@@ -13,10 +13,18 @@ const BRAND = {
   ochre: '#D2C662',
 }
 
+// NOTE: the source PDF filenames (2018 vintage) are misleading — verified by
+// rendering each one and comparing viewBox/layout, not by trusting the name:
+//   - "without tagline-primary unit.pdf" is actually the STACKED lockup
+//     (mark above wordmark).
+//   - "stacked unit without tagline.pdf" is actually the HORIZONTAL lockup
+//     (mark beside wordmark).
+// Output names below describe what each file actually contains. Do not
+// "correct" this mapping back to match the source filenames.
 const SOURCES = [
-  ['logo without tagline/pdf/without tagline-primary unit.pdf', 'swechha-primary'],
-  ['logo without tagline/pdf/stacked unit without tagline.pdf', 'swechha-stacked'],
-  ['logo with tagline/swechha logo with tagline.pdf', 'swechha-tagline'],
+  ['logo without tagline/pdf/without tagline-primary unit.pdf', 'swechha-stacked'],
+  ['logo without tagline/pdf/stacked unit without tagline.pdf', 'swechha-horizontal'],
+  ['logo with tagline/swechha logo with tagline.pdf', 'swechha-stacked-tagline'],
 ]
 
 /** Nearest brand colour for an rgb(a%, b%, c%) triple from pdftocairo. */

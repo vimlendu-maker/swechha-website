@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-const FILES = ['swechha-primary', 'swechha-stacked', 'swechha-tagline']
+const FILES = ['swechha-horizontal', 'swechha-stacked', 'swechha-stacked-tagline']
 
 describe('brand SVGs', () => {
   for (const name of FILES) {
