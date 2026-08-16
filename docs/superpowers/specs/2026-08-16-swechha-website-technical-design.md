@@ -6,6 +6,24 @@
 
 ---
 
+## Standard to judge against
+
+Every design and technical decision is evaluated against one sentence:
+
+> **"This feels like an organisation shaping the future."**
+
+Not "this looks like a good NGO website." The visual personality must read
+as **curious, fearless, human, environmental, contemporary,
+action-oriented** — and warm. Restraint must never become coldness.
+
+**Audiences**, served without complicating the experience: young people and
+students; environmentalists and climate professionals; partners and funders;
+journalists and media; schools and educators; policymakers and institutions;
+volunteers and supporters; first-time visitors; existing Swechha
+communities.
+
+---
+
 ## Purpose
 
 The product brief decides *what* to build and *why*. This document decides
@@ -65,6 +83,7 @@ Micro-grants, Monsoon Wooding, Swechha Podcasts). Mostly `.docx`/`.pptx`/
 | First slice | Foundation + STORY end-to-end |
 | Typefaces | Free/open, self-hosted only |
 | Search | Local static index now; Algolia deferred behind an interface |
+| Environmental Intelligence | **Core in the architecture from day one** — own content type, own top-level nav, homepage prominence. Launch content editorially written; live data feeds are a designed seam, deferred to Phase 2 |
 
 ---
 
@@ -72,8 +91,10 @@ Micro-grants, Monsoon Wooding, Swechha Podcasts). Mostly `.docx`/`.pptx`/
 
 ### 1. Content pipeline
 
-Content lives in `content/<type>/<slug>.md` — five directories, one per
-content type. Each file is YAML frontmatter plus a Markdown body.
+Content lives in `content/<type>/<slug>.md` — **six** directories, one per
+content type: the brief's five (project, story, knowledge, film, campaign)
+plus **briefing**, the Environmental Intelligence type described below. Each
+file is YAML frontmatter plus a Markdown body.
 
 A single module, `lib/content/`, owns the entire load path. Page components
 never touch the filesystem and never parse anything.
@@ -110,6 +131,64 @@ swapping in Algolia later changes this one module and nothing else.
 Markdown," but publishing *broken* Markdown is impossible — the build stops
 first.
 
+### 1a. Environmental Intelligence — the BRIEFING type
+
+The brief defers Environmental Intelligence to Phase 2; the project
+instruction makes it central. These are reconciled by separating the
+**pillar** from the **machinery**.
+
+The pillar ships in MVP. The machinery does not.
+
+**BRIEFING** is a sixth content type: a short, human-written piece situating
+a current environmental development — a policy change, a research finding, a
+pollution event, a climate development in India or globally — and connecting
+it to Swechha's work and to something the reader can do.
+
+Its frontmatter mirrors the structure of the brief's own Part 13 "Swechha
+NOW" example, but authored rather than generated:
+
+```yaml
+title:        string, required
+date:         ISO date, required
+summary:      string, required
+topic:        enum (air, water, waste, climate, biodiversity, policy)
+whatHappened:      string, required
+whyItMatters:      string, required
+whatSwechhaIsDoing: string, required
+whatYouCanDo:      string, required
+sources:      [{ label, url, publishedAt }]   # required, min 1
+related:      { projects, stories, knowledge, films, campaigns }
+```
+
+`sources` is **required with at least one entry** and rendered visibly. An
+organisation commenting on current environmental affairs without attribution
+loses the credibility the site exists to establish. The schema makes an
+unsourced briefing impossible to publish.
+
+**The IA consequence.** NOW stops being "recent posts" — a bucket with no
+reason to exist — and becomes the Environmental Intelligence pillar:
+*what is happening in the environmental world, and what Swechha is doing
+about it*. This is the brief's north star sentence made structural:
+
+> Something is happening. I understand it now. I know what I can do. And
+> Swechha can help me do it.
+
+**The Phase 2 seam.** A briefing may later carry an optional `liveData`
+block (source id, metric, thresholds). Nothing renders it in MVP. When the
+data pipeline is built in Phase 2, it populates an existing type inside an
+existing pillar with existing editorial review — rather than requiring a new
+content type, a new navigation entry, and a homepage redesign.
+
+**What is explicitly NOT in MVP:** live API feeds, automated detection of
+developments, AI-drafted updates, and the auto-updating homepage banner.
+Rationale: live data on a public homepage is a credibility surface, not a
+technical convenience. A stale feed, a wrong reading, or a silent fetch
+failure damages the organisation on the exact page a funder or journalist
+lands on. Doing it responsibly requires source vetting, caching and
+staleness rules, visible failure states, and an editorial review step —
+which is the infrastructure the brief's Part 8 correctly says does not yet
+exist.
+
 ### 2. Design system
 
 Tokens are CSS custom properties declared in `app/globals.css` through
@@ -126,9 +205,14 @@ Scale per the brief (48 / 36 / 24 / 20 / 14), expressed with `clamp()` so
 375px and 1440px both resolve sensibly without a breakpoint stack. Line
 height 1.3 for headlines, 1.6 for body.
 
-**Colour.** Near-black, off-white, three grays. Two accents — one warm, one
-cool — reserved for navigation state and emphasis. No green in the chrome,
-per the brief's explicit "environmental without stereotypical green."
+**Colour — warm neutrals, not cold ones.** A strictly neutral
+black/white/gray palette is technically minimal but emotionally flat, and
+the brand must read *warm and human*. The base is therefore a warm off-white,
+a warm near-black (never pure `#000`), and three neutrals carrying a slight
+warm cast. Two accents — one warm, one cool — reserved for navigation state
+and emphasis, never decoration. No green in the chrome, per the brief's
+explicit "environmental without stereotypical green."
+
 Contrast ratios for every text/background pair will be measured and
 reported as numbers, not asserted.
 
@@ -139,7 +223,15 @@ reported as numbers, not asserted.
 
 **Components** — deliberately few, per the brief's trade-off #4: layout
 shell, navigation (with mobile treatment), content card, tag, button, prose
-wrapper for rendered Markdown, newsletter form.
+wrapper for rendered Markdown, newsletter form, briefing block.
+
+**How the design system gets made.** The token list above is a schematic,
+not a design. The actual visual system — typeface pairing, the specific
+warm palette, hierarchy, image treatment, motion — is produced using the
+installed design skills (`frontend-design`, the taste and UI/UX skills)
+rather than assembled from defaults, and judged against the standard at the
+top of this document. Defaults are what make a site look templated; that is
+the one outcome the brief rules out.
 
 **Known gap:** there is no usable Swechha logo asset. The only file found is
 a 2020 JPEG (`~/Desktop/SWECHHA MASTER/swechha website/swechha site logo.jpg`).
@@ -153,6 +245,8 @@ Routes follow the brief's Part 15 sitemap.
 app/
   layout.tsx                  root shell: fonts, nav, footer, base metadata
   page.tsx                    homepage
+  now/page.tsx                Environmental Intelligence pillar
+  now/[slug]/page.tsx         briefing detail
   stories/page.tsx            archive
   stories/[slug]/page.tsx     detail
   work/, explore/,
@@ -214,8 +308,10 @@ structure (hero, byline, prose body, related-content block, newsletter
 signup); and 3–4 real Markdown entries so the pipeline is exercised against
 genuine content rather than lorem ipsum.
 
-When this renders correctly, the remaining four types are schema and
-template work with no unknowns remaining.
+When this renders correctly, the remaining five types are schema and
+template work with no unknowns remaining. **BRIEFING is built second**, not
+last — it is a core pillar, and its structured multi-field shape is the one
+most likely to surface a limitation in the pipeline.
 
 ### 5. Verification
 
@@ -243,6 +339,8 @@ failures, and the build already catches those.
 | Algolia for search | Static build-time index, searched client-side, behind a `searchContent` seam | ~165 items does not warrant a paid SaaS dependency, API keys, or a sync step that can silently drift. The seam keeps the upgrade contained. |
 | Fonts incl. Söhne, GT Sectra | Free/open self-hosted faces only | Those are commercially licensed (~£200–500+ for web). Headline face is a single swappable token if a budget appears. |
 | Week 1–2 discovery, then build | Foundation first; discovery runs alongside | Real content drops into a structure already proven end-to-end, rather than a structure guessed at from an inventory. |
+| Environmental Intelligence is Phase 2, five content types | Core pillar in MVP as a sixth type (BRIEFING) under a re-purposed NOW; automated data still Phase 2 | The project instruction makes it central. The brief's Part 8 reasons all concern the *machinery* (feeds, detection, automation), not the *editorial pillar*. Shipping the pillar costs content effort, not infrastructure, and gives NOW a reason to exist. |
+| Solo authoring assumed | Git + Markdown retained, but validation messages written for a human and the structure kept Decap-CMS-compatible | Project principle 11 requires a non-technical team can maintain it. A visual editing layer can be added later without a content migration. |
 
 ---
 
