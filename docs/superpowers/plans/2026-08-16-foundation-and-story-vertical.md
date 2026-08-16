@@ -928,6 +928,12 @@ git commit -m "feat(brand): convert logos to SVG with the exact guideline palett
   --swechha-ochre: #d2c662;
   --swechha-indigo: #2b2d46;
 
+  /* Derived for TEXT only. Brand teal is 2.88:1 on paper — it fails WCAG AA
+     for body text (4.5:1) and also fails the 3:1 large-text bar, so it can
+     never be used as text. This darkened teal measures 5.58:1. Brand teal
+     itself stays untouched for the logo and non-text fills. */
+  --swechha-teal-ink: #2c6e72;
+
   /* Surfaces — derived to sit with the brand hues, not chosen independently. */
   --paper: #fbf9f5;
   --ink: #1c1d2b;
@@ -941,6 +947,7 @@ git commit -m "feat(brand): convert logos to SVG with the exact guideline palett
   --color-ink-muted: var(--ink-muted);
   --color-rule: var(--rule);
   --color-teal: var(--swechha-teal);
+  --color-teal-ink: var(--swechha-teal-ink);
   --color-coral: var(--swechha-coral);
   --color-ochre: var(--swechha-ochre);
   --color-indigo: var(--swechha-indigo);
@@ -1048,8 +1055,14 @@ git commit -m "feat(design): add brand design tokens and the typeface pairing"
 - Modify: `app/layout.tsx`
 
 **Interfaces:**
-- Consumes: `public/brand/swechha-primary.svg` from Task 6
+- Consumes: `public/brand/swechha-horizontal.svg` from Task 6
 - Produces: `<SiteHeader />`, `<SiteFooter />`
+
+**AMENDED after Task 6 (ruling R5).** Task 6's outputs were renamed because the
+source PDFs are misnamed — `stacked unit without tagline.pdf` actually contains
+the *horizontal* lockup. The header must use **`swechha-horizontal.svg`
+(155×45)**, not the file this task originally named. The stacked lockup at
+`h-10` (40px tall) renders its wordmark at roughly 12px — illegible.
 
 - [ ] **Step 1: Create `components/site-header.tsx`**
 
@@ -1071,10 +1084,10 @@ export function SiteHeader() {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-5 py-4 md:px-8">
         <Link href="/" aria-label="Swechha — home">
           <Image
-            src="/brand/swechha-primary.svg"
+            src="/brand/swechha-horizontal.svg"
             alt="Swechha"
-            width={145}
-            height={96}
+            width={155}
+            height={45}
             className="h-10 w-auto md:h-12"
             priority
           />
@@ -1085,7 +1098,7 @@ export function SiteHeader() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="inline-block py-2 transition-colors hover:text-teal"
+                  className="inline-block py-2 transition-colors hover:text-teal-ink"
                 >
                   {item.label}
                 </Link>
@@ -1205,7 +1218,7 @@ export function ContentCard({ href, title, summary, image, meta }: ContentCardPr
         {meta && (
           <p className="mt-4 text-xs uppercase tracking-widest text-ink-muted">{meta}</p>
         )}
-        <h3 className="mt-2 group-hover:text-teal">{title}</h3>
+        <h3 className="mt-2 group-hover:text-teal-ink">{title}</h3>
         <p className="mt-2 text-ink-muted">{summary}</p>
       </Link>
     </article>
@@ -1223,7 +1236,7 @@ export function ContentCard({ href, title, summary, image, meta }: ContentCardPr
 export function Prose({ html }: { html: string }) {
   return (
     <div
-      className="prose-swechha max-w-[68ch] [&>h2]:mt-12 [&>h3]:mt-8 [&>p]:mt-6 [&>ul]:mt-6 [&>ul]:list-disc [&>ul]:pl-6 [&_a]:text-teal [&_a]:underline [&_a]:underline-offset-4"
+      className="prose-swechha max-w-[68ch] [&>h2]:mt-12 [&>h3]:mt-8 [&>p]:mt-6 [&>ul]:mt-6 [&>ul]:list-disc [&>ul]:pl-6 [&_a]:text-teal-ink [&_a]:underline [&_a]:underline-offset-4"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   )
@@ -1258,7 +1271,7 @@ export function RelatedContent({ entries }: { entries: Entry[] }) {
             <li key={`${entry.type}/${entry.slug}`}>
               <Link
                 href={`${PATHS[entry.type]}/${entry.slug}`}
-                className="font-display text-xl hover:text-teal"
+                className="font-display text-xl hover:text-teal-ink"
               >
                 {title}
               </Link>
@@ -1711,7 +1724,7 @@ export default function Home() {
         </div>
         <Link
           href="/stories"
-          className="mt-10 inline-block border-b-2 border-teal pb-1 text-sm uppercase tracking-widest hover:text-teal"
+          className="mt-10 inline-block border-b-2 border-teal pb-1 text-sm uppercase tracking-widest hover:text-teal-ink"
         >
           All stories
         </Link>
@@ -1799,9 +1812,13 @@ For each pair below, compute the WCAG contrast ratio (any calculator, or the for
 | `#1C1D2B` ink | `#FBF9F5` paper | ≥ 4.5:1 body |
 | `#55576B` ink-muted | `#FBF9F5` paper | ≥ 4.5:1 body |
 | `#FBF9F5` paper | `#2B2D46` indigo | ≥ 4.5:1 body |
-| `#4BA1A5` teal | `#FBF9F5` paper | ≥ 4.5:1 for link text |
+| `#2C6E72` teal-ink | `#FBF9F5` paper | ≥ 4.5:1 for link text |
 
 Record every ratio. **Any pair below 4.5:1 must be corrected in `globals.css` before this task is complete** — darken the token rather than removing the rule.
+
+**Expected values** (pre-computed with a WCAG 2.1 relative-luminance script; treat a deviation as a bug in the implementation, not in these figures): ink **15.85:1**, ink-muted **6.74:1**, paper-on-indigo **12.75:1**, teal-ink **5.58:1**.
+
+**Do not test brand teal `#4BA1A5` as text.** It measures 2.88:1 on paper and fails both the 4.5:1 body bar and the 3:1 large-text bar. It is deliberately never used as text — only for the logo (logos are exempt from WCAG contrast) and non-text fills. If you find `text-teal` anywhere in the codebase, that is a defect to report.
 
 - [ ] **Step 2: Run Lighthouse against the production build**
 
