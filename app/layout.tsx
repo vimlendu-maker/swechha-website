@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Fraunces, Instrument_Sans } from 'next/font/google'
 import './globals.css'
+import { SiteHeader } from '@/components/site-header'
+import { SiteFooter } from '@/components/site-footer'
 
 const fraunces = Fraunces({
   variable: '--font-fraunces',
@@ -29,7 +31,11 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       lang="en"
       className={`${fraunces.variable} ${instrumentSans.variable} h-full`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <SiteHeader />
+        <div className="flex-1">{children}</div>
+        <SiteFooter />
+      </body>
     </html>
   )
 }
