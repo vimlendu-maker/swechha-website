@@ -24,6 +24,75 @@ communities.
 
 ---
 
+## Brand
+
+Official guidelines exist and are authoritative:
+`~/Desktop/SWECHHA MASTER/from Documents/Branding & Creative/Swechha logos/Swechha/swechha_logo guidelines.pdf`
+(15 pages, dated May 2025). The full logo package alongside it provides EPS,
+PDF, CDR, PNG and JPEG in primary and stacked lockups, with and without
+tagline, plus single-colour black and white versions and a favicon.
+
+**Mark:** a coral circle enclosing an ochre heart-shaped leaf.
+**Wordmark:** SWECHHA, wide-tracked, teal.
+**Tagline:** *Education. Environment. Enterprise.*
+
+### Palette — taken from the guidelines, not invented
+
+| Role | Hex | CMYK |
+|---|---|---|
+| Primary | `#4BA1A5` teal | 70 / 20 / 35 / 0 |
+| Secondary | `#F05A66` coral | 0 / 80 / 50 / 0 |
+| Secondary | `#D2C662` ochre | 20 / 15 / 75 / 0 |
+| Preferred background | `#2B2D46` deep indigo | 85 / 80 / 45 / 45 |
+
+This palette supersedes the neutral scheme previously proposed here. Coral
+and ochre already supply the warmth the brand requires, and a deep indigo
+ground is genuinely distinctive rather than template-like. Nothing in it is
+stereotypical NGO green, so the brief's colour direction is satisfied by the
+real brand rather than in spite of it.
+
+Neutrals are derived to sit with these hues rather than chosen
+independently. Every text/background pair is contrast-measured and reported
+as a number.
+
+### Logo usage rules — encoded, not left to memory
+
+- White single-colour logo on backgrounds of 50% K or greater **and** on any
+  of the logo colours; black single-colour below 50% K.
+- Grayscale reproduction uses the black version unmodified.
+- Minimum clear space of 4mm equivalent on all sides when set with other
+  logos.
+- Never recreate the wordmark by typing it from a font; the logo ships as
+  artwork.
+- Never restyle, recolour, stretch, squash, skew, re-proportion, enclose in
+  a shape, or remove elements of the mark.
+
+**Outstanding asset task:** vector sources exist as EPS and PDF, but the web
+needs SVG. Conversion happens once at implementation and the result is
+committed. The high-resolution transparent PNG (4163×4163) is an acceptable
+fallback if conversion proves unreliable — it must never be re-traced by
+hand, per the rules above.
+
+### Typography — a recorded, deliberate deviation
+
+The guidelines name **Raleway** (the typeface used in the logo) and
+recommend **Merriweather** as a serif companion *in collaterals*. Both are
+free and open, satisfying the licensing constraint.
+
+The website will nonetheless use a **contemporary open pairing chosen to
+harmonise with the mark**, not these two. Reasoning: both are among the most
+widely used typefaces on the web and read as early-2010s; setting the entire
+site in them works directly against "visually distinctive" and the standard
+at the top of this document. The guidelines specify Raleway *for the logo*
+— which ships as artwork and must never be retyped — and recommend
+Merriweather *for print collateral beside the mark*, neither of which
+constrains website body and heading type.
+
+Approved by the brand owner (2026-08-16). Typefaces are bound to two CSS
+variables, so reverting to the guideline pairing is a two-line change.
+
+---
+
 ## Purpose
 
 The product brief decides *what* to build and *why*. This document decides
@@ -196,25 +265,18 @@ Tailwind v4's `@theme inline`. There is no `tailwind.config.ts` and none
 will be added; v4 is CSS-first and the scaffold already follows this.
 
 **Typography.** Two self-hosted open typefaces loaded via
-`next/font/local` — a distinctive serif for headlines, a clean grotesque for
-body. Self-hosting removes the third-party font CDN request and eliminates
-layout shift. Each face is bound to a single CSS variable, so replacing the
-headline face later is a one-line change.
+`next/font/local`, selected per the Brand section above. Self-hosting
+removes the third-party font CDN request and eliminates layout shift. Each
+face is bound to a single CSS variable, so replacing either is a one-line
+change.
 
 Scale per the brief (48 / 36 / 24 / 20 / 14), expressed with `clamp()` so
 375px and 1440px both resolve sensibly without a breakpoint stack. Line
 height 1.3 for headlines, 1.6 for body.
 
-**Colour — warm neutrals, not cold ones.** A strictly neutral
-black/white/gray palette is technically minimal but emotionally flat, and
-the brand must read *warm and human*. The base is therefore a warm off-white,
-a warm near-black (never pure `#000`), and three neutrals carrying a slight
-warm cast. Two accents — one warm, one cool — reserved for navigation state
-and emphasis, never decoration. No green in the chrome, per the brief's
-explicit "environmental without stereotypical green."
-
-Contrast ratios for every text/background pair will be measured and
-reported as numbers, not asserted.
+**Colour.** The brand palette, per the Brand section above. Accents carry
+emphasis and navigation state, never decoration. Contrast ratios for every
+text/background pair are measured and reported as numbers, not asserted.
 
 **Spacing.** 8px base scale.
 
@@ -356,7 +418,10 @@ failures, and the build already catches those.
    the largest single unestimated cost in the project.
 3. **Elementor markup.** Post bodies are page-builder div-soup. Conversion to
    clean Markdown will need per-post attention, not a batch script.
-4. **No logo asset.** See Design system above.
+4. ~~No logo asset.~~ **Resolved 2026-08-16.** A complete logo package and
+   official May 2025 brand guidelines were located at
+   `~/Desktop/SWECHHA MASTER/from Documents/Branding & Creative/Swechha logos/`.
+   See the Brand section. Remaining task is EPS/PDF → SVG conversion.
 
 ---
 
