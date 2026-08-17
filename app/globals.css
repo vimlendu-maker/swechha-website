@@ -46,6 +46,20 @@
 
   --font-display: var(--font-fraunces);
   --font-body: var(--font-instrument-sans);
+
+  /* Heading sizes as real theme tokens (Tailwind's font-size namespace is
+     `--text-*`), so `text-h2`/`text-h3`/`text-h4` are genuine generated
+     utilities — in the `utilities` layer, which per the `@layer theme, base,
+     components, utilities` order above beats the bare element rules in
+     `@layer base` below. A component that needs "look like an h3" (e.g.
+     ContentCard's title, see its comment) can reach for `text-h3` instead of
+     an inline style: an inline style beats every layer including utilities,
+     which is exactly the bug fixed at `ab7080e` and is why this exists
+     instead of a `style={{ fontSize: ... }}` prop. Value lives here once;
+     the `@layer base` rules below reference it via `var()`. */
+  --text-h2: clamp(1.875rem, 1.74rem + 0.56vw, 2.25rem);
+  --text-h3: clamp(1.5rem, 1.41rem + 0.38vw, 1.75rem);
+  --text-h4: 1.25rem;
 }
 
 /* Everything styled by element name lives in `@layer base`, and it must stay
@@ -91,15 +105,15 @@
     font-variation-settings: 'opsz' 96, 'SOFT' 20, 'WONK' 1;
   }
   h2 {
-    font-size: clamp(1.875rem, 1.74rem + 0.56vw, 2.25rem);
+    font-size: var(--text-h2);
     font-variation-settings: 'opsz' 48, 'SOFT' 20, 'WONK' 0;
   }
   h3 {
-    font-size: clamp(1.5rem, 1.41rem + 0.38vw, 1.75rem);
+    font-size: var(--text-h3);
     font-variation-settings: 'opsz' 28, 'SOFT' 25, 'WONK' 0;
   }
   h4 {
-    font-size: 1.25rem;
+    font-size: var(--text-h4);
     font-variation-settings: 'opsz' 20, 'SOFT' 30, 'WONK' 0;
   }
 

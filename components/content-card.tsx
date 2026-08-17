@@ -34,8 +34,14 @@ export function ContentCard({
   // context (see the prop doc above) — the card's own visual size must not
   // change when the tag does, so it's pinned here to what h3 looks like
   // today regardless of which tag is actually rendered.
+  //
+  // The size comes from the `text-h3` utility (its token is defined once in
+  // `app/globals.css`'s `@theme inline` block), not an inline style — an
+  // inline style beats every cascade layer including utilities, which would
+  // silently defeat a future `className="text-2xl"` on this heading exactly
+  // like the site-wide bug fixed at `ab7080e`. `font-variation-settings` has
+  // no Tailwind utility to collide with, so it stays a plain style prop.
   const headingStyle = {
-    fontSize: 'clamp(1.5rem, 1.41rem + 0.38vw, 1.75rem)',
     fontVariationSettings: "'opsz' 28, 'SOFT' 25, 'WONK' 0",
   }
 
@@ -60,7 +66,7 @@ export function ContentCard({
       {meta && (
         <p className="mt-4 text-xs uppercase tracking-widest text-ink-muted">{meta}</p>
       )}
-      <Heading className="mt-2" style={headingStyle}>
+      <Heading className="mt-2 text-h3" style={headingStyle}>
         <Link
           href={href}
           className="after:absolute after:inset-0 group-hover:text-teal-ink"
