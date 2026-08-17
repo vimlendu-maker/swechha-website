@@ -70,12 +70,17 @@ const evidenceSchema = z.strictObject({
   date: z.string().regex(ISO_DATE).optional(),
 })
 
-const timelineEntrySchema = z.strictObject({
-  date: z.string().regex(ISO_DATE, 'timeline date must be YYYY-MM-DD'),
-  status: z.enum(LIFECYCLE_STATUSES_TUPLE),
-  severity: z.enum(SEVERITIES_TUPLE).optional(),
-  note: z.string().min(1),
-})
+const timelineEntrySchema = z
+  .strictObject({
+    date: z.string().regex(ISO_DATE, 'timeline date must be YYYY-MM-DD'),
+    status: z.enum(LIFECYCLE_STATUSES_TUPLE),
+    severity: z.enum(SEVERITIES_TUPLE).optional(),
+    note: z.string().min(1),
+  })
+  .refine((data) => data.status !== 'active' || !!data.severity, {
+    message: 'severity is required when status is "active"',
+    path: ['severity'],
+  })
 
 export const campaignSchema = z
   .strictObject({

@@ -31,12 +31,24 @@ export default function NowPage() {
         ) : (
           <div className="mt-6 flex flex-col gap-[1px] bg-rule">
             {situations.map((s) => (
-              <Link key={s.slug} href={`/campaigns/${s.slug}`} className="block bg-indigo p-6 text-paper md:p-8">
+              // `relative` here, not on the Link: wrapping the whole card's
+              // text in one <Link> (as this used to) made a screen reader
+              // announce the entire card — including the live-data
+              // timestamp and DEMO DATA tag — as the link's accessible
+              // name. Only the title is a real link now, stretched over the
+              // full card via `after:absolute after:inset-0`, matching the
+              // pattern already established in components/content-card.tsx.
+              <div key={s.slug} className="relative bg-indigo p-6 text-paper md:p-8">
                 <p className="font-mono text-xs uppercase tracking-widest opacity-70">{s.data.location}</p>
                 {s.data.liveData && (
                   <>
-                    <div className="mt-2 font-mono text-3xl font-bold md:text-5xl">
-                      {s.data.liveData.value}{s.data.liveData.unit}
+                    <div className="mt-2 flex items-baseline gap-2">
+                      <span className="font-mono text-xs uppercase tracking-widest opacity-70">
+                        {s.data.liveData.label}
+                      </span>
+                      <span className="font-mono text-3xl font-bold md:text-5xl">
+                        {s.data.liveData.value}{s.data.liveData.unit}
+                      </span>
                     </div>
                     <DataAttribution sourceLabel={s.data.liveData.sourceLabel} updatedAt={s.data.liveData.updatedAt} mock={s.data.liveData.mock} />
                   </>
@@ -44,8 +56,12 @@ export default function NowPage() {
                 <div className="mt-3">
                   <StatusBadge status={s.data.status} severity={s.data.severity} onDark />
                 </div>
-                <h3 className="mt-3 max-w-[24ch] text-2xl">{s.data.title}</h3>
-              </Link>
+                <h3 className="mt-3 max-w-[24ch] text-2xl">
+                  <Link href={`/campaigns/${s.slug}`} className="after:absolute after:inset-0">
+                    {s.data.title}
+                  </Link>
+                </h3>
+              </div>
             ))}
           </div>
         )}

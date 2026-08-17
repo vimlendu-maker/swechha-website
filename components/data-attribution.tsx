@@ -21,10 +21,10 @@ export function DataAttribution({ sourceLabel, updatedAt, mock }: DataAttributio
   })
 
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-2 font-mono text-[0.68rem] text-ink-muted">
-      <span>SOURCE: {sourceLabel.toUpperCase()} — UPDATED {formatted}</span>
+    <div className="mt-2 flex flex-wrap items-center gap-2 font-mono text-[0.68rem] text-[#A9ACBF]">
+      <span>SOURCE: {sourceLabel.toUpperCase()} — UPDATED {formatted} UTC</span>
       {mock && (
-        <span className="rounded-[2px] border border-dashed border-ink-muted px-[0.4rem] py-[0.1rem] text-ink-muted">
+        <span className="rounded-[2px] border border-dashed border-ink-muted px-[0.4rem] py-[0.1rem] text-[#A9ACBF]">
           DEMO DATA — NOT LIVE
         </span>
       )}

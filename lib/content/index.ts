@@ -87,13 +87,21 @@ export function getCampaignBySlug(slug: string): Entry<Campaign> | null {
   return content().campaigns.find((e) => e.slug === slug) ?? null
 }
 
-export function getActiveSituations(): Entry<Campaign>[] {
+/**
+ * Extracted so it can be unit-tested directly against mock entries — with
+ * only one real campaign in the repo, a test that only ever calls
+ * `getActiveSituations()` end-to-end can't exercise a multi-item sort at
+ * all. See `index.test.ts`.
+ */
+export function compareBySeverity(a: Entry<Campaign>, b: Entry<Campaign>): number {
   const priority: Severity[] = [...SEVERITIES]
+  const ai = priority.indexOf(a.data.severity as Severity)
+  const bi = priority.indexOf(b.data.severity as Severity)
+  return ai - bi
+}
+
+export function getActiveSituations(): Entry<Campaign>[] {
   return content()
     .campaigns.filter((e) => e.data.status === 'active')
-    .sort((a, b) => {
-      const ai = priority.indexOf(a.data.severity as Severity)
-      const bi = priority.indexOf(b.data.severity as Severity)
-      return ai - bi
-    })
+    .sort(compareBySeverity)
 }

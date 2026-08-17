@@ -49,9 +49,14 @@ export default async function CampaignPage(props: PageProps<'/campaigns/[slug]'>
           </div>
           {data.liveData && (
             <>
-              <div className="mt-4 font-mono text-5xl font-bold leading-none md:text-6xl">
-                {data.liveData.value}
-                {data.liveData.unit}
+              <div className="mt-4 flex items-baseline gap-2">
+                <span className="font-mono text-xs uppercase tracking-widest opacity-70">
+                  {data.liveData.label}
+                </span>
+                <span className="font-mono text-5xl font-bold leading-none md:text-6xl">
+                  {data.liveData.value}
+                  {data.liveData.unit}
+                </span>
               </div>
               <DataAttribution
                 sourceLabel={data.liveData.sourceLabel}
@@ -73,7 +78,7 @@ export default async function CampaignPage(props: PageProps<'/campaigns/[slug]'>
           <p className="mt-4 max-w-[64ch]">{data.whatWeKnow}</p>
         </section>
 
-        <section className="mt-12 border-t border-rule pt-10">
+        <section id="public-health" className="mt-12 border-t border-rule pt-10">
           <h2>Public health impact</h2>
           <p className="mt-4 max-w-[64ch]">{data.publicHealthImpact}</p>
         </section>

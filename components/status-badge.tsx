@@ -10,11 +10,12 @@ interface StatusBadgeProps {
 export function StatusBadge({ status, severity, onDark = false }: StatusBadgeProps) {
   const visual = resolveStatus(status, severity)
   const color = onDark ? visual.colorBright : visual.color
+  const fg = onDark ? visual.fgBright : visual.fg
 
   return (
     <span
       className="inline-block rounded-[2px] px-[0.6rem] py-[0.28rem] font-mono text-[0.7rem] font-bold uppercase tracking-[0.08em]"
-      style={{ backgroundColor: color, color: onDark ? '#1a0508' : '#fff6f4' }}
+      style={{ backgroundColor: color, color: fg }}
     >
       {visual.label}
     </span>

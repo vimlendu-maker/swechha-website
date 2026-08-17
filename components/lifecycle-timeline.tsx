@@ -30,7 +30,7 @@ export function LifecycleTimeline({ entries }: { entries: TimelineEntry[] }) {
               })}
             </time>
             <p className="mt-1 text-[0.94rem]">
-              <span className="mr-1 font-mono text-[0.72rem] uppercase" style={{ color: visual.color }}>
+              <span className="mr-1 font-mono text-[0.72rem] uppercase text-ink">
                 {visual.label}
               </span>
               {entry.note}

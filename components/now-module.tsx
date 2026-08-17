@@ -21,10 +21,16 @@ export function NowModule({ situations }: { situations: Entry<Campaign>[] }) {
 
       <div className="mt-6 bg-indigo p-6 text-paper md:p-9">
         <p className="font-mono text-xs uppercase tracking-widest opacity-70">{hero.data.location}</p>
-        {hero.data.liveData ? (
+        <h3 className="mt-2 max-w-[20ch] text-2xl">{hero.data.title}</h3>
+        {hero.data.liveData && (
           <>
-            <div className="mt-2 font-mono text-4xl font-bold leading-none md:text-6xl">
-              {hero.data.liveData.value}{hero.data.liveData.unit}
+            <div className="mt-3 flex items-baseline gap-2">
+              <span className="font-mono text-xs uppercase tracking-widest opacity-70">
+                {hero.data.liveData.label}
+              </span>
+              <span className="font-mono text-4xl font-bold leading-none md:text-6xl">
+                {hero.data.liveData.value}{hero.data.liveData.unit}
+              </span>
             </div>
             <DataAttribution
               sourceLabel={hero.data.liveData.sourceLabel}
@@ -32,8 +38,6 @@ export function NowModule({ situations }: { situations: Entry<Campaign>[] }) {
               mock={hero.data.liveData.mock}
             />
           </>
-        ) : (
-          <h3 className="mt-2 max-w-[20ch] text-2xl">{hero.data.title}</h3>
         )}
         <div className="mt-3">
           <StatusBadge status={hero.data.status} severity={hero.data.severity} onDark />
@@ -51,17 +55,27 @@ export function NowModule({ situations }: { situations: Entry<Campaign>[] }) {
       {secondary.length > 0 && (
         <div className="mt-[1px] grid gap-[1px] bg-rule sm:grid-cols-2">
           {secondary.map((s) => (
-            <Link
+            // `relative` here, not on the Link: wrapping location + badge +
+            // summary all inside one <Link> (as this used to) made a screen
+            // reader announce the whole tile as the link's accessible name.
+            // Only the title is a real link now, stretched over the full
+            // tile via `after:absolute after:inset-0`, matching the pattern
+            // already established in components/content-card.tsx.
+            <div
               key={s.slug}
-              href={`/campaigns/${s.slug}`}
-              className="flex flex-wrap items-baseline gap-2 bg-paper p-4"
+              className="relative flex flex-wrap items-baseline gap-2 bg-paper p-4"
             >
               <span className="font-mono text-[0.66rem] uppercase tracking-wide text-ink-muted">
                 {s.data.location}
               </span>
               <StatusBadge status={s.data.status} severity={s.data.severity} />
+              <h3 className="w-full text-sm font-semibold">
+                <Link href={`/campaigns/${s.slug}`} className="after:absolute after:inset-0">
+                  {s.data.title}
+                </Link>
+              </h3>
               <span className="text-sm text-ink-muted">{s.data.summary}</span>
-            </Link>
+            </div>
           ))}
         </div>
       )}

@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { renderMarkdown } from '../markdown'
 import { getAllStories, getStoryBySlug, getAllEntries, getRelated } from './index'
-import { getAllCampaigns, getCampaignBySlug, getActiveSituations } from './index'
+import { getAllCampaigns, getCampaignBySlug, getActiveSituations, compareBySeverity } from './index'
+import type { Entry } from './types'
+import type { Campaign } from './schemas'
 
 describe('renderMarkdown', () => {
   it('renders a heading and a paragraph', () => {
@@ -52,13 +54,37 @@ describe('campaign accessors', () => {
     expect(getCampaignBySlug('not-a-real-situation')).toBeNull()
   })
 
+  it('does not throw and only returns active-status entries', () => {
+    expect(() => getActiveSituations()).not.toThrow()
+    expect(getActiveSituations().every((e) => e.data.status === 'active')).toBe(true)
+  })
+
   it('sorts active situations by severity priority', () => {
-    const active = getActiveSituations()
-    const order = ['critical', 'warning', 'watch', 'water']
-    for (let i = 1; i < active.length; i++) {
-      const prev = order.indexOf(active[i - 1].data.severity!)
-      const curr = order.indexOf(active[i].data.severity!)
-      expect(prev).toBeLessThanOrEqual(curr)
-    }
+    // With only one real campaign in the repo, looping over
+    // `getActiveSituations()`'s own output executes zero comparisons and
+    // proves nothing (`active.length === 1`). `compareBySeverity` is the
+    // exact comparator `getActiveSituations()` sorts with, so exercise it
+    // directly against mock entries covering every severity out of order.
+    const mockEntry = (severity: Campaign['severity'], slug: string): Entry<Campaign> => ({
+      type: 'campaign',
+      slug,
+      body: '',
+      data: { severity } as Campaign,
+    })
+
+    const entries = [
+      mockEntry('water', 'water-situation'),
+      mockEntry('watch', 'watch-situation'),
+      mockEntry('critical', 'critical-situation'),
+      mockEntry('warning', 'warning-situation'),
+    ]
+
+    const sorted = [...entries].sort(compareBySeverity)
+    expect(sorted.map((e) => e.slug)).toEqual([
+      'critical-situation',
+      'warning-situation',
+      'watch-situation',
+      'water-situation',
+    ])
   })
 })
