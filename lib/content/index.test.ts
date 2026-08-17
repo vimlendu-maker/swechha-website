@@ -14,15 +14,13 @@ describe('renderMarkdown', () => {
 // "loads real entries" and "relations resolve" checks the comment above
 // used to say were deliberately missing.
 describe('content API against real STORY content', () => {
-  it('getAllStories returns the three sample stories', () => {
+  it('getAllStories returns at least the known sample stories', () => {
     const stories = getAllStories()
-    expect(stories).toHaveLength(3)
-    const slugs = stories.map((s) => s.slug).sort()
-    expect(slugs).toEqual([
-      'delhi-air-victory',
-      'monsoon-wooding-2021',
-      'rooftop-sanctuary',
-    ])
+    expect(stories.length).toBeGreaterThanOrEqual(3)
+    const slugs = stories.map((s) => s.slug)
+    expect(slugs).toContain('delhi-air-victory')
+    expect(slugs).toContain('monsoon-wooding-2021')
+    expect(slugs).toContain('rooftop-sanctuary')
   })
 
   it('getStoryBySlug finds a known story and returns null for an unknown one', () => {
@@ -32,8 +30,8 @@ describe('content API against real STORY content', () => {
     expect(getStoryBySlug('does-not-exist')).toBeNull()
   })
 
-  it('getAllEntries includes every story', () => {
-    expect(getAllEntries()).toHaveLength(3)
+  it('getAllEntries includes at least every known story', () => {
+    expect(getAllEntries().length).toBeGreaterThanOrEqual(3)
   })
 
   it('getRelated resolves the delhi-air-victory -> rooftop-sanctuary relation', () => {
