@@ -200,7 +200,19 @@ swapping in Algolia later changes this one module and nothing else.
 Markdown," but publishing *broken* Markdown is impossible — the build stops
 first.
 
-### 1a. Environmental Intelligence — the BRIEFING type
+### 1a. Environmental Intelligence — the BRIEFING type — SUPERSEDED 2026-08-17
+
+> **This entire section (1a) is superseded.** The project owner corrected the
+> architecture against `Swechha-Website-IA-Environmental-Intelligence-Revised.md`
+> (the authoritative source) and
+> [`2026-08-17-swechha-design-system-v1.md`](./2026-08-17-swechha-design-system-v1.md)
+> §0. There is no `BRIEFING` content type. Environmental Intelligence is a
+> **property of `CAMPAIGN`**, which becomes `CAMPAIGN / SITUATION` — one
+> content type carrying a lifecycle (`active`/`monitoring`/`achieved`/
+> `archived`), severity, live-data fields, and source references. NOW is a
+> curated surface over active Situations, not an archive of a separate type.
+> The section below is left in place as a historical record of the prior
+> (incorrect) model — do not implement against it.
 
 The brief defers Environmental Intelligence to Phase 2; the project
 instruction makes it central. These are reconciled by separating the
@@ -432,7 +444,7 @@ failures, and the build already catches those.
 | Algolia for search | Static build-time index, searched client-side, behind a `searchContent` seam | ~165 items does not warrant a paid SaaS dependency, API keys, or a sync step that can silently drift. The seam keeps the upgrade contained. |
 | Fonts incl. Söhne, GT Sectra | Free/open self-hosted faces only | Those are commercially licensed (~£200–500+ for web). Headline face is a single swappable token if a budget appears. |
 | Week 1–2 discovery, then build | Foundation first; discovery runs alongside | Real content drops into a structure already proven end-to-end, rather than a structure guessed at from an inventory. |
-| Environmental Intelligence is Phase 2, five content types | Core pillar in MVP as a sixth type (BRIEFING) under a re-purposed NOW; automated data still Phase 2 | The project instruction makes it central. The brief's Part 8 reasons all concern the *machinery* (feeds, detection, automation), not the *editorial pillar*. Shipping the pillar costs content effort, not infrastructure, and gives NOW a reason to exist. |
+| Environmental Intelligence is Phase 2, five content types | ~~Core pillar in MVP as a sixth type (BRIEFING) under a re-purposed NOW~~ **SUPERSEDED 2026-08-17 — see §1a and the design system v1**: Environmental Intelligence is a property of `CAMPAIGN` (→ `CAMPAIGN/SITUATION`), not a separate type; automated data still Phase 2 | The project instruction makes it central. The brief's Part 8 reasons all concern the *machinery* (feeds, detection, automation), not the *editorial pillar*. Shipping the pillar costs content effort, not infrastructure, and gives NOW a reason to exist. |
 | Solo authoring assumed | Git + Markdown retained, but validation messages written for a human and the structure kept Decap-CMS-compatible | Project principle 11 requires a non-technical team can maintain it. A visual editing layer can be added later without a content migration. |
 
 ---
