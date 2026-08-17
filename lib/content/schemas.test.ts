@@ -31,4 +31,20 @@ describe('storySchema', () => {
   it('rejects a malformed date', () => {
     expect(() => storySchema.parse({ ...valid, date: '12-08-2024' })).toThrow()
   })
+
+  it('rejects an unknown key inside related (e.g. `stories` typo for `story`)', () => {
+    expect(() =>
+      storySchema.parse({ ...valid, related: { stories: ['ghost-slug'] } }),
+    ).toThrow()
+  })
+
+  it('rejects a wrong-case key inside related (e.g. `Story` for `story`)', () => {
+    expect(() =>
+      storySchema.parse({ ...valid, related: { Story: ['another-ghost'] } }),
+    ).toThrow()
+  })
+
+  it('rejects an unknown top-level frontmatter key (e.g. `titel` typo for `title`)', () => {
+    expect(() => storySchema.parse({ ...valid, titel: 'Typo' })).toThrow()
+  })
 })

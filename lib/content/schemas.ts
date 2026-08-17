@@ -10,7 +10,7 @@ const slugList = () => z.array(z.string()).default([])
  * inferred type stays readable and TypeScript can check it properly.
  */
 export const relatedSchema = z
-  .object({
+  .strictObject({
     project: slugList(),
     story: slugList(),
     knowledge: slugList(),
@@ -32,7 +32,7 @@ export const heroImageSchema = z.object({
   alt: z.string().min(1, 'heroImage.alt is required — every image needs alt text'),
 })
 
-export const storySchema = z.object({
+export const storySchema = z.strictObject({
   title: z.string().min(1, 'title is required'),
   summary: z.string().min(1, 'summary is required'),
   author: z.string().min(1, 'author is required'),
