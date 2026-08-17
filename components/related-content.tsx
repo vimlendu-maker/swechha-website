@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { Entry } from '@/lib/content'
 
-const PATHS: Record<string, string> = {
+const PATHS: Record<Entry['type'], string> = {
   story: '/stories',
   project: '/work',
   knowledge: '/explore',

@@ -48,58 +48,69 @@
   --font-body: var(--font-instrument-sans);
 }
 
-body {
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-body), system-ui, sans-serif;
-  font-size: 1.125rem;   /* 18px floor, per the brief */
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
+/* Everything styled by element name lives in `@layer base`, and it must stay
+   there. Tailwind's utilities live in `@layer utilities`; per CSS cascade
+   layers an UNLAYERED rule beats every layered one regardless of specificity,
+   so a bare `h1 { font-size: … }` here silently defeats `class="text-xs"` on
+   an h1 anywhere in the app. Inside `base` these rules still win over
+   Tailwind's preflight — same layer, later in the file — so the heading scale
+   below is unaffected, but a utility can now override it. */
+@layer base {
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body), system-ui, sans-serif;
+    font-size: 1.125rem;   /* 18px floor, per the brief */
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
 
-h1, h2, h3, h4 {
-  font-family: var(--font-display), Georgia, serif;
-  /* Tailwind's preflight resets headings to `font-weight: inherit`, which left
-     every heading on the site at the body's 400. Restore real weight — this is
-     the primary hierarchy signal, ahead of size. */
-  font-weight: 600;
-  line-height: 1.3;
-  text-wrap: balance;
-}
+  h1, h2, h3, h4 {
+    font-family: var(--font-display), Georgia, serif;
+    /* Tailwind's preflight resets headings to `font-weight: inherit`, which
+       left every heading on the site at the body's 400. Restore real weight —
+       this is the primary hierarchy signal, ahead of size. */
+    font-weight: 600;
+    line-height: 1.3;
+    text-wrap: balance;
+  }
 
-/* Fluid type — 375px and 1440px both resolve sensibly without a breakpoint
-   stack. The minimums carry the hierarchy: at 375px this is 38 / 30 / 24 / 20
-   against an 18px body, so an h3 (the content-card title) is a 1.33 step above
-   body text rather than the 1.12 it used to be.
+  /* Fluid type — 375px and 1440px both resolve sensibly without a breakpoint
+     stack. The minimums carry the hierarchy: at 375px this is 38 / 30 / 24 / 20
+     against an 18px body, so an h3 (the content-card title) is a 1.33 step
+     above body text rather than the 1.12 it used to be.
 
-   `font-variation-settings` drives the Fraunces axes the font file already
-   ships: `opsz` is set per level so display sizes get their optical treatment
-   (lighter, higher-contrast strokes large; sturdier small), and `SOFT` rises
-   slightly as size falls to keep small headings from looking brittle. `WONK` is
-   pinned off everywhere except the single largest heading on a page — the
-   organisation is serious, and one h1 is the whole budget for character. */
-h1 {
-  font-size: clamp(2.375rem, 1.98rem + 1.69vw, 3.5rem);
-  font-variation-settings: 'opsz' 96, 'SOFT' 20, 'WONK' 1;
-}
-h2 {
-  font-size: clamp(1.875rem, 1.74rem + 0.56vw, 2.25rem);
-  font-variation-settings: 'opsz' 48, 'SOFT' 20, 'WONK' 0;
-}
-h3 {
-  font-size: clamp(1.5rem, 1.41rem + 0.38vw, 1.75rem);
-  font-variation-settings: 'opsz' 28, 'SOFT' 25, 'WONK' 0;
-}
-h4 {
-  font-size: 1.25rem;
-  font-variation-settings: 'opsz' 20, 'SOFT' 30, 'WONK' 0;
-}
+     `font-variation-settings` drives the Fraunces axes the font file already
+     ships: `opsz` is set per level so display sizes get their optical treatment
+     (lighter, higher-contrast strokes large; sturdier small), and `SOFT` rises
+     slightly as size falls to keep small headings from looking brittle. `WONK`
+     is pinned off everywhere except the single largest heading on a page — the
+     organisation is serious, and one h1 is the whole budget for character. */
+  h1 {
+    font-size: clamp(2.375rem, 1.98rem + 1.69vw, 3.5rem);
+    font-variation-settings: 'opsz' 96, 'SOFT' 20, 'WONK' 1;
+  }
+  h2 {
+    font-size: clamp(1.875rem, 1.74rem + 0.56vw, 2.25rem);
+    font-variation-settings: 'opsz' 48, 'SOFT' 20, 'WONK' 0;
+  }
+  h3 {
+    font-size: clamp(1.5rem, 1.41rem + 0.38vw, 1.75rem);
+    font-variation-settings: 'opsz' 28, 'SOFT' 25, 'WONK' 0;
+  }
+  h4 {
+    font-size: 1.25rem;
+    font-variation-settings: 'opsz' 20, 'SOFT' 30, 'WONK' 0;
+  }
 
-a { color: inherit; }
+  /* Unlayered, this defeated every text-colour utility on a link — including
+     Prose's `[&_a]:text-teal-ink`, which was rendering ink. */
+  a { color: inherit; }
 
-::selection {
-  background: var(--swechha-ochre);
-  color: var(--ink);
+  ::selection {
+    background: var(--swechha-ochre);
+    color: var(--ink);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
