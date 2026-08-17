@@ -43,3 +43,11 @@ for (const name of ['delhi-air', 'rooftop-sanctuary', 'monsoon-wooding']) {
   writeFileSync(join(OUT, `${name}.png`), solidPng(1600, 1200, [0xe4, 0xe0, 0xd8]))
   console.log(`wrote ${name}.png`)
 }
+
+const CAMPAIGN_OUT = join(process.cwd(), 'public', 'images', 'campaigns')
+mkdirSync(CAMPAIGN_OUT, { recursive: true })
+
+for (const name of ['delhi-air']) {
+  writeFileSync(join(CAMPAIGN_OUT, `${name}.png`), solidPng(1600, 1200, [0xe4, 0xe0, 0xd8]))
+  console.log(`wrote campaigns/${name}.png`)
+}
