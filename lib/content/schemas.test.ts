@@ -47,4 +47,10 @@ describe('storySchema', () => {
   it('rejects an unknown top-level frontmatter key (e.g. `titel` typo for `title`)', () => {
     expect(() => storySchema.parse({ ...valid, titel: 'Typo' })).toThrow()
   })
+
+  it('rejects a briefing relation key — the type no longer exists', () => {
+    expect(() =>
+      storySchema.parse({ ...valid, related: { briefing: ['x'] } }),
+    ).toThrow()
+  })
 })

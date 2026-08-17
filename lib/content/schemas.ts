@@ -16,7 +16,6 @@ export const relatedSchema = z
     knowledge: slugList(),
     film: slugList(),
     campaign: slugList(),
-    briefing: slugList(),
   })
   .default({
     project: [],
@@ -24,7 +23,6 @@ export const relatedSchema = z
     knowledge: [],
     film: [],
     campaign: [],
-    briefing: [],
   })
 
 export const heroImageSchema = z.object({
