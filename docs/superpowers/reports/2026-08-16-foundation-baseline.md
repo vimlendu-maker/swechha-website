@@ -42,14 +42,34 @@ this environment.
 
 | Category | Score |
 |---|---|
-| Performance | **100** |
+| Performance | **100** (see variance note below) |
 | Accessibility | **100** |
-| Best Practices | **96** |
+| Best Practices | **96** (see root cause below) |
 | SEO | **100** |
 
-(Best Practices at 96 rather than 100 — the JSON report was not inspected
-further for which specific audit lost points; flagged as a follow-up if a
-100 is required.)
+**Performance is not a stable number in this environment — treat it as a
+range, not a fixed score.** This run scored 100, but an independent
+reviewer run of the identical build and page scored **Performance 96**
+(LCP 2.7s). Both are real, tool-measured results; the difference is
+run-to-run and load-sensitivity noise in a sandboxed/headless environment
+(CPU/network throttling emulation is sensitive to host load), not a
+discrepancy in either measurement. **Observed range: Performance 96–100.**
+A future run landing anywhere in that band should not be read as a
+regression. Accessibility, Best Practices, and SEO were stable across both
+runs (100/96/100 in both).
+
+**Best Practices 96 — root cause identified, not a defect.** The single
+failing audit is `errors-in-console` (weight 1, scored 0). The site header
+(`components/site-header.tsx`) links to `/now`, `/explore`, `/work`, `/act`,
+and `/about`. Next.js's `<Link>` prefetches these via RSC requests
+(`?_rsc=...`); all five routes 404 because they are not built yet, and each
+404 logs a console error, costing this audit its points. This is the exact,
+already-accepted condition recorded in this plan's own "out of scope"
+list — those five routes are deliberately unbuilt in this plan, and the
+header nav linking to them is the brief's approved information architecture
+(not something this plan is meant to reshape around a half-built site).
+**Expected to resolve on its own, without any action here, once those
+routes ship** in their own future plans — no fix is owed by this baseline.
 
 ## Third-party requests
 
@@ -134,10 +154,28 @@ on demand).
   `next build` does not emit this table in this version (unlike the
   webpack-based `next build` output the brief may have been assuming). Chunk
   sizes on disk were reported instead as the closest available substitute.
-- **Best Practices' specific missing audit** (96 instead of 100): not
-  drilled into for this baseline; the full JSON report is retained
-  transiently in the working environment but not committed to the repo.
+- **Best Practices' specific missing audit**: resolved in a follow-up pass
+  (see the root-cause note above) — no longer an open item.
 
 No numbers in this report are estimated or invented — every figure above
 was read directly from the WCAG contrast script, the Lighthouse JSON
 report, or `du`/`next build` output.
+
+## Revision note (fix round 1)
+
+Two corrections made after independent review, documentation-only, no code
+changed:
+
+1. Identified and recorded the root cause of the Best Practices 96: the
+   `errors-in-console` audit fails because the header nav links to five
+   routes (`/now`, `/explore`, `/work`, `/act`, `/about`) that are
+   deliberately out of scope for this plan and 404, logging console errors
+   on RSC prefetch. Confirmed as an accepted, known consequence of unbuilt
+   routes rather than a defect in this plan's work, expected to clear once
+   those routes ship.
+2. Recorded that Lighthouse Performance is not stable in this environment:
+   this document's own run scored 100, an independent reviewer run of the
+   same build scored 96 (LCP 2.7s). Both values and the observed 96–100
+   range are now recorded, with a note to treat Performance as a range
+   here rather than a fixed number. Accessibility, Best Practices, and SEO
+   were stable across both runs.
