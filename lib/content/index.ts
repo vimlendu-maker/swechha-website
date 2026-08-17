@@ -1,15 +1,18 @@
 import type { ZodType } from 'zod'
 import { loadEntries } from './load'
-import { storySchema, type Story } from './schemas'
+import { campaignSchema, storySchema, type Campaign, type Story } from './schemas'
 import { buildIndex, resolveRelated, validateRelations, type EntryIndex } from './relations'
 import type { ContentType, Entry } from './types'
+import { SEVERITIES, type Severity } from '../status'
 
 export type { Entry } from './types'
 export type { Story } from './schemas'
+export type { Campaign } from './schemas'
 export { ContentError } from './load'
 
 interface Content {
   stories: Entry<Story>[]
+  campaigns: Entry<Campaign>[]
   all: Entry[]
   index: EntryIndex
 }
@@ -24,6 +27,7 @@ interface Content {
  */
 const TYPES = {
   story: storySchema,
+  campaign: campaignSchema,
 } satisfies Partial<Record<ContentType, ZodType>>
 
 let cache: Content | null = null
@@ -49,12 +53,13 @@ function content(): Content {
   ) as Record<keyof typeof TYPES, Entry[]>
 
   const stories = loaded.story as Entry<Story>[]
+  const campaigns = loaded.campaign as Entry<Campaign>[]
   const all: Entry[] = Object.values(loaded).flat()
   const index = buildIndex(loaded)
 
   validateRelations(all, index)
 
-  cache = { stories, all, index }
+  cache = { stories, campaigns, all, index }
   return cache
 }
 
@@ -72,4 +77,23 @@ export function getAllEntries(): Entry[] {
 
 export function getRelated(entry: Entry): Entry[] {
   return resolveRelated(entry, content().index)
+}
+
+export function getAllCampaigns(): Entry<Campaign>[] {
+  return content().campaigns
+}
+
+export function getCampaignBySlug(slug: string): Entry<Campaign> | null {
+  return content().campaigns.find((e) => e.slug === slug) ?? null
+}
+
+export function getActiveSituations(): Entry<Campaign>[] {
+  const priority: Severity[] = [...SEVERITIES]
+  return content()
+    .campaigns.filter((e) => e.data.status === 'active')
+    .sort((a, b) => {
+      const ai = priority.indexOf(a.data.severity as Severity)
+      const bi = priority.indexOf(b.data.severity as Severity)
+      return ai - bi
+    })
 }

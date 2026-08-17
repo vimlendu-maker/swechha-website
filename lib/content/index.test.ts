@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { renderMarkdown } from '../markdown'
 import { getAllStories, getStoryBySlug, getAllEntries, getRelated } from './index'
+import { getAllCampaigns, getCampaignBySlug, getActiveSituations } from './index'
 
 describe('renderMarkdown', () => {
   it('renders a heading and a paragraph', () => {
@@ -39,5 +40,25 @@ describe('content API against real STORY content', () => {
     expect(story).not.toBeNull()
     const related = getRelated(story!)
     expect(related.map((e) => e.slug)).toContain('rooftop-sanctuary')
+  })
+})
+
+describe('campaign accessors', () => {
+  it('does not throw when loading campaigns', () => {
+    expect(() => getAllCampaigns()).not.toThrow()
+  })
+
+  it('returns null for an unknown slug', () => {
+    expect(getCampaignBySlug('not-a-real-situation')).toBeNull()
+  })
+
+  it('sorts active situations by severity priority', () => {
+    const active = getActiveSituations()
+    const order = ['critical', 'warning', 'watch', 'water']
+    for (let i = 1; i < active.length; i++) {
+      const prev = order.indexOf(active[i - 1].data.severity!)
+      const curr = order.indexOf(active[i].data.severity!)
+      expect(prev).toBeLessThanOrEqual(curr)
+    }
   })
 })
