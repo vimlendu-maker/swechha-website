@@ -248,6 +248,37 @@ data pipeline is built in Phase 2, it populates an existing type inside an
 existing pillar with existing editorial review — rather than requiring a new
 content type, a new navigation entry, and a homepage redesign.
 
+**Visual treatment — decided by the project owner, 2026-08-16.**
+
+The NOW banner is built with **WebGL / GPU-rendered visuals via Canvas UI**
+(`canvasui.dev`, `DavidHDev/canvas-ui`). This is the owner's ruling, made
+after the trade-offs below were put to them and overruled.
+
+Implementation constraints established by research, not preference:
+
+- **three.js is not required and should not be added.** Canvas UI has no npm
+  dependencies beyond React — it is raw WebGL2. Adding three.js (357 KB min /
+  85 KB gzip for the module build alone, plus a 376 KB / 99 KB core) would
+  ship an engine Canvas UI does not use.
+- **Use WebGL-overlay components, not HTML-in-canvas ones.** Several Canvas UI
+  components (Liquid among them) depend on Chrome's experimental
+  `canvas-draw-element` flag via `drawElementImage()`/`requestPaint()` — off by
+  default, unstandardised. They degrade gracefully, but the effect would be
+  invisible to nearly every visitor. Each component's docs page states which
+  it is; check before choosing.
+- **Distribution is copy-in** (`npx shadcn@latest add @canvas-ui/<name>-react`),
+  which places the source in `components/canvasui/`. The code then belongs to
+  this repo, so the project's youth (created 2026-07-16) carries far less
+  maintenance risk than a package dependency would.
+- **Licence is MIT + Commons Clause** (`NOASSERTION` on GitHub) — not OSI open
+  source. It permits any personal or commercial use and forbids reselling the
+  components. Fine for this site; recorded so it is a conscious choice.
+- Canvas UI already respects `prefers-reduced-motion`, caps device pixel ratio
+  at 2, and idle-pauses rendering when a simulation settles.
+
+**Scheduling:** the NOW/BRIEFING pillar is its own implementation plan,
+following the foundation + STORY plan. The WebGL treatment is built there.
+
 **What is explicitly NOT in MVP:** live API feeds, automated detection of
 developments, AI-drafted updates, and the auto-updating homepage banner.
 Rationale: live data on a public homepage is a credibility surface, not a

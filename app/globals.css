@@ -1,26 +1,137 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand — exact values from the May 2025 guidelines. Never approximate. */
+  --swechha-teal: #4ba1a5;
+  --swechha-coral: #f05a66;
+  --swechha-ochre: #d2c662;
+  --swechha-indigo: #2b2d46;
+
+  /* Derived for TEXT only. Brand teal is 2.88:1 on paper — it fails WCAG AA
+     for body text (4.5:1) and also fails the 3:1 large-text bar, so it can
+     never be used as text. This darkened teal measures 5.58:1. Brand teal
+     itself stays untouched for the logo and non-text fills. */
+  --swechha-teal-ink: #2c6e72;
+
+  /* Coral splits differently from teal, so it gets a different rule. Brand
+     coral on paper is 3.14:1 (4.06:1 on indigo): it FAILS AA body text (4.5:1)
+     but PASSES the 3:1 large-text bar. So:
+       --coral-ink  ->  coral BODY text (5.48:1 on paper).
+       --coral      ->  legitimate for display headings >= 24px, and any
+                        non-text fill.
+       --teal       ->  legitimate as TEXT at no size at all. At 2.88:1 it
+                        fails the body bar and the large-text bar both; use
+                        --teal-ink for teal text, and keep brand teal for the
+                        logo and non-text fills. */
+  --swechha-coral-ink: #be2e3b;
+
+  /* Surfaces — derived to sit with the brand hues, not chosen independently. */
+  --paper: #fbf9f5;
+  --ink: #1c1d2b;
+  --ink-muted: #55576b;
+  --rule: #e4e0d8;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-rule: var(--rule);
+  --color-teal: var(--swechha-teal);
+  --color-teal-ink: var(--swechha-teal-ink);
+  --color-coral: var(--swechha-coral);
+  --color-coral-ink: var(--swechha-coral-ink);
+  --color-ochre: var(--swechha-ochre);
+  --color-indigo: var(--swechha-indigo);
+
+  --font-display: var(--font-fraunces);
+  --font-body: var(--font-instrument-sans);
+
+  /* Heading sizes as real theme tokens (Tailwind's font-size namespace is
+     `--text-*`), so `text-h2`/`text-h3`/`text-h4` are genuine generated
+     utilities — in the `utilities` layer, which per the `@layer theme, base,
+     components, utilities` order above beats the bare element rules in
+     `@layer base` below. A component that needs "look like an h3" (e.g.
+     ContentCard's title, see its comment) can reach for `text-h3` instead of
+     an inline style: an inline style beats every layer including utilities,
+     which is exactly the bug fixed at `ab7080e` and is why this exists
+     instead of a `style={{ fontSize: ... }}` prop. Value lives here once;
+     the `@layer base` rules below reference it via `var()`. */
+  --text-h2: clamp(1.875rem, 1.74rem + 0.56vw, 2.25rem);
+  --text-h3: clamp(1.5rem, 1.41rem + 0.38vw, 1.75rem);
+  --text-h4: 1.25rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Everything styled by element name lives in `@layer base`, and it must stay
+   there. Tailwind's utilities live in `@layer utilities`; per CSS cascade
+   layers an UNLAYERED rule beats every layered one regardless of specificity,
+   so a bare `h1 { font-size: … }` here silently defeats `class="text-xs"` on
+   an h1 anywhere in the app. Inside `base` these rules still win over
+   Tailwind's preflight — same layer, later in the file — so the heading scale
+   below is unaffected, but a utility can now override it. */
+@layer base {
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body), system-ui, sans-serif;
+    font-size: 1.125rem;   /* 18px floor, per the brief */
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display), Georgia, serif;
+    /* Tailwind's preflight resets headings to `font-weight: inherit`, which
+       left every heading on the site at the body's 400. Restore real weight —
+       this is the primary hierarchy signal, ahead of size. */
+    font-weight: 600;
+    line-height: 1.3;
+    text-wrap: balance;
+  }
+
+  /* Fluid type — 375px and 1440px both resolve sensibly without a breakpoint
+     stack. The minimums carry the hierarchy: at 375px this is 38 / 30 / 24 / 20
+     against an 18px body, so an h3 (the content-card title) is a 1.33 step
+     above body text rather than the 1.12 it used to be.
+
+     `font-variation-settings` drives the Fraunces axes the font file already
+     ships: `opsz` is set per level so display sizes get their optical treatment
+     (lighter, higher-contrast strokes large; sturdier small), and `SOFT` rises
+     slightly as size falls to keep small headings from looking brittle. `WONK`
+     is pinned off everywhere except the single largest heading on a page — the
+     organisation is serious, and one h1 is the whole budget for character. */
+  h1 {
+    font-size: clamp(2.375rem, 1.98rem + 1.69vw, 3.5rem);
+    font-variation-settings: 'opsz' 96, 'SOFT' 20, 'WONK' 1;
+  }
+  h2 {
+    font-size: var(--text-h2);
+    font-variation-settings: 'opsz' 48, 'SOFT' 20, 'WONK' 0;
+  }
+  h3 {
+    font-size: var(--text-h3);
+    font-variation-settings: 'opsz' 28, 'SOFT' 25, 'WONK' 0;
+  }
+  h4 {
+    font-size: var(--text-h4);
+    font-variation-settings: 'opsz' 20, 'SOFT' 30, 'WONK' 0;
+  }
+
+  /* Unlayered, this defeated every text-colour utility on a link — including
+     Prose's `[&_a]:text-teal-ink`, which was rendering ink. */
+  a { color: inherit; }
+
+  ::selection {
+    background: var(--swechha-ochre);
+    color: var(--ink);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
