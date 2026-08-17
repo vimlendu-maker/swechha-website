@@ -1,6 +1,11 @@
 /**
  * Wrapper for rendered Markdown. Content is authored in this repository and
- * is trusted — see lib/markdown.ts.
+ * is trusted — see lib/markdown.ts. That file renders `html` below via
+ * `marked` with no sanitisation step, and this component injects it as-is
+ * via `dangerouslySetInnerHTML`; see lib/markdown.ts's comment for exactly
+ * when a sanitiser (`rehype-sanitize` or DOMPurify) becomes mandatory before
+ * this trust assumption holds — a CMS/web-authoring layer, or a bulk
+ * WordPress import.
  *
  * lib/markdown.ts runs `marked` with GFM on, so every element below can appear
  * in a story. Tailwind's preflight strips list markers, table borders, heading
