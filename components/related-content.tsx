@@ -7,7 +7,6 @@ const PATHS: Record<Entry['type'], string> = {
   knowledge: '/explore',
   film: '/films',
   campaign: '/campaigns',
-  briefing: '/now',
 }
 
 export function RelatedContent({ entries }: { entries: Entry[] }) {

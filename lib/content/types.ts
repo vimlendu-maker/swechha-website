@@ -4,7 +4,6 @@ export const CONTENT_TYPES = [
   'knowledge',
   'film',
   'campaign',
-  'briefing',
 ] as const
 
 export type ContentType = (typeof CONTENT_TYPES)[number]

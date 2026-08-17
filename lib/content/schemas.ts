@@ -16,7 +16,6 @@ export const relatedSchema = z
     knowledge: slugList(),
     film: slugList(),
     campaign: slugList(),
-    briefing: slugList(),
   })
   .default({
     project: [],
@@ -24,7 +23,6 @@ export const relatedSchema = z
     knowledge: [],
     film: [],
     campaign: [],
-    briefing: [],
   })
 
 export const heroImageSchema = z.object({
@@ -44,3 +42,68 @@ export const storySchema = z.strictObject({
 })
 
 export type Story = z.infer<typeof storySchema>
+
+const LIFECYCLE_STATUSES_TUPLE = ['active', 'monitoring', 'achieved', 'archived'] as const
+const SEVERITIES_TUPLE = ['critical', 'warning', 'watch', 'water'] as const
+
+const liveDataSchema = z.strictObject({
+  label: z.string().min(1),
+  value: z.string().min(1),
+  unit: z.string().optional(),
+  sourceLabel: z.string().min(1, 'liveData.sourceLabel is required — every figure must name its source'),
+  updatedAt: z.string().min(1, 'liveData.updatedAt is required'),
+  // No `.default()` / `.optional()` — omitting this field must throw. Do not
+  // add a default; the requirement is that "mock" is stated, not assumed.
+  mock: z.boolean(),
+  trendPoints: z.array(z.number()).optional(),
+})
+
+const actionSchema = z.strictObject({
+  label: z.string().min(1),
+  href: z.string().min(1),
+  primary: z.boolean().default(false),
+})
+
+const evidenceSchema = z.strictObject({
+  source: z.string().min(1),
+  note: z.string().optional(),
+  date: z.string().regex(ISO_DATE).optional(),
+})
+
+const timelineEntrySchema = z
+  .strictObject({
+    date: z.string().regex(ISO_DATE, 'timeline date must be YYYY-MM-DD'),
+    status: z.enum(LIFECYCLE_STATUSES_TUPLE),
+    severity: z.enum(SEVERITIES_TUPLE).optional(),
+    note: z.string().min(1),
+  })
+  .refine((data) => data.status !== 'active' || !!data.severity, {
+    message: 'severity is required when status is "active"',
+    path: ['severity'],
+  })
+
+export const campaignSchema = z
+  .strictObject({
+    title: z.string().min(1, 'title is required'),
+    summary: z.string().min(1, 'summary is required'),
+    location: z.string().min(1, 'location is required'),
+    status: z.enum(LIFECYCLE_STATUSES_TUPLE),
+    severity: z.enum(SEVERITIES_TUPLE).optional(),
+    heroImage: heroImageSchema,
+    whatWeKnow: z.string().min(1),
+    publicHealthImpact: z.string().min(1),
+    whyItMatters: z.string().min(1),
+    whatSwechhaIsDoing: z.string().min(1),
+    liveData: liveDataSchema.optional(),
+    actions: z.array(actionSchema).min(1, 'at least one action is required — "what you can do" cannot be empty'),
+    evidence: z.array(evidenceSchema).min(1, 'at least one evidence entry is required — a situation cannot publish with zero sources'),
+    timeline: z.array(timelineEntrySchema).min(1, 'at least one timeline entry is required — every situation needs an opening entry'),
+    featured: z.boolean().default(false),
+    related: relatedSchema,
+  })
+  .refine((data) => data.status !== 'active' || !!data.severity, {
+    message: 'severity is required when status is "active"',
+    path: ['severity'],
+  })
+
+export type Campaign = z.infer<typeof campaignSchema>

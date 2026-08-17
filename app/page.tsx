@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import { ContentCard } from '@/components/content-card'
-import { getAllStories } from '@/lib/content'
+import { NowModule } from '@/components/now-module'
+import { getAllStories, getActiveSituations } from '@/lib/content'
 
 export default function Home() {
   const stories = getAllStories().slice(0, 3)
+  const situations = getActiveSituations()
 
   return (
     <main className="mx-auto max-w-6xl px-5 py-20 md:px-8">
@@ -14,6 +16,8 @@ export default function Home() {
         Swechha works across climate action, sustainability, education, youth
         engagement and community-led change in India.
       </p>
+
+      <NowModule situations={situations} />
 
       <section className="mt-20">
         <h2 className="text-xs uppercase tracking-widest text-ink-muted">
