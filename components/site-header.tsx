@@ -5,8 +5,11 @@ const NAV = [
   { href: '/now', label: 'Now' },
   { href: '/explore', label: 'Explore' },
   { href: '/work', label: 'Work' },
+  { href: '/campaigns', label: 'Campaigns' },
+  { href: '/impact', label: 'Impact' },
   { href: '/act', label: 'Act' },
   { href: '/about', label: 'About' },
+  { href: '/search', label: 'Search' },
 ]
 
 export function SiteHeader() {
