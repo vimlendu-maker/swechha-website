@@ -51,6 +51,7 @@ export default async function StoryPage(props: PageProps<'/stories/[slug]'>) {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
+                timeZone: 'UTC',
               })}
             </time>
           </p>

@@ -26,9 +26,11 @@ export default function StoriesPage() {
             title={story.data.title}
             summary={story.data.summary}
             image={story.data.heroImage}
+            headingLevel={2}
             meta={new Date(story.data.date).toLocaleDateString('en-IN', {
               year: 'numeric',
               month: 'long',
+              timeZone: 'UTC',
             })}
           />
         ))}

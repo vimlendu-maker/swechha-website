@@ -7,9 +7,38 @@ interface ContentCardProps {
   summary: string
   image: { src: string; alt: string }
   meta?: string
+  /**
+   * Heading level for the card title. Defaults to `h3` because the primary
+   * shipped usage today (the homepage's "Latest stories" section, under an
+   * `h2`) needs `h3`. Pass `2` when a page uses `ContentCard` directly under
+   * an `h1` with no intervening `h2` (e.g. the `/stories` archive) so
+   * heading levels stay sequential for screen-reader navigation.
+   */
+  headingLevel?: 2 | 3
 }
 
-export function ContentCard({ href, title, summary, image, meta }: ContentCardProps) {
+export function ContentCard({
+  href,
+  title,
+  summary,
+  image,
+  meta,
+  headingLevel = 3,
+}: ContentCardProps) {
+  const Heading = headingLevel === 2 ? 'h2' : 'h3'
+
+  // `app/globals.css` sizes h2 and h3 differently (its `h1, h2, h3, h4`
+  // rule shares font-family/weight/line-height, but font-size and the
+  // Fraunces `font-variation-settings` step down per level). headingLevel
+  // exists purely so the *document outline* is correct in each page's
+  // context (see the prop doc above) — the card's own visual size must not
+  // change when the tag does, so it's pinned here to what h3 looks like
+  // today regardless of which tag is actually rendered.
+  const headingStyle = {
+    fontSize: 'clamp(1.5rem, 1.41rem + 0.38vw, 1.75rem)',
+    fontVariationSettings: "'opsz' 28, 'SOFT' 25, 'WONK' 0",
+  }
+
   return (
     // `group` + `relative` here, not on the Link: the accessible name of a
     // link is its text content, so wrapping image/eyebrow/title/summary in
@@ -31,14 +60,14 @@ export function ContentCard({ href, title, summary, image, meta }: ContentCardPr
       {meta && (
         <p className="mt-4 text-xs uppercase tracking-widest text-ink-muted">{meta}</p>
       )}
-      <h3 className="mt-2">
+      <Heading className="mt-2" style={headingStyle}>
         <Link
           href={href}
           className="after:absolute after:inset-0 group-hover:text-teal-ink"
         >
           {title}
         </Link>
-      </h3>
+      </Heading>
       <p className="mt-2 text-ink-muted">{summary}</p>
     </article>
   )
