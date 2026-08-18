@@ -55,6 +55,36 @@ function nearestBrand(r, g, b) {
 
 mkdirSync(OUT, { recursive: true })
 
+/**
+ * IMPORTANT — these SVGs are the 2018 LEGACY lockup, not the current logo.
+ *
+ * Measured 2026-08-18 against the approved black/white PNGs supplied by the
+ * brand owner (`swechha-*-approved.png`, 4:1). Both were normalised to 200px
+ * height and their ink columns profiled:
+ *
+ *   - the MARK is pixel-identical in both (126px wide) — same artwork
+ *   - every wordmark LETTER is 1.232x larger in the approved lockup
+ *   - but inter-letter GAPS are only 1.170x larger
+ *
+ * Letter scale and tracking therefore moved independently, so the approved
+ * lockup CANNOT be reproduced from this vector by any uniform transform —
+ * matching it would mean re-setting each letter's position, i.e. recreating the
+ * wordmark, which the brand rules forbid.
+ *
+ * There is no readable true-vector source for the approved lockup:
+ *   - `black and white logo.eps` / `black-logoswechharectangle.eps` are
+ *     Illustrator-16 EPS carrying ASCII85 %AI9_PrivateData — unconvertible
+ *     without Ghostscript (not installed).
+ *   - `high-res rectangle logo swechha-white.ai` IS %PDF-1.5 and converts, but
+ *     its 9 vector paths are clip/mask geometry only (they render empty); the
+ *     actual artwork is an embedded 5001x1452 raster. It is a placed image.
+ *
+ * So the PNGs are canonical and are what the site uses. Keep this script for
+ * provenance of the legacy colour lockup; do not wire its output into the UI.
+ * To get real vector, ask the brand owner's designer for the May-2021 rectangle
+ * lockup as SVG or PDF.
+ */
+
 for (const [rel, name] of SOURCES) {
   const target = join(OUT, `${name}.svg`)
   execFileSync('pdftocairo', ['-svg', join(SRC, rel), target])
@@ -70,5 +100,5 @@ for (const [rel, name] of SOURCES) {
       ),
   )
   writeFileSync(target, svg)
-  console.log(`wrote ${target}`)
+  console.log(`wrote ${target}  (legacy 2018 lockup — see note above)`)
 }
