@@ -3,6 +3,7 @@ import { Fraunces, Instrument_Sans } from 'next/font/google'
 import './globals.css'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
+import { PhotoFilters } from '@/components/photo-signal'
 
 const fraunces = Fraunces({
   variable: '--font-fraunces',
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       className={`${fraunces.variable} ${instrumentSans.variable} h-full`}
     >
       <body className="min-h-full flex flex-col">
+        <PhotoFilters />
         <SiteHeader />
         <div className="flex-1">{children}</div>
         <SiteFooter />

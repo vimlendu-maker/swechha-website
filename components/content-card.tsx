@@ -1,11 +1,12 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { signalClass, type PhotoSignal } from '@/components/photo-signal'
 
 interface ContentCardProps {
   href: string
   title: string
   summary: string
-  image: { src: string; alt: string }
+  image: { src: string; alt: string; signal?: PhotoSignal }
   meta?: string
   /**
    * Heading level for the card title. Defaults to `h3` because the primary
@@ -60,7 +61,8 @@ export function ContentCard({
           alt={image.alt}
           fill
           sizes="(max-width: 768px) 100vw, 33vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+          // Card imagery has nothing laid over it, so it takes the open ramp.
+          className={`object-cover transition-transform duration-500 group-hover:scale-[1.03] ${signalClass(image.signal)}`}
         />
       </div>
       {meta && (

@@ -4,8 +4,9 @@ summary: A season of planting across sites in and around Delhi, and what the fol
 author: Swechha
 date: '2023-11-20'
 heroImage:
-  src: /images/stories/monsoon-wooding.png
-  alt: PLACEHOLDER — volunteers planting saplings during monsoon
+  src: /images/photos/children-certificates-field.jpg
+  alt: Schoolchildren holding seedling boxes at the edge of a mustard field
+  signal: none
 tags:
   - trees
   - restoration

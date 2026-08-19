@@ -255,3 +255,55 @@ May-2021 rectangle lockup as SVG or PDF.
 - Which of the 7 workbook metrics appear on /impact vs homepage (homepage = 4, settled).
 - Team/Board/Reports/Compliances content — workbook says "Needs inventory".
 - Contact details — workbook says "Verify current details".
+
+## TOKEN RULE LEARNED THE HARD WAY 2026-08-19 — `--ink-3` / `--fg-4` are NOT text colours
+Three separate sections shipped a contrast failure from the same two tokens before
+this was written down: 04's eyebrow (3.01:1), 07's "SWECHHA SINCE" label (3.25:1),
+and five elements across the internal-page board (captions, placeholder labels,
+the campaign source line, the footer copyright — 3.01 to 4.48:1).
+**Rule: `--ink-3` on paper and `--fg-4` on dark are decorative or large-text only.
+Small text (anything under ~16px, which is every label, caption and micro-line in
+this system) uses `--ink-2` on light and `--fg-3` on dark.** Both of those clear AA
+on every ground in the palette. Audit any new section against this before review —
+it is the single most repeated defect in the build so far.
+
+## JOURNEYS LANDING PAGE — LOCKED 2026-08-19
+`public/design/journeys-landing.html` is the approved design for `/work/journeys`.
+Built from the owner's 19-Aug reference after two rejected attempts (an
+intro-plus-tile-grid, then an all-caps version).
+
+**Type hierarchy settled here and it applies site-wide:** Fraunces for section
+headings, the hero promise and closing statements; Archivo caps for the page
+wordmark, card titles and micro-labels; Instrument Sans for body. The owner's
+first mockup set every heading in caps, which made the page read as a different
+product from the homepage; their second mockup put the serif back, which is the
+split the homepage already uses. Do not re-litigate.
+
+**Sections:** big hero → What is a Swechha Journey (GO → EXPERIENCE → QUESTION →
+UNDERSTAND → ACT, joined by dotted connectors so it reads as a path, not a
+fourth icon grid) → Explore the Journeys (4 cards on black, mustard badge on the
+photo edge) → We don't just visit places (5 postures) → Along the way (full-bleed
+photo strip, unequal widths, scroll-snaps on mobile) → Who journeys with us (4
+audiences) → closing mustard statement → global footer.
+
+**Hero photograph** is owner-supplied and pre-treated (monochrome valley, one
+yellow bloom). It carries NO filter class, same rule as the tractor and the
+Green the Map tote on the homepage. 747KB at 1536px — needs AVIF/WebP before
+launch; the ledger's hero budget is 200KB.
+
+**Bug worth remembering:** lifting the shared shell CSS into a standalone page
+by slicing the internal stylesheet copied the header/footer rules but stopped
+short of their media queries, so the nav stayed full-width and the footer stayed
+five-across at 375px — 164px of horizontal overflow. Any future page assembled
+by slicing must carry the shell's responsive block too.
+
+**Open items:** nav and logo follow the approved system, not the mockup (both
+flagged to the owner); Gram Anubhav has no sitemap slug; the four card
+photographs are stand-ins pending the Drive archive; recommended-but-not-built —
+strip the icons from the posture band, and add an impact band and stories row.
+
+**Drive archive is reachable** through the authenticated Google Drive connector
+(the old blocker was link-sharing, which does not apply). `Yamuna Yatra (1) -
+2023` holds 40+ frames at 2–6MB, and the filenames date that Yatra to 23–30
+March 2023. Image BYTES cannot come through the connector at sane cost (base64),
+so files must be dropped on disk — `incoming/` exists for that and is gitignored.

@@ -28,6 +28,13 @@ export const relatedSchema = z
 export const heroImageSchema = z.object({
   src: z.string().min(1, 'heroImage.src is required'),
   alt: z.string().min(1, 'heroImage.alt is required — every image needs alt text'),
+  /**
+   * Which hue in this frame is the subject, for selective-colour treatment
+   * (see components/photo-signal.tsx). Defaults to `none`, which renders the
+   * photograph in warm monochrome — the honest answer for a frame with no
+   * single element to isolate, and the reason this is not required.
+   */
+  signal: z.enum(['none', 'red', 'mustard', 'green']).default('none'),
 })
 
 export const storySchema = z.strictObject({

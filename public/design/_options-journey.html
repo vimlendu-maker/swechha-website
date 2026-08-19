@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Journey page — three options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,100..900,0..100,0..1&family=Instrument+Sans:wght@400..700&family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F7F4ED; --paper-2:#F1EBDD; --ink:#1C1B18; --ink-2:#57524A; --ink-3:#8D8779;
+  --ground:#0F0F0E; --panel:#141413; --mustard:#E1A32B; --mustard-ink:#8A6410;
+  --on-mustard:#12110F; --sev:#F1484E;
+  --fg:#FBF8F1; --fg-2:#CBC6BA; --fg-3:#ADA79C; --fg-4:#7E7A71;
+  --hair:rgba(255,255,255,.15); --hair-d:#E0DACC; --pad:clamp(18px,3.2vw,42px);
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:'Instrument Sans',system-ui,sans-serif;font-size:17px;line-height:1.6;
+  -webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+h1,h2{font-family:'Fraunces',Georgia,serif;font-weight:600;margin:0;line-height:1.05;
+  letter-spacing:-.015em}
+.wrap{max-width:1320px;margin:0 auto;padding:0 var(--pad)}
+.lbl{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700;
+  letter-spacing:.13em;text-transform:uppercase}
+.duo{filter:url(#duo)} .duo-dim{filter:url(#duo-dim)}
+
+/* board chrome */
+.opt{border-top:1px solid var(--hair-d);margin-top:clamp(30px,4vw,60px)}
+.opt-head{padding:clamp(20px,2.6vw,34px) 0 clamp(14px,1.8vw,22px)}
+.opt-head .tag{display:inline-block;background:var(--ink);color:var(--paper);font-size:9.5px;
+  padding:5px 10px;margin-bottom:13px}
+.opt-head h2{font-size:clamp(1.2rem,2.2vw,1.7rem)}
+.opt-head p{color:var(--ink-2);font-size:.9375rem;line-height:1.4;margin:9px 0 0;max-width:74ch}
+.opt-head .why{color:var(--mustard-ink);font-size:.875rem;line-height:1.4;margin:7px 0 0;
+  max-width:74ch}
+.frame{border:1px solid var(--hair-d);overflow:hidden}
+
+/* ── shared journey parts ─────────────────────────────────────────── */
+.jhead{display:flex;align-items:center;justify-content:space-between;
+  padding:14px var(--pad);background:var(--ground);color:var(--fg)}
+.jhead img{height:20px}
+.jnav{display:flex;gap:18px;font-size:9.5px}
+.jnav .d{background:var(--mustard);color:var(--on-mustard);padding:6px 11px}
+.crumb{color:var(--fg-3);font-size:10px;margin:0 0 15px}
+.prop{color:var(--fg-2);margin:14px 0 0;max-width:42ch;font-size:1rem;line-height:1.36}
+.eyeb{font-size:9.5px;color:var(--ink-2);margin:0 0 14px}
+.dark .eyeb{color:var(--fg-3)}
+.band{padding:clamp(26px,3.4vw,48px) 0}
+.dark{background:var(--ground);color:var(--fg)}
+.paper2{background:var(--paper-2)}
+.body-2{color:var(--ink-2);font-size:.9375rem;line-height:1.42;margin:0;max-width:44ch}
+.dark .body-2{color:var(--fg-2)}
+.stat-row{display:grid;grid-template-columns:repeat(3,auto);justify-content:start;
+  gap:clamp(20px,3vw,54px)}
+.stat-row .n{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 104;font-weight:800;
+  font-size:clamp(1.5rem,3vw,2.5rem);line-height:.9;color:var(--mustard);display:block}
+.stat-row .c{color:var(--fg-3);font-size:.8125rem;margin-top:8px;display:block;max-width:14ch;
+  line-height:1.2}
+
+/* ══ OPTION A — the route is a SPINE down the page ═════════════════ */
+.a-hero{position:relative;background:var(--ground);color:var(--fg);min-height:420px;
+  display:flex;flex-direction:column;isolation:isolate}
+.a-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.a-hero::after{content:"";position:absolute;inset:0;z-index:1;
+  background:linear-gradient(0deg,rgba(10,10,9,.93) 0%,rgba(10,10,9,.55) 46%,rgba(10,10,9,.2) 100%)}
+.a-hero-in{position:relative;z-index:2;margin-top:auto;padding:clamp(24px,3vw,44px) var(--pad)}
+/* The route reads as type, not as a map: two place-names and an arrow, in the
+   condensed data voice. Bigger than the title, because the route IS the title. */
+.route-type{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 88;font-weight:800;
+  font-size:clamp(1.6rem,4vw,3.1rem);line-height:1;letter-spacing:-.01em;display:flex;
+  align-items:center;gap:clamp(12px,1.8vw,26px);flex-wrap:wrap}
+.route-type .ar{color:var(--mustard);font-size:.7em}
+.a-spine{display:grid;grid-template-columns:clamp(70px,8vw,124px) minmax(0,1fr);
+  gap:clamp(18px,2.6vw,44px)}
+.a-chap{display:grid;grid-template-columns:subgrid;grid-column:1/-1;
+  padding:clamp(18px,2.4vw,32px) 0;border-top:1px solid var(--hair-d)}
+.a-chap:first-child{border-top:0}
+.a-km{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700;
+  font-size:10px;letter-spacing:.13em;color:var(--mustard-ink);position:relative}
+.a-km::after{content:"";position:absolute;left:-1px;top:26px;bottom:-40px;width:1px;
+  background:var(--hair-d)}
+.a-in{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);
+  gap:clamp(16px,2.4vw,34px);align-items:start}
+.a-in h3{margin:0;font-family:'Fraunces',Georgia,serif;font-weight:500;font-size:1.3rem;
+  line-height:1.16}
+.a-in img{width:100%;height:150px;object-fit:cover}
+
+/* ══ OPTION B — CHAPTERS AS FULL-BLEED FRAMES ══════════════════════ */
+.b-chap{position:relative;height:340px;display:flex;isolation:isolate}
+.b-chap img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.b-chap::after{content:"";position:absolute;inset:0;z-index:1;
+  background:linear-gradient(90deg,rgba(10,10,9,.62) 0%,rgba(10,10,9,.34) 34%,
+             rgba(10,10,9,.10) 62%,rgba(10,10,9,.04) 100%)}
+.b-in{position:relative;z-index:2;align-self:center;color:var(--fg);max-width:40ch;
+  padding:clamp(20px,2.4vw,30px) clamp(26px,3vw,44px) clamp(20px,2.4vw,30px) var(--pad);
+  background:linear-gradient(90deg,rgba(8,8,7,.90) 0%,rgba(8,8,7,.84) 62%,
+             rgba(8,8,7,.52) 88%,rgba(8,8,7,0) 100%)}
+.b-in .st{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700;
+  font-size:10px;letter-spacing:.13em;color:var(--mustard);display:block;margin-bottom:12px}
+.b-in h3{margin:0;font-family:'Fraunces',Georgia,serif;font-weight:500;font-size:1.6rem;
+  line-height:1.1}
+.b-in p{margin:11px 0 0;color:var(--fg-2);font-size:.9375rem;line-height:1.36}
+.b-prog{position:sticky;top:0;z-index:30;height:3px;background:rgba(255,255,255,.14)}
+.b-prog i{display:block;height:100%;width:38%;background:var(--mustard)}
+
+/* ══ OPTION C — MAP-LED, EVIDENCE-FORWARD ═════════════════════════ */
+.c-top{background:var(--ground);color:var(--fg);padding:clamp(24px,3vw,42px) 0}
+.c-map{position:relative;margin-top:clamp(18px,2.4vw,30px);padding:0 0 8px}
+.c-line{position:relative;height:1px;background:var(--hair);margin:26px 0 0}
+.c-stops{display:flex;justify-content:space-between;position:relative;margin-top:-31px}
+.c-stop{text-align:center;position:relative;width:16%}
+.c-stop i{display:block;width:9px;height:9px;border-radius:50%;background:var(--ground);
+  border:1.5px solid var(--fg-3);margin:0 auto 12px}
+.c-stop.on i{background:var(--mustard);border-color:var(--mustard);width:12px;height:12px}
+.c-stop .p{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700;
+  font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;display:block}
+.c-stop .k{color:var(--fg-4);font-size:9px;display:block;margin-top:4px}
+.c-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);
+  gap:clamp(18px,2.6vw,40px);align-items:start;margin-top:clamp(22px,3vw,38px)}
+.c-grid img{width:100%;height:230px;object-fit:cover}
+.c-ev{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(14px,2vw,24px)}
+.c-ev div{border-top:1px solid var(--hair-d);padding-top:13px}
+.c-ev .n{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 104;font-weight:800;
+  font-size:1.5rem;color:var(--mustard-ink);display:block;line-height:1}
+.c-ev .c{color:var(--ink-2);font-size:.8125rem;margin-top:6px;display:block;line-height:1.24}
+.note{background:#EFE9DB;color:#57524A;font-size:11.5px;line-height:1.55;padding:13px var(--pad)}
+.note b{color:var(--ink);font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;
+  font-weight:700}
+@media(max-width:900px){
+  .a-in,.c-grid,.c-ev{grid-template-columns:minmax(0,1fr)}
+  .a-spine{grid-template-columns:minmax(0,1fr)}
+  .a-km::after{display:none}
+  .b-chap{height:300px}
+  .c-stop .k{display:none}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="duo" color-interpolation-filters="sRGB">
+    <feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0
+      0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/>
+    <feComponentTransfer>
+      <feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/>
+      <feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/>
+      <feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/>
+    </feComponentTransfer>
+  </filter>
+  <filter id="duo-dim" color-interpolation-filters="sRGB">
+    <feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0
+      0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/>
+    <feComponentTransfer>
+      <feFuncR type="table" tableValues="0.11 0.18 0.255 0.325 0.385 0.43"/>
+      <feFuncG type="table" tableValues="0.10 0.165 0.235 0.30 0.355 0.40"/>
+      <feFuncB type="table" tableValues="0.085 0.14 0.20 0.26 0.31 0.35"/>
+    </feComponentTransfer>
+  </filter>
+</defs></svg>
+
+<div class="wrap" style="padding-top:clamp(20px,3vw,38px)">
+  <h1 style="font-size:clamp(1.5rem,3vw,2.2rem)">Journey page — three options</h1>
+  <p style="color:var(--ink-2);max-width:76ch;margin:10px 0 0;line-height:1.4">
+    Same design language as the homepage: same palette, same three type voices, monochrome
+    photography, mustard used once per screen. What differs is the <b>structure of the narrative</b>.
+    §7 asks for route, beginning, progression, evidence, the larger question and where it leads —
+    all three options carry those, in a different order of priority. Abbreviated to the first few
+    bands each, so the direction is legible without reading a whole page.
+  </p>
+</div>
+
+<!-- ════════════════════════ OPTION A ════════════════════════ -->
+<section class="opt" id="a">
+  <div class="wrap opt-head">
+    <span class="lbl tag">Option A</span>
+    <h2>The route as a spine</h2>
+    <p>The page opens on the route set as type — <b>YAMUNOTRI → AGRA</b> larger than the journey's
+      own name, because on a journey page the route <i>is</i> the headline. Below it, a single
+      hairline runs down the left margin with distance markers, and each stop hangs off it as a
+      chapter. Scrolling reads as travelling down the river.</p>
+    <p class="why">Closest to the homepage's own habits: hairline structure, condensed data voice for
+      the numbers, one accent. Cheapest to build and the safest on mobile — the spine simply
+      straightens into a list.</p>
+  </div>
+  <div class="frame">
+    <div class="jhead"><img src="/brand/swechha-white.png" alt="Swechha">
+      <nav class="jnav lbl"><span>Now</span><span>Work</span><span>Explore</span><span>Impact</span>
+        <span>Act</span><span>About</span><span class="d">Donate</span></nav></div>
+    <div class="a-hero">
+      <img class="duo-dim" src="/images/photos/ridge-road-dusk.jpg" alt="">
+      <div class="a-hero-in">
+        <p class="crumb lbl">← All journeys</p>
+        <div class="route-type">Yamunotri <span class="ar">→</span> Agra</div>
+        <p class="prop">Twelve days following one river from its source to the plains — and the
+          systems that shape it.</p>
+      </div>
+    </div>
+    <div class="band dark" style="padding-top:22px;padding-bottom:22px">
+      <div class="wrap"><div class="stat-row">
+        <div><span class="n">12</span><span class="c">days on the river</span></div>
+        <div><span class="n">1,000</span><span class="c">kilometres travelled</span></div>
+        <div><span class="n">6</span><span class="c">significant stops</span></div>
+      </div></div>
+    </div>
+    <div class="band">
+      <div class="wrap">
+        <p class="eyeb lbl">Move through the journey</p>
+        <div class="a-spine">
+          <div class="a-chap">
+            <span class="a-km">Km 0 · Day 1</span>
+            <div class="a-in">
+              <div><h3>Where the river begins</h3>
+                <p class="body-2" style="margin-top:9px">Snow, rock and a temple. The Yamuna starts
+                  clean enough to drink.</p></div>
+              <img class="duo" src="/images/photos/yamuna-source-rapids.jpg" alt="">
+            </div>
+          </div>
+          <div class="a-chap">
+            <span class="a-km">Km 210 · Day 4</span>
+            <div class="a-in">
+              <div><h3>The first towns</h3>
+                <p class="body-2" style="margin-top:9px">Where the valley opens, the first drains
+                  arrive with it.</p></div>
+              <img class="duo" src="/images/photos/trekkers-hillside.jpg" alt="">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ OPTION B ════════════════════════ -->
+<section class="opt" id="b">
+  <div class="wrap opt-head">
+    <span class="lbl tag">Option B</span>
+    <h2>Chapters as full-bleed frames</h2>
+    <p>Each stop is its own edge-to-edge photographic frame, at a fixed height, with a stop number
+      and three lines of type held on the dark left third. A thin mustard progress rail sticks to the
+      top of the viewport as you move down. The page becomes a sequence of places rather than a
+      document about a journey.</p>
+    <p class="why">The most cinematic, and the closest to what §7 means by "the scroll should feel
+      like progression". The cost is real: it needs <b>one strong photograph per stop</b> — six good
+      frames, not four — and it carries the least room for evidence and data.</p>
+  </div>
+  <div class="frame">
+    <div class="jhead"><img src="/brand/swechha-white.png" alt="Swechha">
+      <nav class="jnav lbl"><span>Now</span><span>Work</span><span>Explore</span><span>Impact</span>
+        <span>Act</span><span>About</span><span class="d">Donate</span></nav></div>
+    <div class="b-prog"><i></i></div>
+    <div class="b-chap">
+      <img class="duo" src="/images/photos/snow-trek-group.jpg" alt="">
+      <div class="b-in">
+        <span class="st">Stop 01 · Yamunotri · Km 0</span>
+        <h3>Where the river begins</h3>
+        <p>Snow, rock and a temple. Clean enough to drink, and nobody downstream would believe it.</p>
+      </div>
+    </div>
+    <div class="b-chap">
+      <img class="duo" src="/images/photos/yamuna-source-rapids.jpg" alt="">
+      <div class="b-in">
+        <span class="st">Stop 02 · The gorge · Km 60</span>
+        <h3>Fast water, thin air</h3>
+        <p>The river still sets the pace here. Everything that happens next is downstream of this.</p>
+      </div>
+    </div>
+    <div class="b-chap">
+      <img class="duo" src="/images/photos/yamuna-barrage-crowd.jpg" alt="">
+      <div class="b-in">
+        <span class="st">Stop 05 · Delhi · Km 850</span>
+        <h3>Where the city takes over</h3>
+        <p>Twenty-two drains. One river. The stretch that gives the Yamuna its reputation.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ OPTION C ════════════════════════ -->
+<section class="opt" id="c">
+  <div class="wrap opt-head">
+    <span class="lbl tag">Option C</span>
+    <h2>Map-led, evidence-forward</h2>
+    <p>A schematic route rail across the top — six stops, distances, the current one marked — that
+      doubles as navigation: click a stop and the page moves to it. Below, each stop pairs one
+      photograph with what was actually <i>measured</i> or observed there, so the journey reads as
+      fieldwork rather than travelogue.</p>
+    <p class="why">The strongest fit if the Yatra produced <b>data</b> — water readings, drain
+      counts, interviews. It is also the only option that makes the route usable as navigation, which
+      matters if the page gets long. Weakest as pure atmosphere, and it needs the numbers to exist.</p>
+  </div>
+  <div class="frame">
+    <div class="jhead"><img src="/brand/swechha-white.png" alt="Swechha">
+      <nav class="jnav lbl"><span>Now</span><span>Work</span><span>Explore</span><span>Impact</span>
+        <span>Act</span><span>About</span><span class="d">Donate</span></nav></div>
+    <div class="c-top">
+      <div class="wrap">
+        <p class="crumb lbl">← All journeys</p>
+        <div class="route-type">Yamunotri <span class="ar">→</span> Agra</div>
+        <p class="prop">Twelve days, one river, and a record of what we found along it.</p>
+        <div class="c-map">
+          <div class="c-line"></div>
+          <div class="c-stops">
+            <span class="c-stop on"><i></i><span class="p">Yamunotri</span><span class="k">Km 0</span></span>
+            <span class="c-stop"><i></i><span class="p">Barkot</span><span class="k">Km 60</span></span>
+            <span class="c-stop"><i></i><span class="p">Paonta</span><span class="k">Km 210</span></span>
+            <span class="c-stop"><i></i><span class="p">Delhi</span><span class="k">Km 850</span></span>
+            <span class="c-stop"><i></i><span class="p">Mathura</span><span class="k">Km 950</span></span>
+            <span class="c-stop"><i></i><span class="p">Agra</span><span class="k">Km 1,000</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="band paper2">
+      <div class="wrap">
+        <p class="eyeb lbl">Stop 01 · Yamunotri</p>
+        <div class="c-grid">
+          <img class="duo" src="/images/photos/yamuna-source-rapids.jpg" alt="">
+          <div>
+            <h3 style="margin:0;font-family:'Fraunces',Georgia,serif;font-weight:500;font-size:1.4rem;
+              line-height:1.14">Where the river begins</h3>
+            <p class="body-2" style="margin-top:11px">Snow, rock and a temple. The water is clear,
+              cold and fast — the only stretch on the whole route where that is true.</p>
+            <div class="c-ev" style="margin-top:22px">
+              <div><span class="n">0</span><span class="c">drains counted</span></div>
+              <div><span class="n">8.1</span><span class="c">dissolved oxygen mg/l</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="note" style="margin-top:clamp(26px,3.4vw,44px)"><b>All figures and stop names above are
+placeholders.</b> 12 days / 1,000 km / 6 stops, the drain counts and the dissolved-oxygen reading are
+illustrative &mdash; they show what each layout needs, not what the Yatra recorded. Photographs are
+from your own set, monochrome per the current ruling; Option B in particular assumes six strong
+frames exist. Route stop names are the plausible geography of Yamunotri&nbsp;&rarr;&nbsp;Agra, not a
+record of where the Yatra actually stopped.</div>
+</body>
+</html>

@@ -1,0 +1,1569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Swechha — internal page system</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,100..900,0..100,0..1&family=Instrument+Sans:wght@400..700&family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   PALETTE — deliberately thinned. In this panel only two colours work:
+     • mustard / yellow  → accent, links, active selector state
+     • one severity hue  → the current reading and its trend
+   Every theme icon is monochrome; only the ACTIVE one takes mustard.
+   No gradient bar, no rainbow, no second or third hue.
+   ════════════════════════════════════════════════════════════════════ */
+:root{
+  --paper:#F7F4ED; --paper-2:#F1EBDD; --ink:#1C1B18; --ink-2:#57524A; --ink-3:#8D8779;
+  --ground:#0F0F0E; --panel:#141413; --panel-2:#1C1B18; --void:#000;
+  --mustard:#E1A32B;        /* 8.65:1 on ground */
+  --yellow:#F1C33B;         /* 10.34:1 on charcoal — the brighter of the two */
+  --mustard-ink:#8A6410;    /* 4.89:1 on paper — the only mustard legal as text on light */
+  --on-mustard:#12110F;     /* 8.51:1 on mustard */
+  --sev:#F1484E;            /* THE one severity hue. 5.28:1 on ground. */
+  --sev-dim:rgba(241,72,78,.28);
+  --fg:#FBF8F1; --fg-2:#CBC6BA; --fg-3:#ADA79C; --fg-4:#7E7A71;
+  --hair:rgba(255,255,255,.15); --hair-2:rgba(255,255,255,.09); --hair-d:#E0DACC;
+  --pad:clamp(18px,3.2vw,42px);
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:'Instrument Sans',system-ui,sans-serif;font-size:17px;line-height:1.6;
+  -webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+h1,h2{font-family:'Fraunces',Georgia,serif;font-weight:600;margin:0;line-height:1.1;
+  letter-spacing:-.015em;text-wrap:balance}
+h1{font-variation-settings:'opsz' 96,'SOFT' 20,'WONK' 1}
+h2{font-variation-settings:'opsz' 48,'SOFT' 20,'WONK' 0}
+.wrap{max-width:1320px;margin:0 auto;padding:0 var(--pad)}
+.lbl{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700;
+  text-transform:uppercase;letter-spacing:.13em;line-height:1.25}
+.num{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 104;font-weight:800;
+  font-variant-numeric:tabular-nums;line-height:.86;letter-spacing:-.02em}
+/* Photo treatments. Two mono ramps — `duo` for photographs on open ground,
+   `duo-dim` for photographs UNDER text — and one selective-colour variant per
+   signal hue, which keeps a single element in colour and sends the rest of the
+   frame to warm monochrome. Pick the hue from what is actually IN the frame:
+   sig-r for a red jacket or bloom, sig-y for mustard flower or lamplight,
+   sig-g for a sapling or standing crop. A frame that is warm or green all over
+   has no single element to isolate and must stay on a plain mono ramp. */
+.duo{filter:url(#duo)}
+.duo-dim{filter:url(#duo-dim)}
+.duo-m{filter:url(#duo-m)}
+.sig-y{filter:url(#sig-y)}
+.sig-r{filter:url(#sig-r)}
+.sig-g{filter:url(#sig-g)}
+.sig-y-dim{filter:url(#sig-y-dim)}
+.sig-r-dim{filter:url(#sig-r-dim)}
+.sig-g-dim{filter:url(#sig-g-dim)}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip-path:inset(50%)}
+.arrow svg{width:14px;height:14px;transition:transform .2s ease}
+a:hover .arrow svg,a.arrow:hover svg{transform:translateX(3px)}
+.note{background:#EFE9DB;color:#57524A;font-size:11.5px;line-height:1.55;padding:13px var(--pad)}
+.note b{color:var(--ink);font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700}
+
+/* ════════════════════════════════════════════════════════════════════
+   INTERNAL PAGES — shared shell
+   The palette, base type, .wrap, .lbl, .arrow and all nine photo
+   filters above this comment are LIFTED VERBATIM from the homepage
+   deliverable at build time, not retyped. §2 of the internal-page
+   system asks for "one shared DNA, multiple page personalities", and
+   the only way to guarantee the first half is a single source.
+
+   What differs per page is personality, not primitives:
+     project   human, grounded, evidence-led
+     campaign  urgent, alive, immediate
+     story     editorial, intimate
+     impact    bold, measurable
+     about     historical, reflective
+     team      warm, personal
+   ════════════════════════════════════════════════════════════════════ */
+
+/* review chrome for this board only — each page gets a labelled frame so
+   the six can be read in one scroll, exactly like your reference sheet */
+.page{position:relative;border:1px solid var(--hair-d);margin:0 0 clamp(26px,3.4vw,44px);
+  background:var(--paper);overflow:hidden}
+.page-tag{position:absolute;top:0;left:0;z-index:60;background:var(--ink);color:var(--paper);
+  font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700;
+  font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;padding:5px 11px}
+.board-head{padding:clamp(20px,3vw,40px) 0 clamp(14px,2vw,22px)}
+.board-head h1{font-size:clamp(1.5rem,3vw,2.3rem)}
+.board-head p{color:var(--ink-2);margin:10px 0 0;max-width:70ch;line-height:1.4}
+
+/* ── the global shell: header + footer ──────────────────────────────── */
+.ihead{display:flex;align-items:center;justify-content:space-between;gap:18px;
+  padding:clamp(13px,1.6vw,19px) var(--pad);position:relative;z-index:40}
+.ihead.on-dark{color:var(--fg)}
+.ihead .logo{height:23px;width:auto}
+.inav{display:flex;align-items:center;gap:clamp(11px,1.5vw,25px)}
+.inav a{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700;
+  font-size:10px;letter-spacing:.13em;text-transform:uppercase;padding-bottom:2px;
+  border-bottom:1.5px solid transparent}
+.inav a:hover{border-bottom-color:var(--mustard)}
+.inav .donate{background:var(--mustard);color:var(--on-mustard);padding:7px 13px;border-radius:2px;
+  border-bottom:0}
+.inav .ico{width:15px;height:15px}
+
+/* Footer: the sitemap's four columns, verbatim (§13). Built here because the
+   homepage still has no footer and this is the same component. */
+.ifoot{background:var(--ground);color:var(--fg);padding:clamp(30px,3.8vw,54px) 0 clamp(18px,2.2vw,26px)}
+.ifoot-in{display:grid;grid-template-columns:minmax(0,1.25fr) repeat(4,minmax(0,.9fr));
+  gap:clamp(20px,2.6vw,40px)}
+.ifoot h3{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700;
+  font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin:0 0 12px}
+.ifoot ul{list-style:none;margin:0;padding:0}
+.ifoot li{margin:0 0 7px}
+.ifoot li a{font-size:.875rem;color:var(--fg-2);line-height:1.3}
+.ifoot li a:hover{color:var(--mustard)}
+.ifoot .brand img{height:26px;margin-bottom:14px}
+.ifoot .brand p{color:var(--fg-3);font-size:.8125rem;line-height:1.35;margin:0;max-width:30ch}
+.nl{margin-top:15px;display:flex;gap:7px;max-width:250px}
+.nl input{flex:1;min-width:0;background:transparent;border:1px solid var(--hair);color:var(--fg);
+  padding:8px 10px;font:inherit;font-size:.8125rem;border-radius:2px}
+.nl input::placeholder{color:var(--fg-4)}
+.nl button{background:var(--mustard);color:var(--on-mustard);border:0;border-radius:2px;
+  padding:0 12px;cursor:pointer}
+.nl button svg{width:14px;height:14px}
+.socials{display:flex;gap:10px;margin-top:14px}
+.socials a{width:30px;height:30px;border:1px solid var(--hair);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;color:var(--fg-2)}
+.socials a:hover{border-color:var(--mustard);color:var(--mustard)}
+.socials svg{width:13px;height:13px}
+.ifoot-btm{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:space-between;
+  margin-top:clamp(22px,2.8vw,36px);padding-top:clamp(14px,1.8vw,20px);
+  border-top:1px solid var(--hair-2);color:var(--fg-3);font-size:11.5px}
+.ifoot-btm nav{display:flex;flex-wrap:wrap;gap:8px 18px}
+
+/* ── shared internal-page parts ─────────────────────────────────────── */
+/* §4: no page may open with "PAGE TITLE / about this project". Every opening
+   here is a statement, a person, a number or a live reading. */
+.ihero{position:relative;isolation:isolate;background:var(--ground);color:var(--fg);
+  min-height:clamp(340px,46vw,540px);display:flex;flex-direction:column}
+.ihero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.ihero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none}
+.ihero-in{position:relative;z-index:2;margin-top:auto;padding:clamp(26px,3.4vw,52px) var(--pad)}
+.ihero h1{font-size:clamp(2rem,4.6vw,3.6rem);max-width:15ch}
+.ihero .prop{color:var(--fg-2);margin:clamp(13px,1.7vw,20px) 0 0;max-width:44ch;
+  font-size:clamp(.9375rem,1.2vw,1.0625rem);line-height:1.38}
+.crumb{color:var(--fg-3);font-size:10px;margin:0 0 clamp(13px,1.7vw,20px);display:inline-flex;
+  gap:7px;align-items:center}
+.crumb svg{width:11px;height:11px}
+/* The organic curved emphasis §3.4 asks for instead of a straight underline. */
+.swash{display:block;width:clamp(78px,9vw,124px);height:9px;margin:clamp(13px,1.6vw,18px) 0 0;
+  color:var(--mustard)}
+.swash path{fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round}
+
+.band{padding:clamp(30px,4vw,64px) 0}
+.band.paper{background:var(--paper)}
+.band.paper2{background:var(--paper-2)}
+.band.dark{background:var(--ground);color:var(--fg)}
+.eyeb{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700;
+  font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);
+  margin:0 0 clamp(13px,1.6vw,19px)}
+.band.dark .eyeb{color:var(--fg-3)}
+.lead-q{font-family:'Fraunces',Georgia,serif;font-weight:500;
+  font-variation-settings:'opsz' 48,'SOFT' 20,'WONK' 0;
+  font-size:clamp(1.25rem,2.3vw,1.85rem);line-height:1.16;margin:0;max-width:24ch}
+.body-2{color:var(--ink-2);font-size:.9375rem;line-height:1.42;margin:0;max-width:46ch}
+.band.dark .body-2{color:var(--fg-2)}
+.split{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1.28fr);
+  gap:clamp(22px,3.4vw,58px);align-items:start}
+
+/* Big numbers, never small metric cards (§5.5, §10). Content-width cells. */
+.stats{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;
+  gap:clamp(18px,2.8vw,52px)}
+.stat .n{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 104;font-weight:800;
+  font-variant-numeric:tabular-nums;line-height:.9;letter-spacing:-.02em;
+  font-size:clamp(1.6rem,3.4vw,2.9rem);color:var(--mustard-ink);display:block}
+.band.dark .stat .n{color:var(--mustard)}
+.stat .c{color:var(--ink-2);font-size:.8125rem;line-height:1.2;margin-top:8px;display:block;
+  max-width:16ch}
+.band.dark .stat .c{color:var(--fg-3)}
+
+/* icon + label + line: used for "what we do" and "why it matters" */
+.quad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(16px,2.4vw,34px)}
+.quad-i svg{width:clamp(26px,2.2vw,31px);height:clamp(26px,2.2vw,31px);color:var(--mustard);
+  display:block;margin-bottom:11px}
+.quad-i h4{margin:0;font-size:.9375rem;font-weight:700;line-height:1.2}
+.quad-i p{margin:6px 0 0;font-size:.8125rem;line-height:1.26;color:var(--ink-2)}
+.band.dark .quad-i p{color:var(--fg-3)}
+
+.figrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(16px,2.2vw,30px);
+  align-items:end}
+.figrow img{width:100%;height:clamp(190px,26vw,330px);object-fit:cover}
+.figrow .tall{height:clamp(230px,32vw,400px)}
+.cap{color:var(--ink-2);font-size:11px;margin:9px 0 0;line-height:1.25}
+.band.dark .cap{color:var(--fg-3)}
+
+.pull{border-left:2px solid var(--mustard);padding-left:clamp(15px,1.9vw,26px);
+  margin:clamp(22px,3vw,40px) 0}
+.pull p{font-family:'Fraunces',Georgia,serif;font-weight:500;
+  font-variation-settings:'opsz' 48,'SOFT' 20,'WONK' 0;
+  font-size:clamp(1.1rem,1.9vw,1.5rem);line-height:1.22;margin:0}
+.pull cite{display:block;font-style:normal;color:var(--ink-2);font-size:.8125rem;margin-top:11px;
+  font-family:'Instrument Sans',sans-serif}
+
+.cta-band{background:var(--mustard);color:var(--ink);padding:clamp(26px,3.4vw,46px) 0}
+.cta-band h2{font-size:clamp(1.35rem,2.6vw,2.1rem);max-width:20ch}
+.cta-row{display:flex;flex-wrap:wrap;gap:11px;margin-top:clamp(16px,2.2vw,26px)}
+.btn-ink{display:inline-flex;align-items:center;gap:9px;background:var(--ink);color:var(--paper);
+  padding:12px 20px;border-radius:2px;font-family:'Archivo',sans-serif;
+  font-variation-settings:'wdth' 82;font-weight:700;font-size:10.5px;letter-spacing:.13em;
+  text-transform:uppercase}
+.btn-ink:hover{background:var(--panel-2)}
+.btn-line{display:inline-flex;align-items:center;gap:9px;border:1px solid rgba(28,27,24,.5);
+  padding:12px 20px;border-radius:2px;font-family:'Archivo',sans-serif;
+  font-variation-settings:'wdth' 82;font-weight:700;font-size:10.5px;letter-spacing:.13em;
+  text-transform:uppercase}
+.btn-line:hover{border-color:var(--ink);background:rgba(28,27,24,.06)}
+.btn-ink:focus-visible,.btn-line:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
+.rel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(16px,2.2vw,28px)}
+.rel a img{width:100%;height:clamp(120px,13vw,175px);object-fit:cover}
+.rel a h4{margin:11px 0 0;font-family:'Fraunces',Georgia,serif;font-weight:500;
+  font-variation-settings:'opsz' 36,'SOFT' 20,'WONK' 0;font-size:1.0625rem;line-height:1.2}
+.rel a:hover h4{color:var(--mustard-ink)}
+.rel .k{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700;
+  font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-2);
+  display:flex;align-items:center;gap:8px;margin-top:10px}
+.rel .k::before{content:"";width:14px;height:2px;background:var(--mustard);flex:none}
+
+@media(max-width:900px){
+  .split,.figrow{grid-template-columns:minmax(0,1fr)}
+  .quad{grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(18px,4.6vw,26px)}
+  .stats{grid-template-columns:repeat(2,auto);row-gap:clamp(18px,4.6vw,26px)}
+  .rel{grid-template-columns:minmax(0,1fr);gap:clamp(20px,5vw,26px)}
+  .rel a img{height:clamp(160px,44vw,210px)}
+  .ifoot-in{grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(20px,5vw,30px)}
+  .ifoot .brand{grid-column:1/-1}
+  .inav a:not(.donate):not(.ico){display:none}
+  .figrow img,.figrow .tall{height:clamp(200px,54vw,280px)}
+}
+/* §19: do not simply shrink desktop layouts. The split hero becomes photo-over-
+   statement (photo FIRST, so the page still opens on a person), and the live
+   strip stops being a five-column instrument. */
+@media(max-width:560px){
+  .quad,.stats{grid-template-columns:minmax(0,1fr)}
+  .ifoot-in{grid-template-columns:minmax(0,1fr)}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- MONO, open ground. Shadows lifted so dark photographs stay readable. -->
+  <filter id="duo" color-interpolation-filters="sRGB">
+    <feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0
+      0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/>
+    <feComponentTransfer>
+      <feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/>
+      <feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/>
+      <feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/>
+    </feComponentTransfer>
+  </filter>
+
+  <!-- MUSTARD duotone — for photographs sitting ON the mustard flood. -->
+  <filter id="duo-m" color-interpolation-filters="sRGB">
+    <feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0
+      0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/>
+    <feComponentTransfer>
+      <feFuncR type="table" tableValues="0.20 0.38 0.57 0.75 0.89 0.97"/>
+      <feFuncG type="table" tableValues="0.13 0.27 0.44 0.62 0.78 0.90"/>
+      <feFuncB type="table" tableValues="0.05 0.10 0.17 0.27 0.40 0.58"/>
+    </feComponentTransfer>
+  </filter>
+
+  <!-- MONO, under text. Bounded top end: white body copy keeps ~5.5:1 on the lightest pixel. -->
+  <filter id="duo-dim" color-interpolation-filters="sRGB">
+    <feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0
+      0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/>
+    <feComponentTransfer>
+      <feFuncR type="table" tableValues="0.11 0.18 0.255 0.325 0.385 0.43"/>
+      <feFuncG type="table" tableValues="0.10 0.165 0.235 0.30 0.355 0.40"/>
+      <feFuncB type="table" tableValues="0.085 0.14 0.20 0.26 0.31 0.35"/>
+    </feComponentTransfer>
+  </filter>
+
+  <!-- Mustard kept, everything else mono. Sunflower / mustard bloom / lamp glow. -->
+  <filter id="sig-y" color-interpolation-filters="sRGB">
+    <feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0
+      0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/>
+    <feComponentTransfer in="lum" result="m">
+      <feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/>
+      <feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/>
+      <feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/>
+    </feComponentTransfer>
+    <feColorMatrix type="matrix" in="SourceGraphic" result="k" values="
+      0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.65 0.65 -1.5 0 -0.06"/>
+    <feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0 0.12 0.72 1 1"/></feComponentTransfer>
+    <feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/>
+    <feColorMatrix in="SourceGraphic" type="saturate" values="1.22" result="sat"/>
+    <feComposite in="sat" in2="kb" operator="in" result="c"/>
+    <feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge>
+  </filter>
+
+  <!-- Red kept. The tractor case: a red jacket, a red bloom, a red hoarding. -->
+  <filter id="sig-r" color-interpolation-filters="sRGB">
+    <feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0
+      0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/>
+    <feComponentTransfer in="lum" result="m">
+      <feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/>
+      <feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/>
+      <feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/>
+    </feComponentTransfer>
+    <feColorMatrix type="matrix" in="SourceGraphic" result="k" values="
+      0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.55 -1.25 -0.30 0 -0.10"/>
+    <feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0 0.10 0.68 1 1"/></feComponentTransfer>
+    <feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/>
+    <feColorMatrix in="SourceGraphic" type="saturate" values="1.30" result="sat"/>
+    <feComposite in="sat" in2="kb" operator="in" result="c"/>
+    <feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge>
+  </filter>
+
+  <!-- Green kept. Sapling, canopy, standing crop. -->
+  <filter id="sig-g" color-interpolation-filters="sRGB">
+    <feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0
+      0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/>
+    <feComponentTransfer in="lum" result="m">
+      <feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/>
+      <feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/>
+      <feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/>
+    </feComponentTransfer>
+    <feColorMatrix type="matrix" in="SourceGraphic" result="k" values="
+      0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -0.85 1.70 -0.85 0 -0.03"/>
+    <feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0.03 0.30 0.78 1 1"/></feComponentTransfer>
+    <feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/>
+    <feColorMatrix in="SourceGraphic" type="saturate" values="1.72" result="sat"/>
+    <feComposite in="sat" in2="kb" operator="in" result="c"/>
+    <feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge>
+  </filter>
+
+  <!-- Mustard kept, under text. -->
+  <filter id="sig-y-dim" color-interpolation-filters="sRGB">
+    <feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0
+      0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/>
+    <feComponentTransfer in="lum" result="m">
+      <feFuncR type="table" tableValues="0.11 0.18 0.255 0.325 0.385 0.43"/>
+      <feFuncG type="table" tableValues="0.10 0.165 0.235 0.30 0.355 0.40"/>
+      <feFuncB type="table" tableValues="0.085 0.14 0.20 0.26 0.31 0.35"/>
+    </feComponentTransfer>
+    <feColorMatrix type="matrix" in="SourceGraphic" result="k" values="
+      0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.65 0.65 -1.5 0 -0.06"/>
+    <feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0 0.12 0.72 1 1"/></feComponentTransfer>
+    <feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/>
+    <feColorMatrix in="SourceGraphic" type="saturate" values="1.22" result="sat"/>
+    <feComposite in="sat" in2="kb" operator="in" result="c"/>
+    <feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge>
+  </filter>
+
+  <!-- Red kept, under text. -->
+  <filter id="sig-r-dim" color-interpolation-filters="sRGB">
+    <feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0
+      0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/>
+    <feComponentTransfer in="lum" result="m">
+      <feFuncR type="table" tableValues="0.11 0.18 0.255 0.325 0.385 0.43"/>
+      <feFuncG type="table" tableValues="0.10 0.165 0.235 0.30 0.355 0.40"/>
+      <feFuncB type="table" tableValues="0.085 0.14 0.20 0.26 0.31 0.35"/>
+    </feComponentTransfer>
+    <feColorMatrix type="matrix" in="SourceGraphic" result="k" values="
+      0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.55 -1.25 -0.30 0 -0.10"/>
+    <feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0 0.10 0.68 1 1"/></feComponentTransfer>
+    <feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/>
+    <feColorMatrix in="SourceGraphic" type="saturate" values="1.30" result="sat"/>
+    <feComposite in="sat" in2="kb" operator="in" result="c"/>
+    <feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge>
+  </filter>
+
+  <!-- Green kept, under text. -->
+  <filter id="sig-g-dim" color-interpolation-filters="sRGB">
+    <feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0
+      0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/>
+    <feComponentTransfer in="lum" result="m">
+      <feFuncR type="table" tableValues="0.11 0.18 0.255 0.325 0.385 0.43"/>
+      <feFuncG type="table" tableValues="0.10 0.165 0.235 0.30 0.355 0.40"/>
+      <feFuncB type="table" tableValues="0.085 0.14 0.20 0.26 0.31 0.35"/>
+    </feComponentTransfer>
+    <feColorMatrix type="matrix" in="SourceGraphic" result="k" values="
+      0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -0.85 1.70 -0.85 0 -0.03"/>
+    <feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0.03 0.30 0.78 1 1"/></feComponentTransfer>
+    <feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/>
+    <feColorMatrix in="SourceGraphic" type="saturate" values="1.72" result="sat"/>
+    <feComposite in="sat" in2="kb" operator="in" result="c"/>
+    <feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge>
+  </filter>
+</defs></svg>
+<div class="wrap board-head"><h1>Internal page system</h1><p>Six templates against <code>05_INTERNAL_PAGE_DESIGN_SYSTEM.md</code>. Palette, type, photo filters and the <code>.wrap</code> measure are lifted verbatim from the homepage build, not retyped &mdash; &sect;2 asks for one shared DNA with different page personalities, and a single source is the only way to guarantee the first half.</p></div>
+<style>
+/* ── page-specific personality ──────────────────────────────────────── */
+
+/* PROJECT — human, grounded. Hero is a split: statement left on black, one
+   dominant portrait right, so it opens on a person rather than a title bar. */
+.p-hero{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,1fr);min-height:0}
+.p-hero-t{padding:clamp(30px,3.8vw,58px) clamp(22px,2.6vw,42px) clamp(30px,3.8vw,58px) var(--pad);
+  display:flex;flex-direction:column;justify-content:center}
+.p-hero-t h1{font-size:clamp(1.9rem,4.2vw,3.3rem);max-width:12ch}
+.p-hero figure{margin:0;position:relative;min-height:clamp(260px,32vw,430px)}
+.p-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+/* CAMPAIGN — urgent, alive. A live reading strip sits directly under the
+   proposition; §6.3 requires data status to be unmistakable, so the demo
+   label is part of the strip's type, not a sticker. */
+.live{background:var(--panel);color:var(--fg);padding:clamp(20px,2.4vw,32px) 0}
+.live-in{display:grid;grid-template-columns:minmax(0,auto) repeat(3,minmax(0,auto)) minmax(0,1fr);
+  gap:clamp(18px,2.6vw,44px);align-items:end}
+.live .big{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 104;font-weight:800;
+  font-variant-numeric:tabular-nums;font-size:clamp(2.1rem,4.4vw,3.6rem);line-height:.86;
+  color:var(--sev);display:block}
+.live .word{color:var(--sev);font-family:'Archivo',sans-serif;
+  font-variation-settings:'wdth' 82;font-weight:700;font-size:11px;letter-spacing:.13em;
+  text-transform:uppercase;margin-top:9px;display:block}
+.live .m{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 104;font-weight:800;
+  font-variant-numeric:tabular-nums;font-size:clamp(1.1rem,1.9vw,1.5rem);display:block}
+.live .mu{color:var(--fg-3);font-size:.75rem;margin-left:5px}
+.live dt{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700;
+  font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--fg-3);margin:0 0 9px}
+.live dd{margin:0}
+.live .src{justify-self:end;text-align:right;color:var(--fg-3);font-size:10.5px;line-height:1.5}
+.live .demo{display:inline-block;color:var(--mustard);border:1px solid #6E5518;background:#241C0B;
+  border-radius:2px;padding:2px 7px;font-family:'Archivo',sans-serif;
+  font-variation-settings:'wdth' 82;font-weight:700;font-size:8.5px;letter-spacing:.13em;
+  text-transform:uppercase;margin-bottom:6px}
+
+/* STORY — editorial, intimate. One comfortable measure, drop cap, photography
+   that interrupts rather than decorates. */
+.read{max-width:64ch;margin:0 auto}
+.read p{font-size:1.0625rem;line-height:1.62;margin:0 0 clamp(15px,1.9vw,22px);color:var(--ink)}
+.read p.first::first-letter{float:left;font-family:'Fraunces',Georgia,serif;font-weight:600;
+  font-variation-settings:'opsz' 96,'SOFT' 20,'WONK' 1;font-size:3.6em;line-height:.82;
+  padding:.06em .09em 0 0;color:var(--ink)}
+.s-meta{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--fg-3);font-size:10.5px;
+  margin:clamp(15px,1.9vw,22px) 0 0}
+.s-break{margin:clamp(26px,3.4vw,48px) 0 0}
+.s-break img{width:100%;height:clamp(240px,34vw,460px);object-fit:cover}
+</style>
+
+<!-- ══════════════════════════════════════ 1 · PROJECT ══════════════════ -->
+<section class="page" aria-label="Project page template">
+  <span class="page-tag">Project page</span>
+
+  <header class="ihead on-dark" style="background:var(--ground)">
+    <img class="logo" src="/brand/swechha-white.png" alt="Swechha">
+    <nav class="inav" aria-label="Main">
+      <a href="/now">Now</a><a href="/work">Work</a><a href="/explore">Explore</a>
+      <a href="/impact">Impact</a><a href="/act">Act</a><a href="/about">About</a>
+      <a class="ico" href="/search" aria-label="Search"><svg viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/>
+        <path d="M20 20l-4.3-4.3"/></svg></a>
+      <a class="donate" href="/act/donate">Donate</a>
+    </nav>
+  </header>
+
+  <div class="p-hero" style="background:var(--ground);color:var(--fg)">
+    <div class="p-hero-t">
+      <p class="crumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> All projects</p>
+      <h1>Bridge the Gap</h1>
+      <svg class="swash" viewBox="0 0 120 9" aria-hidden="true"><path d="M2 6.4C22 2.2 46 1.8 68 4.2
+        c18 2 32 2.6 50-.6"/></svg>
+      <p class="prop">Learning and opportunity should not depend on where a child begins.</p>
+    </div>
+    <figure><img class="duo" src="/images/photos/school-children-group.jpg"
+      alt="A group of schoolchildren crowded together, smiling at the camera"></figure>
+  </div>
+
+  <div class="band paper">
+    <div class="wrap split">
+      <div>
+        <p class="eyeb">The challenge</p>
+        <p class="lead-q">Learning poverty is real. Dropout is high. Potential is lost every day.</p>
+      </div>
+      <p class="body-2">Thousands of children in government schools lack access to consistent
+        academic support, life skills and exposure. We work with schools, communities and young
+        leaders to change that.</p>
+    </div>
+  </div>
+
+  <div class="band dark">
+    <div class="wrap">
+      <p class="eyeb">What we do</p>
+      <div class="quad">
+        <div class="quad-i">
+          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.25"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 12.5 16 6l12 6.5-12 6.5z"/><path d="M9 15.4V22c0 1.9 3.1 3.4 7 3.4s7-1.5 7-3.4v-6.6"/></svg>
+          <h4>School support</h4><p>Academic support, infrastructure and teacher capacity building.</p>
+        </div>
+        <div class="quad-i">
+          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.25"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="10" r="3.4"/><circle cx="22" cy="12.5" r="2.6"/>
+            <path d="M6 25v-3.4a6 6 0 0 1 12 0V25M19 25v-2.6a5 5 0 0 1 7-4.6"/></svg>
+          <h4>Mentorship</h4><p>Young mentors work with children as guides and role models.</p>
+        </div>
+        <div class="quad-i">
+          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.25"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M16 27V14M16 18c-3.4 0-6-2.3-6-5.6 3.4 0 6 2.3 6 5.6zM16 18c3.4 0 6-2.3 6-5.6
+              -3.4 0-6 2.3-6 5.6zM16 14c0-2.7 1.3-4.6 3.2-6C17.7 6.5 16.8 6 16 6s-1.7.5-3.2 2
+              c1.9 1.4 3.2 3.3 3.2 6z"/></svg>
+          <h4>Life skills</h4><p>Building confidence, critical thinking and future readiness.</p>
+        </div>
+        <div class="quad-i">
+          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.25"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 26V13l11-7 11 7v13"/><path d="M12 26v-7h8v7"/></svg>
+          <h4>Community</h4><p>Engaging parents and communities for lasting change.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band paper2">
+    <div class="wrap split">
+      <div>
+        <p class="eyeb">Stories from the field</p>
+        <p class="lead-q">Real children. Real change.</p>
+        <a class="btn-line" style="margin-top:clamp(16px,2.2vw,24px)" href="/explore/stories">View stories
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="13"
+            height="13" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+      <figure style="margin:0">
+        <img class="duo" src="/images/photos/children-certificates-field.jpg"
+          alt="Schoolchildren holding seedling boxes at the edge of a mustard field"
+          style="width:100%;height:clamp(190px,24vw,300px);object-fit:cover">
+        <p class="cap">Swechha archive</p>
+      </figure>
+    </div>
+  </div>
+
+  <div class="band paper">
+    <div class="wrap">
+      <p class="eyeb">Impact so far</p>
+      <div class="stats">
+        <div class="stat"><span class="n">85+</span><span class="c">Schools</span></div>
+        <div class="stat"><span class="n">25,000+</span><span class="c">Children reached</span></div>
+        <div class="stat"><span class="n">1,200+</span><span class="c">Young mentors</span></div>
+        <div class="stat"><span class="n">12</span><span class="c">Cities</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta-band">
+    <div class="wrap">
+      <h2>Help us reach more children, in more schools.</h2>
+      <div class="cta-row">
+        <a class="btn-ink" href="/act/donate">Support this project</a>
+        <a class="btn-line" href="/act/volunteer">Volunteer</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════ 2 · CAMPAIGN ═════════════════ -->
+<section class="page" aria-label="Campaign page template">
+  <span class="page-tag">Campaign page</span>
+
+  <header class="ihead on-dark" style="background:var(--ground)">
+    <img class="logo" src="/brand/swechha-white.png" alt="Swechha">
+    <nav class="inav" aria-label="Main">
+      <a href="/now">Now</a><a href="/work">Work</a><a href="/explore">Explore</a>
+      <a href="/impact">Impact</a><a href="/act">Act</a><a href="/about">About</a>
+      <a class="donate" href="/act/donate">Donate</a>
+    </nav>
+  </header>
+
+  <div class="ihero">
+    <img class="ihero-img duo" src="/images/photos/india-gate-hero.jpg"
+      alt="India Gate under heavy cloud, birds overhead and a cyclist crossing the wet plaza">
+    <div class="ihero-in">
+      <p class="crumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> All campaigns</p>
+      <h1>Delhi,<br>I Can't See You</h1>
+      <svg class="swash" viewBox="0 0 120 9" aria-hidden="true"><path d="M2 6.4C22 2.2 46 1.8 68 4.2
+        c18 2 32 2.6 50-.6"/></svg>
+      <p class="prop">A campaign for clean air and the right to breathe.</p>
+    </div>
+  </div>
+
+  <!-- §6.3: current reading, timestamp, source, status. Nothing here may imply
+       demo figures are live, so the label leads. -->
+  <div class="live">
+    <div class="wrap">
+      <dl class="live-in">
+        <div>
+          <dt>Air quality right now</dt>
+          <dd><span class="big">312</span><span class="word">Very poor</span></dd>
+        </div>
+        <div><dt>PM2.5</dt><dd><span class="m">196<span class="mu">µg/m³</span></span></dd></div>
+        <div><dt>PM10</dt><dd><span class="m">312<span class="mu">µg/m³</span></span></dd></div>
+        <div><dt>AQI · CPCB</dt><dd><span class="m">312</span></dd></div>
+        <div class="src">
+          <span class="demo">Demo data</span><br>
+          Last updated today, 08:00 IST<br>Source: CPCB · editor-entered
+        </div>
+      </dl>
+    </div>
+  </div>
+
+  <div class="band paper">
+    <div class="wrap split">
+      <div>
+        <p class="eyeb">What is happening?</p>
+        <p class="body-2">Delhi's air is toxic for too many days. Pollution from vehicles, dust,
+          waste burning and industry mixes with weather conditions and traps poisons in the air we
+          breathe.</p>
+        <a class="btn-line" style="margin-top:clamp(16px,2.2vw,24px)" href="/now">See the situation
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="13"
+            height="13" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+      <figure style="margin:0">
+        <img class="duo" src="/images/photos/delhi-smog-skyline.jpg"
+          alt="Delhi high-rise blocks dissolving into heavy smog"
+          style="width:100%;height:clamp(200px,26vw,320px);object-fit:cover">
+      </figure>
+    </div>
+  </div>
+
+  <div class="band dark">
+    <div class="wrap">
+      <p class="eyeb">Why it matters</p>
+      <div class="quad">
+        <div class="quad-i">
+          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.25"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M16 7v9M16 16c0 5-3 9-6.5 9C6.6 25 5 22.6 5 19c0-4.4 2.4-8 5.5-8
+              M16 16c0 5 3 9 6.5 9 2.9 0 4.5-2.4 4.5-6 0-4.4-2.4-8-5.5-8"/></svg>
+          <h4>Respiratory diseases</h4><p>Long exposure damages lungs and airways.</p>
+        </div>
+        <div class="quad-i">
+          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.25"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 20c3-1 5-3 5-6M26 20c-3-1-5-3-5-6M11 14V9M21 14V9M9 24h14"/></svg>
+          <h4>Asthma &amp; allergies</h4><p>Attacks rise sharply through the smog season.</p>
+        </div>
+        <div class="quad-i">
+          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.25"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M16 25.5C10 21.6 6 18 6 13.8A5.3 5.3 0 0 1 16 11a5.3 5.3 0 0 1 10 2.8
+              c0 4.2-4 7.8-10 11.7z"/><path d="M11 17h3l1.6-2.6L18 19l1.6-2h2.4"/></svg>
+          <h4>Heart problems</h4><p>Fine particles enter the bloodstream.</p>
+        </div>
+        <div class="quad-i">
+          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.25"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 8h20v13H6zM11 25h10M16 21v4"/><path d="M11 15.5l3 2.5 6-6"/></svg>
+          <h4>Learning loss in children</h4><p>School days lost, attention affected.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band paper">
+    <div class="wrap split">
+      <div>
+        <p class="eyeb">What we are doing</p>
+        <p class="body-2">From data to advocacy to on-ground action &mdash; our work pushes for
+          clean-air policy and supports communities to demand their right to breathe.</p>
+        <a class="btn-line" style="margin-top:clamp(16px,2.2vw,24px)" href="/work">See our work
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="13"
+            height="13" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+      <figure style="margin:0">
+        <img class="duo" src="/images/photos/clean-air-protest.jpg"
+          alt="Young people marching, one holding a hand-painted placard reading Clean air is our right"
+          style="width:100%;height:clamp(200px,26vw,320px);object-fit:cover">
+      </figure>
+    </div>
+  </div>
+
+  <div class="cta-band">
+    <div class="wrap">
+      <h2>Clean air needs all of us.</h2>
+      <div class="cta-row">
+        <a class="btn-ink" href="/act/participate">Sign the petition</a>
+        <a class="btn-line" href="/act/volunteer">Join a clean-air drive</a>
+        <a class="btn-line" href="/explore/media">Share this</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════ 3 · STORY ════════════════════ -->
+<section class="page" aria-label="Story page template">
+  <span class="page-tag">Story page</span>
+
+  <header class="ihead on-dark" style="background:var(--ground)">
+    <img class="logo" src="/brand/swechha-white.png" alt="Swechha">
+    <nav class="inav" aria-label="Main">
+      <a href="/now">Now</a><a href="/work">Work</a><a href="/explore">Explore</a>
+      <a href="/impact">Impact</a><a href="/act">Act</a><a href="/about">About</a>
+      <a class="donate" href="/act/donate">Donate</a>
+    </nav>
+  </header>
+
+  <div class="p-hero" style="background:var(--ground);color:var(--fg)">
+    <div class="p-hero-t">
+      <p class="crumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> All stories</p>
+      <h1>The Forest<br>She Grew</h1>
+      <p class="prop">How one woman turned a barren hill into a living, breathing community
+        forest.</p>
+      <p class="s-meta"><span>Placeholder date</span><span>Uttarakhand</span>
+        <span>People. Places. Change.</span></p>
+    </div>
+    <figure><img class="duo" src="/images/photos/pine-forest-path.jpg"
+      alt="A single figure on a path through a dense stand of tall pines"></figure>
+  </div>
+
+  <div class="band paper">
+    <div class="wrap">
+      <div class="read">
+        <p class="first">She was told the hill was useless. Too rocky. Too dry. Nothing would grow
+          there. She planted the first sapling anyway.</p>
+        <p>Twenty years later the hill is green. Springs have returned. Birds are back. And a
+          village that once migrated for work now stays.</p>
+        <div class="pull">
+          <p>If we can grow a forest, we can grow our future.</p>
+          <cite>&mdash; Placeholder attribution</cite>
+        </div>
+        <p>This template is the reading experience: one comfortable measure, a drop cap, a pull
+          quote, and photography that interrupts the narrative rather than decorating it.</p>
+      </div>
+      <div class="s-break">
+        <img class="duo" src="/images/photos/ridge-road-dusk.jpg"
+          alt="A ridge road curving away at dusk with a lone tree on the slope">
+        <div class="wrap" style="padding:0"><p class="cap">Swechha archive</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band paper2">
+    <div class="wrap">
+      <p class="eyeb">More stories</p>
+      <div class="rel">
+        <a href="/explore/stories/breathing-easier">
+          <img class="duo" src="/images/photos/bee-on-mustard-flower.jpg"
+            alt="A honeybee feeding on a mustard flower in full bloom">
+          <p class="k">Air detox gardens</p><h4>Breathing easier, growing together.</h4></a>
+        <a href="/explore/stories/river-connects-us">
+          <img class="duo" src="/images/photos/yamuna-floodplain-crowd.jpg"
+            alt="A crowd on the Yamuna floodplain looking out over the river">
+          <p class="k">Yamuna</p><h4>The river that connects us all.</h4></a>
+        <a href="/explore/stories/next-generation">
+          <img class="duo" src="/images/photos/youth-site-visit.jpg"
+            alt="Young volunteers gathered at a planting site">
+          <p class="k">Youth voices</p><h4>The next generation is leading change.</h4></a>
+      </div>
+    </div>
+  </div>
+</section>
+<style>
+/* IMPACT — bold, measurable. §10: metrics are visual events, and the section
+   needs a full-width visual with a constrained inner column. */
+.big-stats{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;
+  gap:clamp(20px,3.2vw,58px)}
+.big-stats .n{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 104;font-weight:800;
+  font-variant-numeric:tabular-nums;line-height:.88;letter-spacing:-.022em;
+  font-size:clamp(2rem,4.6vw,3.7rem);color:var(--mustard);display:block}
+.big-stats .c{color:var(--fg-3);font-size:.8125rem;line-height:1.2;margin-top:10px;display:block;
+  max-width:15ch}
+/* Before/after comparison. §3.5 lists image comparison sliders as preferred
+   motion; a range input does it with no library, works by keyboard, and needs
+   no JS to be meaningful if scripting fails. */
+.ba{position:relative;overflow:hidden;background:var(--panel)}
+.ba img{width:100%;height:clamp(240px,36vw,470px);object-fit:cover;display:block}
+.ba .after{position:absolute;inset:0;clip-path:inset(0 0 0 var(--split,50%))}
+.ba input[type=range]{position:absolute;left:0;bottom:14px;width:calc(100% - 40px);margin:0 20px;
+  z-index:4;appearance:none;background:transparent;cursor:ew-resize}
+.ba input[type=range]::-webkit-slider-thumb{appearance:none;width:26px;height:26px;border-radius:50%;
+  background:var(--paper);border:1px solid var(--ink);box-shadow:0 1px 6px rgba(0,0,0,.4)}
+.ba input[type=range]::-webkit-slider-runnable-track{height:2px;background:rgba(255,255,255,.5)}
+.ba input:focus-visible{outline:2px solid var(--mustard);outline-offset:4px}
+.ba .seam{position:absolute;top:0;bottom:0;left:var(--split,50%);width:1px;
+  background:rgba(255,255,255,.85);z-index:3;pointer-events:none}
+.ba .yr{position:absolute;top:12px;z-index:3;font-family:'Archivo',sans-serif;
+  font-variation-settings:'wdth' 82;font-weight:700;font-size:9.5px;letter-spacing:.13em;
+  color:var(--fg);background:rgba(10,10,9,.62);padding:4px 9px;border-radius:2px}
+.ba .yr.l{left:12px}.ba .yr.r{right:12px}
+
+/* ABOUT — historical, reflective. The five-part narrative sequence §11 names,
+   as a stepped editorial list rather than five equal boxes. */
+.narr{display:grid;gap:0}
+.narr-i{display:grid;grid-template-columns:clamp(52px,6vw,92px) minmax(0,1fr);
+  gap:clamp(16px,2.4vw,36px);padding:clamp(17px,2.2vw,28px) 0;
+  border-top:1px solid var(--hair-d)}
+.narr-i:first-child{border-top:0}
+.narr-i .step{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700;
+  font-size:10px;letter-spacing:.13em;color:var(--mustard-ink);padding-top:5px}
+.narr-i h3{margin:0;font-family:'Fraunces',Georgia,serif;font-weight:500;
+  font-variation-settings:'opsz' 36,'SOFT' 20,'WONK' 0;font-size:clamp(1.05rem,1.7vw,1.35rem);
+  line-height:1.18}
+.narr-i p{margin:7px 0 0;color:var(--ink-2);font-size:.9375rem;line-height:1.38;max-width:56ch}
+.tl-editorial{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.82fr);
+  gap:clamp(22px,3.4vw,56px);align-items:start}
+.arch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(12px,1.6vw,20px)}
+.arch figure{margin:0}
+.arch img{width:100%;height:clamp(120px,15vw,190px);object-fit:cover}
+.arch .ph{height:clamp(120px,15vw,190px);border:1px dashed var(--hair-d);display:flex;
+  align-items:center;justify-content:center;text-align:center;color:var(--ink-2);font-size:10px;
+  font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;padding:12px;line-height:1.5}
+.deeper{display:flex;flex-wrap:wrap;gap:9px;margin-top:clamp(20px,2.6vw,30px)}
+.deeper a{border:1px solid var(--hair-d);border-radius:2px;padding:9px 14px;font-size:11px;
+  font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase}
+.deeper a:hover{border-color:var(--mustard-ink);color:var(--mustard-ink)}
+
+/* TEAM — warm, personal. §12 bans a page of identical headshot cards, so the
+   wall runs at three sizes and the first portrait is deliberately dominant. */
+.tabs{display:flex;flex-wrap:wrap;gap:0 clamp(14px,2vw,28px);border-bottom:1px solid var(--hair-d);
+  margin-bottom:clamp(20px,2.6vw,32px)}
+.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:0 0 10px;
+  font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700;
+  font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-2);cursor:pointer}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--mustard)}
+.tabs button:focus-visible{outline:2px solid var(--mustard-ink);outline-offset:3px}
+.wall{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(14px,2vw,26px)}
+.who{margin:0}
+.who .frame{position:relative;overflow:hidden;background:var(--paper-2);
+  height:clamp(180px,20vw,260px)}
+.who.lead .frame{height:clamp(240px,27vw,350px)}
+.who.lead{grid-row:span 1;grid-column:span 2}
+.who img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.who .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  text-align:center;border:1px dashed var(--hair-d);color:var(--ink-2);font-size:9.5px;padding:14px;
+  font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;line-height:1.6}
+.who h4{margin:12px 0 0;font-size:1rem;font-weight:700;line-height:1.2}
+.who .role{margin:4px 0 0;color:var(--ink-2);font-size:.8125rem;line-height:1.25}
+@media(max-width:900px){
+  .big-stats{grid-template-columns:repeat(2,auto);row-gap:clamp(20px,5vw,28px)}
+  .tl-editorial{grid-template-columns:minmax(0,1fr)}
+  .wall{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .who.lead{grid-column:span 2}
+}
+@media(max-width:560px){
+  .big-stats{grid-template-columns:minmax(0,1fr)}
+  .arch{grid-template-columns:minmax(0,1fr)}
+  .narr-i{grid-template-columns:minmax(0,1fr);gap:6px}
+}
+</style>
+
+<!-- ══════════════════════════════════════ 4 · IMPACT ═══════════════════ -->
+<section class="page" aria-label="Impact page template">
+  <span class="page-tag">Impact page</span>
+
+  <header class="ihead on-dark" style="background:var(--ground)">
+    <img class="logo" src="/brand/swechha-white.png" alt="Swechha">
+    <nav class="inav" aria-label="Main">
+      <a href="/now">Now</a><a href="/work">Work</a><a href="/explore">Explore</a>
+      <a href="/impact">Impact</a><a href="/act">Act</a><a href="/about">About</a>
+      <a class="donate" href="/act/donate">Donate</a>
+    </nav>
+  </header>
+
+  <div class="ihero">
+    <img class="ihero-img duo-dim" src="/images/photos/yamuna-floodplain-crowd.jpg"
+      alt="A crowd on the Yamuna floodplain looking out over the river">
+    <div class="ihero-in">
+      <h1>Impact</h1>
+      <p class="prop" style="color:var(--fg);font-size:clamp(1.05rem,1.7vw,1.35rem)">
+        Change we can measure.<br>Change we can feel.</p>
+    </div>
+  </div>
+
+  <div class="band dark" style="padding-top:clamp(26px,3.2vw,44px)">
+    <div class="wrap">
+      <div class="big-stats">
+        <div><span class="n" id="ctUp" data-to="6890">6,890</span>
+          <span class="c">Tonnes of waste extracted from the Yamuna</span></div>
+        <div><span class="n">78</span><span class="c">Butterfly gardens</span></div>
+        <div><span class="n">67</span><span class="c">Air detox gardens</span></div>
+        <div><span class="n">3M+</span><span class="c">Children &amp; young people reached</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band paper">
+    <div class="wrap">
+      <p class="eyeb">Before &amp; after</p>
+      <div class="ba" id="ba">
+        <img class="duo" src="/images/photos/bamboo-net-plot.jpg"
+          alt="Before: a bare cultivated plot under a bamboo and netting frame">
+        <img class="after duo" src="/images/photos/leafy-greens-crop.jpg"
+          alt="After: the same ground under a dense bed of leafy greens">
+        <span class="seam" aria-hidden="true"></span>
+        <span class="lbl yr l">Before</span><span class="lbl yr r">After</span>
+        <input type="range" min="0" max="100" value="50" aria-label="Reveal the after image">
+      </div>
+      <p class="cap"><b>PLACEHOLDER PAIR</b> &mdash; the interaction is real and keyboard-operable;
+        the two frames are stand-ins. This needs the actual before and after photographs of one named
+        place (Vasant Kunj community park is the obvious candidate) with both dates confirmed.</p>
+    </div>
+  </div>
+
+  <div class="band paper2">
+    <div class="wrap">
+      <p class="eyeb">Impact stories</p>
+      <div class="rel">
+        <a href="/explore/stories/river-connects-us">
+          <img class="duo" src="/images/photos/yamuna-barrage-crowd.jpg"
+            alt="People gathered along the Yamuna below the city skyline">
+          <p class="k">Yamuna</p><h4>6,890 tonnes, one river.</h4></a>
+        <a href="/explore/stories/breathing-easier">
+          <img class="duo" src="/images/photos/bee-on-mustard-flower.jpg"
+            alt="A honeybee feeding on a mustard flower in full bloom">
+          <p class="k">Gardens</p><h4>What 78 gardens brought back.</h4></a>
+        <a href="/work">
+          <img class="duo" src="/images/photos/children-certificates-field.jpg"
+            alt="Schoolchildren holding seedling boxes at the edge of a mustard field">
+          <p class="k">Participation</p><h4>Three million young people.</h4></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════ 5 · ABOUT ════════════════════ -->
+<section class="page" aria-label="About page template">
+  <span class="page-tag">About page</span>
+
+  <header class="ihead on-dark" style="background:var(--ground)">
+    <img class="logo" src="/brand/swechha-white.png" alt="Swechha">
+    <nav class="inav" aria-label="Main">
+      <a href="/now">Now</a><a href="/work">Work</a><a href="/explore">Explore</a>
+      <a href="/impact">Impact</a><a href="/act">Act</a><a href="/about">About</a>
+      <a class="donate" href="/act/donate">Donate</a>
+    </nav>
+  </header>
+
+  <div class="ihero" style="min-height:clamp(300px,38vw,440px)">
+    <img class="ihero-img duo-dim" src="/images/photos/forest-group-walk.jpg"
+      alt="A group walking together through hill forest">
+    <div class="ihero-in">
+      <h1><span id="abYears2">26</span> Years<br>of Showing Up</h1>
+      <p class="prop">For people. For nature.<br>For a better tomorrow.</p>
+    </div>
+  </div>
+
+  <div class="band paper">
+    <div class="wrap">
+      <div class="narr">
+        <div class="narr-i"><span class="step">01</span>
+          <div><h3>How it started</h3>
+            <p>A small group of friends came together to care for the Yamuna.</p></div></div>
+        <div class="narr-i"><span class="step">02</span>
+          <div><h3>What we learned</h3>
+            <p>That a river cannot be cleaned without the people who live along it.</p></div></div>
+        <div class="narr-i"><span class="step">03</span>
+          <div><h3>Where we went</h3>
+            <p>From the river to schools, green spaces, land, water and livelihoods.</p></div></div>
+        <div class="narr-i"><span class="step">04</span>
+          <div><h3>What we're still fighting for</h3>
+            <p>Clean air, living rivers, thriving nature and a more equitable future.</p></div></div>
+        <div class="narr-i"><span class="step">05</span>
+          <div><h3>Where we're going</h3>
+            <p>Different challenges. Same spirit. Stronger together.</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band paper2">
+    <div class="wrap tl-editorial">
+      <div>
+        <p class="eyeb">Milestones</p>
+        <div class="narr">
+          <div class="narr-i"><span class="step" id="tlY1">2000</span>
+            <div><h3>The beginning</h3>
+              <p>A small group of friends starts showing up for the Yamuna.</p></div></div>
+          <div class="narr-i"><span class="step">2005</span>
+            <div><h3>Taking root</h3>
+              <p>The work widens into schools, communities and green spaces.</p></div></div>
+          <div class="narr-i"><span class="step">2012</span>
+            <div><h3>City to countryside</h3>
+              <p>From urban campaigns to land, water, livelihoods and the farm.</p></div></div>
+          <div class="narr-i"><span class="step">Today</span>
+            <div><h3>Still showing up</h3>
+              <p>Different challenges. Same spirit. Stronger together.</p></div></div>
+        </div>
+        <div class="deeper">
+          <a href="/about/team">Our team</a><a href="/about/board">Board</a>
+          <a href="/about/reports">Annual reports</a><a href="/about/compliances">Compliances</a>
+          <a href="/archive">Archive</a>
+        </div>
+      </div>
+      <div>
+        <p class="eyeb">From the archive</p>
+        <div class="arch">
+          <figure><img class="duo" src="/images/photos/yamuna-barrage-crowd.jpg"
+            alt="People gathered along the Yamuna below the city skyline">
+            <p class="cap">Swechha archive</p></figure>
+          <figure><div class="ph">Poster<br>needed</div>
+            <p class="cap">§11 asks for posters and publications</p></figure>
+          <figure><div class="ph">Early<br>photograph</div>
+            <p class="cap">Pre-2010 material needed</p></figure>
+          <figure><img class="duo" src="/images/photos/community-meal.jpg"
+            alt="Volunteers serving a shared meal to a seated gathering">
+            <p class="cap">Swechha archive</p></figure>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════ 6 · TEAM ═════════════════════ -->
+<section class="page" aria-label="Team page template">
+  <span class="page-tag">Team page</span>
+
+  <header class="ihead on-dark" style="background:var(--ground)">
+    <img class="logo" src="/brand/swechha-white.png" alt="Swechha">
+    <nav class="inav" aria-label="Main">
+      <a href="/now">Now</a><a href="/work">Work</a><a href="/explore">Explore</a>
+      <a href="/impact">Impact</a><a href="/act">Act</a><a href="/about">About</a>
+      <a class="donate" href="/act/donate">Donate</a>
+    </nav>
+  </header>
+
+  <div class="p-hero" style="background:var(--ground);color:var(--fg)">
+    <div class="p-hero-t">
+      <h1>The people<br>who show up</h1>
+      <svg class="swash" viewBox="0 0 120 9" aria-hidden="true"><path d="M2 6.4C22 2.2 46 1.8 68 4.2
+        c18 2 32 2.6 50-.6"/></svg>
+      <p class="prop">A team of dreamers, doers and relentless optimists &mdash; united by one
+        purpose.</p>
+    </div>
+    <figure><img class="duo" src="/images/photos/hillside-gathering.jpg"
+      alt="A large group seated together on a hillside slope"></figure>
+  </div>
+
+  <div class="band paper">
+    <div class="wrap">
+      <div class="tabs" role="tablist" aria-label="Filter team">
+        <button role="tab" aria-selected="true">All</button>
+        <button role="tab" aria-selected="false">Leadership</button>
+        <button role="tab" aria-selected="false">Programmes</button>
+        <button role="tab" aria-selected="false">Communications</button>
+        <button role="tab" aria-selected="false">Operations</button>
+      </div>
+      <div class="wall">
+        <figure class="who lead">
+          <div class="frame"><div class="ph">Portrait needed<br>Vimlendu Jha</div></div>
+          <h4>Vimlendu Jha</h4><p class="role">Founder &amp; Director</p>
+        </figure>
+        <figure class="who">
+          <div class="frame"><div class="ph">Name, role<br>&amp; portrait<br>needed</div></div>
+          <h4>&mdash;</h4><p class="role">Programmes</p>
+        </figure>
+        <figure class="who">
+          <div class="frame"><div class="ph">Name, role<br>&amp; portrait<br>needed</div></div>
+          <h4>&mdash;</h4><p class="role">Campaigns</p>
+        </figure>
+        <figure class="who">
+          <div class="frame"><div class="ph">Name, role<br>&amp; portrait<br>needed</div></div>
+          <h4>&mdash;</h4><p class="role">Operations</p>
+        </figure>
+        <figure class="who">
+          <div class="frame"><div class="ph">Name, role<br>&amp; portrait<br>needed</div></div>
+          <h4>&mdash;</h4><p class="role">Communications</p>
+        </figure>
+        <figure class="who">
+          <div class="frame"><div class="ph">Name, role<br>&amp; portrait<br>needed</div></div>
+          <h4>&mdash;</h4><p class="role">Farm</p>
+        </figure>
+      </div>
+      <p class="cap" style="margin-top:clamp(16px,2vw,22px)"><b>ONLY ONE NAME IS REAL HERE.</b>
+        Your reference sheet names four people with roles; the workbook marks team content "needs
+        inventory", so inventing the other three &mdash; or their titles &mdash; is not something this
+        build will do. Vimlendu Jha is named as founder because that is verifiable. The wall runs at
+        two portrait sizes deliberately: &sect;12 rules out a page of identical headshot cards.</p>
+    </div>
+  </div>
+</section>
+
+<style>
+/* Responsive overrides live LAST on purpose: the per-page style blocks
+   below the head would otherwise win on source order. */
+@media(max-width:760px){
+  .p-hero{grid-template-columns:minmax(0,1fr)}
+  .p-hero figure{order:-1;min-height:clamp(210px,58vw,300px)}
+  .p-hero-t{padding:clamp(22px,5.4vw,30px) var(--pad)}
+  .p-hero-t h1{max-width:none}
+  .live-in{grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(16px,4vw,22px)}
+  .live .src{grid-column:1/-1;justify-self:start;text-align:left}
+  .ihero{min-height:clamp(300px,72vw,420px)}
+}
+@media(max-width:430px){
+  .live-in{grid-template-columns:minmax(0,1fr)}
+  .tabs{gap:0 14px}
+}
+</style>
+
+<style>
+/* ══ JOURNEY — cinematic, narrative, exploratory (§7) ════════════════
+   Your pick: A's route-as-spine structure with two of B's full-bleed
+   frames at the turning points. The spine carries orientation and
+   evidence; the frames carry the two moments where the river changes
+   character. Six full-bleed frames would need six hero-grade
+   photographs; two need only two.
+
+   Evidence here is OBSERVATION, not measurement — you confirmed the
+   Yatra has route and dates but no recorded readings, so there are no
+   invented numbers anywhere on this page.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* The route set in the condensed data voice, larger than the journey's own
+   name: on a journey page the route IS the headline. */
+.route-type{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 88;font-weight:800;
+  font-size:clamp(1.5rem,4vw,3.1rem);line-height:1;letter-spacing:-.01em;display:flex;
+  align-items:center;gap:clamp(10px,1.8vw,26px);flex-wrap:wrap;margin:0}
+.route-type .ar{color:var(--mustard);font-size:.7em}
+
+/* Scroll progress. The one piece of motion on this page type, because §7 asks
+   for progression and §3.5 lists it as preferred. Sticky, 3px, no numbers —
+   position, not a percentage readout. */
+.j-prog{position:sticky;top:0;z-index:35;height:3px;background:rgba(255,255,255,.12)}
+.j-prog i{display:block;height:100%;width:0;background:var(--mustard);
+  transition:width .12s linear}
+.j-facts{background:var(--panel);color:var(--fg);padding:clamp(18px,2.2vw,28px) 0}
+.j-facts .row{display:flex;flex-wrap:wrap;gap:clamp(18px,3vw,52px);align-items:flex-end}
+.j-facts .n{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 104;font-weight:800;
+  font-size:clamp(1.3rem,2.6vw,2.1rem);line-height:.92;color:var(--mustard);display:block}
+.j-facts .c{color:var(--fg-3);font-size:.8125rem;margin-top:7px;display:block;line-height:1.2}
+.j-facts .todo{color:var(--fg-4);font-size:10.5px;line-height:1.45;max-width:30ch;margin-left:auto}
+
+/* the spine */
+.j-spine{display:grid;grid-template-columns:clamp(64px,7.5vw,120px) minmax(0,1fr);
+  column-gap:clamp(16px,2.6vw,44px)}
+.j-chap{display:grid;grid-template-columns:subgrid;grid-column:1/-1;
+  padding:clamp(18px,2.4vw,34px) 0;border-top:1px solid var(--hair-d)}
+.j-chap:first-child{border-top:0}
+.j-when{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700;
+  font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mustard-ink);
+  position:relative;line-height:1.5}
+/* the hairline that makes the spine read as one continuous line */
+.j-when::after{content:"";position:absolute;left:-1px;top:30px;bottom:calc(-1 * clamp(18px,2.4vw,34px) - 1px);
+  width:1px;background:var(--hair-d)}
+.j-chap:last-child .j-when::after{display:none}
+.j-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr);
+  gap:clamp(16px,2.4vw,34px);align-items:start}
+.j-body h3{margin:0;font-family:'Fraunces',Georgia,serif;font-weight:500;
+  font-variation-settings:'opsz' 36,'SOFT' 20,'WONK' 0;
+  font-size:clamp(1.1rem,1.8vw,1.4rem);line-height:1.16}
+.j-body p{margin:9px 0 0;color:var(--ink-2);font-size:.9375rem;line-height:1.4;max-width:46ch}
+.j-body img{width:100%;height:clamp(150px,17vw,210px);object-fit:cover}
+
+/* the two full-bleed turning points */
+.j-frame{position:relative;height:clamp(320px,44vw,540px);display:flex;isolation:isolate}
+.j-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.j-frame::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(90deg,rgba(9,9,8,.62) 0%,rgba(9,9,8,.34) 34%,
+             rgba(9,9,8,.10) 62%,rgba(9,9,8,.04) 100%)}
+/* plate, not scrim — the section-06 lesson: a scrim heavy enough for copy
+   dims the photograph, a plate that hugs the copy does not */
+.j-frame-in{position:relative;z-index:2;align-self:center;color:var(--fg);max-width:42ch;
+  padding:clamp(20px,2.4vw,32px) clamp(26px,3vw,46px) clamp(20px,2.4vw,32px) var(--pad);
+  background:linear-gradient(90deg,rgba(8,8,7,.90) 0%,rgba(8,8,7,.84) 62%,
+             rgba(8,8,7,.50) 88%,rgba(8,8,7,0) 100%)}
+.j-frame-in .st{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700;
+  font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mustard);display:block;
+  margin-bottom:11px}
+.j-frame-in h3{margin:0;font-family:'Fraunces',Georgia,serif;font-weight:500;
+  font-size:clamp(1.3rem,2.3vw,1.85rem);line-height:1.1}
+.j-frame-in p{margin:11px 0 0;color:var(--fg-2);font-size:.9375rem;line-height:1.36}
+
+/* the larger question — the pause this page type needs */
+.j-q{background:var(--paper-2);padding:clamp(44px,6.5vw,104px) 0}
+.j-q p{font-family:'Fraunces',Georgia,serif;font-weight:500;
+  font-variation-settings:'opsz' 72,'SOFT' 20,'WONK' 0;
+  font-size:clamp(1.4rem,3.2vw,2.4rem);line-height:1.14;margin:0 auto;max-width:26ch;
+  text-align:center}
+.j-q .who{display:block;text-align:center;font-family:'Instrument Sans',sans-serif;
+  font-size:.8125rem;color:var(--ink-2);margin-top:clamp(16px,2vw,24px);font-weight:400}
+
+/* Motion: reveal is opt-IN via JS, so no-JS and crawlers get painted content,
+   and a timeout guarantees content can never be stuck invisible. Same belt-and-
+   braces pattern as the homepage. */
+.js-rev .rev{opacity:0;transform:translateY(12px)}
+.js-rev .rev.in{opacity:1;transform:none;transition:opacity .5s ease,transform .5s ease}
+@media (prefers-reduced-motion:reduce){
+  .js-rev .rev{opacity:1;transform:none}
+  .j-prog i{transition:none}
+}
+@media(max-width:900px){
+  .j-spine{grid-template-columns:minmax(0,1fr);row-gap:0}
+  .j-chap{grid-template-columns:minmax(0,1fr);gap:10px}
+  .j-when::after{display:none}
+  .j-body{grid-template-columns:minmax(0,1fr)}
+  .j-frame{height:auto;min-height:clamp(280px,64vw,380px)}
+  .j-frame-in{background:linear-gradient(0deg,rgba(8,8,7,.92) 0%,rgba(8,8,7,.82) 74%,
+    rgba(8,8,7,.42) 100%);max-width:none;padding:clamp(22px,5.4vw,30px) var(--pad);align-self:flex-end}
+  .j-facts .todo{margin-left:0}
+}
+</style>
+
+<!-- ══════════════════════════════════════ 7 · JOURNEY ══════════════════ -->
+<section class="page" id="j" aria-label="Journey page template">
+  <span class="page-tag">Journey page</span>
+
+  <header class="ihead on-dark" style="background:var(--ground)">
+    <img class="logo" src="/brand/swechha-white.png" alt="Swechha">
+    <nav class="inav" aria-label="Main">
+      <a href="/now">Now</a><a href="/work">Work</a><a href="/explore">Explore</a>
+      <a href="/impact">Impact</a><a href="/act">Act</a><a href="/about">About</a>
+      <a class="donate" href="/act/donate">Donate</a>
+    </nav>
+  </header>
+  <div class="j-prog" id="jprog" aria-hidden="true"><i></i></div>
+
+  <div class="ihero" style="min-height:clamp(320px,42vw,480px)">
+    <img class="ihero-img duo-dim" src="/images/photos/ridge-road-dusk.jpg"
+      alt="A ridge road curving away at dusk above the valley">
+    <div class="ihero-in">
+      <p class="crumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> All journeys</p>
+      <h1 class="route-type">Yamunotri <span class="ar" aria-hidden="true">→</span> Agra</h1>
+      <p class="prop">Following one river from the snow it starts in to the plains it ends up
+        serving &mdash; and meeting the people living along every stretch of it.</p>
+    </div>
+  </div>
+
+  <!-- Route and dates only: days and dates are real-ish, distance is not claimed. -->
+  <div class="j-facts">
+    <div class="wrap">
+      <div class="row">
+        <div><span class="n">8</span><span class="c">days on the river</span></div>
+        <div><span class="n">Mar 2023</span><span class="c">23rd to 30th</span></div>
+        <div><span class="n">6</span><span class="c">stops along the route</span></div>
+        <p class="todo"><b>To confirm:</b> the dates come from the archive's own filenames
+          (IMG_20230323&hellip;20230330). Total distance is deliberately absent &mdash; it was never
+          recorded, so it is not shown.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="band paper">
+    <div class="wrap">
+      <p class="eyeb">The journey begins</p>
+      <div class="j-spine">
+        <div class="j-chap rev">
+          <span class="j-when">Day 1<br>23 Mar</span>
+          <div class="j-body">
+            <div>
+              <h3>Where the river begins</h3>
+              <p>Snow, rock and a temple. At the source the Yamuna is cold, fast and clear &mdash;
+                the only stretch of the whole route where all three are true at once.</p>
+            </div>
+            <img class="duo" src="/images/photos/yamuna-source-rapids.jpg"
+              alt="The Yamuna running fast over rocks below Himalayan slopes">
+          </div>
+        </div>
+        <div class="j-chap rev">
+          <span class="j-when">Day 2<br>24 Mar</span>
+          <div class="j-body">
+            <div>
+              <h3>Walking out of the mountains</h3>
+              <p>The valley widens. Terraced fields, first bridges, first towns &mdash; and the
+                first places where something is put into the river rather than taken from it.</p>
+            </div>
+            <img class="duo" src="/images/photos/trekkers-hillside.jpg"
+              alt="A long line of trekkers crossing a hillside">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TURNING POINT 1 -->
+  <div class="j-frame rev">
+    <img class="duo" src="/images/photos/snow-trek-group.jpg"
+      alt="A group walking together through snow on a hill path">
+    <div class="j-frame-in">
+      <span class="st">Turning point · Day 3</span>
+      <h3>The last clean stretch</h3>
+      <p>Somewhere along here the river stops being something you can drink and becomes something you
+        have to treat. No sign marks the spot. That is the whole problem.</p>
+    </div>
+  </div>
+
+  <div class="band paper">
+    <div class="wrap">
+      <p class="eyeb">Move through the journey</p>
+      <div class="j-spine">
+        <div class="j-chap rev">
+          <span class="j-when">Day 5<br>27 Mar</span>
+          <div class="j-body">
+            <div>
+              <h3>The plains take over</h3>
+              <p>Canals, pumps, brick kilns. The river is now a resource with owners, and every
+                kilometre has a claim on it.</p>
+            </div>
+            <img class="duo" src="/images/photos/community-meal.jpg"
+              alt="Volunteers serving a shared meal to a seated gathering">
+          </div>
+        </div>
+        <div class="j-chap rev">
+          <span class="j-when">Day 7<br>29 Mar</span>
+          <div class="j-body">
+            <div>
+              <h3>Meeting the people who live with it</h3>
+              <p>Fishers, farmers, priests, sand miners, schoolchildren. Everyone downstream has a
+                version of the same sentence: it was not like this before.</p>
+            </div>
+            <img class="duo" src="/images/photos/hillside-gathering.jpg"
+              alt="A large group seated together on a slope">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TURNING POINT 2 -->
+  <div class="j-frame rev">
+    <img class="duo" src="/images/photos/yamuna-barrage-crowd.jpg"
+      alt="People gathered along the Yamuna below the city skyline">
+    <div class="j-frame-in">
+      <span class="st">Turning point · Day 8</span>
+      <h3>Where the city takes over</h3>
+      <p>The stretch that gives the Yamuna its reputation &mdash; and the one most people mean when
+        they say the river is dead. It is not dead. It is being killed in a specific place, by
+        specific things.</p>
+    </div>
+  </div>
+
+  <div class="band paper2">
+    <div class="wrap">
+      <p class="eyeb">Evidence along the way</p>
+      <div class="split">
+        <div>
+          <p class="lead-q">What we carried back was not data. It was testimony.</p>
+        </div>
+        <p class="body-2">No instruments went on this Yatra, so this page reports what was seen and
+          said rather than what was measured &mdash; field notes, photographs and interviews along
+          the route. Where a figure is needed, it comes from a named published source on the
+          <a href="/work/campaigns/yamuna-pollution" style="border-bottom:1.5px solid var(--mustard)">Yamuna
+          campaign page</a>, never from the journey itself.</p>
+      </div>
+      <div class="pull" style="margin-top:clamp(24px,3vw,40px)">
+        <p>Placeholder for a quotation recorded on the route.</p>
+        <cite>&mdash; Speaker, place, day. To be sourced from the field notes.</cite>
+      </div>
+    </div>
+  </div>
+
+  <div class="j-q">
+    <div class="wrap">
+      <p>If the river is the same river all the way down, why do we only treat one stretch of it as
+        our problem?</p>
+      <span class="who">The larger question this journey set out to ask</span>
+    </div>
+  </div>
+
+  <div class="band paper">
+    <div class="wrap">
+      <p class="eyeb">Stories and media from the route</p>
+      <div class="rel">
+        <a href="/explore/stories/river-connects-us">
+          <img class="duo" src="/images/photos/yamuna-floodplain-crowd.jpg"
+            alt="A crowd on the Yamuna floodplain looking out over the river">
+          <p class="k">Story</p><h4>The river that connects us all.</h4></a>
+        <a href="/work/campaigns/yamuna-pollution">
+          <img class="duo" src="/images/photos/delhi-smog-skyline.jpg"
+            alt="City high-rises dissolving into heavy haze">
+          <p class="k">Campaign</p><h4>What the Delhi stretch is doing to the river.</h4></a>
+        <a href="/explore/media">
+          <img class="duo" src="/images/photos/pine-forest-path.jpg"
+            alt="A single figure on a path through a dense stand of tall pines">
+          <p class="k">Media</p><h4>Photographs and film from the Yatra.</h4></a>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta-band">
+    <div class="wrap">
+      <h2>The next Yatra needs people who will walk it.</h2>
+      <div class="cta-row">
+        <a class="btn-ink" href="/act/participate">Join the next journey</a>
+        <a class="btn-line" href="/work/journeys">All journeys</a>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="note"><b>07 Journey</b> &mdash; your chosen hybrid: A's route-as-spine with two of B's
+full-bleed frames at the turning points. The route is set in the condensed data voice and is larger
+than the journey's own name, because on this page type the route <i>is</i> the headline. Two frames
+rather than six, so it needs two hero-grade photographs instead of six. Motion is the one thing §7
+insists on: a 3px sticky progress rail plus a gentle staggered reveal on each chapter &mdash;
+reduced-motion collapses both, the reveal is opt-in from JS so no-JS visitors get painted content, and
+a timeout guarantees nothing can stay invisible. <b>No invented numbers.</b> You confirmed route and
+dates only, so the evidence band reports testimony rather than measurement, distance is deliberately
+absent, and the one pull quote is an empty slot with its sourcing named. <b>The dates are real-ish:</b>
+23&ndash;30 March 2023, read off the archive's own filenames &mdash; worth confirming, but that is
+where "8 days" comes from. <b>THE PHOTOGRAPHS ARE STAND-INS.</b> I can now see your Drive archive
+through the connector: <code>Yamuna Yatra (1) - 2023</code> holds <b>40+ frames at 2&ndash;6MB each</b>,
+which is exactly what this page wants. I cannot pull image bytes through the connector at a sane cost
+&mdash; a 5MB photo arrives as base64 &mdash; so drop that folder anywhere on disk and I will import,
+convert and place them per stop.</div>
+
+<footer class="ifoot">
+  <div class="wrap">
+    <div class="ifoot-in">
+      <div class="brand">
+        <img src="/brand/swechha-white.png" alt="Swechha">
+        <p>Swechha works at the intersection of environment, education and community action for a
+          just and sustainable world.</p>
+        <form class="nl" onsubmit="return false">
+          <label class="sr" for="nlmail">Email address</label>
+          <input id="nlmail" type="email" placeholder="Your email" autocomplete="email">
+          <button type="submit" aria-label="Subscribe"><svg viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+            <path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </form>
+        <div class="socials">
+          <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18"
+            height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></a>
+          <a href="#" aria-label="X"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.7" aria-hidden="true"><path d="M4 4l16 16M20 4L4 20"/></svg></a>
+          <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M14 8h3V4h-3
+            a4 4 0 0 0-4 4v3H8v4h2v6h4v-6h3l1-4h-4V9a1 1 0 0 1 1-1z"/></svg></a>
+          <a href="#" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="6" width="18"
+            height="12" rx="3"/><path d="M11 9.5l4 2.5-4 2.5z"/></svg></a>
+        </div>
+      </div>
+      <div><h3>Explore</h3><ul>
+        <li><a href="/work">Work</a></li><li><a href="/explore/stories">Stories &amp; media</a></li>
+        <li><a href="/impact">Impact</a></li><li><a href="/farm">Swechha Farm</a></li>
+        <li><a href="https://www.greenthemap.com/" target="_blank" rel="noopener noreferrer">Green the Map</a></li>
+        <li><a href="/archive">Archive</a></li></ul></div>
+      <div><h3>Act</h3><ul>
+        <li><a href="/act/volunteer">Volunteer</a></li><li><a href="/act/donate">Donate</a></li>
+        <li><a href="/act/participate">Participate</a></li>
+        <li><a href="/act/partner">Partner</a></li></ul></div>
+      <div><h3>About</h3><ul>
+        <li><a href="/about">About Swechha</a></li><li><a href="/about/team">Our team</a></li>
+        <li><a href="/about/board">Our board</a></li>
+        <li><a href="/about/reports">Annual reports</a></li>
+        <li><a href="/about/compliances">Compliances</a></li></ul></div>
+      <div><h3>Connect</h3><ul>
+        <li><a href="/contact">Contact</a></li><li><a href="/now">Swechha Now</a></li>
+        <li><a href="/explore/learn">Knowledge &amp; DIY</a></li>
+        <li><a href="/explore/media">Media &amp; research</a></li></ul></div>
+    </div>
+    <div class="ifoot-btm">
+      <span>&copy; <span id="yr">2026</span> Swechha. All rights reserved.</span>
+      <nav><a href="/privacy">Privacy policy</a><a href="/terms">Terms of use</a>
+        <a href="/refund">Refund policy</a></nav>
+    </div>
+  </div>
+</footer>
+<div class="note"><b>Global footer</b> &mdash; the sitemap's four columns verbatim (&sect;13: Explore /
+Act / About / Connect), the newsletter as an embedded field rather than a page (&sect;10 of the
+sitemap prefers global), and social links. <b>Archive lives here and nowhere else</b>, which is what
+the docs require. This is the component the homepage is still missing &mdash; it is built once here and
+drops straight into it. Contact details are unverified: the workbook says "verify current details", so
+there is no address, phone or email on it yet.</div>
+
+<script>
+/* ── the two interactions the internal-page system actually asks for ──
+   §3.5 lists image comparison sliders and "number count-up when meaningful"
+   as preferred motion, and rules out animating everything. So: exactly two,
+   both reduced-motion aware, and the page is fully readable without either. */
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* before/after: the range input IS the control, so keyboard works for free */
+(() => {
+  const ba = document.getElementById('ba');
+  if (!ba) return;
+  const input = ba.querySelector('input[type=range]');
+  const set = v => ba.style.setProperty('--split', v + '%');
+  set(input.value);
+  input.addEventListener('input', () => set(input.value));
+})();
+
+/* count-up on the LEADING figure only — four simultaneous count-ups would be
+   four focal points, which the ledger already ruled against */
+(() => {
+  const el = document.getElementById('ctUp');
+  if (!el) return;
+  const to = +el.dataset.to;
+  const fmt = n => n.toLocaleString('en-IN');
+  if (reduce) { el.textContent = fmt(to); return; }
+  let started = false;
+  const run = () => {
+    if (started) return; started = true;
+    const t0 = performance.now(), dur = 1100;
+    const step = now => {
+      const p = Math.min(1, (now - t0) / dur);
+      el.textContent = fmt(Math.round(to * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+  if (!('IntersectionObserver' in window)) { run(); return; }
+  const io = new IntersectionObserver(e => { if (e[0].isIntersecting) { run(); io.disconnect(); } },
+                                      { threshold: .4 });
+  io.observe(el);
+  /* safety net, same reason as the homepage: content must never be stuck */
+  setTimeout(run, 2500);
+})();
+
+/* the anniversary is derived here too, from the same constant */
+const FOUNDED = 2000;
+(() => {
+  const y = new Date().getFullYear();
+  const n = document.getElementById('abYears2');
+  if (n) n.textContent = String(y - FOUNDED);
+  const t = document.getElementById('tlY1');
+  if (t) t.textContent = String(FOUNDED);
+  const c = document.getElementById('yr');
+  if (c) c.textContent = String(y);
+})();
+
+/* tabs are presentational on this board — say so rather than fake filtering */
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', 'false'));
+  b.setAttribute('aria-selected', 'true');
+}));
+
+/* ── Journey motion (§3.5): progress rail + staggered reveal ─────────
+   Two effects only, on one page type. Reveal is added by JS so the default
+   state is VISIBLE — no-JS, crawlers and print get painted content — and a
+   timeout guarantees nothing can be stuck invisible if IO never fires. */
+(() => {
+  const bar = document.querySelector('#jprog i');
+  const page = document.querySelector('.page[aria-label="Journey page template"]');
+  if (bar && page) {
+    const onScroll = () => {
+      const r = page.getBoundingClientRect();
+      const total = r.height - window.innerHeight;
+      const done = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0;
+      bar.style.width = (done * 100).toFixed(1) + '%';
+    };
+    addEventListener('scroll', onScroll, { passive: true });
+    addEventListener('resize', onScroll);
+    onScroll();
+  }
+
+  const items = [...document.querySelectorAll('.rev')];
+  if (!items.length) return;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.documentElement.classList.add('js-rev');
+  const showAll = () => items.forEach(el => el.classList.add('in'));
+  if (reduce || !('IntersectionObserver' in window)) { showAll(); return; }
+  const io = new IntersectionObserver(entries => {
+    entries.forEach((e, i) => {
+      if (!e.isIntersecting) return;
+      setTimeout(() => e.target.classList.add('in'), i * 30);
+      io.unobserve(e.target);
+    });
+  }, { threshold: .18, rootMargin: '0px 0px -8% 0px' });
+  items.forEach(el => io.observe(el));
+  setTimeout(showAll, 1800);
+})();
+</script>
+
+</body>
+</html>

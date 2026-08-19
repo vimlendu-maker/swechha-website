@@ -1,0 +1,157 @@
+/* ==========================================================================
+   SWECHHA DESIGN TOKENS — v2 (mustard accent / monochrome canvas)
+   Every ratio in a comment is a WCAG 2.1 contrast ratio, computed and then
+   independently re-verified (18/18 reproduced exactly).
+   This is the review copy for the design board. Production version will live
+   in app/globals.css inside @theme inline.
+   ========================================================================== */
+
+:root {
+  /* ---- LAYER 1: PRIMITIVE ------------------------------------------- */
+
+  /* Neutral ramp. Warm, not blue-grey: every step keeps R > G > B, the R−B
+     delta peaking at 20 through the midtones, so greys read as dust and
+     unbleached paper rather than slate. */
+  --n-000: #000000;   /* pure black — the dramatic full-bleed pause only   */
+  --n-100: #12110F;   /* warm near-black — default "black" section ground  */
+  --n-200: #1C1B18;   /* CHARCOAL — primary dark canvas                    */
+  --n-300: #332F29;   /* raised surface on dark; hairline                  */
+  --n-400: #57524A;   /* muted text on paper 7.05:1                        */
+  --n-500: #8D8779;   /* ONLY neutral >=3:1 on BOTH canvases (3.26 / 4.82) */
+  --n-600: #B4AEA1;   /* muted text on dark 7.80:1                         */
+  --n-700: #DBD5C7;   /* body on dark 11.77:1; hairline on paper           */
+  --n-800: #F7F4ED;   /* PAPER — primary light canvas                      */
+
+  /* Mustard ramp. Hue held in the CIELAB 79–87 deg band at every step so the
+     ramp never drifts green (a naive pale tint lands at a* −2). */
+  --m-100: #FCDEAE;   /* 13.29:1 charcoal · 1.18:1 paper                   */
+  --m-200: #F1C33B;   /* 10.34:1 charcoal · 1.52:1 paper                   */
+  --m-300: #E1A32B;   /* SWECHHA MUSTARD · 7.77:1 charcoal · 2.02:1 paper  */
+  --m-400: #C2961F;   /*  6.30:1 charcoal · 2.49:1 paper                   */
+  --m-500: #A57A15;   /*  3.54:1 paper — lowest legal mustard border       */
+  --m-600: #8A6410;   /*  4.89:1 paper — the ONLY mustard body text        */
+  /* Same-luminance chroma variant of m-300, sampled from the approved
+     mockup. Y 0.4292 vs 0.4238 = 1.01:1 luminance ratio, dE2000 4.69:
+     contrast-identical and interchangeable. NOT a separate ramp step. */
+  --m-300-dusty: #D5A942;
+
+  /* Signals. One variant per canvas; each clears 4.5:1 on its own canvas
+     and is illegal on the other. Green sits at 149–152 deg, well clear of
+     brand teal (202 deg), so vegetation never reads as logo. */
+  --sig-green-ink: #2C6B44;   --sig-green-bright: #86D89B;
+  --sig-red-ink:   #8A2216;   --sig-red-bright:   #E8615C;
+  --sig-blue-ink:  #17427E;   --sig-blue-bright:  #4692E4;
+
+  /* Logo colours. CHROME MUST NOT USE THESE — present only to colour-match
+     the supplied asset. On paper: teal 2.76:1, coral 3.01:1, ochre 1.59:1,
+     so teal and ochre fail even the 3:1 large-text bar. Note brand ochre is
+     a yellow-GREEN at Lab hue ~104 deg, outside the mustard band. */
+  --logo-teal: #4BA1A5; --logo-coral: #F05A66;
+  --logo-ochre: #D2C662; --logo-indigo: #2B2D46;
+
+  /* ---- LAYER 2: SEMANTIC (paper default) ---------------------------- */
+  --canvas: var(--n-800);
+  --canvas-raised: #FFFFFF;
+  --fg: var(--n-200);          /* 15.68:1 */
+  --fg-muted: var(--n-400);    /*  7.05:1 */
+  --fg-faint: var(--n-500);    /*  3.26:1 — LARGE TEXT >=24px ONLY */
+  --line-hairline: var(--n-700);
+  --line: var(--n-500);
+  --accent: var(--m-300);       /* fills / grounds / marks — NOT text     */
+  --accent-line: var(--m-500);  /* 3.54:1 — legal mustard border          */
+  --accent-text: var(--m-600);  /* 4.89:1 — legal mustard words           */
+  --on-accent: var(--n-100);    /* 8.52:1 on --accent                    */
+  --state-red: var(--sig-red-ink);
+  --state-green: var(--sig-green-ink);
+  --state-blue: var(--sig-blue-ink);
+
+  --badge-radius: 2px;
+}
+
+/* SECTION INVERSION — not prefers-color-scheme. The design language needs
+   black pauses and paper pauses on the SAME page, so ground truth is this
+   attribute on the section wrapper. In production this pairs with
+   `@theme inline`; without the `inline` keyword Tailwind emits an extra
+   --color-* hop that resolves once at :root and inherits pre-computed, so
+   bg-canvas keeps painting paper inside a dark section — silently. */
+[data-canvas='dark'] {
+  --canvas: var(--n-200);
+  --canvas-raised: var(--n-300);
+  --fg: var(--n-800);          /* 15.68:1 */
+  --fg-muted: var(--n-600);    /*  7.80:1 */
+  --fg-faint: var(--n-500);    /*  4.82:1 — passes AA body here */
+  --line-hairline: var(--n-300);
+  --accent-line: var(--m-200);
+  --accent-text: var(--m-200); /* 10.34:1 — NOT m-600, which is 3.21:1 */
+  --state-red: var(--sig-red-bright);
+  --state-green: var(--sig-green-bright);
+  --state-blue: var(--sig-blue-bright);
+}
+[data-canvas='void'] { --canvas: var(--n-000); }
+[data-canvas='mustard'] {
+  --canvas: var(--m-300);
+  --fg: var(--n-100);          /* 8.52:1 */
+  --fg-muted: #3A2E12;
+  --line-hairline: #A87A1E;
+}
+
+/* ---- BASE ---------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--fg);
+  font-family: 'Instrument Sans', system-ui, sans-serif;
+  font-size: 1.125rem;      /* 18px floor */
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+/* Sections paint their own ground so an inverted block never borrows body's */
+[data-canvas] { background: var(--canvas); color: var(--fg); }
+
+h1, h2, h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600;         /* preflight would leave these at 400 */
+  line-height: 1.08;
+  text-wrap: balance;
+  margin: 0;
+  letter-spacing: -0.015em;
+}
+/* WONK on for the single largest heading only — one h1 is the whole budget
+   for character. Everything smaller stays sober. */
+h1 { font-variation-settings: 'opsz' 96, 'SOFT' 20, 'WONK' 1; }
+h2 { font-variation-settings: 'opsz' 48, 'SOFT' 20, 'WONK' 0; }
+h3 { font-variation-settings: 'opsz' 28, 'SOFT' 25, 'WONK' 0; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 1px; }
+::selection { background: var(--m-200); color: var(--n-100); }
+
+/* ---- VOICE B: the data register ------------------------------------ */
+/* Big Shoulders at opsz 72 for numerals, opsz 14 for labels — genuinely
+   different drawings, not one outline scaled. tabular-nums so a changing
+   live reading never shifts width. */
+.numeral {
+  font-family: 'Big Shoulders', 'Arial Narrow', sans-serif;
+  font-variation-settings: 'opsz' 72;
+  font-variant-numeric: tabular-nums lining-nums;
+  line-height: 0.82;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+.label {
+  font-family: 'Big Shoulders', 'Arial Narrow', sans-serif;
+  font-variation-settings: 'opsz' 14;
+  font-size: 0.8125rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.body-narrow { max-width: 46ch; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important; scroll-behavior: auto !important;
+  }
+}

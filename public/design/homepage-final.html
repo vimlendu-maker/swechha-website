@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Swechha — Hero + The Situation, Now</title>
+<title>Swechha — Change begins with us.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,100..900,0..100,0..1&family=Instrument+Sans:wght@400..700&family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet">
@@ -787,17 +787,48 @@ a:hover .arrow svg,a.arrow:hover svg{transform:translateX(3px)}
     rgba(225,163,43,.88) 72%,rgba(225,163,43,.34) 100%)}
 }
 
+/* Footer: the sitemap's four columns, verbatim (§13). Built here because the
+   homepage still has no footer and this is the same component. */
+.ifoot{background:var(--ground);color:var(--fg);padding:clamp(30px,3.8vw,54px) 0 clamp(18px,2.2vw,26px)}
+.ifoot-in{display:grid;grid-template-columns:minmax(0,1.25fr) repeat(4,minmax(0,.9fr));
+  gap:clamp(20px,2.6vw,40px)}
+.ifoot h3{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;font-weight:700;
+  font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);margin:0 0 12px}
+.ifoot ul{list-style:none;margin:0;padding:0}
+.ifoot li{margin:0 0 7px}
+.ifoot li a{font-size:.875rem;color:var(--fg-2);line-height:1.3}
+.ifoot li a:hover{color:var(--mustard)}
+.ifoot .brand img{height:26px;margin-bottom:14px}
+.ifoot .brand p{color:var(--fg-3);font-size:.8125rem;line-height:1.35;margin:0;max-width:30ch}
+.nl{margin-top:15px;display:flex;gap:7px;max-width:250px}
+.nl input{flex:1;min-width:0;background:transparent;border:1px solid var(--hair);color:var(--fg);
+  padding:8px 10px;font:inherit;font-size:.8125rem;border-radius:2px}
+.nl input::placeholder{color:var(--fg-4)}
+.nl button{background:var(--mustard);color:var(--on-mustard);border:0;border-radius:2px;
+  padding:0 12px;cursor:pointer}
+.nl button svg{width:14px;height:14px}
+.socials{display:flex;gap:10px;margin-top:14px}
+.socials a{width:30px;height:30px;border:1px solid var(--hair);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;color:var(--fg-2)}
+.socials a:hover{border-color:var(--mustard);color:var(--mustard)}
+.socials svg{width:13px;height:13px}
+.ifoot-btm{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:space-between;
+  margin-top:clamp(22px,2.8vw,36px);padding-top:clamp(14px,1.8vw,20px);
+  border-top:1px solid var(--hair-2);color:var(--fg-3);font-size:11.5px}
+.ifoot-btm nav{display:flex;flex-wrap:wrap;gap:8px 18px}
+@media(max-width:900px){
+  .ifoot-in{grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(20px,5vw,30px)}
+  .ifoot .brand{grid-column:1/-1}
+}
+@media(max-width:560px){ .ifoot-in{grid-template-columns:minmax(0,1fr)} }
+
+
 /* review chrome */
-.note{background:#EFE9DB;color:#57524A;font-size:11.5px;line-height:1.55;
-  padding:10px var(--pad);border-top:1px solid var(--hair-d);border-bottom:1px solid var(--hair-d)}
-.note b{color:var(--ink);font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 82;
-  font-weight:700;text-transform:uppercase;letter-spacing:.1em}
-.ctl{position:fixed;right:14px;bottom:14px;z-index:20;display:flex;gap:6px;align-items:center;
-  background:rgba(12,12,11,.92);padding:7px;border-radius:3px;border:1px solid rgba(255,255,255,.2)}
-.ctl button{font:700 10px/1 'Instrument Sans',sans-serif;letter-spacing:.1em;text-transform:uppercase;
-  padding:9px 12px;border-radius:2px;cursor:pointer;border:1px solid rgba(255,255,255,.3);
-  background:transparent;color:#EDE8DC}
-.ctl button[aria-pressed=true]{background:var(--mustard);color:var(--on-mustard);border-color:var(--mustard)}
+
+
+
+
+
 
 /* The earlier fix collapsed to two columns at 1180px, which forced the map into
    its own row AND the selector into three rows — that is what made this section
@@ -994,10 +1025,7 @@ a:hover .arrow svg,a.arrow:hover svg{transform:translateX(3px)}
   </filter>
 </defs></svg>
 
-<div class="ctl" role="group" aria-label="Review controls">
-  <button id="bDemo" aria-pressed="true">Demo data</button>
-  <button id="bLive" aria-pressed="false">Live enabled</button>
-</div>
+
 
 <!-- ══════ HERO ══════ -->
 <section class="hero">
@@ -1099,11 +1127,11 @@ a:hover .arrow svg,a.arrow:hover svg{transform:translateX(3px)}
   </div>
 </section>
 
-<div class="note"><b>Image credits</b> &mdash; every photograph is now yours. The 18 Aug set (34 frames, HEICs converted) is in <code>public/images/photos/</code> at 2000px, catalogued with alt text in <code>content/photo-library.json</code>; the hero, the tractor, the Green the Map tote and the clean-air placard are your generated frames at 2400px. <b>All photographs render monochrome</b> through one warm duotone ramp &mdash; two ramps in fact: an open one for photographs with nothing on top, and a bounded one for photographs under text, where the top end is capped so white copy keeps ~5.5:1 on the lightest pixel. The tractor and the tote take <b>no</b> ramp: their colour is baked into the file and any ramp would grey out the one thing each picture is for. Only remaining placeholder: <b>wildfire</b> in the NOW selector (Matt Palmer, Wikimedia) &mdash; the set contains no fire photograph.</div>
-<div class="note"><b>Corrections made</b> — 347 is <b>Very Poor</b> on the CPCB scale, not "Hazardous" (a US EPA term). Under CPCB, Mumbai 186 is Moderate (not Poor), Kolkata 142 is Moderate (not "Unhealthy for Sensitive" — US terminology), Bengaluru 78 is Satisfactory (not Moderate). Four of your five labels needed changing. Date is now today, with IST. Palette in the panel is mustard plus one severity hue only — every theme icon is monochrome and mustard marks just the active one. The gradient bar is replaced by a 0–500 track with band ticks and a marker. The map is replaced by a seven-day trend, which answers the one question a region list cannot: is this getting worse?</div>
-<div class="note"><b>The LIVE pill</b> — toggle it bottom-right. Backend-controlled, defaults to off. It should only render when every metric on screen is genuinely live; with air from a live feed but Yamuna, heat, monsoon and flood editor-entered, the honest state here is per-theme freshness, not one global claim.</div>
-<div class="note"><b>Yamuna is an evidence card, not a reading</b> — no validated real-time index exists, so it reports the most recent official finding as a <b>count</b> (14 of 18 STPs) with a segmented indicator, because that is discrete rather than a position on a scale. Evidence is tagged by weight: a solid <b>Official report</b> chip for a DPCC/CPCB finding, a dashed <b>Reported</b> chip for anything press-derived — per EI &sect;15, reporting must be distinguishable from Swechha's own position. <b>Every figure and quote in this frame is placeholder</b> until pinned to a named DPCC or CPCB report with its date.</div>
-<div class="note"><b>Depth lives on the campaign page</b> — this banner is now 0.91&times; the hero, deliberately shorter. The 7-day sparkline, the full ranked city table, pollutant breakdown and any dashboard-scale infographics belong on <code>/work/campaigns/delhi-i-cant-see-you</code>, which is where EXPLORE THE SITUATION and each theme in the selector point. Environmental Intelligence &sect;3: no wall of charts on the homepage.</div>
+
+
+
+
+
 
 <!-- ══════ WHAT WE'RE DOING ══════ -->
 <section class="work" id="work">
@@ -1157,13 +1185,7 @@ a:hover .arrow svg,a.arrow:hover svg{transform:translateX(3px)}
     </div>
   </div>
 </section>
-<div class="note"><b>03 What We're Doing</b> — paper &middot; horizontal rail &middot; image-led. Six curated
-workbook items across all four categories, running off the right edge. Your reference used four
-different accent colours; those are uniformly mustard here, because per-card colour would rebuild
-the rainbow and each card already prints its type in words. Note the reference labelled Bridge The
-Gap "Programme" and Influence Fellowship "Youth Leadership" &mdash; the workbook types them both as
-<b>Project</b>, and the sitemap only has Projects, Journeys, Campaigns and Events, so types are used
-consistently here.</div>
+
 <!-- ══════ 04 STORIES ══════ -->
 <section class="stories" id="stories" aria-labelledby="st-h">
   <div class="wrap">
@@ -1245,7 +1267,7 @@ consistently here.</div>
     </div>
   </div>
 </section>
-<div class="note"><b>04 Stories</b> &mdash; warm paper &middot; dark panel &middot; type-led &middot; mid. Your layout, and EXPLORE MORE now runs the full width: four equal columns plus EXPLORE ALL at the right edge, so there is no dead space after Films. <b>Photographs are your own, monochrome.</b> The mockup crops are gone. Selective colour is switched off across the page on your instruction &mdash; it stays in the code (one word per image in the CMS) if you want it back for a specific frame. Worth recording: it did work on two frames here, the red jacket in this panel and the bee on mustard, and it found nothing usable on the rest, which is the argument for turning it off rather than against. <b>Correction:</b> I said twice that DIY has no content type. Checking the sitemap, &sect;5.3 is "KNOWLEDGE / DIY / EXPLAINERS" at <code>/explore/learn</code> &mdash; DIY is a <b>category inside Knowledge</b>, not a seventh type, so this rail is fine as drawn and DIY now points at <code>/explore/learn#diy</code>. Two other destinations here were wrong and are fixed: Knowledge to <code>/explore/learn</code>, Films to <code>/explore/media</code> (&sect;5.2 is "Media &amp; Research"). Card headlines and rail copy are yours verbatim; story slugs are still placeholders.</div>
+
 <!-- ══════ 05 IMPACT ══════ -->
 <section class="impact" id="impact" aria-labelledby="imp-h">
   <img class="imp-photo" src="/images/photos/clean-air-protest.jpg"
@@ -1275,7 +1297,7 @@ consistently here.</div>
     </div>
   </div>
 </section>
-<div class="note"><b>05 Impact</b> &mdash; black &middot; full-bleed &middot; data-led &middot; short. Five figures on one line, oversized numerals in the same data voice as the live readings above, no icons, and your clean-air frame bleeding off the right edge. Caption line spacing is tightened here and across every small-copy block on the page &mdash; captions, ledes, panel copy, evidence text &mdash; which were all set between 1.35 and 1.5 and opened up badly at 13&ndash;15px. <b>This is five metrics, where your earlier ruling was four</b>, and a different five: "5%&nbsp;&rarr;&nbsp;90% green cover" and "100+ green infrastructures across 100+ schools" are gone; butterfly gardens, air detox gardens and communities mobilised are new. Your newer layout wins, but the four-tile ruling is in the decision ledger, so say the word if the earlier set was the verified one. <b>Every figure here needs to match the workbook before launch</b> &mdash; you verified the original four personally; these three have not been through that.</div>
+
 
 <!-- ══════ 06 SWECHHA FARM · GREEN THE MAP ══════ -->
 <section class="dual" aria-label="Swechha Farm and Green the Map">
@@ -1310,7 +1332,7 @@ consistently here.</div>
     </div>
   </div>
 </section>
-<div class="note"><b>06 Swechha Farm &middot; Green the Map</b> &mdash; photograph &middot; full-bleed split &middot; photo-led &middot; tall. Your 50/50 split with your tractor and tote frames, and Green the Map opens <code>greenthemap.com</code> in a new tab with <code>rel="noopener"</code> and the new tab stated in screen-reader text, since it leaves the site for a different property. <b>The copy sits on its own plate rather than on a heavy scrim</b>: both frames put their subject centre-left, exactly where the copy goes, and neither can be shifted (the panel is wider than the photo's aspect, so nothing is cropped horizontally and <code>object-position</code> has no effect). A scrim dense enough for the copy dimmed the tractor; a plate that hugs the copy does not. <b>Flagged, not silently changed:</b> the design language wants Swechha Farm full-bleed and full-viewport on its OWN with Green the Map as a separate lighter contained section, because a 50/50 split makes the Farm the "small programme card" &sect;07 rules out. "Marketplaze" in your reference is corrected to "marketplace".</div>
+
 <!-- ══════ 07 ABOUT ══════ -->
 <section class="about" id="about" aria-labelledby="ab-h">
   <div class="wrap">
@@ -1355,23 +1377,7 @@ consistently here.</div>
     </div>
   </div>
 </section>
-<div class="note"><b>07 About</b> &mdash; paper &middot; offset &middot; type-led &middot;
-full-viewport. Designed from the rhythm score rather than from your mockup, because 05 is
-black/data/short and 06 is photograph/photo-led/tall, so this had to break all four axes. It is also
-<b>the page's one deliberate pause</b> &mdash; the design language asks for at least one near-empty
-full-viewport moment carrying a single line of type, and until now the page had none. Opens on the
-sentence itself with no eyebrow, because 03 and 04 already spent both of the two the design language
-allows. <b>Three things you should know:</b> <b>1.</b> The mockup says "25 years" and dates the start
-to 1999; your own ruling is <b>founded 2000</b>, so this reads 26 and derives both the number and the
-year from a single <code>FOUNDED</code> constant &mdash; it cannot go stale next January.
-<b>2. No photograph, on purpose.</b> One section after a full-bleed photographic split, silence is
-what makes this land, and the score wants a pause. If you would rather have faces here, the mockup's
-arm-in-arm frame is the obvious candidate and it becomes a right-hand column with the timeline moving
-beneath &mdash; say so and it is a small change. <b>3. The 2005 and 2012 milestones are your mockup's,
-not verified</b> &mdash; the workbook marks the About content "needs inventory", so the two middle
-dates and all four descriptions need confirming before launch. <b>Still missing from the homepage
-order:</b> <b>How Change Happens</b>, which the design language places between Impact and Farm, and
-Knowledge, Take Action and the footer after this.</div>
+
 <!-- ══════ 08 TAKE ACTION ══════ -->
 <section class="act" id="act" aria-labelledby="act-h">
   <img class="act-photo duo-m" src="/images/photos/school-children-group.jpg"
@@ -1428,23 +1434,7 @@ Knowledge, Take Action and the footer after this.</div>
     </div>
   </div>
 </section>
-<div class="note"><b>08 Take action</b> &mdash; mustard &middot; full-bleed &middot; list-led &middot;
-short. <b>The flood, spent once.</b> This and the DONATE chip in the header are the only two places on
-the page where mustard is more than a mark, which is what the design language reserves it for &mdash;
-and this section earns the weight because it is the one asking the reader to do something. Mustard is
-the ground and never the text: every word on it is ink at 7.8:1. The photograph runs off the right edge
-on a new <b>mustard duotone</b> ramp rather than the page's warm-grey one, because warm grey on a
-yellow ground reads as a grey patch stuck onto the flood instead of part of it. Four cells are
-content-width, not equal quarters &mdash; both the &sect;3.1 cap and your own reference, whose columns
-are visibly unequal. Each verb is a real link to <code>/act/&hellip;</code> per the sitemap.
-<b>Two things to settle:</b> <b>1.</b> The canonical homepage order puts Take Action <b>11th</b>, after
-Knowledge; you have asked for it directly under About, which is 8th. That is very likely the better
-call &mdash; the ledger already flagged that an 11th-position ask arrives too late down a
-7,000&ndash;9,000px page &mdash; but it means <b>Knowledge</b> now has to slot in after this rather
-than before it. <b>2.</b> The photograph is a real Swechha frame but not the one your reference shows
-(children planting); nothing in the supplied set is a close match for that, so this is the nearest
-honest stand-in. <b>The ABOUT US button above</b> is deliberately ink-filled, not mustard: a mustard
-button sitting directly on top of a mustard band would pre-empt the flood it introduces.</div>
+
 
 
 <script>
@@ -1722,15 +1712,21 @@ else setTimeout(lockHeight,400);
 if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){ stop(); }
 else { timer=setInterval(tick,DWELL); setRotUI(); }
 
+/* The review-only DEMO/LIVE toggle is not in the frontend build, so this is
+   guarded rather than deleted: the same file serves both, and an unguarded
+   null here would take the theme rotation down with it. The DEMO DATA pill
+   itself STAYS — provenance is a permanent fixture, not review chrome. */
 const bD=document.getElementById('bDemo'), bL=document.getElementById('bLive');
-const pill=document.querySelector('.js-pill'), demoTag=document.querySelector('.js-demo');
-function setLive(on){
-  bL.setAttribute('aria-pressed',String(on)); bD.setAttribute('aria-pressed',String(!on));
-  pill.className='pill js-pill '+(on?'live':'demo');
-  pill.innerHTML='<i></i>'+(on?'Live':'Demo data');
-  demoTag.style.display=on?'none':'';
+if(bD&&bL){
+  const pill=document.querySelector('.js-pill'), demoTag=document.querySelector('.js-demo');
+  const setLive=on=>{
+    bL.setAttribute('aria-pressed',String(on)); bD.setAttribute('aria-pressed',String(!on));
+    pill.className='pill js-pill '+(on?'live':'demo');
+    pill.innerHTML='<i></i>'+(on?'Live':'Demo data');
+    demoTag.style.display=on?'none':'';
+  };
+  bD.onclick=()=>setLive(false); bL.onclick=()=>setLive(true);
 }
-bD.onclick=()=>setLive(false); bL.onclick=()=>setLive(true);
 </script>
 <script>
 
@@ -1767,6 +1763,64 @@ const FOUNDED = 2000;
   const n = document.getElementById('abYears');
   if (n) n.textContent = String(y);
 })();
+</script>
+<footer class="ifoot" id="footer">
+  <div class="wrap">
+    <div class="ifoot-in">
+      <div class="brand">
+        <img src="/brand/swechha-white.png" alt="Swechha">
+        <p>Swechha works at the intersection of environment, education and community action for a
+          just and sustainable world.</p>
+        <form class="nl" onsubmit="return false">
+          <label class="sr" for="nlmail">Email address</label>
+          <input id="nlmail" type="email" placeholder="Your email" autocomplete="email">
+          <button type="submit" aria-label="Subscribe"><svg viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+            <path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </form>
+        <div class="socials">
+          <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18"
+            height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></a>
+          <a href="#" aria-label="X"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.7" aria-hidden="true"><path d="M4 4l16 16M20 4L4 20"/></svg></a>
+          <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M14 8h3V4h-3
+            a4 4 0 0 0-4 4v3H8v4h2v6h4v-6h3l1-4h-4V9a1 1 0 0 1 1-1z"/></svg></a>
+          <a href="#" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="6" width="18"
+            height="12" rx="3"/><path d="M11 9.5l4 2.5-4 2.5z"/></svg></a>
+        </div>
+      </div>
+      <div><h3>Explore</h3><ul>
+        <li><a href="/work">Work</a></li><li><a href="/explore/stories">Stories &amp; media</a></li>
+        <li><a href="/impact">Impact</a></li><li><a href="/farm">Swechha Farm</a></li>
+        <li><a href="https://www.greenthemap.com/" target="_blank" rel="noopener noreferrer">Green the Map</a></li>
+        <li><a href="/archive">Archive</a></li></ul></div>
+      <div><h3>Act</h3><ul>
+        <li><a href="/act/volunteer">Volunteer</a></li><li><a href="/act/donate">Donate</a></li>
+        <li><a href="/act/participate">Participate</a></li>
+        <li><a href="/act/partner">Partner</a></li></ul></div>
+      <div><h3>About</h3><ul>
+        <li><a href="/about">About Swechha</a></li><li><a href="/about/team">Our team</a></li>
+        <li><a href="/about/board">Our board</a></li>
+        <li><a href="/about/reports">Annual reports</a></li>
+        <li><a href="/about/compliances">Compliances</a></li></ul></div>
+      <div><h3>Connect</h3><ul>
+        <li><a href="/contact">Contact</a></li><li><a href="/now">Swechha Now</a></li>
+        <li><a href="/explore/learn">Knowledge &amp; DIY</a></li>
+        <li><a href="/explore/media">Media &amp; research</a></li></ul></div>
+    </div>
+    <div class="ifoot-btm">
+      <span>&copy; <span id="yr">2026</span> Swechha. All rights reserved.</span>
+      <nav><a href="/privacy">Privacy policy</a><a href="/terms">Terms of use</a>
+        <a href="/refund">Refund policy</a></nav>
+    </div>
+  </div>
+</footer>
+<script>
+/* footer year, from the same constant the About section uses */
+(()=>{const c=document.getElementById('yr'); if(c) c.textContent=String(new Date().getFullYear());})();
 </script>
 </body>
 </html>
