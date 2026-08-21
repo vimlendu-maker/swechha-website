@@ -319,3 +319,94 @@ vector masters are absent from the working tree and were before this session;
 **Still open after this page ships:** the school-camp capacity (F-3, named on the page),
 a participation figure for the farm, and whether the ₹300/₹375/₹375 meal rates and the
 two Airbnb listings are ever named on the site. None blocks the page; each is one fact.
+
+---
+
+## 9 · Second pass, owner, 22 August — F-6 to F-12
+
+**F-6 · The Aravallis are named as under pressure, WITHOUT case law.** The band says
+what does not go stale: oldest range in India, Delhi to Gujarat, quarried for stone,
+mined and built on. It deliberately says nothing about the litigation, and here is why
+the restraint is load-bearing — the definition of what legally counts as an "Aravalli
+hill" is live before the Supreme Court and **moved three times in nine weeks**: accepted
+20 November 2025 (*In Re: Issues relating to definition of Aravali hills and ranges*,
+2025 INSC 1338), kept in abeyance 29 December 2025, stay extended 22 January 2026 with
+an expert committee to be constituted. Any sentence this page wrote about it would be
+wrong by the time a school read it. **The "31 hills disappeared in Rajasthan" figure was
+checked in two sources and confirmed in NEITHER — it is not used.** This repo has
+shipped fabricated court citations before; the cheapest defence is to write nothing that
+needs one.
+
+**F-7 · The camp activities are real and are published as such.** Owner, 22 August.
+
+**F-8 · "Live, Learn, Lead" is the farm's own frame** and it maps onto the three lengths
+of stay — Learn is a day, Live is a night, Lead is what educators and small
+organisations come to do. It sits ABOVE the four doors as the frame they hang in.
+
+**F-9 · The farm is in Mewat, and it was built by the community there.** This is the
+most significant addition of the second pass, because it changes what the page is
+arguing. Five restored acres in a comfortable district is landscaping; five restored
+acres in Mewat is something else. **Corroborated:** the Haryana district of the region,
+Nuh (formerly Mewat), ranked **last of the 112 districts in NITI Aayog's Aspirational
+Districts baseline (26.02%)** and was widely reported as the country's most backward
+district. **Two cautions were applied to the wording.** First, the farm is at Ladpuri in
+the *Rajasthan* half of Mewat, **not in Nuh** — the page says "the district on the
+Haryana side of it has ranked at the very bottom", which is true and does not relocate
+the farm. Second, Nuh has since improved sharply (2nd on the 2023 Delta ranking), so no
+live ranking is printed — only that the region is among the poorest, which is the
+owner's own claim and is not in dispute.
+
+**F-10 · The land had ONE tree, not none — and this supersedes the owner's own live
+Airbnb listing.** That listing says "The landscape had NOT A SINGLE TREE a year ago". It
+is his published text, it is the more dramatic line, and it is wrong. Owner, 22 August:
+"barren land with one tree, now has over 5000 trees." **The page is gated against the
+superseded wording by name**, because a future session reading the listing in good faith
+will want to restore it. One tree is also the better number: the page's subject is the
+distance between one and five thousand, and a page that starts at zero has no scale.
+
+*Consequence, and it is a live tension worth the owner's eye:* the frozen homepage hook
+is **"Nothing grew here"**, which one tree makes not literally true. The page does not
+quietly drop the hook and does not quietly contradict it — the lead corrects it out
+loud: *"One tree stood on it — which is the only reason the line above is not literally
+true, and the tree has earned the correction."* That is the register `/impact` already
+set. **The homepage band itself is untouched and still says "Nothing grew here".**
+
+**F-11 · The orchard is published as counts.** 200 amla, 200 kinnow, 200 moringa, and
+lemon. A count is a promise an orchard is not: it can be walked. The lemon row carries an
+em dash, not a guessed number.
+
+**F-12 · Seven activities became ten** — bird watching, a tractor ride and the sound of
+crickets join the list, and each of the ten is gated by name so a later edit cannot
+quietly lose one.
+
+### What the second pass cost, measured
+
+| | at 375 | longest band |
+|---|---|---|
+| `/farm` before this pass | 9,689 (at 1440) | — |
+| `/farm` after | **18,704** | `visit` **5,089** |
+| `/impact`, for comparison | 12,655 | `register` **3,676** |
+
+The homepage's ~900px per-band phone cap is a HOMEPAGE rule and inner pages have never
+met it: `/impact`'s register band is 3,676. `origin` at 3,662 is within a hair of that
+precedent and is not an outlier. **`visit` at 5,089 is the page's one genuine outlier**
+— four doors with photographs stacked one per column, then ten activities stacked one
+per column. It is legible, it does not overflow, and it is the direct cost of what was
+asked for. It is the first thing to look at if this page is ever trimmed.
+
+### One defect the build caught, and one it did not
+
+**Caught:** the acreage gate fired on "barren acres" — an adjective, not a figure. It now
+matches only a quantity before the unit, and was re-tested against `forty acres`,
+`12 acres` and `two hectares` (all still caught) and `barren acres` (allowed).
+
+**NOT caught, found by looking:** the head "A story of<br>transformation" set
+`TRANSFORMATION` at 102px in a 564px column. The word measures **710px and cannot wrap**,
+so it painted straight across the lead beside it. **A single long word does not respect
+`minmax(0,1fr)`** — the one thing the grid gate was written to guarantee, and it is not
+guaranteed. Nothing showed in a diff, an overflow check on the container, or a contrast
+audit. There is now a gate: no word in a band head may exceed twelve characters, which
+is the measured capacity of that column at that size. The client offered both
+"transformation" and "change" for this head; **the shorter word is the one that can be
+set big, which is what he asked for**, and his own "story of transformation" survives as
+the quotation that opens the band.

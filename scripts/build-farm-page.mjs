@@ -168,18 +168,49 @@ B.top = () => `    <div class="pic ht">
       <p class="lead fm-standfirst">${esc(M.lead)}</p>
       <div class="fm-rail">
 ${M.readouts.map(r => `        <div class="fm-rail-c"><p class="num fm-rail-v">${esc(r.num)}</p><p class="lbl fm-rail-l">${esc(r.unit)}</p></div>`).join('\n')}
-        <div class="fm-rail-c"><p class="num fm-rail-v fm-rail-w">Ladpuri</p><p class="lbl fm-rail-l">In the Aravallis</p></div>
+        <div class="fm-rail-c"><p class="num fm-rail-v fm-rail-w">${esc(M.place.word)}</p><p class="lbl fm-rail-l">${esc(M.place.under)}</p></div>
       </div>
     </div></div>`;
 
-/* ── BAND 2. THE GROUND CAME FIRST. Story one opens on the absence. ────── */
+/* ── BAND 2. A STORY OF TRANSFORMATION. THE PAGE'S LARGEST BAND. ─────────
+   The client asked for this one big, and big here is structural rather than
+   typographic: three movements instead of one list.
+     1. WHERE — the Aravallis, which is what gives five acres its stakes. A
+        restored plot in an intact landscape is gardening; the same plot in a
+        range being quarried is a demonstration. NO CASE LAW (ruling F-6): the
+        definition of what legally counts as an Aravalli hill is live before
+        the Supreme Court and moved three times between November and January,
+        so anything this page said about it would be wrong by the time a
+        school read it. What is said instead — oldest range, Delhi to Gujarat,
+        quarried and built on — needs no citation and does not go stale.
+     2. WHAT WAS DONE — six rows, water before trees, and permaculture stated
+        as a RULE (every output is some other part's input) rather than as a
+        style, because the style reading is the one that lets a farm buy its
+        inputs and still use the word.
+     3. WHAT IT PRODUCES — the produce hint the client asked for, and the
+        band's closing argument: a barren field's manifest is what comes off
+        it. The frame pair is deliberate — bare ground opens the band, fruit
+        on the tree closes it, and that is the whole transformation in two
+        photographs with the argument in between. */
 B.origin = () => `${opener('origin', F.before.head, esc(F.before.lead))}
     <div class="wrap">
-      <div class="fm-split">
-${sideFrame(F.before.frame)}
-        <div>
-${rows(F.before.rows)}
+      <div class="fm-ctx">
+        <figure class="fm-ctx-f"><img class="duo" src="${F.before.context.frame.src}" alt="${esc(F.before.context.frame.alt)}"></figure>
+        <div class="fm-ctx-t">
+          <p class="lbl fm-ctx-h">${esc(F.before.context.h)}</p>
+          <p class="body fm-ctx-p">${esc(F.before.context.p)}</p>
         </div>
+      </div>
+${rows(F.before.rows)}
+      <div class="fm-prod">
+        <div class="fm-prod-t">
+          <p class="lbl fm-prod-h">${esc(F.before.produce.h)}</p>
+          <p class="lead fm-prod-p">${esc(F.before.produce.p)}</p>
+          <div class="fm-orch">
+${F.before.produce.counts.map(c => `            <div class="fm-orch-c"><p class="num fm-orch-n">${esc(c.n)}</p><p class="lbl fm-orch-w">${esc(c.what)}</p></div>`).join('\n')}
+          </div>
+        </div>
+        <figure class="fm-prod-f"><img class="duo" src="${F.before.produce.frame.src}" alt="${esc(F.before.produce.frame.alt)}" loading="lazy"></figure>
       </div>
     </div>`;
 
@@ -222,6 +253,12 @@ ${sideFrame(F.works.frame)}
    one is the lie this whole section is built to refuse. */
 B.visit = () => `${opener('visit', F.come.head, esc(F.come.lead))}
     <div class="wrap">
+      <div class="fm-triad">
+${F.come.triad.map(t => `        <div class="fm-triad-c">
+          <p class="d1 fm-triad-w">${esc(t.w)}</p>
+          <p class="body fm-triad-p">${esc(t.p)}</p>
+        </div>`).join('\n')}
+      </div>
       <div class="fm-doors">
 ${F.come.doors.map(d => `        <div class="fm-door">
           <figure class="fm-door-f"><img class="duo" src="${d.frame.src}" alt="${esc(d.frame.alt)}" loading="lazy"></figure>
@@ -230,6 +267,18 @@ ${F.come.doors.map(d => `        <div class="fm-door">
           <p class="cap fm-door-w">${esc(d.who)}</p>
 ${d.hole ? hole('We cannot yet tell you how many students can stay over, in what, or with how many adults. Nothing on that is written down anywhere we can cite, so nothing on it is printed here.') : ''}
         </div>`).join('\n')}
+      </div>
+      <div class="fm-act">
+        <div class="fm-act-head">
+          <h3 class="fm-act-h">${esc(F.come.activities.h)}</h3>
+          <p class="body fm-act-l">${esc(F.come.activities.lead)}</p>
+        </div>
+        <div class="fm-act-grid">
+${F.come.activities.items.map(a => `          <div class="fm-act-c">
+            <p class="lbl fm-act-ch">${esc(a.h)}</p>
+            <p class="body fm-act-cp">${esc(a.p)}</p>
+          </div>`).join('\n')}
+        </div>
       </div>
     </div>`;
 
@@ -309,14 +358,14 @@ const PAGE_CSS = `
       in the lead. It takes a smaller size because a word set at numeral
       scale reads as a logo. ── */
 .fm-standfirst{max-width:46ch}
-.fm-rail{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(16px,3vw,48px);
+.fm-rail{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(14px,2.2vw,40px);
   border-top:1px solid var(--hair);margin-top:var(--gap-row);padding-top:var(--gap-row)}
 .fm-rail-c>*{margin:0;min-width:0}
-.fm-rail-v{font-size:clamp(40px,7vw,96px);line-height:.9}
-.fm-rail-w{font-size:clamp(26px,3.6vw,52px);letter-spacing:-.01em}
+.fm-rail-v{font-size:clamp(34px,4.8vw,72px);line-height:.9}
+.fm-rail-w{font-size:clamp(24px,2.9vw,42px);letter-spacing:-.01em}
 .fm-rail-l{margin-top:10px;color:var(--fg-2)}
-@media (max-width:560px){.fm-rail{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
-  .fm-rail-c:last-child{grid-column:span 2}}
+@media (max-width:900px){.fm-rail{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}}
+@media (max-width:420px){.fm-rail{grid-template-columns:minmax(0,1fr);gap:18px}}
 
 /* ── the picture-beside-argument split, both hands. ── */
 .fm-split{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,6fr);
@@ -326,6 +375,74 @@ const PAGE_CSS = `
 .fm-side>img{width:100%;height:auto;display:block;aspect-ratio:3/2;object-fit:cover}
 @media (max-width:760px){.fm-split,.fm-split-r{grid-template-columns:minmax(0,1fr)}
   .fm-split-r .fm-side{order:-1}}
+
+/* ── the story of change. THE PAGE'S LARGEST BAND, and big is carried by
+      structure: a wide context frame, then the six rows, then the produce
+      block mirrored against it. The two frames are the argument — bare
+      ground at the top, fruit at the bottom. ── */
+.fm-ctx{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);
+  gap:clamp(20px,3vw,56px);align-items:center;margin-top:var(--gap-row)}
+.fm-ctx-f{margin:0;min-width:0}
+.fm-ctx-f>img{width:100%;height:auto;display:block;aspect-ratio:16/9;object-fit:cover}
+.fm-ctx-t>*{margin:0;min-width:0}
+.fm-ctx-h{color:var(--ink-3)}
+.fm-ctx-p{margin-top:12px}
+.paper .fm-ctx-h,.paper-2 .fm-ctx-h{color:var(--ink-2)}
+@media (max-width:820px){.fm-ctx{grid-template-columns:minmax(0,1fr)}}
+
+.fm-prod{display:grid;grid-template-columns:minmax(0,6fr) minmax(0,6fr);
+  gap:clamp(20px,3vw,56px);align-items:center;
+  border-top:1px solid var(--hair);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.fm-prod-t>*{margin:0;min-width:0}
+.fm-prod-h{color:var(--ink-2)}
+.fm-prod-p{margin-top:14px}
+.fm-prod-f{margin:0;min-width:0}
+.fm-prod-f>img{width:100%;height:auto;display:block;aspect-ratio:4/3;object-fit:cover}
+@media (max-width:820px){.fm-prod{grid-template-columns:minmax(0,1fr)}
+  .fm-prod-f{order:-1}}
+
+/* ── the orchard, counted. The client gave these as counts (200 amla, 200
+      kinnow, 200 moringa), and a count is a promise in a way "an orchard" is
+      not: it can be walked and checked. Set small, under the produce
+      paragraph, because they are corroboration and not the headline. The
+      lemon row carries an em dash rather than a guessed number. ── */
+.fm-orch{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(10px,1.6vw,24px);
+  border-top:1px solid var(--hair);margin-top:var(--gap-row);padding-top:clamp(14px,1.8vw,22px)}
+.fm-orch-c>*{margin:0;min-width:0}
+.fm-orch-n{font-size:clamp(20px,2.2vw,34px);line-height:1}
+.fm-orch-w{color:var(--ink-2);margin-top:8px}
+@media (max-width:620px){.fm-orch{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}}
+
+/* ── LIVE · LEARN · LEAD. The farm's own three words, and they are also the
+      three lengths of stay, so they sit ABOVE the doors as the frame the
+      doors hang in rather than beside them as a fourth thing to read. Set in
+      the display face at section-head scale: this is the one place on the
+      page where three words carry more than a sentence would. ── */
+.fm-triad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(18px,2.6vw,48px);
+  border-top:1px solid var(--hair);margin-top:var(--gap-row);padding-top:var(--gap-row)}
+.fm-triad-c{min-width:0}
+.fm-triad-w{font-size:clamp(30px,3.6vw,56px);line-height:.95;margin:0;color:var(--mustard)}
+.fm-triad-p{color:var(--fg-2);margin:14px 0 0}
+@media (max-width:760px){.fm-triad{grid-template-columns:minmax(0,1fr);gap:22px}}
+
+/* ── what a group actually does. Seven items on the same hairline run as the
+      inventory, because they are the same KIND of list — a density argument,
+      not a feature grid. Three columns rather than the inventory's two: these
+      are shorter, and at two columns the run outgrew the doors above it. ── */
+.fm-act{border-top:1px solid var(--hair);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.fm-act-head{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,7fr);
+  gap:clamp(16px,3vw,48px);align-items:baseline}
+.fm-act-h{font-family:var(--f-caps);font-size:clamp(19px,2.2vw,30px);font-weight:800;
+  letter-spacing:-.005em;margin:0;text-transform:uppercase}
+.fm-act-l{color:var(--fg-2);margin:0}
+.fm-act-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:0 clamp(20px,3vw,56px);margin-top:var(--gap-row)}
+.fm-act-c{border-top:1px solid var(--hair);padding:clamp(12px,1.6vw,20px) 0;min-width:0}
+.fm-act-ch{color:var(--mustard)}
+.fm-act-cp{color:var(--fg-2);margin:8px 0 0}
+@media (max-width:900px){.fm-act-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:620px){.fm-act-head{grid-template-columns:minmax(0,1fr);gap:12px}
+  .fm-act-grid{grid-template-columns:minmax(0,1fr)}}
 
 /* ── the five figures. ── */
 .fm-figs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(16px,2.4vw,40px);
@@ -438,7 +555,13 @@ const RENDERED = OUT.replace(/<style[\s\S]*?<\/style>/g, ' ')
       the arithmetic honestly can re-import a struck figure believing it is
       corroborating the ruled one. Any acreage or hectarage that is not the
       word "five" fails, including "5". */
-const acre = [...RENDERED.matchAll(/([\w-]+)\s+(acres?|hectares?)\b/gi)]
+/* A QUANTITY before the unit, not any word before it. The first version
+   matched `[\w-]+ acres` and tripped on "barren acres", which is an adjective
+   and not a claim about size — a gate that cries wolf is a gate somebody
+   deletes. This one flags only a number or a number-word. */
+const QTY = String.raw`\d[\d,.]*|zero|one|two|three|four|five|six|seven|eight|nine|ten`
+  + String.raw`|eleven|twelve|fifteen|twenty|thirty|forty|fifty|sixty|hundred|thousand`;
+const acre = [...RENDERED.matchAll(new RegExp(String.raw`\b(${QTY})\s+(acres?|hectares?)\b`, 'gi'))]
   .map(m => m[0]).filter(m => !/^(five|5)\s+acres?$/i.test(m));
 gate(acre.length === 0, `no acreage on the page but "five acres"${acre.length ? `; FOUND: ${[...new Set(acre)].join(' | ')}` : ''}`);
 
@@ -465,6 +588,56 @@ gate(/ninety minutes|hour and a half/i.test(RENDERED), 'the lead carries the nin
 gate(/\bLadpuri\b/.test(RENDERED), 'the farm is placed at Ladpuri (F-5)');
 gate(/\bFood Forest\b/.test(OUT), "the client's proper noun is capitalised");
 gate(/Nothing grew/i.test(RENDERED), "the homepage band's hook opens the page it points at");
+
+/* 3b. THE FACTS THE CLIENT GAVE ON 22 AUGUST, AND THE ONE THEY SUPERSEDE.
+      THE TREE COUNT IS THE PAGE'S SPINE: the land had ONE tree, not none, and
+      the number that matters is the distance between one and five thousand.
+      The owner's live Airbnb listing still says "NOT A SINGLE TREE a year
+      ago" — it is his own published text, it is the more dramatic line, and
+      it is WRONG. A future session reading that listing in good faith will
+      want to put it back, so the gate refuses it by name rather than trusting
+      anyone to remember this paragraph. */
+gate(/\bOne tree\b/.test(RENDERED), 'the land had ONE tree, and the page says so');
+gate(!/not a single tree/i.test(RENDERED),
+  'the superseded "not a single tree" wording is absent (owner, 22 August: it was one tree)');
+gate(/\b5,000\+/.test(RENDERED), 'the five thousand it became is on the page');
+gate(/\bMewat\b/.test(RENDERED), 'Mewat is named — the region, not only the village');
+gate(/built with the people who live around it|community/i.test(RENDERED),
+  'the farm is credited to the community that built it');
+for (const w of ['Live', 'Learn', 'Lead']) {
+  gate(new RegExp(`fm-triad-w">${w}<`).test(OUT), `the triad carries ${w}`);
+}
+for (const c of F.before.produce.counts.filter(x => x.n !== '—')) {
+  gate(RENDERED.includes(`${c.n}`) && RENDERED.includes(c.what), `orchard count rendered: ${c.n} ${c.what}`);
+}
+/* The activities the client named on 22 August, each checked by name. A list
+   is the easiest thing on a page to quietly lose in a later edit. */
+for (const a of ['Bird watching', 'tractor ride', 'crickets', 'Star gazing', 'cows']) {
+  gate(new RegExp(a, 'i').test(RENDERED), `activity present: ${a}`);
+}
+
+/* 3c. NO BAND HEAD CONTAINS A WORD TOO LONG FOR ITS COLUMN.
+      `.im-head` is a 12-column grid and the head takes about half of it; at
+      the display size that column is ~564px at 1280. "TRANSFORMATION" set in
+      `.d1` measures 710px and CANNOT WRAP — a single long word does not
+      respect `minmax(0,1fr)`, so it silently painted across the lead beside
+      it. Caught by eye only because the band was screenshotted; a diff shows
+      nothing and a contrast audit shows nothing.
+      TWELVE CHARACTERS is the measured ceiling, not a guess: 710px/14 chars
+      is ~50px per character at this size, and 564px of column therefore holds
+      about eleven. The client offered both "transformation" and "change" for
+      this head — the shorter word is the one that can be set big, which is
+      what he asked for. */
+const LONGEST = 12;
+const longWords = [];
+for (const m of OUT.matchAll(/<h2 class="d1" id="([^"]+)">([\s\S]*?)<\/h2>/g)) {
+  for (const w of m[2].replace(/<[^>]+>/g, ' ').split(/[\s—–-]+/)) {
+    const bare = w.replace(/[^A-Za-z]/g, '');
+    if (bare.length > LONGEST) longWords.push(`${m[1]}: "${bare}" (${bare.length})`);
+  }
+}
+gate(longWords.length === 0,
+  `no band head has a word over ${LONGEST} characters${longWords.length ? `; TOO LONG: ${longWords.join(', ')}` : ''}`);
 
 /* 4. THE TWO RESOLVED FIGURES ARE THE FARM SCHOOL'S, RENDERED. */
 for (const r of RESOLVED) {
