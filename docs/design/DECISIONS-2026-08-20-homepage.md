@@ -3421,3 +3421,119 @@ Also unchanged, and both correctly stamped `Demo data` so neither is dishonest: 
 frozen hero from `Demo data` to `LIVE` — and R4 is explicit that the hero is where the
 vocabulary lives. **That is a vocabulary decision on a signed-off component and it is the
 client's to make, not a side effect of this one.**
+
+---
+
+# D-25 — THE SITUATION INDEX, REBUILT LEAN
+
+Client instruction, 21 August: *"I want the NOW button page which is situation index page, to be
+lean and small. Make a Hero banner that explains what is situation/environmental intelligence,
+be creative. And then creatively list all the situation blocks. Remove orders, cadence etc. At
+most use a section of campaigns."*
+
+### D-25.1 THREE BANDS. THE PAGE IS 24 PER CENT SHORTER AND CARRIES TWICE THE DOORS.
+`top` · `set` · `campaigns`. Measured at 375, both pages, same viewport:
+
+| | old | new |
+|---|---|---|
+| document height | 8,538px | **6,464px** |
+| `<section>` elements | 7 | **3** |
+| tables | 2 | **0** |
+| situations shown | 9 slides, 0 with a page | **6 cards, all 6 with a page** |
+| phone section index | `display:none` | **works** (inherited chrome) |
+
+The two bands the client cut are gone: `#orders` (already ruled out at D-11.1) and `#method`,
+the source-and-cadence table. `#windows` and `#colour` are gone too, absorbed — the window
+grammar is one line on the Heat card, and the colour legend became the vocabulary strip in the
+hero, where it can teach all four words instead of describing three.
+
+**The file is LARGER in bytes — 89 KB to 123 KB — and that is the trade, not a regression.** The
+old page carried a 44 KB private stylesheet, 49.5% of its own bytes, including a `.rail`
+mechanism that exists nowhere on the frozen homepage. The new one inherits the frozen token and
+chrome layer through `situation-shell.mjs` and has no private design language at all.
+
+### D-25.2 THE CONCEPT CAME OUT OF THE DATA: THE SIX ARE NOT COMMENSURABLE
+Put the six readings side by side and the striking thing is not any one number. It is that they
+share nothing — **six different units, and six different KINDS of limit:**
+
+| situation | kind of limit | the limit |
+|---|---|---|
+| Air | **a ceiling** | AQI 100 — and it is above it |
+| Yamuna | **a floor** | > 5.0 mg/L — and it is below it |
+| Heat | **an absolute** | 47 °C, with no reference to normal |
+| Forest fire | **none** | no statute publishes a permitted area |
+| Forest loss | **a requirement** | approval, naming no quantity |
+| Climate event | **a class, crossed** | 64.5 mm, thirteen times in one year |
+
+**No two share a kind.** That is checked at build time rather than asserted — if a seventh
+situation ever duplicated one, the page's central claim would weaken and the copy adapts instead
+of lying.
+
+So the index does the inverse of a dashboard. VAYU reduces this to one score under a `LIVE` chip
+and serves it from seeded fixtures (D-23.13). This page says the thing a single score has to
+hide: **anything that averages six units is inventing a number nobody published.** The hero
+carries three computed sixes — situations, units, kinds of limit — and then refuses the total
+outright. That refusal *is* the creative device, and it is also why the page is short: there is
+no aggregate to build and no gauge to fill.
+
+### D-25.3 THE `h1` IS AD-13's CONSTANT, AND THE OLD ONE FAILED THREE FROZEN RULES
+**"Every situation we read."** AD-13 Q1's recommendation, adopted unchanged. The old h1 — *"Six
+situations, four of them illegal"* — was two stated totals in the largest type on the page (§7.8),
+near-identical to a string already on record as rejected, false in March when Heatwave returns,
+and internally contradictory: it claimed four illegal over a rendered set of three.
+
+### D-25.4 ALL SIX RENDER. D-11.2 IS AMENDED, AND THE PREMISE IS WHY.
+D-11.2 ruled that Heatwave's shut window means it **does not render at all** — no dormant cell,
+no `OUT OF SEASON` row, no toggle.
+
+**That ruling was right for the page it was written for and its premise no longer holds.** It was
+made when one situation had a page and five did not, so a Heatwave cell would have been a cell
+with nothing behind it — scaffolding, which §4.3 forbids. Now every situation has a page, and the
+Heatwave page is *specifically built* to be true out of season: its reading is a record, which is
+true on every day of the year (D-23.4).
+
+So the card renders, stamped `OUT OF SEASON`, carrying one line — *the season is shut until
+1 March 2027; the record is true either way*. **This is the vocabulary working, not a dormant
+slot.** The fourth state word had never been exercised by a real situation before; now it is, on
+a card with a live door behind it.
+
+### D-25.5 THE AIR CARD SHIPS `PERIODIC` AND EARNS `LIVE`
+The first build stamped it `LIVE` outright, which was false — the card renders a **committed**
+value, and a chip cannot claim liveness for a number that cannot move. Caught before it shipped.
+
+It now behaves exactly as the Air page and the homepage ticker do: ships `PERIODIC`, fetches
+`/api/air`, and **only a well-formed reading may write** — at which point the value, the verdict,
+the breach colour and the chip all move together, because by then the number genuinely can change
+between two views. Every failure path leaves the card as rendered (D-16.4). Verified in the
+browser: the chip reads `LIVE` after the fetch lands.
+
+### D-25.6 THE VOCABULARY IS TAUGHT BY SPECIMEN, WHICH WAS AD-13's HARDEST PROBLEM
+AD-13 §4 called it *"the most interesting design problem on the page: teach four words when the
+live set only exercises two, without faking a third."*
+
+The hero shows **all four chips with a one-line definition each**, marking which the set uses
+today. `DEMO DATA` is present as a labelled specimen with the note that there are none in the set
+below. Nothing is faked and nothing is hidden, and after the Air upgrade the page genuinely
+exercises three of the four.
+
+### D-25.7 CAMPAIGNS: THREE, AND ONE OF THEM DELIBERATELY HAS NO DESCRIPTION
+The client's ceiling was *"at most a section of campaigns"*, so this is the only band after the
+set. Three, per SOURCE-FACTS as updated 21 August: **We for Yamuna**, **Monsoon Wooding**,
+**Delhi I Can't See You**.
+
+Only sourced detail appears. Monsoon Wooding carries ~5,000 trees a year and over 50,000
+*planted and survived* — **"survived" is the organisation's own word and the page keeps it**,
+because planting and living are different measurements. **"Delhi I Can't See You" is named with no
+description**, because SOURCE-FACTS records that it appears in neither source document. The card
+says so. Writing copy for a campaign this site cannot cite would be the same failure as inventing
+a limit.
+
+And the band closes on the gap rather than hiding it: **fifty thousand surviving trees is a real
+number and it is not a reply to 2.43 million hectares.** Both are on the site, in their own
+units, and neither cancels the other — which is D-25.2 applied to Swechha's own record.
+
+### D-25.8 THE INDEX CANNOT DISAGREE WITH A SITUATION PAGE, BY CONSTRUCTION
+Every figure is read at build time from the same committed dataset behind the page it points at.
+Nothing is typed. That closes a real defect class rather than a hypothetical one: the old page's
+h1 claimed four illegal over a set of three, and its `#h-*` anchors pointed at IDs that did not
+exist on their target.

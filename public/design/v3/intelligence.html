@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>Environmental Intelligence - Swechha</title>
+<title>Now &mdash; Swechha</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..700&display=swap" rel="stylesheet">
 <style>
 /* ══════════════════════════════════════════════════════════════════════
@@ -46,7 +46,15 @@
      GREEN    what came back. Past perfect. */
   --mustard:#E1A32B;         /* globals --mustard.      8.78:1 on ground */
   --mustard-2:#F1C33B;       /* globals --yellow.      11.68:1, small text on dark */
-  --mustard-ink:#8A6410;     /* globals --mustard-ink.  4.72:1 on paper */
+  --mustard-ink:#8A6410;     /* globals --mustard-ink.  4.72:1 on paper.
+                                DEMOTED. The one licensed accent cannot have
+                                three faces: #E1A32B is the mark on BOTH
+                                canvases, and a paper band buys its contrast
+                                with weight, an underline or a filled chip in
+                                #E1A32B with --on-mustard ink, never by
+                                darkening the hue. This value survives only as
+                                a focus ring on paper, where it has to clear
+                                AA against #F3F2F0 as a 2px outline. */
   --on-mustard:#12110F;      /* globals --on-mustard.   8.51:1 on mustard */
   --red:#F1484E;             /* globals --sev.          5.35:1 on ground */
   --red-ink:#c81e3a;         /* globals --signal-critical. 4.98:1 on paper */
@@ -65,9 +73,26 @@
   --t-lead:clamp(1.06rem,1.55vw,1.28rem);
   --t-body:18px; --t-cap:13.5px; --t-micro:11.5px;
 
-  --gut:clamp(16px,3.4vw,46px);
-  /* Density: sections are tighter than v2. Blankness was the complaint. */
-  --pad:clamp(44px,5.6vw,88px);
+  /* 16px at 375 is an app margin, not a document margin. */
+  --gut:clamp(20px,3.4vw,46px);
+
+  /* THE FOUR VERTICAL TIERS. One --pad token applied to every band is
+     the root defect this page exists to correct; see the tier classes
+     below. T2:T4 is 3:1, wide enough to read as intent. */
+  --pad-t2:clamp(88px,9vw,136px);
+  --pad-t3:clamp(64px,6.5vw,96px);
+  --pad-t4:clamp(28px,3vw,44px);
+
+  /* THE THREE INTERNAL GAPS. Only three. A fourth is a pattern this
+     page does not have. Four of the nine partials arrived carrying a
+     private copy of exactly these numbers. */
+  --gap-head:clamp(18px,1.6vw,28px);   /* headline -> its lead/body     */
+  --gap-block:clamp(36px,4vw,64px);    /* block -> block                */
+  --gap-row:clamp(24px,2.6vw,40px);    /* row -> row inside a grid      */
+
+  /* THE KISS. .06em of the NUMERAL'S OWN font-size, everywhere the
+     rail appears. One value, nothing else. */
+  --kiss:.06em;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -105,7 +130,10 @@ h1,h2,h3{margin:0;font-weight:inherit}
 /* overflow-x:clip, not hidden: it stops any band widening the document
    without creating a scroll container, so scroll-snap and sticky
    children inside a section keep working. */
-section{padding:var(--pad) 0;position:relative;overflow-x:clip}
+/* NO PADDING ON `section` ITSELF. Every band declares its tier (.t1 to
+   .t4, defined below); a band that forgets to say what it is looks
+   obviously wrong rather than quietly average. */
+section{padding:0;position:relative;overflow-x:clip}
 .paper{background:var(--paper);color:var(--ink)}
 .paper-2{background:var(--paper-2);color:var(--ink)}
 .dark-2{background:var(--ground-2)}
@@ -194,31 +222,29 @@ figure{margin:0}
 
 /* ══════════════════════════════════════════════════════════════════════
    THE RAIL.  ONE CONTRACT, EVERY PLACE IT APPEARS.
-   Identical to home.html's. Expressed for this board's markup, where the
-   numeral is a child of .rail-l rather than of its own wrapper.
 
    THE RULE BELONGS TO THE NUMERAL, NOT TO THE COLUMN.
 
-   The numeral is the box that shrink-wraps its digits (width:max-content)
-   and draws the rule as its OWN ::after at left:100% plus --kiss, where
-   --kiss is .06em of THE NUMERAL'S OWN font-size. Because the rule starts
-   at 100% of a max-content box it is geometrically incapable of crossing
-   a digit — at every viewport width and for every value length: 412, 0.0,
-   1.65, 47.8, 6,890, "14 of 18". And because the account column's
-   clearance is measured FROM THE RULE rather than from a column edge, the
-   rule can never touch the text either.
+   `.rl` is a box that shrink-wraps its digits (width:max-content) and
+   draws the rule as its OWN ::after at left:100% plus --kiss, where
+   --kiss is .06em of THE NUMERAL'S OWN font-size. Because the rule
+   starts at 100% of a max-content box it is geometrically incapable of
+   crossing a digit — at every viewport width and for every value
+   length: 412, 0.0, 512, 6,890, 14 of 18. And because every account
+   column's clearance is measured FROM THE RULE rather than from a
+   column edge, the rule can never touch the text either.
 
-   That is the reported defect fixed in both of the directions it failed.
-   It used to fail in two: `.rail-l>.readout{margin-right:calc(-1*var(--rp)
-   - .28em)}` pulled a 272px numeral 76px over a rule that was really
-   `.rail-r`'s border-left, so the rule sliced a third of the way into the
-   "2" of 412; and in the cut-out spine the identical intent failed
-   inverted, because `.cut-yr` sits one level deeper inside `.cut-l` and a
-   `.rail-l > *` selector never reached it, so the rule floated 200px+ to
-   the RIGHT of "2000" with nothing between them. Same component, two
-   failures, one cause: the rule was drawn by a fixed-percentage column
-   and the numeral was positioned against it. THE SELECTOR BELOW IS A
-   DESCENDANT SELECTOR FOR EXACTLY THAT REASON.
+   That is the reported defect fixed in both of the directions it
+   failed. It used to fail in two: in the hero
+   `.rail-l>.readout{margin-right:calc(-1*var(--rp) - .28em)}` pulled a
+   272px numeral 76px over a rule that was really `.rail-r`'s
+   border-left, so the rule sliced a third of the way into the "2" of
+   412; in the timeline the identical intent failed inverted, because
+   `.cut-yr` was nested one level too deep for the `.rail-l > *`
+   selector to reach it and the rule floated 215px to the RIGHT of
+   "2000" with nothing between them. Same component, two failures, one
+   cause: the rule was drawn by a fixed-percentage column and the
+   numeral was positioned against it.
 
    --ovh is gone. --lw as a positioning input is gone. The negative
    margins are gone. .rail-r draws no border.
@@ -227,103 +253,41 @@ figure{margin:0}
    width grows RIGHTWARD, away from the numeral, so the kiss gap is
    identical in every state — a breach must never shift the numeral.
 
-   THE RAIL DOES NOT DISAPPEAR ON A PHONE. It rotates: see <=860 below.
+   Five numerals on this page use it, each getting its kiss for free
+   from its own size: the hero readout (302px -> an 18px kiss), the
+   timeline year (95px -> 6px), the four impact figures (109px ->
+   6.5px), the two farm ledger figures (66px -> 4px). The ticker carries
+   the same mark laid FLAT — the rule under the numeral rather than
+   beside it — which is the one rotation of the contract and is drawn in
+   the ticker's own block below.
+
+   THE RAIL DOES NOT DISAPPEAR ON A PHONE. It rotates. See the hero and
+   the timeline at <=860 and <=767.
    ══════════════════════════════════════════════════════════════════ */
-.rail{display:flex;align-items:stretch;gap:0;
-  /* the kiss in PIXELS, for the clearance budget only. The rule itself
-     takes .06em off the numeral, which is the same number. */
-  --rail-kiss:calc(.06 * var(--t-num));
-  --rail-clear:32px}
-.rail:has(.readout){--rail-kiss:calc(.06 * var(--t-readout))}
-@media (max-width:1023px){.rail{--rail-clear:24px}}
-
-.rail-l{flex:0 0 var(--lw,52%);min-width:0;position:relative;z-index:1;
-  padding-right:var(--rp,clamp(16px,2.4vw,38px));text-align:right}
-/* THE NUMERAL OWNS THE RULE. Right-aligned in its column, and the numeral
-   ALONE reaches the column edge — every other line keeps its --rp inset,
-   so nothing can touch the rule from the left either. */
-.rail-l .readout,.rail-l .num,.rail-l .cut-yr{
-  --kiss:.06em;
-  position:relative;display:block;width:max-content;max-width:100%;
-  white-space:nowrap;
-  margin-left:auto;margin-right:calc(-1 * var(--rp,clamp(16px,2.4vw,38px)))}
-.rail-l .readout::after,.rail-l .num::after,.rail-l .cut-yr::after{
-  content:'';position:absolute;left:100%;margin-left:var(--kiss);
+.rl{position:relative;display:block;width:max-content;max-width:100%}
+.rl::after{content:'';position:absolute;left:100%;margin-left:var(--kiss);
   top:var(--rl-top,0);bottom:var(--rl-bottom,0);height:var(--rl-h,auto);
-  width:0;border-left:1px solid var(--hair)}
-.paper .rail-l .readout::after,.paper .rail-l .num::after,
-.paper .rail-l .cut-yr::after,.paper-2 .rail-l .readout::after,
-.paper-2 .rail-l .num::after,.paper-2 .rail-l .cut-yr::after{
-  border-left-color:var(--rule-2)}
+  width:0;border-left:var(--rl-w,1px) solid var(--rl-c,var(--hair))}
+.paper .rl::after,.paper-2 .rl::after{--rl-c:var(--rule-2)}
 /* BREACH: colour and weight only, growing away from the digits. */
-.rail.breach .rail-l .readout::after,.rail.breach .rail-l .num::after{
-  border-left-width:6px;border-left-color:var(--red)}
-.paper .rail.breach .rail-l .readout::after,
-.paper .rail.breach .rail-l .num::after,
-.paper-2 .rail.breach .rail-l .readout::after,
-.paper-2 .rail.breach .rail-l .num::after{border-left-color:var(--red-ink)}
+.breach .rl::after{--rl-w:6px;--rl-c:var(--red)}
+.paper .breach .rl::after,.paper-2 .breach .rl::after{--rl-c:var(--red-ink)}
 /* A closed window is a dashed rule, still owned by the numeral. */
-.rail.closed .rail-l .readout::after,.rail.closed .rail-l .num::after{
-  border-left-style:dashed}
+.closed .rl::after{border-left-style:dashed}
+.rl .readout,.rl .num{white-space:nowrap;display:block}
 
-/* .rail-r DRAWS NO BORDER. Its padding is measured from the RULE, with a
-   hard minimum clear distance, which is what kills the text collision
-   permanently. */
-.rail-r{flex:1 1 var(--rw,40%);min-width:0;position:relative;z-index:3;
-  border-left:0;
-  padding-left:calc(var(--rail-kiss) + 6px + var(--rail-clear))}
-.rail-l .bands{margin-left:auto}
-.rail-l .lead,.rail-l .body,.rail-l .cap,.rail-l .limit,.rail-l .win{margin-left:auto}
-
-/* ── THE CUT-OUT SPINE. The year is nested inside .cut-l, so it is the
-   flex line that has to hand it the column edge; margin-left:auto on the
-   numeral does that without a second positioning system. The rule's
-   LENGTH is the plate's height, so the mark and the object hanging beside
-   it start and end on the same two lines. */
-.cut-l .cut-yr{--rl-top:auto;--rl-bottom:0;--rl-h:clamp(118px,19vw,268px)}
-
-/* ══ UNDER 860. THE RAIL ROTATES, IT DOES NOT VANISH. ══════════════════
-   It used to evaporate here: --ovh went to 0, the negative margins were
-   stripped and the rule became a horizontal border-top — the site's
-   signature mark gone on the platform where most Indian readers meet the
-   page. Instead the numeral goes to the left edge of the measure, the
-   rule stays on its right at the same kiss, the unit and the verdict hang
-   off it in their own column, and the rule runs from the numeral's cap
-   line down onto the hairline that opens the account, so the reader can
-   see what the line is holding. */
-@media (max-width:860px){
-  .rail{display:block;--rail-clear:16px}
-  .rail-l{flex:none;padding-right:0;text-align:left;
-    display:grid;grid-template-columns:max-content minmax(0,1fr);
-    column-gap:calc(var(--rail-kiss) + 6px + var(--rail-clear));
-    align-items:start}
-  .rail-l>*{grid-column:2;margin-left:0}
-  .rail-l>.lbl{grid-column:1/-1}
-  /* the numeral spans every content row, so the rule it draws runs past
-     the unit and the verdict rather than stopping at its own baseline */
-  .rail-l>.readout,.rail-l>.num{grid-column:1;grid-row:2/span 24;
-    align-self:stretch;margin:0}
-  .rail-l .bands,.rail-l .cap,.rail-l .limit,.rail-l .win{margin-left:0}
-  .rail-l>.readout::after,.rail-l>.num::after{bottom:-22px}
-  .rail-r{padding-left:0;border-left:0;
-    border-top:1px solid var(--hair);padding-top:22px;margin-top:22px}
-  .paper .rail-r,.paper-2 .rail-r{border-top-color:var(--rule-2)}
-  .rail.breach .rail-r{border-top-color:rgba(241,72,78,.45)}
-  /* the spine keeps its own shape: the plate and the year sit side by
-     side and the year still owns the rule beside it. */
-  .rail-l>.cut-l{grid-column:1/-1;display:flex;align-items:center;
-    gap:clamp(12px,2vw,28px)}
-  .cut-l .cut-yr{--rl-h:clamp(96px,30vw,168px)}
-}
-
-.mult{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
-  font-size:var(--t-micro);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-2);
-  margin:14px 0 0}
-.mult b{font-variation-settings:'wdth' 74,'wght' 800;font-size:2.1em;letter-spacing:-.01em;
-  color:var(--red);vertical-align:-.12em;margin-right:.24em;font-variant-numeric:tabular-nums}
-.paper .mult{color:var(--ink-2)} .paper .mult b{color:var(--red-ink)}
-
-/* ── STATE MARKS. Shape, never hue. ──────────────────────────────────*/
+/* ── STATE MARKS. Shape, never hue. ──────────────────────────────────
+   FOUR WORDS, FOUR CLASS NAMES, AND THEY MATCH: live / periodic / demo /
+   closed render LIVE / PERIODIC / DEMO DATA / OUT OF SEASON. The PERIODIC
+   badges were marked `state delayed` until AD-12 — a survivor of the
+   abandoned RECENT/DELAYED vocabulary, rendering a word it did not name.
+   Nothing in this file ever selected `.delayed`, which is exactly why it
+   survived a freeze and two sweeps unnoticed, and also why the rename is
+   provably free: PERIODIC's hollow 9x9 square is the `.state i` DEFAULT,
+   not a rule of its own. Do not add `.state.periodic i` to "complete the
+   set" — the absence of a fill is the state's shape.
+   `live` / `periodic` / `demo` / `closed` are class names and must never
+   become copy. */
 .state{display:inline-flex;align-items:center;gap:.5em;font-family:Archivo,system-ui,sans-serif;
   font-variation-settings:'wdth' 88,'wght' 650;font-size:var(--t-micro);letter-spacing:.13em;
   text-transform:uppercase;color:var(--fg-2)}
@@ -363,22 +327,65 @@ figure{margin:0}
   letter-spacing:.15em;text-transform:uppercase;margin-bottom:6px;color:var(--fg-3)}
 .paper .win b{color:var(--ink-3)}
 .win.closed b{color:var(--mustard)}
-.paper .win.closed b{color:var(--mustard-ink)}
+.paper .win.closed b{color:var(--ink)}
+/* THE DECIMAL POINT TAKES A DIGIT SLOT. tabular-nums makes the digits
+   monospaced but not the separator, so "0.0" shrink-wrapped 59.2px
+   narrower than "412" — and because the readout is width:max-content and
+   the rule is anchored to it, the whole account column moved 59.2px
+   sideways when the reader arrowed to that slide. A deck whose premise
+   is that only the reading changes cannot lurch. This pads the glyph; it
+   does NOT pin the account to a grid line, which would break the
+   "clearance measured from the rule" contract.
+
+   THE TWO CORRECTIONS IN THE calc ARE BOTH REAL, do not simplify it to
+   1ch. A tabular digit occupies .3915em here (advance .4295em plus the
+   readout's -.038em tracking) while `1ch` reports .42665em, and an
+   inline-block is NOT given the letter-spacing a glyph gets. 1ch minus
+   .0351em is the difference, and because every term scales with
+   font-size the slot is exact at 272px and at the 99.2px floor alike:
+   measured, "0.0" and "412" are both 319.469px at 1440. */
+.readout .dp{display:inline-block;width:calc(1ch - .0351em);text-align:center}
 .readout.quiet{color:var(--fg-2)}
 .paper .readout.quiet{color:var(--ink-2)}
 
 /* ── CHROME. Dark, and it stays dark. ────────────────────────────────*/
+/* THE HEADER'S HEIGHT IS A TOKEN, NOT TWO LITERALS.
+   --bar-h is the bar's own box; --nav-h is the strip that actually
+   OCCLUDES the top of the viewport, which is not the same number:
+   above the breakpoint .nav is sticky and its 1px border-bottom paints
+   too, so 62 + 1 = 63; below it .nav-in is fixed and border-box already
+   contains its hairline, so the occluding strip is 56 flat. Both were
+   literals in two places before, which is how the anchor bug below went
+   unnoticed — there was no single number to reason about. */
+:root{--bar-h:62px;--nav-h:63px}
+/* THE ANCHOR LANDING. Reported by the client on #farm: "it crops the
+   section title SWECHHA FARM."
+   Every in-page jump put the band's top edge at the viewport's top and
+   the header then covered the first --nav-h of it. Measured before the
+   fix, at the resting position AFTER the jump, not in passing:
+     #farm  at 375 -> 34.0px of a 37.1px masthead headline hidden (92%)
+     #farm  at 1440 -> 20.0px of 89.4px hidden (22%)
+     #work #journeys #impact #record #give -> the band's whole top tier
+     padding eaten, 55.5-63.5px at every width tested
+   scroll-padding-top on the scroll container is the whole fix: it is a
+   SCROLL offset, so it adds no layout height, costs no document height,
+   changes nothing until an anchor is used, and covers anchors added
+   later. It is set on both html and body because body{overflow-x:hidden}
+   makes body a scroll container too, and whichever of the two the UA
+   scrolls has to carry the offset.
+   Transient overlap while free-scrolling is what a sticky header IS and
+   is left alone. Overlap on ARRIVAL is a defect, because it hides the
+   one word that tells the reader they got there. */
+html,body{scroll-padding-top:var(--nav-h)}
 .nav{position:sticky;top:0;z-index:60;background:var(--ground);
   border-bottom:1px solid var(--hair)}
-.nav-in{max-width:1580px;margin:0 auto;padding:0 var(--gut);height:62px;
+.nav-in{max-width:1580px;margin:0 auto;padding:0 var(--gut);height:var(--bar-h);
   display:flex;align-items:center;gap:clamp(12px,2.2vw,30px)}
 .mark{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 850;
   font-size:22px;letter-spacing:-.01em;text-transform:uppercase;text-decoration:none;
   margin-right:auto;color:var(--fg)}
-/* THE LOGO IS AN ASSET, NOT TYPE. The approved horizontal lockup (leaf mark +
-   wordmark, 2048x512) is the permanent brand asset for this project and is
-   never re-set as live type, never redrawn and never substituted. White cut on
-   dark ground, black cut on paper. */
+/* THE LOGO IS AN ASSET, NOT TYPE. Approved horizontal lockup, 2048x512. Never
+   re-set as live type, never redrawn, never substituted. */
 .mark img{height:30px;width:auto;display:block}
 .foot .mark img{height:42px}
 
@@ -393,70 +400,68 @@ figure{margin:0}
 .give:hover{background:var(--fg);color:var(--ground)}
 .navscroll{display:none}
 @media (max-width:940px){
-  .nav-in{height:56px}
+  /* Below the breakpoint the pattern inverts: the bar goes fixed, so the
+     occluding strip and the bar's own box are the same 56px. */
+  :root{--bar-h:56px;--nav-h:56px}
   .navlinks{display:none!important}
-  /* THE THUMB. 107px of permanent chrome on an 812px screen is 13% of
-     the viewport, and the chip row was clipped mid-word at the right
-     edge with no affordance. Below the tablet the nav is ONE 56px row:
-     wordmark left, GIVE right. Every link the chip row carried is in the
-     footer. Applied identically on every board. */
-  @media (max-width:767px){.navscroll{display:none!important}}
+  /* 44px FLOOR ON THE ONE PERSISTENT TARGET. GIVE measured 70x37 and the
+     wordmark 92x35 — under the floor on the single control the whole
+     one-row mobile nav strategy is built around, and a reach compromise
+     is only worth making for a target you can actually hit. The bar is
+     57px tall, so 44px fits inside it without touching the 56px one-row
+     doctrine or the row height. */
+  .give{min-height:44px;display:inline-flex;align-items:center;padding:0 18px}
+  .mark{min-height:44px;display:inline-flex;align-items:center}
+
+  /* THE THUMB, AND THE INDEX. The objection to the chip row was never
+     that it existed: it was that 107px of chrome stuck permanently to an
+     812px screen is 13% of the viewport, that the row was clipped
+     mid-word at the right edge, and that it carried no affordance saying
+     it scrolled. All three are answered without deleting the navigation.
+
+     ONLY THE 56px BAR STICKS. The row sits under it on arrival and
+     scrolls away with the page — 56px of permanent chrome, ~37px of
+     one-time chrome, no JS and no drawer. A hamburger was considered and
+     rejected: it would be this site's only modal pattern, and it buries
+     the index behind an icon on a page that is meant to read as an
+     instrument rather than as an app.
+
+     Deleting the row was tried and was a defect, not a trade: the footer
+     link grid it deferred to begins at y 8,992 of a 9,507px document —
+     94.6% of the way down — so on a phone Work, Journeys, Impact, Farm
+     and Record were unreachable, and Environmental Intelligence, which
+     lives on another page entirely, had no route from the homepage at
+     all. GIVE remains the one persistent thumb target in the bar.
+
+     FIXED, NOT STICKY, AND THAT IS NOT A STYLE CHOICE. Moving
+     `position:sticky` from .nav down to .nav-in does not work: a sticky
+     box is constrained to its own containing block, and .nav is only
+     105.8px tall, so the "sticky" bar leaves the screen with the header
+     — measured at 375, scrollY 400 put .nav-in at top -350. Fixed, with
+     .nav reserving the 56px it no longer occupies, is what actually
+     leaves one row on screen and lets the chip row scroll away.
+
+     Safe HERE and only here: .nav-in's max-width:1580px is inert below
+     940 because the viewport is already narrower, so the fixed bar still
+     paints full-bleed. Above 940 the same move would pull the bar's
+     background into a centred box — do not lift it out of this media
+     query. */
+  .nav{position:static;border-bottom:0;padding-top:var(--bar-h)}
+  .nav-in{position:fixed;top:0;left:0;right:0;z-index:60;background:var(--ground);
+    border-bottom:1px solid var(--hair)}
   .navscroll{display:block;border-bottom:1px solid var(--hair);background:var(--ground);
-    overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+    overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+    /* the affordance it was criticised for lacking — the same 8px hard
+       fade the hero's own tab row uses, not a second invention. */
+    -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 8px),transparent);
+    mask-image:linear-gradient(90deg,#000 calc(100% - 8px),transparent)}
   .navscroll::-webkit-scrollbar{display:none}
   .navscroll ul{display:flex;gap:20px;margin:0;padding:10px var(--gut);list-style:none;
     white-space:nowrap}
 }
 
-
-/* ── THE SLIDER. Mechanics unchanged from v2. ────────────────────────*/
-.rig{position:relative}
-.rig-clip{position:relative;overflow:hidden}
-/* Slides are exactly 100% wide and sub-pixel rounding lets the next one
-   bleed a fraction of a pixel in. The shim covers it WITHOUT extending
-   past the clip box, which would widen the document on a full-bleed rig. */
-.rig-clip::after{content:'';position:absolute;top:0;bottom:0;right:0;width:3px;
-  background:var(--ground);z-index:4;pointer-events:none}
-.paper .rig-clip::after{background:var(--paper)}
-.rig-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;
-  scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
-.rig-track::-webkit-scrollbar{display:none}
-.sit{flex:0 0 100%;scroll-snap-align:start;min-width:0;border-left:1px solid transparent}
-.sit[hidden]{display:none}
-.rig-bar{display:flex;align-items:center;gap:12px;margin-top:26px;padding-top:14px;
-  border-top:1px solid var(--hair)}
-.paper .rig-bar{border-top-color:var(--rule-2)}
-.rig-tabs{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
-.rig-tabs::-webkit-scrollbar{display:none}
-.rig-tabs button{appearance:none;background:none;border:0;border-top:3px solid transparent;
-  margin-top:-14px;padding:14px 15px 0 0;cursor:pointer;text-align:left;white-space:nowrap;
-  font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
-  font-size:var(--t-micro);letter-spacing:.13em;text-transform:uppercase;color:var(--fg-3)}
-.paper .rig-tabs button{color:var(--ink-3)}
-.rig-tabs button:hover{color:var(--fg)}
-.paper .rig-tabs button:hover{color:var(--ink)}
-.rig-tabs button[aria-selected=true]{color:var(--fg);border-top-color:var(--fg)}
-.paper .rig-tabs button[aria-selected=true]{color:var(--ink);border-top-color:var(--ink)}
-.rig-tabs button[data-breach=true][aria-selected=true]{border-top-color:var(--red)}
-.paper .rig-tabs button[data-breach=true][aria-selected=true]{border-top-color:var(--red-ink)}
-.rig-arrows{display:flex;gap:8px;flex:none}
-.rig-arrows button{appearance:none;width:40px;height:40px;border:1px solid var(--hair);
-  background:rgba(13,13,11,.5);color:var(--fg);cursor:pointer;display:grid;place-items:center}
-.paper .rig-arrows button{border-color:var(--rule-2);color:var(--ink);background:none}
-.rig-arrows button:hover:not(:disabled){background:var(--fg);color:var(--ground)}
-.rig-arrows button:disabled{opacity:.32;cursor:default}
-.rig-arrows svg{width:18px;height:18px}
-.count{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
-  font-size:var(--t-micro);letter-spacing:.13em;color:var(--fg-3);flex:none}
-.paper .count{color:var(--ink-3)}
-
-/* ── MOTION. Unchanged. ──────────────────────────────────────────────*/
-.js .rise{opacity:0;transform:translateY(14px)}
-.js .rise.in{opacity:1;transform:none;
-  transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
-@media (prefers-reduced-motion:reduce){.js .rise{opacity:1;transform:none;transition:none}}
-:focus-visible{outline:2px solid var(--mustard);outline-offset:3px}
-.paper :focus-visible{outline-color:var(--mustard-ink)}
+/* AD-11: a duplicate `:focus-visible` pair sat here. The FOCUS block below
+   restates it at equal specificity and later, so it could never win. */
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 
@@ -485,22 +490,35 @@ figure{margin:0}
 /* Primary: mustard. The one call to action per band. */
 .b-1{background:var(--mustard);color:var(--on-mustard);border-color:var(--mustard)}
 .b-1:hover{background:var(--mustard-2);border-color:var(--mustard-2)}
-.paper .b-1,.paper-2 .b-1{background:var(--mustard-ink);color:#fff;border-color:var(--mustard-ink)}
-.paper .b-1:hover,.paper-2 .b-1:hover{background:var(--ink);border-color:var(--ink)}
+/* On paper the primary is the SAME #E1A32B chip as on the dark ground,
+   with --on-mustard ink on it. 8.51:1 inside the chip; the hue never
+   darkens to buy that. */
+.paper .b-1,.paper-2 .b-1{background:var(--mustard);color:var(--on-mustard);border-color:var(--mustard)}
+.paper .b-1:hover,.paper-2 .b-1:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 
 /* Secondary: outlined in mustard, ink fill on hover. */
 .b-2{background:none;color:var(--mustard);border-color:var(--mustard)}
 .b-2:hover{background:var(--mustard);color:var(--on-mustard)}
-.paper .b-2,.paper-2 .b-2{color:var(--mustard-ink);border-color:var(--mustard-ink)}
-.paper .b-2:hover,.paper-2 .b-2:hover{background:var(--mustard-ink);color:#fff}
+/* Outlined on paper: the RULE carries the hue at 2px, the label carries
+   the contrast in --ink. #E1A32B as a hairline on off-white is the one
+   place the accent needs weight rather than a darker value. */
+.paper .b-2,.paper-2 .b-2{color:var(--ink);border-color:var(--mustard);
+  border-width:2px;padding:13px 23px}
+.paper .b-2:hover,.paper-2 .b-2:hover{background:var(--mustard);color:var(--on-mustard)}
 
 /* Ghost: neutral until touched, then mustard. For tertiary rows. */
 .b-3{background:none;color:var(--fg-2);border-color:var(--hair)}
 .b-3:hover{color:var(--mustard);border-color:var(--mustard)}
 .paper .b-3,.paper-2 .b-3{color:var(--ink-2);border-color:var(--rule-2)}
-.paper .b-3:hover,.paper-2 .b-3:hover{color:var(--mustard-ink);border-color:var(--mustard-ink)}
+.paper .b-3:hover,.paper-2 .b-3:hover{color:var(--ink);border-color:var(--mustard)}
 
-/* Recovery: green, and only ever pointing at what came back. */
+/* RETIRED, AND DELIBERATELY NOT USED. Green is applied by DATA — it is
+   what has been recovered — and a control is an act, which is mustard.
+   A green button teaches a reader that green means "click me", which is
+   exactly the failure the never-red-on-a-control rule forbids, and it
+   spends the distinction that makes the four green numerals in #impact
+   mean anything. This is the only band that ever reached for it, and it
+   uses .b-2 now. Kept only so the retirement is on the record. */
 .b-g{background:none;color:var(--green);border-color:var(--green)}
 .b-g:hover{background:var(--green);color:var(--ground)}
 .paper .b-g,.paper-2 .b-g{color:var(--green-ink);border-color:var(--green-ink)}
@@ -517,17 +535,20 @@ figure{margin:0}
 .lk{color:var(--mustard);text-decoration:none;border-bottom:1px solid rgba(225,163,43,.42)}
 .lk:hover{border-bottom-color:var(--mustard)}
 .lk:visited{color:var(--mustard-2)}
-.paper .lk,.paper-2 .lk{color:var(--mustard-ink);border-bottom-color:rgba(138,100,16,.4)}
-.paper .lk:hover,.paper-2 .lk:hover{border-bottom-color:var(--mustard-ink)}
-.paper .lk:visited{color:#6E4F0C}
+/* On paper the link is ink with a 2px #E1A32B underline: the mark is the
+   same hue as the mustard field, and the reading is not paid for by
+   darkening it. */
+.paper .lk,.paper-2 .lk{color:var(--ink);border-bottom:2px solid var(--mustard)}
+.paper .lk:hover,.paper-2 .lk:hover{border-bottom-color:var(--ink)}
+.paper .lk:visited{color:var(--ink-2)}
 /* Standalone action link. Same as .act, kept as one component. */
 .act{display:inline-flex;align-items:center;gap:9px;text-decoration:none;
   font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 92,'wght' 680;
   font-size:12.5px;letter-spacing:.13em;text-transform:uppercase;
   border-bottom:2px solid var(--mustard);padding-bottom:5px;color:var(--fg)}
 .act:hover{color:var(--mustard)}
-.paper .act,.paper-2 .act{color:var(--ink);border-bottom-color:var(--mustard-ink)}
-.paper .act:hover,.paper-2 .act:hover{color:var(--mustard-ink)}
+.paper .act,.paper-2 .act{color:var(--ink);border-bottom-color:var(--mustard)}
+.paper .act:hover,.paper-2 .act:hover{color:var(--ink-2)}
 .act svg{width:16px;height:16px;flex:none}
 
 /* ── TAGS AND PILLS ──────────────────────────────────────────────────
@@ -545,8 +566,15 @@ figure{margin:0}
 .tag-recovered{color:var(--green);border-color:var(--green)}
 .paper .tag-recovered{color:var(--green-ink);border-color:var(--green-ink)}
 .tag-act{color:var(--mustard);border-color:var(--mustard)}
-.paper .tag-act{color:var(--mustard-ink);border-color:var(--mustard-ink)}
-.tag-season{border-style:dashed}
+.paper .tag-act{color:var(--ink-2);border-color:var(--mustard)}
+/* SOLID, NOT DASHED. Dashed is already spoken for in this file and it
+   means A WINDOW THAT IS SHUT — `.closed .rl::after` and `.state.closed i`
+   both use it that way. "YEAR ROUND" / "IN WINDOW" say the opposite, and
+   a dashed rectangle around micro-caps beside a live link also reads as a
+   disabled button. The tag keeps its box: the validity window is what
+   decides whether a situation appears at all, so it is a discrete object,
+   not decoration. */
+.tag-season{border-style:solid}
 .tag-demo{border-style:dotted;color:var(--fg-3)}
 .paper .tag-demo{color:var(--ink-3)}
 
@@ -591,181 +619,1133 @@ figure{margin:0}
 .paper .b-1:focus-visible{outline-color:var(--paper);box-shadow:0 0 0 5px var(--mustard-ink)}
 
 /* ── FOOTER ──────────────────────────────────────────────────────────*/
-.foot{background:var(--ground-2);color:var(--fg);padding:var(--pad) 0 36px;
+.foot{background:var(--ground-2);color:var(--fg);padding:var(--pad-t4) 0 30px;
   border-top:1px solid var(--hair)}
 .foot-g{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:30px}
 .foot h3{margin:0 0 12px;color:var(--fg-3)}
 .foot a{color:var(--fg-2);text-decoration:none;font-size:15.5px;line-height:1.8;display:block}
 .foot a:hover{color:var(--mustard)}
+/* ══ SOCIAL ROW. Added AD-08, 21 August. ═══════════════════════════════
+   WORDMARKS, NOT AN ICON SET. This page's whole vocabulary is type, rules
+   and photographs; the only non-type marks it allows anywhere are the
+   arrow, the six-band scale and the halftone. Four borrowed platform
+   logos would be four foreign trademarks arriving with their own colour
+   and geometry, and would be the site's first icon set — so the accounts
+   are set as words, in the footer's own link treatment. Real text: it
+   inherits the contrast, needs no SVG or alt string, and scales with the
+   type rather than against it.
+
+   IT SITS BETWEEN .foot-g AND .foot-b, not as a fifth column. A fifth
+   column takes the four existing ones from 352.7/235.1 to 280/187 at
+   1440, at which width "Environmental Intelligence" wraps — the row
+   would have reflowed every link already in the footer to hold four
+   words. As its own sub-row it costs one hairline and touches nothing.
+
+   THE SEPARATOR IS A HAIRLINE, because every division on this page is a
+   rule. Left-borders are only safe while the row does not wrap: a wrapped
+   line would open with a stray leading rule. Verified unwrapped from 521
+   up; at ≤520 the borders come off and the row becomes the same 1fr 1fr
+   grid .foot-g already uses there, on the same 44px rows. */
+.foot-soc{margin-top:30px;padding-top:20px;border-top:1px solid var(--hair)}
+.foot-soc-x{display:flex;flex-wrap:wrap;gap:16px 40px;
+  align-items:flex-end;justify-content:space-between}
+.foot-soc-t{max-width:62ch}
+.foot-soc-t .cap{margin-top:3px}
+/* not <strong>: the handle is the same on all four accounts, which is a
+   fact worth one word of weight, not an emphasis. */
+.foot-soc-t b{color:var(--fg-2);font-weight:inherit;
+  font-variation-settings:'wght' 650}
+.foot-soc-r{margin:0;display:flex;flex-wrap:wrap;align-items:center}
+.foot-soc-r a{display:inline-flex;align-items:center;min-height:44px;
+  padding:0 16px;line-height:1.35;border-left:1px solid var(--hair)}
+.foot-soc-r a:first-child{padding-left:0;border-left:0}
+.foot-soc-r a:last-child{padding-right:0}
 .foot-b{margin-top:42px;padding-top:18px;border-top:1px solid var(--hair);
   display:flex;flex-wrap:wrap;gap:12px 28px;color:var(--fg-3);font-size:13.5px}
 @media (max-width:820px){.foot-g{grid-template-columns:1fr 1fr}}
-@media (max-width:520px){.foot-g{grid-template-columns:1fr}}
-
-/* ── THE HERO SLIDE ──────────────────────────────────────────────────
-   A picture band with nothing on it but the halftone, then the reading
-   on solid ground beneath. The masthead headline sits over the picture
-   at display size, which is the only type allowed there. */
-.rig-hero .rig-track{background:var(--ground)}
-.hsit{position:relative;display:flex;flex-direction:column}
-.hbg{flex:none}
-.hin{position:relative;z-index:2;width:100%}
-.hwhy{font-size:16.5px;line-height:1.5;margin:0 0 16px;max-width:46ch;color:var(--fg-2)}
-.hmeta{border-top:1px solid var(--hair);padding-top:11px;margin-top:14px}
-.hsit .bands{margin:16px 0 8px}
-.hsit .rail-r{display:flex;flex-direction:column;justify-content:flex-end}
-.rig-hero .rig-bar{margin-top:0;padding-top:14px}
-@media (max-width:860px){
-  .hsit .rail-r{display:block}
+/* 856px at 375 — two and a half times its desktop height and taller
+   than impact or farm — was four columns stacked. Two-column link grid
+   instead, with the address block spanning, and the link leading tuned
+   for a phone rather than for a 1.8 desktop rhythm. */
+@media (max-width:520px){
+  .foot-g{grid-template-columns:1fr 1fr}
+  .foot h3{margin-bottom:4px}
+  /* Thirteen links rendered 159x23 with a MEASURED 0px gap between
+     vertical siblings — a guaranteed mis-tap column, and caused by this
+     very rule dropping line-height from the desktop 1.8 to 1.55 while
+     keeping display:block, which made the phone treatment strictly
+     worse than the desktop one. 44px rows instead. Four rows per column
+     go from ~92px to 176px, and the ~84px that costs is taken back out
+     of this footer's own padding below. */
+  .foot a{font-size:15px;line-height:1.35;display:flex;align-items:center;
+    min-height:44px}
+  .foot{padding-top:12px;padding-bottom:14px}
+  .foot-g{gap:4px 18px}
+  /* the wrap-proof form: no borders to strand at a line start, and the
+     same two-column 44px grid the link block above uses at this width. */
+  .foot-soc{margin-top:14px;padding-top:12px}
+  /* flex:1 1 100% FIRST, and it is load-bearing. .foot-soc-x is still a
+     flex row at this width, so the row was sizing to its own content
+     (~160px) and the 1fr 1fr inside it resolved to 71px columns — tidy
+     by accident, and NOT on the same two columns as .foot-g above it.
+     Taking the full wrap width puts the grid back on 158.5px columns at
+     x 20 and 196.5, which is where READ / GO / REACH US already sit. */
+  .foot-soc-r{flex:1 1 100%;display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+  .foot-soc-r a{padding:0;border-left:0;min-height:44px}
+  .foot-b{margin-top:12px;padding-top:10px;gap:4px 20px;font-size:13px}
 }
-/* The masthead sits over the picture band rather than repeating inside
-   every slide, so the frame reaches the top of the screen. */
-.hero{position:relative}
-.hero-mast{position:absolute;top:0;left:0;right:0;z-index:5;pointer-events:none;
-  padding:clamp(16px,2.4vw,32px) 0 clamp(20px,2.6vw,40px);
-  background:linear-gradient(180deg,rgba(11,11,9,.92) 0%,rgba(11,11,9,.88) 74%,
-    rgba(11,11,9,.72) 88%,rgba(11,11,9,0) 100%)}
-.hero-mast .wide{display:flex;flex-wrap:wrap;gap:8px 26px;align-items:baseline}
-.hero-mast h1{pointer-events:auto}
-.hero-mast .d1{font-size:clamp(2rem,5vw,4.2rem);text-shadow:0 2px 26px rgba(11,11,9,.55)}
 
-/* ── THE INDEX HEAD ──────────────────────────────────────────────────
-   The board's own state, so the index cannot be mistaken for a
-   situation page. */
-.idx{padding-bottom:clamp(26px,3.4vw,44px)}
-.idx-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-  gap:20px clamp(28px,4vw,64px);align-items:end;margin-bottom:clamp(24px,3vw,40px)}
-@media (max-width:860px){.idx-top{grid-template-columns:1fr}}
-.idx-stat{display:grid;grid-template-columns:repeat(4,1fr);gap:0;
-  border-top:1px solid var(--hair)}
-.idx-stat>div{padding:18px 18px 0 0;border-right:1px solid var(--hair)}
-.idx-stat>div:last-child{border-right:0}
-.idx-stat .num{font-size:clamp(2rem,4.6vw,3.4rem)}
-@media (max-width:760px){.idx-stat{grid-template-columns:1fr 1fr}
-  .idx-stat>div:nth-child(2n){border-right:0}}
-.det-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.12fr);
-  gap:18px clamp(26px,3.6vw,58px);align-items:start;margin-bottom:clamp(20px,2.8vw,38px)}
-@media (max-width:860px){.det-head{grid-template-columns:1fr}}
+/* ══════════════════════════════════════════════════════════════════════
+   THE VERTICAL TIERS.  ADDED AT INTEGRATION.
 
-/* ── CONFIGURATION BAR ───────────────────────────────────────────────*/
-.cfg{background:var(--ground-2);border-top:1px solid var(--hair);
-  border-bottom:1px solid var(--hair);padding:14px 0}
-.cfg-in{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px}
-.cfg-set{display:flex;gap:0;margin-left:auto}
-.cfg-set button{appearance:none;background:none;cursor:pointer;border:1px solid var(--hair);
-  border-right-width:0;padding:9px 16px;color:var(--fg-2);
-  font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
-  font-size:var(--t-micro);letter-spacing:.13em;text-transform:uppercase}
-.cfg-set button:last-child{border-right-width:1px}
-.cfg-set button[aria-pressed=true]{background:var(--mustard);color:var(--on-mustard);
-  border-color:var(--mustard)}
-.cfg-set button:hover:not([aria-pressed=true]){color:var(--mustard);border-color:var(--mustard)}
-@media (max-width:640px){.cfg-set{margin-left:0}}
+   The root defect the whole exercise exists to correct: one --pad token
+   applied by `section{padding:var(--pad) 0}` gave a 526px mustard ask
+   and a 2,132px project index identical top and bottom padding, so
+   nothing on the page had a weight. There are four tiers now, and every
+   band declares which one it is. `section` itself carries NO padding, so
+   a band that forgets to say what it is looks obviously wrong rather
+   than quietly average.
 
-/* ── YEAR GRID ───────────────────────────────────────────────────────*/
-.year{overflow-x:auto;padding-bottom:8px;margin-top:8px}
-.year-in{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);
-  gap:2px;min-width:760px}
-.year-in i{width:100%;aspect-ratio:1;display:block}
-.b0{background:#FBF8F0} .b1{background:#C9C3B3} .b2{background:#948E7E}
-.b3{background:#615C50} .b4{background:#38352E} .b5{background:var(--red)}
-.paper .b0{background:#fff;box-shadow:inset 0 0 0 1px var(--rule)}
-.mkey{display:flex;gap:2px;min-width:760px;margin-top:6px}
-.mkey span{flex:1;font-family:Archivo,system-ui,sans-serif;
-  font-variation-settings:'wdth' 88,'wght' 650;font-size:10.5px;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--fg-3)}
-.ramp{display:flex;flex-wrap:wrap;gap:0;margin-top:20px;border-top:1px solid var(--hair)}
-.ramp div{flex:1 1 120px;padding:12px 14px 14px 0}
-.ramp i{display:block;width:100%;height:10px;margin-bottom:8px}
-.ramp p{margin:0;font-family:Archivo,system-ui,sans-serif;
-  font-variation-settings:'wdth' 88,'wght' 650;font-size:var(--t-micro);letter-spacing:.12em;
-  text-transform:uppercase;color:var(--fg-2)}
-.ramp small{display:block;font-family:Newsreader,Georgia,serif;font-size:12.5px;
-  letter-spacing:0;text-transform:none;color:var(--fg-3);margin-top:3px}
-.figs{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:clamp(22px,3vw,38px);
-  border-top:1px solid var(--hair)}
-.figs>div{padding:18px 18px 0 0;border-right:1px solid var(--hair)}
-.figs>div:last-child{border-right:0}
-.figs .num{font-size:clamp(1.9rem,4.2vw,3.2rem)}
-@media (max-width:760px){.figs{grid-template-columns:1fr 1fr}
-  .figs>div:nth-child(2n){border-right:0}}
+     T1 ARRIVAL  0            heroes — the photograph runs to the seam
+     T2 MAJOR    88-136 (56)  journeys, work, timeline, record
+     T3 MINOR    64-96  (44)  impact, give
+     T4 STRIP    28-44  (22)  green the map, footer
+   T2:T4 is 3:1, which is wide enough to read as intent.
 
-/* ── TABLES ──────────────────────────────────────────────────────────*/
-.tb{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-.tbwrap{overflow-x:auto}
-.tb th,.tb td{text-align:right;padding:12px 10px;vertical-align:baseline;white-space:nowrap}
-.tb th:first-child,.tb td:first-child{text-align:left;padding-left:0;white-space:normal}
-.tb th{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
-  font-size:var(--t-micro);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-2);
-  border-bottom:1px solid var(--fg-2);padding-bottom:9px}
-.paper .tb th,.paper-2 .tb th{color:var(--ink-2);border-bottom-color:var(--ink)}
-.tb th small{display:block;font-family:Newsreader,Georgia,serif;font-size:12px;letter-spacing:0;
-  text-transform:none;color:var(--fg-3);font-weight:400;margin-top:2px}
-.paper .tb th small{color:var(--ink-3)}
-.tb td{border-bottom:1px solid var(--hair);font-size:16.5px}
-.paper .tb td,.paper-2 .tb td{border-bottom-color:var(--rule)}
-.tb tr:last-child td{border-bottom:1px solid var(--fg-2)}
-.paper .tb tr:last-child td{border-bottom-color:var(--ink)}
-.tb .v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 78,'wght' 700;
-  font-size:20px;letter-spacing:-.01em}
-.tb .over,.tb .under{color:var(--red)}
-.paper .tb .over,.paper .tb .under{color:var(--red-ink)}
-.tb .over::after{content:'\25B2';font-size:9px;margin-left:6px;vertical-align:2px}
-.tb .under::after{content:'\25BC';font-size:9px;margin-left:6px;vertical-align:1px}
-.tb tr.bad td:first-child{box-shadow:inset 5px 0 0 -1px var(--red);padding-left:14px}
-.paper .tb tr.bad td:first-child{box-shadow:inset 5px 0 0 -1px var(--red-ink)}
-.tb .st{font-size:13.5px;color:var(--fg-3)}
-.paper .tb .st,.paper-2 .tb .st{color:var(--ink-3)}
-.tb-l th,.tb-l td{text-align:left}
+   The ticker is the one exception and it is deliberate: it is not a
+   band, it is a rule between bands, and its own spec fixes it at
+   96-120px. T4 padding alone would be 88px of that, so the strip keeps
+   its chrome padding the way the nav does. Ruled at integration; see
+   the report.
+   ══════════════════════════════════════════════════════════════════ */
+.t1{padding:0}
+.t2{padding:var(--pad-t2) 0}
+.t3{padding:var(--pad-t3) 0}
+.t4{padding:var(--pad-t4) 0}
+/* The phone floors are the direction's own numbers, and they have to be
+   stated: a clamp whose vw term is 9vw bottoms out at its 88px MINIMUM
+   on a 375 screen, so without this every T2 band arrived on the phone
+   carrying its desktop padding. 4 x T2 + 2 x T3 + 2 x T4 = 360px of
+   phone height that was not buying anything. */
+@media (max-width:767px){
+  :root{--pad-t2:56px;--pad-t3:44px;--pad-t4:22px}
+}
 
-/* ── ORDERS ──────────────────────────────────────────────────────────*/
-.ordbar{display:flex;flex-wrap:wrap;gap:10px 8px;align-items:center;
-  padding:14px 0;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);
-  margin-bottom:6px}
-.chip{appearance:none;background:none;cursor:pointer;border:1px solid var(--hair);
-  padding:7px 14px;border-radius:2px;color:var(--fg-2);font-family:Archivo,system-ui,sans-serif;
-  font-variation-settings:'wdth' 88,'wght' 650;font-size:var(--t-micro);letter-spacing:.13em;
+/* ── THE SECTION OPENER. ONE GESTURE, EIGHT TIMES. ───────────────────
+   Formalised at integration. Five of the nine partials arrived with a
+   private near-identical copy of this grid (.s-journeys-open,
+   .s-work-head, .s-impact-open, .s-timeline-open, and .im-head itself),
+   each with its own column split and its own optical nudge. They are
+   one component now, so the eight section openings read as one move
+   instead of eight near-misses.
+
+   12 columns / 24px gutter. Display headline on 1-6, lead on 8-12,
+   tops aligned. EXACTLY TWO CHILDREN, always: a left group and a right
+   group. The .4em top padding on the right group is an optical match to
+   the display cap line rather than to its em box. */
+.im-head{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));
+  column-gap:24px;row-gap:var(--gap-head);align-items:start;
+  margin:0 0 var(--gap-block)}
+.im-head>*:first-child{grid-column:1/span 6;min-width:0}
+.im-head>*:last-child{grid-column:8/span 5;min-width:0;padding-top:.4em}
+.im-head .lead{margin:0}
+/* THE STRANDED LEAD. A 2-3 line display headline against a 1-2 line lead
+   left 183px (#work), 190px (#impact) and 231px (#give) of empty ground
+   under the lead — three to four times the largest internal gap this
+   page owns, which reads as unresolved rather than as air. The right
+   group is bottom-set instead, so the lead lands on the headline's last
+   line and the slack sits ABOVE it as deliberate air. When the lead is
+   the taller of the two it drives the row and end-alignment is
+   identical to start-alignment, so the .4em optical cap-line match
+   above still governs that case. Copy is untouched: every line is
+   approved and none of them got longer. */
+.im-head>*:last-child{align-self:end}
+/* The one-group opener. #journeys is the only band whose prose belongs
+   AFTER its rail rather than above it, so its opener carries the
+   headline alone and runs to 8 columns. `:only-child` matches both the
+   first- and last-child rules above and, being later, wins both. */
+.im-head>*:only-child{grid-column:1/span 8;padding-top:0;align-self:start}
+@media (max-width:1023px){
+  .im-head{row-gap:var(--gap-head)}
+  .im-head>*:first-child,.im-head>*:last-child{grid-column:1/-1;padding-top:0}
+  .im-head>*:last-child{max-width:64ch}
+  /* display type never takes a full-width measure */
+  .im-head .d1{max-width:min(640px,15ch)}
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   AD-09 FINAL PASS. TOUCH TARGETS.
+
+   The page already states a 44px floor and already enforces it in three
+   places — `.give` and `.mark` at <=940, `.s-hero-plate .act` at <=560,
+   `.w7-im-foot .act` at <=767, and the deck's own `.rig-tabs button`.
+   Six other controls never got it. Measured heights, at 375:
+
+     .navscroll a.nl        26.0px  (the six mobile nav destinations,
+                                     sitting in a 48.8px row: 11.4px of
+                                     the row above and below each chip
+                                     was not tappable)
+     .act x6                27.0px  (work, journeys, projects, campaigns
+                                     x2, about — each band's one CTA)
+     .w7-ce-lk x3           23.0px  (the campaign names; also under the
+                                     24px WCAG 2.5.8 AA floor)
+     .w7-ce-pre a x2        17.3px  (the two "Runs against ..." hooks —
+                                     the smallest targets on the page,
+                                     and under 24px at EVERY width)
+
+   THE HIT BOX GROWS, THE DRAWN BOX DOES NOT. Every one of these carries
+   a 2px mustard underline or an optical baseline that is part of the
+   composition, so raising `min-height` would drop the rule 8-17px and
+   add ~136px of document height across the page. A transparent absolutely
+   positioned ::after centred on the link expands what the finger hits and
+   changes no pixel and no band height — verified: document 10,244px at
+   375 before and after.
+
+   THE CLEARANCES WERE MEASURED FIRST, so no expander can steal a
+   neighbour's taps. Nearest interactive neighbour to each .act at 375:
+   work 37.0 · journeys 32.0 · projects 27.0 · campaigns 35.8 · events
+   267.0 · about 562.2 — all clear of the 8.5px each side that 27->44
+   costs.
+
+   THE CAMPAIGNS PAIR IS THE ONE PLACE 44px IS ARITHMETICALLY
+   IMPOSSIBLE. "Runs against the Yamuna" and "We for Yamuna" are two
+   different destinations 8.0px apart, inside a 48.3px envelope: two
+   44px targets need 88. They are brought to the 24px AA floor instead,
+   which fits (3.35 + 0.5 of the 8px gap, leaving 4.15px between them).
+   Closing the rest needs the composition opened, which is the client's
+   call, not this pass's. Logged in AD-09 as a ruling question.
+   ══════════════════════════════════════════════════════════════════ */
+.act,.w7-ce-lk,.w7-ce-pre a{position:relative}
+.act::after,.w7-ce-lk::after,.w7-ce-pre a::after{
+  content:'';position:absolute;left:0;right:0;top:50%;
+  transform:translateY(-50%);height:var(--hit,44px)}
+
+@media (max-width:940px){
+  .navscroll a.nl{position:relative}
+  .navscroll a.nl::after{content:'';position:absolute;left:0;right:0;
+    top:50%;transform:translateY(-50%);height:44px}
+  /* THE LAST CHIP MUST CLEAR THE FADE. `.navscroll ul` carries
+     `padding:10px var(--gut)`, but a flex container's trailing padding is
+     not honoured as scrollable overflow, so at full scroll-right the last
+     destination ("Record") landed at x 320.2 in a 320px strip — flush to
+     the edge with 8.2px of the word under the 8px mask, at both 320 and
+     375. A real trailing flex item restores the space the padding was
+     supposed to provide. The strip's own 20px flex gap already supplies
+     the gutter, so the spacer only has to cover the 8px the mask eats.
+     Measured: "Record" ends 8.2px INSIDE the fade before (clearance
+     -8.2px at 320, 375 and 414) and clears it by 19.8px after, with the
+     strip's scrollWidth going 416 -> 444. The document is unchanged at
+     every width; a scroll container's own overflow costs no page height. */
+  .navscroll ul::after{content:'';flex:none;width:8px;height:1px}
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   D-09.3. THE HERO OPENS FOR THE KEYBOARD, AND ONLY FOR THE KEYBOARD.
+
+   Everything in this block is invisible until something takes focus.
+   Nothing that is drawn moves: the hero's composition, copy, vocabulary
+   and visual state are frozen and were re-measured after every edit.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* THE SKIP LINK. Off-screen at -200px rather than hidden, so it is a
+   real link in the tab order at stop 1 and the first thing a keyboard
+   reader meets. It arrives flush to the top-left corner, which is where
+   the page's own instrument grammar puts a control that belongs to the
+   whole page rather than to a band.
+   THE RING IS INSET, not the .give halo. A mustard ring on a mustard
+   chip is invisible, and the .give treatment (outline-offset:2px plus a
+   5px mustard box-shadow) would put 7px of ring ABOVE y=0 and off the
+   screen on the one control that lives in the corner. Inset is the
+   pattern this file already uses for exactly that reason on
+   `.s-ticker-cell:focus-visible`. */
+.skip{position:fixed;top:-200px;left:0;z-index:100;
+  font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 92,'wght' 700;
+  font-size:12px;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;
+  background:var(--mustard);color:var(--on-mustard);
+  min-height:44px;display:inline-flex;align-items:center;padding:0 18px}
+.skip:focus{top:0}
+.skip:focus-visible{outline:2px solid var(--fg);outline-offset:-3px;box-shadow:none}
+/* <main> is a landmark, not a box. Stated rather than assumed, because a
+   UA default on an unknown element is exactly how a wrapper added for
+   accessibility ends up costing document height. */
+main{display:block;margin:0;padding:0}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   D-09.1. ONE COMPACT INDEX CONTROL, IN THE BAR'S OWN UNUSED SPACE.
+
+   The measurement that bought it: at 375 the bar carries a 120px
+   wordmark and a 70.4px GIVE chip inside 335px of content width, so
+   ~165px was already paid for and empty. The control goes there and
+   costs the page NO height at all — the panel is `hidden` when closed,
+   which is why this is not the sticky chip row (+37px of permanent
+   chrome, 14.6% of a 635px screen) that was rejected.
+
+   NO NEW ICONOGRAPHY, WHICH IS A RULING AND NOT AN OVERSIGHT. There is
+   no hamburger, no caret, no chevron: this page's only non-type marks
+   anywhere are the arrow, the six-band scale and the halftone, and a
+   disclosure glyph would be its first icon. The control is the word the
+   page already uses for these six things — `.navscroll` is
+   `aria-label="Sections"` — set in the nav's own micro-caps.
+   ITS OPEN STATE IS THE PAGE'S OWN MARK. `.nav a.nl` already carries a
+   2px transparent bottom border that goes mustard on hover and on
+   `[aria-current]`. The button borrows exactly that declaration for
+   `[aria-expanded=true]`, so "this is the live thing" is said in the
+   vocabulary eleven bands have already established, and a sighted reader
+   gets a state marker without a glyph being invented for it.
+
+   NOT MODAL, AND THAT IS THE POINT. The file's own comment rejects a
+   hamburger drawer as "this site's only modal pattern". So: no scrim, no
+   focus trap, no `aria-modal`, no scroll lock. Tab runs through the six
+   rows and then out into the page, and focus leaving the panel closes it
+   — a reader who has tabbed past the index is done with it. Escape
+   closes it and hands focus back to the button that opened it.
+
+   IT SITS UNDER THE BAR, NOT OVER IT: z-index 59 against `.nav-in`'s 60,
+   so the wordmark, the control and GIVE stay visible and the reader can
+   always see the thing they pressed. 44px rows, hairline-ruled, which is
+   the same ruled-rows grammar as the footer grid and the record doors.
+   ══════════════════════════════════════════════════════════════════ */
+.navidx-t{display:none}
+.navidx{position:fixed;left:0;right:0;top:var(--bar-h);z-index:59;
+  background:var(--ground);border-bottom:1px solid var(--hair);
+  max-height:calc(100vh - var(--bar-h));overflow-y:auto}
+/* stated explicitly so no later `display` on .navidx can defeat the
+   attribute that makes the whole thing free when closed. */
+.navidx[hidden]{display:none}
+@media (max-width:940px){
+  .navidx-t{display:inline-flex;align-items:center;min-height:44px;
+    appearance:none;background:none;border:0;border-bottom:2px solid transparent;
+    padding:0;cursor:pointer;white-space:nowrap;
+    font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 92,'wght' 620;
+    font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--fg-2)}
+  .navidx-t:hover{color:var(--fg)}
+  .navidx-t[aria-expanded=true]{color:var(--fg);border-bottom-color:var(--mustard)}
+  /* full-width 44px rows: the whole row is the target, not the word. */
+  .navidx a.nl{display:flex;align-items:center;min-height:44px;
+    padding:0 var(--gut);border-top:1px solid var(--hair)}
+  .navidx a.nl:first-child{border-top:0}
+}
+/* ABOVE 940 THE BAR IS NOT THE NAVIGATION. `.navlinks` carries the six
+   destinations there, so the control is display:none — no extra tab stop
+   on desktop, where the header order was already correct — and the panel
+   cannot paint even if a stale `aria-expanded` survived a resize. The JS
+   closes it on resize as well; this is the belt to that braces. */
+@media (min-width:941px){
+  .navidx,.navidx-t{display:none}
+}
+
+/* ══ AD-14 / D-19.3 — THIS PAGE'S OWN BLOCK ═══════════════════════════════
+   Everything above was EXTRACTED from the frozen home.html. Six sub-blocks
+   were left behind deliberately and are named in the build script.
+   Every voice, hue, rule and mark below is a frozen component. Layout only.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* MEASURED vs MODELLED, carried by the rule (D-17.6). Solid = measured.
+   DOTTED = modelled. Dashed is NOT reused: §5.7 gives dashed to a shut
+   window, and dotted is already the placeholder grammar — the nearer
+   neighbour to "not a direct measurement". Three styles, three meanings. */
+.p-kind{display:inline-block;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 650;font-size:var(--t-micro);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--fg-2);
+  border-bottom:2px solid var(--hair);padding-bottom:3px}
+.p-kind-m{border-bottom-style:dotted;border-bottom-color:var(--fg-3)}
+.paper .p-kind,.paper-2 .p-kind{color:var(--ink-2);border-bottom-color:var(--rule-2)}
+
+/* HERO. THE PICTURE BAND, not a photograph behind the readout.
+   The frozen CSS states the rule and the measurements behind it:
+   "DISPLAY TYPE MAY SIT ON A PHOTOGRAPH. NOTHING ELSE MAY." — copy over a
+   full frame failed contrast twice, because the reading block is tall enough
+   to cover the frame edge to edge and any scrim strong enough for 12px
+   metadata darkens the whole photograph to a rectangle. So: h1 only, over the
+   frame, on .pic-over's ramp; the readout, the scale, the provenance and the
+   national panel all sit on solid ground in .pic-body directly beneath it,
+   where contrast cannot drift. .pic and .pic-over are the homepage's own,
+   extracted verbatim — this page adds no new photographic treatment.
+   T1 carries no padding by contract; padding-block never the shorthand, or
+   .wrap's horizontal gutter is reset to zero. */
+.p2-hero{padding-block:0 var(--pad-t3);display:grid;gap:var(--gap-block)}
+.p2-top{display:flex;flex-wrap:wrap;gap:12px var(--gap-block);align-items:baseline;
+  justify-content:space-between}
+.p2-method{color:var(--fg-2);margin:0}
+/* The reading and the national panel, one row. The reading is the subject and
+   keeps the wider column; the panel is context and is ruled off, not boxed. */
+.p2-cols{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);
+  gap:var(--gap-block) clamp(28px,4vw,72px);align-items:start}
+.p2-nat{border-top:1px solid var(--hair);padding-top:var(--gap-row)}
+.p2-nat>*{margin:0}
+.p2-nat-h{color:var(--fg-2)}
+.p2-nat-l{color:var(--fg-3);max-width:38ch;margin:10px 0 var(--gap-row)!important}
+.p-nr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:0 14px;align-items:baseline;
+  border-bottom:1px solid var(--hair);padding:9px 0}
+.p-nr-n{font-family:Newsreader,Georgia,serif;font-size:16px;min-width:0}
+.p-nr-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 800;
+  font-size:19px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;text-align:right}
+.p-nr-v.is-red{color:var(--red)}
+.p-nr-s{color:var(--fg-3);min-width:3.4em;text-align:right}
+/* MUSTARD IS THE HUMAN ACT, so it cannot mark "this is the city you are
+   reading" — that is a position in a table, not an act. The row Delhi is on
+   is marked by WEIGHT and a left rule in the ground's own ink instead. */
+.p-nr.is-me{border-left:2px solid var(--fg);padding-left:12px}
+.p-nr.is-me .p-nr-n{font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 80,'wght' 700;font-size:15px;letter-spacing:.02em;
   text-transform:uppercase}
-.chip[aria-pressed=true]{background:var(--mustard);color:var(--on-mustard);border-color:var(--mustard)}
-.chip:hover:not([aria-pressed=true]){color:var(--mustard);border-color:var(--mustard)}
-.ord{display:block;text-decoration:none;padding:20px 0;border-bottom:1px solid var(--hair)}
-.ord[hidden]{display:none}
-.ord-in{display:grid;grid-template-columns:142px minmax(0,1fr) auto;
-  gap:6px clamp(18px,2.6vw,40px);align-items:start}
-.ord time{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 700;
-  font-size:var(--t-micro);letter-spacing:.13em;text-transform:uppercase;color:var(--fg-3);
-  padding-top:5px;display:block}
-.ord h3{font-family:Newsreader,Georgia,serif;font-weight:400;
-  font-size:clamp(1.15rem,2vw,1.5rem);line-height:1.24;letter-spacing:-.012em;margin:0 0 7px}
-.ord:hover h3{color:var(--mustard)}
-.ord .who{color:var(--fg-2);font-size:15px;margin:0}
-.ord .doc{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
-  font-size:var(--t-micro);letter-spacing:.13em;text-transform:uppercase;color:var(--mustard);
-  white-space:nowrap;padding-top:5px}
-.ord-empty{padding:38px 0;border-bottom:1px solid var(--hair);max-width:56ch}
-@media (max-width:760px){.ord-in{grid-template-columns:1fr}.ord time{padding-top:0}
-  .ord .doc{white-space:normal}
-  .ord .doc{padding-top:6px}}
+.p2-nat-c{color:var(--fg-3);max-width:40ch;margin:var(--gap-row) 0!important}
+.p2-read{position:relative;border-top:1px solid var(--hair);
+  padding-top:var(--gap-row);display:grid;gap:10px;justify-items:start}
+.p2-state{position:absolute;top:var(--gap-row);right:0;margin:0}
+.p2-read>*{margin:0}
+.p2-read .bands{width:100%}
+.p2-read .bands i{flex:1 1 0;min-width:0}
+.p2-src{color:var(--fg-3);max-width:60ch;border-top:1px solid var(--hair-2);
+  padding-top:10px;margin-top:4px}
 
-/* ── THE COLOUR RULE ─────────────────────────────────────────────────*/
-.rule-box{display:grid;grid-template-columns:repeat(3,1fr);gap:0;
-  margin-top:clamp(22px,3vw,40px);border-top:1px solid var(--hair)}
-.rule-box>div{padding:22px 24px 0 0;border-right:1px solid var(--hair)}
-.rule-box>div:last-child{border-right:0}
-.rule-box i{display:block;width:52px;height:8px;margin-bottom:14px}
-.rule-box h3{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 700;
-  font-size:var(--t-micro);letter-spacing:.15em;text-transform:uppercase;margin:0 0 10px}
-@media (max-width:760px){.rule-box{grid-template-columns:1fr}
-  .rule-box>div{border-right:0;border-bottom:1px solid var(--hair);padding-bottom:20px}}
+/* THE STRIP. Not a band: a rule between bands, on chrome padding. Caged —
+   own hex, hairline top and bottom, micro type, never any mustard. Red only:
+   Swechha's outcomes are not on this page at all, so no exemption is used. */
+#strip{background:var(--ground-2);border-top:1px solid var(--hair);
+  border-bottom:1px solid var(--hair);padding:14px 0}
+.p-strip-in{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 18px}
+.p-cell{display:grid;gap:2px;text-decoration:none;color:inherit;min-width:0;position:relative}
+.p-cell-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 64,'wght' 800;
+  font-size:clamp(1.3rem,3.4vw,2rem);letter-spacing:-.02em;line-height:1;
+  font-variant-numeric:tabular-nums;border-bottom:1px solid var(--hair);padding-bottom:6px}
+.p-cell-v.is-red{border-bottom-color:var(--red)}
+.p-cell-l{color:var(--fg-2)}
+.p-cell-s{color:var(--fg-3)}
+.p-strip-note{grid-column:1/-1;color:var(--fg-3);margin:4px 0 0}
+
+/* TWO-UP AND ROWS. Shared by people / sources / money. */
+.p-two{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap-row) clamp(24px,4vw,64px);
+  border-top:1px solid var(--hair);padding-top:var(--gap-row)}
+.p-two-c>*{margin:0}
+.p-two-c .num{margin-bottom:6px}
+.p-two-c .cap{color:var(--fg-2);margin-top:8px}
+.p-ratio{max-width:62ch;margin:var(--gap-row) 0 0}
+.p-cite{color:var(--fg-3)}
+.paper .p-cite,.paper-2 .p-cite{color:var(--ink-3)}
+.p-rows{margin-top:var(--gap-block)}
+.p-row{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);
+  gap:8px clamp(20px,3vw,44px);align-items:start;border-top:1px solid var(--hair);padding:18px 0}
+.p-row:last-child{border-bottom:1px solid var(--hair)}
+.p-row>*{margin:0}
+.p-row .body{max-width:52ch}
+.p-row .cap{color:var(--fg-2);margin-top:8px;max-width:58ch}
+
+/* THE KIND RULE (D-17.6 standout 1). SOLID = counted or measured. DOTTED =
+   modelled. Dashed is deliberately NOT reused: §5.7 gives dashed to a shut
+   window, and dotted is already the placeholder grammar — the nearer
+   neighbour to "not a direct measurement". Ink and never hue: the kind of a
+   figure is not the same question as whether a limit fell. */
+.p-kd{display:inline-block;padding-bottom:5px;border-bottom:2px solid var(--hair)}
+.p-kd-m{border-bottom-style:dotted;border-bottom-color:var(--fg-3)}
+.paper .p-kd,.paper-2 .p-kd{border-bottom-color:var(--rule-2)}
+.paper .p-kd-m,.paper-2 .p-kd-m{border-bottom-color:var(--ink-3)}
+.p-legend{display:flex;flex-wrap:wrap;gap:10px 26px;margin:0 0 var(--gap-row);color:var(--fg-3)}
+.p-row .p-kd,.p-map .p-kd{margin-left:8px;font-size:var(--t-micro)}
+.p-hole{border-left:2px dotted var(--hair);padding-left:14px;margin-top:var(--gap-row)!important;
+  color:var(--fg-3);max-width:62ch}
+.paper .p-hole,.paper-2 .p-hole{border-left-color:var(--rule-2);color:var(--ink-3)}
+
+/* MEASURED. Explainers, sub-indices, the two-scale device, the method table. */
+.p-expl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;
+  border-top:1px solid var(--rule);margin-bottom:var(--gap-block)}
+.p-expl>div{padding:var(--gap-row) clamp(14px,2vw,28px) var(--gap-row) 0;border-right:1px solid var(--rule)}
+.p-expl>div:last-child{border-right:0}
+.p-expl-h{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 800;
+  font-size:20px;letter-spacing:-.01em;margin:0;text-transform:uppercase}
+/* NOT ON MUSTARD. The page this replaces put this line on a mustard fill at
+   1.31:1 (D-18.1). It sits on the band's own ground. */
+.p-expl-s{font-size:19px;font-weight:300;color:var(--ink-2);margin:6px 0 10px}
+.p-expl-b{font-size:16px;line-height:1.5;color:var(--ink-2);margin:0}
+.p-quote{max-width:62ch;margin:0 0 var(--gap-row)}
+.p-subs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border-top:1px solid var(--rule)}
+.p-sub{padding:var(--gap-row) 10px var(--gap-row) 0;border-right:1px solid var(--rule);min-width:0}
+.p-sub:last-child{border-right:0}
+.p-sub>*{margin:0}
+.p-sub-n,.p-sub-c{color:var(--ink-3)}
+.p-sub-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 800;
+  font-size:clamp(1.4rem,2.6vw,2.2rem);letter-spacing:-.02em;line-height:1;color:var(--ink-3);
+  margin:8px 0 6px;font-variant-numeric:tabular-nums}
+/* Weight and ink, never hue: which pollutant decided the number is not a
+   question of whether a limit fell. */
+.p-sub.is-gov .p-sub-n,.p-sub.is-gov .p-sub-v,.p-sub.is-gov .p-sub-c{color:var(--ink)}
+.p-sub-g{color:var(--ink);margin-top:8px}
+.p-miss{color:var(--ink-3);max-width:64ch;margin:14px 0 0}
+.p-key{max-width:62ch;margin:var(--gap-row) 0 0}
+.p-scales{border-top:1px solid var(--rule);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.p-scales-l{color:var(--ink-3)}
+.p-scales-r{display:grid;grid-template-columns:1fr 1fr;gap:clamp(20px,3vw,48px);margin:14px 0}
+.p-scales-r>div>*{margin:0}
+.p-scales .cap{color:var(--ink-2);max-width:62ch}
+.p-method{border-top:1px solid var(--rule);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.p-tbl{width:100%;border-collapse:collapse;margin:14px 0;font-size:var(--t-cap);
+  font-family:Newsreader,Georgia,serif}
+.p-tbl th{text-align:left;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 650;font-size:var(--t-micro);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--rule-2);padding:0 10px 8px 0}
+.p-tbl td{padding:9px 10px 9px 0;border-bottom:1px solid var(--rule);color:var(--ink-2);vertical-align:top}
+.p-method .cap{color:var(--ink-3);max-width:62ch}
+
+/* THE APPORTIONMENT SPLIT. Registers and bars — width and ink only. Hue is
+   not available: red means a published limit was broken, and a sector holding
+   a large share is not that. */
+.p-ap>*{margin:0 0 var(--gap-row)}
+.p-ap>*:last-child{margin-bottom:0}
+.p-ap-k,.p-ap-f{max-width:62ch}
+.p-ap-h,.p-ap-r{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr) minmax(0,1fr) 2.6em;
+  gap:0 14px;align-items:center}
+.p-ap-h{border-bottom:1px solid var(--hair);padding-bottom:8px;margin-bottom:0}
+.p-ap-h .lbl{color:var(--fg-3)}
+.p-ap-r{border-bottom:1px solid var(--hair);padding:10px 0;margin:0}
+.p-ap-n{font-family:Newsreader,Georgia,serif;font-size:16px;min-width:0}
+.p-ap-w{display:flex;align-items:center;gap:8px;min-width:0}
+.p-ap-b{display:block;height:9px;background:var(--fg-2);flex:none;min-width:1px}
+.p-ap-s .p-ap-b{background:var(--fg-3)}
+.p-ap-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 700;
+  font-size:var(--t-micro);color:var(--fg);font-style:normal;font-variant-numeric:tabular-nums;flex:none}
+.p-ap-d{color:var(--fg-3);text-align:right;font-variant-numeric:tabular-nums}
+.p-ap-r2{grid-template-columns:minmax(0,11em) minmax(0,1fr)}
+.p-ap .cap{color:var(--fg-3);max-width:64ch}
+/* THE RANGE CHART. A line from low to high on a shared axis: the LENGTH is
+   the uncertainty, which is the whole point of the panel. */
+.p-rg{border-top:1px solid var(--hair)}
+.p-rg-r{display:grid;grid-template-columns:minmax(0,12em) minmax(0,1fr) 5.2em;gap:0 14px;
+  align-items:center;border-bottom:1px solid var(--hair);padding:11px 0}
+.p-rg-n{font-family:Newsreader,Georgia,serif;font-size:16px;min-width:0}
+.p-rg-t{position:relative;height:11px;min-width:0}
+.p-rg-t::before{content:'';position:absolute;left:0;right:0;top:5px;height:1px;background:var(--hair-2)}
+.p-rg-l{position:absolute;top:3px;height:5px;background:var(--fg);display:block}
+.p-rg-l::before,.p-rg-l::after{content:'';position:absolute;top:-3px;width:1.5px;height:11px;background:var(--fg)}
+.p-rg-l::before{left:0}
+.p-rg-l::after{right:0}
+.p-rg-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 700;
+  font-size:var(--t-micro);color:var(--fg);text-align:right;font-variant-numeric:tabular-nums}
+.p-rg-ax{display:flex;justify-content:space-between;padding-top:8px;
+  font-family:Archivo,system-ui,sans-serif;font-size:var(--t-micro);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--fg-3)}
+.p-ap-sub{border-top:1px solid var(--hair)}
+
+/* SOURCES / FIRES. */
+.p-fire{border-top:1px solid var(--hair);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.p-fire .lbl{color:var(--fg-2)}
+.p-gapkey{max-width:62ch;margin:var(--gap-row) 0}
+.p-yy-l{margin-top:var(--gap-block)!important;color:var(--fg-2)}
+.p-yy{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:end;
+  height:150px;margin:14px 0;border-bottom:1px solid var(--hair)}
+.p-yy-c{display:grid;align-content:end;gap:4px;height:100%;min-width:0}
+.p-yy-bar{display:block;background:var(--fg-2);width:100%;align-self:end}
+.p-yy-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 700;
+  font-size:var(--t-micro);color:var(--fg);font-variant-numeric:tabular-nums}
+.p-yy-y{color:var(--fg-3)}
+.p-fire .cap{color:var(--fg-3);max-width:64ch;margin-top:10px}
+
+/* TREND. The day grid, the attention series, the forecast. */
+.p-grid-wrap .lbl,.p-attn .lbl,.p-fc .lbl{color:var(--fg-2)}
+.p-grid{display:grid;grid-template-columns:repeat(31,1fr);gap:2px;margin:14px 0;max-width:620px}
+.p-grid i{aspect-ratio:1;background:var(--hair-2);border-radius:1px}
+.p-grid i.p-g-on{background:var(--red)}
+.p-grid-wrap .cap{color:var(--fg-3);max-width:62ch}
+.p-attn{border-top:1px solid var(--hair);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.p-attn-c{display:flex;gap:3px;align-items:flex-end;height:132px;margin:14px 0 6px;
+  border-bottom:1px solid var(--hair)}
+.p-attn-b{flex:1 1 0;background:var(--fg-3);min-width:0}
+.p-attn-x{display:flex;justify-content:space-between;font-family:Archivo,system-ui,sans-serif;
+  font-size:var(--t-micro);letter-spacing:.14em;color:var(--fg-3)}
+.p-attn .body{max-width:62ch;margin:var(--gap-row) 0 0}
+.p-attn .cap{color:var(--fg-3);max-width:64ch;margin-top:10px}
+.p-fc{border-top:1px solid var(--hair);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.p-fc-c{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:end;
+  height:140px;margin:14px 0;border-bottom:1px solid var(--hair)}
+.p-fc-d{display:grid;align-content:end;gap:4px;height:100%;min-width:0}
+.p-fc-bar{position:relative;display:block;width:100%;background:var(--fg-3);align-self:end}
+.p-fc-rng{position:absolute;left:0;right:0;background:var(--hair);display:block}
+.p-fc-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 700;
+  font-size:var(--t-micro);color:var(--fg);font-variant-numeric:tabular-nums}
+.p-fc-x{color:var(--fg-3)}
+.p-fc .body{max-width:62ch;margin:var(--gap-row) 0 0}
+.p-fc .cap{color:var(--fg-3);margin-top:8px}
+
+/* GEOGRAPHY. Register rows, worst first. */
+.p-rank .lbl,.p-nat .lbl{color:var(--fg-2)}
+.p-rank-r{display:grid;grid-template-columns:4.2em minmax(0,1fr) auto;gap:0 16px;align-items:baseline;
+  border-bottom:1px solid var(--hair);padding:11px 0}
+.p-rank-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 800;
+  font-size:22px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;text-align:right}
+.p-rank-v.is-red{color:var(--red)}
+.p-rank-n{font-family:Newsreader,Georgia,serif;font-size:16.5px;min-width:0}
+.p-rank-g{color:var(--fg-3)}
+.p-rank-more{color:var(--fg-3);text-align:center;padding:10px 0;margin:0;
+  border-bottom:1px solid var(--hair)}
+.p-rank .cap,.p-nat .cap{color:var(--fg-3);max-width:64ch;margin-top:12px}
+.p-nat{border-top:1px solid var(--hair);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.p-nat .body{max-width:62ch;margin:12px 0 0}
+
+/* THE MAP. Real positions, equal scale on both axes. Squares, hairlines and
+   type — the same three marks the rest of the page is built from, so the map
+   is not a new visual system. No fill, no gradient, no plume. */
+.p-map{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:var(--gap-row) clamp(28px,4vw,64px);align-items:start}
+.p-map-s{display:block;width:100%;max-width:480px;height:auto;margin:0 0 14px;overflow:visible}
+.p-map-lg{margin:0}
+.p-sw{display:inline-block;width:9px;height:9px;margin-right:8px;vertical-align:baseline}
+.p-sw-hi{background:var(--red)}
+.p-sw-lo{background:var(--fg-3)}
+.p-m-fr{fill:none;stroke:var(--hair);stroke-width:1}
+.p-m-ln{stroke:var(--red);stroke-width:1;stroke-dasharray:3 3}
+.p-m-lo{fill:var(--fg-3)}
+.p-m-hi{fill:var(--red)}
+/* The two labelled numerals sit in the densest part of the map, so one of
+   them landed on a neighbouring monitor. Separated by a stroke in the BAND'S
+   OWN GROUND, drawn under the fill — the same principle as .pic-over's ramp
+   (type over a busy field needs separation), not a decorative outline. The
+   map only ever renders inside #geography, whose ground is --ground-2. */
+.p-m-lb text{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 800;
+  font-size:14px;fill:var(--fg);font-variant-numeric:tabular-nums;
+  stroke:var(--ground-2);stroke-width:3.5px;paint-order:stroke fill}
+.p-m-sc line{stroke:var(--fg-3);stroke-width:1}
+.p-m-sc text{font-family:Archivo,system-ui,sans-serif;font-size:9px;letter-spacing:.14em;
+  text-transform:uppercase;fill:var(--fg-3)}
+.p-map-k{max-width:62ch;margin:0 0 12px}
+.p-map .cap{color:var(--fg-3);max-width:64ch;margin:0 0 10px}
+
+/* MONEY. Three registers at wildly different scales; the gap does the work. */
+.p-money{border-top:1px solid var(--rule);margin-top:0}
+.p-money-r{border-bottom:1px solid var(--rule);padding:var(--gap-row) 0}
+.p-money-r>*{margin:0}
+.p-money-r .lbl{color:var(--ink-3)}
+.p-money-r .num{margin:8px 0}
+.p-money-r .cap{color:var(--ink-2);max-width:60ch}
+
+/* ACT. */
+.p-act{display:grid;grid-template-columns:1.4fr 1fr;gap:var(--gap-row) clamp(28px,4vw,64px);
+  border-top:1px solid var(--hair);padding-top:var(--gap-row)}
+.p-act-c>*{margin:0 0 12px}
+.p-act-c>*:last-child{margin-bottom:0}
+.p-act-c .lbl{color:var(--fg-2)}
+.p-act-c .body{max-width:48ch}
+.p-act-c .cap{color:var(--fg-3)}
+.p-news{border-top:1px solid var(--hair);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.p-news .lbl{color:var(--fg-2)}
+.p-news-o{border-left:2px solid var(--hair);padding-left:16px;margin:14px 0 var(--gap-row)}
+.p-news-o>*{margin:0 0 8px}
+.p-news-ol{color:var(--fg-3)}
+.p-news-o .cap{color:var(--fg-3);max-width:62ch}
+.p-news-r{display:grid;gap:3px;border-bottom:1px solid var(--hair);padding:12px 0}
+.p-news-m{color:var(--fg-3)}
+.p-news .cap{color:var(--fg-3);max-width:64ch;margin-top:12px}
+.p-sib{border-top:1px solid var(--hair);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.p-sib .lbl{color:var(--fg-2)}
+.p-sib-n{color:var(--fg-2);margin:10px 0}
+.p-sib .cap{color:var(--fg-3)}
+.p-cite-b{color:var(--fg-3);border-top:1px solid var(--hair-2);margin-top:var(--gap-block);
+  padding-top:14px;max-width:64ch}
+/* WATCH YOUR MONITOR. A register of monitors, each with its live reading, so
+   choosing one is also reading the page's argument. 44px targets throughout. */
+.p-ward{margin:0 0 12px}
+.p-ward-l{border-top:1px solid var(--hair);margin:12px 0 10px}
+.p-ward-r{display:grid;grid-template-columns:minmax(0,1fr) 3.2em auto;gap:0 14px;
+  align-items:baseline;width:100%;text-align:left;appearance:none;background:none;
+  border:0;border-bottom:1px solid var(--hair);padding:12px 0;min-height:44px;
+  cursor:pointer;color:inherit;font:inherit}
+.p-ward-r:hover .p-ward-n,.p-ward-r:focus-visible .p-ward-n{text-decoration:underline;
+  text-underline-offset:3px}
+.p-ward-n{font-family:Newsreader,Georgia,serif;font-size:16.5px;min-width:0}
+.p-ward-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 800;
+  font-size:19px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;text-align:right}
+.p-ward-v.is-red{color:var(--red)}
+.p-ward-b{color:var(--fg-3)}
+.p-ward-hint,.p-ward-none{color:var(--fg-3);padding:10px 0 0;margin:0}
+.p-ward-p{border-top:1px solid var(--hair-2);margin-top:var(--gap-row);padding-top:var(--gap-row)}
+.p-ward-p>*{margin:0 0 12px}
+.p-ward-p>*:last-child{margin-bottom:0}
+.p-ward-p .lbl{color:var(--fg-2)}
+.p-ward-p .body{max-width:52ch}
+.p-ward-p .cap{color:var(--fg-3);max-width:56ch}
+/* The submit is a real <button>; the frozen .b pill is styled for <a>. */
+button.b{appearance:none;border:0;font:inherit;cursor:pointer}
+button.b[disabled]{opacity:.55;cursor:default}
+
+/* THE DIY BANK. A register, not cards: three rows on hairlines. */
+.p-do-r{border-top:1px solid var(--hair);padding:var(--gap-row) 0}
+.p-do-r:last-child{border-bottom:1px solid var(--hair)}
+.p-do-r>*{margin:0 0 10px}
+.p-do-r>*:last-child{margin-bottom:0}
+.p-do-r .lbl{color:var(--fg-2)}
+.p-do-r .body{max-width:58ch}
+.p-do-r .cap{color:var(--fg-3);max-width:64ch}
+/* THE CLOSE. Two registers on the band's own hairline, below the tabs, so
+   they are never hidden behind a tab — a citation must not be a panel. */
+.p-close{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap-row) clamp(28px,4vw,64px);
+  border-top:1px solid var(--hair-2);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.p-close-r>*{margin:0 0 10px}
+.p-close-r>*:last-child{margin-bottom:0}
+.p-close-r .lbl{color:var(--fg-2)}
+.p-close-r .cap{color:var(--fg-3);max-width:56ch}
+
+/* ══ TABS (D-21.1) ═════════════════════════════════════════════════════
+   The frozen deck's tab grammar, reused for long data objects. Marker is a
+   3px border-top in the ground's own ink — THERE IS NO RED VARIANT AND NO
+   MUSTARD VARIANT (§5.2). The negative margin and the equal padding are the
+   deck's own fix for a focus ring clipped by a scroll container, and they
+   MUST move together: dropping either re-clips the ring. */
+.p-tabs-l{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;
+  margin:-5px -5px 0;padding:5px 5px 0;scroll-padding-inline:5px;
+  border-bottom:1px solid var(--hair)}
+.paper .p-tabs-l,.paper-2 .p-tabs-l{border-bottom-color:var(--rule)}
+.p-tabs-l::-webkit-scrollbar{display:none}
+.p-tabs-l button{appearance:none;background:none;border:0;border-top:3px solid transparent;
+  color:var(--fg-3);font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 92,'wght' 650;font-size:12.5px;letter-spacing:.13em;
+  text-transform:uppercase;padding:14px 18px 14px 0;cursor:pointer;white-space:nowrap;
+  min-height:44px;flex:none}
+.paper .p-tabs-l button,.paper-2 .p-tabs-l button{color:var(--ink-3)}
+.p-tabs-l button[aria-selected=true]{color:var(--fg);border-top-color:var(--fg)}
+.paper .p-tabs-l button[aria-selected=true],.paper-2 .p-tabs-l button[aria-selected=true]{
+  color:var(--ink);border-top-color:var(--ink)}
+.p-tabs [role=tabpanel]{padding-top:var(--gap-row)}
+
+/* ── PHONE ─────────────────────────────────────────────────────────────── */
+@media (max-width:900px){
+  .p-subs{grid-template-columns:1fr}
+  .p-sub{display:grid;grid-template-columns:5.5em minmax(0,1fr) auto;gap:0 14px;align-items:baseline;
+    border-right:0;border-bottom:1px solid var(--rule);padding:14px 0}
+  .p-sub:last-child{border-bottom:0}
+  .p-sub-v{font-size:1.5rem;margin:0}
+  .p-sub-g{margin:0;text-align:right}
+  .p-expl{grid-template-columns:1fr}
+  .p-expl>div{border-right:0;border-bottom:1px solid var(--rule);padding-right:0}
+  .p-expl>div:last-child{border-bottom:0}
+  .p-act{grid-template-columns:1fr}
+  .p-close{grid-template-columns:1fr}
+  .p-map{grid-template-columns:1fr}
+  .p2-cols{grid-template-columns:1fr}
+  .p-grid{grid-template-columns:repeat(21,1fr)}
+}
+@media (max-width:640px){
+  /* The strip goes two-up rather than four; four cells at 375 give each
+     numeral 78px, which the account column cannot hold. */
+  .p-strip-in{grid-template-columns:1fr 1fr}
+  .p-scales-r{grid-template-columns:1fr}
+  .p-yy{grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+  .p-yy-v{font-size:10px}
+}
+@media (max-width:560px){
+  /* .p-two does NOT stack: the device IS the side-by-side comparison, and
+     the numerals were kept short so a 158px column holds them. */
+  .p-two{column-gap:18px}
+  .p-two-c .cap{max-width:none}
+  .p-row{grid-template-columns:1fr}
+  .p-rank-r{grid-template-columns:3.4em minmax(0,1fr) auto;gap:0 12px}
+  .p-grid{grid-template-columns:repeat(14,1fr)}
+  .p-fc-c{gap:5px}
+  .p-fc-v{font-size:10px}
+}
+
+/* NO BACKTICKS ANYWHERE BELOW — this whole block is one template literal and a
+   backtick in a comment silently terminates it. Three separate builds were
+   broken this way. Quote CSS selectors in prose without them. */
+/* ── THE HERO CROP, AND A FINDING ABOUT IT.
+      The situation pages all carry style="--zh:...;--zt:..." on their hero
+      image, copied from the Air build. Those three custom properties belong to
+      .s-hero-shot img on the frozen homepage, which reads them as height,
+      top and object-position. .pic > img reads NONE of them: its rule is a
+      plain width:100%;height:100%;object-fit:cover. So the zoom values are
+      INERT on every situation page including Air's, and every hero is a
+      centre crop whether or not that is the right crop.
+      Rather than delete the attributes (they are harmless, and the Air page is
+      signed off), the one property that actually decides the crop is wired up
+      here. A wide photograph cropped to a portrait band loses its subject if
+      the subject is not dead centre — which is exactly what happened to the
+      flooded-field hero, whose pylon sits at 70% across. ─────────────────── */
+.pic>img{object-position:var(--op,50% 50%)}
+
+/* ── THE DISCLOSURE. Native details/summary: no JS, keyboard and
+      screen-reader support for free, and it is what keeps a long table off a
+      phone's critical path. The summary is held at var(--hit) so it meets the
+      44px touch target the frozen page sets for every control. ─────────── */
+.dx{margin:clamp(14px,1.6vw,20px) 0 0;border-top:1px solid var(--hair-2)}
+.paper .dx{border-top-color:var(--rule-2)}
+.dx-s{cursor:pointer;list-style:none;display:flex;align-items:center;gap:9px;
+  min-height:var(--hit,44px);font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--fg-2)}
+.paper .dx-s{color:var(--ink-2)}
+.dx-s::-webkit-details-marker{display:none}
+.dx-s::before{content:'';flex:none;width:9px;height:9px;border-right:2px solid currentColor;
+  border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .16s}
+.dx[open]>.dx-s::before{transform:rotate(-135deg) translateY(-2px)}
+.dx-s:hover,.dx-s:focus-visible{color:var(--mustard)}
+.paper .dx-s:hover,.paper .dx-s:focus-visible{color:var(--ink)}
+.dx-b{padding:2px 0 clamp(12px,1.4vw,18px)}
+
+/* ── THE MEASURE ROW. A label, a bar, its value, and A TICK WHERE THE
+      PUBLISHED LIMIT SITS. The tick is the whole point: a bar on its own is a
+      quantity, and this site only publishes a quantity against its limit.
+      Bar ink is neutral by default — weight, not red — because a large value
+      is not automatically a breach. .is-over is the opt-in for a row that
+      genuinely crosses a published threshold. ─────────────────────────── */
+.mr-h,.mr{display:grid;grid-template-columns:minmax(0,1fr) minmax(70px,1.2fr) 4.2em 3.2em;
+  gap:0 clamp(7px,.9vw,13px);align-items:center}
+.mr-h{padding:0 0 7px;border-bottom:1px solid var(--hair)}
+.paper .mr-h{border-bottom-color:var(--rule-2)}
+.mr-h .lbl{font-size:10px;color:var(--fg-3)}
+.paper .mr-h .lbl{color:var(--ink-3)}
+.mr{padding:9px 0;border-bottom:1px solid var(--hair-2)}
+.paper .mr{border-bottom-color:var(--rule)}
+.mr-n{font-size:clamp(13px,.93vw,15px);color:var(--fg);min-width:0;overflow-wrap:break-word}
+.paper .mr-n{color:var(--ink)}
+.mr-n i{display:block;font-size:9.5px;font-style:normal;letter-spacing:.05em;color:var(--fg-3);line-height:1.2}
+.paper .mr-n i{color:var(--ink-3)}
+.mr-b{position:relative;display:block;height:8px;background:var(--hair-2)}
+.paper .mr-b{background:var(--rule)}
+.mr-f{position:absolute;inset:0 auto 0 0;width:var(--w);background:var(--fg-2)}
+.paper .mr-f{background:var(--ink-2)}
+.mr.is-over .mr-f{background:var(--red)}
+.paper .mr.is-over .mr-f{background:var(--red-ink)}
+.mr.is-me .mr-f{background:var(--mustard)}
+.mr-l{position:absolute;top:-3px;bottom:-3px;left:var(--x);width:2px;background:var(--fg)}
+.paper .mr-l{background:var(--red-ink)}
+.mr-v,.mr-x{font-variant-numeric:tabular-nums;text-align:right}
+.mr-v{font-size:clamp(12.5px,.9vw,14px);color:var(--fg)}
+.paper .mr-v{color:var(--ink)}
+.mr-x{font-size:11px;color:var(--fg-3)}
+.paper .mr-x{color:var(--ink-3)}
+.mr.is-over .mr-x{color:var(--red)}
+.paper .mr.is-over .mr-x{color:var(--red-ink)}
+@media (max-width:639px){
+  .mr-h{display:none}
+  .mr{grid-template-columns:minmax(0,1fr) 4em 3em;grid-template-areas:'n v x' 'b b b';
+    gap:5px 8px;padding:11px 0}
+  .mr-n{grid-area:n}.mr-v{grid-area:v}.mr-x{grid-area:x}.mr-b{grid-area:b}
+}
+
+
+/* ══ D-25 — THE SITUATION INDEX'S OWN BLOCK ═══════════════════════════════
+   Tokens, chrome and the state chip are inherited. Nothing below re-picks a
+   colour or a type size. Every component states its colour for its own ground.
+   The old page was 887 lines with 49.5% of its bytes in a private style block
+   and a rail mechanism that did not exist on the frozen page; none of that is
+   carried forward.
+   ═══════════════════════════════════════════════════════════════════════ */
+.ix-hero{padding-top:clamp(8px,1.4vw,20px)}
+.ix-eyebrow{display:block;color:var(--fg-3);margin:0 0 clamp(14px,1.6vw,22px)}
+.ix-h1{margin:0 0 clamp(18px,2vw,28px)}
+.ix-lead{font-size:clamp(17px,1.35vw,22px);line-height:1.46;max-width:44ch;color:var(--fg);
+  margin:0 0 clamp(24px,2.8vw,38px)}
+.ix-refuse{border-left:2px solid var(--hair);padding:2px 0 2px 16px;
+  margin:clamp(22px,2.6vw,34px) 0 0;font-size:clamp(15px,1.05vw,17px);line-height:1.58;
+  color:var(--fg-2);max-width:62ch}
+.ix-vocab{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;max-width:62ch;
+  color:var(--fg-3);margin:clamp(20px,2.2vw,28px) 0 clamp(22px,2.4vw,30px)}
+
+/* THE THREE DEFINITION COLUMNS. Numerals, because the page's argument is a
+   count: six situations, six units, six kinds of limit. */
+.ix-def{display:grid;grid-template-columns:1fr;gap:clamp(20px,2.4vw,32px);
+  margin:0 0 clamp(4px,1vw,10px)}
+.ix-def-c{border-top:2px solid var(--hair);padding-top:13px}
+.ix-def-n{font-size:clamp(40px,4.6vw,64px);line-height:.92;margin:0 0 .08em;
+  font-variant-numeric:tabular-nums;color:var(--fg)}
+.ix-def-l{display:block;color:var(--fg-2);margin:0 0 .5em}
+.ix-def-x{color:var(--fg-3);max-width:40ch}
+
+/* THE SIX CARDS. A grid that reads as a contact sheet rather than a
+   dashboard: no shared scale, because there is no shared unit. */
+.ix-cards{display:grid;grid-template-columns:1fr;gap:1px;background:var(--hair-2);
+  margin:0 0 clamp(24px,2.8vw,36px)}
+.ix-card{display:grid;gap:0;background:var(--ground-2);padding:clamp(18px,2vw,26px);
+  text-decoration:none;color:inherit;position:relative;transition:background .14s}
+.ix-card:hover,.ix-card:focus-visible{background:rgba(251,248,240,.045)}
+.ix-card:focus-visible{outline:2px solid var(--fg);outline-offset:-3px}
+.ix-card-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  margin:0 0 clamp(12px,1.4vw,18px)}
+.ix-card-n{color:var(--fg)}
+.ix-card-w{color:var(--fg-3)}
+.ix-card-v{display:block;font-size:clamp(44px,5vw,68px);line-height:.94;
+  font-variant-numeric:tabular-nums;color:var(--fg)}
+.ix-card.is-breach .ix-card-v{color:var(--red)}
+.ix-card-u{display:block;color:var(--fg-2);margin:.35em 0 .1em}
+.ix-card-s{display:block;color:var(--fg-3)}
+.ix-card-rule{display:block;height:1px;background:var(--hair);margin:clamp(14px,1.6vw,20px) 0}
+/* THE KIND OF LIMIT. Given the same weight as the reading, because it is the
+   page's argument. A card with no limit is marked by the ABSENCE of a value,
+   not by a colour — there is nothing here to call red. */
+.ix-card-lim{display:block;margin:0 0 clamp(10px,1.2vw,14px)}
+.ix-card-k{display:block;font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--fg-3);font-style:normal;margin:0 0 .3em}
+.ix-card-lim b{display:block;font-size:clamp(15px,1.15vw,18px);line-height:1.3;color:var(--fg);font-weight:500}
+.ix-card-a{display:block;color:var(--fg-3);margin-top:.28em;font-style:normal}
+.ix-card.is-nolimit .ix-card-lim b{color:var(--fg-2)}
+.ix-card-verd{display:block;font-size:clamp(14px,1vw,16px);line-height:1.4;color:var(--fg-2);
+  margin:0 0 clamp(10px,1.2vw,14px)}
+.ix-card-line{display:block;color:var(--fg-3);max-width:38ch;
+  margin:0 0 clamp(16px,1.8vw,22px)}
+.ix-card-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-top:auto}
+.ix-card-go{display:inline-flex;width:22px;height:22px;color:var(--mustard);flex:none}
+.ix-card-go svg{width:100%;height:100%}
+.is-red{color:var(--red)}
+
+.ix-note{border-left:2px solid var(--hair);padding:2px 0 2px 16px;
+  margin:clamp(20px,2.2vw,30px) 0;font-size:clamp(15px,1.05vw,17px);line-height:1.58;
+  color:var(--fg-2);max-width:62ch}
+.paper .ix-note{border-left-color:var(--rule-2);color:var(--ink-2)}
+.ix-src{color:var(--fg-3);max-width:62ch;margin:.8em 0 0}
+.ix-close{color:var(--ink-3);max-width:62ch;margin:clamp(20px,2.2vw,28px) 0 clamp(18px,2vw,24px)}
+
+/* CAMPAIGNS, on paper. */
+.ix-camps{display:grid;grid-template-columns:1fr;gap:clamp(22px,2.6vw,34px)}
+.ix-camp{border-top:2px solid var(--rule-2);padding-top:13px}
+.ix-camp-n{font-family:inherit;font-size:clamp(18px,1.5vw,24px);line-height:1.2;color:var(--ink);margin:0 0 .2em}
+.ix-camp-y{display:block;color:var(--ink-3);margin:0 0 .7em}
+.ix-camp-x{font-size:clamp(14.5px,1vw,16.5px);line-height:1.55;color:var(--ink-2);
+  max-width:40ch;margin:0 0 1em}
+
+@media (min-width:760px){
+  .ix-def{grid-template-columns:repeat(3,1fr)}
+  .ix-cards{grid-template-columns:1fr 1fr}
+  .ix-camps{grid-template-columns:repeat(3,1fr)}
+}
+@media (min-width:1100px){
+  .ix-cards{grid-template-columns:repeat(3,1fr)}
+}
 </style>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><filter id="duo" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/><feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/><feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/></feComponentTransfer></filter><filter id="duo-dim" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0.11 0.18 0.255 0.325 0.385 0.43"/><feFuncG type="table" tableValues="0.10 0.165 0.235 0.30 0.355 0.40"/><feFuncB type="table" tableValues="0.085 0.14 0.20 0.26 0.31 0.35"/></feComponentTransfer></filter><filter id="duo-m" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0.20 0.38 0.57 0.75 0.89 0.97"/><feFuncG type="table" tableValues="0.13 0.27 0.44 0.62 0.78 0.90"/><feFuncB type="table" tableValues="0.05 0.10 0.17 0.27 0.40 0.58"/></feComponentTransfer></filter><filter id="sig-r" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer in="lum" result="m"><feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/><feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/><feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/></feComponentTransfer><feColorMatrix type="matrix" in="SourceGraphic" result="k" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.55 -1.25 -0.30 0 -0.10"/><feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0 0.10 0.68 1 1"/></feComponentTransfer><feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/><feColorMatrix in="SourceGraphic" type="saturate" values="1.30" result="sat"/><feComposite in="sat" in2="kb" operator="in" result="c"/><feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge></filter><filter id="sig-y" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer in="lum" result="m"><feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/><feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/><feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/></feComponentTransfer><feColorMatrix type="matrix" in="SourceGraphic" result="k" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.65 0.65 -1.5 0 -0.06"/><feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0 0.12 0.72 1 1"/></feComponentTransfer><feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/><feColorMatrix in="SourceGraphic" type="saturate" values="1.22" result="sat"/><feComposite in="sat" in2="kb" operator="in" result="c"/><feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge></filter><filter id="sig-g" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer in="lum" result="m"><feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/><feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/><feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/></feComponentTransfer><feColorMatrix type="matrix" in="SourceGraphic" result="k" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -0.85 1.70 -0.85 0 -0.03"/><feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0.03 0.30 0.78 1 1"/></feComponentTransfer><feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/><feColorMatrix in="SourceGraphic" type="saturate" values="1.72" result="sat"/><feComposite in="sat" in2="kb" operator="in" result="c"/><feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge></filter><filter id="sig-r-dim" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer in="lum" result="m"><feFuncR type="table" tableValues="0.11 0.18 0.255 0.325 0.385 0.43"/><feFuncG type="table" tableValues="0.10 0.165 0.235 0.30 0.355 0.40"/><feFuncB type="table" tableValues="0.085 0.14 0.20 0.26 0.31 0.35"/></feComponentTransfer><feColorMatrix type="matrix" in="SourceGraphic" result="k" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.55 -1.25 -0.30 0 -0.10"/><feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0 0.10 0.68 1 1"/></feComponentTransfer><feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/><feColorMatrix in="SourceGraphic" type="saturate" values="1.30" result="sat"/><feComposite in="sat" in2="kb" operator="in" result="c"/><feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge></filter><filter id="sig-y-dim" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer in="lum" result="m"><feFuncR type="table" tableValues="0.11 0.18 0.255 0.325 0.385 0.43"/><feFuncG type="table" tableValues="0.10 0.165 0.235 0.30 0.355 0.40"/><feFuncB type="table" tableValues="0.085 0.14 0.20 0.26 0.31 0.35"/></feComponentTransfer><feColorMatrix type="matrix" in="SourceGraphic" result="k" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.65 0.65 -1.5 0 -0.06"/><feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0 0.12 0.72 1 1"/></feComponentTransfer><feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/><feColorMatrix in="SourceGraphic" type="saturate" values="1.22" result="sat"/><feComposite in="sat" in2="kb" operator="in" result="c"/><feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge></filter></defs></svg>
-<header class="nav"><div class="nav-in"><a class="mark" href="/design/v3/home.html" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/design/v3/intelligence.html" aria-current="page">Now</a><a class="nl" href="#work">Work</a><a class="nl" href="#journeys">Journeys</a><a class="nl" href="#impact">Impact</a><a class="nl" href="#farm">Farm</a><a class="nl" href="#record">Record</a></nav><a class="give" href="#give">Give</a></div><nav class="navscroll" aria-label="Sections"><ul><li><a class="nl" href="/design/v3/intelligence.html" aria-current="page">Now</a></li><li><a class="nl" href="#work">Work</a></li><li><a class="nl" href="#journeys">Journeys</a></li><li><a class="nl" href="#impact">Impact</a></li><li><a class="nl" href="#farm">Farm</a></li><li><a class="nl" href="#record">Record</a></li></ul></nav></header>
-<section class="idx"><div class="wide"><p class="lbl" style="color:var(--fg-3);margin:0 0 18px">Environmental Intelligence &nbsp;/&nbsp; the index &nbsp;/&nbsp; Wednesday, 19 August 2026, 07:00 IST</p><div class="idx-top"><h1 class="d1" style="max-width:15ch">Six situations,<br>four of them<br>illegal</h1><p class="lead">This page is the index. It says what is being watched, how fresh each reading is and what changed overnight. It does not go deep on any one of them: every situation has its own page, and the link is on the situation.</p></div><div class="idx-stat"><div><span class="num">6</span><p class="lbl" style="margin:10px 0 0;color:var(--fg-3)">In window today</p><p class="cap" style="margin:4px 0 0">Of nine defined. Heat closed on 15 July.</p></div><div><span class="num">4</span><p class="lbl" style="margin:10px 0 0;color:var(--red)">Breaking a legal limit</p><p class="cap" style="margin:4px 0 0">Air, the river, sewage treatment, night noise.</p></div><div><span class="num">0</span><p class="lbl" style="margin:10px 0 0;color:var(--fg-3)">Live feeds</p><p class="cap" style="margin:4px 0 0">None are wired yet. Every reading here is a bulletin figure or a sample value.</p></div><div><span class="num">+3</span><p class="lbl" style="margin:10px 0 0;color:var(--fg-3)">Change since yesterday</p><p class="cap" style="margin:4px 0 0">Air up 3 points. Nothing else moved.</p></div></div><p class="cap" style="margin:16px 0 0;max-width:74ch">No feed is wired yet: five readings are the most recent published bulletin or our own field log, three are sample values, and one is out of season. There is no LIVE badge anywhere on this page, because that would be a claim the data cannot support.</p></div></section><section style="padding-top:0"><div class="rig rig-hero"><div class="rig-clip"><div class="rig-track" role="region" aria-label="Situations, one at a time. Use the arrow keys or swipe."><article class="sit hsit" id="h-air" data-id="air" data-tab="Air" data-breach="true" role="tabpanel" aria-label="Delhi-NCR / Air quality index"><figure class="pic hbg"><img class="duo" src="/images/photos/india-gate-hero.jpg" alt="India Gate through Delhi haze"></figure><div class="hin pic-body"><div class="wide"><div class="rail breach" style="--lw:56%"><div class="rail-l"><p class="lbl" style="color:var(--fg-2);margin:0 0 10px">Delhi-NCR / Air quality index</p><span class="readout" aria-hidden="true">412</span><span class="sr">Delhi-NCR / Air quality index. 412 AQI, 24-hour rolling. Severe. Demo data.</span><span class="unit">AQI, 24-hour rolling</span><p class="verdict bad">Severe</p><p class="mult"><b>4.1&#215;</b> the limit</p></div><div class="rail-r"><p class="hwhy">Four times the limit the Central Pollution Control Board sets for a safe day. Schools in this ward are three kilometres from the monitor that recorded it.</p><div class="bands bad" role="img" aria-label="Band 6 of 6, Severe"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on tip"></i></div><p class="limit" style="margin:14px 0 0">CPCB safe limit 100. <b>Limit broken.</b></p><div class="hmeta"><p class="state demo" style="margin:0 0 8px"><i></i>Demo data</p><p class="cap hero-cap" style="margin:0 0 6px">CPCB continuous monitor, Anand Vihar.<br>Hourly. Sample value, not a reading.</p><p class="cap" style="margin:0"><span class="tag tag-season">Year round</span></p></div><p style="margin:20px 0 0"><a class="act" href="/design/v3/situation-air.html">The full instrument <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p></div></div></div></div></article><article class="sit hsit" id="h-yamuna" data-id="yamuna" data-tab="Yamuna" data-breach="true" role="tabpanel" aria-label="Yamuna at Nizamuddin / Dissolved oxygen"><figure class="pic hbg"><img class="duo" src="/images/photos/yamuna-students-foam-line.jpg" alt="Students at the edge of the Yamuna beside a line of foam"></figure><div class="hin pic-body"><div class="wide"><div class="rail breach" style="--lw:56%"><div class="rail-l"><p class="lbl" style="color:var(--fg-2);margin:0 0 10px">Yamuna at Nizamuddin / Dissolved oxygen</p><span class="readout" aria-hidden="true">0.0</span><span class="sr">Yamuna at Nizamuddin / Dissolved oxygen. 0.0 milligrams per litre. Nothing can breathe. Periodic.</span><span class="unit">milligrams per litre</span><p class="verdict bad">Nothing can breathe</p></div><div class="rail-r"><p class="hwhy">The river enters Delhi alive and leaves it without oxygen. Twenty-two kilometres of it are inside the city, under two per cent of its length, and they carry most of its pollution load.</p><div class="bands bad" role="img" aria-label="Band 6 of 6, Dead"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on tip"></i></div><p class="limit" style="margin:14px 0 0">CPCB class C minimum 5.0. <b>Limit broken.</b></p><div class="hmeta"><p class="state periodic" style="margin:0 0 8px"><i></i>Periodic</p><p class="cap hero-cap" style="margin:0 0 6px">DPCC monthly grab sample, Yamuna monitoring round.<br>Monthly. Last drawn 4 August 2026.</p><p class="cap" style="margin:0"><span class="tag tag-season">Year round</span></p></div><p style="margin:20px 0 0"><a class="act" href="/design/v3/situation-yamuna.html">The full instrument <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p></div></div></div></div></article><article class="sit hsit" id="h-monsoon" data-id="monsoon" data-tab="Monsoon" data-breach="false" role="tabpanel" aria-label="Delhi / Rainfall, season to date"><figure class="pic hbg"><img class="duo" src="/images/photos/yamuna-floodplain-crowd.jpg" alt="People gathered on the Yamuna floodplain in the rains"></figure><div class="hin pic-body"><div class="wide"><div class="rail" style="--lw:56%"><div class="rail-l"><p class="lbl" style="color:var(--fg-2);margin:0 0 10px">Delhi / Rainfall, season to date</p><span class="readout" aria-hidden="true">512</span><span class="sr">Delhi / Rainfall, season to date. 512 millimetres since 1 June. Above normal. Periodic.</span><span class="unit">millimetres since 1 June</span><p class="verdict">Above normal</p></div><div class="rail-r"><p class="hwhy">Above normal is not the same as illegal, so this page does not turn red for it. What floods the drains is a single day above 100mm, and there have been two.</p><div class="bands" role="img" aria-label="Band 4 of 6, Above"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></div><p class="limit" style="margin:14px 0 0">Normal to 19 August is 434mm.</p><div class="hmeta"><p class="state periodic" style="margin:0 0 8px"><i></i>Periodic</p><p class="cap hero-cap" style="margin:0 0 6px">India Meteorological Department, season accumulation.<br>Daily. Updated 19 August 2026.</p><p class="cap" style="margin:0"><span class="tag tag-season">In window</span></p></div><p style="margin:20px 0 0"><a class="act" href="/design/v3/situation-soon.html">The full instrument <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p></div></div></div></div></article><article class="sit hsit" id="h-fire" data-id="fire" data-tab="Forest fire" data-breach="false" role="tabpanel" aria-label="North India / Active fire detections"><figure class="pic hbg"><img class="duo" src="/images/photos/grasses-dusk.jpg" alt="Dry standing grasses at dusk"></figure><div class="hin pic-body"><div class="wide"><div class="rail" style="--lw:56%"><div class="rail-l"><p class="lbl" style="color:var(--fg-2);margin:0 0 10px">North India / Active fire detections</p><span class="readout" aria-hidden="true">118</span><span class="sr">North India / Active fire detections. 118 thermal detections, 7 days. Below season. Demo data.</span><span class="unit">thermal detections, 7 days</span><p class="verdict">Below season</p></div><div class="rail-r"><p class="hwhy">A detection is a thermal anomaly, not a confirmed fire, and in Punjab and Haryana in October it is very often crop residue rather than forest. This situation counts detections. What was actually lost is a different situation on a different clock.</p><div class="bands" role="img" aria-label="Band 2 of 6, Few"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div><p class="limit" style="margin:14px 0 0">No legal threshold. Stubble season opens in October.</p><div class="hmeta"><p class="state demo" style="margin:0 0 8px"><i></i>Demo data</p><p class="cap hero-cap" style="margin:0 0 6px">NASA FIRMS, VIIRS 375m active fire product.<br>Twice daily. Sample value, not a reading.</p><p class="cap" style="margin:0"><span class="tag tag-season">Year round</span></p></div><p style="margin:20px 0 0"><a class="act" href="/design/v3/situation-soon.html">The full instrument <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p></div></div></div></div></article><article class="sit hsit" id="h-forestloss" data-id="forestloss" data-tab="Forest loss" data-breach="false" role="tabpanel" aria-label="India / Tree cover loss"><figure class="pic hbg"><img class="duo" src="/images/photos/pine-forest-path.jpg" alt="A path through standing pine forest"></figure><div class="hin pic-body"><div class="wide"><div class="rail" style="--lw:56%"><div class="rail-l"><p class="lbl" style="color:var(--fg-2);margin:0 0 10px">India / Tree cover loss</p><span class="readout" aria-hidden="true">1.65</span><span class="sr">India / Tree cover loss. 1.65 million hectares lost, 2001 to 2025. Declining. Periodic.</span><span class="unit">million hectares lost, 2001 to 2025</span><p class="verdict">Declining</p></div><div class="rail-r"><p class="hwhy">The slow companion to the fire count. Tree cover loss is not always deforestation and it is never a weekly number: this one moves once a year and is read over decades. Same page shape, different clock.</p><p class="limit" style="margin:14px 0 0">No legal threshold. Compared to the 2000 baseline.</p><div class="hmeta"><p class="state periodic" style="margin:0 0 8px"><i></i>Periodic</p><p class="cap hero-cap" style="margin:0 0 6px">Global Forest Watch, Hansen tree cover loss, annual analysis.<br>Annual. 2025 analysis published April 2026.</p><p class="cap" style="margin:0"><span class="tag tag-season">Year round</span></p></div><p style="margin:20px 0 0"><a class="act" href="/design/v3/situation-soon.html">The full instrument <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p></div></div></div></div></article><article class="sit hsit" id="h-heat" data-id="heat" data-tab="Heatwave" data-breach="false" role="tabpanel" aria-label="Safdarjung / Heat index"><figure class="pic hbg"><img class="duo" src="/images/photos/turmeric-plot-workers.jpg" alt="Farm workers in an open plot in full sun"></figure><div class="hin pic-body"><div class="wide"><div class="rail closed" style="--lw:56%"><div class="rail-l"><p class="lbl" style="color:var(--fg-2);margin:0 0 10px">Safdarjung / Heat index</p><span class="readout quiet" aria-hidden="true">47.8</span><span class="sr">Safdarjung / Heat index. 47.8 degrees Celsius, the peak of the 2026 season. Season closed. Out of season.</span><span class="unit">degrees Celsius, the peak of the 2026 season</span><p class="verdict">Season closed</p></div><div class="rail-r"><p class="hwhy">A heatwave page in December is one of the most useful pages on this site and almost nobody builds one. Out of window the situation does not disappear, it becomes the record of the season just gone: fourteen days over the alert threshold, a peak of 47.8 on 22 May, and the date it comes back.</p><p class="limit" style="margin:14px 0 0">IMD heatwave alert at 45.0. Crossed on 14 days in 2026.</p><div class="hmeta"><p class="state closed" style="margin:0 0 8px"><i></i>Out of season</p><p class="cap hero-cap" style="margin:0 0 6px">India Meteorological Department, Safdarjung observatory.<br>Daily, in season. Season closed 15 July 2026.</p><p class="cap" style="margin:0"><span class="tag tag-season">Out of window</span></p></div><p style="margin:20px 0 0"><a class="act" href="/design/v3/situation-soon.html">The record of the season <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p></div></div></div></div></article><article class="sit hsit" id="h-stp" data-id="stp" data-tab="Treatment" data-breach="true" role="tabpanel" aria-label="Delhi / Sewage treatment plants"><figure class="pic hbg"><img class="duo" src="/images/photos/cityscapes-yamuna-walk.jpg" alt="A group walking the Yamuna bank in Delhi"></figure><div class="hin pic-body"><div class="wide"><div class="rail breach" style="--lw:56%"><div class="rail-l"><p class="lbl" style="color:var(--fg-2);margin:0 0 10px">Delhi / Sewage treatment plants</p><span class="readout" aria-hidden="true">14 of 18</span><span class="sr">Delhi / Sewage treatment plants. 14 of 18 plants failing discharge standards. Not meeting standard. Periodic.</span><span class="unit">plants failing discharge standards</span><p class="verdict bad">Not meeting standard</p></div><div class="rail-r"><p class="hwhy">Not every reading is a number on a scale. This one is a count, and the value the backend stores for it is the string "14 of 18". The layout has to hold that as comfortably as it holds 412.</p><div class="bands bad" role="img" aria-label="Band 5 of 6, 12 to 15"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on tip"></i><i class=""></i></div><p class="limit" style="margin:14px 0 0">Standard is all 18. <b>Limit broken.</b></p><div class="hmeta"><p class="state periodic" style="margin:0 0 8px"><i></i>Periodic</p><p class="cap hero-cap" style="margin:0 0 6px">DPCC compliance report, pre-monsoon round.<br>Twice a year. Published June 2026.</p><p class="cap" style="margin:0"><span class="tag tag-season">Year round</span></p></div><p style="margin:20px 0 0"><a class="act" href="/design/v3/situation-soon.html">The full instrument <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p></div></div></div></div></article><article class="sit hsit" id="h-noise" data-id="noise" data-tab="Noise" data-breach="true" role="tabpanel" aria-label="ITO crossing / Night noise"><figure class="pic hbg"><img class="duo" src="/images/photos/india-gate-dusk.jpg" alt="Traffic at dusk in central Delhi"></figure><div class="hin pic-body"><div class="wide"><div class="rail breach" style="--lw:56%"><div class="rail-l"><p class="lbl" style="color:var(--fg-2);margin:0 0 10px">ITO crossing / Night noise</p><span class="readout" aria-hidden="true">68</span><span class="sr">ITO crossing / Night noise. 68 dB(A), 22:00 to 06:00. Over limit. Demo data.</span><span class="unit">dB(A), 22:00 to 06:00</span><p class="verdict bad">Over limit</p><p class="mult"><b>1.2&#215;</b> the limit</p></div><div class="rail-r"><p class="hwhy">Three independent facts at once, and the design keeps all three apart. It is in breach. It is demo data. And it sits in a one-off window that closes on 26 August and never returns, rather than a recurring season.</p><div class="bands bad" role="img" aria-label="Band 5 of 6, High"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on tip"></i><i class=""></i></div><p class="limit" style="margin:14px 0 0">Noise Rules 2000 night limit 55. <b>Limit broken.</b></p><div class="hmeta"><p class="state demo" style="margin:0 0 8px"><i></i>Demo data</p><p class="cap hero-cap" style="margin:0 0 6px">Not yet wired. Shown to prove the state.<br>Not fetching. No observation.</p><p class="cap" style="margin:0"><span class="tag tag-season">One-off window</span></p></div><p style="margin:20px 0 0"><a class="act" href="/design/v3/situation-soon.html">The full instrument <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p></div></div></div></div></article><article class="sit hsit" id="h-waste" data-id="waste" data-tab="Our record" data-breach="false" role="tabpanel" aria-label="Swechha field record / Yamuna clean-ups"><figure class="pic hbg"><img class="duo" src="/images/photos/children-seedling-boxes-field.jpg" alt="Children carrying boxes of seedlings across a field"></figure><div class="hin pic-body"><div class="wide"><div class="rail" style="--lw:56%"><div class="rail-l"><p class="lbl" style="color:var(--fg-2);margin:0 0 10px">Swechha field record / Yamuna clean-ups</p><span class="readout" aria-hidden="true">6,890</span><span class="sr">Swechha field record / Yamuna clean-ups. 6,890 tonnes, weighed at disposal since 2000. Recovered. Periodic.</span><span class="unit">tonnes, weighed at disposal since 2000</span><p class="verdict" style="color:var(--green)">Recovered</p></div><div class="rail-r"><p class="hwhy">The only situation here where the number going up is good. It is the one reading Swechha is the source for, and it is the one place inside the instrument where green is allowed.</p><p class="limit" style="margin:14px 0 0">Swechha’s own record, not a public feed.</p><div class="hmeta"><p class="state periodic" style="margin:0 0 8px"><i></i>Periodic</p><p class="cap hero-cap" style="margin:0 0 6px">Swechha field log, weighed at disposal.<br>Per drive. Last drive 11 August 2026.</p><p class="cap" style="margin:0"><span class="tag tag-season">Year round</span></p></div><p style="margin:20px 0 0"><a class="act" href="/design/v3/situation-soon.html">The full instrument <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p></div></div></div></div></article></div></div><div class="wide"><div class="rig-bar"><div class="rig-tabs" role="tablist" aria-label="Situations"></div><span class="count">1 of 9</span><div class="rig-arrows"><button type="button" class="rp" aria-label="Previous situation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg></button><button type="button" class="rn" aria-label="Next situation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div></div></div></div></section><section class="cfg" style="padding:14px 0"><div class="wide"><div class="cfg-in"><p class="lbl" style="margin:0;color:var(--fg-3);max-width:56ch;letter-spacing:.1em">Which situations are on is decided by each one's validity window, not by an editor. Six are in window on 19 August. Change the count and watch the slider, the tabs and the counter re-derive.</p><div class="cfg-set" role="group" aria-label="Number of active situations"><button type="button" data-set="3" aria-pressed="false">3 on</button><button type="button" data-set="6" aria-pressed="true">6 in window today</button><button type="button" data-set="9" aria-pressed="false">All 9, in and out</button></div></div></div></section><section class="paper" id="windows"><div class="wide"><div class="det-head"><h2 class="d1">What is in<br>season?</h2><div><p class="body" style="margin:0 0 12px">Every situation carries a validity window, and the window is what puts it in the list. Heat runs March to mid-July. Monsoon runs June to September. Air, the river and forest loss are permanent. Nobody has to remember to switch anything on in March.</p><p class="cap" style="margin:0">Two shapes of window, and they behave differently. A recurring season repeats every year and says when it returns. A one-off window has a real end and never comes back.</p></div></div><div class="tbwrap"><table class="tb tb-l"><thead><tr><th>Situation</th><th>Window</th><th>Shape</th><th>Clock</th><th>On 19 August</th></tr></thead><tbody><tr><td>Air quality</td><td class="st">Year round</td><td class="st">Permanent</td><td class="st">Hourly</td><td class="st">In window</td></tr><tr><td>Yamuna</td><td class="st">Year round</td><td class="st">Permanent</td><td class="st">Monthly</td><td class="st">In window</td></tr><tr><td>Monsoon rainfall</td><td class="st">1 June to 30 September</td><td class="st">Recurring, annual</td><td class="st">Daily</td><td class="st">In window, day 80 of 122</td></tr><tr><td>Forest fire</td><td class="st">Year round, peaks Oct to Nov</td><td class="st">Permanent</td><td class="st">Twice daily</td><td class="st">In window</td></tr><tr><td>Loss of forest</td><td class="st">Year round</td><td class="st">Permanent</td><td class="st">Annual, each April</td><td class="st">In window</td></tr><tr><td>Sewage treatment</td><td class="st">Year round</td><td class="st">Permanent</td><td class="st">Twice a year</td><td class="st">In window</td></tr><tr><td>Heatwave</td><td class="st">1 March to 15 July</td><td class="st">Recurring, annual</td><td class="st">Daily, in season</td><td class="st">Out of window. Returns 1 March 2027</td></tr><tr><td>Night noise</td><td class="st">12 to 26 August 2026</td><td class="st">One-off, does not recur</td><td class="st">Not fetching</td><td class="st">In window, demo data</td></tr><tr><td>Our clean-up record</td><td class="st">Year round</td><td class="st">Permanent</td><td class="st">Per drive</td><td class="st">In window</td></tr></tbody></table></div><p class="cap" style="margin:20px 0 0;max-width:78ch">When a window closes the situation does not disappear and it does not 404. It becomes the record of the season just gone, with its peak, its count of threshold days and the date it returns. Switch the control above to <b>All 9</b> and step to Heatwave to see that state.</p></div></section><section class="dark-2" id="orders"><div class="wide"><div class="det-head"><h2 class="d1">What has been<br>ordered</h2><div><p class="body" style="margin:0 0 12px;color:var(--fg-2)">Every environmental order and direction from the courts, the tribunal and the pollution control boards, dated, tagged and with the source document attached. Swechha does not comment on them here. It lists them, because nobody else does and because half the readings on this page are the subject of one.</p><p class="cap" style="margin:0">Compiled weekly. Last compiled 18 August 2026. If a week is missed this line says so rather than quietly showing older entries as current.</p></div></div><div class="ordbar" role="group" aria-label="Filter orders by theme"><button type="button" class="chip" data-theme="all" aria-pressed="true">Everything</button><button type="button" class="chip" data-theme="air" aria-pressed="false">Air</button><button type="button" class="chip" data-theme="river" aria-pressed="false">River</button><button type="button" class="chip" data-theme="waste" aria-pressed="false">Waste</button><button type="button" class="chip" data-theme="forest" aria-pressed="false">Forest</button><button type="button" class="chip" data-theme="policy" aria-pressed="false">Policy</button><span class="cap" style="margin-left:auto" id="ordcount">6 orders</span></div><div id="ordlist"><a class="ord" href="#" data-theme="air"><div class="ord-in"><time datetime="2026-08-14">14 Aug 2026</time><div><h3>Tribunal directs DPCC to publish ward-level PM2.5 data within thirty days, holding that aggregate city figures do not discharge the duty to inform.</h3><p class="who">National Green Tribunal, Principal Bench</p></div><span class="doc">Order, OA 412/2026 &nbsp;&rarr;</span></div></a><a class="ord" href="#" data-theme="river"><div class="ord-in"><time datetime="2026-07-30">30 Jul 2026</time><div><h3>Court seeks a compliance affidavit from Delhi Jal Board on the fourteen sewage treatment plants found below discharge standard in the pre-monsoon round.</h3><p class="who">Supreme Court of India</p></div><span class="doc">Record of proceedings &nbsp;&rarr;</span></div></a><a class="ord" href="#" data-theme="policy"><div class="ord-in"><time datetime="2026-07-22">22 Jul 2026</time><div><h3>Draft notification revising the ambient noise standard for mixed-use zones, open for objections for sixty days.</h3><p class="who">Ministry of Environment, Forest and Climate Change</p></div><span class="doc">Gazette draft, S.O. 3118(E) &nbsp;&rarr;</span></div></a><a class="ord" href="#" data-theme="waste"><div class="ord-in"><time datetime="2026-06-11">11 Jun 2026</time><div><h3>Tribunal imposes environmental compensation on three Delhi-NCR municipal bodies for legacy waste at the Bhalswa and Ghazipur sites.</h3><p class="who">National Green Tribunal, Principal Bench</p></div><span class="doc">Order, OA 88/2024 &nbsp;&rarr;</span></div></a><a class="ord" href="#" data-theme="forest"><div class="ord-in"><time datetime="2026-05-28">28 May 2026</time><div><h3>Direction to state boards to report on ridge and protected-forest encroachment every quarter rather than annually.</h3><p class="who">Central Pollution Control Board</p></div><span class="doc">Direction under section 18(1)(b) &nbsp;&rarr;</span></div></a><a class="ord" href="#" data-theme="river"><div class="ord-in"><time datetime="2026-04-09">09 Apr 2026</time><div><h3>Court asks for a stretch-by-stretch account of the twenty-two kilometres of the Yamuna inside Delhi, naming the authority responsible for each.</h3><p class="who">Delhi High Court</p></div><span class="doc">Order, WP(C) 2201/2026 &nbsp;&rarr;</span></div></a><div class="ord-empty" hidden id="ordempty"><p class="lbl" style="color:var(--fg-3);margin:0 0 10px">Nothing filed</p><p style="margin:0;color:var(--fg-2)">No order under this theme since the tracker opened. That is a finding, not a gap, and it stays on the page.</p></div></div><p style="margin:clamp(20px,2.6vw,34px) 0 0"><a class="b b-2" href="#">The full order index, 2004 onward <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p></div></section><section class="paper" id="method"><div class="wide"><div class="det-head"><h2 class="d1">Every source,<br>its cadence<br>and its date</h2><div><p class="body" style="margin:0">Where every number on this page comes from. If a reading is stale, this page says so rather than showing you the last good value as though it were current. None of the seven feeds below is wired yet. Four are the most recent published bulletin or our own field log, typed in by hand; three are read by nothing at all. They are labelled that way rather than as live data.</p></div></div><div class="tbwrap"><table class="tb tb-l"><thead><tr><th>Source</th><th>Feeds</th><th>Cadence</th><th>As of</th><th>State</th></tr></thead><tbody><tr><td>Central Pollution Control Board</td><td class="st">Air quality index, PM2.5, PM10</td><td class="st">Hourly</td><td class="st">No reading</td><td><span class="state demo"><i></i>Demo data</span></td></tr><tr><td>Delhi Pollution Control Committee</td><td class="st">Yamuna BOD, dissolved oxygen, coliform</td><td class="st">Monthly</td><td class="st">4 August 2026</td><td><span class="state periodic"><i></i>Periodic</span></td></tr><tr><td>Delhi Pollution Control Committee</td><td class="st">Sewage treatment plant compliance</td><td class="st">Twice a year</td><td class="st">June 2026</td><td><span class="state periodic"><i></i>Periodic</span></td></tr><tr><td>India Meteorological Department</td><td class="st">Temperature, rainfall, warnings</td><td class="st">Daily</td><td class="st">19 August 2026</td><td><span class="state periodic"><i></i>Periodic</span></td></tr><tr><td>NASA FIRMS</td><td class="st">Active fire detections, VIIRS 375m</td><td class="st">Twice daily</td><td class="st">No reading</td><td><span class="state demo"><i></i>Demo data</span></td></tr><tr><td>Swechha field record</td><td class="st">Waste weighed at clean-ups</td><td class="st">Per drive</td><td class="st">11 August 2026</td><td><span class="state periodic"><i></i>Periodic</span></td></tr><tr><td>Not yet wired</td><td class="st">Ambient night noise</td><td class="st">Not fetching</td><td class="st">No observation</td><td><span class="state demo"><i></i>Demo data</span></td></tr></tbody></table></div><p style="margin:22px 0 0"><a class="b b-2" href="#">Download the readings as CSV <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p></div></section><section id="colour"><div class="wide"><div class="det-head"><h2 class="d1">Why this page<br>goes red</h2><div><p class="body" style="margin:0;color:var(--fg-2)">Three colours are allowed on this site and each one does one job. Nothing is ever coloured because it looked better that way.</p></div></div><div class="rule-box"><div><i style="background:var(--mustard)"></i><h3>Mustard</h3><p style="margin:0;color:var(--fg-2);font-size:16.5px">A human act, and therefore the interactive colour. Buttons, links, hover, focus, the Give chip, the filters above. It never touches a reading and it never means anything is fine.</p></div><div><i style="background:var(--red)"></i><h3>Red</h3><p style="margin:0;color:var(--fg-2);font-size:16.5px">A published legal limit has been broken. Applied by comparing the reading to the limit, never by a designer. The rail, the word, the top band, the multiplier. Never a button, never a link, never the logo.</p></div><div><i style="background:var(--green)"></i><h3>Green</h3><p style="margin:0;color:var(--fg-2);font-size:16.5px">What came back. Tonnes out of the river, gardens planted, saplings standing. Green only ever labels a past-tense recovery, which is why it can sit next to a number without being read as a forecast.</p></div></div><p class="cap" style="margin:24px 0 0;max-width:76ch">Feed state is a separate question from severity and uses shape, not colour: a filled square is live, a hollow one is periodic, a hatched one is demo data, a dashed one is out of season. A situation can be in breach and be demo data at the same time.</p><p style="margin:26px 0 0"><a class="b b-1" href="/design/v3/system.html">The full system sheet <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p></div></section>
-
-<footer class="foot">
-  <div class="wide">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><!-- AD-11: duo-m and five sig-* selective-colour filters were defined here and referenced by nothing (0 of 40 filtered elements). Two ramps only, per the CSS. Selective colour is still live on the journeys-*/project-* pages, which carry their own defs. --><filter id="duo" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/><feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/><feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/></feComponentTransfer></filter><filter id="duo-dim" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0.11 0.18 0.255 0.325 0.385 0.43"/><feFuncG type="table" tableValues="0.10 0.165 0.235 0.30 0.355 0.40"/><feFuncB type="table" tableValues="0.085 0.14 0.20 0.26 0.31 0.35"/></feComponentTransfer></filter></defs></svg>
+<!-- D-09.3. BYPASS BLOCKS (WCAG 2.4.1). There are 8 tab stops before the
+     first piece of content at every width, in front of a 10,244px
+     document with a header repeated on every page of the site. The skip
+     link is the whole remedy and it costs nothing that is drawn: it is
+     off-screen until it takes focus, so no reader who is not using a
+     keyboard will ever see it. It targets <main> rather than #top
+     because #top is the hero SECTION — landing focus on the landmark is
+     what a screen-reader user is being offered, and <main> carries
+     tabindex="-1" so the focus actually lands rather than only moving
+     the sequential-navigation start point. -->
+<a class="skip" href="#main">Skip to the content</a>
+<header class="nav"><div class="nav-in"><a class="mark" href="/design/v3/home.html" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/design/v3/intelligence.html">Now</a><a class="nl" href="/design/v3/home.html#work">Work</a><a class="nl" href="/design/v3/home.html#journeys">Journeys</a><a class="nl" href="/design/v3/home.html#impact">Impact</a><a class="nl" href="/design/v3/home.html#farm">Farm</a><a class="nl" href="/design/v3/home.html#record">Record</a></nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Sections</button>
+<div class="navidx" id="navidx" hidden><nav aria-label="All sections"><a class="nl" href="#top">What a situation is</a><a class="nl" href="#set">The six</a><a class="nl" href="#campaigns">What we do about it</a></nav></div><a class="give" href="/design/v3/home.html#give">Give</a></div><nav class="navscroll" aria-label="Sections"><ul><li><a class="nl" href="#top">What a situation is</a></li><li><a class="nl" href="#set">The six</a></li><li><a class="nl" href="#campaigns">What we do about it</a></li></ul></nav></header>
+<main id="main" tabindex="-1">
+  <section class="t1" id="top">
+    <div class="wrap ix-hero">
+      <p class="lbl ix-eyebrow">Environmental intelligence</p>
+      <h1 class="d1 ix-h1">Every situation<br>we read</h1>
+      <p class="ix-lead"><b>A situation is one measurement, against one published limit, with
+        the gap named.</b> Not a score, not a mood, not a colour. If nobody published a limit,
+        the page says so instead of inventing one.</p>
+      <div class="ix-def">
+        <div class="ix-def-c">
+          <p class="ix-def-n">6</p>
+          <p class="lbl ix-def-l">situations</p>
+          <p class="cap ix-def-x">Air, the Yamuna, heat, forest fire, forest loss, extreme rain.
+            Each one has its own page, and every figure on this page is read from the same
+            committed data as that page &mdash; so the two cannot disagree.</p>
+        </div>
+        <div class="ix-def-c">
+          <p class="ix-def-n">6</p>
+          <p class="lbl ix-def-l">different units</p>
+          <p class="cap ix-def-x">An index. Milligrams per litre. Degrees. Square kilometres.
+            Million hectares. A count of days. <b>There is no exchange rate between them.</b></p>
+        </div>
+        <div class="ix-def-c">
+          <p class="ix-def-n">6</p>
+          <p class="lbl ix-def-l">kinds of limit</p>
+          <p class="cap ix-def-x">A ceiling. A floor. An absolute. A class crossed repeatedly.
+            A legal requirement that names no quantity. And, once, <b>none at all</b>.</p>
+        </div>
+      </div>
+      <p class="ix-refuse"><b>So there is no total on this page, and there never will be.</b>
+        No two of the 6 share a kind of limit, and
+        6 units cannot be averaged into one. A dashboard that gives you a single
+        figure for &ldquo;the environment&rdquo; has decided something on your behalf and not
+        told you what. <b>This page would rather be harder to read than that.</b></p>
+      <p class="lbl ix-vocab-h">The four words, and the two the set needs today</p>
+      <div class="ix-vocab">
+        <span class="ix-vocab-r"><span class="lbl tag tag-live">LIVE</span><i class="cap">the value can change between two views of this page</i></span>
+        <span class="ix-vocab-r is-used"><span class="lbl tag tag-periodic">PERIODIC</span><i class="cap">delivered on a cadence — a yearly table, a monthly sample</i></span>
+        <span class="ix-vocab-r is-used"><span class="lbl tag tag-closed">OUT OF SEASON</span><i class="cap">the window is shut; the record still stands</i></span>
+        <span class="ix-vocab-r"><span class="lbl tag tag-demo">DEMO DATA</span><i class="cap">a specimen, and there are none in the set below</i></span>
+      </div>
+      <p class="cap ix-vocab-x"><b>Nothing below is unstamped</b>, and the word is shown whether
+        or not it flatters the reading. Air ships stamped PERIODIC and upgrades itself to
+        LIVE only if the server answers &mdash; because a badge that claims liveness for a number
+        that cannot move is the one lie this site is built to avoid.</p>
+      <p style="margin:0"><a class="act" href="#set">All 6 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+    </div>
+  </section>
+  <section class="dark-2 t2" id="set" aria-labelledby="set-h">
+    <div class="wrap"><div class="im-head">
+        <h2 class="d1" id="set-h">The six</h2>
+        <p class="lead">One card each. The line that matters on every one of them is not the reading &mdash; it is what kind of limit the reading is being held to.</p>
+      </div></div>
+    <div class="wide ix-cards">
+        <a class="ix-card is-breach" id="ix-air" href="/design/v3/situation-air.html">
+          <span class="ix-card-top">
+            <span class="lbl ix-card-n">Air</span>
+            <span class="cap ix-card-w">Delhi</span>
+          </span>
+          <span class="ix-card-v" data-v>387</span>
+          <span class="cap ix-card-u">air quality index</span>
+          <span class="cap ix-card-s" data-sub>Very Poor · governed by PM2.5</span>
+          <span class="ix-card-rule" aria-hidden="true"></span>
+          <span class="ix-card-lim">
+            <i class="lbl ix-card-k">a ceiling</i>
+            <b>AQI 100</b>
+            <i class="cap ix-card-a">CPCB, National Air Quality Index</i>
+          </span>
+          <span class="ix-card-verd is-red" data-verd>3.9× the limit</span>
+          <span class="ix-card-line cap">The only reading on this site that can change while you look at it.</span>
+          <span class="ix-card-foot"><span data-chip class="lbl tag tag-periodic">PERIODIC</span><i class="ix-card-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></i></span>
+        </a>
+        <a class="ix-card is-breach" href="/design/v3/situation-yamuna.html">
+          <span class="ix-card-top">
+            <span class="lbl ix-card-n">Yamuna</span>
+            <span class="cap ix-card-w">Delhi</span>
+          </span>
+          <span class="ix-card-v">0.3</span>
+          <span class="cap ix-card-u">mg/L dissolved oxygen</span>
+          <span class="cap ix-card-s">at or below the detection limit</span>
+          <span class="ix-card-rule" aria-hidden="true"></span>
+          <span class="ix-card-lim">
+            <i class="lbl ix-card-k">a floor</i>
+            <b>> 5.0 mg/L</b>
+            <i class="cap ix-card-a">Primary Water Quality Criteria, E(P) Rules 1986</i>
+          </span>
+          <span class="ix-card-verd is-red">no measurable oxygen</span>
+          <span class="ix-card-line cap">The one number here that has to be read downwards. Lower is worse, and it is at the bottom.</span>
+          <span class="ix-card-foot"><span class="lbl tag tag-periodic">PERIODIC</span><i class="ix-card-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></i></span>
+        </a>
+        <a class="ix-card is-breach" href="/design/v3/situation-heatwave.html">
+          <span class="ix-card-top">
+            <span class="lbl ix-card-n">Heat</span>
+            <span class="cap ix-card-w">India</span>
+          </span>
+          <span class="ix-card-v">48.3</span>
+          <span class="cap ix-card-u">°C</span>
+          <span class="cap ix-card-s">Jodhpur, 2024 · the record in this archive</span>
+          <span class="ix-card-rule" aria-hidden="true"></span>
+          <span class="ix-card-lim">
+            <i class="lbl ix-card-k">an absolute</i>
+            <b>47 °C</b>
+            <i class="cap ix-card-a">IMD, severe heat wave</i>
+          </span>
+          <span class="ix-card-verd is-red">1.3 °C above it</span>
+          <span class="ix-card-line cap">The season is shut until 1 March 2027. The record is true either way.</span>
+          <span class="ix-card-foot"><span class="lbl tag tag-closed">OUT OF SEASON</span><i class="ix-card-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></i></span>
+        </a>
+        <a class="ix-card is-nolimit" href="/design/v3/situation-forest-fire.html">
+          <span class="ix-card-top">
+            <span class="lbl ix-card-n">Forest fire</span>
+            <span class="cap ix-card-w">India</span>
+          </span>
+          <span class="ix-card-v">34,562</span>
+          <span class="cap ix-card-u">km² burnt in one season</span>
+          <span class="cap ix-card-s">November 2023 to June 2024</span>
+          <span class="ix-card-rule" aria-hidden="true"></span>
+          <span class="ix-card-lim">
+            <i class="lbl ix-card-k">none</i>
+            <b>No legal threshold.</b>
+            <i class="cap ix-card-a">no statute publishes one</i>
+          </span>
+          <span class="ix-card-verd">nothing to be over</span>
+          <span class="ix-card-line cap">The only situation here with no threshold to break. That is not reassurance.</span>
+          <span class="ix-card-foot"><span class="lbl tag tag-periodic">PERIODIC</span><i class="ix-card-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></i></span>
+        </a>
+        <a class="ix-card" href="/design/v3/situation-forest-loss.html">
+          <span class="ix-card-top">
+            <span class="lbl ix-card-n">Forest loss</span>
+            <span class="cap ix-card-w">India</span>
+          </span>
+          <span class="ix-card-v">2.43</span>
+          <span class="cap ix-card-u">million hectares of tree cover</span>
+          <span class="cap ix-card-s">2001–2025 · satellite-measured</span>
+          <span class="ix-card-rule" aria-hidden="true"></span>
+          <span class="ix-card-lim">
+            <i class="lbl ix-card-k">a requirement</i>
+            <b>approval, not a quantity</b>
+            <i class="cap ix-card-a">Forest (Conservation) Act, 1980</i>
+          </span>
+          <span class="ix-card-verd">India’s own report says +156.4 km²</span>
+          <span class="ix-card-line cap">Two official sources, opposite directions. Neither is lying.</span>
+          <span class="ix-card-foot"><span class="lbl tag tag-periodic">PERIODIC</span><i class="ix-card-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></i></span>
+        </a>
+        <a class="ix-card is-breach" href="/design/v3/situation-climate-event.html">
+          <span class="ix-card-top">
+            <span class="lbl ix-card-n">Climate event</span>
+            <span class="cap ix-card-w">India</span>
+          </span>
+          <span class="ix-card-v">13</span>
+          <span class="cap ix-card-u">days over the heavy-rain threshold</span>
+          <span class="cap ix-card-s">Mangaluru, 2025</span>
+          <span class="ix-card-rule" aria-hidden="true"></span>
+          <span class="ix-card-lim">
+            <i class="lbl ix-card-k">a class, crossed</i>
+            <b>64.5 mm in 24 hours</b>
+            <i class="cap ix-card-a">IMD rainfall day categories</i>
+          </span>
+          <span class="ix-card-verd is-red">crossed 13 times in one year</span>
+          <span class="ix-card-line cap">Not one breach. A count of them.</span>
+          <span class="ix-card-foot"><span class="lbl tag tag-periodic">PERIODIC</span><i class="ix-card-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></i></span>
+        </a>
+    </div>
+    <div class="wrap">
+      <p class="ix-note"><b>Read the middle line of each card.</b> 4 of the
+        6 are over a published limit. One is <i>below</i> a published
+        minimum, which is the same failure pointing the other way. One is measured against a
+        legal <i>requirement</i> that names no quantity at all. And one has
+        <b>no threshold in law to break</b> &mdash; which is the weakest position of the six,
+        not the safest.</p>
+      <p class="cap ix-src">Every figure is read at build time from the committed dataset behind
+        its own page. Nothing on this page is typed in by hand, which is why it cannot drift from
+        the six pages it points at.</p>
+      <p class="p-hole">There is no seventh situation hidden behind this page, and no waiting list. When a source exists for one, it gets a page and a card. Until then this is the whole set.</p>
+    </div>
+  </section>
+  <section class="paper t3" id="campaigns" aria-labelledby="campaigns-h">
+    <div class="wrap"><div class="im-head">
+        <h2 class="d1" id="campaigns-h">What we do about it</h2>
+        <p class="lead">Three campaigns. None of them is a solution to a national number, and saying otherwise would be the same trick as a single score.</p>
+      </div></div>
+    <div class="wrap">
+      <div class="ix-camps">
+        <div class="ix-camp">
+          <p class="ix-camp-n">We for Yamuna</p>
+          <p class="cap ix-camp-y">since 2000</p>
+          <p class="ix-camp-x">The founding campaign, and still the organisation&rsquo;s spine.
+            It is the reason there is a Yamuna page at all, and the reason the walk exists.</p>
+          <p style="margin:0"><a class="act" href="/design/v3/situation-yamuna.html">The reading it works against <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+        </div>
+        <div class="ix-camp">
+          <p class="ix-camp-n">Monsoon Wooding</p>
+          <p class="cap ix-camp-y">annual</p>
+          <p class="ix-camp-x">Roughly <b>5,000 trees a year</b> across Delhi NCR, and
+            <b>over 50,000 planted and survived</b> in total.
+            <i>Survived</i> is the organisation&rsquo;s own word for it, and it is the honest one
+            &mdash; planting is not the same measurement as living.</p>
+          <p style="margin:0"><a class="act" href="/design/v3/home.html#impact">The record <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+        </div>
+        <div class="ix-camp">
+          <p class="ix-camp-n">Delhi I Can&rsquo;t See You</p>
+          <p class="cap ix-camp-y">&mdash;</p>
+          <p class="ix-camp-x">Named here because it is one of the three current campaigns.
+            <b>No description is given because none is sourced yet</b>, and this page does not
+            write copy for a campaign it cannot cite.</p>
+          <p style="margin:0"><a class="act" href="/design/v3/home.html#work">What we work on <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+        </div>
+      </div>
+      <p class="ix-note"><b>The gap between a campaign and a national figure is the honest
+        subject.</b> Fifty thousand surviving trees is a real number and it is not a reply to
+        2.43 million hectares. Both are on this site, in their own units, and
+        neither is used to cancel the other.</p>
+      <p class="cap ix-close">Every reading here is public, dated and linked to the document it
+        came from. Where a figure could not be obtained, the page it belongs to says so in the
+        place the figure would have gone.</p>
+      <p style="margin:0"><a class="act" href="/design/v3/home.html#give">Support the work <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+    </div>
+  </section>
+</main>
+<footer class="foot" id="footer">
+  <div class="wrap">
     <div class="foot-g">
       <div>
         <div class="mark" style="font-size:34px;display:block;margin-bottom:12px"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></div>
@@ -773,15 +1753,36 @@ figure{margin:0}
           New Delhi. Working since 2000. Registered under sections 12A and 80G.</p>
       </div>
       <div><h3 class="lbl">Read</h3>
-        <a href="/design/v3/intelligence.html">Environmental Intelligence</a>
-        <a href="#work">Projects and campaigns</a><a href="#">Stories and films</a>
+        <a href="/now">Environmental Intelligence</a>
+        <a href="/work">Projects and campaigns</a><a href="#">Stories and films</a>
         <a href="#">Publications</a></div>
-      <div><h3 class="lbl">Go</h3><a href="#journeys">Yamuna Yatra</a>
-        <a href="#journeys">NatureScapes</a><a href="#journeys">CityScapes</a>
-        <a href="#journeys">Gram Anubhav</a></div>
+      <div><h3 class="lbl">Go</h3><a href="/work/journeys/yamuna-yatra">Yamuna Yatra</a>
+        <a href="/work/journeys/naturescapes">NatureScapes</a><a href="/work/journeys/cityscapes">CityScapes</a>
+        <a href="/work/journeys/gram-anubhav">Gram Anubhav</a></div>
       <div><h3 class="lbl">Reach us</h3><a href="mailto:info@swechha.in">info@swechha.in</a>
-        <a href="#farm">Swechha Farm visits</a><a href="#">Work with us</a>
+        <a href="/#farm">Swechha Farm visits</a><a href="#">Work with us</a>
         <a href="/design/v3/system.html">The system sheet</a></div>
+    </div>
+    <!-- ══ SOCIAL. Added AD-08, 21 August. See §9 of that document. ══
+         FOUR REAL ACCOUNTS, SCRAPED FROM THE LIVE SITE. No LinkedIn —
+         none exists, and one may not be invented. No follower counts, no
+         post embeds, no "latest from Instagram" strip: this page cut a
+         typed "today" rather than imply a feed it does not have, and the
+         closing sentence says so in the same voice as .foot-b. -->
+    <div class="foot-soc">
+      <div class="foot-soc-x">
+        <div class="foot-soc-t">
+          <h3 class="lbl">Follow the work</h3>
+          <p class="cap">Journeys, clean-up dates and film go out on these four accounts
+            &mdash; all of them <b>@swechhaindia</b>. Nothing on this page is pulled from them.</p>
+        </div>
+        <p class="foot-soc-r">
+          <a href="https://www.instagram.com/swechhaindia/" rel="noopener" target="_blank">Instagram<span class="sr"> (opens in a new tab)</span></a>
+          <a href="https://www.facebook.com/SwechhaIndia/" rel="noopener" target="_blank">Facebook<span class="sr"> (opens in a new tab)</span></a>
+          <a href="https://x.com/swechhaindia" rel="noopener" target="_blank">X / Twitter<span class="sr"> (opens in a new tab)</span></a>
+          <a href="https://www.youtube.com/@swechhaindia" rel="noopener" target="_blank">YouTube<span class="sr"> (opens in a new tab)</span></a>
+        </p>
+      </div>
     </div>
     <div class="foot-b">
       <span>Design synthesis v3, 19 August 2026. Not the live site.</span>
@@ -789,98 +1790,248 @@ figure{margin:0}
     </div>
   </div>
 </footer>
-
 <script>
-document.documentElement.className+=' js';
+/* ── TABS. Canonical ARIA tabs with a roving tabindex. Panels use the
+   'hidden' attribute rather than the deck's tabindex trick, and that is
+   deliberate: the deck keeps four READINGS in the accessibility tree at once
+   because a reader should have all of them; these panels are alternative
+   VIEWS of one object, where one at a time is the point and the height
+   saving is the reason the band fits at all. */
 (function(){
-  var io=new IntersectionObserver(function(es){
-    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
-  },{rootMargin:'0px 0px -8% 0px',threshold:.12});
-  document.querySelectorAll('.rise').forEach(function(n,i){ n.style.transitionDelay=(i%4*70)+'ms'; io.observe(n); });
-})();
-
-function rig(root){
-  var track=root.querySelector('.rig-track'), tabs=root.querySelector('.rig-tabs'),
-      prev=root.querySelector('.rp'), next=root.querySelector('.rn'),
-      count=root.querySelector('.count');
-  function slides(){ return [].filter.call(track.children,function(s){return !s.hasAttribute('hidden')}); }
-  function build(){
-    tabs.innerHTML='';
-    slides().forEach(function(s,i){
-      var b=document.createElement('button');
-      b.type='button'; b.setAttribute('role','tab'); b.setAttribute('aria-selected',i===0);
-      b.setAttribute('aria-controls',s.id); b.dataset.breach=s.dataset.breach||'false';
-      b.textContent=s.dataset.tab;
-      b.onclick=function(){ goMark(i); };
-      tabs.appendChild(b);
+  var groups=[].slice.call(document.querySelectorAll('[data-tabs]'));
+  if(!groups.length) return;
+  groups.forEach(function(g){
+    var tabs=[].slice.call(g.querySelectorAll('[role=tab]'));
+    var panels=tabs.map(function(t){ return document.getElementById(t.getAttribute('aria-controls')); });
+    function select(i,focus){
+      tabs.forEach(function(t,k){
+        var on=k===i;
+        t.setAttribute('aria-selected',on?'true':'false');
+        if(on) t.removeAttribute('tabindex'); else t.setAttribute('tabindex','-1');
+        if(panels[k]){ if(on) panels[k].removeAttribute('hidden'); else panels[k].setAttribute('hidden',''); }
+      });
+      if(focus) tabs[i].focus();
+    }
+    tabs.forEach(function(t,i){ t.addEventListener('click',function(){ select(i,false); }); });
+    g.querySelector('[role=tablist]').addEventListener('keydown',function(e){
+      var i=tabs.indexOf(document.activeElement); if(i<0) return;
+      var n=null;
+      if(e.key==='ArrowRight'||e.key==='ArrowDown') n=(i+1)%tabs.length;
+      if(e.key==='ArrowLeft'||e.key==='ArrowUp') n=(i-1+tabs.length)%tabs.length;
+      if(e.key==='Home') n=0;
+      if(e.key==='End') n=tabs.length-1;
+      if(n!==null){ e.preventDefault(); select(n,true); }
     });
-    mark(0);
-  }
-  function mark(i){
-    var n=slides().length;
-    [].forEach.call(tabs.children,function(b,j){ b.setAttribute('aria-selected',j===i); });
-    if(count) count.textContent=(i+1)+' of '+n;
-    prev.disabled=i<=0; next.disabled=i>=n-1;
-    // Keep the active tab in view WITHOUT scrollIntoView, which scrolls the page too.
-    var b=tabs.children[i];
-    if(b){ var l=b.offsetLeft, r=l+b.offsetWidth;
-      if(l<tabs.scrollLeft) tabs.scrollLeft=l;
-      else if(r>tabs.scrollLeft+tabs.clientWidth) tabs.scrollLeft=r-tabs.clientWidth; }
-  }
-  // scrollLeft, not scrollTo({behavior}). The smoothing is declarative
-  // (scroll-behavior on .rig-track) so it degrades correctly under
-  // prefers-reduced-motion and does not depend on a scripted animation.
-  function go(i){ var s=slides()[i]; if(s) track.scrollLeft=s.offsetLeft-track.offsetLeft; }
-  function goMark(i){ go(i); mark(idx()); }
-  function idx(){ var s=slides(),w=track.clientWidth||1;
-    return Math.max(0,Math.min(s.length-1,Math.round(track.scrollLeft/w))); }
-  var io=new IntersectionObserver(function(){ mark(idx()); },{root:track,threshold:.55});
-  function watch(){ io.disconnect(); slides().forEach(function(s){ io.observe(s); }); }
-  // mark() again straight after moving: the IntersectionObserver is a frame
-  // behind, and a stale disabled state on prev/next is the classic way a
-  // carousel appears to ignore a click.
-  prev.onclick=function(){ go(idx()-1); mark(idx()); };
-  next.onclick=function(){ go(idx()+1); mark(idx()); };
-  track.setAttribute('tabindex','0');
-  track.addEventListener('keydown',function(e){
-    if(e.key==='ArrowRight'){e.preventDefault();go(idx()+1);}
-    if(e.key==='ArrowLeft'){e.preventDefault();go(idx()-1);}
   });
-  root.setActive=function(ids){
-    [].forEach.call(track.children,function(s){
-      if(ids===null||ids.indexOf(s.dataset.id)>-1) s.removeAttribute('hidden'); else s.setAttribute('hidden','');
+})();
+
+/* ── D-09.1. THE MOBILE INDEX CONTROL. ───────────────────────────────
+   A DISCLOSURE, NOT A DIALOG. Everything below is deliberately NOT the
+   modal playbook: no focus trap, no aria-modal, no scrim, no scroll
+   lock, no inerting of the page behind it. Tab runs through the six rows
+   and then leaves into the document, which is correct for a non-modal
+   disclosure and is the requirement this control was ruled under.
+   Four ways out, because a control that is easy to open and awkward to
+   close is worse than no control: press it again, press Escape, choose a
+   destination, or touch anything else on the page.
+   NO JS, NO CONTROL — `hidden` is in the markup, so a reader without
+   JavaScript gets the status quo (the non-sticky chip row) and never
+   sees a button that cannot open. */
+(function(){
+  var t=document.querySelector('.navidx-t'), p=document.getElementById('navidx');
+  if(!t||!p) return;
+  // ONE INDEX IN THE TAB ORDER AT A TIME — the property AD-09 recorded
+  // as true of `.navlinks`/`.navscroll` and which this control would
+  // otherwise have broken. The chip row sits BETWEEN the bar and the
+  // panel in the DOM, so with the panel open a Tab out of the button
+  // landed on the six chips first. Measured, that is two defects, not an
+  // untidiness: at the top of the page the chips are underneath the open
+  // panel, so focus went somewhere the reader cannot see; and anywhere
+  // further down the row has scrolled away entirely, so focusing a chip
+  // SCROLLS THE PAGE BACK TO THE TOP — the reader opens an index to keep
+  // their place and loses it to the second Tab. Withdrawing the row from
+  // sequential focus while the panel is open is the same move, for the
+  // same reason, as D-09.3 on the deck's off-screen panels.
+  var chips=[].slice.call(document.querySelectorAll('.navscroll a.nl'));
+  function show(v){
+    t.setAttribute('aria-expanded',v?'true':'false');
+    if(v) p.removeAttribute('hidden'); else p.setAttribute('hidden','');
+    chips.forEach(function(a){
+      if(v) a.setAttribute('tabindex','-1'); else a.removeAttribute('tabindex');
     });
-    build(); watch(); track.scrollLeft=0; mark(0);
-  };
-  build(); watch();
-}
-document.querySelectorAll('.rig').forEach(rig);
+  }
+  function shut(){ return p.hasAttribute('hidden'); }
+  function inside(n){ return p.contains(n)||t.contains(n)||n===t; }
+  t.addEventListener('click',function(){ show(shut()); });
+  // ESCAPE RETURNS FOCUS TO THE BUTTON. Without this the reader who
+  // dismisses the panel from the keyboard is left with focus on a node
+  // that has just become display:none, which hands it to <body> and
+  // restarts the next Tab from the top of a 10,244px document.
+  addEventListener('keydown',function(e){
+    if((e.key==='Escape'||e.key==='Esc')&&!shut()){ show(false); t.focus(); }
+  });
+  // Choosing a destination closes it. The anchor jump itself is left
+  // entirely alone — scroll-padding-top does the landing (A-1) and
+  // nothing here calls scrollTo or preventDefault.
+  p.addEventListener('click',function(e){ if(e.target.closest('a')) show(false); });
+  // A touch anywhere else closes it. The containment test is what keeps
+  // the opening click — which bubbles to document — from closing it again
+  // in the same tick.
+  document.addEventListener('click',function(e){ if(!shut()&&!inside(e.target)) show(false); });
+  // Focus leaving the panel closes it. This is the non-trapping half of
+  // the contract: Tab is never blocked, it just tidies up behind itself.
+  document.addEventListener('focusin',function(e){ if(!shut()&&!inside(e.target)) show(false); });
+  // Above 940 `.navlinks` is the navigation and this control is
+  // display:none, so an open panel must not survive the crossing.
+  var r; addEventListener('resize',function(){
+    clearTimeout(r); r=setTimeout(function(){ if(innerWidth>940&&!shut()) show(false); },150);
+  },{passive:true});
+})();
+
+/* ── D-09.4. WHERE AM I? THE ACTIVE-SECTION UNDERLINE. ───────────────
+   The vocabulary was already drawn and nothing ever set it:
+     .nav a.nl:hover, .nav a.nl[aria-current]
+       {color:var(--fg);border-bottom-color:var(--mustard)}
+   `aria-current` was present on ZERO elements at every width, so seven
+   nav items over fourteen bands and 10,244px told a reader 8,000px down
+   nothing about where they were. This lights the underline the design
+   already owns. NO NEW COLOUR, NO NEW MARK, NO NEW BREAKPOINT — the
+   only thing this code does is add and remove one attribute.
+
+   NOT A REVEAL SYSTEM. Nothing here observes anything for the purpose of
+   animating it, nothing adds a class that transitions, and no rule in
+   this file puts a transition on `.nav a.nl` — the underline appears on
+   the frame it is set. This file has no motion language (AD-08 refused
+   auto-advancing the hero) and does not acquire one here.
+
+   A READING LINE, NOT A RATIO. The root is shrunk to a single row of
+   pixels sitting exactly at the bar's bottom edge, so the observer fires
+   once per band boundary crossed — which is exactly when the answer
+   changes — and "which section am I in" needs no tie-break between
+   competing intersection ratios.
+
+   THE OBSERVER IS THE TRIGGER; GEOMETRY IS THE ANSWER. A first version
+   read the answer straight off `isIntersecting` and it was WRONG at
+   phone widths, in the one case that matters most: a same-page click on
+   JOURNEYS lands the band's top at 56.47 against a line at 56.0, so the
+   1px line is crossed by the boundary itself and BOTH bands intersect it
+   — `work` over [56, 56.47] and `journeys` over [56.47, 57]. Whichever
+   went live first won, and that was Work. Measured: clicking JOURNEYS at
+   375 and at 375x635 underlined WORK, while 1440 (where the landing was
+   0.47px the other side of the line) was correct — a defect that a
+   desktop-only check would have shipped.
+   So each callback recomputes from the rects with an explicit
+   containment test, `top <= line+0.5 < bottom`. Bands are contiguous and
+   non-overlapping, so exactly one can satisfy it, and the half-pixel
+   bias points at the band the reader is ARRIVING in — which is the same
+   half-pixel slack the anchor landing itself has (measured error -0.48
+   to +0.47px across five widths). The two edges of the document are
+   handled by the same one test rather than by special cases: below
+   `record`, `bottom` is above the line and nothing qualifies.
+
+   IT IS DRIVEN BY THE SAME TOKEN AS THE ANCHOR OFFSET, WHICH IS WHY THE
+   TWO CANNOT FIGHT. `html,body{scroll-padding-top:var(--nav-h)}` lands
+   an anchor jump with the band's top edge at exactly --nav-h; the
+   reading line is at exactly --nav-h. So the band a reader has just
+   jumped to is the band that lights, by construction rather than by
+   luck — and if --nav-h is ever retuned, both move together. It is read
+   from the custom property rather than re-typed, so the 56/63 split
+   across the 940 breakpoint is inherited, not duplicated.
+
+   IT LIGHTS THE BAND THE READER IS ACTUALLY IN, AND NOTHING OTHERWISE.
+   The nav is a SELECTION of five bands (work, journeys, impact, farm,
+   record), not a partition of all fourteen, so a reader inside
+   `projects`, `campaigns`, `about` or `gtm` is in a band no nav item
+   names. Considered and refused: holding the last-lit item until the
+   next one arrives, which would leave JOURNEYS underlined through
+   Projects, Campaigns and About — three bands that are Work's children,
+   not Journeys'. `aria-current` is announced to a screen reader as the
+   current location; pointing it at the wrong section is worse than
+   pointing it nowhere. So the underline is dark in the hero, the ticker,
+   the statement, Projects, Campaigns, About, Green the Map, Give and the
+   footer. That is the honest reading of an IA that does not partition.
+
+   `location`, not `true`: these are positions within one page, so the
+   ARIA token for a location in an environment is the correct one. The
+   CSS matches on attribute presence, so the value is free to be right.
+
+   SILENT WHERE IntersectionObserver IS NOT AVAILABLE. The guard is the
+   whole degradation: no observer, no attribute, no error, and a nav that
+   behaves exactly as it did before this was written. (The two older
+   observers in this file are unguarded; this one is guarded because it
+   is the only one whose absence a reader would never notice.) */
+(function(){
+  if(!('IntersectionObserver' in window)) return;
+  var byId={}, links=[];
+  [].forEach.call(document.querySelectorAll('.nav a.nl[href*="#"]'),function(a){
+    var id=a.getAttribute('href').split('#')[1]||'';
+    if(!id||!document.getElementById(id)) return;   // never invent a target
+    (byId[id]=byId[id]||[]).push(a); links.push(a);
+  });
+  var ids=Object.keys(byId);
+  if(!ids.length) return;
+  // Both nav rows carry the same six destinations and only one row is
+  // displayed at a time, so every id maps to a LIST of links and both
+  // get the attribute. Setting it on the hidden row costs nothing and
+  // means the state is already correct if the viewport crosses 940.
+  var current=null;
+  function set(id){
+    if(id===current) return;
+    current=id;
+    links.forEach(function(a){ a.removeAttribute('aria-current'); });
+    if(id) byId[id].forEach(function(a){ a.setAttribute('aria-current','location'); });
+  }
+  var io=null, line=0;
+  // WHICH BAND HOLDS THE LINE. Not "which band intersects it" — see the
+  // note above on the JOURNEYS click. Returns null above `work` and
+  // below `record`, which is the honest answer there.
+  function pick(){
+    for(var i=0;i<ids.length;i++){
+      var r=document.getElementById(ids[i]).getBoundingClientRect();
+      if(r.top<=line+0.5 && r.bottom>line+0.5) return ids[i];
+    }
+    return null;
+  }
+  function build(){
+    if(io) io.disconnect();
+    line=parseFloat(getComputedStyle(document.documentElement)
+          .getPropertyValue('--nav-h'))||0;
+    // bottom margin pulls the root's foot up to 1px below its head.
+    var bottom=-(Math.max(0,innerHeight-line-1));
+    io=new IntersectionObserver(function(){ set(pick()); },
+      {rootMargin:(-line)+'px 0px '+bottom+'px 0px',threshold:0});
+    ids.forEach(function(id){ io.observe(document.getElementById(id)); });
+  }
+  build();
+  // --nav-h changes across the 940 breakpoint and innerHeight changes
+  // when mobile browser chrome collapses, so the line is rebuilt rather
+  // than measured once. Debounced: a resize storm must not rebuild an
+  // observer per frame.
+  var t; addEventListener('resize',function(){
+    clearTimeout(t); t=setTimeout(build,150);
+  },{passive:true});
+})();
 
 (function(){
-  var SETS={"3": ["air", "yamuna", "monsoon"], "6": ["air", "yamuna", "monsoon", "fire", "forestloss", "stp"], "9": ["air", "yamuna", "monsoon", "fire", "forestloss", "heat", "stp", "noise", "waste"]};
-  var r=document.querySelector('.rig'); if(!r||!r.setActive) return;
-  var btns=document.querySelectorAll('.cfg-set button');
-  function apply(k){
-    r.setActive(SETS[k]);
-    btns.forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.set===k); });
-  }
-  btns.forEach(function(b){ b.onclick=function(){ apply(b.dataset.set); }; });
-  apply('6');
-})();
-(function(){
-  var chips=document.querySelectorAll('.chip'), rows=document.querySelectorAll('.ord'),
-      empty=document.getElementById('ordempty'), count=document.getElementById('ordcount');
-  if(!chips.length) return;
-  chips.forEach(function(c){ c.onclick=function(){
-    var t=c.dataset.theme, n=0;
-    chips.forEach(function(x){ x.setAttribute('aria-pressed', x===c); });
-    rows.forEach(function(r){
-      var on = t==='all' || r.dataset.theme===t;
-      if(on){ r.removeAttribute('hidden'); n++; } else r.setAttribute('hidden','');
-    });
-    empty.hidden = n>0;
-    count.textContent = n===1 ? '1 order' : n+' orders';
-  };});
+  var card=document.getElementById('ix-air'); if(!card||!window.fetch) return;
+  var v=card.querySelector('[data-v]'), chip=card.querySelector('[data-chip]'),
+      verd=card.querySelector('[data-verd]'), sub=card.querySelector('[data-sub]');
+  if(!v||!chip) return;
+  fetch('/api/air',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
+    if(!d||d.ok!==true) return;
+    var r=d.reading;
+    if(!r||typeof r.aqi!=='number'||!isFinite(r.aqi)||r.aqi<=0||!r.band) return;
+    var limit=(typeof d.aqiLimit==='number'&&d.aqiLimit>0)?d.aqiLimit:100;
+    v.textContent=r.aqi.toLocaleString('en-IN');
+    var over=r.aqi>limit;
+    card.classList.toggle('is-breach',over);
+    if(verd) verd.textContent=over?(Math.round(r.aqi/limit*10)/10)+'× the limit':'within the limit';
+    if(verd) verd.classList.toggle('is-red',over);
+    if(sub&&r.band) sub.textContent=r.band+(r.governing?' · governed by '+r.governing:'');
+    /* THE CHIP IS EARNED HERE AND NOWHERE ELSE. */
+    chip.className='lbl tag tag-live';
+    chip.textContent='LIVE';
+  }).catch(function(){ /* leave the committed card alone */ });
 })();
 </script>
 </body>
