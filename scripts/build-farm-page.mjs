@@ -77,6 +77,19 @@ const RESOLVED = F.forest.resolved.map(r => {
   return { ...hit, from: SCHOOL.name };
 });
 
+/* ── THE ELAPSED YEARS, DERIVED AND NEVER TYPED ───────────────────────────
+   D-09.5's standing rule: no year count is written into a static page, it is
+   computed from a stored year, so a rebuild refreshes it and no January makes
+   the page wrong. The client said "4 years ago" on 22 August 2026; 2022 is
+   stored and the count comes from here. */
+const YEARS = new Date().getFullYear() - F.acquired.year;
+const YEARWORD = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight',
+  'nine', 'ten', 'eleven', 'twelve'][YEARS] || String(YEARS);
+if (YEARS < 1) {
+  console.error(`REFUSING TO BUILD: acquired year ${F.acquired.year} is not in the past.`);
+  process.exit(1);
+}
+
 /* ── EVERY FIGURE CARRIES A SOURCE ────────────────────────────────────────
    The section's standing rule, applied before a line of HTML is built. */
 const OWN = F.forest.figures;
@@ -117,10 +130,15 @@ const bigFig = (f, prov) => `          <div class="fm-big">
             <p class="cap fm-big-s">${esc(f.period)}${prov ? `<br>${esc(prov)}` : ''}</p>
           </div>`;
 
+/* `{{years}}` in any row heading or body is replaced with the DERIVED count.
+   The data file may not type the number, and this is the seam where that rule
+   is actually enforced rather than merely stated. */
+const yr = (t) => String(t).replace(/\{\{years\}\}/g, YEARWORD);
+
 const rows = (list) => `      <div class="p-rows">
 ${list.map(r => `        <div class="p-row">
-          <p class="lbl">${esc(r.h)}</p>
-          <div><p class="body">${esc(r.p)}</p></div>
+          <p class="lbl">${esc(yr(r.h))}</p>
+          <div><p class="body">${esc(yr(r.p))}</p></div>
         </div>`).join('\n')}
       </div>`;
 
@@ -129,17 +147,26 @@ const sideFrame = (fr) => `      <figure class="fm-side"><img class="duo" src="$
 /* ═══ BANDS ══════════════════════════════════════════════════════════════
    Ground chain checked mechanically below. No two adjacent bands share a hex,
    and the last does not share one with the footer (#151512).
-   NO BAND IS CALLED `farm` OR `record` — see the header note. */
+   NO BAND IS CALLED `farm` OR `record` — see the header note.
+
+   THE TIER IS THE BAND'S PADDING, AND `t1` MEANS ZERO. `t1` is for a band that
+   supplies its own — the masthead does, through `.pic-body`. `visit` and `act`
+   were on `t1` and supplied none, so their `opener()` heading sat flush against
+   the ground change above it: at 1440 the display-scale h2 started 0px below a
+   hard #ECEBE8 → #0D0D0B edge, and `act`'s last line ended 25px above the
+   footer. Both open with the same `.im-head` every t2/t3 band opens with, so
+   they take the tier their content actually is — nothing else about them
+   changes, because t1/t2/t3 paint nothing (see the act page's gate 0). */
 const BANDS = [
   ['top',     't1',         '#0D0D0B'],
   ['origin',  'paper t2',   '#F3F2F0'],
   ['grows',   't2',         '#151512'],
   ['keeps',   'paper-2 t3', '#ECEBE8'],
-  ['visit',   't1',         '#0D0D0B'],
+  ['visit',   't2',         '#0D0D0B'],
   ['plainly', 'paper t2',   '#F3F2F0'],
   ['waiting', 'dark-2 t2',  '#151512'],
   ['sheet',   'paper-2 t3', '#ECEBE8'],
-  ['act',     't1',         '#0D0D0B'],
+  ['act',     't3',         '#0D0D0B'],
 ];
 const clashes = S.groundChain(BANDS);
 
@@ -264,6 +291,7 @@ ${F.come.doors.map(d => `        <div class="fm-door">
           <figure class="fm-door-f"><img class="duo" src="${d.frame.src}" alt="${esc(d.frame.alt)}" loading="lazy"></figure>
           <h3 class="fm-door-h">${esc(d.name)}</h3>
           <p class="body fm-door-p">${esc(d.p)}</p>
+${d.figure ? `          <p class="fm-door-fig"><span class="num">${esc(d.figure.value)}</span> <span class="lbl">${esc(d.figure.label)}</span></p>` : ''}
           <p class="cap fm-door-w">${esc(d.who)}</p>
 ${d.hole ? hole('We cannot yet tell you how many students can stay over, in what, or with how many adults. Nothing on that is written down anywhere we can cite, so nothing on it is printed here.') : ''}
         </div>`).join('\n')}
@@ -323,18 +351,26 @@ ${F.sheet.frames.map(fr => `        <figure class="fm-sh-c"><img class="duo" src
     </div>`;
 
 /* ── BAND 9. COME AND SEE. ───────────────────────────────────────────────
-   A phone number and an address, per ruling F-2. There is no form, and the
-   band says why rather than leaving a reader to wonder where the button is. */
+   An address, per ruling F-2. There is no form, and the band says why rather
+   than leaving a reader to wonder where the button is.
+
+   THE PHONE CELL IS GONE, on the owner's instruction of 22 August ("remove my
+   phone number from the site"), which supersedes F-2's phone clause. F-2's
+   actual point — this page ends in a PERSON and not a form — is unchanged.
+   The cell is now CONDITIONAL rather than deleted: `F.act.phone` is absent from
+   farm.json, so nothing renders, and if the owner ever gives an office number
+   it comes back by adding that one field. Written this way so the next session
+   does not have to reconstruct the markup from the ledger. */
 const A = F.act;
 B.act = () => `${opener('act', A.head, esc(A.lead))}
     <div class="wrap">
-      <div class="fm-ways">
-        <div class="fm-way">
+      <div class="fm-ways${A.phone ? '' : ' fm-ways-1'}">
+${A.phone ? `        <div class="fm-way">
           <p class="lbl fm-way-l">Call the farm</p>
           <p class="fm-way-v"><a href="tel:${A.phone.replace(/[^+\d]/g, '')}">${esc(A.phone)}</a></p>
           <p class="cap">${esc(A.phone_note)}</p>
         </div>
-        <div class="fm-way">
+` : ''}        <div class="fm-way">
           <p class="lbl fm-way-l">Write</p>
           <p class="fm-way-v"><a href="mailto:${esc(A.email)}">${esc(A.email)}</a></p>
           <p class="cap">${esc(A.email_note)}</p>
@@ -477,6 +513,9 @@ const PAGE_CSS = `
   letter-spacing:.01em;margin:0;display:flex;align-items:baseline;gap:8px}
 .fm-door-h svg{width:15px;height:15px;flex:0 0 auto;align-self:center}
 .fm-door-p{color:var(--fg-2);margin:10px 0 0}
+.fm-door-fig{margin:14px 0 0;display:flex;align-items:baseline;gap:8px}
+.fm-door-fig .num{font-size:clamp(26px,2.6vw,40px);line-height:1;color:var(--mustard)}
+.fm-door-fig .lbl{color:var(--fg-2)}
 .fm-door-w{color:var(--fg-3);margin-top:12px;border-top:1px solid var(--hair);padding-top:10px}
 @media (max-width:1000px){.fm-doors{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:560px){.fm-doors{grid-template-columns:minmax(0,1fr)}}
@@ -515,6 +554,9 @@ const PAGE_CSS = `
 .fm-door-a{display:block;text-decoration:none;color:inherit;border:1px solid var(--hair);
   padding:clamp(16px,2vw,24px);min-width:0}
 .fm-door-a:hover{border-color:var(--fg-2)}
+/* ONE CHANNEL, after the phone number came off (owner, 22 August). Not a
+   two-column grid with an empty cell. */
+.fm-ways-1{grid-template-columns:minmax(0,1fr)}
 .fm-door-a .fm-door-h{color:var(--mustard)}
 @media (max-width:640px){.fm-ways,.fm-onward{grid-template-columns:minmax(0,1fr)}}
 `;
@@ -652,8 +694,42 @@ gate(collide.length === 0, `no band id collides with a nav word${collide.length 
 
 /* 6. THE NAMED HOLES RENDER AS HOLES. Ruling F-3 is only kept if the school
       camp door actually says it cannot answer. */
-gate((OUT.match(/class="p-hole"/g) || []).length >= F.waiting.claims.length + 1,
-  `${F.waiting.claims.length + 1} named holes render (two waiting claims + the school camp)`);
+gate((OUT.match(/class="p-hole"/g) || []).length === F.waiting.claims.length,
+  `exactly ${F.waiting.claims.length} named hole(s) render — the camp capacity is ANSWERED (100) and must no longer print as one`);
+
+/* 6b. THE CAPACITY, AND THE THINGS THE CLIENT RULED OUT.
+      100 students closes the hole this page shipped with. The MEAL RATES are
+      the opposite ruling: they are real, they are on his own live Airbnb
+      listing, they are undated, and he has said they do not go on the site.
+      An undated price is the easiest thing in this whole build for a future
+      session to "helpfully" add, so it is refused by number. */
+gate(/\b100\b/.test(RENDERED) && /stay over/i.test(RENDERED), 'the camp capacity is published: 100 students');
+const rates = [...RENDERED.matchAll(/(?:₹|Rs\.?\s*)\d+/gi)].map(m => m[0]);
+gate(rates.length === 0, `no price on the page — the meal rates are ruled out${rates.length ? `; FOUND: ${rates.join(', ')}` : ''}`);
+
+/* 6c. NO ELAPSED-YEAR COUNT IS TYPED IN THE DATA. D-09.5. The data file must
+      say `{{years}}` and let the build compute it; a typed "four years" is
+      wrong from the next January and nothing would catch it. */
+/* CONTENT FIELDS ONLY. `_` keys are this repo's in-file documentation and the
+   note on `acquired` necessarily QUOTES the client's "4 years ago" — scanning
+   raw text made the gate fail on its own explanation, which is the fastest way
+   to get a gate switched off. */
+const typedYears = [];
+const scanTyped = (o, path = '') => {
+  if (Array.isArray(o)) return o.forEach((v, i) => scanTyped(v, `${path}[${i}]`));
+  if (o && typeof o === 'object') {
+    for (const [k, v] of Object.entries(o)) if (k !== '_') scanTyped(v, `${path}.${k}`);
+    return;
+  }
+  if (typeof o !== 'string') return;
+  for (const m of o.matchAll(/\b(one|two|three|four|five|six|seven|eight|nine|ten|\d+)[ -]years?\b/gi)) {
+    typedYears.push(`${path}: "${m[0]}"`);
+  }
+};
+scanTyped(F);
+gate(typedYears.length === 0,
+  `no elapsed-year count typed in the data — use {{years}}${typedYears.length ? `; TYPED: ${typedYears.join(', ')}` : ''}`);
+gate(new RegExp(`${YEARWORD} years ago`).test(RENDERED), `the derived count reached the page: "${YEARWORD} years ago"`);
 
 /* 7. PHOTOGRAPHS, INSIDE W-18's BAND. */
 const imgs = (OUT.match(/<img[^>]+src="\/images\//g) || []).length;
@@ -680,6 +756,11 @@ gate(headless.length === 0, `every band carries a heading${headless.length ? `; 
 
 /* 12. EVERY INDEX CHIP RESOLVES TO A BAND ON THIS PAGE. */
 for (const [, href] of INDEX) gate(OUT.includes(`id="${href.slice(1)}"`), `index chip ${href} resolves`);
+
+/* 13. THE STRUCK PHONE NUMBER MAY NEVER COME BACK (owner, 22 August). Checked
+       on digits with separators stripped, so a reformat does not evade it. */
+gate(!OUT.replace(/[^\d]/g, '').includes('9013522222') && !/href="tel:/.test(OUT),
+  'the struck phone number is absent, and there is no tel: link');
 
 if (fail > 0) {
   console.error(`\n${fail} gate(s) failed. The file is written — fix the generator and rebuild.`);

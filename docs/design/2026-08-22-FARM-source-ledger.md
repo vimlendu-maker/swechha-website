@@ -410,3 +410,50 @@ is the measured capacity of that column at that size. The client offered both
 "transformation" and "change" for this head; **the shorter word is the one that can be
 set big, which is what he asked for**, and his own "story of transformation" survives as
 the quotation that opens the band.
+
+---
+
+## 10 · Third pass, owner, 22 August — F-13 to F-15
+
+**F-13 · A hundred students can stay over. The capacity hole is CLOSED.** The page
+shipped that morning saying it could not tell you this; it now says 100, and the school
+camp door is the strongest of the four rather than the one with a caveat under it. The
+`waiting` band drops from two claims to one. **The gate changed with it** — it was
+`>= claims + 1` (the camp counted as a hole); it is now `=== claims`, an equality, so
+that if anybody re-adds the camp hole the build fails rather than quietly passing a
+looser test. A gate written as `>=` cannot detect a hole coming back.
+
+*What is still not stated, and is deliberately not printed as a hole:* where a hundred
+students sleep, and at what supervision ratio. A school will ask that in the enquiry F-2
+routes them to, and a formal hole for it would be pedantry next to a published capacity.
+
+**F-14 · The meal rates are ruled OUT.** ₹300 / ₹375 / ₹375 are real and are on the
+owner's own live Airbnb listing, but they are undated and he has said they do not go on
+the site. **Gated by number**, not by memory: an undated price is the single easiest
+thing in this build for a later session to add helpfully, and the gate refuses any `₹`
+or `Rs.` figure anywhere on the page.
+
+**F-15 · One tree, and the land was bought four years ago.** Owner: "yes we had one tree
+when we bought it 4 years ago." This closes the dating problem §3.3 raised in the first
+pass — the 5,000 figure now has a span, and the span is the story: **one tree to five
+thousand in four years.**
+
+**THE ELAPSED COUNT IS NEVER TYPED.** `data/farm.json` stores `acquired.year = 2022` and
+writes `{{years}}` in the copy; the build computes the count and substitutes it. This is
+D-09.5's standing rule ("no year count is typed anywhere, the count derives from the
+founding year") applied to a second page, and it is enforced rather than stated: a gate
+walks the data file's **content fields** and fails on any typed "four years" or
+"4 years". The gate scans content only and skips `_` keys — the first version read the
+raw file and failed on the `acquired._` note, which necessarily quotes the client's own
+"4 years ago". **A gate that fails on its own documentation is a gate somebody deletes.**
+
+*One derivation the owner should confirm:* "4 years ago", said on 22 August 2026, is
+stored as **2022**. If the farm was actually bought in 2021 or 2023, change
+`acquired.year` and every mention re-derives on the next build — nothing else needs
+editing.
+
+### Open after this pass
+Only two things, and neither is a hole the page pretends not to have:
+1. **A participation figure** for the farm, with a period. Still the one named hole.
+2. Whether the **two Airbnb listings** are ever named on the site. The meal rates are
+   now settled (no), the listings are not.
