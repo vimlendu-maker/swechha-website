@@ -18,7 +18,7 @@
 // showing how much the answer depends on which satellite you ask.
 import * as S from './lib/situation-shell.mjs';
 const { esc, n0, n1, compact, opener, tabs, hole, kd, KIND_LEGEND, ARROW, MON3,
-  stateChip, measureRow, measureHead, disclose } = S;
+  stateChip, measureRow, measureHead, disclose, crumb, siblings } = S;
 
 const sh = S.shell();
 
@@ -77,6 +77,7 @@ B.top = () => `    <div class="pic ht">
       </div></div>
     </div>
     <div class="pic-body"><div class="wrap p2-hero">
+${crumb('fire')}
       <div class="p2-top">
         <p class="lbl p2-method">Every reading against its published limit. Every gap named.</p>
         <p style="margin:0"><span class="tag tag-season">${esc(FF.season.label)}</span></p>
@@ -403,6 +404,7 @@ B.act = () => `${opener('act', 'What you can do', 'Almost every forest fire in I
       </div>
       <p class="cap f-close">Every figure on this page is public, dated and linked, and the three
         that could not be obtained are named where they would have gone.</p>
+${siblings('fire')}
     </div>`;
 
 /* ═══ HELPERS ════════════════════════════════════════════════════════════ */

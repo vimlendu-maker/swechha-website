@@ -12,7 +12,7 @@
 // page is built to be good at that rather than to look like a dashboard.
 import { readFileSync, writeFileSync } from 'node:fs';
 import * as S from './lib/situation-shell.mjs';
-const { esc, n0, n1, compact, opener, tabs, hole, kd, KIND_LEGEND, ARROW, MON3, stateChip } = S;
+const { esc, n0, n1, compact, opener, tabs, hole, kd, KIND_LEGEND, ARROW, MON3, stateChip , crumb, siblings } = S;
 
 const sh = S.shell();
 
@@ -101,6 +101,7 @@ B.top = () => `    <div class="pic ht">
       </div></div>
     </div>
     <div class="pic-body"><div class="wrap p2-hero">
+${crumb('yamuna')}
       <div class="p2-top">
         <p class="lbl p2-method">Every reading against its published limit. Every gap named.</p>
         <p style="margin:0"><span class="tag tag-season">Year round</span></p>
@@ -732,6 +733,7 @@ B.act = () => `${opener('act', 'What you can do', 'The river is downstream of a 
       <p class="cap y-close">Every figure on this page is public, dated and linked. If one is wrong,
         the source is named so you can prove it &mdash; which is the only kind of number worth
         publishing.</p>
+${siblings('yamuna')}
     </div>`;
 
 /* ═══ HELPERS ════════════════════════════════════════════════════════════ */

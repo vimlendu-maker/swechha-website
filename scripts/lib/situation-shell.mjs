@@ -201,6 +201,22 @@ export function shell() {
       'Narrow the extraction — do not substitute the value.');
     air.state.bad++;
   }
+  /* ── THE SAME GUARD ON THE CSS, ADDED AFTER IT BIT. ──────────────────
+     SITUATION_CSS is Air's PAGE_CSS lifted as raw TEXT, so any ${...} in it
+     arrives here as literal characters and then ships to five pages. That is
+     exactly what happened when ${FAMILY_CSS} was added to Air's block: six
+     pages carried the literal string and only `verify:final` noticed.
+     The script half had this guard from the start; the CSS half did not, which
+     is the same bug on a different line — the phrase already in this file's
+     header, earned twice now. */
+  if (SITUATION_CSS.includes('${')) {
+    const found = [...new Set(SITUATION_CSS.match(/\$\{[A-Za-z_][\w.]*\}/g) || [])];
+    console.error('EXTRACTION IS WRONG: the CSS lifted from build-situation-air.mjs contains ' +
+      `unexpanded placeholder(s): ${found.join(', ')}. That block is read as TEXT, so an ` +
+      'interpolation in it ships to every page built on this shell as literal characters. ' +
+      'Move it out of PAGE_CSS and into Air\'s own document assembly.');
+    air.state.bad++;
+  }
 
   return {
     CSS, HEAD_FONTS, SVG_DEFS, SKIP, FOOTER,
@@ -352,6 +368,113 @@ export const stateChip = (word) => {
   return `<span class="lbl tag tag-${cls}">${word}</span>`;
 };
 
+/* ═══ THE FAMILY ═════════════════════════════════════════════════════════
+   ONE definition of the set, with THREE consumers: the situation pages (for
+   their parent crumb and sibling rail), build-intelligence.mjs (for its cards)
+   and verify-final.mjs (for the link-graph assertion).
+
+   Before this existed the index kept its own list and the verifier kept
+   another, which is two places for the same truth to drift apart — the exact
+   problem the extraction pattern exists to solve, one level further up.
+
+   THE WORKFLOW THIS ENCODES. The index is the parent: a reader arrives at /now,
+   picks a situation, and lands on its page. So every page carries a crumb back
+   to the index and a rail to its five siblings, and the relationship is
+   asserted in both directions by `npm run verify:final`. A page that stops
+   linking home, or an index that drops a card, fails the build rather than
+   quietly orphaning itself.
+   ═══════════════════════════════════════════════════════════════════════ */
+export const INDEX_PAGE = { file: 'intelligence.html', route: '/design/v3/intelligence.html', label: 'Now' };
+
+export const FAMILY = [
+  { id: 'air',      name: 'Air',           where: 'Delhi', file: 'situation-air.html' },
+  { id: 'yamuna',   name: 'Yamuna',        where: 'Delhi', file: 'situation-yamuna.html' },
+  { id: 'heatwave', name: 'Heat',          where: 'India', file: 'situation-heatwave.html' },
+  { id: 'fire',     name: 'Forest fire',   where: 'India', file: 'situation-forest-fire.html' },
+  { id: 'loss',     name: 'Forest loss',   where: 'India', file: 'situation-forest-loss.html' },
+  { id: 'climate',  name: 'Climate event', where: 'India', file: 'situation-climate-event.html' },
+];
+const href = (f) => `/design/v3/${f}`;
+export const familyHref = (id) => {
+  const m = FAMILY.find(f => f.id === id);
+  if (!m) throw new Error(`"${id}" is not in FAMILY: ${FAMILY.map(f => f.id).join(', ')}`);
+  return href(m.file);
+};
+
+/**
+ * THE PARENT CRUMB. Sits directly under the hero, above the reading, and says
+ * where the reader is in the set. Two links, not a decoration: the index, and
+ * the position. It is the only place a situation page states that it is one of
+ * six rather than a standalone document.
+ */
+export const crumb = (id) => {
+  const i = FAMILY.findIndex(f => f.id === id);
+  if (i < 0) throw new Error(`crumb: "${id}" is not in FAMILY`);
+  return `      <nav class="fam-crumb" aria-label="Where this page sits">
+        <a class="fam-crumb-up" href="${INDEX_PAGE.route}">${INDEX_PAGE.label}</a>
+        <i class="fam-crumb-sep" aria-hidden="true">/</i>
+        <span class="fam-crumb-here">${esc(FAMILY[i].name)}</span>
+        <span class="cap fam-crumb-n">${i + 1} of ${FAMILY.length} situations</span>
+      </nav>`;
+};
+
+/**
+ * THE SIBLING RAIL. The other five, at the foot of the page, so the set is
+ * navigable without going back up. Reads the family, so adding a seventh
+ * situation adds it to five rails automatically.
+ */
+export const siblings = (id) => {
+  const rest = FAMILY.filter(f => f.id !== id);
+  return `      <nav class="fam-sibs" aria-label="The other situations">
+        <p class="lbl fam-sibs-h">The other ${rest.length}</p>
+        <div class="fam-sibs-r">
+          ${rest.map(f => `<a class="fam-sib" href="${href(f.file)}">
+            <span class="fam-sib-n">${esc(f.name)}</span>
+            <span class="cap fam-sib-w">${esc(f.where)}</span></a>`).join('\n          ')}
+        </div>
+        <p style="margin:0"><a class="act" href="${INDEX_PAGE.route}">All ${FAMILY.length}, side by side ${ARROW}</a></p>
+      </nav>`;
+};
+
+/* THE FAMILY'S OWN CSS, exported separately because build-situation-air.mjs
+   assembles its own document and needs the crumb and rail without the
+   disclosure and measure-row rules it does not use. */
+export const FAMILY_CSS = `
+/* ── THE FAMILY: PARENT CRUMB AND SIBLING RAIL. Both work on either ground. ── */
+.fam-crumb{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px;
+  margin:0 0 clamp(16px,1.8vw,24px)}
+.fam-crumb-up{font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--mustard);text-decoration:none;min-height:var(--hit,44px);display:inline-flex;align-items:center}
+.fam-crumb-up:hover,.fam-crumb-up:focus-visible{color:var(--mustard-2);text-decoration:underline}
+.fam-crumb-sep{color:var(--fg-3);font-style:normal;font-size:11px}
+.paper .fam-crumb-sep{color:var(--ink-3)}
+.fam-crumb-here{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--fg-2)}
+.paper .fam-crumb-here{color:var(--ink-2)}
+.fam-crumb-n{margin-left:auto;color:var(--fg-3)}
+.paper .fam-crumb-n{color:var(--ink-3)}
+
+.fam-sibs{margin:clamp(28px,3.2vw,44px) 0 0;border-top:1px solid var(--hair);padding-top:clamp(16px,1.8vw,24px)}
+.paper .fam-sibs{border-top-color:var(--rule-2)}
+.fam-sibs-h{display:block;color:var(--fg-3);margin:0 0 clamp(12px,1.4vw,18px)}
+.paper .fam-sibs-h{color:var(--ink-3)}
+.fam-sibs-r{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--hair-2);
+  margin:0 0 clamp(16px,1.8vw,24px)}
+.paper .fam-sibs-r{background:var(--rule)}
+.fam-sib{display:block;background:var(--ground);padding:12px 14px;text-decoration:none;
+  transition:background .14s}
+.paper .fam-sib{background:var(--paper)}
+.dark-2 .fam-sib{background:var(--ground-2)}
+.fam-sib:hover,.fam-sib:focus-visible{background:rgba(251,248,240,.05)}
+.paper .fam-sib:hover,.paper .fam-sib:focus-visible{background:var(--paper-2)}
+.fam-sib:focus-visible{outline:2px solid var(--fg);outline-offset:-3px}
+.paper .fam-sib:focus-visible{outline-color:var(--ink)}
+.fam-sib-n{display:block;font-size:clamp(13.5px,.98vw,15.5px);color:var(--fg)}
+.paper .fam-sib-n{color:var(--ink)}
+.fam-sib-w{display:block;color:var(--fg-3);margin-top:1px}
+.paper .fam-sib-w{color:var(--ink-3)}
+@media (min-width:760px){ .fam-sibs-r{grid-template-columns:repeat(5,1fr)} }
+`;
+
 /* ═══ SHARED PAGE CSS ════════════════════════════════════════════════════
    Two components that every situation page after Air needs and that Air did
    not have. They live here rather than in each page's own block because five
@@ -439,6 +562,8 @@ export const SHARED_PAGE_CSS = `
     gap:5px 8px;padding:11px 0}
   .mr-n{grid-area:n}.mr-v{grid-area:v}.mr-x{grid-area:x}.mr-b{grid-area:b}
 }
+${FAMILY_CSS}
+
 `;
 
 /**

@@ -16,7 +16,7 @@
 // web client's proxy rather than a documented contract.
 import * as S from './lib/situation-shell.mjs';
 const { esc, n0, n1, compact, opener, tabs, hole, kd, KIND_LEGEND, ARROW,
-  stateChip, measureRow, measureHead, disclose } = S;
+  stateChip, measureRow, measureHead, disclose, crumb, siblings } = S;
 
 const sh = S.shell();
 
@@ -76,6 +76,7 @@ B.top = () => `    <div class="pic ht">
       </div></div>
     </div>
     <div class="pic-body"><div class="wrap p2-hero">
+${crumb('loss')}
       <div class="p2-top">
         <p class="lbl p2-method">Every reading against its published limit. Every gap named.</p>
         <p style="margin:0"><span class="tag tag-season">Year round</span></p>
@@ -372,6 +373,7 @@ B.act = () => `${opener('act', 'What you can do', 'A forest is lost with paperwo
       </div>
       <p class="cap l-close">Every figure on this page is public, dated and linked &mdash; including
         the two that disagree, and the ones that could not be obtained at all.</p>
+${siblings('loss')}
     </div>`;
 
 /* ═══ HELPERS ════════════════════════════════════════════════════════════ */

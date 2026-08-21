@@ -3634,3 +3634,92 @@ answer is not to fill them — it is not to have them.
 Verified after the change: both pages rebuild with **0 contrast failures, 0 horizontal overflow**,
 eight bands each, no `#money` section, and no money-shaped copy anywhere in the four. Air's and
 Yamuna's bands are untouched.
+
+---
+
+# D-28 — THE FINISHED SET IS A REGISTER THAT RUNS
+
+Client instruction, 21 August: *"Save all this in such a way that it's final. Not sure if there
+is a place which only stores the final pages we have developed. This should be there"* — and then:
+*"the situation index page needs to be linked to these pages, in some workflow, these pages come
+out of that index"*, and *"these are not 7 siblings. 6 situations are born out of the situation
+index page."*
+
+### D-28.1 THE REGISTER IS EXECUTABLE, BECAUSE A PROSE LIST GOES STALE SILENTLY
+`scripts/verify-final.mjs` is the register **and** the acceptance test.
+`docs/design/FINAL.md` is generated from it, so the document and the code cannot disagree — the
+only way that file can be wrong is if the test is failing, and the test is what writes it.
+
+A hand-written list of finished pages goes stale the first time somebody edits a generator and
+nothing tells you. This project has been bitten by that class of failure repeatedly: a stale
+death toll under a passing hash check (D-23.6), an index claiming 412 against a page saying 387
+(D-25.8), a ticker publishing a figure CPCB never printed (D-23.9). **A register that cannot
+check itself is the same bug in documentation form.**
+
+`npm run verify:final` · `-- --no-build` to assert the pages on disk · `-- --doc` to regenerate
+the document. **No credentials:** builds read committed JSON, only fetchers need keys, so it runs
+in CI.
+
+### D-28.2 ONE PARENT, SIX CHILDREN — NOT SEVEN PEERS
+The client's correction, and it was right. `/now` is the parent; the six situations are born out
+of it. The first version of the register listed all seven in one flat array, which reads as seven
+equal pages and is the wrong model of the set.
+
+The register is now `INDEX` (one) and `SITUATIONS` (six), and the report prints the hierarchy.
+**`FAMILY` in `situation-shell.mjs` is the single definition of the set**, with three consumers —
+the situation pages for their crumb and rail, `build-intelligence.mjs` for its cards, and the
+verifier for its graph. Before this, the index kept one list and the verifier another: two places
+for one truth to drift.
+
+### D-28.3 THE WORKFLOW IS NOW NAVIGABLE BOTH WAYS, AND ASSERTED BOTH WAYS
+Every situation page gained two components, from the shell so they cannot diverge:
+
+- **the parent crumb**, under the hero — `Now / Yamuna · 2 of 6 situations`. Its link is a 44px
+  target. It is the only place a situation page states that it is one of six rather than a
+  standalone document.
+- **the sibling rail**, at the foot — the other five, plus *All 6, side by side*. Adding a seventh
+  situation adds it to six rails automatically.
+
+**And the graph is checked in both directions:** a child must link up to `/now` and to all five
+siblings; the parent must link down to all six. A page that stops linking home has orphaned
+itself and an index that drops a card has orphaned a page, and **neither shows up in a diff.**
+Demonstrated by breaking it: removing heatwave's links to Yamuna fails the run with
+`links to 5 siblings: missing Yamuna`.
+
+**Air is in the family too.** It imports `crumb`, `siblings` and `FAMILY_CSS` from the shell —
+not a cycle, because the shell reads Air's file as *text* and Air never calls `shell()`. A family
+whose eldest member has no family navigation is not a family.
+
+### D-28.4 AND THE VERIFIER IMMEDIATELY EARNED ITS KEEP
+Its first full run failed **six of seven pages** on `no placeholders`. Adding `${FAMILY_CSS}` to
+Air's `PAGE_CSS` had shipped the literal characters `${FAMILY_CSS}` into every page built on the
+shell — because the shell lifts that block as **raw text**, not as evaluated code.
+
+The script half of the extraction has had a `${` guard since it was written, and it caught
+`${AIR.aqiLimit}` on day one. **The CSS half did not have one.** That is the phrase already in
+the shell's own header — *the same bug on a different line* — earned a second time. Both halves
+are guarded now, Air's block carries a comment saying nothing in it may contain `${...}`, and the
+family CSS is appended in Air's document assembly where it is evaluated rather than extracted.
+
+**This is the argument for the whole file.** Six pages were carrying a visible defect that no
+build gate, no contrast audit and no diff had flagged.
+
+### D-28.5 WHAT THE REGISTER RECORDS AS NOT FINAL, AND WHY THAT MATTERS
+`home.html` (the frozen design source, not a deliverable in this set), three prototypes, the
+concurrent session's `work/`, and — newly identified — **`situation-soon.html`, which is dead**.
+It was the "coming soon" stub for situations without pages; all six now have pages and nothing
+links to it. Safe to delete, left in place because deleting another session's prototype is not
+this work's call.
+
+Listing what is *not* final is what makes the register a complete picture of the directory rather
+than a flattering subset of it.
+
+### D-28.6 ONE DIVERGENCE ACCEPTED, AND RECORDED RATHER THAN HIDDEN
+The five shell-built pages stamp state with the `.tag` component in caps (`PERIODIC`). **Air
+predates the shell and uses the frozen homepage's `.state` component in title case (`Periodic`).**
+Both are legitimate frozen components and both say the right word, so the verifier accepts both.
+
+But it is a divergence across siblings, and silently accepting it is how a divergence becomes
+permanent. It is item 1 in FINAL.md's open list, to be resolved when Air is next touched for its
+own reasons — alongside moving the situation CSS into the shell and proving that migration with a
+byte-identical rebuild.

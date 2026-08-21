@@ -5,6 +5,13 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
+/* THE FAMILY. Air is one of six situations born out of /now, so it carries the
+   same parent crumb and sibling rail as the other five. Imported rather than
+   restated — FAMILY lives once, in the shell.
+   NOT A CYCLE: situation-shell.mjs reads THIS file as text via readFileSync to
+   extract PAGE_CSS and the tab controller. It never imports it, and Air never
+   calls shell(). */
+import { crumb, siblings, FAMILY_CSS } from './lib/situation-shell.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const V3 = join(ROOT, 'public/design/v3');
@@ -178,6 +185,7 @@ B.top = () => {
       </div></div>
     </div>
     <div class="pic-body"><div class="wrap p2-hero">
+${crumb('air')}
       <div class="p2-top">
         <p class="lbl p2-method">Every reading against its published limit. Every gap named.</p>
         <p style="margin:0"><span class="tag tag-season">Year round</span></p>
@@ -739,10 +747,19 @@ ${tabs('Act', [['Watch your ward', pAsk], ['Do it yourself', pDo], ['What is bei
             quote the kind with it.</p>
         </div>
       </div>
+${siblings('air')}
     </div>`;
 };
 
-/* ═══ PAGE CSS ═══════════════════════════════════════════════════════════ */
+/* ═══ PAGE CSS ═══════════════════════════════════════════════════════════
+   ★ NOTHING IN THIS BLOCK MAY CONTAIN ${...}.
+   situation-shell.mjs lifts this template out of this file AS RAW TEXT to give
+   the other five pages the same tab component and rules. Text, not evaluation
+   — so an interpolation here arrives in five other pages as the literal
+   characters "${NAME}". That happened once, with ${FAMILY_CSS}, and six pages
+   shipped it before `verify:final` caught it. The family CSS is now appended in
+   THE DOCUMENT below instead, where it is evaluated and not extracted.
+   ═══════════════════════════════════════════════════════════════════════ */
 const PAGE_CSS = `
 /* ══ AD-14 / D-19.3 — THIS PAGE'S OWN BLOCK ═══════════════════════════════
    Everything above was EXTRACTED from the frozen home.html. Six sub-blocks
@@ -1413,7 +1430,8 @@ const OUT = `<!doctype html>
 ${HEAD_FONTS}
 <style>
 ${CSS}
-${PAGE_CSS}</style>
+${PAGE_CSS}
+${FAMILY_CSS}</style>
 </head>
 <body>
 ${SVG_DEFS}

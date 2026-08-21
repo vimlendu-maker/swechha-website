@@ -20,7 +20,7 @@
 // 3. THE COPY IS CUT. Short sentences. The numbers carry it.
 import * as S from './lib/situation-shell.mjs';
 const { esc, n0, n1, compact, opener, tabs, hole, kd, KIND_LEGEND, ARROW, MON, MON3,
-  stateChip, measureRow, measureHead, disclose } = S;
+  stateChip, measureRow, measureHead, disclose, crumb, siblings } = S;
 
 const sh = S.shell();
 
@@ -86,6 +86,7 @@ B.top = () => `    <div class="pic ht">
       </div></div>
     </div>
     <div class="pic-body"><div class="wrap p2-hero">
+${crumb('heatwave')}
       <div class="p2-top">
         <p class="lbl p2-method">Every reading against its published limit. Every gap named.</p>
         <p style="margin:0"><span class="tag tag-season">${esc(W.label)}</span></p>
@@ -410,6 +411,7 @@ B.act = () => `${opener('act', 'What you can do', 'Heat kills the people who can
       </div>
       <p class="cap h-close">Every figure here is public, dated and reproducible from the source
         named beside it &mdash; including the ones that do not support the argument.</p>
+${siblings('heatwave')}
     </div>`;
 
 /* ═══ HELPERS ════════════════════════════════════════════════════════════ */
