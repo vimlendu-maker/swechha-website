@@ -359,11 +359,15 @@ npm run watch:documents:strict    # exit 1 if anything changed or was superseded
 
 ## 13. What is still open
 
-1. **The money bands are the weakest thing on these pages.** Yamuna has two primary
-   parliamentary documents; heat, fire and forest loss have none. Every lifetime spending
-   figure in circulation traces to journalism reporting a parliamentary panel rather than to
-   the panel's own document, and under D-13.6 those belong in the coverage band. **Closing this
-   is document work, not API work, and it is the largest remaining task.**
+1. **The money band is now scoped, not missing — D-27.** It belongs on **Air and Yamuna only**,
+   the two situations with primary documents behind the figures (NCAP fund tables; the Namami
+   Gange Lok Sabha reply and the Phase-II release). Heat, forest fire, forest loss and climate
+   event **have no money band and no note explaining the absence** — a paragraph about a band
+   the page never promised is an apology, not a named hole.
+   If a primary document ever lands for one of the four, the band is added then. Every lifetime
+   spending figure currently in circulation traces to journalism reporting a parliamentary panel
+   rather than to the panel's own document, and under D-13.6 those belong in the coverage band.
+   **Do not add a money band to a page that cannot attach a document.**
 2. **The GFW key.** The figures come through a public web client's keyless proxy, which can
    close without notice. One free account fixes it.
 3. **The WAQI token** is one click away in the 21 August email.

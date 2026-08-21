@@ -369,6 +369,12 @@ B.said = () => `${opener('said', 'What is being said', 'The register, and one me
       <p style="margin:0"><a class="act" href="#act">What you can do ${ARROW}</a></p>
     </div>`;
 
+/* NO MONEY CARD. The earlier version asked the reader to chase state fire
+   budgets — a question this page cannot answer and had no business raising.
+   Client ruling: money belongs only where it is applicable, which on this site
+   means Air and Yamuna, the two with primary documents behind the figures. The
+   card is replaced by one the page can stand behind completely, because it is
+   made of what the page already proved. */
 B.act = () => `${opener('act', 'What you can do', 'Almost every forest fire in India is lit. That makes this a page about people, not weather.')}
     <div class="wrap">
       <div class="p-act">
@@ -380,11 +386,12 @@ B.act = () => `${opener('act', 'What you can do', 'Almost every forest fire in I
           <p style="margin:0"><a class="act" href="${esc(FIRE.alerts.portal)}">FSI forest fire alerts ${ARROW}</a></p>
         </div>
         <div class="p-act-c">
-          <p class="lbl">Ask what the state spent</p>
-          <p>Fire lines, watchtowers, crew wages and equipment are state forest department budget
-            lines. The burnt-area table names which states burn most. Whether their fire budgets
-            match is a question with a public answer, and this page does not have it.</p>
-          <p style="margin:0"><a class="act" href="${esc(ISFR.source.landing)}">The forest report ${ARROW}</a></p>
+          <p class="lbl">Ask which number you are being given</p>
+          <p>Any fire figure quoted at you is one of three things: <b>satellite detections</b>,
+            <b>alerts sent</b>, or <b>area burnt</b> &mdash; and almost no report says which, or
+            which satellite. The three answers differ by an order of magnitude.
+            <b>Asking is free, and it is the whole argument of this page.</b></p>
+          <p style="margin:0"><a class="act" href="#measured">The three, side by side ${ARROW}</a></p>
         </div>
         <div class="p-act-c">
           <p class="lbl">Plant where it matters</p>

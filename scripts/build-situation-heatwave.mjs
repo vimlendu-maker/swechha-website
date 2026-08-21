@@ -343,7 +343,18 @@ B.trend = () => {
     </div>`;
 };
 
-/* WHO IS WATCHING. Bhuvan, linked and never scraped. */
+/* WHO IS WATCHING. Bhuvan, linked and never scraped.
+   NO MONEY BAND, AND NO NOTE ABOUT NOT HAVING ONE. Client ruling: the money
+   section belongs only where it is applicable, and Air and Yamuna are the two
+   that have it clearly — both rest on primary documents (NCAP fund tables, the
+   Namami Gange reply). Heat preparedness has no single audited national figure
+   this build could attach.
+   An earlier pass named that as a hole here. That was the wrong instinct
+   applied in the wrong place: naming a hole is content when the hole is IN THE
+   MEASUREMENT the page is about — a missing forest mask, an uncountable
+   cloudburst. A paragraph explaining the absence of a band this page never
+   promised is not a named hole, it is an apology, and it raises a question the
+   page then declines to answer. Removed. */
 B.official = () => {
   const cov = BHU.coverage;
   const years = Object.entries(cov.by_year || {});
@@ -368,7 +379,6 @@ B.official = () => {
         Read from the application&rsquo;s date index, not described &mdash; a portal that stopped
         publishing and one that is current look identical from outside. This one is current.
         <b>It serves map images, so no reading on this page comes from it.</b></p>
-${hole('There is no money band on this page. Heat Action Plans are city and state documents and there is no single audited national figure for heat preparedness spending this build could attach. Naming that is more honest than totalling press coverage.')}
       <p class="cap h-src-p"><b>Source.</b>
         <a class="lk" href="${esc(BHU.source.url)}">${esc(BHU.source.name)} &mdash; ${esc(BHU.source.application)}</a>.</p>
       <p style="margin:0"><a class="act" href="#act">What you can do ${ARROW}</a></p>

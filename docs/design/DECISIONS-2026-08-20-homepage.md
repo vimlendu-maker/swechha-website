@@ -3588,3 +3588,49 @@ delivers, not how this page was built.**
 Three of the four state words now appear on real cards — `LIVE` on Air, `PERIODIC` on four,
 `OUT OF SEASON` on Heat — and `DEMO DATA` remains in the hero as a labelled specimen with the
 note that the set below contains none.
+
+---
+
+# D-27 — THE MONEY BAND IS SCOPED TO AIR AND YAMUNA
+
+Client ruling, 21 August: *"Keep the money section only for situations where it's applicable.
+Disable for rest. Air and Yamuna have it clearly."*
+
+### D-27.1 TWO PAGES HAVE IT. FOUR DO NOT, AND THEY NO LONGER MENTION IT.
+| page | money band | why |
+|---|---|---|
+| **Air** | **yes** | NCAP fund tables, 15th Finance Commission air-quality grants, PRANA, CAG audits |
+| **Yamuna** | **yes** | two primary documents — Lok Sabha US Q1949 (31 Jul 2025) and the Namami Gange Phase-II release (29 Jan 2026), with per-project cost and capacity |
+| Heatwave | no | no single audited national figure for heat preparedness |
+| Forest fire | no | state fire budgets are not compiled nationally |
+| Forest loss | no | Forest (Conservation) Act diversion approvals not obtained |
+| Climate event | no | no national figure this build could attach |
+
+The test is the one D-13.6 already set: **the figure is quoted, the document is attached, and no
+inference is drawn beyond the arithmetic.** Two pages pass it. Four cannot, so four do not have
+the band.
+
+### D-27.2 AND THE FOUR NO LONGER APOLOGISE FOR NOT HAVING IT
+Two money-shaped elements were removed, and the distinction they got wrong is worth keeping.
+
+**Heatwave carried a named hole** reading *"There is no money band on this page…"*. That was the
+right instinct in the wrong place. **Naming a hole is content when the hole is in the measurement
+the page is about** — a missing forest mask, an uncountable cloudburst, a station the compiler
+cannot see. A paragraph explaining the absence of a band the page never promised is not a named
+hole; it is an apology, and it raises a question the page then declines to answer. Removed.
+
+**Forest fire carried an action card, "Ask what the state spent"**, sending the reader after a
+figure the page does not have and had no business raising. Replaced with **"Ask which number you
+are being given"** — any fire figure quoted at you is satellite detections, alerts sent, or area
+burnt, the three differ by an order of magnitude, and almost no report says which. That card is
+made entirely of what the page already proved, which is the standard every action card should
+meet.
+
+### D-27.3 THE RULE THIS SETS FOR PAGE SEVEN
+**A band exists because it has something to carry, not because the template has a slot for it.**
+Six of Air's bands and five of Yamuna's would be empty on a page without their sources, and the
+answer is not to fill them — it is not to have them.
+
+Verified after the change: both pages rebuild with **0 contrast failures, 0 horizontal overflow**,
+eight bands each, no `#money` section, and no money-shaped copy anywhere in the four. Air's and
+Yamuna's bands are untouched.
