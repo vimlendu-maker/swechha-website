@@ -335,7 +335,7 @@ B.cover = () => {
         ${n1(ISFR.change_2021_to_2023.net_change_forest_cover)} km&sup2;</b>. Both figures are
         official, both are honest, and they measure different things. That argument has its own
         page.</p>
-      <p style="margin:0"><a class="act" href="/design/v3/situation-forest-loss.html">Forest loss, in full ${ARROW}</a></p>
+      <p style="margin:0"><a class="act" href="/now/forest-loss">Forest loss, in full ${ARROW}</a></p>
       <p class="cap f-cap"><b>Tree cover loss is not deforestation and this page does not call it
         that.</b> ${esc(GFW.caveats[0])}</p>
       <p class="cap p-hole"><b>Nothing here attributes tree cover loss to fire.</b> Loss is counted
@@ -399,7 +399,7 @@ B.act = () => `${opener('act', 'What you can do', 'Almost every forest fire in I
           <p>A ${n1(PRONE.top_three_pct)}%-fire-prone country does not need more monoculture on dry
             slopes. Swechha&rsquo;s nursery grows native species for the places people actually
             live and walk.</p>
-          <p style="margin:0"><a class="act" href="/design/v3/home.html#give">Support the work ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/#give">Support the work ${ARROW}</a></p>
         </div>
       </div>
       <p class="cap f-close">Every figure on this page is public, dated and linked, and the three

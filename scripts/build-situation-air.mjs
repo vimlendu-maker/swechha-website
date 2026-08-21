@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
    NOT A CYCLE: situation-shell.mjs reads THIS file as text via readFileSync to
    extract PAGE_CSS and the tab controller. It never imports it, and Air never
    calls shell(). */
-import { crumb, siblings, FAMILY_CSS } from './lib/situation-shell.mjs';
+import { crumb, siblings, FAMILY_CSS, NAV as SHELL_NAV, HOME_HREF, GIVE_HREF, INDEX_PAGE } from './lib/situation-shell.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const V3 = join(ROOT, 'public/design/v3');
@@ -112,15 +112,19 @@ for (let i = 0; i < chain.length - 1; i++) {
 console.log(`  => ${clashes} clash(es)`);
 
 /* ═══ NAV ════════════════════════════════════════════════════════════════ */
-const NAV = [['Now','/design/v3/intelligence.html'],['Work','/design/v3/home.html#work'],
-  ['Journeys','/design/v3/home.html#journeys'],['Impact','/design/v3/home.html#impact'],
-  ['Farm','/design/v3/home.html#farm'],['Record','/design/v3/home.html#record']];
+/* THE SIX ARE THE RULED CONTRACT (AD-17 §2, as amended by W-16), and they are
+   canonical routes rather than the `/design/` paths this file used to write —
+   `public/design/` is deleted before any deploy, so a prototype path is a link
+   that cannot survive the port. Air predates the shell and still owns its own
+   copy of the nav; the values are IMPORTED from the shell so the two cannot
+   drift, which is the whole reason FINAL.md §6.2 wants this block migrated. */
+const NAV = SHELL_NAV;
 // Seven rows for eight bands — the index carries the argument, not the DOM.
 const INDEX = [['The reading','#top'],['Who is in it','#people'],['How the number is made','#measured'],
   ['Where it comes from','#sources'],['Where it is going','#trend'],['The geography','#geography'],
   ['What it costs','#money'],['What you can do','#act']];
-const HEADER = `<header class="nav"><div class="nav-in"><a class="mark" href="/design/v3/home.html" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t,h])=>`<a class="nl" href="${h}">${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Sections</button>
-<div class="navidx" id="navidx" hidden><nav aria-label="All sections">${INDEX.map(([t,h])=>`<a class="nl" href="${h}">${t}</a>`).join('')}</nav></div><a class="give" href="/design/v3/home.html#give">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${INDEX.map(([t,h])=>`<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>`;
+const HEADER = `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Sections</button>
+<div class="navidx" id="navidx" hidden><nav aria-label="All sections">${INDEX.map(([t,h])=>`<a class="nl" href="${h}">${t}</a>`).join('')}</nav></div><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${INDEX.map(([t,h])=>`<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>`;
 
 /* ═══ SHARED FRAGMENTS ═══════════════════════════════════════════════════ */
 // MEASURED vs MODELLED, carried by the rule itself (D-17.6). Solid = a
@@ -675,11 +679,11 @@ B.act = () => {
             <p class="lbl">The campaign</p>
             <p class="body"><b>Delhi I Can&rsquo;t See You</b> is Swechha&rsquo;s campaign on this. This page is
               the why; the campaign is the what.</p>
-            <p><a class="b b-2" href="/design/v3/home.html#campaigns">Delhi I Can&rsquo;t See You ${ARROW}</a></p>
+            <p><a class="b b-2" href="/work/campaigns#delhi-i-cant-see-you">Delhi I Can&rsquo;t See You ${ARROW}</a></p>
             <p class="lbl" style="margin-top:var(--gap-row)">Five more situations</p>
             <p class="body p-sib-n">Yamuna &middot; Heatwave &middot; Forest fires &middot; Forest loss &middot; Climate event</p>
             <p class="cap">Named, not linked, until their pages exist.</p>
-            <p><a class="act" href="/design/v3/intelligence.html">All situations ${ARROW}</a></p>
+            <p><a class="act" href="${INDEX_PAGE.route}">All situations ${ARROW}</a></p>
           </div></div>`;
   const pNews = `<div class="p-news">
           ${order ? `<div class="p-news-o"><p class="lbl p-news-ol">Most recent order, as reported</p>

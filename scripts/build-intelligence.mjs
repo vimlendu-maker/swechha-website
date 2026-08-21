@@ -54,11 +54,18 @@ const clWorst = [...CL.stations].sort((a, b) =>
 
 /* ── THE SIX. Each one names its own KIND of limit, because that is the
       page's argument. `kind` is a word from a closed list of six, and no two
-      situations share one — which is the finding, not a coincidence. ────── */
+      situations share one — which is the finding, not a coincidence.
+
+      `href` IS READ OUT OF THE SHELL'S FAMILY, never typed. This index and
+      its six children are asserted to link to each other in both directions
+      (`npm run verify:final`), so the one place a route may be written is
+      `FAMILY` in situation-shell.mjs — and `familyHref` throws on an id it
+      does not know, which is what makes a typo here a build failure rather
+      than a card pointing at nothing. ────────────────────────────────────── */
 const SITUATIONS = [
   {
     id: 'air', name: 'Air', where: 'Delhi',
-    href: '/design/v3/situation-air.html',
+    href: S.familyHref('air'),
     value: n0(airRd.aqi), unit: 'air quality index',
     sub: `${esc(airRd.band)} · governed by ${airRd.governing === 'PM2.5' ? 'PM2.5' : esc(airRd.governing)}`,
     kind: 'a ceiling', limit: `AQI ${AIR.aqiLimit}`,
@@ -97,7 +104,7 @@ const SITUATIONS = [
   },
   {
     id: 'yamuna', name: 'Yamuna', where: 'Delhi',
-    href: '/design/v3/situation-yamuna.html',
+    href: S.familyHref('yamuna'),
     value: n1(YAM.reporting_floor.do), unit: 'mg/L dissolved oxygen',
     sub: 'at or below the detection limit',
     kind: 'a floor', limit: YAM.limits.do.label,
@@ -109,7 +116,7 @@ const SITUATIONS = [
   },
   {
     id: 'heat', name: 'Heat', where: 'India',
-    href: '/design/v3/situation-heatwave.html',
+    href: S.familyHref('heatwave'),
     value: n1(heatRec.tmax), unit: '°C',
     sub: `${esc(heatRec.name)}, ${heatRec.year} · the record in this archive`,
     kind: 'an absolute', limit: `${HEAT.criteria.absolute_severe} °C`,
@@ -121,7 +128,7 @@ const SITUATIONS = [
   },
   {
     id: 'fire', name: 'Forest fire', where: 'India',
-    href: '/design/v3/situation-forest-fire.html',
+    href: S.familyHref('fire'),
     value: n0(Math.round(burnt.total)), unit: 'km² burnt in one season',
     sub: esc(burnt.season),
     kind: 'none', limit: FF.limit.label,
@@ -133,7 +140,7 @@ const SITUATIONS = [
   },
   {
     id: 'forest', name: 'Forest loss', where: 'India',
-    href: '/design/v3/situation-forest-loss.html',
+    href: S.familyHref('loss'),
     value: `${GFW.total.loss_mha}`, unit: 'million hectares of tree cover',
     sub: `${GFW.total.from}–${GFW.total.to} · satellite-measured`,
     kind: 'a requirement', limit: 'approval, not a quantity',
@@ -145,7 +152,7 @@ const SITUATIONS = [
   },
   {
     id: 'climate', name: 'Climate event', where: 'India',
-    href: '/design/v3/situation-climate-event.html',
+    href: S.familyHref('climate'),
     value: n0(clWorst.last_complete.extreme_days), unit: 'days over the heavy-rain threshold',
     sub: `${esc(clWorst.name)}, ${clWorst.last_complete.year}`,
     kind: 'a class, crossed', limit: `${n1(CL.categories.heavy)} mm in 24 hours`,
@@ -293,7 +300,7 @@ B.campaigns = () => `${opener('campaigns', 'What we do about it', 'Three campaig
           <p class="cap ix-camp-y">since 2000</p>
           <p class="ix-camp-x">The founding campaign, and still the organisation&rsquo;s spine.
             It is the reason there is a Yamuna page at all, and the reason the walk exists.</p>
-          <p style="margin:0"><a class="act" href="/design/v3/situation-yamuna.html">The reading it works against ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/now/yamuna">The reading it works against ${ARROW}</a></p>
         </div>
         <div class="ix-camp">
           <p class="ix-camp-n">Monsoon Wooding</p>
@@ -302,7 +309,7 @@ B.campaigns = () => `${opener('campaigns', 'What we do about it', 'Three campaig
             <b>over 50,000 planted and survived</b> in total.
             <i>Survived</i> is the organisation&rsquo;s own word for it, and it is the honest one
             &mdash; planting is not the same measurement as living.</p>
-          <p style="margin:0"><a class="act" href="/design/v3/home.html#impact">The record ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/#impact">The record ${ARROW}</a></p>
         </div>
         <div class="ix-camp">
           <p class="ix-camp-n">Delhi I Can&rsquo;t See You</p>
@@ -310,7 +317,7 @@ B.campaigns = () => `${opener('campaigns', 'What we do about it', 'Three campaig
           <p class="ix-camp-x">Named here because it is one of the three current campaigns.
             <b>No description is given because none is sourced yet</b>, and this page does not
             write copy for a campaign it cannot cite.</p>
-          <p style="margin:0"><a class="act" href="/design/v3/home.html#work">What we work on ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/#work">What we work on ${ARROW}</a></p>
         </div>
       </div>
       <p class="ix-note"><b>The gap between a campaign and a national figure is the honest
@@ -320,7 +327,7 @@ B.campaigns = () => `${opener('campaigns', 'What we do about it', 'Three campaig
       <p class="cap ix-close">Every reading here is public, dated and linked to the document it
         came from. Where a figure could not be obtained, the page it belongs to says so in the
         place the figure would have gone.</p>
-      <p style="margin:0"><a class="act" href="/design/v3/home.html#give">Support the work ${ARROW}</a></p>
+      <p style="margin:0"><a class="act" href="/#give">Support the work ${ARROW}</a></p>
     </div>`;
 
 /* ═══ THE ONE PIECE OF PAGE SCRIPT ═══════════════════════════════════════

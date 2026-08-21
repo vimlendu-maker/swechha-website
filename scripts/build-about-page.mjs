@@ -354,7 +354,7 @@ ${WHEEL.map(t => `            <li>${t}</li>`).join('\n')}
         <p class="cap a-q-s"><i>Introduction to Swechha</i>, p1.</p>
       </div>
 
-      <p class="a-foot"><a class="act" href="/design/v3/home.html#work">What that looks like as work ${ARROW}</a></p>
+      <p class="a-foot"><a class="act" href="/#work">What that looks like as work ${ARROW}</a></p>
     </div>`;
 
 /* ── BAND 3. THE RECORD. ─────────────────────────────────────────────────
@@ -377,7 +377,7 @@ ${RUNGS.map(r => `        <li class="a-rung rl${r.green ? ' is-now' : ''}">
           </div>
         </li>`).join('\n')}
       </ol>
-      <p class="a-foot"><a class="act" href="/design/v3/home.html#impact">What the record adds up to ${ARROW}</a></p>
+      <p class="a-foot"><a class="act" href="/#impact">What the record adds up to ${ARROW}</a></p>
     </div>`;
 
 /* ── BAND 4. WHO DOES THE WORK. ──────────────────────────────────────────
@@ -507,10 +507,16 @@ ${HOLES.map(h => hole(h)).join('\n')}
 /* ── BAND 7. TURN UP. ────────────────────────────────────────────────────
    Three doors and one act. Mustard is the only hue in the band and it is on
    the controls, which is what licenses it everywhere else (§3.1). */
+/* CANONICAL ROUTES, NOT PROTOTYPE PATHS. These three were written as
+   `/design/v3/...` and were the last such hrefs in the finished set —
+   `public/design/` is deleted before any deploy (AD-17 §6.4), so each would
+   have become a 404 at the port. `The readings` is the situation index the
+   nav's `Now` also points at; the other two are homepage bands written
+   ABSOLUTELY, which is the same destination from here as from the homepage. */
 const DOORS = [
-  ['/design/v3/intelligence.html', 'The readings', 'Six situations, each against the limit somebody published for it.'],
-  ['/design/v3/home.html#impact', 'The record', 'What the work adds up to, with a method note behind every figure.'],
-  ['/design/v3/home.html#farm', 'The farm', 'Five acres, an hour and a half from Delhi. You can come to it.'],
+  ['/now', 'The readings', 'Six situations, each against the limit somebody published for it.'],
+  ['/#impact', 'The record', 'What the work adds up to, with a method note behind every figure.'],
+  ['/#farm', 'The farm', 'Five acres, an hour and a half from Delhi. You can come to it.'],
 ];
 
 B.act = () => `${opener('act', 'Turn up',
@@ -523,7 +529,7 @@ ${DOORS.map(([h, n, t]) => `        <a class="a-door" href="${h}">
           <span class="a-door-go" aria-hidden="true">${ARROW}</span>
         </a>`).join('\n')}
       </div>
-      <p class="a-foot a-foot-2"><a class="b b-1" href="/design/v3/home.html#give">Give monthly</a>
+      <p class="a-foot a-foot-2"><a class="b b-1" href="/#give">Give monthly</a>
         <a class="b b-2" href="mailto:info@swechha.in">Write to us</a></p>
     </div>`;
 
@@ -796,7 +802,7 @@ gate(!DEAD.test(OUT), 'none of the killed year-count phrasings is present');
 //        somebody's quoted bio is the page speaking in its own voice, and then
 //        §3.5 applies with full force. Anything new fails here loudly instead
 //        of passing quietly because the regex happened not to match it.
-const BIOTEXT = TEAM.concat(BOARD).flatMap(p => p.bio || []).join('   ');
+const BIOTEXT = TEAM.concat(BOARD).flatMap(p => p.bio || []).join('  ');
 const counts = [...OUT.matchAll(/[^.>;]{0,90}\b(?:\d+|a decade|two decades)\s+years?\b/g)]
   .map(m => m[0].replace(/<[^>]*>/g, '').replace(/&\w+;/g, ' ').replace(/\s+/g, ' ').trim());
 const untraceable = counts.filter((c) => {

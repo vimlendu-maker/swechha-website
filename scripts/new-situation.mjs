@@ -188,7 +188,7 @@ B.act = () => \`\${opener('act', 'What you can do', 'TODO: one line.')}
         <div class="p-act-c">
           <p class="lbl">TODO</p>
           <p>TODO.</p>
-          <p style="margin:0"><a class="act" href="/design/v3/home.html#give">Support the work \${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/#give">Support the work \${ARROW}</a></p>
         </div>
       </div>
       <p class="cap s7-close">Every figure on this page is public, dated and linked.</p>

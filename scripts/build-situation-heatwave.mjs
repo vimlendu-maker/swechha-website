@@ -400,13 +400,13 @@ B.act = () => `${opener('act', 'What you can do', 'Heat kills the people who can
           <p>Cities write Heat Action Plans. Ask if yours has one, whether it names shaded spaces and
             water points near your ward, and whether outdoor workers were consulted. A plan nobody
             can find is not a plan.</p>
-          <p style="margin:0"><a class="act" href="/design/v3/home.html#work">What we work on ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/#work">What we work on ${ARROW}</a></p>
         </div>
         <div class="p-act-c">
           <p class="lbl">Shade is infrastructure</p>
           <p>A tree over a bus stop does more for a waiting body than any advisory. It is the one
             place a heat page and a forest page meet.</p>
-          <p style="margin:0"><a class="act" href="/design/v3/home.html#give">Support the work ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/#give">Support the work ${ARROW}</a></p>
         </div>
       </div>
       <p class="cap h-close">Every figure here is public, dated and reproducible from the source

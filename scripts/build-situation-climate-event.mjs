@@ -371,20 +371,20 @@ B.act = () => `${opener('act', 'What you can do', 'Rainfall is weather. A flood 
           <p>Most urban flooding happens where water used to go &mdash; a lake, a nala, a
             floodplain. City master plans and old survey maps are public. If your street floods,
             something was built on the way out.</p>
-          <p style="margin:0"><a class="act" href="/design/v3/situation-yamuna.html">The Yamuna floodplain ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/now/yamuna">The Yamuna floodplain ${ARROW}</a></p>
         </div>
         <div class="p-act-c">
           <p class="lbl">Lightning is the one you can act on today</p>
           <p>${n0(DTH.causes.find(c => c.cause === 'Lightning').y2024)} deaths a year, mostly
             outdoors, mostly avoidable with thirty minutes of shelter. It is the largest killer on
             this page and the cheapest to reduce.</p>
-          <p style="margin:0"><a class="act" href="/design/v3/home.html#work">What we work on ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/#work">What we work on ${ARROW}</a></p>
         </div>
         <div class="p-act-c">
           <p class="lbl">Ask who signed it off</p>
           <p>Every building on a floodplain has an approval with a name on it. That is a public
             record, and it is a more useful question than how much it rained.</p>
-          <p style="margin:0"><a class="act" href="/design/v3/home.html#give">Support the work ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/#give">Support the work ${ARROW}</a></p>
         </div>
       </div>
       <p class="cap c-close">Every figure here is public, dated and reproducible from the source

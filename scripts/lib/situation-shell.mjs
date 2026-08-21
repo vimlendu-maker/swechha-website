@@ -227,19 +227,56 @@ export function shell() {
 
 /* ═══ CHROME ═════════════════════════════════════════════════════════════ */
 
-// The site's primary nav, identical on every situation page. `Now` points at
-// the situation index, which is where a reader goes to find the other five.
+/* The site's primary nav, identical on every situation page and on /about.
+ *
+ * THE SIX DESTINATIONS ARE THE RULED CONTRACT, NOT THIS FILE'S CHOICE:
+ * AD-17 §2 ("one word, one absolute destination, from every page on the
+ * site"), as amended by W-16, which reinstated `/work` as a page. `Now`
+ * points at the situation index because that is where a reader goes to
+ * find the other five.
+ *
+ * WHY THESE ARE CANONICAL ROUTES AND NOT `/design/` PATHS. Every href in
+ * this build used to be written as the prototype path it resolves to
+ * today — `/design/v3/intelligence.html` for Now, `/design/v3/home.html#work`
+ * for Work. That is the one thing the contract forbids: `public/design/` is
+ * deleted before any deploy (AD-17 §6.4), so a `/design/` path is a link
+ * that cannot survive the port, and W-2 records the homepage's own six being
+ * corrected off exactly these values. The WORK section's link gate rejects
+ * the class outright. So the pages carry the destination they will have,
+ * and the prototype is browsed knowing the chrome links forward.
+ *
+ * Four of the six resolve to a page and two to a homepage band written
+ * ABSOLUTELY — `/#farm` is a same-page jump from the homepage and a
+ * navigate-plus-jump from here, and it is the SAME destination either way.
+ */
 export const NAV = [
-  ['Now', '/design/v3/intelligence.html'],
-  ['Work', '/design/v3/home.html#work'],
-  ['Journeys', '/design/v3/home.html#journeys'],
-  ['Impact', '/design/v3/home.html#impact'],
-  ['Farm', '/design/v3/home.html#farm'],
-  ['Record', '/design/v3/home.html#record'],
+  ['Now', '/now'],
+  ['Work', '/work'],
+  ['Journeys', '/work/journeys'],
+  ['Impact', '/impact'],
+  ['Farm', '/#farm'],
+  ['Record', '/#record'],
 ];
 
-export const header = (index) => `<header class="nav"><div class="nav-in"><a class="mark" href="/design/v3/home.html" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t, h]) => `<a class="nl" href="${h}">${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Sections</button>
-<div class="navidx" id="navidx" hidden><nav aria-label="All sections">${index.map(([t, h]) => `<a class="nl" href="${h}">${t}</a>`).join('')}</nav></div><a class="give" href="/design/v3/home.html#give">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${index.map(([t, h]) => `<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>`;
+/* THE HOMEPAGE, AND THE GIVE CHIP. The wordmark is the site root, matching
+ * all fifteen WORK pages. The chip is `/act` per the nav contract's Give
+ * row — the chip is a nav control, so it takes the nav's destination, not
+ * the homepage's `#give` band that body copy still points at. */
+export const HOME_HREF = '/';
+export const GIVE_HREF = '/act';
+
+/* `aria-current` on the nav, per AD-19 §5: `"page"` ONLY where the href
+ * equals the URL being built, `"true"` where the label is the right
+ * location but the href is its parent. So the index carries `"page"` on
+ * Now, and a situation page carries `"true"` on Now — its href is `/now`,
+ * which is not this page, and `"page"` there would be a lie. Pass
+ * `current` as the nav label to mark, and `url` as this page's own route.
+ * Pages outside the six (about) pass neither and mark nothing. */
+const navCurrent = (label, href, current, url) => label !== current ? ''
+  : (href === url ? ' aria-current="page"' : ' aria-current="true"');
+
+export const header = (index, { current = null, url = null } = {}) => `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Sections</button>
+<div class="navidx" id="navidx" hidden><nav aria-label="All sections">${index.map(([t, h]) => `<a class="nl" href="${h}">${t}</a>`).join('')}</nav></div><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${index.map(([t, h]) => `<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>`;
 
 /* ═══ GROUND ADJACENCY ═══════════════════════════════════════════════════ */
 
@@ -384,21 +421,38 @@ export const stateChip = (word) => {
    linking home, or an index that drops a card, fails the build rather than
    quietly orphaning itself.
    ═══════════════════════════════════════════════════════════════════════ */
-export const INDEX_PAGE = { file: 'intelligence.html', route: '/design/v3/intelligence.html', label: 'Now' };
+export const INDEX_PAGE = { file: 'intelligence.html', route: '/now', label: 'Now' };
 
+/* EACH MEMBER CARRIES BOTH ITS FILE AND ITS ROUTE, and they are different
+ * things: `file` is where the generator writes today, `route` is the URL every
+ * href in the built page points at. Keeping the pair here is what makes the
+ * port a table lookup instead of a re-derivation — and it is why no generator
+ * anywhere writes a `/design/` path any more (see NAV above for the reasoning).
+ *
+ * THE ROUTES NEST UNDER THE PARENT ON PURPOSE. `/now` is the index and the six
+ * are its children, so they are `/now/<slug>` — the shape FINAL.md has declared
+ * since the set was finished. An earlier flat guess at `/situations/<slug>`
+ * survived in the WORK section's link gate (work-shell.mjs) and disagreed with
+ * this on both the parent AND heat's slug; that map now defers to this one,
+ * because a child route that does not sit under the index it belongs to orphans
+ * the page from its own parent.
+ *
+ * `id` is the internal key and does NOT track the slug: `heatwave`/`heat`,
+ * `fire`/`forest-fire`, `loss`/`forest-loss`, `climate`/`climate-event`. The
+ * ids are load-bearing across six generators, so they stay as they are and the
+ * route is stated rather than derived from them. */
 export const FAMILY = [
-  { id: 'air',      name: 'Air',           where: 'Delhi', file: 'situation-air.html' },
-  { id: 'yamuna',   name: 'Yamuna',        where: 'Delhi', file: 'situation-yamuna.html' },
-  { id: 'heatwave', name: 'Heat',          where: 'India', file: 'situation-heatwave.html' },
-  { id: 'fire',     name: 'Forest fire',   where: 'India', file: 'situation-forest-fire.html' },
-  { id: 'loss',     name: 'Forest loss',   where: 'India', file: 'situation-forest-loss.html' },
-  { id: 'climate',  name: 'Climate event', where: 'India', file: 'situation-climate-event.html' },
+  { id: 'air',      name: 'Air',           where: 'Delhi', file: 'situation-air.html',           route: '/now/air' },
+  { id: 'yamuna',   name: 'Yamuna',        where: 'Delhi', file: 'situation-yamuna.html',        route: '/now/yamuna' },
+  { id: 'heatwave', name: 'Heat',          where: 'India', file: 'situation-heatwave.html',       route: '/now/heat' },
+  { id: 'fire',     name: 'Forest fire',   where: 'India', file: 'situation-forest-fire.html',    route: '/now/forest-fire' },
+  { id: 'loss',     name: 'Forest loss',   where: 'India', file: 'situation-forest-loss.html',    route: '/now/forest-loss' },
+  { id: 'climate',  name: 'Climate event', where: 'India', file: 'situation-climate-event.html',  route: '/now/climate-event' },
 ];
-const href = (f) => `/design/v3/${f}`;
 export const familyHref = (id) => {
   const m = FAMILY.find(f => f.id === id);
   if (!m) throw new Error(`"${id}" is not in FAMILY: ${FAMILY.map(f => f.id).join(', ')}`);
-  return href(m.file);
+  return m.route;
 };
 
 /**
@@ -428,7 +482,7 @@ export const siblings = (id) => {
   return `      <nav class="fam-sibs" aria-label="The other situations">
         <p class="lbl fam-sibs-h">The other ${rest.length}</p>
         <div class="fam-sibs-r">
-          ${rest.map(f => `<a class="fam-sib" href="${href(f.file)}">
+          ${rest.map(f => `<a class="fam-sib" href="${f.route}">
             <span class="fam-sib-n">${esc(f.name)}</span>
             <span class="cap fam-sib-w">${esc(f.where)}</span></a>`).join('\n          ')}
         </div>
@@ -598,6 +652,14 @@ export const disclose = (summary, body) => `      <details class="dx">
  * line (SITUATION-PAGE-TEMPLATE.md §2).
  */
 export async function assemble({ file, title, bands, sectionFor, index, sh, pageCss = '', script = '', clashes, note = '' }) {
+  /* WHICH NAV WORD THIS PAGE IS STANDING UNDER, derived from the file being
+     written rather than passed in, so a generator cannot mark the wrong one.
+     The index and all six situations live under `Now`; anything else built
+     through this shell (about.html) is not a nav word and marks nothing. */
+  const own = file === INDEX_PAGE.file ? INDEX_PAGE.route
+    : (FAMILY.find(f => f.file === file)?.route ?? null);
+  const navMark = { current: own ? INDEX_PAGE.label : null, url: own };
+
   const section = ([id, cls]) => {
     const body = sectionFor(id);
     const labelled = !['top', 'strip'].includes(id) ? ` aria-labelledby="${id}-h"` : '';
@@ -623,7 +685,7 @@ ${pageCss}</style>
 <body>
 ${sh.SVG_DEFS}
 ${sh.SKIP}
-${header(index)}
+${header(index, navMark)}
 <main id="main" tabindex="-1">
 ${bands.map(section).join('\n')}
 </main>

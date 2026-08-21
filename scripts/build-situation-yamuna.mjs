@@ -713,7 +713,7 @@ B.act = () => `${opener('act', 'What you can do', 'The river is downstream of a 
           <p>Swechha has run the Yamuna walk for two decades, and it is the single thing that
             changes how people talk about this river. You stand at the foam line. Nothing on a
             screen does that.</p>
-          <p style="margin:0"><a class="act" href="/design/v3/home.html#journeys">Yamuna Yatra ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/work/journeys/yamuna-yatra">Yamuna Yatra ${ARROW}</a></p>
         </div>
         <div class="p-act-c">
           <p class="lbl">Ask one question</p>
@@ -727,7 +727,7 @@ B.act = () => `${opener('act', 'What you can do', 'The river is downstream of a 
           <p class="lbl">Stop sending it there</p>
           <p>Idols, ashes, flowers, plastic and oil all arrive at the same water. It is the smallest
             of the causes on this page and the only one an individual fully controls.</p>
-          <p style="margin:0"><a class="act" href="/design/v3/home.html#give">Support the work ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/#give">Support the work ${ARROW}</a></p>
         </div>
       </div>
       <p class="cap y-close">Every figure on this page is public, dated and linked. If one is wrong,

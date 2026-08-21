@@ -143,7 +143,7 @@ const alertText = (station, aqi, band, prev, observed, unsubToken) => [
   `the index scale — which is not ${(aqi/100).toFixed(1)} times the pollution, because the index is`,
   `piecewise-linear. The concentration behind it is on the page.`,
   ``,
-  `${SITE}/design/v3/situation-air.html`,
+  `${SITE}/now/air`,
   ``,
   `You will not hear from us again until the band changes again.`,
   unsubToken ? `Stop these: ${SITE}/api/ward/unsubscribe?t=${encodeURIComponent(unsubToken)}` : null,

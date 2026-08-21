@@ -361,14 +361,14 @@ B.act = () => `${opener('act', 'What you can do', 'A forest is lost with paperwo
           <p>Forest land cannot be used for anything else without central approval, and those
             proposals are published while they are still proposals. That is the point at which a
             forest is still a forest.</p>
-          <p style="margin:0"><a class="act" href="/design/v3/situation-forest-fire.html">And what burns ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/now/forest-fire">And what burns ${ARROW}</a></p>
         </div>
         <div class="p-act-c">
           <p class="lbl">Compensatory is not equivalent</p>
           <p>An approval usually comes with compensatory afforestation elsewhere. A sixty-year-old
             forest and a two-year-old plantation are the same line in a ledger and not the same
             thing on the ground.</p>
-          <p style="margin:0"><a class="act" href="/design/v3/home.html#give">Support the work ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/#give">Support the work ${ARROW}</a></p>
         </div>
       </div>
       <p class="cap l-close">Every figure on this page is public, dated and linked &mdash; including

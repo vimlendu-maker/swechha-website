@@ -263,13 +263,13 @@ for (const p of FINAL) {
     add('links up to /now', html.includes(`href="${INDEX_PAGE.route}"`),
       html.includes(INDEX_PAGE.route) ? 'yes' : `no link to ${INDEX_PAGE.route}`);
     const sibs = FAMILY.filter(f => f.id !== p.famId);
-    const missingSibs = sibs.filter(f => !html.includes(`href="/design/v3/${f.file}"`));
+    const missingSibs = sibs.filter(f => !html.includes(`href="${f.route}"`));
     add('links to 5 siblings', missingSibs.length === 0,
       missingSibs.length ? `missing ${missingSibs.map(f => f.name).join(', ')}` : `all ${sibs.length}`);
     add('carries its crumb', /class="fam-crumb"/.test(html) && html.includes(`of ${FAMILY.length} situations`),
       /class="fam-crumb"/.test(html) ? 'yes' : 'no crumb');
   } else {
-    const missingKids = FAMILY.filter(f => !html.includes(`href="/design/v3/${f.file}"`));
+    const missingKids = FAMILY.filter(f => !html.includes(`href="${f.route}"`));
     add('links down to all 6', missingKids.length === 0,
       missingKids.length ? `missing ${missingKids.map(f => f.name).join(', ')}` : `all ${FAMILY.length}`);
   }
