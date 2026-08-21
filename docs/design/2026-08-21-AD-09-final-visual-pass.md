@@ -1130,3 +1130,233 @@ document 10,282px at 375 and 10,852px at 1440, `record` 1,393.5px at 375 and 1,2
 as the two eyebrows take a second line; 320 remains below the project's tested floor.
 
 Backup: `scratchpad/home.html.bak-pre-320fix`.
+
+---
+
+# Post-freeze honesty pass — D-10.1 and D-10.4, 21 August 2026
+
+Two client rulings, both honesty corrections, which on this project outrank the
+freeze. Everything not named below is untouched, and that was verified rather
+than assumed: the diff against `2ce1495` is **four content changes** in
+`home.html` (two badge classes, two badge words, two `.sr` sentences) plus
+comments, and one added band plus its CSS in `journeys-cityscapes.html`.
+
+Backups taken before the first edit:
+`public/design/v3/home.html.bak-20260821-pre-D10.1` and
+`public/design/journeys-cityscapes.html.bak-20260821-pre-D10.4`.
+
+## 1. Every state claim on the homepage, found and adjudicated
+
+I looked in all six places a state can be asserted, not only at the badges:
+the hero deck's per-slide stamps, any page-level indicator, the readings
+ticker's cells, the Record band's door eyebrows, every `aria-label` and `.sr`
+string, and every `title`/`alt`. **The file has no `title` attribute at all**,
+and no `alt` text makes a state claim.
+
+### 1.1 The hero deck — the only per-reading state badges on the page
+
+| Slide | Reading | Provenance line | Was | Now | Why |
+|---|---|---|---|---|---|
+| `#h-air` | Delhi-NCR AQI 412 | CPCB continuous monitor, Anand Vihar. Hourly. | `state live` / **LIVE** | `state demo` / **DEMO DATA** | No HTTP client, no OpenAQ. Nothing fetches it. |
+| `#h-yamuna` | Yamuna DO 0.0 mg/l | DPCC monthly grab sample. Monthly. | `state delayed` / **PERIODIC** | **PERIODIC** — unchanged | A lab grab sample typed in on a monthly cadence *is* the PERIODIC mechanism. |
+| `#h-monsoon` | Delhi rainfall 512mm | IMD season accumulation. Daily. | `state delayed` / **PERIODIC** | **PERIODIC** — unchanged | Already demoted by D-01.11; a published daily bulletin, editor-entered. |
+| `#h-fire` | 118 thermal detections | NASA FIRMS VIIRS 375m. Twice daily. | `state live` / **LIVE** | `state demo` / **DEMO DATA** | FIRMS was called "already wired" on 20 Aug. It is not. |
+
+Each badge has exactly one mirror — the slide's `.sr` sentence, which the
+stamp's `aria-hidden="true"` delegates to. Both mirrors were changed with their
+badge, so no reading now says one thing to the eye and another to a screen
+reader:
+
+- `#h-air` `.sr`: *"…24-hour rolling. Severe. **Demo data.**"*
+- `#h-fire` `.sr`: *"…118 thermal detections, 7 days. Below season. **Demo data.**"*
+
+**Shape, not just the word.** `DEMO DATA` takes the vocabulary's existing
+hatched 9×9 chip (`.state.demo i`, 45° `repeating-linear-gradient`) — verified
+rendering as hatched, against PERIODIC's hollow square and the retired LIVE
+filled square. Nothing was restyled and no fifth state word was invented.
+
+### 1.2 The client's count was five; the file carries four
+
+Reported rather than reconciled silently. The frozen homepage asserts LIVE in
+**four** places — two visible badges and their two `.sr` twins — not five, and
+that count is identical at `1149b6d` and `2ce1495`, so nothing was lost between
+the freeze and the sweep. The likely fifth is **off the homepage**: the pages
+the homepage links to carry nine more LIVE badges between them
+(`intelligence.html` ×6, `system.html` ×2, `situation-air.html` ×1), and the
+ticker's six cells and the Record band's "Today's readings" door all point at
+`intelligence.html`. **D-10.1's argument applies there unchanged and those
+pages were out of scope for today.**
+
+### 1.3 The page-level indicator: already absent, re-verified
+
+AD-05 R4 removed the page-level LIVE dot. Confirmed still gone. The only state
+marks on the page are the four slide-owned stamps, which is the structural
+guarantee D-01.10 bought: **`document.querySelectorAll('.state').length` is 4,
+all four inside a `.s-hero-sit`.**
+
+### 1.4 The ticker: no state is asserted, so nothing to correct
+
+The six cells carry a name and a numeral only — no `.state` element, no
+vocabulary word, and the `is-over` / `is-good` classes are severity, not state.
+Correct as built.
+
+### 1.5 Judged to be DESCRIPTIONS, not state claims — left alone
+
+**The Record band's three door eyebrows: "Updated every hour" / "Compiled
+weekly" / "Evergreen".** All three are descriptions, and the third proves it:
+"Evergreen" cannot be a state, it is a content kind. The three share one slot,
+one register and one typographic treatment; they carry no vocabulary word, no
+chip, no shape, and they describe *a section of the record's publishing
+cadence*, not the provenance of a reading. That is the same register as the
+`.s-hero-cad` spans ("Hourly.", "Monthly.", "Daily.", "Twice daily."), which
+§3.4 of the branding spec classes as part of the provenance line and explicitly
+distinct from the state mark. **Under the freeze they stay.**
+
+One reservation, recorded for a ruling rather than acted on: of the three,
+**"Updated every hour" is the only one in the present tense**, and it is the
+one that would read as a promise about the live page. If the client wants it
+brought into the register the other two already sit in, `"Hourly"` is a
+one-word change that matches `.s-hero-cad` exactly. Not done without a ruling.
+
+## 2. Liveness asserted in ways the ruling did not anticipate
+
+Found, **not changed** — each needs its own ruling, and each is louder than a
+badge because it recomputes on every load and therefore never looks stale.
+
+1. **`"Fetched 03:10 IST"` on the fire slide.** The verb names a machine
+   operation that does not happen. `"Read"` (air), `"Updated"` (monsoon) and
+   `"Last drawn"` (yamuna) are weaker but tensed. A badge reading DEMO DATA
+   above a line reading *Fetched* is a contradiction inside one plate.
+2. **The computed relative age, `<time class="s-hero-age">` → `"· 43 min
+   ago"`.** On all four slides. It is *the* liveness claim on the page now:
+   D-01.11 built it precisely so the hour would never be stale, which means it
+   asserts a fresh read on every load, including on the two slides that now say
+   DEMO DATA. The clock is honest; what it is a clock *for* does not exist.
+3. **The ticker head's computed date + `"07:00 IST"`.** Same mechanism, same
+   issue, one level up: it dates the whole strip to today.
+4. **`#ticker`'s `aria-label`: "Today's readings: every situation in window,
+   and one Swechha record."** Two claims in one string — *"Today's"*, and a
+   completeness claim that §4.2 consequence 2 already flagged as going false
+   with the season.
+5. **The Record door's `"Last compiled 18 August 2026"`**, three days stale on
+   the day the branding spec measured it. Already on the ledger as a live
+   residue; unchanged.
+
+## 3. A consequence the client should know about
+
+**The blink is gone from the homepage.** It was bound to `.state.live` and no
+slide carries that class any more, so the page's only `@keyframes` now animates
+nothing. This is the honest outcome — D-01.9 asked for a blinking LIVE mark and
+D-01.10 answered that the only version that cannot lie is a state badge that is
+*sometimes* live; today it is never live, so it never blinks. **The blink
+returns by itself, on the reading that earns it, the day a feed is wired.**
+
+To protect that, the four dormant rules (`.s-hero-stamp .state.live i`, its
+`prefers-reduced-motion` twin, `.state.live i`, and `@keyframes s-hero-live`)
+now carry a **DO NOT SWEEP** comment naming them. Without it the next
+AD-11-style unmatched-selector sweep would delete them and turn D-01.11's
+guaranteed **one-token** flip back to `state live` into a rebuild.
+
+## 4. The judgment call in D-10.1, stated plainly
+
+D-10.1 draws the line at mechanism: an unwired *feed* is DEMO DATA, an
+editor-entered *bulletin* figure is PERIODIC. Yamuna and Monsoon keep PERIODIC
+on that test, because a person typing a DPCC monthly result or an IMD daily
+accumulation into the CMS is a mechanism that needs nothing built — PERIODIC
+promises no infrastructure, where LIVE promised a fetch that does not exist.
+
+**The residue, so it is on the record:** the *values* currently shown for
+Yamuna and Monsoon are sample values like every other figure on this page, and
+PERIODIC does not say so. What says so is the footer, at document level, which
+the ruling ordered kept verbatim and which is unchanged. If the client wants
+per-reading honesty about the *value* as well as the *mechanism*, all four
+slides go to DEMO DATA and PERIODIC returns with the first real bulletin entry.
+**That is a one-token change per slide and it is the client's call, not mine.**
+
+## 5. Measurements
+
+Method: CDP `Emulation.setDeviceMetricsOverride` only, IST, `deviceScaleFactor`
+1 for measurement and 2 for capture. Before/after on the same harness, same
+session, not against remembered numbers.
+
+**Bands: not one pixel moved, at any width.** All thirteen band heights are
+identical before and after at 320, 375, 414, 768, 1024 and 1440 — to the tenth
+of a pixel, which is the resolution the harness reports.
+
+| | 375 | 1440 |
+|---|---|---|
+| document | **10,282** → 10,282 ✓ frozen ledger | **10,852** → 10,852 ✓ frozen ledger |
+| `record` | **1,393.5** → 1,393.5 ✓ | **1,236.2** → 1,236.2 ✓ |
+| `top` (hero) | 733.6 → 733.6 | 825 → 825 |
+| `ticker` | 116.5 → 116.5 | 111.2 → 111.2 |
+
+The stamp costs no band height by construction — `.s-hero-stamp` is
+`position:absolute` — which is why a 45px wider word moves nothing.
+
+**`scrollWidth === innerWidth` at 320 / 375 / 414 / 768 / 1024 / 1440.** No new
+horizontal overflow. Also verified at 320×635.
+
+**Badge geometry.** `Live` 43.8px → `Demo data` **88.9px** (+45.1px);
+`Periodic` 77.6px unchanged. The corner was measured in D-01.10 against a
+**118.4px** worst case (`Out of season`), so DEMO DATA sits 29.5px inside the
+budget that was already approved. Right offset from the slide edge is unchanged
+at every width (20 / 26.1 / 34.8 / 145.5). At ≤560 the stamp is on its own
+right-aligned row under the `h1`, read at 320 and 375: no collision with `WE
+KEEP THE RECORD`, no clipping.
+
+**Contrast, measured from the rendered pixels rather than from tokens** — the
+badge word sits on a photograph, so the token pair is not the answer. Ink is
+`rgb(205,199,183)`/`rgb(246,243,235)` at the glyph core; ground is the brightest
+1% and the median of the shadow-lit annulus 3–6 device-px around the glyphs.
+**It improved on all four changed measurements**, because the wider word pulls
+more of its own text-shadow ramp with it:
+
+| | worst 1% of local ground | median local ground |
+|---|---|---|
+| 375 air, `Live` → `Demo data` | 3.28:1 → **3.49:1** | 7.02:1 → **8.61:1** |
+| 375 fire, `Live` → `Demo data` | 1.41:1 → **1.97:1** | 4.99:1 → **9.16:1** |
+| 1440 air | 9.07:1 → **14.40:1** | 9.80:1 → **15.08:1** |
+| 1440 fire | 8.06:1 → **9.45:1** | 9.30:1 → **12.66:1** |
+| 375 yamuna `Periodic` (untouched control) | 3.50:1 | 11.78:1 |
+
+**The weak spot, named:** at 375 the fire slide's brightest 1% of local ground
+gives **1.97:1**. That is the burnt-hillside photograph, the brightest frame
+behind any corner mark on the page, and it is **pre-existing and better than it
+was** (1.41:1 before). It is a worst-single-percentile figure against a 9.16:1
+median, and the word is legible in the PNG at both widths. Reported, not
+"fixed" — closing it properly means a scrim or a plate behind the stamp, which
+is a design change the freeze does not authorise.
+
+**Console clean** at 375×812 and 1440×900: zero messages, zero failed requests,
+zero ≥400 responses, after a full scroll of the document.
+
+**The deck still works.** All four tabs at 375 and 1440: each selects its slide,
+the pager reads `1 of 4` … `4 of 4`, and — the thing that actually mattered —
+**each slide's stamp travels with it and never desyncs**, so `Air → DEMO DATA`,
+`Yamuna → PERIODIC`, `Climate Event → PERIODIC`, `Forest fire → DEMO DATA` at
+every step. Next ×4 advances and clamps at the last slide, prev ×2 walks back
+correctly (clamping, not wrapping, is the pre-existing behaviour).
+
+**Captures read, not just taken:** hero at 375 and 1440 on all four slides,
+plus 320, plus per-badge crops at both widths, in `scratchpad/d10/`.
+
+## 6. D-10.4 — `journeys-cityscapes.html`
+
+**The stamp is on.** The band and its CSS were lifted **verbatim** from
+`project-she-leads-change.html` / `project-food-systems.html`, whose own demo
+bands are byte-identical to each other, rather than a new stamp being invented:
+same markup, same `.demo-band` + `.demo-tag` declarations, same position
+immediately after `</header>` and above the hero. Side-by-side captures at 1440
+render pixel-identically to the sibling. Verified at 320, 375, 768 and 1440:
+`scrollWidth === innerWidth` at all four, console clean, band height 128.9 /
+110.8 / 92.6 / 46.2px, dashed 1px bottom rule, 9.5px uppercase tag on
+`--panel-2`. The page already had every token the band needs.
+
+**The half-a-day line: already correct, so nothing to fix.** Reported rather
+than edited. The AD-07 open item ("`journeys-cityscapes.html` still shows the
+half-day duration, not 2–4 hours") **has since been closed** — the string
+"day" does not appear anywhere in the file, and the page says 2–4 hours in both
+places it states a duration: the oversized `2–4` over `Hours` in the facts row,
+and the lead paragraph *"Cityscapes are 2–4 hour immersion journeys…"*. That
+matches the frozen homepage's CityScapes row exactly. **The only thing the page
+was actually missing was the stamp.**

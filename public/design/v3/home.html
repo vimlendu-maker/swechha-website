@@ -960,7 +960,13 @@ html,body{scroll-padding-top:var(--nav-h)}
 .s-hero-stamp .state{margin:0;line-height:1.5;background:none;border:0;padding:0;
   text-shadow:0 1px 1px rgba(11,11,9,.8),0 0 10px rgba(11,11,9,.92),0 0 24px rgba(11,11,9,.7)}
 .s-hero-stamp .state i{color:var(--fg)}
-/* 0.42Hz, solid for the first 70% of the cycle — a pilot light at rest,
+/* DORMANT SINCE D-10.1 — DO NOT SWEEP. After the 21 August ruling no slide
+   carries `.state.live`, so the three rules below and the page's only
+   @keyframes currently match nothing. They are kept on purpose: D-01.11 made
+   "flip back to Live the day a feed exists" a ONE-TOKEN change, and deleting
+   the CSS would turn that one token into a rebuild. An AD-11-style
+   unmatched-selector sweep must skip these four rules by name.
+   0.42Hz, solid for the first 70% of the cycle — a pilot light at rest,
    seven times slower than WCAG 2.3.1's three-flashes-a-second threshold.
    The dot only, never the word; bound to .live, which is the same single
    token that sets the word and the fill, so a situation going live is
@@ -3066,12 +3072,22 @@ main{display:block;margin:0;padding:0}
 
         <article class="sit s-hero-sit" id="h-air" data-id="air" data-tab="Air" data-breach="true" role="tabpanel" aria-label="Delhi-NCR / Air quality index">
           <figure class="s-hero-shot"><img class="duo" src="/images/photos/india-gate-hero.jpg" alt="India Gate through Delhi haze" style="--zh:134%;--zt:-33%"></figure>
-          <div class="s-hero-stamp" aria-hidden="true"><div class="wrap"><p class="state live"><i></i>Live</p></div></div>
+          <!-- DEMO DATA, not Live (D-10.1, client, 21 August). The repository
+               has no HTTP client and no OpenAQ integration, so nothing
+               fetches this figure. The footer discloses that at document
+               level, but a badge is a claim about THIS reading, and on this
+               reading the claim was false. `demo` is the frozen vocabulary's
+               third word and its hatched 9x9 fill, so the state still
+               survives a photocopier and colour blindness. ONE TOKEN, both
+               directions: this becomes `state live` the day the feed exists
+               and the word, the fill and the blink all return together. Its
+               one mirror is the .sr sentence below. -->
+          <div class="s-hero-stamp" aria-hidden="true"><div class="wrap"><p class="state demo"><i></i>Demo data</p></div></div>
           <div class="s-hero-panel"><div class="wrap">
             <div class="s-hero-rail breach">
               <div class="s-hero-read">
                 <span class="s-hero-numwrap rl"><span class="readout" aria-hidden="true">412</span></span>
-                <span class="sr">Delhi-NCR / Air quality index. 412 AQI, 24-hour rolling. Severe. Live.</span>
+                <span class="sr">Delhi-NCR / Air quality index. 412 AQI, 24-hour rolling. Severe. Demo data.</span>
                 <div class="s-hero-num-side">
                   <p class="lbl s-hero-id">Delhi-NCR / Air quality index</p>
                   <span class="unit">AQI, 24-hour rolling</span>
@@ -3177,12 +3193,23 @@ main{display:block;margin:0;padding:0}
 
         <article class="sit s-hero-sit" id="h-fire" data-id="fire" data-tab="Forest fire" data-breach="false" role="tabpanel" aria-label="North India / Active fire detections">
           <figure class="s-hero-shot"><img class="duo" src="/images/photos/uttarakhand-fire-scar-2016.jpg" alt="A burnt hillside of charred pines after the 2016 Uttarakhand forest fires" style="--op:50% 8%"></figure>
-          <div class="s-hero-stamp" aria-hidden="true"><div class="wrap"><p class="state live"><i></i>Live</p></div></div>
+          <!-- DEMO DATA, not Live (D-10.1, client, 21 August). Fire was
+               described as "already live" on 20 August and that was the one
+               fact in D-01.11 that did not hold: there is no NASA FIRMS
+               integration and no HTTP client, so the VIIRS product is
+               fetched by nothing. Same one-token flip as Air.
+               STILL OPEN, deliberately not changed under the freeze: the
+               verb "Fetched" in the source line below names a machine
+               operation that does not happen, and the computed age after it
+               ("· 4 hours ago") re-asserts it on every load. Both are
+               liveness claims outside the four-word vocabulary and both need
+               their own ruling. -->
+          <div class="s-hero-stamp" aria-hidden="true"><div class="wrap"><p class="state demo"><i></i>Demo data</p></div></div>
           <div class="s-hero-panel"><div class="wrap">
             <div class="s-hero-rail">
               <div class="s-hero-read">
                 <span class="s-hero-numwrap rl"><span class="readout" aria-hidden="true">118</span></span>
-                <span class="sr">North India / Active fire detections. 118 thermal detections, 7 days. Below season. Live.</span>
+                <span class="sr">North India / Active fire detections. 118 thermal detections, 7 days. Below season. Demo data.</span>
                 <div class="s-hero-num-side">
                   <p class="lbl s-hero-id">North India / Active fire detections</p>
                   <span class="unit">thermal detections, 7 days</span>
