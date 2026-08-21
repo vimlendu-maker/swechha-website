@@ -3304,3 +3304,56 @@ and D-23.5 made it unnecessary.
 
 **Consequence on the record:** the FIRMS key has now passed through a chat transcript, which
 `SITUATION-PAGE-TEMPLATE.md` §6 already names as the rotate trigger. **Rotate it at sign-off.**
+
+### D-23.12 THE WAQI TOKEN ARRIVED, AND VAYU'S DATA SOURCE WAS RE-VERIFIED
+The WAQI token was supplied on 21 August and is in `.env.local` alongside the CPCB and FIRMS
+keys. **All three now need rotating at sign-off** — every one has passed through a chat
+transcript.
+
+**The cross-check is refreshed, and it needed the CPCB side refreshed with it.** The first run
+compared a fresh WAQI reading against a five-hour-old CPCB figure and reported a difference of
+230, part of which was staleness rather than disagreement. With both sides at the same hour
+(16:00 IST):
+
+| | |
+|---|---|
+| same station | Anand Vihar, Delhi |
+| CPCB National AQI, computed here | **387** |
+| WAQI, US EPA 2016 scale | **162** |
+| difference | **225** |
+| CPCB concentration | PM2.5 233 µg/m³ |
+
+**The rule stands unchanged (D-16.1): do not convert between the scales, average them, or
+present either as a correction of the other.** WAQI publishes index values only and never
+concentrations, so the two causes — different scales, and different underlying measurements —
+cannot be separated from outside. WAQI also lists 23 Delhi stations against CPCB's 45; the two
+sources do not agree on how many stations exist, which is itself part of the coverage story.
+
+**A snapshot is not a fact, applied to our own pipeline.** Comparing a fresh number to a stale
+one manufactures a difference. Any cross-check on this site must refresh both sides or state
+the gap between their observation times.
+
+### D-23.13 VAYU RE-VERIFIED LIVE: THE FINDING HOLDS, WITH ONE NEW DETAIL
+AD-14 §1 recorded that the client's reference site `vayu-gamma.vercel.app` serves every figure
+from its own Vercel routes off seeded fixtures. **Re-tested from scratch on 21 August, and it
+is confirmed:**
+
+1. **No external data source exists.** Its only cross-origin requests are CartoDB basemap
+   tiles. Every figure comes from its own `/api/aqi/live`, `/api/aqi/forecast`,
+   `/api/attribution` and `/api/validation/exposure-impact`. No CPCB, no data.gov.in, no WAQI,
+   no OpenAQ.
+2. **`/api/aqi/live?city=Delhi` is byte-identical across calls seconds apart.** Identical
+   SHA-256. Nothing labelled "live" is live.
+3. **NEW, and it settles the question.** A nonsense city — `Zzzyx`, `Atlantis`,
+   `NotARealCity123` — returns `name: "Delhi"`, Delhi's coordinates, and **AQI 120**. Real
+   `city=Delhi` returns **366**. So there are two different hardcoded Delhis: a fixture for the
+   named city and a different fallback constant. **That is not a lookup that failed; it is
+   fixture data with a default.**
+4. **Its own UI still labels its attribution a "Spatial Noise Model"**, under a header reading
+   "Live Command Center & Spatial Dispatch". The word for the method is in the interface, and
+   the word "Live" is on top of it.
+
+**Nothing changes on our side, and that is the point.** The available position remains the
+inverse and the stronger one because it is the only one that is true: *every reading against
+its published limit, every gap named.* This re-verification is recorded so the claim in AD-14
+§1 rests on a dated test rather than on a previous session's memory.
