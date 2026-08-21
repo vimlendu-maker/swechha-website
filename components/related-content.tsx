@@ -6,7 +6,7 @@ const PATHS: Record<Entry['type'], string> = {
   project: '/work',
   knowledge: '/explore',
   film: '/films',
-  campaign: '/campaigns',
+  campaign: '/work/campaigns',
 }
 
 export function RelatedContent({ entries }: { entries: Entry[] }) {
@@ -22,7 +22,7 @@ export function RelatedContent({ entries }: { entries: Entry[] }) {
             <li key={`${entry.type}/${entry.slug}`}>
               <Link
                 href={`${PATHS[entry.type]}/${entry.slug}`}
-                className="font-display text-xl hover:text-teal-ink"
+                className="font-display text-xl hover:text-mustard-ink"
               >
                 {title}
               </Link>

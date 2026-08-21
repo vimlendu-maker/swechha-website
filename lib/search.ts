@@ -14,7 +14,7 @@ const PATHS: Record<ContentType, string> = {
   project: '/work',
   knowledge: '/explore',
   film: '/explore',
-  campaign: '/campaigns',
+  campaign: '/work/campaigns',
 }
 
 function titleOf(data: unknown): string {

@@ -29,7 +29,7 @@ export function SearchClient({ index }: { index: SearchDoc[] }) {
       <ul className="mt-4 flex flex-col gap-4">
         {results.map((doc) => (
           <li key={`${doc.type}/${doc.slug}`} className="border-b border-rule pb-4">
-            <Link href={doc.href} className="font-display text-xl hover:text-teal-ink">
+            <Link href={doc.href} className="font-display text-xl hover:text-mustard-ink">
               {doc.title}
             </Link>
             <p className="mt-1 text-sm text-ink-muted">{doc.summary}</p>

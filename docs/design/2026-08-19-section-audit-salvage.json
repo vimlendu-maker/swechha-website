@@ -1,0 +1,461 @@
+[
+ {
+  "section": "Ticker (seven-reading strip under the hero)",
+  "verdict": "As an object on a 1440 laptop the strip is the best-behaved thing on the page \u2014 tight, dense, one idea, and the halftone-free flat band is the right relief after the hero. But it is not wired up: one of the seven cells is a dead link, the whole band walks off the page grid above 1672px, one reading says the opposite of what it means, and on a phone it slices a number in half exactly the way the rail slices 412.",
+  "defects": [
+   {
+    "severity": "broken",
+    "what": "\"Out of river / 6,890t\" is a dead link \u2014 the only green figure in the strip goes nowhere",
+    "evidence": "The cell's href is /design/v3/intelligence.html#h-waste. On that page the #h-waste panel is filtered out of the rig: getComputedStyle('#h-waste').display === 'none', its rect is 0x0, and the rig's tab list renders only six entries (Air, Yamuna, Monsoon, Forest fire, Forest loss, Treatment) out of nine slides. Navigating to intelligence.html#h-waste lands at scrollY 0 on the Air panel with no visible response. The other six links do work (intelligence.html#h-stp scrolls the rig-track to 7200px and shows Treatment) but the pager underneath still reads \"1 of 6\" because setActive() does track.scrollLeft=0; mark(0) and nothing re-marks on hash \u2014 intelligence.html contains no reference to location.hash at all.",
+    "fix": "Either add 'waste' to the intelligence rig's default active set so #h-waste is a visible panel, or repoint this one cell at a target that exists (the Receipts band already carries 6,890 at home.html#impact). In the same pass add a hash handler on the intelligence rig: on load and on hashchange, find the .sit whose id matches, un-hide it if hidden, go() to its index and mark() the pager. Then re-check all seven hrefs resolve to a visible panel.",
+    "width": "both"
+   },
+   {
+    "severity": "major",
+    "what": "Above ~1672px the whole ticker band leaves the page's grid and hangs ~190px to the left of everything else",
+    "evidence": "Measured at 1920: .wide is capped at max-width 1580 and centred, so the wordmark and every section head start at x=216, while .tick is full-bleed and its date line starts at x=46 (var(--gut)) and \"AIR / 412\" at x=26 (cell padding). Screenshot at 1920 shows SWECHHA at 216 and AIR at 26 in the same eyeline. Cells also inflate to 234-290px each, marooning each value in the left third of a near-empty box.",
+    "fix": "Keep the band full-bleed but put its contents on the page column: wrap the .tick-date and the row of cells in the same max-width:1580px centred box used by .wide, or give .tick-in padding-inline:max(var(--gut) - 26px, (100vw - 1580px)/2 + var(--gut) - 26px) so that the first cell's TEXT \u2014 not its box \u2014 lands on the page's left text edge at every width. Cap the strip itself at 1580 too, so the columns stop inflating.",
+    "width": "desktop"
+   },
+   {
+    "severity": "major",
+    "what": "Even at 1440 the first reading sits 20px left of the date line directly above it",
+    "evidence": "Measured at 1440: the date's text box starts at x=46 (.tick-date padding is 11px var(--gut), and --gut computes to 46px), the first cell's \"AIR\" and \"412\" start at x=26 (.tick a padding is clamp(14px,2vw,26px) = 26px). Two elements 11px apart vertically, out of register by 20px. home.html:617 and :620-621.",
+    "fix": "Set the first cell's left padding to the gutter \u2014 .tick-in a:first-child{padding-left:var(--gut)} \u2014 or make the cell padding var(--gut) throughout so every value sits on a 46px pitch and the first one lines up with the date. At 375 this same bug is only 2px (16 vs 14) and can be left alone once the rule is expressed in var(--gut).",
+    "width": "desktop"
+   },
+   {
+    "severity": "major",
+    "what": "\"TREATMENT 14/18\" states the opposite of what the reading means",
+    "evidence": "The instrument this cell links to reads: \"Delhi / Sewage treatment plants \u2026 14 of 18 plants FAILING discharge standards\", verdict \"Not meeting standard\", limit note \"Standard is all 18. Limit broken.\" (intelligence.html, #h-stp). In the strip it appears as label \"Treatment\", value \"14/18\" \u2014 which reads as 14 of 18 plants working. Red is the only signal against that reading, and red on a fraction is ambiguous: three of the other six values are also counts.",
+    "fix": "Change the cell label from \"Treatment\" to the instrument's own words, \"Plants failing\" (or \"Treatment failing\"), keeping the value 14/18 in red. This is not a copy rewrite \u2014 it removes a direct factual contradiction between the strip and the instrument.",
+    "width": "both"
+   },
+   {
+    "severity": "major",
+    "what": "On a phone the strip cuts a number in half \u2014 the same defect the client rejected on the rail",
+    "evidence": "At 375 (measured live in mobile emulation): .tick a is flex:1 0 auto with min-width:150px, so cells are exactly 150px and .tick-in scrollWidth is 1050 against clientW 375. The viewport edge therefore falls at 75px into cell 3, and the value box of \"512mm\" runs from x=14 to x=87 \u2014 the edge slices through the second m. Confirmed in a true-375 capture: the third cell shows \"MONSOO\" and \"512mm\" chopped mid-glyph. The same arithmetic cuts mid-number at 360 and at 390.",
+    "fix": "@media (max-width:520px){.tick a{flex:0 0 45vw;min-width:0} .tick-in{scroll-snap-type:x proximity} .tick a{scroll-snap-align:start}} \u2014 45vw shows 2.2 cells, so the cut always lands in the empty right half of a cell rather than through a digit, and snapping returns the strip to a whole cell after each swipe. Add a 24px right-edge fade in --ground-2 while scrollLeft < scrollWidth-clientWidth if you want the overflow stated rather than implied; the scrollbar is suppressed (scrollbar-width:none, home.html:618-619) so there is currently no other cue that four and a half readings exist off-screen.",
+    "width": "mobile"
+   },
+   {
+    "severity": "major",
+    "what": "Red and green are in the same band, in adjacent cells, one hairline apart",
+    "evidence": "TREATMENT 14/18 is #F1484E and OUT OF RIVER 6,890t is #5FBE85, sitting in neighbouring cells separated by a 1px rgba(251,248,240,.20) rule at 26px type (home.html:626-627). The band is also directly adjacent to the red hero band. The signed-off grammar is one hue per band, red and green never in the same or adjacent bands. It currently reads as a traffic light, and it gives an organisation's own achievement the same voice and rhythm as a CPCB reading \u2014 the instrument page itself flags this one as \"Swechha field record \u2026 not a public feed\".",
+    "fix": "If green stays, make it earn its place: pull \"Out of river\" out of the seven-column rhythm \u2014 a double-width gutter or a 1px-to-3px heavier rule before it, plus an \"OUR RECORD\" micro-label above the column label \u2014 so the hue change coincides with an authorship change rather than sitting in the same run. If it does not stay, set the value neutral in the strip and let green live only in the Receipts band.",
+    "width": "both"
+   },
+   {
+    "severity": "major",
+    "what": "Nothing says the seven cells are links, and hover uses no mustard",
+    "evidence": "The only hover state is .tick a:hover{background:rgba(251,248,240,.05)} (home.html:622) \u2014 a 5% white wash, no hue, no underline, no arrow. Every other hoverable thing on this page goes mustard (nav underline, .jn-rack a:hover h3, .wk-i a:hover h3). Mustard is the signed-off hue for a human act, including hover. Keyboard focus is correct by accident, from the global :focus-visible mustard outline.",
+    "fix": "Add .tick a:hover .lbl,.tick a:focus-visible .lbl{color:var(--mustard)} and a 2px mustard rule inset at the top of the cell on hover/focus, keeping the existing 5% wash. Leave the value's red/green/white alone \u2014 the hue change belongs on the label, which is the part that is not a reading.",
+    "width": "both"
+   },
+   {
+    "severity": "minor",
+    "what": "The strip reads as a second, longer tab bar for the hero carousel",
+    "evidence": "The hero's tab row sits at y=984 and the ticker's labels at y\u22481132 \u2014 93px apart, both 11.5px Archivo caps with ~0.15em tracking, and the ticker's first four labels (Air, Yamuna DO, Monsoon, Forest fire) are the carousel's four tabs (Air, Yamuna, Monsoon, Forest fire) with one word added. One switches a panel in place; the other leaves the page. The hero's 412 in red also repeats as the ticker's first value in red about 200px below it.",
+    "fix": "Make the strip legibly the hero's index rather than its echo: give the cell whose data-id matches the carousel's active panel a 2px mustard top rule, updated in the rig's mark() function. That justifies the repeated 412 and tells the reader the two rows are one instrument. If they are meant to be independent, then differentiate instead \u2014 drop the ticker labels to 10.5px and separate the two rows with more than 93px.",
+    "width": "both"
+   },
+   {
+    "severity": "minor",
+    "what": "The date line is typographically identical to the seven column labels, so the strip's masthead reads as an eighth column head",
+    "evidence": "\"Delhi. Since 2000. Wednesday, 19 August 2026, 07:00 IST\" is .lbl at 11.5px in rgb(156,149,133); every cell label is .lbl at 11.5px in rgb(156,149,133). Same family, size, tracking, case and colour, 11px apart vertically (home.html:617 and the inline color:var(--fg-3) on each cell label).",
+    "fix": "Separate datum from column head: either raise the date to var(--fg-2) so it reads as the strip's stamp, or hold it at --fg-3 and drop it to 10.5px with wider tracking. At 375 it also wraps to two lines with \"07:00 IST\" alone on the second \u2014 set the timestamp in a nowrap span so the break falls after \"2026,\" deliberately.",
+    "width": "both"
+   },
+   {
+    "severity": "minor",
+    "what": "Column widths are ragged \u2014 set by word length, not by the grid",
+    "evidence": "Measured at 1440: 165, 207, 202, 216, 219, 208, 222px. flex:1 0 auto (home.html:620) sizes each cell to its label's content then shares the slack equally, so \"Air\" gets a column 26% narrower than \"Out of river\". In a strip whose whole argument is that it is an index, the dividers land on an irregular pitch and read as a table that failed to line up.",
+    "fix": "flex:1 1 0 with min-width:150px retained, or a grid-template-columns:repeat(7,1fr) on .tick-in \u2014 either gives a clean 205.7px pitch at 1440 \u2014 and keep the flex:0 0 45vw override inside the mobile media query.",
+    "width": "desktop"
+   },
+   {
+    "severity": "minor",
+    "what": "A hairline sits flush against the right edge of the viewport, leaving the table open-ended",
+    "evidence": ".tick a carries border-right:1px solid var(--hair) with no last-child exception (home.html:621), and the last cell's right edge is at 1440 at 1440 wide and 1920 at 1920 wide, so the rule renders in the final pixel column.",
+    "fix": ".tick-in a:last-child{border-right:0}",
+    "width": "desktop"
+   },
+   {
+    "severity": "minor",
+    "what": "\"FOREST LOSS 1.65M\" carries no unit while its neighbours do",
+    "evidence": "The strip mixes 512mm and 6,890t (unit attached) with 1.65M (no unit). The instrument reads \"1.65 million hectares lost, 2001 to 2025\". Next to \"118\" (thermal detections, 7 days) the bare 1.65M reads as another count on the same clock.",
+    "fix": "Render the value as \"1.65M ha\". It fits: at 1440 the widest value in the strip is 512mm at 73.5px inside a 202px cell.",
+    "width": "both"
+   }
+  ],
+  "questions": [
+   {
+    "question": "Is the ticker exempt from \"one hue per band, red and green never in the same or adjacent band\", on the grounds that an index of every situation has to carry both?",
+    "options": [
+     "Exempt, but the green must be separated from the red run and marked as Swechha's own record (my recommendation)",
+     "Not exempt \u2014 set Out of river neutral in the strip and let green live only in the Receipts band",
+     "Exempt as-is, leave the adjacency alone"
+    ]
+   },
+   {
+    "question": "Is the ticker the hero carousel's index, or an independent index of all seven readings that navigates away?",
+    "options": [
+     "Hero's index \u2014 mark the active situation in the strip, and the first four cells drive the carousel in place rather than leaving the page",
+     "Independent index \u2014 keep all seven links going to the intelligence page, and instead pull it visually away from the carousel's tab row"
+    ]
+   }
+  ]
+ },
+ {
+  "section": "Impact \u2014 \"The receipts\" (`section.dark-2.im#impact`, /Users/administrator/swechha-website/public/design/v3/home.html, CSS lines 694\u2013710)",
+  "verdict": "The strip is the right idea and it is genuinely compressed \u2014 529px at 1440 for four figures \u2014 but the figures themselves are now the smallest, sparsest, most crowded thing in a band named after them: set below the site's own numeral scale, and pinned with zero clearance against the hairlines that divide them. It holds together better at 320px than at 1440, where 65\u201384% of every cell is empty air and the head's two columns miss the strip's centre rule by 29px.",
+  "defects": [
+   {
+    "severity": "major",
+    "what": "The numerals sit flush on their dividing rule. Cells 2, 3 and 4 have zero left padding, so \"6,890\", \"78\" and \"67\" start exactly where the hairline is drawn, with only the glyph's side bearing (~3px at 64px) between ink and rule. Column 1's \"3\" meanwhile has the full page gutter around it, so one figure breathes and three lean on a wall. This is the same fault class the client already called damage on the hero rail.",
+    "evidence": "home.html:702 `.im-strip>div{padding:20px 20px 22px 0}` \u2014 padding-left is 0. Measured with a Range over the first glyph at 1440/1200/900/375: firstGlyphL === cellL === the border position, gap 0.0px in every cell at every width. Visible in the 2.2x crop of the strip: the 6, the 7 and the 6 all begin on the rule.",
+    "fix": "home.html:702 \u2014 change to `padding:20px 20px 22px 24px`, add `.im-strip>div:first-child{padding-left:0}`, and inside the `@media (max-width:820px)` block at line 708 add `.im-strip>div:nth-child(2n+1){padding-left:0}` so the left-hand column stays locked to the page gutter while any cell that follows a rule clears it by 24px. Mirror in the generator (scratchpad/build3_home.py:118); about.html shares `.im-strip` and needs the same.",
+    "width": "both"
+   },
+   {
+    "severity": "major",
+    "what": "The figures are set BELOW the site's own numeral scale, which is the opposite of the brief (\"numerals still big and bold\"). The strip overrides `--t-num` downward. At 1440 the figures are 64px against a 104px headline (62%); at 375 they are 36.8px against a 43.2px headline \u2014 on a phone the word RECEIPTS is bigger than any receipt.",
+    "evidence": "home.html:704 `.im-strip .num{font-size:clamp(2.3rem,5.2vw,4rem)}` overrides `--t-num:clamp(2.6rem,6vw,4.6rem)` (home.html:62). Measured computed font-size: 64px at 1440 where the site scale gives 73.6px; 36.8px at 375 where the site scale gives 41.6px.",
+    "fix": "home.html:704 \u2014 delete the `font-size` override so `.im-strip .num` inherits `var(--t-num)`; keep `display:block`. Pay for the ~14px of extra height by trimming the band's chrome (see the band-proportion defect), not the figures.",
+    "width": "both"
+   },
+   {
+    "severity": "major",
+    "what": "\"3M+\" does not read as three million. The superscript breaks with the numeral on three axes at once \u2014 size (0.34em), colour (green against an off-white 3) and width axis ('wdth' 88 against the numeral's 'wdth' 64). At 375 the M+ is 12.5px and reads as a trademark mark stuck to a bare \"3\". The single largest achievement in the section is the smallest mark in the strip.",
+    "evidence": "home.html:705-706 `.im-strip .num sup{font-size:.34em;vertical-align:.92em;font-variation-settings:'wdth' 88,'wght' 700;color:var(--green)}`. Measured total ink width of the \"3M+\" lockup at 375 = 33.1px vs 67.3px for \"6,890\"; at 1440, 57.6px vs 116.9px.",
+    "fix": "home.html:705-706 \u2014 set the sup to `font-size:.5em;vertical-align:.58em;font-variation-settings:'wdth' 64,'wght' 800;letter-spacing:-.01em;color:inherit` so the M+ is the same face, same width axis and same colour as the 3 it belongs to, and stops being a separate signal.",
+    "width": "both"
+   },
+   {
+    "severity": "major",
+    "what": "The head's two columns do not line up with the strip's four, and both edges near-miss the same axis. The strip's centre rule is a strong vertical; the headline stops just short of it and the lead paragraph starts just past it. Two 30\u201340px misses on one line read as accidental rather than as a decision.",
+    "evidence": "At 1440: strip centre rule x=720; h2 \"THE RECEIPTS\" right edge x=679.5 (40.5px short); `.lead` left edge x=748.8 (28.8px past). Same at 1200 (rule 600, h2 ends 576, lead starts 624), 1024 (rule 512, lead 532.5), 900 (rule 450, h2 ends 401.4, lead 468). Cause: `.im-head` is a 2-col grid with `gap:18px clamp(28px,4vw,64px)` (home.html:697-698), independent of the strip's 4 equal columns.",
+    "fix": "Add scoped rules (`.im-head` is shared by #work, #record and #give, so scope with `.im`): `.im .im-head{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px 0}` `.im .im-head>div{grid-column:1/3}` `.im .im-head>.lead{grid-column:3/5;padding-right:20px}`. The lead's left edge then lands exactly on the centre rule at every width.",
+    "width": "desktop"
+   },
+   {
+    "severity": "major",
+    "what": "Caption wrapping makes the strip uneven \u2014 it stops reading as one band. Between 821 and ~1023px, labels 1 and 2 wrap to two lines while 3 and 4 stay on one, leaving a visible 17.3px ledge of dead space under \"Butterfly gardens\" and \"Air-detox gardens\". At 375 the same cause makes the two rows unequal heights (118.9px vs 100.7px), so the middle rule sits low.",
+    "evidence": "Measured at 900: voidUnderLabel = 22.0px for cells 1-2 vs 39.3px for cells 3-4. At 375: row 1 cell height 118.9px, row 2 cell height 100.7px. Confirmed by eye in the 900-wide and the 3.5x 375-wide captures. At 320 the fault disappears because all four labels wrap to two lines \u2014 the strip is more even on the smallest phone than on a 900px laptop.",
+    "fix": "home.html:707 \u2014 add `min-height:3em` to `.im-strip .lbl` (two lines at its 1.5 line-height) so every cell reserves the same caption depth regardless of wrap, and add `grid-auto-rows:1fr` to `.im-strip` inside the `@media (max-width:820px)` block at line 708 so the two mobile rows are equal.",
+    "width": "both"
+   },
+   {
+    "severity": "minor",
+    "what": "Every cell is mostly empty, so the strip reads as four stranded clumps rather than one compressed band. The last cell has no closing rule, so ~285px of void runs off the right edge and the section trails away. In column 1 the caption is physically 3.6x wider than the figure it captions, which inverts the intended hierarchy.",
+    "evidence": "At 1440 (cell width 337px) numeral ink fills 17.1% / 34.7% / 15.6% / 15.6% of its cell; trailing void per cell 279 / 220 / 285 / 285px. Column 1: numeral ink 57.6px wide, label ink 205.7px wide.",
+    "fix": "Put the impact band's inner container on `.wrap` (max-width 1240px) instead of `.wide` (1580px) so head and strip narrow together and stay aligned \u2014 cells drop to ~287px. Combined with restoring `--t-num`, ink fill rises to roughly 22\u201348% and the four items read as one strip.",
+    "width": "desktop"
+   },
+   {
+    "severity": "minor",
+    "what": "Green lands on the captions and on the CTA but not on the figures \u2014 the one element the approved grammar names as green. Meanwhile the CTA is a control, which the grammar assigns to mustard. As built, the recovery hue marks the labels and the button while the recovered quantities are plain off-white.",
+    "evidence": "home.html:707 `.im-strip .lbl{color:var(--green)}`; home.html:706 sup is green; the four `.num` inherit `--fg` off-white; the CTA is `<a class=\"b b-g\">`, and `.b-g` (home.html:421) is `color:var(--green);border-color:var(--green)`.",
+    "fix": "Depends on the answer to Q1. Grammar-literal branch: `.im-strip .num{color:var(--green)}` and swap the CTA to `class=\"b b-1\"` (mustard). Band-hue branch: leave the CTA green but still move green onto the figures and drop the labels to `var(--fg-2)`, so green marks the readings rather than their captions.",
+    "width": "both"
+   },
+   {
+    "severity": "minor",
+    "what": "The band's proportions still favour the chrome over the data: the headline lockup is taller than the strip it introduces. The compression the client asked for was applied to the figures and not to the frame around them.",
+    "evidence": "At 1440: section height 528.9px = 161.3px vertical padding + 131.2px head + 34px gap + 124.4px strip + 28px gap + 50px button. The strip is 23.5% of the band; the head alone is 131.2px, 6.8px taller than the strip. On mobile it is worse in absolute terms: 544.7px at 375 \u2014 taller than the desktop band, and 67% of an 812px viewport.",
+    "fix": "Add `.im{padding-block:clamp(36px,4vw,60px)}` and `.im .im-head{margin-bottom:clamp(16px,2vw,24px)}`, which reclaims roughly 50px at 1440; spend it on restoring the numerals to `var(--t-num)` so the band's total height is unchanged but the figures grow.",
+    "width": "both"
+   }
+  ],
+  "questions": [
+   {
+    "question": "The CTA \"Read the method notes\" is green (`.b-g`), but the approved grammar gives every button and CTA to mustard and reserves green for what has been recovered. Which reading governs this band?",
+    "options": [
+     "Grammar-literal: green moves onto the four figures, the CTA becomes mustard (`b-1`) like every other control on the site",
+     "One-hue-per-band: the whole impact band stays green including the CTA, and green still moves onto the figures with the labels stepping back to `--fg-2`",
+     "Leave the colour exactly as built and treat this as out of scope"
+    ]
+   },
+   {
+    "question": "\"Numerals still big and bold\" \u2014 how big? This decides whether the fix is a correction or a restructure.",
+    "options": [
+     "Restore to the site's own numeral scale, `--t-num` (73.6px at 1440 / 41.6px at 375), keeping four columns in one row \u2014 a one-line CSS correction",
+     "Go substantially larger than `--t-num` and drop the desktop layout to 2x2 so each figure can carry real display scale, accepting a taller band than today",
+     "Keep the current 64px/36.8px and fix only the collisions and alignment"
+    ]
+   }
+  ]
+ },
+ {
+  "section": "Timeline \u2014 the 26-year cut-out spine (`section#timeline`, home.html)",
+  "verdict": "The idea is right and the desktop composition has real presence, but the section is currently rendering with the dark-ground palette on an off-white band, so the entry copy is invisible, the row rules have vanished and the headings are washed out \u2014 every `.cut-*` light-ground override in the stylesheet is written `.paper` only while the section is `.paper-2`, so all of it is dead code. On top of that the rail's whole premise fails here: the numeral never reaches its rule (138px of void at 1024, 216px at 1440, 288px at 1920), so what should be the site's structural signature reads as four unrelated dashes floating in space, and on a 375px phone the rail disappears altogether.",
+  "defects": [
+   {
+    "severity": "broken",
+    "what": "Entry body copy is effectively invisible \u2014 all four `.cut-t` paragraphs render in the dark-ground text colour on the off-white band",
+    "evidence": "Computed: `.cut-t` colour is rgb(205,199,183) (#CDC7B7, the `--fg-2` dark-ground value) on the section's #ECEBE8 ground = 1.42:1 contrast. In both the 1440 and 375 screenshots the four paragraphs (\"No funding, no office, one stretch of bank\u2026\", \"Bridge the Gap starts putting\u2026\", \"From urban campaigns to land\u2026\", \"Different challenges, same spirit\u2026\") read as pale cream ghosts, while the section's own intro paragraph directly above them is solid #141310. Root cause: home.html:563 is `.paper .cut-t{color:var(--ink-2)}` but the section is `class=\"paper-2\"`, so the override never applies. Every other component in this file pairs the two (see lines 112, 230, 260, 274, 405, 411, 417, 423, 437, 446, 458, 474, 482, 504) \u2014 the `.cut-*` block is the only place that forgot.",
+    "fix": "home.html:563 \u2014 change to `.paper .cut-t,.paper-2 .cut-t{color:var(--ink-2)}`. Same one-selector fix is needed at 539, 549, 551, 565, 567 and 579 (see the separate defects); do them as one pass.",
+    "width": "both"
+   },
+   {
+    "severity": "broken",
+    "what": "The numeral never reaches the rail. The rule sits in open space with a huge void between it and the year, and the void grows with the viewport",
+    "evidence": "Measured on the live page, row 1: at 1024px the year's right edge is 138px clear of the rule; at 1440px, 216px (year right edge x=531, rule left x=747); at 1920px, 288px. `.cut-l` (home.html:552) is a flex row with the default `justify-content:flex-start`, so figure+gap+year pack against the left edge of the 52% column and stop 216px short. The compensating pull at line 558, `.cut-row .cut-yr{margin-right:calc(-1 * var(--rp) - .22em)}` (computed -61.3px), is inert at flex-start \u2014 a negative right margin on the last flex item in a start-packed container shrinks the container, it does not move the item right. Net effect is exactly the failure mode the client already rejected: the rule is pinned to a percentage of the container while the numeral is pinned elsewhere, so the two drift apart as the width changes.",
+    "fix": "home.html:552 \u2014 add `justify-content:flex-end` to `.cut-l` so the figure+year group is pushed to the right of the column and the existing negative margin actually bites. Then set the pull at line 558 to `margin-right:calc(-1 * var(--rp,clamp(16px,2.4vw,38px)))` \u2014 that lands the digit's right edge flush on the rule (kissing it) instead of crossing it by .22em. Keep `--lw:52%` as the ceiling; the figure will absorb the slack because it is `flex:0 0 auto`.",
+    "width": "desktop"
+   },
+   {
+    "severity": "broken",
+    "what": "The bottom-right mustard ghost prints directly over the last entry's headline and body copy, which the code's own spec comment forbids",
+    "evidence": "Ghost 2 (`right:-14%;bottom:-6%;width:44%`, farm-tractor-ploughing.jpg) measures x 990\u21921583 at 1440 wide; the right column's text starts at x=818. In the screenshot of the \"Now\" row, \"STILL SHOWING UP\" ends on top of the tractor's cab and the line \"feed and twenty-six years of records that nobody else\" runs straight through the tractor wheel \u2014 the word \"else\" is unreadable. The CSS comment at home.html:533 states \"pointer-events none, and it never sits under a column of body copy.\" It does.",
+    "fix": "Move ghost 2 into the left column's dead space rather than the copy column: change its inline style on the second `.cut-ghost` in `#timeline` to `left:-10%;bottom:-6%;width:44%` (dropping `right:-14%`), or clip the ghost layer to the left column by wrapping it in an element bounded at `var(--lw)`. Do not solve it by lowering opacity \u2014 the copy is already at 1.42:1.",
+    "width": "desktop"
+   },
+   {
+    "severity": "major",
+    "what": "The row separators are invisible, so the four rule segments read as unconnected dashes instead of one spine",
+    "evidence": "`.cut-row` border-top computes to rgba(251,248,240,0.2) \u2014 a 20%-opacity near-white hairline \u2014 on the #ECEBE8 ground, i.e. nothing. Same for the last row's border-bottom. In the 1440 screenshot the only marks in the middle of the band are four short vertical black segments with ~90px of blank off-white between each; nothing connects them top to bottom and nothing terminates them. For a section whose subject is 26 continuous years, the spine currently reads as four fragments. Root cause is the same missing `.paper-2` selector: home.html:549 and 551 are `.paper`-only.",
+    "fix": "home.html:549 \u2192 `.paper .cut-row,.paper-2 .cut-row{border-top-color:var(--rule-2)}`; home.html:551 \u2192 `.paper .cut-row:last-of-type,.paper-2 .cut-row:last-of-type{border-bottom-color:var(--rule-2)}`. Once the hairlines are visible, decide whether the four rule segments should also join into one continuous line (see question 1).",
+    "width": "desktop"
+   },
+   {
+    "severity": "major",
+    "what": "Entry headings use the dark-ground hues on a light ground, so both mustard and green headings are washed out",
+    "evidence": "`.cut-h` computes to rgb(225,163,43) (#E1A32B) on #ECEBE8 = 1.86:1 for the three mustard rows, and rgb(95,190,133) (#5FBE85) = 1.92:1 for \"CITY TO COUNTRYSIDE\". In the screenshots the green heading reads as pale mint and barely holds against the ground. The ink variants exist for exactly this: `--mustard-ink` #8A6410 gives 4.51:1 and `--green-ink` #1F6B45 gives 5.44:1. Root cause again: home.html:565 and 567 are written `.paper`-only.",
+    "fix": "home.html:565 \u2192 `.paper .cut-tone-mustard .cut-h,.paper-2 .cut-tone-mustard .cut-h{color:var(--mustard-ink)}`; home.html:567 \u2192 `.paper .cut-tone-green .cut-h,.paper-2 .cut-tone-green .cut-h{color:var(--green-ink)}`.",
+    "width": "both"
+   },
+   {
+    "severity": "major",
+    "what": "The mustard \"silhouettes\" are not silhouettes \u2014 each one is a second, offset copy of the very photograph sitting on top of it, with dead-straight clipped edges",
+    "evidence": "Ghost 1 masks yamuna-students-line-skyline.jpg, which is the same file used in the 2000 cut-out immediately in front of it; ghost 2 masks farm-tractor-ploughing.jpg, the same file used in the \"Now\" cut-out in front of it. In the zoomed 2000 crop you can read the crowd twice \u2014 once in black and white inside the decagon, once as mustard-and-white figures behind it, offset by about 80px. That is the visual language of a misregistered print, not of a designed silhouette. The ghost also shows a dead-vertical hard edge at x=46 where `.cut{overflow:hidden}` clips it at the gutter, and a hard polygon edge at the top right, so it reads as an accidental mustard swatch rather than a shape.",
+    "fix": "Two changes: (a) point each ghost at a photograph that is NOT used elsewhere in the section (the archive has clean-up and journey frames unused on this page), so the double-image never occurs; (b) drop the `clip-path` from the two `.cut-ghost` inline styles and let the luminance mask alone define the shape, or replace the photo mask with a genuinely silhouetted asset \u2014 the clip-path polygon is what produces the straight geometric edges.",
+    "width": "desktop"
+   },
+   {
+    "severity": "major",
+    "what": "Nothing in the section has had its background removed, but the caption states that everything has \u2014 a factual contradiction with what is on screen",
+    "evidence": "The caption at the foot of the section reads \"Every object here is an archive photograph with its background removed.\" Every `.cut-fig img` is a full rectangular photograph with `clip-path:polygon(...)` applied \u2014 a decagon crop. In the 2000 cut-out you can see sky, the Delhi skyline, the river's foam line and sand inside the shape; in \"Now\" you see cloud, field and horizon. These are cropped rectangles, not cut-outs, and the polygon edge slices arbitrarily through subjects (the crowd is cut mid-body at the bottom left of 2000).",
+    "fix": "Either produce real background-removed PNGs for the four entries and drop the `clip-path` inline styles, or change the caption to describe what is actually shown. Which one is right is question 2 below \u2014 the copy is otherwise approved, so this is flagged as a contradiction rather than rewritten.",
+    "width": "both"
+   },
+   {
+    "severity": "major",
+    "what": "On a 375px phone the rail disappears entirely and the section stops reading as a timeline",
+    "evidence": "At the \u2264860px breakpoint `.rail{display:block}` and `.rail-r` swaps its left border for a top border (home.html:242), so the vertical rule \u2014 the site's structural signature and the whole subject of this section \u2014 is gone. `.cut-ghost` is `display:none` below 900px, removing the only colour event. What is left in the 375 screenshot is four stacked units of: small grey photo, black year, thin horizontal rule, faint heading, invisible paragraph. There is no vertical thread and no sense of duration; the four entries read as unrelated cards. Worse, the one horizontal rule that IS visible (the `.rail-r` top border, `--rule-2`) sits INSIDE each entry, between the year and its heading, while the rule that should separate entry from entry (`.cut-row` border-top) is invisible \u2014 so the only visible division groups the wrong things.",
+    "fix": "Give the mobile breakpoint its own spine: in the \u2264860px block add a continuous left rule to `.cut-in` (e.g. `border-left:2px solid var(--ink)` with the rows padded off it) and hang the year+photo off it, rather than letting the rail collapse to nothing. At minimum fix the border colours (defect 4) so the between-entry rule outranks the within-entry rule.",
+    "width": "mobile"
+   },
+   {
+    "severity": "major",
+    "what": "The 2007 halftone is a fixed-size black dot grid, not a tonal halftone, and it is applied to a thumbnail \u2014 which both breaks the halftone rule and destroys the photograph",
+    "evidence": "`.cut-fig.nocut::after` (home.html:580) paints `radial-gradient(circle at 50% 50%,rgba(0,0,0,.62) 1.5px,transparent 1.7px)` at `background-size:6px 6px` \u2014 every dot is the same diameter regardless of the tone beneath, so it is an overlay, not a screen. The approved system says halftone is for FULL-BLEED HEROES ONLY; this is a 268px square on desktop and a 112.5px square on mobile. At 112.5px that is ~19 dots across the whole frame: in the 375 screenshot the 2007 photograph is an unreadable checkerboard \u2014 you cannot see that it contains schoolchildren. The intent (\"the row is meant to look different\") lands as a rendering fault, not as a decision. The frame's border is invisible too \u2014 home.html:579 is `.paper`-only, so `border-color` stays at rgba(251,248,240,.20) and there is no frame edge at all.",
+    "fix": "Remove the halftone from `.cut-fig.nocut` (it is out of grammar at this size) and mark the non-cut-out entry the way the rest of the system marks things \u2014 a visible `--rule-2` frame plus the square silhouette against three decagons is already enough differentiation. Fix home.html:579 to `.paper .cut-fig.nocut,.paper-2 .cut-fig.nocut{border-color:var(--rule-2)}` so that frame actually exists. If the halftone must stay, it needs to be tone-modulated and its pitch tied to the figure width, not fixed at 6px.",
+    "width": "both"
+   },
+   {
+    "severity": "major",
+    "what": "Two hues run simultaneously in one section band, and the green is not carrying its assigned meaning",
+    "evidence": "Three rows are `cut-tone-mustard` and the 2016 row is `cut-tone-green`, so mustard and green are both live inside the same band \u2014 the system says one hue active per section band. The green is applied to the headline \"CITY TO COUNTRYSIDE\", which is a phase of the organisation's history, not something recovered or restored; green's assigned job is impact figures and recovered tags. The only recovery figure in that row (\"Seventy-eight butterfly gardens\") sits in the body copy, in neutral text.",
+    "fix": "Make all four rows `cut-tone-mustard` so the band carries one hue, and if the butterfly-garden recovery needs marking, mark the figure itself (a `.tag-recovered` or a green numeral inside the 2016 body copy) rather than tinting the headline. Alternative reading in question 2 below.",
+    "width": "both"
+   },
+   {
+    "severity": "minor",
+    "what": "The four numerals share a left edge instead of a right edge, so they do not form a column against the rule and \"Now\" sits 14px shy of the years",
+    "evidence": "At 1024 the gap from numeral to rule is 138px for 2000/2007/2016 and 152px for \"Now\" (its glyph string is 19px narrower at 1440: 170px vs 189px). Because `.cut-l` packs from the left, the numerals align on their left edges at x=342 and their right edges are ragged \u2014 the opposite of what a rail wants.",
+    "fix": "Falls out of the defect 2 fix: once `.cut-l` is `justify-content:flex-end`, all four right edges land on the rule and the ragged edge moves to the left, where the figure absorbs it.",
+    "width": "desktop"
+   },
+   {
+    "severity": "minor",
+    "what": "The right column pays a 29px indent to clear an overhang that does not exist",
+    "evidence": "`.cut-row` sets `--ovh:calc(.24 * clamp(3.2rem,9vw,7.6rem))` (home.html:544), computing to 29.2px at 1440, and `.rail-r` adds it to its left padding (computed `padding-left:69.5px`). But the numeral currently stops 216px short of the rule, so nothing overhangs \u2014 the copy column is simply indented 29px further from its rule than every other rail on the site for no reason.",
+    "fix": "Leave the token in place but re-derive it after defect 2 is fixed: with the numeral kissing the rule rather than crossing it, `--ovh` should go to 0 for this section (`.cut-row{--ovh:0px}`), which pulls the copy column back to the standard `--lp` and buys back 29px of measure.",
+    "width": "desktop"
+   },
+   {
+    "severity": "minor",
+    "what": "On mobile the photographs are too small to carry any information, and the year outweighs them",
+    "evidence": "At 375 the `.cut-fig` computes to 112.5px square against a 51.2px numeral. In the 375 screenshot the 2000 frame is a grey smudge with an indistinct skyline \u2014 you cannot see it is a line of people on a riverbank \u2014 and 2016 is an undifferentiated mass of foliage. The section's own claim is that it is \"told with the photographs the archive already holds\"; at this size the photographs tell nothing and the numeral is the only thing with presence.",
+    "fix": "In the \u2264860px block raise `.cut-fig` to `width:clamp(140px,44vw,200px)` (\u2248165px at 375) and drop `.cut-yr` to `clamp(2.4rem,11vw,7.6rem)` so the picture leads and the year supports, matching the desktop relationship.",
+    "width": "mobile"
+   }
+  ],
+  "questions": [
+   {
+    "question": "Once the numeral is pulled onto the rule, should the rail in this section become ONE continuous vertical line running the full height of all four entries \u2014 with the years hung off it like ticks on a 26-year scale \u2014 or stay as four independent per-row segments the way it renders today? This changes whether the fix is a padding change on `.cut-l` or a restructure of `.cut-in` (and it is the difference between the section reading as a duration and reading as a list).",
+    "options": [
+     "One continuous spine down the whole section, years hung off it",
+     "Four per-row segments, as now, just correctly attached to each numeral",
+     "One continuous spine on desktop, and carry it to mobile too (which would also fix the mobile rail collapse)"
+    ]
+   },
+   {
+    "question": "The caption says every object is \"an archive photograph with its background removed\", but all four are rectangular photos clipped to a polygon with sky, skyline and horizon fully visible. Is the plan to produce real background-removed cut-outs, or is the polygon crop the intended treatment? This decides whether the work is asset production or a copy correction, and it also determines whether the 2007 \"no clean cut-out available\" entry still has a reason to exist.",
+    "options": [
+     "Produce real background-removed PNGs; the polygon clip is a placeholder",
+     "Keep the polygon crop and correct the caption to describe it accurately",
+     "Mixed: real cut-outs where the archive allows, polygon crop elsewhere, caption rewritten to cover both"
+    ]
+   }
+  ]
+ },
+ {
+  "section": "STATEMENT \u2014 \"A number is not a smell\" full-bleed band over the Yamuna foam-line photograph (`#journeys`, home.html:768; CSS at home.html:167\u2013191, 632)",
+  "verdict": "On a 375 phone this band is the best thing on the page \u2014 the crop keeps the whole photograph, the foam streaks read between the headline and the crowd, and the 43px display sits cleanly in the top-left third. On a 1440 laptop the same band collapses: the frame letterboxes to 4:1, the scrim blacks out the entire foam field the copy names, and at any window shorter than ~620px the scrim covers 100% of the photograph and spills 8px past its bottom edge onto the ground.",
+  "defects": [
+   {
+    "severity": "broken",
+    "what": "At common laptop window heights the scrim covers the whole photograph, and past 1367px wide it spills 8px below the frame onto the solid ground band",
+    "evidence": "`.pic{height:clamp(240px,40vh,440px)}` (home.html:167) is derived from viewport HEIGHT; `.pic-over` (home.html:180) is a fixed 248px block derived from the headline, which scales on viewport WIDTH (`--t-d1:clamp(2.7rem,8vw,6.5rem)`, home.html:61). Measured: 1440x900 pic 360 / over 248 (112px of photo clear); 1366x620 pic 248 / over 246 (2px clear); 1280x560 pic 240 / over 240 (0 clear); 1440x600 pic 240 / over 248 \u2014 overlay bottom is 8px BELOW the picture bottom. Screenshot at 1440x600: the photograph is a black strip with ghost figures, no image left, and the gradient tail lands on the #0d0d0b ground.",
+    "fix": "Stop scaling the frame on one axis and its scrim on another. Define one token, e.g. `:root{--picH:clamp(320px,26vw,460px)}` (1440 -> 374px, 1280 -> 333px, 375 -> 320px, independent of window height), then `.pic{height:var(--picH)}` (home.html:167) and `.pic-over{max-height:var(--picH);overflow:hidden}` (home.html:180) so the scrim can never exceed or outlive the picture. Also require a minimum of clear photograph: the gradient must reach alpha 0 by 62% of --picH.",
+    "width": "desktop"
+   },
+   {
+    "severity": "major",
+    "what": "The scrim erases the foam \u2014 the one thing the copy names \u2014 and blacks out the right two-thirds of the frame where no type sits",
+    "evidence": "Source image is 1280x591: foam sheets fill rows ~60\u2013290, the students' line rows ~290\u2013470. At 1440x360 `object-fit:cover` shows source rows 136\u2013456, and the 248px scrim (0.92 -> 0.88 at 74% -> 0.72 at 88%) covers display 0\u2013248 = source rows 136\u2013356, i.e. every pixel of foam plus the crowd's heads. The only unobscured photograph is a 100px strip of bodies. Meanwhile the headline occupies x 46\u2013536 of 1440 (measured line widths 482 and 490), so the scrim darkens 900px of frame carrying no type. In the 1440x900 capture the top-right of the band is dead black with faint streaks; the phrase \"The foam is not snow\" sits under a picture with no visible foam. The `.duo` open ramp also caps whites at 0.77, so the foam has no punch even where it survives.",
+    "fix": "Make the scrim protect the type, not the frame. In home.html:180\u2013186 keep a shallower vertical wash (0.90 -> 0 by ~60% of --picH) and add a horizontal one so the right side stays open, e.g. background:`linear-gradient(180deg,rgba(11,11,9,.92),rgba(11,11,9,.55) 62%,rgba(11,11,9,0) 100%),linear-gradient(95deg,rgba(11,11,9,.94) 0 38%,rgba(11,11,9,.45) 54%,rgba(11,11,9,0) 68%)`. Then set `#journeys .pic>img{object-position:50% 42%}` so the foam field lands in the now-clear right/lower zone. If the type still needs help after that, switch this one image to `.duo-dim` \u2014 the bounded ramp is defined at home.html:766 and used zero times on the page, and this is the canonical photograph-under-text.",
+    "width": "desktop"
+   },
+   {
+    "severity": "major",
+    "what": "Landing on the section from the nav hides the statement behind the sticky header \u2014 entirely on mobile, sliced through the caps on desktop",
+    "evidence": "`.nav{position:sticky;top:0;z-index:60}` (home.html:301) is 63px tall on desktop and 107px on mobile (two rows); computed `scroll-margin-top` on `#journeys` is 0px and the string \"scroll-margin\" appears 0 times in home.html. Six in-page links point at #journeys, including the JOURNEYS nav item. Captured at the anchor: at 1440 the top ~43px of the 113px line \"A NUMBER IS\" is cut off by the nav bar; at 375 the whole overlay block (110px) sits under the 107px header and the headline is completely invisible \u2014 you land on a photo of a crowd with no statement at all.",
+    "fix": "Add `section[id]{scroll-margin-top:64px}` and, in the same breakpoint the nav goes two-row, `@media(max-width:860px){section[id]{scroll-margin-top:110px}}`.",
+    "width": "both"
+   },
+   {
+    "severity": "major",
+    "what": "The two copy columns align to nothing: the right block misses the rack column below by 16px, and both blocks strand large voids",
+    "evidence": "`.jn-head` is a 2-column grid with gap clamp(28px,4vw,64px) (home.html:632) while `.jn-rack` directly beneath it is 4 columns with gap clamp(12px,1.8vw,24px). Measured at 1440: rack cards run 46\u2013364, 390\u2013707, 733\u20131051, 1077\u20131394; the right paragraph starts at x=749 \u2014 16px right of card 3's edge at 733, close enough to read as a failed alignment. The left `.lead` stops at 566 (max-width:46ch, home.html:99) leaving a 183px gulf against a 58px grid gap, and the right block stops at 1231, leaving 163px of empty ground before the rack's right edge at 1394.",
+    "fix": "Give `.jn-head` the rack's grid so the head and the rack share one measure: `grid-template-columns:repeat(4,1fr);gap:18px clamp(12px,1.8vw,24px)`, lead in columns 1\u20132, second paragraph in columns 3\u20134 with `margin-left:auto` so its right edge lands exactly on 1394 (the last card's right edge). The band then has two hard alignments instead of one 16px near-miss.",
+    "width": "desktop"
+   },
+   {
+    "severity": "major",
+    "what": "The photograph is drawn at 2.25x its native resolution and then halftoned, so the students are mush",
+    "evidence": "/Users/administrator/swechha-website/public/images/photos/yamuna-students-foam-line.jpg is 1280x591. At 1440 CSS full-bleed on a 2x screen it is painted into 2880x720 device pixels \u2014 a 2.25x upscale \u2014 and `.pic::after` (home.html:175) then lays a 6px/12-device-px dot screen over it. A 2x zoom of the crowd (page x 680\u20131360) shows no faces, no limb separation, figures dissolving into dot mush against the water. It is the section's only photograph and it is full-bleed.",
+    "fix": "Re-export the frame from the archive master at >=2880px wide (>=3200 preferred, since --picH may grow). If no larger master exists, cap the frame so it is never drawn above its native width \u2014 e.g. keep the band full-bleed but let the image sit in a max-width 1280px window with the ground either side, or accept the softness only below 1280 CSS px.",
+    "width": "both"
+   },
+   {
+    "severity": "minor",
+    "what": "On the phone the lead paragraph stops leading: the two paragraphs are the same size, and the smaller one has the looser leading",
+    "evidence": "At 375: `.lead` computes to 16.96px/25.1 line-height (var(--t-lead), home.html:65/99) and the second paragraph is 16.5px/26.4 (inline style, home.html:768). A 0.46px size difference is invisible, so the seven lines read as one undifferentiated block; the secondary text is also set looser (1.6) than the primary (1.48), which inverts the hierarchy.",
+    "fix": "At <=520px set `.jn-head .lead{font-size:18.5px;line-height:1.42}` and the secondary paragraph to 15.5px/1.55, so size and leading move in the same direction.",
+    "width": "mobile"
+   },
+   {
+    "severity": "minor",
+    "what": "The two head columns are box-top-aligned rather than baseline-aligned, so their first lines sit at different heights",
+    "evidence": "`.jn-head{align-items:start}` (home.html:632). Measured at 1440 both boxes start at y=1613, but the first line boxes are 1618\u20131638 (20.48px type) and 1618\u20131634 (16.5px type) \u2014 roughly a 4px first-baseline mismatch across a 183px gap, where the eye reads it as a slip.",
+    "fix": "Align the first baselines: add `padding-top:4px` to the secondary paragraph in `#journeys .jn-head` (or set both columns from one baseline value) so the two opening lines sit on the same line.",
+    "width": "desktop"
+   }
+  ],
+  "questions": [
+   {
+    "question": "Is there a higher-resolution master of yamuna-students-foam-line in the archive? The file on disk is 1280x591, which is under half the device pixels this full-bleed frame needs at 1440/2x \u2014 the fix is different depending on the answer.",
+    "options": [
+     "Yes, re-export at >=2880px wide and keep the frame full-bleed",
+     "No larger master exists \u2014 cap how large the frame paints this image instead",
+     "Substitute a different foam-line frame that does have a master"
+    ]
+   },
+   {
+    "question": "May the statement frame stop being tied to window height (40vh) and scale on width like the headline does? Everything in defect 1 follows from those two scales being independent.",
+    "options": [
+     "Yes \u2014 width-derived clamp, frame height no longer changes with window height",
+     "No \u2014 keep 40vh and instead cap the scrim to a fraction of the frame so the photograph always survives"
+    ]
+   }
+  ]
+ },
+ {
+  "section": "WORK \u2014 \"What is running\", the projects and campaigns grid (#work)",
+  "verdict": "The staggered 12-column frame grid is the right instrument for this content and rows one and two hold together, but the section is currently damaged at both ends: another section's sentence prints through the headline, and the grid stops two tiles short of the ten its own lead promises, leaving 41% of the last row empty. The photography is the deeper problem \u2014 five of eight frames are recropped 1.3\u00d7\u20133\u00d7 away from their native aspect, so the pictures are doing far less work than their size implies, and on a 375px phone three of them are too small to read at all.",
+  "defects": [
+   {
+    "severity": "broken",
+    "what": "The Journeys section's last photo caption overprints the \"WHAT IS RUNNING\" headline; the WORK section has no top boundary at all",
+    "evidence": "At 375 (screenshot /private/tmp/claude-502/-Users-administrator-Farm-App/1f38e9f1-2481-4f92-bd81-dd029171a65e/scratchpad/wkC-zoom-head.png) the sentence \"Living in a village long enough to stop being a visitor.\" is drawn through the headline glyphs \u2014 only the word \"visitor.\" clears them on the right. Measured: #journeys section box bottom 4276, its last .cap bottom 4336 (60px of overflow past its own section), #work h2 top 4320 \u2014 a 16px box overlap. Cause is upstream: the last .jn-rack item's content is 621px tall in a 539.17px grid row (gridTemplateRows \"558.742 558.742 558.742 539.172\"), and section{overflow-x:clip} leaves vertical overflow visible. At 1440 the same overflow leaves only 7px between caption box and h2 box (~20px optically, see wkA-zoom-head.png) \u2014 the section's 88px padding-top is entirely consumed.",
+    "fix": "Two changes, both needed. (1) Source: home.html has two competing .jn-rack blocks (lines 632-643 and 673-682) and the later unconditional `.jn-rack img{aspect-ratio:3/4}` overrides the \u2264520px rule at line 644, so the rack rows are computed short \u2014 delete the duplicate block so one rule governs and the rows size to content. (2) Defensively give this section its own boundary rather than relying on the neighbour: `#work{padding-top:clamp(72px,9vw,132px)}` so a 60px overflow above can no longer reach the headline.",
+    "width": "both"
+   },
+   {
+    "severity": "major",
+    "what": "The grid ends on a hole: the last row fills only columns 1\u20137, leaving the bottom-right 41% of the section empty",
+    "evidence": "At 1440 the last row is wk-g (x 46\u2013481) and wk-h (x 503\u2013823) while the grid's right edge is 1394 \u2014 a 571px-wide \u00d7 533px-tall void (grid rows 1 and 2 both run the full 12 columns). The CTA sits at x 46, so the entire bottom-right quadrant of the band is black. In wkA-crop-desk.png the section visibly stops mid-thought.",
+    "fix": "Fill the last row: add two more tiles at `.wk-i{grid-column:8/span 5}` and `grid-column:...` completing columns 8\u201312 (see the count defect below \u2014 ten items exactly fill three rows of this pattern). If the item count must stay at eight, instead move \"THE WHOLE LIST\" button into the empty region as a full-height cell at columns 9\u201312 so the void becomes a deliberate terminal element rather than a gap.",
+    "width": "desktop"
+   },
+   {
+    "severity": "major",
+    "what": "The lead says ten items; the grid shows eight, and only three of the five promised campaigns",
+    "evidence": "Lead copy: \"Five projects and five campaigns, in the order they take up our week.\" The grid holds 8 tiles \u2014 Projects: Bridge the Gap, Farm School, Influence Fellowship, She Leads Change, Food systems with UNEP (5). Campaigns: Delhi I Can't See You, Yamuna Palla to Okhla, Monsoon Wooding (3). Combined with the empty tail of the last row, it reads as two tiles that failed to load.",
+    "fix": "Add the two missing campaign tiles (10 items = 5+5), which also closes the last row's void. If the homepage is deliberately a selection, the grid must not end with an empty row \u2014 see the fix above \u2014 because a short grid plus a stated count reads as breakage, not curation.",
+    "width": "both"
+   },
+   {
+    "severity": "major",
+    "what": "\"Food systems, with UNEP\" is a 2.2:1 panorama forced into a 3:4 portrait frame, so the last tile in the section is a formless texture",
+    "evidence": "leafy-greens-crop.jpg is natively 2000\u00d7901 (AR 2.22) displayed at 321\u00d7427 (AR 0.75) with object-fit:cover \u2014 a 2.96\u00d7 aspect change that discards roughly two-thirds of the frame's width. At 1:1 (wkA-zoom-unep.png) it is an undifferentiated mass of leaves with no subject, no depth and no person, and it is the only frame in the grid with no human in it. Four other frames are recropped too: hillside-journaling-group.jpg 0.75\u21921.25 (She Leads Change \u2014 the group is reduced to specks and a tree trunk owns the frame), nursery-plants.jpg 0.75\u21921.25, school-children-group.jpg 0.75\u21921.00, farm-plot-children-facilitator.jpg 1.33\u21921.00. The one frame whose slot matches its source (yamuna-students-line-skyline.jpg 0.75 into 0.80) is visibly the strongest picture in the section.",
+    "fix": "Set the per-tile `--ar` (home.html lines 658-665) from the photograph rather than from the pattern: give leafy-greens-crop.jpg a landscape slot (--ar:16/10 or 3/2) and swap it into wk-e/wk-a-shaped positions, and give the three 3:4 portraits (hillside-journaling, nursery-plants, school-children-group) portrait slots (--ar:4/5 or 3/4). Keep no frame more than ~1.25\u00d7 away from its source aspect. If \"Food systems\" must stay in a portrait slot, reshoot/re-source it with a subject.",
+    "width": "both"
+   },
+   {
+    "severity": "major",
+    "what": "The stagger contradicts the stated running order \u2014 tiles 2 and 3, and 4 and 5, read in the wrong sequence",
+    "evidence": "Copy claims \"in the order they take up our week\", but at 1440 wk-a (Delhi I Can't See You, cols 1-5) and wk-c (Yamuna Palla to Okhla, cols 9-12) share the identical top edge y=2640, so the eye reads 1 \u2192 3 \u2192 2; in row two wk-e (Influence Fellowship) starts at y=3258, a full 30px ABOVE wk-d (Farm School) at y=3288, so item 5 reads before item 4. Measured tops: a 2640, b 2692, c 2640, d 3288, e 3258, f 3314.",
+    "fix": "Make each row's tops descend monotonically left to right, e.g. wk-a 0, wk-b 52 (already), wk-c 96 instead of 0; wk-d 0, wk-e 30 instead of -30, wk-f 56. Alternatively, if the order is genuinely load-bearing, number the tiles 01\u201310 in Archivo caps above each title and let the stagger stay free.",
+    "width": "desktop"
+   },
+   {
+    "severity": "major",
+    "what": "On a 375px phone the frames vary 103px\u2013219px tall and three of them shrink groups of people into unreadable smears",
+    "evidence": "At 375 the desktop --ar values are inherited unchanged, giving image heights of: Influence Fellowship 165\u00d7103 (16/10), She Leads Change 165\u00d7132, Monsoon Wooding 165\u00d7132, Delhi I Can't See You 165\u00d7123, vs Food systems 165\u00d7219 and Yamuna 165\u00d7206 \u2014 a 2.1\u00d7 height range in a plain 2-up grid. In wkC-mob-bot.png the Influence Fellowship and She Leads Change groups are illegible, and the uneven heights plus 1-line vs 2-line titles mean no two captions in a row share a baseline.",
+    "fix": "In the \u2264860px block (home.html lines 666-670) override the ratios to one or two values so the 2-up grid has a rhythm \u2014 e.g. `.wk-i img{aspect-ratio:4/5}` for all, or alternate 4/5 and 1/1 by column \u2014 and drop the 26px stagger on .wk-b/.wk-d/.wk-f at \u2264520px so titles align across the pair.",
+    "width": "mobile"
+   },
+   {
+    "severity": "minor",
+    "what": "The section's lead paragraph does not sit on the 12-column grid it introduces",
+    "evidence": "At 1440 .im-head is a 2\u00d7equal-column grid (645.2px each, 64px gap) so the lead starts at x=749, while the wk-grid column edges are at 46, 160, 274, 388, 503, 617, 731, 845, 959, 1073, 1188, 1302 \u2014 the lead is 18px right of column 7 and lines up with nothing above or below it (see wkA-zoom-head.png).",
+    "fix": "Give .im-head (home.html line 697) the same 12-column track as .wk-grid \u2014 `grid-template-columns:repeat(12,1fr);gap:0 22px` with the h2 at `grid-column:1/span 6` and the lead at `grid-column:7/span 5` \u2014 so the lead's left edge lands exactly on 731.",
+    "width": "desktop"
+   },
+   {
+    "severity": "minor",
+    "what": "Every tile title is the same 25.6px regardless of frame size, so the section has no lead item",
+    "evidence": "`.wk-i h3` (line 653) is a single clamp(1.1rem,1.9vw,1.6rem) = 25.6px at 1440 across frames that range 321px to 549px wide \u2014 a 1.7\u00d7 scale range in the pictures answered by a 1.0\u00d7 range in the type. \"DELHI I CAN'T SEE YOU\" under a 549px frame reads as small print; \"FOOD SYSTEMS, WITH UNEP\" fills its 321px frame edge to edge. The stagger therefore reads as decoration rather than as ranking.",
+    "fix": "Add a per-tile type step tied to the slot: `--ttl` on the wk-a\u2026wk-h rules (e.g. wk-a/wk-e 2rem, wk-c/wk-f/wk-g 1.6rem, wk-b/wk-d/wk-h 1.3rem) and set `.wk-i h3{font-size:var(--ttl,1.6rem)}`. Do not raise the top of the scale beyond 2rem \u2014 the display/body relationship stays as approved.",
+    "width": "desktop"
+   },
+   {
+    "severity": "minor",
+    "what": "Straight ASCII apostrophe in a tile title where the rest of the page uses a typographic one",
+    "evidence": "`<h3>Delhi I Can't See You</h3>` uses U+0027, while the page elsewhere uses U+2019 (\"Today\u2019s readings\", \"one\u2019s own free will\", 3 occurrences). At 25.6px Archivo the difference is visible as a vertical tick in an otherwise typographically clean row of caps.",
+    "fix": "Replace with the curly apostrophe: Delhi I Can\u2019t See You.",
+    "width": "both"
+   }
+  ],
+  "questions": [
+   {
+    "question": "Is this grid meant to be the complete running list (ten items, matching the lead copy), or a curated eight with \"The whole list\" carrying the rest?",
+    "options": [
+     "Complete \u2014 add the two missing campaign tiles at columns 8\u201312, which closes the empty last row too",
+     "Curated \u2014 keep eight and rebuild the last row so it closes deliberately (CTA occupying columns 9\u201312), leaving the lead copy to be resolved separately"
+    ]
+   },
+   {
+    "question": "Is \"in the order they take up our week\" a literal ranking the reader must be able to follow, or narrative colour?",
+    "options": [
+     "Literal \u2014 number the tiles 01\u201310 and keep the free stagger",
+     "Narrative \u2014 leave them unnumbered but make each row's tops descend left to right so nothing reads out of sequence"
+    ]
+   }
+  ]
+ }
+]

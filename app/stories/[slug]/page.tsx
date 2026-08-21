@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { Prose } from '@/components/prose'
+import { signalClass } from '@/components/photo-signal'
 import { RelatedContent } from '@/components/related-content'
 import { getAllStories, getStoryBySlug, getRelated } from '@/lib/content'
 import { renderMarkdown } from '@/lib/markdown'
@@ -63,7 +64,7 @@ export default async function StoryPage(props: PageProps<'/stories/[slug]'>) {
             alt={heroImage.alt}
             fill
             sizes="(max-width: 1152px) 100vw, 1152px"
-            className="object-cover"
+            className={`object-cover ${signalClass(heroImage.signal)}`}
             priority
           />
         </div>

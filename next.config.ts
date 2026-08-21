@@ -1,9 +1,9 @@
 import type { NextConfig } from 'next'
-import { legacyRedirects } from './redirects'
+import { legacyRedirects, movedRedirects } from './redirects'
 
 const nextConfig: NextConfig = {
   async redirects() {
-    return legacyRedirects
+    return [...movedRedirects, ...legacyRedirects]
   },
 }
 

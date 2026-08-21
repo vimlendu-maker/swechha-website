@@ -1,0 +1,1033 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Air - Delhi-NCR - Swechha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   SWECHHA v3. C's intensity, A's structure.
+   The ground alternates and DARK LEADS. Photography is full-bleed and
+   halftoned. Every surface has grain in it. The system underneath is
+   unchanged from v2: rail, multiplier, band counter, validity window,
+   slider, three-tense colour grammar.
+   ══════════════════════════════════════════════════════════════════ */
+:root{
+  /* GROUNDS. Dark is the default now, not the exception. */
+  --ground:#0D0D0B;          /* the page */
+  --ground-2:#151512;        /* the alternate dark band */
+  --paper:#F3F2F0;           /* off-white. Long reading and section breaks only. */
+  --paper-2:#ECEBE8;         /* tuned so every hue still clears AA on it */
+
+  /* INK on the dark ground */
+  --fg:#FBF8F0;              /* 18.3:1 */
+  --fg-2:#CDC7B7;            /* 11.2:1 */
+  --fg-3:#9C9585;            /*  6.4:1  - 12px floor */
+  --hair:rgba(251,248,240,.20);
+  --hair-2:rgba(251,248,240,.10);
+
+  /* INK on paper */
+  --ink:#141310;             /* 16.6:1 */
+  --ink-2:#4C473F;           /*  8.2:1 */
+  --ink-3:#615B50;           /*  6.0:1 - captions, 13.5px floor */
+  --rule:#DEDDD9; --rule-2:#C6C4BF;
+
+  /* ── THE THREE HUES ────────────────────────────────────────────────
+     Same three colours as approved, same three meanings, same band rule.
+     Every value below is lifted from app/globals.css. Nothing was
+     re-picked because the ground changed; where a hue needed a different
+     value for a different canvas, the file already carried both, exactly
+     as it already does for --swechha-teal / --swechha-teal-ink.
+
+     MUSTARD  a human act.  Second person. THE INTERACTIVE COLOUR.
+     RED      a published limit broken. Third person present. Never a control.
+     GREEN    what came back. Past perfect. */
+  --mustard:#E1A32B;         /* globals --mustard.      8.78:1 on ground */
+  --mustard-2:#F1C33B;       /* globals --yellow.      11.68:1, small text on dark */
+  --mustard-ink:#8A6410;     /* globals --mustard-ink.  4.72:1 on paper */
+  --on-mustard:#12110F;      /* globals --on-mustard.   8.51:1 on mustard */
+  --red:#F1484E;             /* globals --sev.          5.35:1 on ground */
+  --red-ink:#c81e3a;         /* globals --signal-critical. 4.98:1 on paper */
+  --green:#5FBE85;           /* globals --signal-nature-bright. 8.51:1 on ground */
+  --green-ink:#1F6B45;       /* darkened --signal-nature: the base is 4.43:1 on
+                                paper and fails AA, so this follows the file's
+                                existing -ink convention. 5.68:1. */
+
+  /* TYPE. Unchanged from v2. 14.9:1 display to body is already right; the
+     blankness is not solved by making this bigger. */
+  --t-readout:clamp(6.2rem,21vw,17rem);
+  --t-d1:clamp(2.7rem,8vw,6.5rem);
+  --t-num:clamp(2.6rem,6vw,4.6rem);
+  --t-d2:clamp(1.5rem,3.4vw,2.75rem);
+  --t-h2:clamp(1rem,1.9vw,1.45rem);
+  --t-lead:clamp(1.06rem,1.55vw,1.28rem);
+  --t-body:18px; --t-cap:13.5px; --t-micro:11.5px;
+
+  --gut:clamp(16px,3.4vw,46px);
+  /* Density: sections are tighter than v2. Blankness was the complaint. */
+  --pad:clamp(44px,5.6vw,88px);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--fg);
+  font:400 var(--t-body)/1.6 Newsreader,Georgia,'Times New Roman',serif;
+  font-optical-sizing:auto;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{max-width:100%;display:block}
+a{color:inherit}
+p{margin:0 0 1em}
+h1,h2,h3{margin:0;font-weight:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:0 var(--gut)}
+.wide{max-width:1580px;margin:0 auto;padding:0 var(--gut)}
+
+
+/* ── VOICES. Unchanged. ──────────────────────────────────────────────*/
+.d1{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 68,'wght' 850;
+  font-size:var(--t-d1);line-height:.86;letter-spacing:-.032em;text-transform:uppercase;margin:0}
+.d2{font-family:Newsreader,Georgia,serif;font-weight:300;font-size:var(--t-d2);
+  line-height:1.12;letter-spacing:-.015em;margin:0}
+.h2{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 100,'wght' 680;
+  font-size:var(--t-h2);letter-spacing:.24em;text-transform:uppercase;line-height:1.35;margin:0}
+.readout{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 62,'wght' 800;
+  font-size:var(--t-readout);line-height:.74;letter-spacing:-.038em;
+  font-variant-numeric:tabular-nums;display:block}
+.num{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 64,'wght' 800;
+  font-size:var(--t-num);line-height:.8;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.lbl{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
+  font-size:var(--t-micro);letter-spacing:.15em;text-transform:uppercase;line-height:1.5}
+.lead{font-size:var(--t-lead);line-height:1.48;font-weight:300;max-width:46ch;margin:0}
+.body{max-width:62ch}
+.cap{font-size:var(--t-cap);line-height:1.45;color:var(--fg-3);margin:0}
+.on-paper .cap,.paper .cap{color:var(--ink-3)}
+
+/* ── GROUND BANDS. Dark leads, paper is for long reading only. ───────*/
+/* overflow-x:clip, not hidden: it stops any band widening the document
+   without creating a scroll container, so scroll-snap and sticky
+   children inside a section keep working. */
+section{padding:var(--pad) 0;position:relative;overflow-x:clip}
+.paper{background:var(--paper);color:var(--ink)}
+.paper-2{background:var(--paper-2);color:var(--ink)}
+.dark-2{background:var(--ground-2)}
+.paper .lbl,.paper-2 .lbl{color:var(--ink-3)}
+.eyebrow{color:var(--fg-3);margin:0 0 20px}
+.paper .eyebrow,.paper-2 .eyebrow{color:var(--ink-3)}
+
+/* ── PHOTOGRAPHY ─────────────────────────────────────────────────────
+   BLACK AND WHITE, WITHOUT EXCEPTION.
+
+   THESE TWO RULES ARE LOad-BEARING. They are the only thing joining the
+   `duo` / `duo-dim` class names to the <filter> definitions in the SVG
+   defs block. Without them every photograph renders in full colour while
+   the markup still looks correct, which is exactly what happened in
+   v3.0: a source read passes, and only getComputedStyle(img).filter or a
+   colour-aware look at a screenshot catches it. Do not remove them, and
+   if you touch the defs block, re-check `filter` computes to url(#duo).
+
+   Two ramps and nothing else: `duo` for a frame with the scrim doing the
+   contrast work, `duo-dim` for a frame where type sits on an unveiled
+   area. Selective colour is retired from photography; hue lives only in
+   type, data, marks and controls. */
+.duo{filter:url(#duo)}
+.duo-dim{filter:url(#duo-dim)}
+
+.ht{position:relative;overflow:hidden}
+.ht>img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* The halftone is for FULL-BLEED FRAMES ONLY. Every other photograph on
+   the site is clean monochrome: a dot screen turns a busy mid-tone frame
+   to mud and buys nothing on a thumbnail. Composited NORMALLY, per
+   Direction C: mix-blend-mode is visually identical for a pure black
+   pattern, materially more expensive, and unreliable once several
+   halftoned frames are on screen at once. */
+.ht.scrim::after,.ht.scrim-l::after{content:'';position:absolute;inset:0;z-index:2;
+  pointer-events:none;
+  background-image:radial-gradient(circle at 50% 50%,rgba(0,0,0,.62) 1.5px,transparent 1.7px);
+  background-size:6px 6px}
+@media (max-width:700px){.ht.scrim::after,.ht.scrim-l::after{background-size:4px 4px;
+  background-image:radial-gradient(circle at 50% 50%,rgba(0,0,0,.62) 1px,transparent 1.2px)}}
+
+/* ── THE PICTURE BAND ────────────────────────────────────────────────
+   Copy floating over a full frame was tried twice and failed contrast
+   both times, measured. The reason is structural, not a tuning problem:
+   the reading block is 450 to 500px tall, so on an 800px hero it covers
+   the frame edge to edge, and any scrim strong enough to carry 12px
+   metadata over a bright pixel darkens the entire photograph to a
+   rectangle. That is the client's "too blank" arriving in a new costume.
+
+   The rule now, and it is simple enough to hold:
+     DISPLAY TYPE MAY SIT ON A PHOTOGRAPH. NOTHING ELSE MAY.
+   A headline at 44px or more needs 3:1, which a short top gradient
+   delivers while leaving the lower half of the frame completely
+   untouched. Everything smaller sits on solid ground directly beneath
+   the picture, where it is at full contrast and cannot drift.
+
+   The result is a photograph you can actually see AND type that is
+   never marginal, which is what neither previous attempt managed. */
+.pic{position:relative;overflow:hidden;height:clamp(240px,40vh,440px)}
+.pic>img{width:100%;height:100%;object-fit:cover;display:block}
+/* No gradient on the frame itself. A band gradient has to guess how tall
+   the headline is, and a two-line headline overruns it: measured, the
+   farm headline dropped to alpha 0 at its second line. The scrim belongs
+   to the TEXT BLOCK instead, so it scales itself to one line or three and
+   the rest of the photograph is completely untouched. */
+/* Halftone, full-bleed frames only, composited normally per Direction C. */
+.pic::after{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
+  background-image:radial-gradient(circle at 50% 50%,rgba(0,0,0,.62) 1.5px,transparent 1.7px);
+  background-size:6px 6px}
+@media (max-width:700px){.pic::after{background-size:4px 4px;
+  background-image:radial-gradient(circle at 50% 50%,rgba(0,0,0,.62) 1px,transparent 1.2px)}}
+.pic-over{position:absolute;top:0;left:0;right:0;z-index:3;
+  padding:clamp(16px,2.4vw,32px) 0 clamp(20px,2.6vw,40px);
+  background:linear-gradient(180deg,
+    rgba(11,11,9,.92) 0%,
+    rgba(11,11,9,.88) 74%,
+    rgba(11,11,9,.72) 88%,
+    rgba(11,11,9,0)   100%)}
+.pic-over .d1{text-shadow:0 2px 26px rgba(11,11,9,.5)}
+/* The band under the picture. Solid ground, so every measurement, label
+   and caption on it is at full contrast by construction. */
+.pic-body{background:var(--ground);padding:clamp(24px,3.2vw,42px) 0 clamp(22px,2.8vw,36px)}
+.pic-body.alt{background:var(--ground-2)}
+
+figure{margin:0}
+
+/* ══════════════════════════════════════════════════════════════════════
+   THE RAIL.  ONE CONTRACT, EVERY PLACE IT APPEARS.
+   Identical to home.html's. Expressed for this board's markup, where the
+   numeral is a child of .rail-l rather than of its own wrapper.
+
+   THE RULE BELONGS TO THE NUMERAL, NOT TO THE COLUMN.
+
+   The numeral is the box that shrink-wraps its digits (width:max-content)
+   and draws the rule as its OWN ::after at left:100% plus --kiss, where
+   --kiss is .06em of THE NUMERAL'S OWN font-size. Because the rule starts
+   at 100% of a max-content box it is geometrically incapable of crossing
+   a digit — at every viewport width and for every value length: 412, 0.0,
+   1.65, 47.8, 6,890, "14 of 18". And because the account column's
+   clearance is measured FROM THE RULE rather than from a column edge, the
+   rule can never touch the text either.
+
+   That is the reported defect fixed in both of the directions it failed.
+   It used to fail in two: `.rail-l>.readout{margin-right:calc(-1*var(--rp)
+   - .28em)}` pulled a 272px numeral 76px over a rule that was really
+   `.rail-r`'s border-left, so the rule sliced a third of the way into the
+   "2" of 412; and in the cut-out spine the identical intent failed
+   inverted, because `.cut-yr` sits one level deeper inside `.cut-l` and a
+   `.rail-l > *` selector never reached it, so the rule floated 200px+ to
+   the RIGHT of "2000" with nothing between them. Same component, two
+   failures, one cause: the rule was drawn by a fixed-percentage column
+   and the numeral was positioned against it. THE SELECTOR BELOW IS A
+   DESCENDANT SELECTOR FOR EXACTLY THAT REASON.
+
+   --ovh is gone. --lw as a positioning input is gone. The negative
+   margins are gone. .rail-r draws no border.
+
+   STATE changes the rule's COLOUR and its WIDTH, and nothing else. The
+   width grows RIGHTWARD, away from the numeral, so the kiss gap is
+   identical in every state — a breach must never shift the numeral.
+
+   THE RAIL DOES NOT DISAPPEAR ON A PHONE. It rotates: see <=860 below.
+   ══════════════════════════════════════════════════════════════════ */
+.rail{display:flex;align-items:stretch;gap:0;
+  /* the kiss in PIXELS, for the clearance budget only. The rule itself
+     takes .06em off the numeral, which is the same number. */
+  --rail-kiss:calc(.06 * var(--t-num));
+  --rail-clear:32px}
+.rail:has(.readout){--rail-kiss:calc(.06 * var(--t-readout))}
+@media (max-width:1023px){.rail{--rail-clear:24px}}
+
+.rail-l{flex:0 0 var(--lw,52%);min-width:0;position:relative;z-index:1;
+  padding-right:var(--rp,clamp(16px,2.4vw,38px));text-align:right}
+/* THE NUMERAL OWNS THE RULE. Right-aligned in its column, and the numeral
+   ALONE reaches the column edge — every other line keeps its --rp inset,
+   so nothing can touch the rule from the left either. */
+.rail-l .readout,.rail-l .num,.rail-l .cut-yr{
+  --kiss:.06em;
+  position:relative;display:block;width:max-content;max-width:100%;
+  white-space:nowrap;
+  margin-left:auto;margin-right:calc(-1 * var(--rp,clamp(16px,2.4vw,38px)))}
+.rail-l .readout::after,.rail-l .num::after,.rail-l .cut-yr::after{
+  content:'';position:absolute;left:100%;margin-left:var(--kiss);
+  top:var(--rl-top,0);bottom:var(--rl-bottom,0);height:var(--rl-h,auto);
+  width:0;border-left:1px solid var(--hair)}
+.paper .rail-l .readout::after,.paper .rail-l .num::after,
+.paper .rail-l .cut-yr::after,.paper-2 .rail-l .readout::after,
+.paper-2 .rail-l .num::after,.paper-2 .rail-l .cut-yr::after{
+  border-left-color:var(--rule-2)}
+/* BREACH: colour and weight only, growing away from the digits. */
+.rail.breach .rail-l .readout::after,.rail.breach .rail-l .num::after{
+  border-left-width:6px;border-left-color:var(--red)}
+.paper .rail.breach .rail-l .readout::after,
+.paper .rail.breach .rail-l .num::after,
+.paper-2 .rail.breach .rail-l .readout::after,
+.paper-2 .rail.breach .rail-l .num::after{border-left-color:var(--red-ink)}
+/* A closed window is a dashed rule, still owned by the numeral. */
+.rail.closed .rail-l .readout::after,.rail.closed .rail-l .num::after{
+  border-left-style:dashed}
+
+/* .rail-r DRAWS NO BORDER. Its padding is measured from the RULE, with a
+   hard minimum clear distance, which is what kills the text collision
+   permanently. */
+.rail-r{flex:1 1 var(--rw,40%);min-width:0;position:relative;z-index:3;
+  border-left:0;
+  padding-left:calc(var(--rail-kiss) + 6px + var(--rail-clear))}
+.rail-l .bands{margin-left:auto}
+.rail-l .lead,.rail-l .body,.rail-l .cap,.rail-l .limit,.rail-l .win{margin-left:auto}
+
+/* ── THE CUT-OUT SPINE. The year is nested inside .cut-l, so it is the
+   flex line that has to hand it the column edge; margin-left:auto on the
+   numeral does that without a second positioning system. The rule's
+   LENGTH is the plate's height, so the mark and the object hanging beside
+   it start and end on the same two lines. */
+.cut-l .cut-yr{--rl-top:auto;--rl-bottom:0;--rl-h:clamp(118px,19vw,268px)}
+
+/* ══ UNDER 860. THE RAIL ROTATES, IT DOES NOT VANISH. ══════════════════
+   It used to evaporate here: --ovh went to 0, the negative margins were
+   stripped and the rule became a horizontal border-top — the site's
+   signature mark gone on the platform where most Indian readers meet the
+   page. Instead the numeral goes to the left edge of the measure, the
+   rule stays on its right at the same kiss, the unit and the verdict hang
+   off it in their own column, and the rule runs from the numeral's cap
+   line down onto the hairline that opens the account, so the reader can
+   see what the line is holding. */
+@media (max-width:860px){
+  .rail{display:block;--rail-clear:16px}
+  .rail-l{flex:none;padding-right:0;text-align:left;
+    display:grid;grid-template-columns:max-content minmax(0,1fr);
+    column-gap:calc(var(--rail-kiss) + 6px + var(--rail-clear));
+    align-items:start}
+  .rail-l>*{grid-column:2;margin-left:0}
+  .rail-l>.lbl{grid-column:1/-1}
+  /* the numeral spans every content row, so the rule it draws runs past
+     the unit and the verdict rather than stopping at its own baseline */
+  .rail-l>.readout,.rail-l>.num{grid-column:1;grid-row:2/span 24;
+    align-self:stretch;margin:0}
+  .rail-l .bands,.rail-l .cap,.rail-l .limit,.rail-l .win{margin-left:0}
+  .rail-l>.readout::after,.rail-l>.num::after{bottom:-22px}
+  .rail-r{padding-left:0;border-left:0;
+    border-top:1px solid var(--hair);padding-top:22px;margin-top:22px}
+  .paper .rail-r,.paper-2 .rail-r{border-top-color:var(--rule-2)}
+  .rail.breach .rail-r{border-top-color:rgba(241,72,78,.45)}
+  /* the spine keeps its own shape: the plate and the year sit side by
+     side and the year still owns the rule beside it. */
+  .rail-l>.cut-l{grid-column:1/-1;display:flex;align-items:center;
+    gap:clamp(12px,2vw,28px)}
+  .cut-l .cut-yr{--rl-h:clamp(96px,30vw,168px)}
+}
+
+.mult{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
+  font-size:var(--t-micro);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-2);
+  margin:14px 0 0}
+.mult b{font-variation-settings:'wdth' 74,'wght' 800;font-size:2.1em;letter-spacing:-.01em;
+  color:var(--red);vertical-align:-.12em;margin-right:.24em;font-variant-numeric:tabular-nums}
+.paper .mult{color:var(--ink-2)} .paper .mult b{color:var(--red-ink)}
+
+/* ── STATE MARKS. Shape, never hue. ──────────────────────────────────*/
+.state{display:inline-flex;align-items:center;gap:.5em;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 650;font-size:var(--t-micro);letter-spacing:.13em;
+  text-transform:uppercase;color:var(--fg-2)}
+.paper .state,.paper-2 .state{color:var(--ink-2)}
+.state i{width:9px;height:9px;flex:none;border:1.5px solid currentColor}
+.state.live i{background:currentColor}
+.state.demo i{background:repeating-linear-gradient(45deg,currentColor 0 1.5px,transparent 1.5px 3.5px)}
+.state.closed i{background:none;border-style:dashed;border-width:2px}
+
+/* ── BANDS, LIMIT, VERDICT, WINDOW. Unchanged. ───────────────────────*/
+.verdict{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 78,'wght' 800;
+  font-size:clamp(1.15rem,2.4vw,1.85rem);letter-spacing:.03em;text-transform:uppercase;margin:14px 0 0}
+.verdict.bad{color:var(--red)}
+.paper .verdict.bad{color:var(--red-ink)}
+.unit{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
+  font-size:var(--t-micro);letter-spacing:.15em;text-transform:uppercase;color:var(--fg-2);
+  display:block;margin-top:14px}
+.paper .unit,.paper-2 .unit{color:var(--ink-2)}
+.bands{display:flex;gap:3px;margin:20px 0 10px;max-width:340px}
+.bands i{flex:1;height:12px;border:1px solid var(--fg-2);background:none}
+.bands i.on{background:var(--fg-2)}
+.paper .bands i{border-color:var(--ink)} .paper .bands i.on{background:var(--ink)}
+.bands.bad i.tip{background:var(--red);border-color:var(--red)}
+.paper .bands.bad i.tip{background:var(--red-ink);border-color:var(--red-ink)}
+.limit{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
+  font-size:var(--t-micro);letter-spacing:.13em;text-transform:uppercase;color:var(--fg-2)}
+.paper .limit{color:var(--ink-2)}
+.limit b{font-variation-settings:'wdth' 88,'wght' 800;color:var(--red)}
+.paper .limit b{color:var(--red-ink)}
+.src{border-top:1px solid var(--hair);padding-top:12px;margin-top:18px}
+.paper .src{border-top-color:var(--rule)}
+.win{border-top:1px solid var(--hair);margin:20px 0 0;padding-top:12px;
+  font-size:15px;line-height:1.5;color:var(--fg-2);max-width:46ch}
+.paper .win{border-top-color:var(--rule);color:var(--ink-2)}
+.win b{display:block;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 800;font-size:var(--t-micro);
+  letter-spacing:.15em;text-transform:uppercase;margin-bottom:6px;color:var(--fg-3)}
+.paper .win b{color:var(--ink-3)}
+.win.closed b{color:var(--mustard)}
+.paper .win.closed b{color:var(--mustard-ink)}
+.readout.quiet{color:var(--fg-2)}
+.paper .readout.quiet{color:var(--ink-2)}
+
+/* ── CHROME. Dark, and it stays dark. ────────────────────────────────*/
+.nav{position:sticky;top:0;z-index:60;background:var(--ground);
+  border-bottom:1px solid var(--hair)}
+.nav-in{max-width:1580px;margin:0 auto;padding:0 var(--gut);height:62px;
+  display:flex;align-items:center;gap:clamp(12px,2.2vw,30px)}
+.mark{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 850;
+  font-size:22px;letter-spacing:-.01em;text-transform:uppercase;text-decoration:none;
+  margin-right:auto;color:var(--fg)}
+/* THE LOGO IS AN ASSET, NOT TYPE. The approved horizontal lockup (leaf mark +
+   wordmark, 2048x512) is the permanent brand asset for this project and is
+   never re-set as live type, never redrawn and never substituted. White cut on
+   dark ground, black cut on paper. */
+.mark img{height:30px;width:auto;display:block}
+.foot .mark img{height:42px}
+
+.navlinks{display:flex;align-items:center;gap:clamp(12px,2.2vw,30px)}
+.nav a.nl{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 92,'wght' 620;
+  font-size:12px;letter-spacing:.13em;text-transform:uppercase;text-decoration:none;
+  color:var(--fg-2);padding:5px 0;border-bottom:2px solid transparent}
+.nav a.nl:hover,.nav a.nl[aria-current]{color:var(--fg);border-bottom-color:var(--mustard)}
+.give{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 92,'wght' 700;
+  font-size:12px;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;
+  background:var(--mustard);color:var(--on-mustard);padding:9px 18px;white-space:nowrap}
+.give:hover{background:var(--fg);color:var(--ground)}
+.navscroll{display:none}
+@media (max-width:940px){
+  .nav-in{height:56px}
+  .navlinks{display:none!important}
+  /* THE THUMB. 107px of permanent chrome on an 812px screen is 13% of
+     the viewport, and the chip row was clipped mid-word at the right
+     edge with no affordance. Below the tablet the nav is ONE 56px row:
+     wordmark left, GIVE right. Every link the chip row carried is in the
+     footer. Applied identically on every board. */
+  @media (max-width:767px){.navscroll{display:none!important}}
+  .navscroll{display:block;border-bottom:1px solid var(--hair);background:var(--ground);
+    overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .navscroll::-webkit-scrollbar{display:none}
+  .navscroll ul{display:flex;gap:20px;margin:0;padding:10px var(--gut);list-style:none;
+    white-space:nowrap}
+}
+
+
+/* ── THE SLIDER. Mechanics unchanged from v2. ────────────────────────*/
+.rig{position:relative}
+.rig-clip{position:relative;overflow:hidden}
+/* Slides are exactly 100% wide and sub-pixel rounding lets the next one
+   bleed a fraction of a pixel in. The shim covers it WITHOUT extending
+   past the clip box, which would widen the document on a full-bleed rig. */
+.rig-clip::after{content:'';position:absolute;top:0;bottom:0;right:0;width:3px;
+  background:var(--ground);z-index:4;pointer-events:none}
+.paper .rig-clip::after{background:var(--paper)}
+.rig-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;
+  scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
+.rig-track::-webkit-scrollbar{display:none}
+.sit{flex:0 0 100%;scroll-snap-align:start;min-width:0;border-left:1px solid transparent}
+.sit[hidden]{display:none}
+.rig-bar{display:flex;align-items:center;gap:12px;margin-top:26px;padding-top:14px;
+  border-top:1px solid var(--hair)}
+.paper .rig-bar{border-top-color:var(--rule-2)}
+.rig-tabs{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
+.rig-tabs::-webkit-scrollbar{display:none}
+.rig-tabs button{appearance:none;background:none;border:0;border-top:3px solid transparent;
+  margin-top:-14px;padding:14px 15px 0 0;cursor:pointer;text-align:left;white-space:nowrap;
+  font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
+  font-size:var(--t-micro);letter-spacing:.13em;text-transform:uppercase;color:var(--fg-3)}
+.paper .rig-tabs button{color:var(--ink-3)}
+.rig-tabs button:hover{color:var(--fg)}
+.paper .rig-tabs button:hover{color:var(--ink)}
+.rig-tabs button[aria-selected=true]{color:var(--fg);border-top-color:var(--fg)}
+.paper .rig-tabs button[aria-selected=true]{color:var(--ink);border-top-color:var(--ink)}
+.rig-tabs button[data-breach=true][aria-selected=true]{border-top-color:var(--red)}
+.paper .rig-tabs button[data-breach=true][aria-selected=true]{border-top-color:var(--red-ink)}
+.rig-arrows{display:flex;gap:8px;flex:none}
+.rig-arrows button{appearance:none;width:40px;height:40px;border:1px solid var(--hair);
+  background:rgba(13,13,11,.5);color:var(--fg);cursor:pointer;display:grid;place-items:center}
+.paper .rig-arrows button{border-color:var(--rule-2);color:var(--ink);background:none}
+.rig-arrows button:hover:not(:disabled){background:var(--fg);color:var(--ground)}
+.rig-arrows button:disabled{opacity:.32;cursor:default}
+.rig-arrows svg{width:18px;height:18px}
+.count{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
+  font-size:var(--t-micro);letter-spacing:.13em;color:var(--fg-3);flex:none}
+.paper .count{color:var(--ink-3)}
+
+/* ── MOTION. Unchanged. ──────────────────────────────────────────────*/
+.js .rise{opacity:0;transform:translateY(14px)}
+.js .rise.in{opacity:1;transform:none;
+  transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+@media (prefers-reduced-motion:reduce){.js .rise{opacity:1;transform:none;transition:none}}
+:focus-visible{outline:2px solid var(--mustard);outline-offset:3px}
+.paper :focus-visible{outline-color:var(--mustard-ink)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   COMPONENTS. The three hues at work in the interface itself.
+
+   MUSTARD IS THE INTERACTIVE COLOUR, and it always was: "second person,
+   a human act" is the definition of a button. Primary buttons, links on
+   the dark ground, hover, active, focus rings, the Give chip, form
+   submits. RED IS NEVER A CONTROL: a red Give button teaches a reader
+   that red means "click me", and three screens later red has to mean the
+   river is dead. GREEN reaches the interface only where the interface is
+   about recovery, which is still past perfect, so the rule holds.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── BUTTONS ─────────────────────────────────────────────────────────*/
+.b{display:inline-flex;align-items:center;gap:9px;text-decoration:none;cursor:pointer;
+  font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 92,'wght' 700;
+  font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;padding:14px 24px;
+  border:1px solid transparent;white-space:nowrap;background:none;
+  transition:background .16s,color .16s,border-color .16s}
+.b svg{width:16px;height:16px;flex:none}
+.b:active:not(:disabled){transform:translateY(1px)}
+.b:disabled,.b[aria-disabled=true]{cursor:default;transform:none}
+
+/* Primary: mustard. The one call to action per band. */
+.b-1{background:var(--mustard);color:var(--on-mustard);border-color:var(--mustard)}
+.b-1:hover{background:var(--mustard-2);border-color:var(--mustard-2)}
+.paper .b-1,.paper-2 .b-1{background:var(--mustard-ink);color:#fff;border-color:var(--mustard-ink)}
+.paper .b-1:hover,.paper-2 .b-1:hover{background:var(--ink);border-color:var(--ink)}
+
+/* Secondary: outlined in mustard, ink fill on hover. */
+.b-2{background:none;color:var(--mustard);border-color:var(--mustard)}
+.b-2:hover{background:var(--mustard);color:var(--on-mustard)}
+.paper .b-2,.paper-2 .b-2{color:var(--mustard-ink);border-color:var(--mustard-ink)}
+.paper .b-2:hover,.paper-2 .b-2:hover{background:var(--mustard-ink);color:#fff}
+
+/* Ghost: neutral until touched, then mustard. For tertiary rows. */
+.b-3{background:none;color:var(--fg-2);border-color:var(--hair)}
+.b-3:hover{color:var(--mustard);border-color:var(--mustard)}
+.paper .b-3,.paper-2 .b-3{color:var(--ink-2);border-color:var(--rule-2)}
+.paper .b-3:hover,.paper-2 .b-3:hover{color:var(--mustard-ink);border-color:var(--mustard-ink)}
+
+/* Recovery: green, and only ever pointing at what came back. */
+.b-g{background:none;color:var(--green);border-color:var(--green)}
+.b-g:hover{background:var(--green);color:var(--ground)}
+.paper .b-g,.paper-2 .b-g{color:var(--green-ink);border-color:var(--green-ink)}
+.paper .b-g:hover,.paper-2 .b-g:hover{background:var(--green-ink);color:var(--paper)}
+
+/* Disabled: no hue at all. A disabled control is not a human act. */
+.b-1:disabled,.b-2:disabled,.b-3:disabled,.b-g:disabled,
+.b-1[aria-disabled=true],.b-2[aria-disabled=true]{
+  background:none;color:var(--fg-3);border-color:var(--hair-2);opacity:1}
+.paper .b-1:disabled,.paper .b-2:disabled,.paper .b-3:disabled{
+  color:var(--ink-3);border-color:var(--rule)}
+
+/* ── LINKS ───────────────────────────────────────────────────────────*/
+.lk{color:var(--mustard);text-decoration:none;border-bottom:1px solid rgba(225,163,43,.42)}
+.lk:hover{border-bottom-color:var(--mustard)}
+.lk:visited{color:var(--mustard-2)}
+.paper .lk,.paper-2 .lk{color:var(--mustard-ink);border-bottom-color:rgba(138,100,16,.4)}
+.paper .lk:hover,.paper-2 .lk:hover{border-bottom-color:var(--mustard-ink)}
+.paper .lk:visited{color:#6E4F0C}
+/* Standalone action link. Same as .act, kept as one component. */
+.act{display:inline-flex;align-items:center;gap:9px;text-decoration:none;
+  font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 92,'wght' 680;
+  font-size:12.5px;letter-spacing:.13em;text-transform:uppercase;
+  border-bottom:2px solid var(--mustard);padding-bottom:5px;color:var(--fg)}
+.act:hover{color:var(--mustard)}
+.paper .act,.paper-2 .act{color:var(--ink);border-bottom-color:var(--mustard-ink)}
+.paper .act:hover,.paper-2 .act:hover{color:var(--mustard-ink)}
+.act svg{width:16px;height:16px;flex:none}
+
+/* ── TAGS AND PILLS ──────────────────────────────────────────────────
+   Square, 2px radius, never a SaaS pill. Feed state is carried by SHAPE
+   (see .state) so it cannot borrow red's meaning; these tags carry
+   category and severity, which are different questions. */
+.tag{display:inline-flex;align-items:center;gap:.5em;border:1px solid currentColor;
+  padding:5px 10px;border-radius:2px;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 700;font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--fg-2)}
+.paper .tag,.paper-2 .tag{color:var(--ink-2)}
+.tag-breach{color:var(--red);border-color:var(--red)}
+.paper .tag-breach{color:var(--red-ink);border-color:var(--red-ink)}
+.tag-breach-solid{background:var(--red);border-color:var(--red);color:#1A0507}
+.tag-recovered{color:var(--green);border-color:var(--green)}
+.paper .tag-recovered{color:var(--green-ink);border-color:var(--green-ink)}
+.tag-act{color:var(--mustard);border-color:var(--mustard)}
+.paper .tag-act{color:var(--mustard-ink);border-color:var(--mustard-ink)}
+.tag-season{border-style:dashed}
+.tag-demo{border-style:dotted;color:var(--fg-3)}
+.paper .tag-demo{color:var(--ink-3)}
+
+/* ── FORM FIELDS ─────────────────────────────────────────────────────*/
+.f-lab{display:block;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 700;font-size:var(--t-micro);letter-spacing:.14em;
+  text-transform:uppercase;margin-bottom:8px;color:var(--fg-2)}
+.paper .f-lab,.paper-2 .f-lab{color:var(--ink-2)}
+.f{width:100%;max-width:380px;font:400 17px/1.5 Newsreader,Georgia,serif;
+  padding:13px 14px;border-radius:2px;background:rgba(251,248,240,.05);
+  border:1px solid var(--hair);color:var(--fg);
+  transition:border-color .16s,background .16s}
+.f::placeholder{color:var(--fg-3);opacity:1}
+.f:hover{border-color:var(--fg-3)}
+.f:focus{outline:none;border-color:var(--mustard);background:rgba(251,248,240,.08)}
+.paper .f,.paper-2 .f{background:#FFFCF4;border-color:var(--rule-2);color:var(--ink)}
+.paper .f::placeholder,.paper-2 .f::placeholder{color:var(--ink-3)}
+.paper .f:focus,.paper-2 .f:focus{border-color:var(--mustard-ink);background:#fff}
+.f-help{font-size:13.5px;line-height:1.45;color:var(--fg-3);margin:8px 0 0}
+.paper .f-help,.paper-2 .f-help{color:var(--ink-3)}
+/* Error is the ONE place red touches a control, and it is not a control,
+   it is a reading of the control: the field is out of limit. */
+.f-err{border-color:var(--red)}
+.paper .f-err{border-color:var(--red-ink)}
+.f-errmsg{font-size:14px;color:var(--red);margin:8px 0 0;
+  display:flex;align-items:baseline;gap:.5em}
+.paper .f-errmsg{color:var(--red-ink)}
+.f-search{max-width:100%;padding-left:40px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%239C9585' stroke-width='2'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Cpath d='M12.5 12.5L17 17'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:13px 50%}
+.paper .f-search{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%23615B50' stroke-width='2'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Cpath d='M12.5 12.5L17 17'/%3E%3C/svg%3E")}
+
+/* ── FOCUS ───────────────────────────────────────────────────────────
+   A mustard ring on a mustard button is invisible, so the ring is the
+   GROUND colour with a mustard halo outside it. That reads on both
+   canvases and on top of any hue. */
+:focus-visible{outline:2px solid var(--mustard);outline-offset:3px;border-radius:1px}
+.paper :focus-visible,.paper-2 :focus-visible{outline-color:var(--mustard-ink)}
+.b-1:focus-visible,.tag-breach-solid:focus-visible,.give:focus-visible{
+  outline-color:var(--fg);outline-offset:2px;
+  box-shadow:0 0 0 5px var(--mustard)}
+.paper .b-1:focus-visible{outline-color:var(--paper);box-shadow:0 0 0 5px var(--mustard-ink)}
+
+/* ── FOOTER ──────────────────────────────────────────────────────────*/
+.foot{background:var(--ground-2);color:var(--fg);padding:var(--pad) 0 36px;
+  border-top:1px solid var(--hair)}
+.foot-g{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:30px}
+.foot h3{margin:0 0 12px;color:var(--fg-3)}
+.foot a{color:var(--fg-2);text-decoration:none;font-size:15.5px;line-height:1.8;display:block}
+.foot a:hover{color:var(--mustard)}
+.foot-b{margin-top:42px;padding-top:18px;border-top:1px solid var(--hair);
+  display:flex;flex-wrap:wrap;gap:12px 28px;color:var(--fg-3);font-size:13.5px}
+@media (max-width:820px){.foot-g{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.foot-g{grid-template-columns:1fr}}
+
+/* ── THE HERO SLIDE ──────────────────────────────────────────────────
+   A picture band with nothing on it but the halftone, then the reading
+   on solid ground beneath. The masthead headline sits over the picture
+   at display size, which is the only type allowed there. */
+.rig-hero .rig-track{background:var(--ground)}
+.hsit{position:relative;display:flex;flex-direction:column}
+.hbg{flex:none}
+.hin{position:relative;z-index:2;width:100%}
+.hwhy{font-size:16.5px;line-height:1.5;margin:0 0 16px;max-width:46ch;color:var(--fg-2)}
+.hmeta{border-top:1px solid var(--hair);padding-top:11px;margin-top:14px}
+.hsit .bands{margin:16px 0 8px}
+.hsit .rail-r{display:flex;flex-direction:column;justify-content:flex-end}
+.rig-hero .rig-bar{margin-top:0;padding-top:14px}
+@media (max-width:860px){
+  .hsit .rail-r{display:block}
+}
+/* The masthead sits over the picture band rather than repeating inside
+   every slide, so the frame reaches the top of the screen. */
+.hero{position:relative}
+.hero-mast{position:absolute;top:0;left:0;right:0;z-index:5;pointer-events:none;
+  padding:clamp(16px,2.4vw,32px) 0 clamp(20px,2.6vw,40px);
+  background:linear-gradient(180deg,rgba(11,11,9,.92) 0%,rgba(11,11,9,.88) 74%,
+    rgba(11,11,9,.72) 88%,rgba(11,11,9,0) 100%)}
+.hero-mast .wide{display:flex;flex-wrap:wrap;gap:8px 26px;align-items:baseline}
+.hero-mast h1{pointer-events:auto}
+.hero-mast .d1{font-size:clamp(2rem,5vw,4.2rem);text-shadow:0 2px 26px rgba(11,11,9,.55)}
+
+/* Bands nested inside the side-by-side column drop their own ground and
+   outer padding: they are already inside a section. */
+.withside>div>section{padding:0 0 clamp(30px,4vw,56px);background:none;overflow-x:visible}
+.withside>div>section>.wide{padding:0;max-width:none}
+.withside>div>section.paper,.withside>div>section.paper-2{color:var(--fg)}
+.withside>div>section.paper .body,.withside>div>section.paper p{color:var(--fg-2)}
+.withside>div>section.paper .expl,.withside>div>section.paper .cols3{
+  border-top-color:var(--hair)}
+.withside>div>section.paper .expl>div,.withside>div>section.paper .cols3>div{
+  border-right-color:var(--hair)}
+.withside>div>section.paper .expl .sub{color:var(--fg-2)}
+.withside>div>section.paper .expl .eg{border-top-color:var(--hair);color:var(--fg-3)}
+.withside .expl{grid-template-columns:1fr}
+.withside .expl>div{border-right:0;border-bottom:1px solid var(--hair);padding:18px 0}
+.withside .geo{grid-template-columns:1fr}
+.withside .conds{grid-template-columns:1fr 1fr}
+.withside .conds>div:nth-child(2n){border-right:0}
+.withside .pair{grid-template-columns:1fr}
+.withside .pair>div{border-right:0;border-bottom:1px solid var(--hair);padding-left:0}
+
+.ph{padding-top:clamp(28px,3.4vw,48px);padding-bottom:clamp(26px,3.4vw,44px)}
+.dateline{display:flex;flex-wrap:wrap;gap:8px 26px;align-items:baseline;padding-bottom:14px;
+  border-bottom:1px solid var(--hair-2);margin-bottom:clamp(18px,2.2vw,30px);color:var(--fg-3)}
+.crumb{display:flex;gap:10px;align-items:center;margin-bottom:16px;color:var(--fg-3)}
+.crumb a{text-decoration:none;color:var(--fg-2);border-bottom:1px solid var(--hair)}
+.ph-sub{display:grid;grid-template-columns:1fr auto;gap:18px 40px;align-items:end}
+@media (max-width:800px){.ph-sub{grid-template-columns:1fr}}
+
+.det{border-top:1px solid var(--hair)}
+.det-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);
+  gap:20px clamp(28px,4vw,64px);align-items:start;margin-bottom:clamp(24px,3.2vw,42px)}
+@media (max-width:860px){.det-head{grid-template-columns:1fr}}
+
+/* ── MEASURED vs MODELLED ────────────────────────────────────────────
+   The single most important rule on this page, and the one the
+   reference dashboard gets wrong. A measured figure and a modelled one
+   must not be able to be mistaken for each other, so they are set in
+   different families, on different rules, with different marks:
+
+   MEASURED   Archivo, tabular, on a SOLID rail, square state mark.
+   MODELLED   Newsreader italic, on a DASHED rail, round state mark,
+              at --ink-2 rather than --ink, and the word "Modelled"
+              is never abbreviated away.
+
+   That is four independent signals, none of which is colour, so the
+   distinction survives a photocopier and a screenshot. */
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:0;
+  border-top:1px solid var(--fg);margin-top:clamp(22px,3vw,36px)}
+.pair>div{padding:26px 30px 28px 0;border-right:1px solid var(--hair)}
+.pair>div:last-child{border-right:0;padding-left:clamp(24px,3vw,44px)}
+@media (max-width:800px){.pair{grid-template-columns:1fr}
+  .pair>div{border-right:0;border-bottom:1px solid var(--hair);padding-left:0!important}}
+
+.fig-m{border-left:5px solid var(--fg);padding-left:20px}
+.fig-d{border-left:5px dashed var(--hair);padding-left:20px}
+.fig-m .v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 66,'wght' 800;
+  font-size:clamp(2.6rem,6vw,4.6rem);line-height:.86;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;display:block;color:var(--fg)}
+.fig-d .v{font-family:Newsreader,Georgia,serif;font-style:italic;font-weight:300;
+  font-size:clamp(2.4rem,5.4vw,4.1rem);line-height:1.06;letter-spacing:-.02em;display:block;
+  color:var(--fg-2);padding-bottom:4px}
+.mk{display:inline-flex;align-items:center;gap:.55em;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 700;font-size:var(--t-micro);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--fg-2);margin-bottom:14px}
+.mk i{width:9px;height:9px;flex:none;border:1.5px solid currentColor;background:currentColor}
+.mk.derived i{border-radius:50%;background:none}
+.on-dark .mk{color:var(--fg-2)}
+
+/* ── THE MULTIPLIER ──────────────────────────────────────────────────
+   The best device on the RiverWatch reference. 412 means nothing to a
+   parent; four point one times the limit cannot be misread. It is the
+   red rule expressed as a figure instead of a colour, which means it
+   still works for a reader who cannot see the red at all. It is free
+   once the limit is stored, which is the schema change this design asks
+   for anyway. */
+.mult{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
+  font-size:var(--t-micro);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-2);
+  margin:12px 0 0}
+.mult b{font-variation-settings:'wdth' 74,'wght' 800;font-size:2.1em;letter-spacing:-.01em;
+  color:var(--red);vertical-align:-.12em;margin-right:.24em;font-variant-numeric:tabular-nums}
+.on-dark .mult b{color:var(--red-bright)}
+.mult.ok b{color:var(--fg)}
+
+/* ── EXPLAINERS ──────────────────────────────────────────────────────
+   One beside every measure. Evergreen, searchable, and the thing that
+   makes an instrument page readable by a parent rather than only by an
+   analyst. */
+.expl{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--hair);
+  margin-top:clamp(26px,3.4vw,44px)}
+.expl>div{padding:22px 26px 0 0;border-right:1px solid var(--hair)}
+.expl>div:last-child{border-right:0}
+.expl h3{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 800;
+  font-size:clamp(1.25rem,2.3vw,1.75rem);text-transform:uppercase;line-height:1;margin:0 0 6px}
+.expl .sub{font-family:Newsreader,Georgia,serif;font-style:italic;font-weight:300;
+  font-size:19px;color:var(--fg-2);margin:0 0 14px}
+.expl .eg{border-top:1px solid var(--hair-2);margin-top:14px;padding-top:12px}
+@media (max-width:820px){.expl{grid-template-columns:1fr}
+  .expl>div{border-right:0;border-bottom:1px solid var(--hair);padding-bottom:20px}}
+
+/* ── THE NATIONAL TABLE, WITH SWECHHA'S OWN RECORD OVER IT ───────────*/
+.nat .tb td.sw{box-shadow:inset 5px 0 0 -1px var(--mustard);padding-left:14px}
+.nat .tb .mx{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 78,'wght' 750;
+  font-size:18px;color:var(--red);font-variant-numeric:tabular-nums}
+.nat .tb .v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 78,'wght' 750;
+  font-size:19px;font-variant-numeric:tabular-nums}
+.nat .tb td,.nat .tb th{text-align:right}
+.nat .tb td:first-child,.nat .tb th:first-child{text-align:left}
+
+/* ── BYLINE, VERSION AND CITATION ────────────────────────────────────
+   Taken from Our World in Data, and it is the cheapest credibility
+   device there is. A page that is dated, versioned and citable gets
+   linked; a page that is none of those gets screenshotted. */
+.byline{display:flex;flex-wrap:wrap;gap:10px 28px;align-items:baseline;
+  border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);
+  padding:14px 0;margin-top:clamp(20px,2.6vw,32px)}
+.byline a{color:var(--mustard);text-decoration:none;border-bottom:1px solid var(--hair)}
+.byline a:hover{border-bottom-color:var(--mustard)}
+
+/* ── THE CAVEAT LINE ─────────────────────────────────────────────────
+   Set in the interface, not buried in a methodology page. The device is
+   Global Nature Watch's "Tree cover loss is not always deforestation",
+   which is the same discipline as marking a modelled figure differently
+   from a measured one. Mustard, because a caveat is Swechha speaking,
+   not an instrument reading. */
+.caveat{border-left:5px solid var(--mustard);padding:2px 0 2px 20px;margin:0 0 22px;
+  max-width:64ch}
+.caveat b{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 800;
+  font-size:var(--t-micro);letter-spacing:.15em;text-transform:uppercase;display:block;
+  margin-bottom:8px;color:var(--mustard)}
+
+/* ── PROVENANCE BOX ──────────────────────────────────────────────────*/
+.prov{border:1px solid var(--hair);padding:clamp(20px,2.6vw,34px);
+  margin-top:clamp(24px,3vw,40px);max-width:78ch}
+.prov h3{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 800;
+  font-size:var(--t-micro);letter-spacing:.15em;text-transform:uppercase;margin:0 0 12px;
+  color:var(--fg-2)}
+
+/* ── THE YEAR SCRUBBER ───────────────────────────────────────────────*/
+.scrub-top{display:flex;flex-wrap:wrap;gap:16px 40px;align-items:flex-start;margin-bottom:22px}
+.scrub-yr{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 66,'wght' 800;
+  font-size:clamp(2.8rem,6.4vw,5rem);line-height:.84;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;display:block}
+.scrub-bars{display:flex;gap:2px;align-items:flex-end;height:140px;
+  border-bottom:1px solid var(--fg)}
+.scrub-bars button{appearance:none;border:0;padding:0;flex:1;cursor:pointer;
+  background:rgba(251,248,240,.22);min-width:0}
+.scrub-bars button[aria-current="true"]{background:var(--red)}
+.scrub-bars button:hover{background:var(--mustard)}
+.scrub-x{display:flex;justify-content:space-between;margin-top:8px}
+.scrub input[type=range]{width:100%;margin-top:20px;accent-color:#E1A32B}
+
+/* ── SUBSCRIBE SLOT ──────────────────────────────────────────────────*/
+.sub{background:var(--mustard);color:var(--on-mustard)}
+.sub .lbl,.sub .cap{color:#4A3708}
+.sub-in{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:24px clamp(28px,4vw,64px);align-items:start}
+@media (max-width:820px){.sub-in{grid-template-columns:1fr}}
+.sub .btn{background:var(--on-mustard);color:var(--mustard)}
+.sub .btn:hover{background:#fff;color:var(--on-mustard)}
+.sub input[type=text]{width:100%;max-width:340px;font:400 17px/1.5 Newsreader,Georgia,serif;
+  padding:12px 14px;border:1px solid rgba(22,21,15,.5);background:rgba(251,248,240,.06);color:var(--on-mustard)}
+.sub input::placeholder{color:var(--fg-3)}
+.sub label{display:block;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 700;font-size:var(--t-micro);letter-spacing:.14em;
+  text-transform:uppercase;margin-bottom:8px;color:#4A3708}
+
+/* ── SUPPORTING CONDITIONS ───────────────────────────────────────────*/
+.conds{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--hair);
+  margin-top:clamp(24px,3vw,40px)}
+.conds>div{padding:18px 18px 0 0;border-right:1px solid var(--hair)}
+.conds>div:last-child{border-right:0}
+.conds b{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 750;
+  font-size:clamp(1.5rem,3vw,2.15rem);line-height:1;letter-spacing:-.02em;display:block;
+  font-variant-numeric:tabular-nums}
+@media (max-width:700px){.conds{grid-template-columns:1fr 1fr}
+  .conds>div:nth-child(2n){border-right:0}}
+
+/* ── SOURCE ATTRIBUTION ──────────────────────────────────────────────*/
+.attr-bar{display:flex;height:44px;margin:6px 0 22px;border:1px dashed var(--hair)}
+.attr-bar i{display:block;height:100%}
+.a1{background:#FBF8F0} .a2{background:#B8B2A2} .a3{background:#797365} .a4{background:#454138}
+.attr-list{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--hair)}
+.attr-list>div{padding:16px 16px 0 0;border-right:1px solid var(--hair)}
+.attr-list>div:last-child{border-right:0}
+.attr-list b{font-family:Newsreader,Georgia,serif;font-style:italic;font-weight:300;
+  font-size:clamp(1.6rem,3vw,2.2rem);line-height:1.1;display:block;color:var(--fg-2)}
+.attr-list i{display:block;width:26px;height:8px;margin-bottom:12px}
+@media (max-width:700px){.attr-list{grid-template-columns:1fr 1fr}
+  .attr-list>div:nth-child(2n){border-right:0}}
+
+/* ── GEOGRAPHY AS A LAYER CONTROL ────────────────────────────────────*/
+.geo{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);
+  gap:clamp(24px,3vw,48px);align-items:start}
+@media (max-width:900px){.geo{grid-template-columns:1fr}}
+.layers{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.map{width:100%;height:auto;display:block;background:var(--ground-2)}
+.map .ward{fill:none;stroke:var(--hair);stroke-width:1}
+.map .wname{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
+  font-size:9px;letter-spacing:.1em;text-transform:uppercase;fill:var(--fg-3);text-anchor:middle}
+.map .mon{fill:var(--fg)}
+.map .mon.over{fill:var(--red)}
+.map .plume{fill:var(--fg);opacity:.09}
+.map [data-layer][hidden]{display:none}
+.mlist{border-top:1px solid var(--fg)}
+.mlist div{display:flex;justify-content:space-between;gap:16px;align-items:baseline;
+  padding:11px 0;border-bottom:1px solid var(--hair-2)}
+.mlist span{font-size:16px}
+.mlist b{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 78,'wght' 750;
+  font-size:19px;font-variant-numeric:tabular-nums}
+.mlist b.over{color:var(--red)}
+
+/* ── FORECAST, AND ITS EMPTY STATE ───────────────────────────────────*/
+.fc{background:var(--ground-2)}
+.fc-slot{border:1px dashed var(--hair);padding:clamp(26px,4vw,48px);margin-top:clamp(20px,2.6vw,32px)}
+.fc-slot[hidden]{display:none}
+.fc-chart{display:flex;gap:clamp(4px,1vw,12px);height:230px;position:relative;
+  border-bottom:1px solid var(--fg);margin-bottom:10px}
+.fc-chart>div{flex:1;position:relative;height:100%}
+/* The band is the spread between runs; the bar is the central projection.
+   Both are set on a dashed baseline, because both are modelled. */
+.fc-chart i{position:absolute;left:0;right:0;background:var(--fg-2);opacity:.22}
+.fc-chart em{position:absolute;left:0;right:0;height:4px;background:var(--fg)}
+.fc-chart>div.fc-limit{position:absolute;left:0;right:0;flex:none;height:0;
+  border-top:1.5px dashed var(--red);pointer-events:none}
+.fc-limit span{position:absolute;right:0;top:-19px;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 700;font-size:10.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--red);background:var(--ground-2);padding:0 4px}
+.fc-x{display:flex;gap:clamp(4px,1vw,12px)}
+.fc-x span{flex:1;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 650;font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--fg-3);text-align:center}
+
+/* ── ORDERS, POLICY AND COVERAGE, SCOPED TO THIS SITUATION ───────────*/
+.ord{display:block;text-decoration:none;padding:20px 0;border-bottom:1px solid var(--hair-2)}
+.ord-in{display:grid;grid-template-columns:132px minmax(0,1fr) auto;gap:6px clamp(18px,2.6vw,40px);
+  align-items:start}
+.ord time{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 700;
+  font-size:var(--t-micro);letter-spacing:.13em;text-transform:uppercase;color:var(--fg-3);
+  padding-top:5px;display:block}
+.ord h3{font-family:Newsreader,Georgia,serif;font-weight:400;font-size:clamp(1.15rem,2vw,1.5rem);
+  line-height:1.24;letter-spacing:-.012em;margin:0 0 7px}
+.ord:hover h3{text-decoration:underline;text-underline-offset:4px}
+.ord .who{color:var(--fg-2);font-size:15px;margin:0}
+.ord .doc{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
+  font-size:var(--t-micro);letter-spacing:.13em;text-transform:uppercase;color:var(--mustard);
+  white-space:nowrap;padding-top:5px}
+@media (max-width:760px){.ord-in{grid-template-columns:1fr}.ord time{padding-top:0}
+  .ord .doc{white-space:normal}}
+.cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--hair);
+  margin-top:clamp(24px,3vw,40px)}
+.cols3>div{padding:20px 22px 0 0;border-right:1px solid var(--hair)}
+.cols3>div:last-child{border-right:0}
+@media (max-width:820px){.cols3{grid-template-columns:1fr}
+  .cols3>div{border-right:0;border-bottom:1px solid var(--hair);padding-bottom:20px}}
+.chip{appearance:none;background:none;cursor:pointer;border:1px solid var(--hair);
+  padding:7px 14px;color:var(--fg-2);font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 650;font-size:var(--t-micro);letter-spacing:.13em;
+  text-transform:uppercase}
+.chip[aria-pressed=true]{background:var(--fg);color:var(--ground);border-color:var(--fg)}
+.chip:hover:not([aria-pressed=true]){color:var(--fg);border-color:var(--fg)}
+.tb{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.tbwrap{overflow-x:auto}
+.tb th,.tb td{text-align:left;padding:12px 12px 12px 0;vertical-align:baseline}
+.tb th{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
+  font-size:var(--t-micro);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-2);
+  border-bottom:1px solid var(--fg);padding-bottom:9px}
+.tb td{border-bottom:1px solid var(--hair-2);font-size:16px}
+.tb tr:last-child td{border-bottom:1px solid var(--fg)}
+
+/* ── THE YEAR GRID, moved here from the index ────────────────────────*/
+.year{overflow-x:auto;padding-bottom:8px;margin-top:8px}
+.year-in{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);
+  gap:2px;min-width:760px}
+.year-in i{width:100%;aspect-ratio:1;display:block}
+.b0{background:#FBF8F0} .b1{background:#C9C3B3} .b2{background:#948E7E}
+.b3{background:#615C50} .b4{background:#38352E} .b5{background:var(--red)}
+.mkey{display:flex;gap:2px;min-width:760px;margin-top:6px}
+.mkey span{flex:1;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 650;font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--fg-3)}
+.ramp{display:flex;flex-wrap:wrap;gap:0;margin-top:20px;border-top:1px solid var(--hair)}
+.ramp div{flex:1 1 120px;padding:12px 14px 14px 0}
+.ramp i{display:block;width:100%;height:10px;margin-bottom:8px}
+.ramp p{margin:0;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 650;font-size:var(--t-micro);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--fg-2)}
+.ramp small{display:block;font-family:Newsreader,Georgia,serif;font-size:12.5px;
+  letter-spacing:0;text-transform:none;color:var(--fg-3);margin-top:3px}
+
+/* ── THE PERSISTENT NATIONAL PANEL ───────────────────────────────────
+   The side panel of India data. It rides alongside the page rather than
+   sitting in one band, so the local reading is always legible against
+   the country it sits in. Sticky on desktop, a plain block on mobile. */
+.withside{display:grid;grid-template-columns:minmax(0,1fr) 330px;
+  gap:clamp(24px,3.4vw,56px);align-items:start}
+@media (max-width:1080px){.withside{grid-template-columns:1fr}}
+.side{position:sticky;top:78px;border:1px solid var(--hair);padding:20px 20px 22px}
+@media (max-width:1080px){.side{position:static}}
+.side h3{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 800;
+  font-size:var(--t-micro);letter-spacing:.15em;text-transform:uppercase;margin:0 0 4px}
+.side-rows{margin-top:14px}
+.side-row{display:grid;grid-template-columns:1fr auto auto;gap:4px 12px;align-items:baseline;
+  padding:9px 0;border-bottom:1px solid var(--hair-2)}
+.side-row:last-child{border-bottom:0}
+.side-row.me{box-shadow:inset 3px 0 0 -1px var(--mustard);padding-left:11px}
+.side-row b{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 78,'wght' 750;
+  font-size:17px;font-variant-numeric:tabular-nums}
+.side-row b.over{color:var(--red)}
+.side-row .mx{font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 650;font-size:11px;color:var(--fg-3);
+  font-variant-numeric:tabular-nums}
+.side-row span{font-size:14.5px;color:var(--fg-2)}
+
+/* ── PAPER OVERRIDES. Only two bands on this page use paper. ─────────*/
+.paper .expl,.paper .cols3{border-top-color:var(--rule-2)}
+.paper .expl>div,.paper .cols3>div{border-right-color:var(--rule-2)}
+.paper .expl .sub{color:var(--ink-2)}
+.paper .expl .eg{border-top-color:var(--rule);color:var(--ink-3)}
+.paper .expl p,.paper .cols3 p{color:var(--ink-2)}
+.paper .cols3 .lbl{color:var(--ink-3)}
+.paper .ord{border-bottom-color:var(--rule)}
+.paper .ord time{color:var(--ink-3)}
+.paper .ord .who{color:var(--ink-2)}
+.paper .ord .doc,.paper .ord:hover h3{color:var(--mustard-ink)}
+@media (max-width:820px){.paper .expl>div,.paper .cols3>div{border-bottom-color:var(--rule-2)}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><filter id="duo" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/><feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/><feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/></feComponentTransfer></filter><filter id="duo-dim" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0.11 0.18 0.255 0.325 0.385 0.43"/><feFuncG type="table" tableValues="0.10 0.165 0.235 0.30 0.355 0.40"/><feFuncB type="table" tableValues="0.085 0.14 0.20 0.26 0.31 0.35"/></feComponentTransfer></filter><filter id="duo-m" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0.20 0.38 0.57 0.75 0.89 0.97"/><feFuncG type="table" tableValues="0.13 0.27 0.44 0.62 0.78 0.90"/><feFuncB type="table" tableValues="0.05 0.10 0.17 0.27 0.40 0.58"/></feComponentTransfer></filter><filter id="sig-r" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer in="lum" result="m"><feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/><feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/><feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/></feComponentTransfer><feColorMatrix type="matrix" in="SourceGraphic" result="k" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.55 -1.25 -0.30 0 -0.10"/><feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0 0.10 0.68 1 1"/></feComponentTransfer><feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/><feColorMatrix in="SourceGraphic" type="saturate" values="1.30" result="sat"/><feComposite in="sat" in2="kb" operator="in" result="c"/><feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge></filter><filter id="sig-y" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer in="lum" result="m"><feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/><feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/><feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/></feComponentTransfer><feColorMatrix type="matrix" in="SourceGraphic" result="k" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.65 0.65 -1.5 0 -0.06"/><feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0 0.12 0.72 1 1"/></feComponentTransfer><feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/><feColorMatrix in="SourceGraphic" type="saturate" values="1.22" result="sat"/><feComposite in="sat" in2="kb" operator="in" result="c"/><feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge></filter><filter id="sig-g" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer in="lum" result="m"><feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/><feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/><feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/></feComponentTransfer><feColorMatrix type="matrix" in="SourceGraphic" result="k" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -0.85 1.70 -0.85 0 -0.03"/><feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0.03 0.30 0.78 1 1"/></feComponentTransfer><feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/><feColorMatrix in="SourceGraphic" type="saturate" values="1.72" result="sat"/><feComposite in="sat" in2="kb" operator="in" result="c"/><feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge></filter><filter id="sig-r-dim" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer in="lum" result="m"><feFuncR type="table" tableValues="0.11 0.18 0.255 0.325 0.385 0.43"/><feFuncG type="table" tableValues="0.10 0.165 0.235 0.30 0.355 0.40"/><feFuncB type="table" tableValues="0.085 0.14 0.20 0.26 0.31 0.35"/></feComponentTransfer><feColorMatrix type="matrix" in="SourceGraphic" result="k" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.55 -1.25 -0.30 0 -0.10"/><feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0 0.10 0.68 1 1"/></feComponentTransfer><feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/><feColorMatrix in="SourceGraphic" type="saturate" values="1.30" result="sat"/><feComposite in="sat" in2="kb" operator="in" result="c"/><feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge></filter><filter id="sig-y-dim" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer in="lum" result="m"><feFuncR type="table" tableValues="0.11 0.18 0.255 0.325 0.385 0.43"/><feFuncG type="table" tableValues="0.10 0.165 0.235 0.30 0.355 0.40"/><feFuncB type="table" tableValues="0.085 0.14 0.20 0.26 0.31 0.35"/></feComponentTransfer><feColorMatrix type="matrix" in="SourceGraphic" result="k" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.65 0.65 -1.5 0 -0.06"/><feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0 0.12 0.72 1 1"/></feComponentTransfer><feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/><feColorMatrix in="SourceGraphic" type="saturate" values="1.22" result="sat"/><feComposite in="sat" in2="kb" operator="in" result="c"/><feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge></filter></defs></svg>
+<header class="nav"><div class="nav-in"><a class="mark" href="/design/v3/home.html" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/design/v3/intelligence.html" aria-current="page">Now</a><a class="nl" href="#work">Work</a><a class="nl" href="#journeys">Journeys</a><a class="nl" href="#impact">Impact</a><a class="nl" href="#farm">Farm</a><a class="nl" href="#record">Record</a></nav><a class="give" href="#give">Give</a></div><nav class="navscroll" aria-label="Sections"><ul><li><a class="nl" href="/design/v3/intelligence.html" aria-current="page">Now</a></li><li><a class="nl" href="#work">Work</a></li><li><a class="nl" href="#journeys">Journeys</a></li><li><a class="nl" href="#impact">Impact</a></li><li><a class="nl" href="#farm">Farm</a></li><li><a class="nl" href="#record">Record</a></li></ul></nav></header>
+<section class="hero" style="padding:0"><div class="hero-mast"><div class="wide"><h1 class="d1">Four times the limit</h1></div></div><article class="sit hsit" id="h-air" data-id="air" data-tab="Air" data-breach="true" role="tabpanel" aria-label="Delhi-NCR / Air quality index"><figure class="pic hbg"><img class="duo" src="/images/photos/india-gate-hero.jpg" alt="India Gate through Delhi haze"></figure><div class="hin pic-body"><div class="wide"><div class="rail breach" style="--lw:56%"><div class="rail-l"><p class="lbl" style="color:var(--fg-2);margin:0 0 10px">Delhi-NCR / Air quality index</p><span class="readout" aria-hidden="true">412</span><span class="sr">Delhi-NCR / Air quality index. 412 AQI, 24-hour rolling. Severe. Live.</span><span class="unit">AQI, 24-hour rolling</span><p class="verdict bad">Severe</p><p class="mult"><b>4.1&#215;</b> the limit</p></div><div class="rail-r"><p class="hwhy">Four times the limit the Central Pollution Control Board sets for a safe day. Schools in this ward are three kilometres from the monitor that recorded it.</p><div class="bands bad" role="img" aria-label="Band 6 of 6, Severe"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on tip"></i></div><p class="limit" style="margin:14px 0 0">CPCB safe limit 100. <b>Limit broken.</b></p><div class="hmeta"><p class="state live" style="margin:0 0 8px"><i></i>Live</p><p class="cap hero-cap" style="margin:0 0 6px">CPCB continuous monitor, Anand Vihar.<br>Hourly. Read 07:00 IST today.</p><p class="cap" style="margin:0"><span class="tag tag-season">Year round</span></p></div><p style="margin:20px 0 0"><a class="act" href="/design/v3/situation-air.html">The full instrument <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p></div></div></div></div></article></section><section class="dark-2"><div class="wide"><p class="lbl" style="margin:0 0 18px;color:var(--fg-3)"><a class="lk" href="/design/v3/intelligence.html">All situations</a> &nbsp;/&nbsp; Air &nbsp;/&nbsp; 07:00 IST, 19 August 2026</p><div class="det-head"><p class="caveat"><b>A monitor reading is not an exposure</b>The index describes the air at one instrument at one hour. What a person actually breathes depends on where they are, how long they are outside and how high off the road they sleep. This page reports the instrument, and says so, rather than implying it has measured you.</p><p class="body" style="margin:0;color:var(--fg-2)">Everything below is either measured or modelled, and the two are set differently on purpose. If it is on a solid rule in the condensed face, an instrument recorded it. If it is italic on a dashed rule, a model produced it and you should weigh it accordingly.</p></div><div class="byline"><span class="lbl" style="color:var(--fg-3)">Swechha Environmental Intelligence</span><span class="cap">First published 4 November 2021. Text last revised 12 August 2026. Readings update hourly.</span><span class="cap"><a class="lk" href="#">Past versions</a> &nbsp; <a class="lk" href="#">Cite this page</a> &nbsp; <a class="lk" href="#">Reuse freely, CC BY 4.0</a></span></div></div></section><section><div class="wide"><div class="withside"><div><section class="dark-2"><div class="wide"><div class="det-head"><h2 class="h2 eyebrow" style="margin:0">Who is in it?</h2><p class="body" style="margin:0">The consequence comes before the measurement, because the measurement is not the point. One of these two figures is a count and the other is an estimate, and the page is built so you can never mistake which is which.</p></div><div class="pair"><div><div class="fig-m"><p class="mk"><i></i>Measured, counted</p><span class="v">1,441</span><p class="lbl" style="color:var(--ink-2);margin:14px 0 8px">Schools inside the five kilometres around a monitor reading above 400</p><p class="cap" style="margin:0">Directorate of Education school register, 2025 list, joined to the CPCB station list by distance. Both inputs are published. Nothing here is estimated.</p></div></div><div><div class="fig-d"><p class="mk derived"><i></i>Modelled, not measured</p><span class="v">1.93 million</span><p class="lbl" style="color:var(--ink-2);margin:14px 0 8px">People in those wards likely to be exposed above the limit today</p><p class="cap" style="margin:0">Ward population from the 2011 Census projected forward, multiplied by the share of the ward inside the plume estimate. It is an order of magnitude, not a headcount, and Swechha will not print it as one.</p></div></div></div></div></section><section class="paper"><div class="wide"><div class="det-head"><h2 class="d1">What is<br>actually being<br>measured?</h2><div><p class="body" style="margin:0">Every measure on this site carries an explainer beside it. A number without one is a number for analysts, and this is not a site for analysts. These do not change from day to day, which is exactly why they are worth writing well once.</p></div></div><div class="expl"><div><h3>AQI</h3><p class="sub">One number for six poisons</p><p style="margin:0;font-size:16.5px;color:var(--ink-2)">The air quality index folds six pollutants into a single 0 to 500 figure and reports whichever is worst. It is not a concentration. It is a rank, and a rank hides which pollutant is doing the damage.</p><p class="eg lbl" style="color:var(--ink-3);letter-spacing:.1em">412 today. The safe limit is 100 and the WHO would call 100 unsafe.</p></div><div><h3>PM2.5</h3><p class="sub">Small enough to enter blood</p><p style="margin:0;font-size:16.5px;color:var(--ink-2)">Particles under two and a half microns. They pass the lung wall and enter the bloodstream, which is why they are measured separately from everything else in the air.</p><p class="eg lbl" style="color:var(--ink-3);letter-spacing:.1em">218 micrograms per cubic metre today. The Indian daily standard is 60.</p></div><div><h3>PM10</h3><p class="sub">Dust you can feel</p><p style="margin:0;font-size:16.5px;color:var(--ink-2)">Coarser particles from roads, construction and soil. They stop in the upper airway, which is why they make you cough and why they respond to water spraying when finer particles do not.</p><p class="eg lbl" style="color:var(--ink-3);letter-spacing:.1em">392 micrograms per cubic metre today. The Indian daily standard is 100.</p></div></div></div></section><section class="dark-2"><div class="wide"><div class="det-head"><h2 class="d1">Where is it<br>coming from?</h2><div><p class="mk derived" style="margin-bottom:12px"><i></i>Modelled, not measured</p><p class="body" style="margin:0 0 12px">A source apportionment is a model. It takes measured concentrations, wind and an emissions inventory and works backwards to a plausible split. Nobody measured thirty-seven per cent of anything.</p><p class="cap" style="margin:0">TERI and SAFAR winter apportionment for Delhi-NCR, run against this morning's meteorology. Percentages move by ten points or more between runs. Sample values for design review.</p></div></div><div class="attr-bar" role="img" aria-label="Modelled source split: vehicular traffic 37 per cent, biomass burning 31, industry 17, construction dust 15."><i class="a1" style="width:37%"></i><i class="a2" style="width:31%"></i><i class="a3" style="width:17%"></i><i class="a4" style="width:15%"></i></div><div class="attr-list"><div><i class="a1"></i><b>37%</b><p class="lbl" style="color:var(--ink-2);margin:10px 0 0">Vehicular traffic</p></div><div><i class="a2"></i><b>31%</b><p class="lbl" style="color:var(--ink-2);margin:10px 0 0">Biomass burning</p></div><div><i class="a3"></i><b>17%</b><p class="lbl" style="color:var(--ink-2);margin:10px 0 0">Industry</p></div><div><i class="a4"></i><b>15%</b><p class="lbl" style="color:var(--ink-2);margin:10px 0 0">Construction dust</p></div></div></div></section><section><div class="wide"><div class="det-head"><h2 class="d1">Which part<br>of the city?</h2><div><p class="body" style="margin:0 0 12px">Thirty-six monitors report for Delhi-NCR and they do not agree. A city average hides a factor of two, which is why the tribunal asked for ward-level publication in August.</p><p class="cap" style="margin:0">Schematic geometry, not a boundary claim. Replace with a compliant boundary file before launch. Only the plume layer is modelled.</p></div></div><div class="geo"><div><div class="layers" role="group" aria-label="Map layers"><button type="button" class="chip" data-layer="mon" aria-pressed="true">Monitors</button><button type="button" class="chip" data-layer="wname" aria-pressed="true">Ward labels</button><button type="button" class="chip" data-layer="plume" aria-pressed="false">Plume, modelled</button></div><svg class="map" viewBox="0 0 260 240" role="img" aria-label="Schematic of Delhi-NCR with eight monitors marked. Anand Vihar, the highest, reads 412. Values are listed beside the diagram."><g data-layer="plume" hidden><ellipse class="plume" cx="176" cy="92" rx="78" ry="58"/><ellipse class="plume" cx="160" cy="86" rx="46" ry="34"/></g><path class="ward" d="M40 120 L64 54 L118 26 L188 40 L224 92 L212 158 L156 206 L92 200 L48 166 Z"/><path class="ward" d="M118 26 L124 108 L92 200 M224 92 L124 108 M40 120 L124 108"/><g data-layer="wname"><text class="wname" x="198" y="58">ANAND VIHAR</text><text class="wname" x="150" y="116">ITO</text><text class="wname" x="98" y="34">BAWANA</text><text class="wname" x="146" y="196">LODHI</text><text class="wname" x="58" y="134">DWARKA</text></g><g data-layer="mon"><circle class="mon over" cx="196" cy="78" r="7"/><circle class="mon" cx="150" cy="96" r="5"/><circle class="mon" cx="132" cy="62" r="5"/><circle class="mon" cx="98" cy="48" r="5"/><circle class="mon" cx="112" cy="152" r="5"/><circle class="mon" cx="146" cy="176" r="5"/><circle class="mon" cx="74" cy="190" r="5"/><circle class="mon" cx="58" cy="148" r="5"/></g></svg></div><div><div class="mlist"><div><span>Anand Vihar</span><b class="over">412</b></div><div><span>Wazirpur</span><b class="over">388</b></div><div><span>Jahangirpuri</span><b class="over">371</b></div><div><span>Bawana</span><b class="over">366</b></div><div><span>R K Puram</span><b class="over">302</b></div><div><span>Lodhi Road</span><b class="over">241</b></div><div><span>IGI Airport T3</span><b class="over">228</b></div><div><span>Dwarka Sector 8</span><b class="over">219</b></div></div><p class="cap" style="margin:14px 0 0">Highest and lowest of thirty-six. CPCB continuous monitors, read 07:00 IST. A red value is above the limit.</p></div></div></div></section><section class="dark-2"><div class="wide"><div class="det-head"><h2 class="d1">Is it getting<br>better?</h2><div><p class="body" style="margin:0 0 12px">Barely. Twenty-six years of days above 200, one bar per year, on a true zero baseline, so the flatness of it is the finding rather than a fault in the chart. The trend has been downward since 2016 and the best year on record still has the city above the limit two days in three.</p><p class="cap" style="margin:0">Drag the slider or pick a year. Sample values shaped on the published CPCB trend, for design review.</p></div></div><div class="scrub"><div class="scrub-top"><div><span class="scrub-yr" id="sy">2026</span></div><div class="rail" style="--lw:auto;flex:1;min-width:220px"><div class="rail-l" style="max-width:none"><span class="num" id="sv">237</span><p class="unit" style="margin-top:12px">days above 200</p></div><div class="rail-r" style="padding-top:4px"><p class="cap" id="sn" style="font-size:15.5px;color:var(--ink-2)">Two hundred and thirty-seven days above 200. The lowest of the twenty-six, and still two days in three.</p></div></div></div><div class="scrub-bars" role="group" aria-label="Days above 200 by year"><button type="button" data-y="2001" data-v="268" aria-current="false" style="height:89.0%" aria-label="2001, 268 days above 200"></button><button type="button" data-y="2002" data-v="272" aria-current="false" style="height:90.4%" aria-label="2002, 272 days above 200"></button><button type="button" data-y="2003" data-v="281" aria-current="false" style="height:93.4%" aria-label="2003, 281 days above 200"></button><button type="button" data-y="2004" data-v="276" aria-current="false" style="height:91.7%" aria-label="2004, 276 days above 200"></button><button type="button" data-y="2005" data-v="269" aria-current="false" style="height:89.4%" aria-label="2005, 269 days above 200"></button><button type="button" data-y="2006" data-v="274" aria-current="false" style="height:91.0%" aria-label="2006, 274 days above 200"></button><button type="button" data-y="2007" data-v="281" aria-current="false" style="height:93.4%" aria-label="2007, 281 days above 200"></button><button type="button" data-y="2008" data-v="286" aria-current="false" style="height:95.0%" aria-label="2008, 286 days above 200"></button><button type="button" data-y="2009" data-v="279" aria-current="false" style="height:92.7%" aria-label="2009, 279 days above 200"></button><button type="button" data-y="2010" data-v="284" aria-current="false" style="height:94.4%" aria-label="2010, 284 days above 200"></button><button type="button" data-y="2011" data-v="291" aria-current="false" style="height:96.7%" aria-label="2011, 291 days above 200"></button><button type="button" data-y="2012" data-v="288" aria-current="false" style="height:95.7%" aria-label="2012, 288 days above 200"></button><button type="button" data-y="2013" data-v="282" aria-current="false" style="height:93.7%" aria-label="2013, 282 days above 200"></button><button type="button" data-y="2014" data-v="296" aria-current="false" style="height:98.3%" aria-label="2014, 296 days above 200"></button><button type="button" data-y="2015" data-v="301" aria-current="false" style="height:100.0%" aria-label="2015, 301 days above 200"></button><button type="button" data-y="2016" data-v="294" aria-current="false" style="height:97.7%" aria-label="2016, 294 days above 200"></button><button type="button" data-y="2017" data-v="288" aria-current="false" style="height:95.7%" aria-label="2017, 288 days above 200"></button><button type="button" data-y="2018" data-v="283" aria-current="false" style="height:94.0%" aria-label="2018, 283 days above 200"></button><button type="button" data-y="2019" data-v="291" aria-current="false" style="height:96.7%" aria-label="2019, 291 days above 200"></button><button type="button" data-y="2020" data-v="286" aria-current="false" style="height:95.0%" aria-label="2020, 286 days above 200"></button><button type="button" data-y="2021" data-v="279" aria-current="false" style="height:92.7%" aria-label="2021, 279 days above 200"></button><button type="button" data-y="2022" data-v="262" aria-current="false" style="height:87.0%" aria-label="2022, 262 days above 200"></button><button type="button" data-y="2023" data-v="251" aria-current="false" style="height:83.4%" aria-label="2023, 251 days above 200"></button><button type="button" data-y="2024" data-v="244" aria-current="false" style="height:81.1%" aria-label="2024, 244 days above 200"></button><button type="button" data-y="2025" data-v="239" aria-current="false" style="height:79.4%" aria-label="2025, 239 days above 200"></button><button type="button" data-y="2026" data-v="237" aria-current="true" style="height:78.7%" aria-label="2026, 237 days above 200"></button></div><div class="scrub-x lbl" style="color:var(--ink-3)"><span>2001</span><span>2026</span></div><label class="sr" for="yr">Year</label><input type="range" id="yr" min="2001" max="2026" value="2026" step="1"></div><div class="prov"><h3>A note on CPCB station data</h3><p style="margin:0 0 10px;font-size:16.5px;color:var(--ink-2)">The station network grew from six monitors in 2001 to thirty-six today, so an early year is measured by fewer instruments in fewer places than a recent one. A rise in the count can therefore be a rise in coverage rather than a rise in pollution, and the first decade of this chart should be read as indicative.</p><p style="margin:0;font-size:16.5px;color:var(--ink-2)">Swechha does not adjust for this, because any adjustment would be a model and would have to be marked as one. The unadjusted count is published with its caveat instead.</p></div></div></section><section class="dark-2" id="year"><div class="wide"><div class="det-head"><h2 class="d1">Two hundred<br>and thirty-seven<br>days above 200</h2><div><p class="body" style="margin:0 0 12px;color:var(--fg-2)">A year of Delhi air in one grid. Each square is a day, filled lighter to darker as the index climbs through the six official bands. Only the top band takes the red, because only the top band is a limit broken four times over.</p><p class="cap" style="margin:0">The pale band running through the middle is the monsoon. It is the best the air gets all year, and it is still above what the World Health Organization considers safe to breathe.</p></div></div><div class="year"><div class="year-in" role="img" aria-label="Three hundred and sixty days of Delhi air quality, one cell per day, filled darker through the six official bands. Two hundred and thirty-seven days were above 200."><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b3"></i><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b2"></i><i class="b3"></i><i class="b3"></i><i class="b2"></i><i class="b3"></i><i class="b2"></i><i class="b2"></i><i class="b1"></i><i class="b3"></i><i class="b1"></i><i class="b1"></i><i class="b2"></i><i class="b1"></i><i class="b2"></i><i class="b1"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="b3"></i><i class="b3"></i><i class="b1"></i><i class="b2"></i><i class="b1"></i><i class="b3"></i><i class="b3"></i><i class="b2"></i><i class="b2"></i><i class="b3"></i><i class="b2"></i><i class="b3"></i><i class="b2"></i><i class="b1"></i><i class="b2"></i><i class="b2"></i><i class="b3"></i><i class="b3"></i><i class="b1"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b1"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b4"></i><i class="b3"></i><i class="b4"></i><i class="b4"></i><i class="b4"></i><i class="b4"></i><i class="b4"></i><i class="b2"></i><i class="b4"></i><i class="b3"></i><i class="b3"></i><i class="b2"></i><i class="b4"></i><i class="b2"></i><i class="b4"></i><i class="b4"></i><i class="b4"></i><i class="b3"></i><i class="b4"></i><i class="b3"></i><i class="b2"></i><i class="b4"></i><i class="b4"></i><i class="b4"></i><i class="b3"></i><i class="b4"></i><i class="b4"></i><i class="b3"></i><i class="b4"></i><i class="b4"></i><i class="b5"></i><i class="b5"></i><i class="b5"></i><i class="b4"></i><i class="b4"></i><i class="b4"></i><i class="b3"></i><i class="b3"></i><i class="b4"></i><i class="b5"></i><i class="b5"></i><i class="b5"></i><i class="b5"></i><i class="b4"></i><i class="b4"></i><i class="b4"></i><i class="b5"></i><i class="b5"></i><i class="b5"></i><i class="b5"></i><i class="b5"></i><i class="b5"></i><i class="b3"></i><i class="b4"></i><i class="b4"></i><i class="b5"></i><i class="b3"></i><i class="b5"></i><i class="b5"></i><i class="b4"></i><i class="b5"></i><i class="b4"></i><i class="b5"></i><i class="b5"></i><i class="b3"></i><i class="b4"></i><i class="b5"></i><i class="b4"></i><i class="b3"></i><i class="b4"></i><i class="b5"></i><i class="b4"></i><i class="b5"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b5"></i><i class="b5"></i><i class="b5"></i><i class="b3"></i><i class="b5"></i><i class="b4"></i><i class="b4"></i><i class="b3"></i><i class="b5"></i><i class="b3"></i><i class="b5"></i><i class="b4"></i><i class="b4"></i><i class="b4"></i><i class="b3"></i><i class="b4"></i><i class="b5"></i><i class="b5"></i><i class="b5"></i><i class="b4"></i><i class="b5"></i><i class="b4"></i><i class="b5"></i><i class="b5"></i><i class="b4"></i><i class="b5"></i><i class="b5"></i><i class="b4"></i><i class="b3"></i><i class="b5"></i><i class="b4"></i><i class="b4"></i><i class="b5"></i><i class="b4"></i><i class="b5"></i><i class="b5"></i><i class="b5"></i><i class="b4"></i><i class="b5"></i><i class="b4"></i><i class="b5"></i><i class="b3"></i><i class="b3"></i><i class="b5"></i><i class="b2"></i><i class="b2"></i><i class="b3"></i><i class="b3"></i><i class="b2"></i><i class="b2"></i><i class="b4"></i><i class="b4"></i><i class="b3"></i><i class="b3"></i><i class="b4"></i><i class="b3"></i><i class="b2"></i><i class="b4"></i><i class="b4"></i><i class="b4"></i><i class="b4"></i><i class="b3"></i><i class="b3"></i><i class="b4"></i><i class="b4"></i><i class="b3"></i><i class="b4"></i><i class="b4"></i><i class="b3"></i><i class="b4"></i><i class="b4"></i><i class="b3"></i><i class="b2"></i><i class="b4"></i><i class="b3"></i><i class="b2"></i><i class="b3"></i><i class="b3"></i><i class="b2"></i><i class="b4"></i><i class="b2"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i><i class="b3"></i><i class="b4"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b4"></i><i class="b3"></i><i class="b2"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i><i class="b3"></i><i class="b3"></i><i class="b2"></i><i class="b4"></i><i class="b4"></i><i class="b3"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b4"></i><i class="b2"></i><i class="b2"></i><i class="b3"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i><i class="b4"></i><i class="b3"></i><i class="b2"></i><i class="b2"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b2"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b2"></i><i class="b2"></i><i class="b3"></i><i class="b2"></i><i class="b3"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="b3"></i><i class="b2"></i><i class="b2"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b3"></i><i class="b2"></i><i class="b3"></i><i class="b1"></i><i class="b1"></i><i class="b1"></i><i class="b1"></i><i class="b0"></i><i class="b0"></i><i class="b2"></i><i class="b1"></i><i class="b2"></i><i class="b0"></i><i class="b0"></i><i class="b0"></i><i class="b1"></i><i class="b0"></i><i class="b1"></i><i class="b0"></i><i class="b0"></i><i class="b2"></i><i class="b2"></i><i class="b1"></i><i class="b1"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="b0"></i><i class="b2"></i><i class="b1"></i><i class="b2"></i><i class="b1"></i><i class="b2"></i><i class="b2"></i><i class="b2"></i><i class="b0"></i><i class="b1"></i><i class="b2"></i><i class="b1"></i><i class="b2"></i><i class="b1"></i><i class="b1"></i><i class="b0"></i><i class="b2"></i><i class="b0"></i><i class="b1"></i><i class="b1"></i><i class="b1"></i><i class="b0"></i><i class="b1"></i><i class="b2"></i><i class="b1"></i><i class="b2"></i><i class="b0"></i><i class="b2"></i><i class="b1"></i><i class="b1"></i><i class="b2"></i><i class="b0"></i><i class="b0"></i><i class="b1"></i><i class="b2"></i><i class="b0"></i></div><div class="mkey"><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span></div></div><div class="ramp"><div><i class="b0"></i><p>Good<small>0 to 50</small></p></div><div><i class="b1"></i><p>Satisfactory<small>51 to 100</small></p></div><div><i class="b2"></i><p>Moderate<small>101 to 200</small></p></div><div><i class="b3"></i><p>Poor<small>201 to 300</small></p></div><div><i class="b4"></i><p>Very poor<small>301 to 400</small></p></div><div><i class="b5"></i><p>Severe<small>401 and above</small></p></div></div><p class="cap" style="margin:18px 0 0">Source: CPCB daily bulletin, Delhi city average, August 2025 to August 2026. Sample values for design review.</p></div></section></div><aside class="side" aria-label="India, ranked against Delhi"><h3>India, right now</h3><p class="cap" style="margin:0">256 cities report to CPCB. Delhi is not always the worst of them.</p><div class="side-rows"><div class="side-row"><span>Byrnihat, Meghalaya</span><b class="over">449</b><span class="mx">4.5&#215;</span></div><div class="side-row me"><span>Anand Vihar</span><b class="over">412</b><span class="mx">4.1&#215;</span></div><div class="side-row"><span>Hajipur, Bihar</span><b class="over">398</b><span class="mx">4.0&#215;</span></div><div class="side-row"><span>Gurugram, Haryana</span><b class="over">377</b><span class="mx">3.8&#215;</span></div><div class="side-row"><span>Ghaziabad, Uttar Pradesh</span><b class="over">366</b><span class="mx">3.7&#215;</span></div><div class="side-row me"><span>Lodhi Road</span><b class="over">241</b><span class="mx">2.4&#215;</span></div><div class="side-row"><span>Kolkata, Rabindra Bharati</span><b class="over">198</b><span class="mx">2.0&#215;</span></div><div class="side-row"><span>Mumbai, Colaba</span><b class="over">121</b><span class="mx">1.2&#215;</span></div></div><p class="cap" style="margin:14px 0 0">A mustard rule marks a station Swechha also samples independently. Read 07:00 IST. Sample values.</p><p style="margin:16px 0 0"><a class="act" href="#nat">All 256 cities <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p></aside></div></div></section><section class="nat"><div class="wide"><div class="det-head"><h2 class="d1">And where<br>does Delhi<br>stand?</h2><div><p class="body" style="margin:0 0 12px">The homepage carries your city. This page carries the country it sits in. Two hundred and fifty-six cities report to CPCB and Delhi is not always the worst of them, which is a fact worth publishing even though it is inconvenient for a Delhi organisation to publish.</p><p class="cap" style="margin:0">A mustard rule marks a station Swechha also samples independently, with its own monitors and its own dated record. That overlay is the thing a national table taken off a public dataset cannot have.</p></div></div><div class="tbwrap"><table class="tb"><caption class="sr">Highest and lowest of 256 reporting cities, 07:00 IST today. Sample values.</caption><thead><tr><th>Station</th><th>AQI</th><th>Times the limit</th><th>Swechha record</th></tr></thead><tbody><tr><td class="">Byrnihat, Meghalaya</td><td class="v">449</td><td class="mx">4.5&#215;</td><td class="st" style="color:var(--ink-3);font-size:14px">Not sampled by us</td></tr><tr><td class="sw">Delhi, Anand Vihar</td><td class="v">412</td><td class="mx">4.1&#215;</td><td class="st" style="color:var(--ink-3);font-size:14px">11 years of school sampling</td></tr><tr><td class="">Hajipur, Bihar</td><td class="v">398</td><td class="mx">4.0&#215;</td><td class="st" style="color:var(--ink-3);font-size:14px">Not sampled by us</td></tr><tr><td class="">Gurugram, Haryana</td><td class="v">377</td><td class="mx">3.8&#215;</td><td class="st" style="color:var(--ink-3);font-size:14px">Not sampled by us</td></tr><tr><td class="">Ghaziabad, Uttar Pradesh</td><td class="v">366</td><td class="mx">3.7&#215;</td><td class="st" style="color:var(--ink-3);font-size:14px">Not sampled by us</td></tr><tr><td class="sw">Delhi, Lodhi Road</td><td class="v">241</td><td class="mx">2.4&#215;</td><td class="st" style="color:var(--ink-3);font-size:14px">11 years of school sampling</td></tr><tr><td class="">Kolkata, Rabindra Bharati</td><td class="v">198</td><td class="mx">2.0&#215;</td><td class="st" style="color:var(--ink-3);font-size:14px">Not sampled by us</td></tr><tr><td class="">Mumbai, Colaba</td><td class="v">121</td><td class="mx">1.2&#215;</td><td class="st" style="color:var(--ink-3);font-size:14px">Not sampled by us</td></tr></tbody></table></div><p class="cap" style="margin:20px 0 0;max-width:76ch">Source: CPCB continuous monitoring network, 07:00 IST bulletin. Swechha column: our own low-cost monitors in partner schools, calibrated against the nearest CPCB station quarterly. Sample values for design review.</p><p style="margin:clamp(24px,3vw,38px) 0 0"><a class="act" href="#">All 256 reporting cities <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p></div></section><section class="dark-2 fc"><div class="wide"><div class="det-head"><h2 class="d1">What happens<br>next?</h2><div><p class="body" style="margin:0 0 16px">Swechha does not forecast air quality and is not going to pretend to. The slot is designed, and until a forecast source is wired it shows what it actually has, which is nothing.</p><div class="layers"><button type="button" class="chip" data-fc="empty" aria-pressed="true">As it ships today</button><button type="button" class="chip" data-fc="full" aria-pressed="false">With a forecast wired</button></div></div></div><div class="fc-slot" id="fc-empty"><p class="mk derived" style="margin-bottom:14px"><i></i>No forecast source</p><p class="d2" style="max-width:24ch;margin:0 0 16px">No forecast is published here.</p><p class="body" style="margin:0 0 8px">Two of the feeds behind this page are live and three are a published bulletin. None of them forecasts. When CPCB's own air quality early warning system is wired in, this slot will carry it with its issuing time and its skill score attached, and it will be marked modelled like everything else that is.</p><p class="cap" style="margin:0">Last checked for a forecast feed: 18 August 2026.</p></div><div class="fc-slot" id="fc-full" hidden><p class="mk derived" style="margin-bottom:14px"><i></i>Modelled, not measured</p><div class="fc-chart" role="img" aria-label="Seventy-two hour projection. The index is projected to rise to about 470 at plus eighteen hours and fall through the weekend. The shaded band is the spread between runs."><div><i style="bottom:72.9%;height:7.9%"></i><em style="bottom:76.8%"></em></div><div><i style="bottom:76.8%;height:13.6%"></i><em style="bottom:83.6%"></em></div><div><i style="bottom:71.2%;height:20.0%"></i><em style="bottom:81.2%"></em></div><div><i style="bottom:58.6%;height:26.4%"></i><em style="bottom:71.8%"></em></div><div><i style="bottom:44.3%;height:34.3%"></i><em style="bottom:61.4%"></em></div><div><i style="bottom:30.9%;height:42.1%"></i><em style="bottom:52.0%"></em></div><div><i style="bottom:22.1%;height:47.9%"></i><em style="bottom:46.1%"></em></div><div><i style="bottom:15.0%;height:54.3%"></i><em style="bottom:42.1%"></em></div></div><div class="fc-x"><span>+6h</span><span>+12h</span><span>+18h</span><span>+24h</span><span>+36h</span><span>+48h</span><span>+60h</span><span>+72h</span></div><p class="body" style="margin:20px 0 8px">The heavy line is the central projection and the block behind it is the spread between runs. It widens with distance, which is the honest shape of a forecast: by plus seventy-two hours the model is telling you a direction, not a number.</p><p class="cap" style="margin:0">Would carry: issuing system, issuing time, and the skill score of the last thirty days. Sample shape for design review.</p></div></div></section><section class="paper" id="record"><div class="wide"><div class="det-head"><h2 class="d1">What has been<br>ordered about it?</h2><div><p class="body" style="margin:0 0 12px">Orders, policy and coverage sit on the situation they concern, not in a separate chapter, so a judgement is next to the reading it is about. Every entry names its document.</p><p class="cap" style="margin:0">Compiled weekly from NGT, Supreme Court, Delhi High Court, CAQM and gazette publication. Last compiled 18 August 2026. A missed week says so here rather than showing older entries as current.</p></div></div><a class="ord" href="#"><div class="ord-in"><time datetime="2026-08-14">14 Aug 2026</time><div><h3>Tribunal directs DPCC to publish ward-level PM2.5 data within thirty days, holding that aggregate city figures do not discharge the duty to inform.</h3><p class="who">National Green Tribunal, Principal Bench</p></div><span class="doc">Order, OA 412/2026 &nbsp;&rarr;</span></div></a><a class="ord" href="#"><div class="ord-in"><time datetime="2026-07-22">22 Jul 2026</time><div><h3>Draft notification revising the ambient standard for mixed-use zones, open for objections for sixty days.</h3><p class="who">Ministry of Environment, Forest and Climate Change</p></div><span class="doc">Gazette draft, S.O. 3118(E) &nbsp;&rarr;</span></div></a><a class="ord" href="#"><div class="ord-in"><time datetime="2026-02-03">03 Feb 2026</time><div><h3>GRAP stage III invoked across Delhi-NCR after four consecutive days above 400, with a construction halt and a switch to hybrid schooling.</h3><p class="who">Commission for Air Quality Management</p></div><span class="doc">Direction 91 of 2026 &nbsp;&rarr;</span></div></a><div class="cols3"><div><p class="lbl" style="color:var(--ink-3);margin:0 0 10px">Every reading, kept</p><p style="margin:0 0 14px;font-size:16.5px;color:var(--ink-2)">Each day's reading keeps its own address after it stops being today's, with the source, the hour and the limit it was judged against. 9,400 days on file.</p><a class="act" href="#">The daily record <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div><div><p class="lbl" style="color:var(--ink-3);margin:0 0 10px">Coverage</p><p style="margin:0 0 14px;font-size:16.5px;color:var(--ink-2)">Press reporting on Delhi air, listed and dated. Reporting is tagged as reporting. It is never presented as Swechha's finding.</p><a class="act" href="#">Recent coverage <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div><div><p class="lbl" style="color:var(--ink-3);margin:0 0 10px">Do something</p><p style="margin:0 0 14px;font-size:16.5px;color:var(--ink-2)">A balcony air-detox garden, a classroom monitor build, and how to file an objection on the draft notification above before it closes.</p><a class="act" href="#">The DIY bank <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div></div></div></section><section class="sub"><div class="wide"><div class="sub-in"><div><h2 class="d1" style="max-width:12ch">Watch<br>your ward</h2><p class="lead" style="margin:20px 0 0;color:#4A3708">Nobody visits a record every morning. Pick the ward you live in and we will write to you when the monitor nearest it crosses the limit, when an order lands about it, or when the draft notification you objected to closes.</p></div><div><label for="ward">Your ward or pin code</label><input type="text" id="ward" name="ward" placeholder="Khirki Extension, 110017"><p style="margin:18px 0 20px;font-size:16.5px">One message when something crosses a limit. One digest a month. Nothing else, ever, and no address is shared with anybody.</p><button class="btn" type="button">Watch this ward</button><p class="cap" style="margin:16px 0 0">Not built yet. This slot is designed because it is the only thing on this page that would make somebody come back.</p></div></div></div></section><section><div class="wide"><h2 class="d1" style="max-width:15ch">What is measured<br>and what is not?</h2><div class="tbwrap" style="margin-top:clamp(26px,3.4vw,44px)"><table class="tb tb-l"><thead><tr><th>Figure on this page</th><th>Kind</th><th>Source</th><th>Cadence</th></tr></thead><tbody><tr><td>Air quality index, 412</td><td>Measured</td><td>CPCB continuous monitor</td><td>Hourly</td></tr><tr><td>Monitor values by station</td><td>Measured</td><td>CPCB, 36 stations</td><td>Hourly</td></tr><tr><td>Temperature, wind, humidity</td><td>Measured</td><td>IMD Safdarjung</td><td>Hourly</td></tr><tr><td>Schools within 5km, 1,441</td><td>Measured</td><td>Directorate of Education register</td><td>Annual</td></tr><tr><td>People exposed, 1.93 million</td><td>Modelled</td><td>Census 2011 projected, ward share</td><td>Per run</td></tr><tr><td>Source split, 37 / 31 / 17 / 15</td><td>Modelled</td><td>TERI and SAFAR apportionment</td><td>Per run</td></tr><tr><td>72-hour projection</td><td>Modelled</td><td>Not wired</td><td>None</td></tr></tbody></table></div><p class="cap" style="margin:22px 0 0;max-width:74ch">Four figures on this page are measured and three are modelled. The reference dashboards this was compared against set both at the same weight, which is how a credible number and a guess end up carrying the same authority. This one does not.</p></div></section>
+
+<footer class="foot">
+  <div class="wide">
+    <div class="foot-g">
+      <div>
+        <div class="mark" style="font-size:34px;display:block;margin-bottom:12px"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></div>
+        <p class="cap" style="max-width:34ch">We for Change Foundation. Khirki Extension,
+          New Delhi. Working since 2000. Registered under sections 12A and 80G.</p>
+      </div>
+      <div><h3 class="lbl">Read</h3>
+        <a href="/design/v3/intelligence.html">Environmental Intelligence</a>
+        <a href="#work">Projects and campaigns</a><a href="#">Stories and films</a>
+        <a href="#">Publications</a></div>
+      <div><h3 class="lbl">Go</h3><a href="#journeys">Yamuna Yatra</a>
+        <a href="#journeys">NatureScapes</a><a href="#journeys">CityScapes</a>
+        <a href="#journeys">Gram Anubhav</a></div>
+      <div><h3 class="lbl">Reach us</h3><a href="mailto:info@swechha.in">info@swechha.in</a>
+        <a href="#farm">Swechha Farm visits</a><a href="#">Work with us</a>
+        <a href="/design/v3/system.html">The system sheet</a></div>
+    </div>
+    <div class="foot-b">
+      <span>Design synthesis v3, 19 August 2026. Not the live site.</span>
+      <span>Every reading shown is a sample value standing in for the live feed.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+document.documentElement.className+=' js';
+(function(){
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{rootMargin:'0px 0px -8% 0px',threshold:.12});
+  document.querySelectorAll('.rise').forEach(function(n,i){ n.style.transitionDelay=(i%4*70)+'ms'; io.observe(n); });
+})();
+
+document.querySelectorAll('.chip[data-layer]').forEach(function(c){
+  c.onclick=function(){
+    var on=c.getAttribute('aria-pressed')!=='true';
+    c.setAttribute('aria-pressed',on);
+    document.querySelectorAll('[data-layer="'+c.dataset.layer+'"]:not(.chip)').forEach(function(g){
+      if(on) g.removeAttribute('hidden'); else g.setAttribute('hidden','');
+    });
+  };
+});
+(function(){
+  var bars=[].slice.call(document.querySelectorAll('.scrub-bars button')),
+      rng=document.getElementById('yr'),
+      sy=document.getElementById('sy'), sv=document.getElementById('sv'), sn=document.getElementById('sn'),
+      NOTES={"2016": "The Diwali week that broke the scale. 999 recorded at four stations.", "2020": "The lockdown year. The only spring on record inside the satisfactory band.", "2023": "GRAP moved to a forecast trigger rather than a reactive one.", "2026": "Two hundred and thirty-seven days above 200. The lowest of the twenty-six, and still two days in three."};
+  function pick(y){
+    bars.forEach(function(b){ b.setAttribute('aria-current', b.dataset.y===String(y)); });
+    var b=bars.filter(function(x){return x.dataset.y===String(y)})[0]; if(!b) return;
+    sy.textContent=y; sv.textContent=b.dataset.v; rng.value=y;
+    sn.textContent = NOTES[y] || (b.dataset.v+' days above 200 in '+y+'. The limit is 100 and the '
+      +'index was above twice that on '+b.dataset.v+' of 365 days.');
+  }
+  bars.forEach(function(b){ b.onclick=function(){ pick(+b.dataset.y); }; });
+  if(rng) rng.oninput=function(){ pick(+rng.value); };
+})();
+(function(){
+  var cs=document.querySelectorAll('.chip[data-fc]');
+  cs.forEach(function(c){ c.onclick=function(){
+    cs.forEach(function(x){ x.setAttribute('aria-pressed', x===c); });
+    document.getElementById('fc-empty').hidden = c.dataset.fc!=='empty';
+    document.getElementById('fc-full').hidden = c.dataset.fc!=='full';
+  };});
+})();
+</script>
+</body>
+</html>

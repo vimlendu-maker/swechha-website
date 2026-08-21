@@ -19,7 +19,7 @@ export default function ActPage() {
           <h2 className="text-xl">Volunteer</h2>
           <p className="mt-3 max-w-[52ch] text-ink-muted">
             Volunteer sign-up isn&rsquo;t connected yet. Check back soon, or
-            follow a specific <Link href="/campaigns" className="underline underline-offset-[3px]">campaign</Link>{' '}
+            follow a specific <Link href="/work/campaigns" className="underline underline-offset-[3px]">campaign</Link>{' '}
             for situation-specific ways to help.
           </p>
         </section>

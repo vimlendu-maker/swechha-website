@@ -24,7 +24,7 @@ export default function WorkPage() {
           {campaigns.map((c) => (
             <div key={c.slug}>
               <ContentCard
-                href={`/campaigns/${c.slug}`}
+                href={`/work/campaigns/${c.slug}`}
                 title={c.data.title}
                 summary={c.data.summary}
                 image={c.data.heroImage}

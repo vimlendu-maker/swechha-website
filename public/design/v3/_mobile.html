@@ -1,0 +1,209 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Swechha — mobile review</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{ --line:#2b2b27; --dim:#8b8b83; --fg:#F3F2F0; --mustard:#E1A32B; --bad:#F1484E; }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#161614;color:var(--fg);
+    font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;-webkit-font-smoothing:antialiased}
+  #bar{display:flex;align-items:center;gap:9px;padding:9px 14px;background:#0D0D0B;
+    border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .ttl{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);font-weight:700}
+  .sep{width:1px;height:20px;background:var(--line)}
+  select,button{font:inherit;background:#1e1e1b;color:var(--fg);border:1px solid var(--line);
+    border-radius:3px;padding:5px 9px;cursor:pointer}
+  select:hover,button:hover{border-color:#4d4d46}
+  button.on{background:var(--mustard);color:#0D0D0B;border-color:var(--mustard);font-weight:700}
+  button.step{min-width:32px;font-size:14px;line-height:1}
+  #stage{display:flex;justify-content:center;align-items:flex-start;gap:26px;
+    padding:24px 14px 60px;height:calc(100% - 43px);overflow:auto}
+  #devwrap{position:relative;flex:0 0 auto}
+  #dev{border:1px solid var(--line);background:#0D0D0B;display:block;
+    box-shadow:0 18px 50px rgba(0,0,0,.55)}
+  /* The fold marker sits OVER the frame and must never eat a scroll event. */
+  #fold{position:absolute;left:0;right:0;top:0;pointer-events:none;display:none}
+  #fold.on{display:block}
+  #fold i{position:absolute;left:0;right:0;height:0;border-top:1px dashed var(--bad)}
+  #fold b{position:absolute;right:0;transform:translateY(-100%);background:var(--bad);
+    color:#0D0D0B;font-size:9px;letter-spacing:.1em;padding:1px 5px;font-weight:700}
+  #fold u{position:absolute;left:0;right:0;background:rgba(0,0,0,.5);display:block}
+  #meta{flex:0 0 220px;position:sticky;top:0}
+  #meta h4{margin:0 0 8px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--dim);font-weight:700}
+  #meta dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:11px}
+  #meta dt{color:var(--dim)}
+  #meta dd{margin:0;color:var(--fg)}
+  #meta dd.bad{color:var(--bad);font-weight:700}
+  .hint{margin-top:14px;color:#6a6a63;line-height:1.6;font-size:10px}
+</style>
+
+<div id="bar">
+  <span class="ttl">mobile</span>
+  <select id="page">
+    <option value="home.html">home &mdash; frozen</option>
+    <option value="intelligence.html">intelligence</option>
+    <option value="situation-air.html">situation-air</option>
+    <option value="situation-yamuna.html">situation-yamuna</option>
+    <option value="situation-soon.html">situation-soon</option>
+    <option value="system.html">system</option>
+    <option value="about.html">about</option>
+  </select>
+  <span class="sep"></span>
+  <span class="ttl">width</span>
+  <button data-w="375" class="on">375</button>
+  <button data-w="390">390</button>
+  <button data-w="414">414</button>
+  <button data-w="768">768</button>
+  <button data-w="940">940</button>
+  <span class="sep"></span>
+  <span class="ttl">height</span>
+  <button data-h="812" class="on">812</button>
+  <button data-h="736">736</button>
+  <button data-h="635">635</button>
+  <span class="sep"></span>
+  <button class="step" id="prev" title="Previous band">&larr;</button>
+  <select id="sec"></select>
+  <button class="step" id="next" title="Next band">&rarr;</button>
+  <span class="sep"></span>
+  <button id="foldbtn">fold line</button>
+  <button id="reload">reload</button>
+</div>
+
+<div id="stage">
+  <div id="devwrap">
+    <iframe id="dev" width="375" height="812"></iframe>
+    <div id="fold"><i></i><b></b><u></u></div>
+  </div>
+  <div id="meta">
+    <h4>Reading</h4>
+    <dl>
+      <dt>viewport</dt><dd id="mv">375 &times; 812</dd>
+      <dt>document</dt><dd id="md">&mdash;</dd>
+      <dt>scroll</dt><dd id="ms">0</dd>
+      <dt>in band</dt><dd id="mb">&mdash;</dd>
+      <dt>band height</dt><dd id="mh">&mdash;</dd>
+      <dt>budget</dt><dd id="mg">&mdash;</dd>
+      <dt>overflow-x</dt><dd id="mo">&mdash;</dd>
+    </dl>
+    <p class="hint">
+      Scroll with the pointer over the frame &mdash; it is an ordinary iframe, so the
+      wheel works normally. No touch emulation, which is what made a 375-wide tab
+      fight you.<br><br>
+      <b>635</b> is iOS Safari at rest, with the address bar and toolbar showing.
+      <b>812</b> is the bare emulator figure &mdash; taller than any real phone in use.
+      The fold line marks 635 inside a taller frame.<br><br>
+      Arrow keys step bands.
+    </p>
+  </div>
+</div>
+
+<script>
+const BANDS=[
+  {id:'top',name:'hero',mob:null},{id:'ticker',name:'ticker',mob:900},
+  {id:'statement',name:'statement',mob:null},{id:'journeys',name:'journeys',mob:900},
+  {id:'work',name:'work',mob:900},{id:'timeline',name:'timeline',mob:null},
+  {id:'impact',name:'impact',mob:900},{id:'farm',name:'farm',mob:null},
+  {id:'gtm',name:'green the map',mob:900},{id:'record',name:'record',mob:900},
+  {id:'give',name:'give',mob:900},{id:'footer',name:'footer',mob:420}
+];
+const dev=document.getElementById('dev'), secSel=document.getElementById('sec');
+let i=0, W=375, H=812;
+
+BANDS.forEach((b,n)=>{const o=document.createElement('option');
+  o.value=b.id;o.textContent=String(n+1).padStart(2,'0')+' '+b.name;secSel.appendChild(o)});
+
+function size(){
+  dev.width=W; dev.height=H;
+  dev.style.width=W+'px'; dev.style.height=H+'px';
+  document.getElementById('mv').textContent=W+' × '+H;
+  const f=document.getElementById('fold');
+  f.style.height=H+'px';
+  const y=Math.min(635,H);
+  f.querySelector('i').style.top=y+'px';
+  f.querySelector('b').style.top=y+'px';
+  f.querySelector('b').textContent='635 — iOS Safari at rest';
+  const u=f.querySelector('u');
+  u.style.top=y+'px'; u.style.height=Math.max(0,H-y)+'px';
+  report();
+}
+function goto(n){
+  i=(n+BANDS.length)%BANDS.length; secSel.value=BANDS[i].id;
+  try{
+    const doc=dev.contentDocument, el=doc.getElementById(BANDS[i].id);
+    if(el){
+      // Band 1 means the top of the page, header included — not the band's own
+      // offset, which would scroll the masthead out of sight.
+      if(i===0){ dev.contentWindow.scrollTo({top:0,behavior:'auto'}); }
+      else {
+        // Whichever chrome is pinned overlaps the band top and must be cleared.
+        // Below 940 the header is static and the 56px BAR inside it is fixed, so
+        // measuring header.nav alone reads 0 and buries the band under the bar.
+        let off=0;
+        ['header.nav','.nav-in'].forEach(sel=>{
+          const n=doc.querySelector(sel); if(!n) return;
+          const pos=getComputedStyle(n).position;
+          if(pos==='fixed'||pos==='sticky')
+            off=Math.max(off,n.getBoundingClientRect().height);
+        });
+        dev.contentWindow.scrollTo({top:el.offsetTop-off,behavior:'auto'});
+      }
+    }
+  }catch(e){}
+  report();
+}
+function report(){
+  let doc,win;
+  try{ doc=dev.contentDocument; win=dev.contentWindow; }catch(e){ return }
+  if(!doc||!doc.body) return;
+  const de=doc.documentElement;
+  document.getElementById('md').textContent=de.scrollHeight+'px';
+  document.getElementById('ms').textContent=Math.round(win.scrollY)+'px';
+  const ox=de.scrollWidth>W;
+  const oel=document.getElementById('mo');
+  oel.textContent=ox?('BLEEDS +'+(de.scrollWidth-W)+'px'):'clean';
+  oel.className=ox?'bad':'';
+  // The band occupying the top of the frame. Above the first band we are still
+  // in the header, so fall back to band 1 rather than reporting nothing.
+  let cur=null;
+  BANDS.forEach(b=>{const el=doc.getElementById(b.id);
+    if(el && el.offsetTop<=win.scrollY+4) cur=b;});
+  if(!cur) cur=BANDS[0];
+  const el=cur?doc.getElementById(cur.id):null;
+  document.getElementById('mb').textContent=cur?cur.name:'—';
+  const h=el?Math.round(el.getBoundingClientRect().height):null;
+  document.getElementById('mh').textContent=h!=null?h+'px':'—';
+  const g=document.getElementById('mg');
+  if(cur&&cur.mob&&h!=null){ g.textContent=h+' / '+cur.mob; g.className=h>cur.mob?'bad':''; }
+  else { g.textContent=cur?'exempt':'—'; g.className=''; }
+}
+function load(){
+  dev.onload=()=>{ setTimeout(()=>{goto(i); try{
+      dev.contentWindow.addEventListener('scroll',report,{passive:true});
+    }catch(e){}},60); };
+  dev.src='/design/v3/'+document.getElementById('page').value+'?t='+Date.now();
+}
+document.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('[data-w]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); W=+b.dataset.w; size();
+});
+document.querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('[data-h]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); H=+b.dataset.h; size();
+});
+document.getElementById('foldbtn').onclick=function(){
+  document.getElementById('fold').classList.toggle('on');
+  this.classList.toggle('on');
+};
+document.getElementById('prev').onclick=()=>goto(i-1);
+document.getElementById('next').onclick=()=>goto(i+1);
+secSel.onchange=()=>goto(BANDS.findIndex(b=>b.id===secSel.value));
+document.getElementById('page').onchange=load;
+document.getElementById('reload').onclick=load;
+addEventListener('keydown',e=>{
+  if(e.target.tagName==='SELECT') return;
+  if(e.key==='ArrowRight'){e.preventDefault();goto(i+1)}
+  if(e.key==='ArrowLeft'){e.preventDefault();goto(i-1)}
+});
+size(); load();
+</script>

@@ -26,7 +26,7 @@ export default function NowPage() {
         {situations.length === 0 ? (
           <p className="mt-6 max-w-[52ch] text-ink-muted">
             Nothing is currently active. Resolved and monitored situations are on the{' '}
-            <Link href="/campaigns" className="underline underline-offset-[3px]">Campaigns</Link> page.
+            <Link href="/work/campaigns" className="underline underline-offset-[3px]">Campaigns</Link> page.
           </p>
         ) : (
           <div className="mt-6 flex flex-col gap-[1px] bg-rule">
@@ -38,7 +38,7 @@ export default function NowPage() {
               // name. Only the title is a real link now, stretched over the
               // full card via `after:absolute after:inset-0`, matching the
               // pattern already established in components/content-card.tsx.
-              <div key={s.slug} className="relative bg-indigo p-6 text-paper md:p-8">
+              <div key={s.slug} className="relative bg-ground p-6 text-paper md:p-8">
                 <p className="font-mono text-xs uppercase tracking-widest opacity-70">{s.data.location}</p>
                 {s.data.liveData && (
                   <>
@@ -57,7 +57,7 @@ export default function NowPage() {
                   <StatusBadge status={s.data.status} severity={s.data.severity} onDark />
                 </div>
                 <h3 className="mt-3 max-w-[24ch] text-2xl">
-                  <Link href={`/campaigns/${s.slug}`} className="after:absolute after:inset-0">
+                  <Link href={`/work/campaigns/${s.slug}`} className="after:absolute after:inset-0">
                     {s.data.title}
                   </Link>
                 </h3>

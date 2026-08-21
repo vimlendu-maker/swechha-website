@@ -4,8 +4,9 @@ summary: After eighteen months of documentation and advocacy, a partial ban on c
 author: Swechha
 date: '2024-08-14'
 heroImage:
-  src: /images/stories/delhi-air.png
-  alt: PLACEHOLDER — community members gathered at an anti-pollution event
+  src: /images/photos/delhi-smog-skyline.jpg
+  alt: Delhi high-rise blocks dissolving into heavy smog
+  signal: none
 tags:
   - air
   - delhi

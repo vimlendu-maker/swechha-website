@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Situation not built yet - Swechha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   SWECHHA v3. C's intensity, A's structure.
+   The ground alternates and DARK LEADS. Photography is full-bleed and
+   halftoned. Every surface has grain in it. The system underneath is
+   unchanged from v2: rail, multiplier, band counter, validity window,
+   slider, three-tense colour grammar.
+   ══════════════════════════════════════════════════════════════════ */
+:root{
+  /* GROUNDS. Dark is the default now, not the exception. */
+  --ground:#0D0D0B;          /* the page */
+  --ground-2:#151512;        /* the alternate dark band */
+  --paper:#F3F2F0;           /* off-white. Long reading and section breaks only. */
+  --paper-2:#ECEBE8;         /* tuned so every hue still clears AA on it */
+
+  /* INK on the dark ground */
+  --fg:#FBF8F0;              /* 18.3:1 */
+  --fg-2:#CDC7B7;            /* 11.2:1 */
+  --fg-3:#9C9585;            /*  6.4:1  - 12px floor */
+  --hair:rgba(251,248,240,.20);
+  --hair-2:rgba(251,248,240,.10);
+
+  /* INK on paper */
+  --ink:#141310;             /* 16.6:1 */
+  --ink-2:#4C473F;           /*  8.2:1 */
+  --ink-3:#615B50;           /*  6.0:1 - captions, 13.5px floor */
+  --rule:#DEDDD9; --rule-2:#C6C4BF;
+
+  /* ── THE THREE HUES ────────────────────────────────────────────────
+     Same three colours as approved, same three meanings, same band rule.
+     Every value below is lifted from app/globals.css. Nothing was
+     re-picked because the ground changed; where a hue needed a different
+     value for a different canvas, the file already carried both, exactly
+     as it already does for --swechha-teal / --swechha-teal-ink.
+
+     MUSTARD  a human act.  Second person. THE INTERACTIVE COLOUR.
+     RED      a published limit broken. Third person present. Never a control.
+     GREEN    what came back. Past perfect. */
+  --mustard:#E1A32B;         /* globals --mustard.      8.78:1 on ground */
+  --mustard-2:#F1C33B;       /* globals --yellow.      11.68:1, small text on dark */
+  --mustard-ink:#8A6410;     /* globals --mustard-ink.  4.72:1 on paper */
+  --on-mustard:#12110F;      /* globals --on-mustard.   8.51:1 on mustard */
+  --red:#F1484E;             /* globals --sev.          5.35:1 on ground */
+  --red-ink:#c81e3a;         /* globals --signal-critical. 4.98:1 on paper */
+  --green:#5FBE85;           /* globals --signal-nature-bright. 8.51:1 on ground */
+  --green-ink:#1F6B45;       /* darkened --signal-nature: the base is 4.43:1 on
+                                paper and fails AA, so this follows the file's
+                                existing -ink convention. 5.68:1. */
+
+  /* TYPE. Unchanged from v2. 14.9:1 display to body is already right; the
+     blankness is not solved by making this bigger. */
+  --t-readout:clamp(6.2rem,21vw,17rem);
+  --t-d1:clamp(2.7rem,8vw,6.5rem);
+  --t-num:clamp(2.6rem,6vw,4.6rem);
+  --t-d2:clamp(1.5rem,3.4vw,2.75rem);
+  --t-h2:clamp(1rem,1.9vw,1.45rem);
+  --t-lead:clamp(1.06rem,1.55vw,1.28rem);
+  --t-body:18px; --t-cap:13.5px; --t-micro:11.5px;
+
+  --gut:clamp(16px,3.4vw,46px);
+  /* Density: sections are tighter than v2. Blankness was the complaint. */
+  --pad:clamp(44px,5.6vw,88px);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--fg);
+  font:400 var(--t-body)/1.6 Newsreader,Georgia,'Times New Roman',serif;
+  font-optical-sizing:auto;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{max-width:100%;display:block}
+a{color:inherit}
+p{margin:0 0 1em}
+h1,h2,h3{margin:0;font-weight:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:0 var(--gut)}
+.wide{max-width:1580px;margin:0 auto;padding:0 var(--gut)}
+
+
+/* ── VOICES. Unchanged. ──────────────────────────────────────────────*/
+.d1{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 68,'wght' 850;
+  font-size:var(--t-d1);line-height:.86;letter-spacing:-.032em;text-transform:uppercase;margin:0}
+.d2{font-family:Newsreader,Georgia,serif;font-weight:300;font-size:var(--t-d2);
+  line-height:1.12;letter-spacing:-.015em;margin:0}
+.h2{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 100,'wght' 680;
+  font-size:var(--t-h2);letter-spacing:.24em;text-transform:uppercase;line-height:1.35;margin:0}
+.readout{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 62,'wght' 800;
+  font-size:var(--t-readout);line-height:.74;letter-spacing:-.038em;
+  font-variant-numeric:tabular-nums;display:block}
+.num{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 64,'wght' 800;
+  font-size:var(--t-num);line-height:.8;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.lbl{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
+  font-size:var(--t-micro);letter-spacing:.15em;text-transform:uppercase;line-height:1.5}
+.lead{font-size:var(--t-lead);line-height:1.48;font-weight:300;max-width:46ch;margin:0}
+.body{max-width:62ch}
+.cap{font-size:var(--t-cap);line-height:1.45;color:var(--fg-3);margin:0}
+.on-paper .cap,.paper .cap{color:var(--ink-3)}
+
+/* ── GROUND BANDS. Dark leads, paper is for long reading only. ───────*/
+/* overflow-x:clip, not hidden: it stops any band widening the document
+   without creating a scroll container, so scroll-snap and sticky
+   children inside a section keep working. */
+section{padding:var(--pad) 0;position:relative;overflow-x:clip}
+.paper{background:var(--paper);color:var(--ink)}
+.paper-2{background:var(--paper-2);color:var(--ink)}
+.dark-2{background:var(--ground-2)}
+.paper .lbl,.paper-2 .lbl{color:var(--ink-3)}
+.eyebrow{color:var(--fg-3);margin:0 0 20px}
+.paper .eyebrow,.paper-2 .eyebrow{color:var(--ink-3)}
+
+/* ── PHOTOGRAPHY ─────────────────────────────────────────────────────
+   BLACK AND WHITE, WITHOUT EXCEPTION.
+
+   THESE TWO RULES ARE LOad-BEARING. They are the only thing joining the
+   `duo` / `duo-dim` class names to the <filter> definitions in the SVG
+   defs block. Without them every photograph renders in full colour while
+   the markup still looks correct, which is exactly what happened in
+   v3.0: a source read passes, and only getComputedStyle(img).filter or a
+   colour-aware look at a screenshot catches it. Do not remove them, and
+   if you touch the defs block, re-check `filter` computes to url(#duo).
+
+   Two ramps and nothing else: `duo` for a frame with the scrim doing the
+   contrast work, `duo-dim` for a frame where type sits on an unveiled
+   area. Selective colour is retired from photography; hue lives only in
+   type, data, marks and controls. */
+.duo{filter:url(#duo)}
+.duo-dim{filter:url(#duo-dim)}
+
+.ht{position:relative;overflow:hidden}
+.ht>img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* The halftone is for FULL-BLEED FRAMES ONLY. Every other photograph on
+   the site is clean monochrome: a dot screen turns a busy mid-tone frame
+   to mud and buys nothing on a thumbnail. Composited NORMALLY, per
+   Direction C: mix-blend-mode is visually identical for a pure black
+   pattern, materially more expensive, and unreliable once several
+   halftoned frames are on screen at once. */
+.ht.scrim::after,.ht.scrim-l::after{content:'';position:absolute;inset:0;z-index:2;
+  pointer-events:none;
+  background-image:radial-gradient(circle at 50% 50%,rgba(0,0,0,.62) 1.5px,transparent 1.7px);
+  background-size:6px 6px}
+@media (max-width:700px){.ht.scrim::after,.ht.scrim-l::after{background-size:4px 4px;
+  background-image:radial-gradient(circle at 50% 50%,rgba(0,0,0,.62) 1px,transparent 1.2px)}}
+
+/* ── THE PICTURE BAND ────────────────────────────────────────────────
+   Copy floating over a full frame was tried twice and failed contrast
+   both times, measured. The reason is structural, not a tuning problem:
+   the reading block is 450 to 500px tall, so on an 800px hero it covers
+   the frame edge to edge, and any scrim strong enough to carry 12px
+   metadata over a bright pixel darkens the entire photograph to a
+   rectangle. That is the client's "too blank" arriving in a new costume.
+
+   The rule now, and it is simple enough to hold:
+     DISPLAY TYPE MAY SIT ON A PHOTOGRAPH. NOTHING ELSE MAY.
+   A headline at 44px or more needs 3:1, which a short top gradient
+   delivers while leaving the lower half of the frame completely
+   untouched. Everything smaller sits on solid ground directly beneath
+   the picture, where it is at full contrast and cannot drift.
+
+   The result is a photograph you can actually see AND type that is
+   never marginal, which is what neither previous attempt managed. */
+.pic{position:relative;overflow:hidden;height:clamp(240px,40vh,440px)}
+.pic>img{width:100%;height:100%;object-fit:cover;display:block}
+/* No gradient on the frame itself. A band gradient has to guess how tall
+   the headline is, and a two-line headline overruns it: measured, the
+   farm headline dropped to alpha 0 at its second line. The scrim belongs
+   to the TEXT BLOCK instead, so it scales itself to one line or three and
+   the rest of the photograph is completely untouched. */
+/* Halftone, full-bleed frames only, composited normally per Direction C. */
+.pic::after{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
+  background-image:radial-gradient(circle at 50% 50%,rgba(0,0,0,.62) 1.5px,transparent 1.7px);
+  background-size:6px 6px}
+@media (max-width:700px){.pic::after{background-size:4px 4px;
+  background-image:radial-gradient(circle at 50% 50%,rgba(0,0,0,.62) 1px,transparent 1.2px)}}
+.pic-over{position:absolute;top:0;left:0;right:0;z-index:3;
+  padding:clamp(16px,2.4vw,32px) 0 clamp(20px,2.6vw,40px);
+  background:linear-gradient(180deg,
+    rgba(11,11,9,.92) 0%,
+    rgba(11,11,9,.88) 74%,
+    rgba(11,11,9,.72) 88%,
+    rgba(11,11,9,0)   100%)}
+.pic-over .d1{text-shadow:0 2px 26px rgba(11,11,9,.5)}
+/* The band under the picture. Solid ground, so every measurement, label
+   and caption on it is at full contrast by construction. */
+.pic-body{background:var(--ground);padding:clamp(24px,3.2vw,42px) 0 clamp(22px,2.8vw,36px)}
+.pic-body.alt{background:var(--ground-2)}
+
+figure{margin:0}
+
+/* ══════════════════════════════════════════════════════════════════════
+   THE RAIL.  ONE CONTRACT, EVERY PLACE IT APPEARS.
+   Identical to home.html's. Expressed for this board's markup, where the
+   numeral is a child of .rail-l rather than of its own wrapper.
+
+   THE RULE BELONGS TO THE NUMERAL, NOT TO THE COLUMN.
+
+   The numeral is the box that shrink-wraps its digits (width:max-content)
+   and draws the rule as its OWN ::after at left:100% plus --kiss, where
+   --kiss is .06em of THE NUMERAL'S OWN font-size. Because the rule starts
+   at 100% of a max-content box it is geometrically incapable of crossing
+   a digit — at every viewport width and for every value length: 412, 0.0,
+   1.65, 47.8, 6,890, "14 of 18". And because the account column's
+   clearance is measured FROM THE RULE rather than from a column edge, the
+   rule can never touch the text either.
+
+   That is the reported defect fixed in both of the directions it failed.
+   It used to fail in two: `.rail-l>.readout{margin-right:calc(-1*var(--rp)
+   - .28em)}` pulled a 272px numeral 76px over a rule that was really
+   `.rail-r`'s border-left, so the rule sliced a third of the way into the
+   "2" of 412; and in the cut-out spine the identical intent failed
+   inverted, because `.cut-yr` sits one level deeper inside `.cut-l` and a
+   `.rail-l > *` selector never reached it, so the rule floated 200px+ to
+   the RIGHT of "2000" with nothing between them. Same component, two
+   failures, one cause: the rule was drawn by a fixed-percentage column
+   and the numeral was positioned against it. THE SELECTOR BELOW IS A
+   DESCENDANT SELECTOR FOR EXACTLY THAT REASON.
+
+   --ovh is gone. --lw as a positioning input is gone. The negative
+   margins are gone. .rail-r draws no border.
+
+   STATE changes the rule's COLOUR and its WIDTH, and nothing else. The
+   width grows RIGHTWARD, away from the numeral, so the kiss gap is
+   identical in every state — a breach must never shift the numeral.
+
+   THE RAIL DOES NOT DISAPPEAR ON A PHONE. It rotates: see <=860 below.
+   ══════════════════════════════════════════════════════════════════ */
+.rail{display:flex;align-items:stretch;gap:0;
+  /* the kiss in PIXELS, for the clearance budget only. The rule itself
+     takes .06em off the numeral, which is the same number. */
+  --rail-kiss:calc(.06 * var(--t-num));
+  --rail-clear:32px}
+.rail:has(.readout){--rail-kiss:calc(.06 * var(--t-readout))}
+@media (max-width:1023px){.rail{--rail-clear:24px}}
+
+.rail-l{flex:0 0 var(--lw,52%);min-width:0;position:relative;z-index:1;
+  padding-right:var(--rp,clamp(16px,2.4vw,38px));text-align:right}
+/* THE NUMERAL OWNS THE RULE. Right-aligned in its column, and the numeral
+   ALONE reaches the column edge — every other line keeps its --rp inset,
+   so nothing can touch the rule from the left either. */
+.rail-l .readout,.rail-l .num,.rail-l .cut-yr{
+  --kiss:.06em;
+  position:relative;display:block;width:max-content;max-width:100%;
+  white-space:nowrap;
+  margin-left:auto;margin-right:calc(-1 * var(--rp,clamp(16px,2.4vw,38px)))}
+.rail-l .readout::after,.rail-l .num::after,.rail-l .cut-yr::after{
+  content:'';position:absolute;left:100%;margin-left:var(--kiss);
+  top:var(--rl-top,0);bottom:var(--rl-bottom,0);height:var(--rl-h,auto);
+  width:0;border-left:1px solid var(--hair)}
+.paper .rail-l .readout::after,.paper .rail-l .num::after,
+.paper .rail-l .cut-yr::after,.paper-2 .rail-l .readout::after,
+.paper-2 .rail-l .num::after,.paper-2 .rail-l .cut-yr::after{
+  border-left-color:var(--rule-2)}
+/* BREACH: colour and weight only, growing away from the digits. */
+.rail.breach .rail-l .readout::after,.rail.breach .rail-l .num::after{
+  border-left-width:6px;border-left-color:var(--red)}
+.paper .rail.breach .rail-l .readout::after,
+.paper .rail.breach .rail-l .num::after,
+.paper-2 .rail.breach .rail-l .readout::after,
+.paper-2 .rail.breach .rail-l .num::after{border-left-color:var(--red-ink)}
+/* A closed window is a dashed rule, still owned by the numeral. */
+.rail.closed .rail-l .readout::after,.rail.closed .rail-l .num::after{
+  border-left-style:dashed}
+
+/* .rail-r DRAWS NO BORDER. Its padding is measured from the RULE, with a
+   hard minimum clear distance, which is what kills the text collision
+   permanently. */
+.rail-r{flex:1 1 var(--rw,40%);min-width:0;position:relative;z-index:3;
+  border-left:0;
+  padding-left:calc(var(--rail-kiss) + 6px + var(--rail-clear))}
+.rail-l .bands{margin-left:auto}
+.rail-l .lead,.rail-l .body,.rail-l .cap,.rail-l .limit,.rail-l .win{margin-left:auto}
+
+/* ── THE CUT-OUT SPINE. The year is nested inside .cut-l, so it is the
+   flex line that has to hand it the column edge; margin-left:auto on the
+   numeral does that without a second positioning system. The rule's
+   LENGTH is the plate's height, so the mark and the object hanging beside
+   it start and end on the same two lines. */
+.cut-l .cut-yr{--rl-top:auto;--rl-bottom:0;--rl-h:clamp(118px,19vw,268px)}
+
+/* ══ UNDER 860. THE RAIL ROTATES, IT DOES NOT VANISH. ══════════════════
+   It used to evaporate here: --ovh went to 0, the negative margins were
+   stripped and the rule became a horizontal border-top — the site's
+   signature mark gone on the platform where most Indian readers meet the
+   page. Instead the numeral goes to the left edge of the measure, the
+   rule stays on its right at the same kiss, the unit and the verdict hang
+   off it in their own column, and the rule runs from the numeral's cap
+   line down onto the hairline that opens the account, so the reader can
+   see what the line is holding. */
+@media (max-width:860px){
+  .rail{display:block;--rail-clear:16px}
+  .rail-l{flex:none;padding-right:0;text-align:left;
+    display:grid;grid-template-columns:max-content minmax(0,1fr);
+    column-gap:calc(var(--rail-kiss) + 6px + var(--rail-clear));
+    align-items:start}
+  .rail-l>*{grid-column:2;margin-left:0}
+  .rail-l>.lbl{grid-column:1/-1}
+  /* the numeral spans every content row, so the rule it draws runs past
+     the unit and the verdict rather than stopping at its own baseline */
+  .rail-l>.readout,.rail-l>.num{grid-column:1;grid-row:2/span 24;
+    align-self:stretch;margin:0}
+  .rail-l .bands,.rail-l .cap,.rail-l .limit,.rail-l .win{margin-left:0}
+  .rail-l>.readout::after,.rail-l>.num::after{bottom:-22px}
+  .rail-r{padding-left:0;border-left:0;
+    border-top:1px solid var(--hair);padding-top:22px;margin-top:22px}
+  .paper .rail-r,.paper-2 .rail-r{border-top-color:var(--rule-2)}
+  .rail.breach .rail-r{border-top-color:rgba(241,72,78,.45)}
+  /* the spine keeps its own shape: the plate and the year sit side by
+     side and the year still owns the rule beside it. */
+  .rail-l>.cut-l{grid-column:1/-1;display:flex;align-items:center;
+    gap:clamp(12px,2vw,28px)}
+  .cut-l .cut-yr{--rl-h:clamp(96px,30vw,168px)}
+}
+
+.mult{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
+  font-size:var(--t-micro);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-2);
+  margin:14px 0 0}
+.mult b{font-variation-settings:'wdth' 74,'wght' 800;font-size:2.1em;letter-spacing:-.01em;
+  color:var(--red);vertical-align:-.12em;margin-right:.24em;font-variant-numeric:tabular-nums}
+.paper .mult{color:var(--ink-2)} .paper .mult b{color:var(--red-ink)}
+
+/* ── STATE MARKS. Shape, never hue. ──────────────────────────────────*/
+.state{display:inline-flex;align-items:center;gap:.5em;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 650;font-size:var(--t-micro);letter-spacing:.13em;
+  text-transform:uppercase;color:var(--fg-2)}
+.paper .state,.paper-2 .state{color:var(--ink-2)}
+.state i{width:9px;height:9px;flex:none;border:1.5px solid currentColor}
+.state.live i{background:currentColor}
+.state.demo i{background:repeating-linear-gradient(45deg,currentColor 0 1.5px,transparent 1.5px 3.5px)}
+.state.closed i{background:none;border-style:dashed;border-width:2px}
+
+/* ── BANDS, LIMIT, VERDICT, WINDOW. Unchanged. ───────────────────────*/
+.verdict{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 78,'wght' 800;
+  font-size:clamp(1.15rem,2.4vw,1.85rem);letter-spacing:.03em;text-transform:uppercase;margin:14px 0 0}
+.verdict.bad{color:var(--red)}
+.paper .verdict.bad{color:var(--red-ink)}
+.unit{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
+  font-size:var(--t-micro);letter-spacing:.15em;text-transform:uppercase;color:var(--fg-2);
+  display:block;margin-top:14px}
+.paper .unit,.paper-2 .unit{color:var(--ink-2)}
+.bands{display:flex;gap:3px;margin:20px 0 10px;max-width:340px}
+.bands i{flex:1;height:12px;border:1px solid var(--fg-2);background:none}
+.bands i.on{background:var(--fg-2)}
+.paper .bands i{border-color:var(--ink)} .paper .bands i.on{background:var(--ink)}
+.bands.bad i.tip{background:var(--red);border-color:var(--red)}
+.paper .bands.bad i.tip{background:var(--red-ink);border-color:var(--red-ink)}
+.limit{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
+  font-size:var(--t-micro);letter-spacing:.13em;text-transform:uppercase;color:var(--fg-2)}
+.paper .limit{color:var(--ink-2)}
+.limit b{font-variation-settings:'wdth' 88,'wght' 800;color:var(--red)}
+.paper .limit b{color:var(--red-ink)}
+.src{border-top:1px solid var(--hair);padding-top:12px;margin-top:18px}
+.paper .src{border-top-color:var(--rule)}
+.win{border-top:1px solid var(--hair);margin:20px 0 0;padding-top:12px;
+  font-size:15px;line-height:1.5;color:var(--fg-2);max-width:46ch}
+.paper .win{border-top-color:var(--rule);color:var(--ink-2)}
+.win b{display:block;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 800;font-size:var(--t-micro);
+  letter-spacing:.15em;text-transform:uppercase;margin-bottom:6px;color:var(--fg-3)}
+.paper .win b{color:var(--ink-3)}
+.win.closed b{color:var(--mustard)}
+.paper .win.closed b{color:var(--mustard-ink)}
+.readout.quiet{color:var(--fg-2)}
+.paper .readout.quiet{color:var(--ink-2)}
+
+/* ── CHROME. Dark, and it stays dark. ────────────────────────────────*/
+.nav{position:sticky;top:0;z-index:60;background:var(--ground);
+  border-bottom:1px solid var(--hair)}
+.nav-in{max-width:1580px;margin:0 auto;padding:0 var(--gut);height:62px;
+  display:flex;align-items:center;gap:clamp(12px,2.2vw,30px)}
+.mark{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 850;
+  font-size:22px;letter-spacing:-.01em;text-transform:uppercase;text-decoration:none;
+  margin-right:auto;color:var(--fg)}
+/* THE LOGO IS AN ASSET, NOT TYPE. The approved horizontal lockup (leaf mark +
+   wordmark, 2048x512) is the permanent brand asset for this project and is
+   never re-set as live type, never redrawn and never substituted. White cut on
+   dark ground, black cut on paper. */
+.mark img{height:30px;width:auto;display:block}
+.foot .mark img{height:42px}
+
+.navlinks{display:flex;align-items:center;gap:clamp(12px,2.2vw,30px)}
+.nav a.nl{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 92,'wght' 620;
+  font-size:12px;letter-spacing:.13em;text-transform:uppercase;text-decoration:none;
+  color:var(--fg-2);padding:5px 0;border-bottom:2px solid transparent}
+.nav a.nl:hover,.nav a.nl[aria-current]{color:var(--fg);border-bottom-color:var(--mustard)}
+.give{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 92,'wght' 700;
+  font-size:12px;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;
+  background:var(--mustard);color:var(--on-mustard);padding:9px 18px;white-space:nowrap}
+.give:hover{background:var(--fg);color:var(--ground)}
+.navscroll{display:none}
+@media (max-width:940px){
+  .nav-in{height:56px}
+  .navlinks{display:none!important}
+  /* THE THUMB. 107px of permanent chrome on an 812px screen is 13% of
+     the viewport, and the chip row was clipped mid-word at the right
+     edge with no affordance. Below the tablet the nav is ONE 56px row:
+     wordmark left, GIVE right. Every link the chip row carried is in the
+     footer. Applied identically on every board. */
+  @media (max-width:767px){.navscroll{display:none!important}}
+  .navscroll{display:block;border-bottom:1px solid var(--hair);background:var(--ground);
+    overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .navscroll::-webkit-scrollbar{display:none}
+  .navscroll ul{display:flex;gap:20px;margin:0;padding:10px var(--gut);list-style:none;
+    white-space:nowrap}
+}
+
+
+/* ── THE SLIDER. Mechanics unchanged from v2. ────────────────────────*/
+.rig{position:relative}
+.rig-clip{position:relative;overflow:hidden}
+/* Slides are exactly 100% wide and sub-pixel rounding lets the next one
+   bleed a fraction of a pixel in. The shim covers it WITHOUT extending
+   past the clip box, which would widen the document on a full-bleed rig. */
+.rig-clip::after{content:'';position:absolute;top:0;bottom:0;right:0;width:3px;
+  background:var(--ground);z-index:4;pointer-events:none}
+.paper .rig-clip::after{background:var(--paper)}
+.rig-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;
+  scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
+.rig-track::-webkit-scrollbar{display:none}
+.sit{flex:0 0 100%;scroll-snap-align:start;min-width:0;border-left:1px solid transparent}
+.sit[hidden]{display:none}
+.rig-bar{display:flex;align-items:center;gap:12px;margin-top:26px;padding-top:14px;
+  border-top:1px solid var(--hair)}
+.paper .rig-bar{border-top-color:var(--rule-2)}
+.rig-tabs{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
+.rig-tabs::-webkit-scrollbar{display:none}
+.rig-tabs button{appearance:none;background:none;border:0;border-top:3px solid transparent;
+  margin-top:-14px;padding:14px 15px 0 0;cursor:pointer;text-align:left;white-space:nowrap;
+  font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
+  font-size:var(--t-micro);letter-spacing:.13em;text-transform:uppercase;color:var(--fg-3)}
+.paper .rig-tabs button{color:var(--ink-3)}
+.rig-tabs button:hover{color:var(--fg)}
+.paper .rig-tabs button:hover{color:var(--ink)}
+.rig-tabs button[aria-selected=true]{color:var(--fg);border-top-color:var(--fg)}
+.paper .rig-tabs button[aria-selected=true]{color:var(--ink);border-top-color:var(--ink)}
+.rig-tabs button[data-breach=true][aria-selected=true]{border-top-color:var(--red)}
+.paper .rig-tabs button[data-breach=true][aria-selected=true]{border-top-color:var(--red-ink)}
+.rig-arrows{display:flex;gap:8px;flex:none}
+.rig-arrows button{appearance:none;width:40px;height:40px;border:1px solid var(--hair);
+  background:rgba(13,13,11,.5);color:var(--fg);cursor:pointer;display:grid;place-items:center}
+.paper .rig-arrows button{border-color:var(--rule-2);color:var(--ink);background:none}
+.rig-arrows button:hover:not(:disabled){background:var(--fg);color:var(--ground)}
+.rig-arrows button:disabled{opacity:.32;cursor:default}
+.rig-arrows svg{width:18px;height:18px}
+.count{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
+  font-size:var(--t-micro);letter-spacing:.13em;color:var(--fg-3);flex:none}
+.paper .count{color:var(--ink-3)}
+
+/* ── MOTION. Unchanged. ──────────────────────────────────────────────*/
+.js .rise{opacity:0;transform:translateY(14px)}
+.js .rise.in{opacity:1;transform:none;
+  transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+@media (prefers-reduced-motion:reduce){.js .rise{opacity:1;transform:none;transition:none}}
+:focus-visible{outline:2px solid var(--mustard);outline-offset:3px}
+.paper :focus-visible{outline-color:var(--mustard-ink)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   COMPONENTS. The three hues at work in the interface itself.
+
+   MUSTARD IS THE INTERACTIVE COLOUR, and it always was: "second person,
+   a human act" is the definition of a button. Primary buttons, links on
+   the dark ground, hover, active, focus rings, the Give chip, form
+   submits. RED IS NEVER A CONTROL: a red Give button teaches a reader
+   that red means "click me", and three screens later red has to mean the
+   river is dead. GREEN reaches the interface only where the interface is
+   about recovery, which is still past perfect, so the rule holds.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── BUTTONS ─────────────────────────────────────────────────────────*/
+.b{display:inline-flex;align-items:center;gap:9px;text-decoration:none;cursor:pointer;
+  font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 92,'wght' 700;
+  font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;padding:14px 24px;
+  border:1px solid transparent;white-space:nowrap;background:none;
+  transition:background .16s,color .16s,border-color .16s}
+.b svg{width:16px;height:16px;flex:none}
+.b:active:not(:disabled){transform:translateY(1px)}
+.b:disabled,.b[aria-disabled=true]{cursor:default;transform:none}
+
+/* Primary: mustard. The one call to action per band. */
+.b-1{background:var(--mustard);color:var(--on-mustard);border-color:var(--mustard)}
+.b-1:hover{background:var(--mustard-2);border-color:var(--mustard-2)}
+.paper .b-1,.paper-2 .b-1{background:var(--mustard-ink);color:#fff;border-color:var(--mustard-ink)}
+.paper .b-1:hover,.paper-2 .b-1:hover{background:var(--ink);border-color:var(--ink)}
+
+/* Secondary: outlined in mustard, ink fill on hover. */
+.b-2{background:none;color:var(--mustard);border-color:var(--mustard)}
+.b-2:hover{background:var(--mustard);color:var(--on-mustard)}
+.paper .b-2,.paper-2 .b-2{color:var(--mustard-ink);border-color:var(--mustard-ink)}
+.paper .b-2:hover,.paper-2 .b-2:hover{background:var(--mustard-ink);color:#fff}
+
+/* Ghost: neutral until touched, then mustard. For tertiary rows. */
+.b-3{background:none;color:var(--fg-2);border-color:var(--hair)}
+.b-3:hover{color:var(--mustard);border-color:var(--mustard)}
+.paper .b-3,.paper-2 .b-3{color:var(--ink-2);border-color:var(--rule-2)}
+.paper .b-3:hover,.paper-2 .b-3:hover{color:var(--mustard-ink);border-color:var(--mustard-ink)}
+
+/* Recovery: green, and only ever pointing at what came back. */
+.b-g{background:none;color:var(--green);border-color:var(--green)}
+.b-g:hover{background:var(--green);color:var(--ground)}
+.paper .b-g,.paper-2 .b-g{color:var(--green-ink);border-color:var(--green-ink)}
+.paper .b-g:hover,.paper-2 .b-g:hover{background:var(--green-ink);color:var(--paper)}
+
+/* Disabled: no hue at all. A disabled control is not a human act. */
+.b-1:disabled,.b-2:disabled,.b-3:disabled,.b-g:disabled,
+.b-1[aria-disabled=true],.b-2[aria-disabled=true]{
+  background:none;color:var(--fg-3);border-color:var(--hair-2);opacity:1}
+.paper .b-1:disabled,.paper .b-2:disabled,.paper .b-3:disabled{
+  color:var(--ink-3);border-color:var(--rule)}
+
+/* ── LINKS ───────────────────────────────────────────────────────────*/
+.lk{color:var(--mustard);text-decoration:none;border-bottom:1px solid rgba(225,163,43,.42)}
+.lk:hover{border-bottom-color:var(--mustard)}
+.lk:visited{color:var(--mustard-2)}
+.paper .lk,.paper-2 .lk{color:var(--mustard-ink);border-bottom-color:rgba(138,100,16,.4)}
+.paper .lk:hover,.paper-2 .lk:hover{border-bottom-color:var(--mustard-ink)}
+.paper .lk:visited{color:#6E4F0C}
+/* Standalone action link. Same as .act, kept as one component. */
+.act{display:inline-flex;align-items:center;gap:9px;text-decoration:none;
+  font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 92,'wght' 680;
+  font-size:12.5px;letter-spacing:.13em;text-transform:uppercase;
+  border-bottom:2px solid var(--mustard);padding-bottom:5px;color:var(--fg)}
+.act:hover{color:var(--mustard)}
+.paper .act,.paper-2 .act{color:var(--ink);border-bottom-color:var(--mustard-ink)}
+.paper .act:hover,.paper-2 .act:hover{color:var(--mustard-ink)}
+.act svg{width:16px;height:16px;flex:none}
+
+/* ── TAGS AND PILLS ──────────────────────────────────────────────────
+   Square, 2px radius, never a SaaS pill. Feed state is carried by SHAPE
+   (see .state) so it cannot borrow red's meaning; these tags carry
+   category and severity, which are different questions. */
+.tag{display:inline-flex;align-items:center;gap:.5em;border:1px solid currentColor;
+  padding:5px 10px;border-radius:2px;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 700;font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--fg-2)}
+.paper .tag,.paper-2 .tag{color:var(--ink-2)}
+.tag-breach{color:var(--red);border-color:var(--red)}
+.paper .tag-breach{color:var(--red-ink);border-color:var(--red-ink)}
+.tag-breach-solid{background:var(--red);border-color:var(--red);color:#1A0507}
+.tag-recovered{color:var(--green);border-color:var(--green)}
+.paper .tag-recovered{color:var(--green-ink);border-color:var(--green-ink)}
+.tag-act{color:var(--mustard);border-color:var(--mustard)}
+.paper .tag-act{color:var(--mustard-ink);border-color:var(--mustard-ink)}
+.tag-season{border-style:dashed}
+.tag-demo{border-style:dotted;color:var(--fg-3)}
+.paper .tag-demo{color:var(--ink-3)}
+
+/* ── FORM FIELDS ─────────────────────────────────────────────────────*/
+.f-lab{display:block;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 700;font-size:var(--t-micro);letter-spacing:.14em;
+  text-transform:uppercase;margin-bottom:8px;color:var(--fg-2)}
+.paper .f-lab,.paper-2 .f-lab{color:var(--ink-2)}
+.f{width:100%;max-width:380px;font:400 17px/1.5 Newsreader,Georgia,serif;
+  padding:13px 14px;border-radius:2px;background:rgba(251,248,240,.05);
+  border:1px solid var(--hair);color:var(--fg);
+  transition:border-color .16s,background .16s}
+.f::placeholder{color:var(--fg-3);opacity:1}
+.f:hover{border-color:var(--fg-3)}
+.f:focus{outline:none;border-color:var(--mustard);background:rgba(251,248,240,.08)}
+.paper .f,.paper-2 .f{background:#FFFCF4;border-color:var(--rule-2);color:var(--ink)}
+.paper .f::placeholder,.paper-2 .f::placeholder{color:var(--ink-3)}
+.paper .f:focus,.paper-2 .f:focus{border-color:var(--mustard-ink);background:#fff}
+.f-help{font-size:13.5px;line-height:1.45;color:var(--fg-3);margin:8px 0 0}
+.paper .f-help,.paper-2 .f-help{color:var(--ink-3)}
+/* Error is the ONE place red touches a control, and it is not a control,
+   it is a reading of the control: the field is out of limit. */
+.f-err{border-color:var(--red)}
+.paper .f-err{border-color:var(--red-ink)}
+.f-errmsg{font-size:14px;color:var(--red);margin:8px 0 0;
+  display:flex;align-items:baseline;gap:.5em}
+.paper .f-errmsg{color:var(--red-ink)}
+.f-search{max-width:100%;padding-left:40px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%239C9585' stroke-width='2'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Cpath d='M12.5 12.5L17 17'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:13px 50%}
+.paper .f-search{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%23615B50' stroke-width='2'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Cpath d='M12.5 12.5L17 17'/%3E%3C/svg%3E")}
+
+/* ── FOCUS ───────────────────────────────────────────────────────────
+   A mustard ring on a mustard button is invisible, so the ring is the
+   GROUND colour with a mustard halo outside it. That reads on both
+   canvases and on top of any hue. */
+:focus-visible{outline:2px solid var(--mustard);outline-offset:3px;border-radius:1px}
+.paper :focus-visible,.paper-2 :focus-visible{outline-color:var(--mustard-ink)}
+.b-1:focus-visible,.tag-breach-solid:focus-visible,.give:focus-visible{
+  outline-color:var(--fg);outline-offset:2px;
+  box-shadow:0 0 0 5px var(--mustard)}
+.paper .b-1:focus-visible{outline-color:var(--paper);box-shadow:0 0 0 5px var(--mustard-ink)}
+
+/* ── FOOTER ──────────────────────────────────────────────────────────*/
+.foot{background:var(--ground-2);color:var(--fg);padding:var(--pad) 0 36px;
+  border-top:1px solid var(--hair)}
+.foot-g{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:30px}
+.foot h3{margin:0 0 12px;color:var(--fg-3)}
+.foot a{color:var(--fg-2);text-decoration:none;font-size:15.5px;line-height:1.8;display:block}
+.foot a:hover{color:var(--mustard)}
+.foot-b{margin-top:42px;padding-top:18px;border-top:1px solid var(--hair);
+  display:flex;flex-wrap:wrap;gap:12px 28px;color:var(--fg-3);font-size:13.5px}
+@media (max-width:820px){.foot-g{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.foot-g{grid-template-columns:1fr}}
+
+.soon{min-height:min(70vh,700px);display:flex;align-items:center;
+  border-bottom:1px solid var(--hair)}
+.soon-in{width:100%}
+.parts{display:grid;grid-template-columns:repeat(3,1fr);gap:0;
+  border-top:1px solid var(--hair);margin-top:clamp(24px,3vw,40px)}
+.parts>div{padding:20px 24px 0 0;border-right:1px solid var(--hair)}
+.parts>div:last-child{border-right:0}
+.parts h3{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 76,'wght' 800;
+  font-size:clamp(1.1rem,2vw,1.5rem);text-transform:uppercase;line-height:1;margin:0 0 10px}
+@media (max-width:820px){.parts{grid-template-columns:1fr}
+  .parts>div{border-right:0;border-bottom:1px solid var(--hair);padding-bottom:18px}}
+.qlist{border-top:1px solid var(--hair);margin-top:clamp(22px,3vw,38px)}
+.qlist a{display:grid;grid-template-columns:1fr auto auto;gap:6px 20px;align-items:baseline;
+  padding:15px 0;border-bottom:1px solid var(--hair);text-decoration:none}
+.qlist a:hover h3{color:var(--mustard)}
+.qlist h3{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 76,'wght' 800;
+  font-size:clamp(1.05rem,1.9vw,1.4rem);text-transform:uppercase;line-height:1;margin:0}
+.qlist .st{font-size:14px;color:var(--fg-3);white-space:nowrap}
+@media (max-width:640px){.qlist a{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><filter id="duo" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/><feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/><feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/></feComponentTransfer></filter><filter id="duo-dim" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0.11 0.18 0.255 0.325 0.385 0.43"/><feFuncG type="table" tableValues="0.10 0.165 0.235 0.30 0.355 0.40"/><feFuncB type="table" tableValues="0.085 0.14 0.20 0.26 0.31 0.35"/></feComponentTransfer></filter><filter id="duo-m" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0.20 0.38 0.57 0.75 0.89 0.97"/><feFuncG type="table" tableValues="0.13 0.27 0.44 0.62 0.78 0.90"/><feFuncB type="table" tableValues="0.05 0.10 0.17 0.27 0.40 0.58"/></feComponentTransfer></filter><filter id="sig-r" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer in="lum" result="m"><feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/><feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/><feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/></feComponentTransfer><feColorMatrix type="matrix" in="SourceGraphic" result="k" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.55 -1.25 -0.30 0 -0.10"/><feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0 0.10 0.68 1 1"/></feComponentTransfer><feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/><feColorMatrix in="SourceGraphic" type="saturate" values="1.30" result="sat"/><feComposite in="sat" in2="kb" operator="in" result="c"/><feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge></filter><filter id="sig-y" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer in="lum" result="m"><feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/><feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/><feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/></feComponentTransfer><feColorMatrix type="matrix" in="SourceGraphic" result="k" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.65 0.65 -1.5 0 -0.06"/><feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0 0.12 0.72 1 1"/></feComponentTransfer><feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/><feColorMatrix in="SourceGraphic" type="saturate" values="1.22" result="sat"/><feComposite in="sat" in2="kb" operator="in" result="c"/><feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge></filter><filter id="sig-g" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer in="lum" result="m"><feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/><feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/><feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/></feComponentTransfer><feColorMatrix type="matrix" in="SourceGraphic" result="k" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -0.85 1.70 -0.85 0 -0.03"/><feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0.03 0.30 0.78 1 1"/></feComponentTransfer><feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/><feColorMatrix in="SourceGraphic" type="saturate" values="1.72" result="sat"/><feComposite in="sat" in2="kb" operator="in" result="c"/><feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge></filter><filter id="sig-r-dim" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer in="lum" result="m"><feFuncR type="table" tableValues="0.11 0.18 0.255 0.325 0.385 0.43"/><feFuncG type="table" tableValues="0.10 0.165 0.235 0.30 0.355 0.40"/><feFuncB type="table" tableValues="0.085 0.14 0.20 0.26 0.31 0.35"/></feComponentTransfer><feColorMatrix type="matrix" in="SourceGraphic" result="k" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.55 -1.25 -0.30 0 -0.10"/><feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0 0.10 0.68 1 1"/></feComponentTransfer><feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/><feColorMatrix in="SourceGraphic" type="saturate" values="1.30" result="sat"/><feComposite in="sat" in2="kb" operator="in" result="c"/><feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge></filter><filter id="sig-y-dim" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" in="SourceGraphic" result="lum" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer in="lum" result="m"><feFuncR type="table" tableValues="0.11 0.18 0.255 0.325 0.385 0.43"/><feFuncG type="table" tableValues="0.10 0.165 0.235 0.30 0.355 0.40"/><feFuncB type="table" tableValues="0.085 0.14 0.20 0.26 0.31 0.35"/></feComponentTransfer><feColorMatrix type="matrix" in="SourceGraphic" result="k" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.65 0.65 -1.5 0 -0.06"/><feComponentTransfer in="k" result="kt"><feFuncA type="table" tableValues="0 0 0.12 0.72 1 1"/></feComponentTransfer><feGaussianBlur in="kt" stdDeviation="1.1" result="kb"/><feColorMatrix in="SourceGraphic" type="saturate" values="1.22" result="sat"/><feComposite in="sat" in2="kb" operator="in" result="c"/><feMerge><feMergeNode in="m"/><feMergeNode in="c"/></feMerge></filter></defs></svg>
+<header class="nav"><div class="nav-in"><a class="mark" href="/design/v3/home.html" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/design/v3/intelligence.html" aria-current="page">Now</a><a class="nl" href="#work">Work</a><a class="nl" href="#journeys">Journeys</a><a class="nl" href="#impact">Impact</a><a class="nl" href="#farm">Farm</a><a class="nl" href="#record">Record</a></nav><a class="give" href="#give">Give</a></div><nav class="navscroll" aria-label="Sections"><ul><li><a class="nl" href="/design/v3/intelligence.html" aria-current="page">Now</a></li><li><a class="nl" href="#work">Work</a></li><li><a class="nl" href="#journeys">Journeys</a></li><li><a class="nl" href="#impact">Impact</a></li><li><a class="nl" href="#farm">Farm</a></li><li><a class="nl" href="#record">Record</a></li></ul></nav></header>
+<section class="soon"><div class="wide soon-in"><p class="lbl" style="color:var(--fg-3);margin:0 0 18px"><a class="lk" href="/design/v3/intelligence.html">All situations</a> &nbsp;/&nbsp; Not built yet</p><h1 class="d1" style="max-width:16ch">This situation<br>has no page yet</h1><p class="lead" style="margin:22px 0 0">It is switched on, it is in the index, and its reading is live on the slider. What it does not have is the deep page below, which is a real piece of work rather than a template fill.</p><p style="margin:26px 0 0"><a class="b b-1" href="/design/v3/intelligence.html">Back to the index</a>&nbsp;&nbsp;<a class="b b-2" href="/design/v3/situation-air.html">See a finished one <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p></div></section><section><div class="wide"><h2 class="d1" style="max-width:16ch">What a situation<br>page carries</h2><p class="lead" style="margin:20px 0 0">Three parts, in this order. Air and the Yamuna are built. The rest inherit the same template as their data lands.</p><div class="parts"><div><h3>The reading</h3><p style="margin:0;color:var(--fg-2);font-size:16.5px">The value, its unit, the band it falls in, the legal limit it is judged against and the multiplier. Plus the source, the hour and the cadence.</p></div><div><h3>The context</h3><p style="margin:0;color:var(--fg-2);font-size:16.5px">The national or system-wide dataset the local reading sits inside, as a persistent side panel. Explainers for every measure. What is measured and what is modelled.</p></div><div><h3>The record</h3><p style="margin:0;color:var(--fg-2);font-size:16.5px">Every past reading at its own address, the orders and policy that concern this situation, and what you can do about it.</p></div></div></div></section><section class="dark-2"><div class="wide"><h2 class="d1" style="max-width:14ch">The nine</h2><div class="qlist"><a href="/design/v3/situation-air.html"><h3>Air</h3><span class="st">Live</span><span class="st">Page built</span></a><a href="/design/v3/situation-yamuna.html"><h3>Yamuna</h3><span class="st">Periodic</span><span class="st">Page built</span></a><a href="#"><h3>Monsoon</h3><span class="st">Live</span><span class="st">No page yet</span></a><a href="#"><h3>Forest fire</h3><span class="st">Live</span><span class="st">No page yet</span></a><a href="#"><h3>Forest loss</h3><span class="st">Periodic</span><span class="st">No page yet</span></a><a href="#"><h3>Heatwave</h3><span class="st">Out of season</span><span class="st">No page yet</span></a><a href="#"><h3>Treatment</h3><span class="st">Periodic</span><span class="st">No page yet</span></a><a href="#"><h3>Noise</h3><span class="st">Demo data</span><span class="st">No page yet</span></a><a href="#"><h3>Our record</h3><span class="st">Periodic</span><span class="st">No page yet</span></a></div><p class="cap" style="margin:16px 0 0;max-width:70ch">Each situation has its own address whether or not the page behind it exists. Nothing outside a page links to an anchor on the slider.</p></div></section>
+
+<footer class="foot">
+  <div class="wide">
+    <div class="foot-g">
+      <div>
+        <div class="mark" style="font-size:34px;display:block;margin-bottom:12px"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></div>
+        <p class="cap" style="max-width:34ch">We for Change Foundation. Khirki Extension,
+          New Delhi. Working since 2000. Registered under sections 12A and 80G.</p>
+      </div>
+      <div><h3 class="lbl">Read</h3>
+        <a href="/design/v3/intelligence.html">Environmental Intelligence</a>
+        <a href="#work">Projects and campaigns</a><a href="#">Stories and films</a>
+        <a href="#">Publications</a></div>
+      <div><h3 class="lbl">Go</h3><a href="#journeys">Yamuna Yatra</a>
+        <a href="#journeys">NatureScapes</a><a href="#journeys">CityScapes</a>
+        <a href="#journeys">Gram Anubhav</a></div>
+      <div><h3 class="lbl">Reach us</h3><a href="mailto:info@swechha.in">info@swechha.in</a>
+        <a href="#farm">Swechha Farm visits</a><a href="#">Work with us</a>
+        <a href="/design/v3/system.html">The system sheet</a></div>
+    </div>
+    <div class="foot-b">
+      <span>Design synthesis v3, 19 August 2026. Not the live site.</span>
+      <span>Every reading shown is a sample value standing in for the live feed.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+document.documentElement.className+=' js';
+(function(){
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{rootMargin:'0px 0px -8% 0px',threshold:.12});
+  document.querySelectorAll('.rise').forEach(function(n,i){ n.style.transitionDelay=(i%4*70)+'ms'; io.observe(n); });
+})();
+</script>
+</body>
+</html>

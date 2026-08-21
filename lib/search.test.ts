@@ -11,13 +11,13 @@ describe('getSearchIndex', () => {
     }
   })
 
-  it('routes stories to /stories and campaigns to /campaigns', () => {
+  it('routes stories to /stories and campaigns to /work/campaigns', () => {
     const index = getSearchIndex()
     const story = index.find((d) => d.type === 'story')
     const campaign = index.find((d) => d.type === 'campaign')
     expect(story).toBeDefined()
     expect(story!.href).toBe(`/stories/${story!.slug}`)
     expect(campaign).toBeDefined()
-    expect(campaign!.href).toBe(`/campaigns/${campaign!.slug}`)
+    expect(campaign!.href).toBe(`/work/campaigns/${campaign!.slug}`)
   })
 })

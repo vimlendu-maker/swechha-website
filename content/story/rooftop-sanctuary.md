@@ -4,8 +4,9 @@ summary: A terrace in East Delhi now hosts eleven bird species and a resident po
 author: Swechha
 date: '2024-05-02'
 heroImage:
-  src: /images/stories/rooftop-sanctuary.png
-  alt: PLACEHOLDER — a terrace garden with native flowering plants
+  src: /images/photos/bee-on-mustard-flower.jpg
+  alt: A honeybee feeding on a mustard flower in full bloom
+  signal: none
 tags:
   - biodiversity
   - urban

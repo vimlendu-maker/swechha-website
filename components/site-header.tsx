@@ -1,45 +1,33 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { SiteNav, type NavSection } from '@/components/site-nav'
 
-const NAV = [
-  { href: '/now', label: 'Now' },
-  { href: '/explore', label: 'Explore' },
-  { href: '/work', label: 'Work' },
-  { href: '/campaigns', label: 'Campaigns' },
-  { href: '/impact', label: 'Impact' },
-  { href: '/act', label: 'Act' },
-  { href: '/about', label: 'About' },
-  { href: '/search', label: 'Search' },
-]
+export type { NavSection }
 
-export function SiteHeader() {
+/* `current` marks the active SECTION, not the current URL. A journey or project
+   page passes the section it lives under, so /journeys/naturescapes and
+   /work/projects/farm-school both light up WORK.
+
+   All the navigation itself lives in SiteNav, which owns the item list once and
+   renders the desktop bar, the WORK dropdown and the mobile panel from it. */
+export function SiteHeader({ current }: { current?: NavSection }) {
   return (
-    <header className="border-b border-rule">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-5 py-4 md:px-8">
-        <Link href="/" aria-label="Swechha — home">
+    /* `relative` anchors the mobile panel, which is positioned to the full width
+       of the header rather than to the nav. */
+    <header className="relative bg-ground text-fg">
+      <div className="mx-auto flex max-w-[1320px] items-center justify-between gap-4 px-[clamp(18px,3.2vw,42px)] py-3.5">
+        <Link href="/" aria-label="Swechha — home" className="shrink-0">
           <Image
-            src="/brand/swechha-horizontal.svg"
+            src="/brand/swechha-horizontal-white-approved.png"
             alt="Swechha"
-            width={155}
-            height={45}
-            className="h-10 w-auto md:h-12"
+            width={620}
+            height={90}
+            className="h-[23px] w-auto"
             priority
           />
         </Link>
-        <nav aria-label="Primary">
-          <ul className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm uppercase tracking-widest md:gap-x-8">
-            {NAV.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className="inline-block py-2 transition-colors hover:text-teal-ink"
-                >
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+
+        <SiteNav current={current} />
       </div>
     </header>
   )

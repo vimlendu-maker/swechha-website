@@ -19,7 +19,7 @@ export function NowModule({ situations }: { situations: Entry<Campaign>[] }) {
     <section className="mt-20">
       <h2 className="text-xs uppercase tracking-widest text-ink-muted">Swechha now</h2>
 
-      <div className="mt-6 bg-indigo p-6 text-paper md:p-9">
+      <div className="mt-6 bg-ground p-6 text-paper md:p-9">
         <p className="font-mono text-xs uppercase tracking-widest opacity-70">{hero.data.location}</p>
         <h3 className="mt-2 max-w-[20ch] text-2xl">{hero.data.title}</h3>
         {hero.data.liveData && (
@@ -43,10 +43,10 @@ export function NowModule({ situations }: { situations: Entry<Campaign>[] }) {
           <StatusBadge status={hero.data.status} severity={hero.data.severity} onDark />
         </div>
         <div className="mt-5 flex flex-wrap gap-6">
-          <Link href={`/campaigns/${hero.slug}#public-health`} className="text-sm underline underline-offset-[3px] opacity-85">
+          <Link href={`/work/campaigns/${hero.slug}#public-health`} className="text-sm underline underline-offset-[3px] opacity-85">
             What this means
           </Link>
-          <Link href={`/campaigns/${hero.slug}`} className="text-sm underline underline-offset-[3px] opacity-85">
+          <Link href={`/work/campaigns/${hero.slug}`} className="text-sm underline underline-offset-[3px] opacity-85">
             What you can do
           </Link>
         </div>
@@ -70,7 +70,7 @@ export function NowModule({ situations }: { situations: Entry<Campaign>[] }) {
               </span>
               <StatusBadge status={s.data.status} severity={s.data.severity} />
               <h3 className="w-full text-sm font-semibold">
-                <Link href={`/campaigns/${s.slug}`} className="after:absolute after:inset-0">
+                <Link href={`/work/campaigns/${s.slug}`} className="after:absolute after:inset-0">
                   {s.data.title}
                 </Link>
               </h3>
@@ -80,7 +80,7 @@ export function NowModule({ situations }: { situations: Entry<Campaign>[] }) {
         </div>
       )}
 
-      <Link href="/now" className="mt-6 inline-block border-b-2 border-teal pb-1 text-sm uppercase tracking-widest hover:text-teal-ink">
+      <Link href="/now" className="mt-6 inline-block border-b-2 border-mustard pb-1 text-sm uppercase tracking-widest hover:text-mustard-ink">
         All active situations
       </Link>
     </section>
