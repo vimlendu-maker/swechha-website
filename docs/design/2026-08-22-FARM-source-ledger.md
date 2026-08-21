@@ -1,0 +1,224 @@
+# Swechha Farm — source ledger, 22 August 2026
+
+Written before any layout, on the pattern of `2026-08-22-AD-22-impact-source-ledger.md`
+and `2026-08-21-AD-15-air-source-ledger.md`. Nothing here is a design decision. It
+records what is sourced, what is contradicted, and what the page cannot be built
+without.
+
+The page this serves is **the destination of the homepage's dead button**: band 8 of
+`public/design/v3/home.html` carries `<a class="b b-1" href="#">Visits, camps and
+retreats</a>`. That `href="#"` is the whole brief.
+
+---
+
+## 1 · What was already on record in this repo
+
+| Fact | Source in repo | Status |
+|---|---|---|
+| Five acres; an hour and a half from Delhi | D-07.3, ruled by the owner | **ruled** |
+| Transformation story: 5,000+ trees, 20 cows, poultry, native nursery, vermicompost, hydroponics, butterfly garden, organic farming, apiary, mud houses, permaculture prototypes | SOURCE-FACTS §197–201, owner 21 Aug | **owner-given** |
+| It is a place you can come to: school camps (overnight), day visits, "an ideal place for team meetings and retreats" | SOURCE-FACTS §205–206, owner 21 Aug | **owner-given** |
+| "Both are detailed further on the farm's inner page" | SOURCE-FACTS §208 | the instruction for this page |
+| Nursery of twenty thousand saplings | frozen homepage band 8 | compatible with "native nursery" |
+| Day visits · short courses (the 5 C's) · internships and stays; 5,000 kg leaves composted; 500 kg honey; permaculture, water harvesting in swales/bundhs/ponds, solar, dairy prototype | `data/work/projects/farm-school.json`, from SOURCE-FACTS §65–72 | **live on `/work/projects/farm-school`** |
+| ~10 farm frames catalogued | `content/photo-library.json` | all Swechha originals |
+
+**The recorded open hole (AD-17 question 6, and `farm-school.json` `holes[1]`):**
+the farm and the Farm School share five acres, a nursery and an apiary, and nobody
+has ruled whether they are one page or two. This ledger does not rule it.
+
+---
+
+## 2 · External sources checked, 22 August 2026
+
+### 2.1 Google Maps — the listing exists and is the farm's own
+
+Place: **Swechha Farm** / स्वेच्छा फार्म · category **Campground** · **4.9★ from 23
+reviews** · `swechha.in` linked · phone **090135 22222**.
+
+- Address as listed: **Swechha Farm, Dist, Ladpuri, Rajasthan 301707**
+- Plus code **4WGH+Q3 Ladpuri** · coordinates **28.1269309, 76.927649**
+- Google place id `0x390d33ec3c173de5:0x4221a1dde6ba71e3`
+
+**What reviewers say the place is** (their words, not ours, and not quotable on the
+site without permission): a stone house with "rooms [that] are a masterpiece"; "fresh
+A2 milk from Gir cows"; "fresh white butter and ghee they provide produced at the farm
+itself"; organic vegetables and fruit; "in the lap of Aravalli hill"; "just an hour
+away from Gurgaon"; "a hidden gem for nature lovers looking for a stay around NCR".
+
+**Photographs: 13 are visible signed-out, and they are NOT a usable set.** They are
+visitor snapshots, they belong to the visitors, and the subject matter is lopsided —
+roughly nine of thirteen are flowers (bougainvillea, dahlias, ixora). The four that
+carry information are: a thatched-roof room interior with lattice windows and a vase;
+a cattle shed with a feed trough; a bee frame drawn out of a hive; sunrise over the
+fields. **None of them can go on the site.** Their value is corroboration only — they
+independently confirm the apiary, the dairy shed and the thatched/mud building.
+
+### 2.2 Airbnb — two listings, hosted by the owner, and the most concrete stay source found
+
+Both are titled for this farm and hosted by **Vimlendu, "12 years hosting"**. They
+share one description verbatim.
+
+| | Whole farm | Yamuna House |
+|---|---|---|
+| id | `763424639055785815` | `763406979666649683` |
+| type | Farm stay, entire place | Private room in farm stay |
+| capacity | **10 guests · 4 bedrooms · 4 beds · 2 bathrooms** | **4 guests · 2 bedrooms · 2 beds · 1 private bathroom** |
+| rating | 4.83 · 6 reviews | 4.83 · 6 reviews · **Guest favourite** |
+| photos | **67** | **31** |
+
+The shared description, in the owner's own words:
+
+- "a comfortable stay in the lap of a **5 acre organic farm**… the backdrop of Aravali
+  Hills. It's **less than 50 kms from Gurugram, approx 90 mins from Delhi**"
+- "It's not a hotel, its natural, it's rustic. It's a **REAL farm**"
+- "The landscape had **NOT A SINGLE TREE a year ago**, a barren piece of land, and now
+  it boasts of **over two thousand trees**, many/most native"
+- Inventory as listed there: "vegetable farms, **Amla orchard**, vermi composting lab,
+  a **mini-poultry**, a butterfly garden, a dairy farm, a native nursery"
+- "you can choose to stay in your **mudhouse**… or walk around the farm amidst
+  **peacocks, parrots and kingfishers**"
+- "You can spend time **volunteering at the farm**… sowing, harvesting, composting,
+  honey keeping, or just pulling out grass from our vegetable beds"
+- Conditions stated plainly: **erratic electricity with inverter backup**; **no
+  television, no Wi-Fi**, "Jio network works the best"; **borewell water, filtered for
+  drinking**; nearest shop "a couple of kilometers away"; **pet-friendly** at ₹500 per
+  pet per night; BYOB; firepit; free parking; a fully functional kitchen guests may use
+- **Meals charged extra: breakfast ₹300, lunch ₹375, dinner ₹375 per person, tea twice
+  a day.** (Rate currency unknown — see §4.)
+- "don't expect a 5-star safari stay… cows, bees, birds, buffalos, goats, chicken and
+  more"
+
+**Buffalos and goats appear here and nowhere in this repo.** So does the Amla orchard.
+
+### 2.3 swechha.in — the programme pages
+
+`/project/farm-school/` and `/project/farm-school-sustainability-program/`:
+
+- "a **2-hectare campus** near Manesar, at **Ladpuri Village in Alwar District**"
+- **Day visits are "half-day exposure visits"** — "for individuals, families, and
+  school students"
+- Workshops: "learning by moving, learning by doing"; vermicomposting, bee-keeping,
+  permaculture, water-harvesting, farming, forestry, system thinking
+- **Age range: "starting from toddlers (2.5-year-olds onwards) and their parents, to
+  young adults and college students"**
+- Internships "to young people, **from India and abroad**"; plus "**research students
+  from various Universities, to do their action research**"
+- Contact given: **011-41009320**, **swechhaindia@gmail.com**
+- The site's own counters for day visits / workshops / participants / internships
+  **all render `0`** — the figures are not published anywhere.
+
+---
+
+## 3 · Contradictions, and which way they now fall
+
+**3.1 The acreage — resolved in favour of five, and the ledger should say so.**
+Four numbers were in play: the frozen homepage's **forty acres**, the prototype's
+**twelve**, the PDF's **2 hectares**, and D-07.3's **five**. Two hectares is **4.94
+acres**. So the PDF and the owner's own Airbnb listing ("a 5 acre organic farm") and
+D-07.3 all say the same thing in different units. **Forty and twelve are the outliers
+and neither has a source.** AD-22's worry about a third acreage entering was a unit
+mismatch, not a conflict.
+
+**3.2 The distance — both "60 km" and "90 minutes" are true, of different things.**
+From the coordinates, the farm is **~60 km from central Delhi in a straight line** and
+**~100 km by road**. The old homepage's "60km" was a map distance; "90 minutes" and
+"less than 50 kms from Gurugram" are the travelling facts. **Publish time, not
+distance** — 90 minutes is the owner's number, the Airbnb's number and D-07.3.
+
+**3.3 The trees — 2,000 vs 5,000+, and this is a date problem, not a conflict.**
+Airbnb says "over two thousand trees" and dates it "a year ago" from an undated
+listing. The owner said "over 5,000 trees" on 21 August 2026. A growing farm produces
+exactly this. **The page needs a date against the 5,000, or it inherits an argument
+with a listing that is still live and still says two thousand.**
+
+**3.4 "Manesar" and "Alwar District" are both in the address and both are loose.**
+The coordinates put the farm in Ladpuri at the Haryana–Rajasthan edge; the postal code
+301707 is Rajasthan; Manesar is the landmark, ~35 km north. Google's own listing says
+Ladpuri, Rajasthan. Nothing here is wrong, but the page should pick one phrasing.
+
+**3.5 The day visit's length.** swechha.in says **half-day**. The live
+`farm-school.json` says "ninety minutes out, and back by evening" — a full day. One of
+them is stale.
+
+---
+
+## 4 · What the page cannot be built without — the owner's calls
+
+1. **One page or two.** The unresolved AD-17 question 6. Everything below depends on it.
+2. **Where the "Visits, camps and retreats" button goes**, and what a reader does when
+   they land: a phone number, an email, a form, or the Airbnb listings.
+3. **School camps overnight — the numbers.** The only sleeping capacity found anywhere
+   is the homestay's 10 guests and 4 beds. A school camp is not ten people. Where does
+   a school group sleep, how many, in what, and with what washrooms and supervision?
+4. **Whether the Airbnb listings are named on the site at all.** They are the owner's
+   own, they are the only bookable thing that exists, and they are also the only place
+   the farm is described as a rental rather than a school.
+5. **Whether any price goes on the site**, and if so whether the ₹300/₹375/₹375 meal
+   rates are current. They are undated.
+6. **Retreats.** "An ideal place for team meetings and retreats" is the entire sourced
+   record. No capacity, no day rate, no room, no meeting space.
+7. **A participation figure with a period.** The standing ledger hole: every other
+   project counts its people, this one counts its compost. Still open.
+8. **When the farm is open**, and whether Aravalli summer closes it.
+9. **The photographs.** The 98 frames on the two Airbnb listings are the owner's own
+   and are the only substantial photographic record of the stay found anywhere. The
+   repo's ~10 farm frames are of the farm, not of the stay: no mud house interior, no
+   bed, no table, no group. Reuse of the Airbnb set needs his word.
+
+---
+
+## 5 · Corroboration table — what three independent sources agree on
+
+Facts that appear in the repo **and** on swechha.in **and** in the owner's Airbnb text
+are the safe spine of the page:
+
+| | repo | swechha.in | Airbnb |
+|---|---|---|---|
+| five acres / 2 ha | ✓ D-07.3 | ✓ | ✓ |
+| 90 minutes from Delhi | ✓ | — | ✓ |
+| native nursery | ✓ | ✓ | ✓ |
+| vermicomposting | ✓ | ✓ | ✓ |
+| apiary / bee-keeping | ✓ | ✓ | ✓ (honey keeping) |
+| butterfly garden | ✓ | ✓ | ✓ |
+| dairy | ✓ (20 cows) | — | ✓ (dairy farm) |
+| poultry | ✓ | — | ✓ (mini-poultry) |
+| water harvesting | ✓ | ✓ | — |
+| barren before | ✓ | — | ✓ ("NOT A SINGLE TREE") |
+| mud houses | ✓ | — | ✓ (mudhouse) |
+| hydroponics | ✓ | ✓ (fodder) | — |
+
+**The transformation hook is the best-sourced sentence available.** "Nothing grew
+here" is on the frozen homepage; "NOT A SINGLE TREE a year ago, a barren piece of
+land" is the owner's own wording, published, and still live.
+
+---
+
+## 6 · Rulings, owner, 22 August 2026 — F-1 to F-4
+
+**F-1 · Two pages, place and programme.** This closes AD-17 question 6 and
+`farm-school.json` `holes[1]`, both of which have been open since 21 August.
+`/farm` is **the place**: the transformation, what grows there, and every way a
+person can come — day visits, school camps, retreats, the farm stay.
+`/work/projects/farm-school` is unchanged and remains **the programme**, in the work
+register. They link across. The homepage band 8 button resolves to `/farm`.
+
+*Consequence to apply:* `farm-school.json` `holes[1]` is now answered and must be
+removed from that file rather than left standing — a hole that has been filled and
+still prints is worse than no hole at all.
+
+**F-2 · The page ends in a phone number and an email, not a form.** No enquiry form,
+no route handler, no inbox to maintain. This is how the farm takes bookings today and
+the page should not pretend otherwise.
+
+**F-3 · School camps ship with the hole named, not filled.** No capacity figure, no
+sleeping arrangement, no ratio is published, because none is sourced. The page says so
+in its own words, on the pattern already set by `farm-school.json` `holes[]` and by
+`/impact` — the section refusing the number it is named for. It fills in when the
+owner supplies figures.
+
+**F-4 · The Airbnb photographs may be used.** The 98 frames across the two listings
+are Swechha originals and enter `content/photo-library.json` with alt text written
+from the frame, on the same consent basis as ruling W-14. This is what makes a stay
+section possible at all: the ten catalogued farm frames contain no interior, no bed
+and no group.

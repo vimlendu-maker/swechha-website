@@ -43,6 +43,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
+import { imageSize } from './lib/jpeg-size.mjs';
 const { esc, opener, hole, ARROW, kd, KIND_LEGEND } = S;
 
 const sh = S.shell();
@@ -108,16 +109,71 @@ const PAIR_B = find(IMPACT.pair.b, 'pair.b');
 
 /* Every frame must be in the library, must not be a bought stock frame, and
    must not appear twice on this page. All three have shipped as defects
-   elsewhere in this section. */
+   elsewhere in this section.
+
+   ★ AND ITS SHAPE MUST SUIT THE CELL IT IS GOING INTO. This is the gate the
+   first build of this page needed and did not have. Seven frames in the
+   library carry EXIF Orientation 6, so they are 1500x2000 PORTRAIT as a
+   browser lays them out while the library recorded 2000x1500 landscape — and
+   nothing checked, so two of them went into full-width letterbox cells and
+   rendered as a thin horizontal sliver of a tall photograph. The reported
+   symptom was "the image is not visible" and the cause was geometry, not
+   tone.
+
+   So two checks, and the first is what makes the second trustworthy:
+     1. the library's own width/height must match what the FILE says, with
+        EXIF applied — the library is not the authority on its own contents;
+     2. a frame may not go into a cell materially wider than itself.
+
+   MIN_AR is per cell shape, not global: the sheet's 4:3 cells crop a portrait
+   frame honestly and most of the archive is portrait, so only the letterbox
+   cells are strict. */
 const FRAMES = [IMPACT.masthead.frame, ...IMPACT.sheet.frames];
+const WIDE_CELLS = new Set([1, 8]);          // .ip-sh-c:nth-child(1),(8) span 2 at 8:3
 const seenFrame = new Set();
 for (const fr of FRAMES) {
   const e = LIB.get(fr.src);
-  if (!e) dataFail(`frame ${fr.src} is not in content/photo-library.json.`);
-  else if (e.stock) dataFail(`frame ${fr.src} is a bought stock frame and may not be published as our work.`);
+  if (!e) { dataFail(`frame ${fr.src} is not in content/photo-library.json.`); continue; }
+  /* ★ PROVENANCE FAILS SAFE, ON THE CREDIT, NOT ON A BOOLEAN.
+     `stock: true` is set on exactly five bought frames. It is NOT set on the
+     TWELVE frames credited "NOT A PHOTOGRAPH — provenance unverified, shows
+     generation/screenshot artefacts" — the synthetic Gram Anubhav set — so a
+     gate that reads only the flag would have passed a generated image as
+     Swechha's own work. It did not, on this page, by luck rather than by
+     check: all ten frames here are archive frames.
+     So the credit is allow-listed instead. Our own archive, or a named
+     Wikimedia licence. Anything else has to be added here deliberately. */
+  const CREDIT_OK = /^Swechha archive$/.test(String(e.credit))
+    || /\bCC BY[\w.\- ]*, via Wikimedia Commons/.test(String(e.credit));
+  if (e.stock || !CREDIT_OK) {
+    dataFail(`frame ${fr.src} may not be published as our work — credit is ${JSON.stringify(e.credit)}`
+      + `${e.stock ? ' and it is flagged stock' : ''}. Accepted: "Swechha archive", or a named CC/Wikimedia attribution.`);
+  }
   if (seenFrame.has(fr.src)) dataFail(`frame ${fr.src} appears twice on this page.`);
   seenFrame.add(fr.src);
   if (!fr.alt) dataFail(`frame ${fr.src} has no alt text.`);
+
+  /* 1. THE LIBRARY AGAINST THE FILE. */
+  let real;
+  try { real = imageSize(join(S.ROOT, 'public' + fr.src)); }
+  catch (err) { dataFail(`frame ${fr.src} could not be measured: ${err.message}`); continue; }
+  if (e.width !== real.width || e.height !== real.height) {
+    dataFail(`frame ${fr.src}: the library says ${e.width}x${e.height}, the file renders `
+      + `${real.width}x${real.height} (EXIF orientation ${real.orientation}). The file wins — `
+      + `correct content/photo-library.json.`);
+    continue;
+  }
+
+  /* 2. THE SHAPE AGAINST THE CELL. */
+  const ar = real.width / real.height;
+  const idx = FRAMES.indexOf(fr);              // 0 is the masthead
+  const where = idx === 0 ? 'the masthead letterbox' : `sheet cell ${idx}`;
+  const min = idx === 0 ? 1.4 : (WIDE_CELLS.has(idx) ? 1.6 : 0);
+  if (ar < min) {
+    dataFail(`frame ${fr.src} is ${real.width}x${real.height} (aspect ${ar.toFixed(2)}) and goes into `
+      + `${where}, which needs at least ${min}. A frame narrower than its cell renders as a sliver of `
+      + `itself — this is the defect that made the first hero unreadable.`);
+  }
 }
 if (bad) { console.error(`\nREFUSING TO WRITE: ${bad} data check(s) failed.`); process.exit(1); }
 
