@@ -490,7 +490,14 @@ mechanism by which a wrong state gets displayed*. Removing the branch removes
 the failure mode. Absence is also unreadable — "not live" and "failed to
 render" look identical.
 
-**`closed` / `demo` / `delayed` are class names and must never become copy.**
+**`live` / `periodic` / `demo` / `closed` are class names and must never become
+copy.** The PERIODIC badges were marked `state delayed` until AD-12 (21 August)
+— a survivor of the abandoned RECENT/DELAYED vocabulary, rendering a word it did
+not name. Nothing ever selected `.delayed`, which is why it outlived a freeze
+and two sweeps; the rename is byte-identical in the render, proved on 1,058
+computed properties per badge and on identical PNGs. **PERIODIC's hollow square
+has no rule of its own — it is the `.state i` default.** Do not add
+`.state.periodic i` to complete the set: the absence of a fill is the shape.
 
 **The blink.** Only `.state.live`, only the 9×9 dot, never the word: 2.4s
 holding solid for 70% of the cycle — **0.42 Hz, seven times slower than WCAG
