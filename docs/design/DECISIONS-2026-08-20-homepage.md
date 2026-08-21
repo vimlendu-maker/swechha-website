@@ -989,3 +989,44 @@ homepage-visual: `content/photo-library.json` has no `cityscapes-*` entries, so 
 archive credit has nowhere to live; the campaigns pair stays capped at the 24px AA floor
 (44px is arithmetically impossible in a 48.3px envelope); and "9,400 days on file" and
 "34 guides" are still unsourced in `2026-08-21-SOURCE-FACTS.md`.
+
+## 21 August — rulings for the situation-page phase
+
+### D-10.1 NO READING MAY CARRY "LIVE" UNTIL A FEED EXISTS
+**Client: label them DEMO DATA until a feed exists.**
+
+Verified before ruling: the repository has **no live data of any kind** — runtime
+dependencies are `gray-matter`, `marked`, `next`, `react`, `react-dom`, `zod`; there is no
+HTTP client and no OpenAQ or NASA FIRMS integration. Live feeds were an architecture ruling
+on 18 August and were never built. The frozen homepage discloses this at document level in
+its footer ("Not the live site… every reading shown is a sample value standing in for the
+live feed") but still carries **five per-reading LIVE badges**, and a badge is a claim about
+that reading.
+
+So: every reading takes the honest label from the frozen four-word vocabulary — **LIVE /
+PERIODIC / DEMO DATA / OUT OF SEASON**. An unwired feed reads **DEMO DATA**; an
+editor-entered bulletin figure reads **PERIODIC**, not LIVE. LIVE returns per-reading on the
+day that reading's feed is actually wired, which is also the moment the badge starts to mean
+something. The footer disclosure stays.
+
+### D-10.2 A SITUATION PAGE'S HEADLINE IS A CONSTANT, NOT A READING
+**Client: a constant.** The existing `situation-air.html` sets its `<h1>` to "Four times the
+limit" — a reading, typed into static markup, in the largest type on the page, false on the
+first clean-air day. The page's `<h1>` now names its subject and the reading lives in the
+instrument below it, where it changes. This is what the homepage hero already does with "WE
+KEEP THE RECORD".
+
+### D-10.3 THE AIR PAGE IS A REBUILT SHELL, NOT A RETROFIT
+**Client: rebuild the shell, keep the content.** The existing file is a pre-freeze fork with
+~40 distinct drifts, and that set is open — it cannot be proven closed from outside the file.
+Starting from the frozen page's token and chrome layer verbatim closes the drift set *by
+construction*, and leaves a reusable shell for the five sibling situations. The existing
+page's content architecture survives: its six-question spine, its feed inventory, its honest
+forecast empty state, its method table.
+
+### D-10.4 THE FROZEN HOMEPAGE IS AUTHORITATIVE OVER EVERY DETAIL PAGE
+**Client: homepage is authoritative; stamp CityScapes now.** Where a detail page contradicts
+the frozen homepage — She Leads Change, Food systems, CityScapes — the homepage wins and the
+detail page is corrected when its turn comes. **`journeys-cityscapes.html` gets the "demo
+content" stamp immediately**: it is the only one of the three carrying none, so a reader
+cannot currently tell a template from finished work.
