@@ -71,7 +71,7 @@ export function ContentCard({
       <Heading className="mt-2 text-h3" style={headingStyle}>
         <Link
           href={href}
-          className="after:absolute after:inset-0 group-hover:text-teal-ink"
+          className="after:absolute after:inset-0 group-hover:text-mustard-ink"
         >
           {title}
         </Link>

@@ -18,7 +18,7 @@ export default function ImpactPage() {
       </p>
       <p className="mt-6 max-w-[60ch] text-ink-muted">
         In the meantime, individual outcomes are visible on resolved{' '}
-        <Link href="/campaigns" className="underline underline-offset-[3px]">campaign pages</Link>.
+        <Link href="/work/campaigns" className="underline underline-offset-[3px]">campaign pages</Link>.
       </p>
     </main>
   )

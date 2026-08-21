@@ -37,7 +37,7 @@ const PROSE = [
   '[&_li>ol]:mt-2',
 
   // Links.
-  '[&_a]:text-teal-ink',
+  '[&_a]:text-mustard-ink',
   '[&_a]:underline',
   '[&_a]:underline-offset-4',
 
@@ -45,7 +45,7 @@ const PROSE = [
   // mistakable for narration.
   '[&>blockquote]:my-10',
   '[&>blockquote]:border-l-2',
-  '[&>blockquote]:border-ochre',
+  '[&>blockquote]:border-mustard',
   '[&>blockquote]:pl-6',
   '[&>blockquote]:font-display',
   '[&>blockquote]:text-xl',

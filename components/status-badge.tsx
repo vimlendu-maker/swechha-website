@@ -3,7 +3,7 @@ import { resolveStatus, type LifecycleStatus, type Severity } from '@/lib/status
 interface StatusBadgeProps {
   status: LifecycleStatus
   severity?: Severity | null
-  /** True when the badge sits on the indigo/dark canvas — swaps to the -bright colour. */
+  /** True when the badge sits on a dark ground — swaps to the -bright colour. */
   onDark?: boolean
 }
 
