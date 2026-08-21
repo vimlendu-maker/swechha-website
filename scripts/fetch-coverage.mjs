@@ -77,8 +77,22 @@ async function register() {
   return { ok: true, error: null, items, count: items.length, publishers: byPublisher };
 }
 
-/* ── THE SIGNAL — GDELT article volume over 12 months ────────────────── */
+/* ── THE SIGNAL — GDELT article volume over 12 months ──────────────────
+   D-20.2 REPLACED THIS WITH WIKIPEDIA PAGEVIEWS for the Air page, on the
+   grounds that GDELT measures what outlets PUBLISH, rate-limits to about one
+   request per five seconds, and refused six consecutive attempts during that
+   build. The code stays because the register half of this file is still the
+   coverage band on every situation page — but the signal half is now opt-in.
+   With COVERAGE_SKIP_GDELT=1 the block is recorded as a DELIBERATE OMISSION,
+   which is a different thing from a failure and is stored as a different
+   thing: `skipped: true`, not `ok: false`. A page must never read a decision
+   as an outage. */
 async function signal() {
+  if (process.env.COVERAGE_SKIP_GDELT) {
+    return { ok: false, skipped: true,
+      error: 'not requested — D-20.2 replaced the GDELT signal with Wikipedia pageviews',
+      points: null, monthly: null, peak: null, floor: null, ratio: null };
+  }
   const url = 'https://api.gdeltproject.org/api/v2/doc/doc?query='
     + encodeURIComponent(GDELT_QUERY) + '&mode=timelinevol&timespan=12m&format=json';
   for (let attempt = 1; attempt <= 6; attempt++) {
@@ -115,8 +129,13 @@ async function signal() {
 
 const [reg, sig] = [await register(), await signal()];
 
-if (!reg.ok && !sig.ok) {
+// A SKIPPED signal is not a failed one, so it must not be able to abort the job.
+if (!reg.ok && !sig.ok && !sig.skipped) {
   console.error('Both feeds failed. Leaving the previous file alone rather than publishing an absence.');
+  process.exit(1);
+}
+if (!reg.ok && sig.skipped) {
+  console.error('The register failed and the signal was skipped. Nothing to publish; leaving the previous file alone.');
   process.exit(1);
 }
 
@@ -125,8 +144,12 @@ const out = {
   role: 'journalism as a measurement of ATTENTION, never as a source of fact',
   rule: 'Reporting is tagged as reporting. It is never presented as Swechha\'s finding. '
       + 'A headline is evidence that something was said, not that it is true.',
-  device: 'Coverage volume is drawn against AQI on one time axis. The finding is the '
-        + 'divergence: the air is bad all year and the coverage is not.',
+  // The device sentence is per-subject: the reading it is drawn against differs
+  // from page to page, and a hardcoded "against AQI" would be false on four of
+  // the five situations that reuse this file.
+  device: process.env.COVERAGE_DEVICE
+        || 'Coverage volume is drawn against the reading on one time axis. The finding is the '
+         + 'divergence: the problem runs all year and the coverage does not.',
   state_label: 'PERIODIC',
   register: {
     source: { name: 'Google News', url: 'https://news.google.com/', note: 'search feed, keyless' },
@@ -159,6 +182,8 @@ console.log(`register: ${reg.ok ? `${reg.count} items, ${Object.keys(reg.publish
 if (sig.ok) {
   console.log(`signal:   ${sig.points.length} days, ${sig.monthly.length} months (attempt ${sig.attempts})`);
   console.log(`          peak ${sig.peak.month} ${sig.peak.mean} · floor ${sig.floor.month} ${sig.floor.mean} · ratio ${sig.ratio}x`);
+} else if (sig.skipped) {
+  console.log(`signal:   SKIPPED — ${sig.error} (recorded as a decision, not an outage)`);
 } else {
   console.log(`signal:   FAILED — ${sig.error} (recorded as null, not zero)`);
 }
