@@ -505,3 +505,56 @@ sitting there as evidence for a fact the page did not yet know.
 ### Open after this pass
 **One thing.** A participation figure for the farm, with a period. That is the whole of
 what this page still cannot tell a reader.
+
+---
+
+## 12 · F-18 — the last hole closes, and the page stops naming any
+
+**F-18 · Thirty school groups a year.** Owner, 22 August. This is the participation
+figure §4 item 7 asked for on the first pass and `farm-school.json` had carried as an
+open hole since 21 August: *"We cannot tell you how many people have been through the
+farm. Every other project on this register counts its participants. This one counts its
+compost."* It counts its groups now.
+
+**It went on the REGISTER, not on this page.** `data/work/projects/farm-school.json`
+holds it and `/farm` **resolves** it, exactly as it already resolves the composted leaves
+and the honey. Three consequences, all of them the reason for doing it this way:
+1. `/impact` picked it up **with no edit at all** — that page reads every figure out of
+   `data/work/**`, so the farm now appears on the people register instead of being the
+   entry that counts kilograms.
+2. `/farm`, the Farm School page and `/impact` structurally cannot disagree about it.
+3. The Farm School page's participation hole is closed at its source rather than papered
+   over on a second page.
+
+**The camp door now carries two figures of different kinds**, and the order is
+deliberate: `capacity` (100 students — this page's own, what the site holds) *then*
+`resolved` (30 school groups a year — what actually happens). Can-hold before has-hosted
+reads as a promise; the reverse reads as an excuse.
+
+### The `waiting` band is gone, and the band list is now conditional
+
+Both of its claims closed on the same day — the camp capacity (F-13) and this figure
+(F-18). **A "what we cannot tell you" band with nothing under it performs honesty
+instead of doing it**, so the band renders only while it has something to say. The
+implementation matters more than the removal: `ALL_BANDS` is filtered to `BANDS`, the
+**ground chain is recomputed from whatever survives**, and the section index is derived
+from the bands that actually render, so a chip can never point at a band that is not
+there. Put a claim back into `data/farm.json` and the band returns, correctly coloured,
+with no code change. The band's data survives in the file with a note saying why it is
+empty.
+
+Ground chain re-verified after the removal: `plainly` #F3F2F0 → `sheet` #ECEBE8 →
+`act` #0D0D0B → footer #151512. **Zero clashes.** This is why the chain is computed and
+not written down.
+
+### Two gates earned their keep on this pass
+- **The work register's source-format gate** rejected `"owner, 22 August 2026"` and named
+  the three accepted forms. The figure now reads `owner 2026-08-22`. A prose date would
+  have been unsearchable across the register.
+- **This page's own door-figure gate** caught the 100 disappearing: renaming the door's
+  `figure` field to make room for the resolved one silently dropped the capacity, and the
+  gate failed the build rather than shipping a camp door that had lost its number.
+
+### Open on this page
+**Nothing.** Every figure on `/farm` now carries a source and a period, and the page no
+longer names a hole — because it no longer has one.

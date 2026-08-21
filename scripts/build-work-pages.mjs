@@ -743,6 +743,29 @@ for (const need of ['farm', 'record']) {
 }
 const anchors = new Map([['/', homeAnchors]]);
 
+/* /act's ANCHORS, READ OUT OF act.html, by the same extract-rather-than-retype
+   rule as the homepage's above. AD-25 gave `/act` a real page with six bands,
+   and the frozen footer's "Work with us" — which is extracted into every page
+   in this section — now points at `/act#partner` instead of the href="#" it had
+   carried since 19 August. Without this the link gate fails all fifteen pages
+   with FAIL:not-in-anchor-registry, which is the gate working correctly: it
+   cannot confirm an anchor on a page whose ids it has never been shown.
+   Read, not typed, so renaming a band on that page fails the build here rather
+   than leaving a dead fragment in fifteen footers. */
+const actPath = join(V3, 'act.html');
+if (!existsSync(actPath)) {
+  rej('act.html', 'not built, and the frozen footer now links to /act#partner on every page in this section. Run `npm run build:act` first.');
+} else {
+  const actHtml = readFileSync(actPath, 'utf8');
+  const actAnchors = new Set([...actHtml.matchAll(/<section[^>]*\sid="([^"]+)"/g)].map(m => m[1]).concat(['main', 'footer']));
+  for (const need of ['give', 'hands', 'partner']) {
+    if (!actAnchors.has(need)) {
+      rej('act.html', `no <section id="${need}"> — the frozen homepage's Give band and this section's footer both point at /act#${need}, so that link would be dead.`);
+    }
+  }
+  anchors.set('/act', actAnchors);
+}
+
 /* ═══ THE BAND SEQUENCES — AD-18, DERIVED FROM WHAT HAS CONTENT ═══════════
    AD-17 §5 published one chain per page type and this file carried them as
    literals. That worked while `with` was the only optional band; the client's

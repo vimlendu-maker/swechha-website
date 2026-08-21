@@ -193,16 +193,18 @@ const RUNGS = [
    given in chat on 21 August 2026. The two remaining rows are HOLES and they
    render as holes: dotted, stated in a sentence, per §4.1 and §4.4. ───── */
 const LEGAL = [
-  /* THE REGISTERED NAME IS OWNER-CORRECTED AND IT DISAGREES WITH THE FROZEN
-     FOOTER. home.html:4183 reads "We for Change Foundation."; the Executive
-     Director gave the registered name as "Swechha We For Change Foundation" on
-     21 August 2026. The owner's word outranks the footer, so the owner's word
-     is what this row publishes — and the footer is now carrying a wrong legal
-     name on EVERY page of this site, which is a defect in home.html and is
-     logged as such in this page's decision record. Not fixed here: home.html
-     is hand-maintained by a concurrent session and a legal name is not
-     something to change in two places at once. */
-  ['Registered as', 'Swechha We For Change Foundation', 'the Executive Director, 21 August 2026'],
+  /* THE REGISTERED NAME, AND THE FOOTER NOW AGREES WITH IT.
+     This row was written on 21 August against a frozen footer that read "We for
+     Change Foundation." — missing the word "Swechha" — and recorded that
+     mismatch as a defect in home.html it would not reach across and fix.
+     RESOLVED 22 AUGUST (AD-25). The owner restated the registered name and
+     ruled on the brand name in the same breath, which settled both halves: the
+     footer now carries "Swechha We for Change Foundation." on every page, and
+     THE CASE IS "We for Change" WITH A LOWERCASE "for". It was written "We For
+     Change" here and on /act until he said so — a capital in the middle of a
+     legal name is the kind of error that survives every check except being
+     told, so build-act-page.mjs now gates the wrong case out. */
+  ['Registered as', 'Swechha We for Change Foundation', 'the Executive Director, 21 August 2026'],
   ['Where', 'Khirki Extension, New Delhi', 'the footer of every page on this site'],
   ['Working since', String(FOUNDED), 'the footer of every page on this site'],
   ['Tax exemption', 'Sections 12A and 80G of the Income Tax Act', 'the footer of every page on this site'],

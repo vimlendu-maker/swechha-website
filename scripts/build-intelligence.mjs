@@ -371,7 +371,14 @@ const PAGE_CSS = `
    and a rail mechanism that did not exist on the frozen page; none of that is
    carried forward.
    ═══════════════════════════════════════════════════════════════════════ */
-.ix-hero{padding-top:clamp(8px,1.4vw,20px)}
+/* THE INDEX'S HERO PAYS FOR ITS OWN PADDING, because its band is t1 and t1 is
+   padding:0. It had a top value only, and no bottom, so the ALL 6 link's rule
+   landed exactly on the #0D0D0B -> #151512 ground change below it. Both halves
+   are now the site's hero figure -- .pic-body on farm/impact/about/work, which
+   is also what .ac-mast on /act uses -- so all six heroes sit on one rhythm
+   instead of this one being 8px off the top on a phone.
+   NO BACKTICKS IN THIS BLOCK: it is inside a template literal. */
+.ix-hero{padding:clamp(24px,3.2vw,42px) 0 clamp(22px,2.8vw,36px)}
 .ix-eyebrow{display:block;color:var(--fg-3);margin:0 0 clamp(14px,1.6vw,22px)}
 .ix-h1{margin:0 0 clamp(18px,2vw,28px)}
 .ix-lead{font-size:clamp(17px,1.35vw,22px);line-height:1.46;max-width:44ch;color:var(--fg);

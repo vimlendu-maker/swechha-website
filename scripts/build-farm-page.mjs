@@ -101,6 +101,18 @@ if (YEARS < 1) {
   process.exit(1);
 }
 
+/* Doors may resolve a figure from the Farm School too — same rule, same file,
+   same refusal to type a number twice. */
+const resolveFig = (r) => {
+  const hit = (SCHOOL.figures || []).find(f => f.label === r.label);
+  if (!hit) {
+    console.error(`REFUSING TO BUILD: no figure labelled "${r.label}" in farm-school.json.`);
+    process.exit(1);
+  }
+  return hit;
+};
+for (const d of F.come.doors) if (d.resolved) d.figure = resolveFig(d.resolved);
+
 /* ── EVERY FIGURE CARRIES A SOURCE ────────────────────────────────────────
    The section's standing rule, applied before a line of HTML is built. */
 const OWN = F.forest.figures;
@@ -170,7 +182,16 @@ const sideFrame = (fr) => `      <figure class="fm-side"><img class="duo" src="$
    footer. Both open with the same `.im-head` every t2/t3 band opens with, so
    they take the tier their content actually is — nothing else about them
    changes, because t1/t2/t3 paint nothing (see the act page's gate 0). */
-const BANDS = [
+/* ── THE WAITING BAND IS CONDITIONAL, AND THAT IS THE POINT ───────────────
+   `waiting` names what this page cannot source. On 22 August both its claims
+   closed — the camp capacity (F-13) and the participation figure (F-18) — and
+   a "what we cannot tell you" band with nothing under it is worse than no
+   band: it performs the honesty instead of doing it. So the band renders only
+   while it has something to say, and THE GROUND CHAIN IS RECOMPUTED from
+   whatever survives rather than being a fixed list with a hole in it. Put a
+   claim back in the data and the band returns, correctly coloured, with no
+   code change here. */
+const ALL_BANDS = [
   ['top',     't1',         '#0D0D0B'],
   ['origin',  'paper t2',   '#F3F2F0'],
   ['grows',   't2',         '#151512'],
@@ -181,13 +202,19 @@ const BANDS = [
   ['sheet',   'paper-2 t3', '#ECEBE8'],
   ['act',     't3',         '#0D0D0B'],
 ];
+const LIVE = { waiting: F.waiting.claims.length > 0 };
+const BANDS = ALL_BANDS.filter(([id]) => LIVE[id] !== false);
 const clashes = S.groundChain(BANDS);
 
-const INDEX = [
+const INDEX_ALL = [
   ['Nothing grew here', '#top'], ['The ground', '#origin'], ['What grows now', '#grows'],
   ['How it keeps itself', '#keeps'], ['Ways to come', '#visit'], ['Not a hotel', '#plainly'],
   ['What we cannot say', '#waiting'], ['The place itself', '#sheet'], ['Come and see', '#act'],
 ];
+/* Derived from the bands that actually render, so a chip can never point at
+   a band that is not there. */
+const BAND_IDS = new Set(BANDS.map(b => b[0]));
+const INDEX = INDEX_ALL.filter(([, href]) => BAND_IDS.has(href.slice(1)));
 
 const B = {};
 
@@ -304,7 +331,7 @@ ${F.come.doors.map(d => `        <div class="fm-door">
           <figure class="fm-door-f"><img class="duo" src="${d.frame.src}" alt="${esc(d.frame.alt)}" loading="lazy"></figure>
           <h3 class="fm-door-h">${esc(d.name)}</h3>
           <p class="body fm-door-p">${esc(d.p)}</p>
-${d.figure ? `          <p class="fm-door-fig"><span class="num">${esc(d.figure.value)}</span> <span class="lbl">${esc(d.figure.label)}</span></p>` : ''}
+${[d.capacity, d.figure].filter(Boolean).map(g => `          <p class="fm-door-fig"><span class="num">${esc(g.value)}</span> <span class="lbl">${esc(g.label)}</span></p>`).join('\n')}
           <p class="cap fm-door-w">${esc(d.who)}</p>
 ${d.hole ? hole('We cannot yet tell you how many students can stay over, in what, or with how many adults. Nothing on that is written down anywhere we can cite, so nothing on it is printed here.') : ''}
         </div>`).join('\n')}
@@ -662,6 +689,16 @@ gate(/built with the people who live around it|community/i.test(RENDERED),
 for (const w of ['Live', 'Learn', 'Lead']) {
   gate(new RegExp(`fm-triad-w">${w}<`).test(OUT), `the triad carries ${w}`);
 }
+/* 3d. THE PARTICIPATION FIGURE (F-18). The last thing this page could not say.
+      It is RESOLVED from the work register, not typed here, so /farm, the Farm
+      School page and /impact cannot disagree about it — and the register is
+      where it belongs, because "30 school groups a year" is a fact about the
+      programme that the place happens to host. */
+gate(/\b30\b/.test(RENDERED) && /School groups a year/i.test(RENDERED),
+  'the participation figure is published and resolved: 30 school groups a year');
+gate(!/class="p-hole"/.test(OUT) && !/id="waiting"/.test(OUT),
+  'the waiting band is gone — nothing on this page is unsourced any more');
+
 for (const c of F.before.produce.counts.filter(x => x.n !== '—')) {
   gate(RENDERED.includes(`${c.n}`) && RENDERED.includes(c.what), `orchard count rendered: ${c.n} ${c.what}`);
 }

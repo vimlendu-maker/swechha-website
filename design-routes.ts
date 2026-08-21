@@ -32,11 +32,10 @@ import { join } from 'node:path'
  * Nothing else in the app depends on it: delete the file and the `rewrites()`
  * hook, and the scaffold routes come back exactly as they were.
  *
- * ROUTES WITH NO FINISHED PAGE ARE LEFT ALONE, deliberately: `/act` is a nav
- * destination whose page was never designed, and it keeps serving its honest
- * placeholder. `/explore`, `/search`, `/stories` and `/work/campaigns/<slug>`
- * keep their real app routes. Shadowing a route with a page that does not
- * exist would trade a scaffold for a 404.
+ * ROUTES WITH NO FINISHED PAGE ARE LEFT ALONE, deliberately: `/explore`,
+ * `/search`, `/stories` and `/work/campaigns/<slug>` keep their real app
+ * routes. Shadowing a route with a page that does not exist would trade a
+ * scaffold for a 404.
  *
  * `/impact` JOINED THE MAP ON 22 AUGUST (AD-22). It was in the paragraph above
  * until its page existed, and this is the failure mode that paragraph was
@@ -56,6 +55,19 @@ import { join } from 'node:path'
  * AD-24 builds the page D-07.13 promised, repoints the nav word in BOTH
  * shells, and maps the route. Those are one change, not three: a nav word, a
  * built file and a route — and any two of them without the third is a defect.
+ *
+ * `/act` JOINED ON 22 AUGUST (AD-25), and it is the fourth turn of the same
+ * screw and the worst of them. `/act` was named in the paragraph above as the
+ * one route deliberately left on its placeholder — and meanwhile the GIVE CHIP
+ * in the nav of every page on this site pointed at it, the frozen homepage's
+ * three "Three ways in" buttons pointed at `href="#"`, the footer's "Work with
+ * us" pointed at `href="#"`, and EIGHTEEN WORK pages ended in a named ask whose
+ * destination was this route. So the most-linked-to page on the site was the
+ * only one nobody had built. AD-25 builds it, repoints the four dead hrefs in
+ * `home.html` that should have opened it — band 12's three buttons and the
+ * footer's "Work with us" — and maps the route here. The Give chip needed no
+ * repointing: it had said `/act` all along, which is exactly why the missing page
+ * mattered.
  */
 
 const ROOT = __dirname
@@ -99,6 +111,7 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
     '/about': 'about.html',
     '/impact': 'impact.html',
     '/farm': 'farm.html',
+    '/act': 'act.html',
   }
 
   /* THE GATE. Every generator in this repo refuses to write on a failed check
