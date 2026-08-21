@@ -457,3 +457,51 @@ Only two things, and neither is a hole the page pretends not to have:
 1. **A participation figure** for the farm, with a period. Still the one named hole.
 2. Whether the **two Airbnb listings** are ever named on the site. The meal rates are
    now settled (no), the listings are not.
+
+---
+
+## 11 · Fourth pass, owner, 22 August — F-16, F-17
+
+**F-16 · The span is a BOUND, not a count: "less than five years".** Owner's own
+phrasing, and it is better than the precision it replaces on two counts. It is **more
+robust** — 2022 is *my* arithmetic from his "4 years ago", and if the true year is 2021
+or 2023 then a stated "four years" is wrong while a ceiling is not. And it is
+**stronger** — the claim is about how little time this took, and a bound is the shape
+that argument wants.
+
+It is still **derived, never typed**: the build computes `LESSTHAN = elapsed + 1` from
+`acquired.year`, so elapsed 4 renders "less than five years" and elapsed 5 will render
+"less than six". **The sentence can never become false**, which a typed "four years"
+would in about five months. A second gate now asserts the span is stated *only* as a
+bound — a bare "four years" fails the build, because that is precisely the regression
+this ruling exists to prevent.
+
+**F-17 · Tents, and the farm's own camping site.** This closes the silence the third
+pass left on purpose: capacity was published (100) before the arrangement was known, and
+inventing a dormitory was the one thing that could not be done. A hundred students sleep
+**under canvas on the farm's own camping site**, and it is stated in three places — the
+camp door, the inventory (it is infrastructure, not an arrangement), and the "it is not
+a hotel" band, where the mud-house/tent distinction actually matters to a reader
+deciding.
+
+**It also explains a loose end from the very first research pass.** Google Maps lists
+this place as a **Campground** — not a farm stay, not a guest house — and §2.1 recorded
+that without being able to say why. The camping site is why. A category on a listing was
+sitting there as evidence for a fact the page did not yet know.
+
+### Two corrections to earlier entries in this ledger
+- **§4 item 3 is CLOSED.** "Where does a school group sleep, how many, in what" — a
+  hundred, in tents, on the camping site. Nothing of it remains open.
+- **F-2's phone half is superseded.** The owner instructed on 22 August that his phone
+  number come off the site, and it has (recorded as G-4 against the `/act` work, applied
+  to this page in the same tree). The page still ends in a person — an email — which was
+  F-2's actual point. **Process note worth recording: that removal was made by a
+  concurrent session working in the same checkout, and it was swept into this page's
+  third-pass commit (1b3589a) rather than committed under its own ruling.** The content
+  is right and it is the owner's instruction; the attribution is not. Two sessions
+  sharing one working tree is the cause, and `git status` before staging is the only
+  defence.
+
+### Open after this pass
+**One thing.** A participation figure for the farm, with a period. That is the whole of
+what this page still cannot tell a reader.

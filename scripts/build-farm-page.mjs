@@ -82,9 +82,20 @@ const RESOLVED = F.forest.resolved.map(r => {
    computed from a stored year, so a rebuild refreshes it and no January makes
    the page wrong. The client said "4 years ago" on 22 August 2026; 2022 is
    stored and the count comes from here. */
+const WORD = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight',
+  'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen'];
 const YEARS = new Date().getFullYear() - F.acquired.year;
-const YEARWORD = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight',
-  'nine', 'ten', 'eleven', 'twelve'][YEARS] || String(YEARS);
+const YEARWORD = WORD[YEARS] || String(YEARS);
+/* ── AND THE CEILING, WHICH IS WHAT THE PAGE ACTUALLY SAYS (F-16).
+   The client asked for "less than five years" rather than "four years", and
+   the phrasing is better than the precision it replaces for two reasons.
+   It is ROBUST: the acquisition year is my arithmetic from his "4 years ago",
+   and if the true year is 2021 or 2023 a stated "four" is wrong while a
+   ceiling is not. And it is STRONGER: a bound is the shape this claim wants —
+   the point is how little time it took, not how much.
+   Derived like the count, so it stays true forever: elapsed 4 gives "less
+   than five", elapsed 5 gives "less than six". It can never become false. */
+const LESSTHAN = WORD[YEARS + 1] || String(YEARS + 1);
 if (YEARS < 1) {
   console.error(`REFUSING TO BUILD: acquired year ${F.acquired.year} is not in the past.`);
   process.exit(1);
@@ -133,7 +144,9 @@ const bigFig = (f, prov) => `          <div class="fm-big">
 /* `{{years}}` in any row heading or body is replaced with the DERIVED count.
    The data file may not type the number, and this is the seam where that rule
    is actually enforced rather than merely stated. */
-const yr = (t) => String(t).replace(/\{\{years\}\}/g, YEARWORD);
+const yr = (t) => String(t)
+  .replace(/\{\{years\}\}/g, YEARWORD)
+  .replace(/\{\{lessthan\}\}/g, LESSTHAN);
 
 const rows = (list) => `      <div class="p-rows">
 ${list.map(r => `        <div class="p-row">
@@ -729,7 +742,23 @@ const scanTyped = (o, path = '') => {
 scanTyped(F);
 gate(typedYears.length === 0,
   `no elapsed-year count typed in the data — use {{years}}${typedYears.length ? `; TYPED: ${typedYears.join(', ')}` : ''}`);
-gate(new RegExp(`${YEARWORD} years ago`).test(RENDERED), `the derived count reached the page: "${YEARWORD} years ago"`);
+gate(new RegExp(`less than ${LESSTHAN} years`).test(RENDERED),
+  `the derived CEILING reached the page: "less than ${LESSTHAN} years" (elapsed ${YEARS})`);
+/* The bound must never be stated as an exact elapsed count — that is the
+   thing F-16 replaced, and it is the thing that can go wrong silently. */
+gate(!new RegExp(`(?<!less than )\\b${YEARWORD} years\\b`).test(RENDERED),
+  `the span is stated only as a bound, never as "${YEARWORD} years"`);
+
+/* 6d. WHERE A HUNDRED STUDENTS SLEEP (F-17). The page carried a deliberate
+      silence here for exactly one pass: capacity was published before the
+      arrangement was known, and inventing a dormitory was the one thing that
+      could not be done. Tents on the farm's own camping site is the answer,
+      and it also explains something that was sitting in the research
+      unexplained — Google lists this place as a CAMPGROUND, not a guest
+      house, and now it is obvious why. */
+for (const w of ['tents', 'camping site']) {
+  gate(new RegExp(w, 'i').test(RENDERED), `the sleeping arrangement is stated: ${w}`);
+}
 
 /* 7. PHOTOGRAPHS, INSIDE W-18's BAND. */
 const imgs = (OUT.match(/<img[^>]+src="\/images\//g) || []).length;
