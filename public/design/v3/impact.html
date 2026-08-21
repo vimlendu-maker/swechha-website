@@ -1510,8 +1510,16 @@ button.b[disabled]{opacity:.55;cursor:default}
 .ip-door{display:block;text-decoration:none;color:inherit;border:1px solid var(--hair);
   padding:clamp(16px,2vw,24px);min-width:0}
 .ip-door:hover{border-color:var(--fg-2)}
-.ip-door.b-1{border-color:var(--mustard)}
-.ip-door.b-1 .ip-door-h{color:var(--mustard)}
+/* THE HIGHLIGHTED DOOR IS AN OUTLINE, NOT A FILL, AND THAT IS A BUG FIX.
+   The first build put .b-1 on this card, and .b-1 is the frozen FILLED button
+   (background:var(--mustard);color:var(--on-mustard)), so the card went solid
+   mustard — and this rule then painted the heading mustard on top of it.
+   Measured in the browser: heading contrast 1.00, i.e. invisible, and body
+   text 1.31. Both are hard failures, and neither is visible in a diff.
+   Mustard stays on the control, per §3.1; it is now the border and the
+   heading, on the band's own ground. */
+.ip-door-hi{border-color:var(--mustard)}
+.ip-door-hi .ip-door-h{color:var(--mustard)}
 .ip-door-h{display:flex;align-items:center;gap:8px;margin:0}
 .ip-door-h svg{width:16px;height:16px;flex:0 0 auto}
 .ip-door-p{color:var(--fg-2);margin:12px 0 0}
@@ -1531,7 +1539,7 @@ button.b[disabled]{opacity:.55;cursor:default}
      tabindex="-1" so the focus actually lands rather than only moving
      the sequential-navigation start point. -->
 <a class="skip" href="#main">Skip to the content</a>
-<header class="nav"><div class="nav-in"><a class="mark" href="/" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact" aria-current="page">Impact</a><a class="nl" href="/#farm">Farm</a><a class="nl" href="/#record">Record</a></nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Sections</button>
+<header class="nav"><div class="nav-in"><a class="mark" href="/" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact" aria-current="page">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/#record">Record</a></nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Sections</button>
 <div class="navidx" id="navidx" hidden><nav aria-label="All sections"><a class="nl" href="#top">No total</a><a class="nl" href="#refuse">Why not</a><a class="nl" href="#pair">Two numbers</a><a class="nl" href="#register">Every figure</a><a class="nl" href="#waiting">Waiting</a><a class="nl" href="#sheet">The archive</a><a class="nl" href="#act">Hold us to it</a></nav></div><a class="give" href="/act">Give</a></div><nav class="navscroll" aria-label="Sections"><ul><li><a class="nl" href="#top">No total</a></li><li><a class="nl" href="#refuse">Why not</a></li><li><a class="nl" href="#pair">Two numbers</a></li><li><a class="nl" href="#register">Every figure</a></li><li><a class="nl" href="#waiting">Waiting</a></li><li><a class="nl" href="#sheet">The archive</a></li><li><a class="nl" href="#act">Hold us to it</a></li></ul></nav></header>
 <main id="main" tabindex="-1">
   <section class="t1" id="top">
@@ -1884,7 +1892,7 @@ button.b[disabled]{opacity:.55;cursor:default}
           <p class="lbl ip-door-h">The work itself<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></p>
           <p class="body ip-door-p">Fifteen pages, four kinds. Every figure above, on the page it belongs to, with what it does not say.</p>
         </a>
-        <a class="ip-door b-1" href="/act">
+        <a class="ip-door ip-door-hi" href="/act">
           <p class="lbl ip-door-h">Give us a number<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></p>
           <p class="body ip-door-p">Four claims above are one figure short. If you hold a register, a roll or a receipt that settles one, it goes on the page with your name on the source line.</p>
         </a>
@@ -1912,7 +1920,7 @@ button.b[disabled]{opacity:.55;cursor:default}
         <a href="/work/journeys/naturescapes">NatureScapes</a><a href="/work/journeys/cityscapes">CityScapes</a>
         <a href="/work/journeys/gram-anubhav">Gram Anubhav</a></div>
       <div><h3 class="lbl">Reach us</h3><a href="mailto:info@swechha.in">info@swechha.in</a>
-        <a href="/#farm">Swechha Farm visits</a><a href="#">Work with us</a></div>
+        <a href="/farm">Swechha Farm visits</a><a href="#">Work with us</a></div>
     </div>
     <!-- ══ SOCIAL. Added AD-08, 21 August. See §9 of that document. ══
          FOUR REAL ACCOUNTS, SCRAPED FROM THE LIVE SITE. No LinkedIn —

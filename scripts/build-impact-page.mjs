@@ -368,7 +368,7 @@ ${IMPACT.sheet.frames.map(fr => `        <figure class="ht ip-sh-c"><img class="
 B.act = () => `${opener('act', IMPACT.act.head, esc(IMPACT.act.lead))}
     <div class="wrap">
       <div class="ip-doors">
-${IMPACT.act.doors.map((d, i) => `        <a class="ip-door${i === 1 ? ' b-1' : ''}" href="${d.href}">
+${IMPACT.act.doors.map((d, i) => `        <a class="ip-door${i === 1 ? ' ip-door-hi' : ''}" href="${d.href}">
           <p class="lbl ip-door-h">${esc(d.h)}${ARROW}</p>
           <p class="body ip-door-p">${esc(d.p)}</p>
         </a>`).join('\n')}
@@ -436,8 +436,16 @@ const PAGE_CSS = `
 .ip-door{display:block;text-decoration:none;color:inherit;border:1px solid var(--hair);
   padding:clamp(16px,2vw,24px);min-width:0}
 .ip-door:hover{border-color:var(--fg-2)}
-.ip-door.b-1{border-color:var(--mustard)}
-.ip-door.b-1 .ip-door-h{color:var(--mustard)}
+/* THE HIGHLIGHTED DOOR IS AN OUTLINE, NOT A FILL, AND THAT IS A BUG FIX.
+   The first build put .b-1 on this card, and .b-1 is the frozen FILLED button
+   (background:var(--mustard);color:var(--on-mustard)), so the card went solid
+   mustard — and this rule then painted the heading mustard on top of it.
+   Measured in the browser: heading contrast 1.00, i.e. invisible, and body
+   text 1.31. Both are hard failures, and neither is visible in a diff.
+   Mustard stays on the control, per §3.1; it is now the border and the
+   heading, on the band's own ground. */
+.ip-door-hi{border-color:var(--mustard)}
+.ip-door-hi .ip-door-h{color:var(--mustard)}
 .ip-door-h{display:flex;align-items:center;gap:8px;margin:0}
 .ip-door-h svg{width:16px;height:16px;flex:0 0 auto}
 .ip-door-p{color:var(--fg-2);margin:12px 0 0}
