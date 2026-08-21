@@ -22,8 +22,10 @@
 //
 // That is also why the page is short. There is no aggregate to build, no gauge
 // to fill, and no cadence table to pad it with — the client cut orders and
-// cadence, and the vocabulary teaches itself in the blocks because five cards
-// read PERIODIC and one reads OUT OF SEASON.
+// cadence, and the vocabulary teaches itself in the blocks, where three of the
+// four state words appear on real cards: LIVE on Air, PERIODIC on four, and
+// OUT OF SEASON on Heat. Each chip names how its SOURCE delivers, never how
+// this page was rendered — which is why Air's reads LIVE on every render.
 //
 // ★ EVERY FIGURE IS READ FROM THE SAME COMMITTED JSON THE SITUATION PAGES USE.
 // The index cannot disagree with a situation page, because it is not told the
@@ -64,12 +66,32 @@ const SITUATIONS = [
     verdict: airRd.aqi > AIR.aqiLimit
       ? `${+(airRd.aqi / AIR.aqiLimit).toFixed(1)}× the limit` : 'within the limit',
     breach: airRd.aqi > AIR.aqiLimit,
-    /* PERIODIC, AND IT UPGRADES. The first build shipped this card stamped
-       LIVE, which was false: the card renders a COMMITTED value, and a chip
-       cannot claim liveness for a number that cannot move. The Air page
-       starts at PERIODIC for exactly this reason and upgrades only when
-       /api/air answers. This card now does the same — see IX_LIVE below. */
-    state: 'PERIODIC',
+    /* ★ LIVE, ALWAYS. Client ruling, and the justification is better than
+       the ruling.
+
+       THE CHIPS ON THIS PAGE ARE CADENCE LABELS FOR THE SITUATION, NOT
+       CLAIMS ABOUT THIS PAGE'S RENDER. Yamuna's PERIODIC does not mean
+       "this card was fetched periodically" — it means the Yamuna SOURCE is
+       periodic, an annual CPCB table. Forest loss carries PERIODIC over a
+       2001-2025 cumulative figure that no fetch could ever move. Heat
+       carries OUT OF SEASON because the SEASON is shut, not because the
+       card is.
+
+       Not one of the six chips describes the DOM. They describe how the
+       source delivers. So Air — the one situation with a server route in
+       front of an hourly feed, which is what earned its own page the badge
+       under D-21.5 — is the one situation whose delivery IS live, and its
+       label should say so on every render.
+
+       An earlier pass had this card ship PERIODIC and swap to LIVE after
+       the fetch. That was the wrong correction to the right instinct: it
+       made the chip describe the fetch instead of the source, which is the
+       one thing none of the other five chips do.
+
+       The fetch still runs — see IX_LIVE — but only to keep the NUMBER
+       current. The chip no longer moves, because the cadence it names does
+       not move. The residual is recorded at D-26.2. */
+    state: 'LIVE',
     upgrades: true,
     line: 'The only reading on this site that can change while you look at it.',
   },
@@ -212,9 +234,11 @@ B.top = () => `    <div class="wrap ix-hero">
   }).join('\n        ')}
       </div>
       <p class="cap ix-vocab-x"><b>Nothing below is unstamped</b>, and the word is shown whether
-        or not it flatters the reading. Air ships stamped ${'PERIODIC'} and upgrades itself to
-        LIVE only if the server answers &mdash; because a badge that claims liveness for a number
-        that cannot move is the one lie this site is built to avoid.</p>
+        or not it flatters the reading. <b>Each word describes how its source delivers, not how
+        this page was built</b> &mdash; Yamuna reads PERIODIC because CPCB publishes once a year,
+        and Air reads LIVE because it is the one situation with a server route in front of an
+        hourly feed. The chip names the cadence. The reading&rsquo;s own page carries the hour it
+        was observed.</p>
       <p style="margin:0"><a class="act" href="#set">All ${SITUATIONS.length} ${ARROW}</a></p>
     </div>`;
 
@@ -237,9 +261,7 @@ B.set = () => {
           </span>
           <span class="ix-card-verd${s.breach ? ' is-red' : ''}"${s.upgrades ? ' data-verd' : ''}>${s.verdict}</span>
           <span class="ix-card-line cap">${s.line}</span>
-          <span class="ix-card-foot">${s.upgrades
-    ? stateChip(s.state).replace('<span class="lbl', '<span data-chip class="lbl')
-    : stateChip(s.state)}<i class="ix-card-go">${ARROW}</i></span>
+          <span class="ix-card-foot">${stateChip(s.state)}<i class="ix-card-go">${ARROW}</i></span>
         </a>`).join('\n        ');
 
   return `${opener('set', 'The six', 'One card each. The line that matters on every one of them is not the reading &mdash; it is what kind of limit the reading is being held to.')}
@@ -312,9 +334,9 @@ B.campaigns = () => `${opener('campaigns', 'What we do about it', 'Three campaig
 const IX_LIVE = `
 (function(){
   var card=document.getElementById('ix-air'); if(!card||!window.fetch) return;
-  var v=card.querySelector('[data-v]'), chip=card.querySelector('[data-chip]'),
+  var v=card.querySelector('[data-v]'),
       verd=card.querySelector('[data-verd]'), sub=card.querySelector('[data-sub]');
-  if(!v||!chip) return;
+  if(!v) return;
   fetch('/api/air',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
     if(!d||d.ok!==true) return;
     var r=d.reading;
@@ -326,9 +348,9 @@ const IX_LIVE = `
     if(verd) verd.textContent=over?(Math.round(r.aqi/limit*10)/10)+'\u00D7 the limit':'within the limit';
     if(verd) verd.classList.toggle('is-red',over);
     if(sub&&r.band) sub.textContent=r.band+(r.governing?' \u00B7 governed by '+r.governing:'');
-    /* THE CHIP IS EARNED HERE AND NOWHERE ELSE. */
-    chip.className='lbl tag tag-live';
-    chip.textContent='LIVE';
+    /* THE CHIP IS NOT TOUCHED. It reads LIVE on every render because it
+       names Air's DELIVERY CADENCE, not this fetch. See the note on the
+       Air situation above, and D-26. */
   }).catch(function(){ /* leave the committed card alone */ });
 })();
 `;

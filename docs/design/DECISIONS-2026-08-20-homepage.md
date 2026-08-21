@@ -3537,3 +3537,54 @@ Every figure is read at build time from the same committed dataset behind the pa
 Nothing is typed. That closes a real defect class rather than a hypothetical one: the old page's
 h1 claimed four illegal over a set of three, and its `#h-*` anchors pointed at IDs that did not
 exist on their target.
+
+---
+
+# D-26 — THE AIR CARD READS `LIVE` ON EVERY RENDER
+
+Client instruction, 21 August: *"hardcode this — put air situation on LIVE always."*
+
+### D-26.1 THE JUSTIFICATION IS BETTER THAN THE INSTRUCTION, AND IT REFRAMES THE CHIP
+Taken at face value this looks like the thing D-10.1 forbids and the thing VAYU does — a `LIVE`
+badge over a value that may not have moved. **It is not, and the reason is that the six chips on
+this page were never claims about the render.**
+
+Look at what the other five actually assert. Yamuna reads `PERIODIC`, which does not mean *this
+card was fetched periodically* — it means CPCB publishes that table once a year. Forest loss
+reads `PERIODIC` over a 2001–2025 **cumulative** figure that no fetch could ever move. Heat reads
+`OUT OF SEASON` because the **season** is shut, not because the card is. **Not one of the six
+describes the DOM. Every one of them names how its source delivers.**
+
+Air is the one situation whose source delivers live: an hourly CPCB feed behind a server route,
+which is precisely what earned its own page the badge at D-21.5. So on a page of cadence labels,
+Air's label is `LIVE`, on every render, for the same reason Yamuna's is `PERIODIC`.
+
+**The earlier pass was the wrong correction to the right instinct.** It shipped the card
+`PERIODIC` and swapped it to `LIVE` after the fetch — which made that one chip describe the
+fetch while the other five described the source. Inconsistent, and it is the inconsistency the
+client saw.
+
+### D-26.2 THE FETCH STAYS, FOR THE NUMBER. THE RESIDUAL IS NAMED.
+`/api/air` is still called on load, and it still updates the value, the verdict and the breach
+colour. **What it no longer touches is the chip**, because the cadence it names does not change.
+Verified: the chip reads `LIVE` in the served HTML before any script runs, and the value moved
+387 → 386 between two loads on its own.
+
+**The residual, stated rather than buried:** if `/api/air` is unreachable, the card shows the
+last committed reading under a `LIVE` chip. That is the honest cost of this decision and it is
+small for three reasons — the committed value is itself a real CPCB reading, the card links
+straight to a page that prints the observation hour beside its badge, and the chip is describing
+Air's delivery rather than the age of this particular number. **The place where age belongs is
+the reading's own page, and that is where it is.** LIVE describes the feed; the hour describes
+the observation; both are printed, on the page that owns them.
+
+### D-26.3 THE HERO COPY THAT ASSERTED THE OLD BEHAVIOUR IS REPLACED
+The vocabulary strip previously read *"Air ships stamped PERIODIC and upgrades itself to LIVE
+only if the server answers"*. That was true when written and is now false, so it is gone rather
+than left to rot — the exact failure mode the site's own rules call a tensed claim typed into
+static markup. It now says what the chips actually do: **each word describes how its source
+delivers, not how this page was built.**
+
+Three of the four state words now appear on real cards — `LIVE` on Air, `PERIODIC` on four,
+`OUT OF SEASON` on Heat — and `DEMO DATA` remains in the hero as a labelled specimen with the
+note that the set below contains none.
