@@ -32,11 +32,20 @@ import { join } from 'node:path'
  * Nothing else in the app depends on it: delete the file and the `rewrites()`
  * hook, and the scaffold routes come back exactly as they were.
  *
- * ROUTES WITH NO FINISHED PAGE ARE LEFT ALONE, deliberately: `/impact` and
- * `/act` are nav destinations whose pages were never designed, and they keep
- * serving their honest placeholders. `/explore`, `/search`, `/stories` and
- * `/work/campaigns/<slug>` keep their real app routes. Shadowing a route with
- * a page that does not exist would trade a scaffold for a 404.
+ * ROUTES WITH NO FINISHED PAGE ARE LEFT ALONE, deliberately: `/act` is a nav
+ * destination whose page was never designed, and it keeps serving its honest
+ * placeholder. `/explore`, `/search`, `/stories` and `/work/campaigns/<slug>`
+ * keep their real app routes. Shadowing a route with a page that does not
+ * exist would trade a scaffold for a 404.
+ *
+ * `/impact` JOINED THE MAP ON 22 AUGUST (AD-22). It was in the paragraph above
+ * until its page existed, and this is the failure mode that paragraph was
+ * written to prevent working in reverse: the nav has said `/impact` on every
+ * page of this site since AD-23, so for as long as the route was unmapped,
+ * clicking `Impact` in the finished header opened the 25-line Tailwind
+ * placeholder — the same defect, on the same nav bar, that this whole file was
+ * written to fix for `Work`. Building a page is not shipping it; routing it
+ * is.
  */
 
 const ROOT = __dirname
@@ -78,6 +87,7 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
     ...SITUATIONS,
     ...workRoutes(),
     '/about': 'about.html',
+    '/impact': 'impact.html',
   }
 
   /* THE GATE. Every generator in this repo refuses to write on a failed check
