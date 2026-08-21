@@ -1,0 +1,182 @@
+{
+  "subject": "Source apportionment for Delhi PM2.5 and PM10",
+  "kind": "modelled",
+  "state_label": "PERIODIC",
+  "provenance": "Transcribed by hand from the primary reports, not fetched from an API. Every figure below appears in a published document that anyone can open at the URL given; page references are included so a reader can check the number rather than trust this page for it.",
+  "why_more_than_one_study": "A source apportionment is not a measurement. It takes measured concentrations, wind fields and an emissions inventory and works backwards to a plausible split, and the answer depends on the method, the monitoring window and which sources the inventory happens to know about. Publishing one study's pie chart as 'the causes of Delhi's air pollution' hides that. Publishing two lets the disagreement be read, which is the honest version.",
+  "the_finding": "The two government-commissioned studies do not agree, and one of them refuses to give a single number at all. IIT Kanpur reports vehicles as 6-29% of PM2.5 across its sites and seasons; TERI-ARAI's dispersion model reports transport at 17-28%. A range that wide is not a rounding difference. It is the actual state of the knowledge.",
+
+  "studies": [
+    {
+      "id": "teri-arai-2018",
+      "short": "TERI-ARAI",
+      "title": "Source Apportionment of PM2.5 & PM10 of Delhi NCR for Identification of Major Sources",
+      "report_no": "ARAI/16-17/DHI-SA-NCR",
+      "by": "The Automotive Research Association of India (Pune) and The Energy and Resources Institute (New Delhi)",
+      "commissioned_by": "Department of Heavy Industry, Ministry of Heavy Industries and Public Enterprises, Government of India",
+      "published": "August 2018",
+      "monitoring_period": "April 2016 to February 2017",
+      "base_year": 2016,
+      "method": "Two approaches. Receptor modelling (CMB8.2) by ARAI, and dispersion modelling (WRF-CMAQ, source-sensitivity) by TERI. The split published below is the dispersion result, because it is the one that allocates secondary particulates back to the sectors that caused them.",
+      "url": "https://prana.cpcb.gov.in/ncapDashboard/downloadEmissionFiles/Delhi.pdf",
+      "url_note": "The 560-page final report, hosted by CPCB on its own NCAP/PRANA portal. The 39-page executive summary is at https://www.teriin.org/sites/default/files/2018-08/Exec-summary.pdf",
+      "table": "Table E.2, page E13, executive summary",
+      "unit": "percent of ambient concentration",
+      "sums_to_100": {
+        "pm25_winter": 100,
+        "pm25_summer": 100,
+        "pm10_winter": 99,
+        "pm10_summer": 101,
+        "note": "Transcribed as printed. The PM2.5 columns sum to exactly 100; the PM10 columns sum to 99 and 101 because of the study's own rounding to whole percent. Not corrected here - correcting a published table silently is worse than reporting it, and the discrepancy is one point."
+      },
+      "splits": {
+        "pm25": {
+          "winter": [
+            { "sector": "Industry", "pct": 30 },
+            { "sector": "Transport", "pct": 28 },
+            { "sector": "Dust", "pct": 17 },
+            { "sector": "Others", "pct": 11 },
+            { "sector": "Residential", "pct": 10 },
+            { "sector": "Agricultural burning", "pct": 4 }
+          ],
+          "summer": [
+            { "sector": "Dust", "pct": 38 },
+            { "sector": "Industry", "pct": 22 },
+            { "sector": "Transport", "pct": 17 },
+            { "sector": "Residential", "pct": 8 },
+            { "sector": "Others", "pct": 8 },
+            { "sector": "Agricultural burning", "pct": 7 }
+          ]
+        },
+        "pm10": {
+          "winter": [
+            { "sector": "Industry", "pct": 27 },
+            { "sector": "Dust", "pct": 25 },
+            { "sector": "Transport", "pct": 24 },
+            { "sector": "Residential", "pct": 9 },
+            { "sector": "Others", "pct": 10 },
+            { "sector": "Agricultural burning", "pct": 4 }
+          ],
+          "summer": [
+            { "sector": "Dust", "pct": 42 },
+            { "sector": "Industry", "pct": 22 },
+            { "sector": "Transport", "pct": 15 },
+            { "sector": "Residential", "pct": 8 },
+            { "sector": "Others", "pct": 7 },
+            { "sector": "Agricultural burning", "pct": 7 }
+          ]
+        }
+      },
+      "sector_definitions": {
+        "Industry": "power plants including stacks, flyash ponds and coal handling units; brick manufacturing; stone crushers; and other industries. The report notes this sector includes biomass used as an industrial fuel, and that it 'seems to be overestimated' in the dispersion approach.",
+        "Dust": "soil, road dust re-suspension and construction activities, and also dust arriving through trans-boundary atmospheric transport from outside India.",
+        "Others": "DG sets, refuse burning, crematoria, airport, restaurants, incinerators, landfills.",
+        "Transport": "all on-road vehicles; the sub-sector split is below.",
+        "Residential": "household fuel, dominated by biomass."
+      },
+      "self_stated_caveats": [
+        "Agricultural burning is UNDER-COUNTED and the report says so: 'the contribution of agricultural burning is not fully accounted for in this study as the monitoring and modelling periods did not include the month of October, when the burning activities are generally at their maximum.' The 4% figure is therefore a floor, not an estimate of a burning day.",
+        "The sectoral contributions are averaged over the whole monitoring period, so they cannot describe an episode. The report states this explicitly: the averaging 'does not highlight the contribution of agricultural burning, which happens during a certain number of days and cause episodically high pollutant concentrations.'",
+        "The dispersion model runs low. 'The average ratio of modelled to observed PM2.5 concentrations was 0.82-0.87' - it reproduces 82 to 87 percent of the mass actually measured.",
+        "The industrial sector in the dispersion result includes biomass burned as an industrial fuel, which the report says makes it look overestimated relative to the receptor result.",
+        "Petcoke and furnace oil, counted inside the industrial share, were banned in the region in 2017 - after the monitoring window closed."
+      ],
+      "sub_sectors_pm25_winter_delhi": {
+        "note": "Within the sector shares above. From executive summary section E7.3, page E15-E16.",
+        "transport": [
+          { "item": "Trucks", "pct": 8 },
+          { "item": "Two-wheelers", "pct": 7 },
+          { "item": "Three-wheelers", "pct": 5 },
+          { "item": "Cars", "pct": 3.4 }
+        ],
+        "transport_note": "Trucks contribute more than twice what cars do, and two-wheelers twice what cars do. Of the car share, diesel accounts for 67-74%, CNG 13-20%, petrol 13-14%; and older cars dominate - BS-II and earlier contribute 31-50% of the car share. The report's own arithmetic puts ALL BS-IV diesel cars in Delhi at about 0.5-0.9% of PM2.5.",
+        "industry_within_30pct": [
+          { "item": "Other industries burning coal, biomass, pet-coke, furnace oil", "pct": 14 },
+          { "item": "Bricks", "pct": 8 },
+          { "item": "Power stations", "pct": 6 },
+          { "item": "Stone crushers", "pct": 2 }
+        ],
+        "others_within_11pct": [
+          { "item": "DG sets", "pct": 5 },
+          { "item": "Refuse burning", "pct": 3 }
+        ],
+        "dust_within_17pct": [
+          { "item": "Road dust", "pct": 4 },
+          { "item": "Construction", "pct": 1 }
+        ],
+        "dust_note": "Road dust and construction together account for 5 of the 17 points. The report attributes much of the rest to trans-boundary transport - dust that did not originate in Delhi at all."
+      },
+      "receptor_ranges": {
+        "note": "The same study's OTHER method, for comparison. Receptor modelling shows primary contributions with secondary particulates listed separately, so these do not sum the way the dispersion table does.",
+        "pm25": { "dust": "15% winter, 31-34% summer", "vehicles": "20-23% winter, 18-20% summer", "biomass_burning": "22% winter, 15% summer", "industry": "10-11% both seasons", "secondary_ions": "26% winter, 17-18% summer", "others_incl_dg_sets": "under 5%" },
+        "pm10": { "dust": "23-31% winter, 38-42% summer", "vehicles": "17-18% winter, 15-16% summer", "biomass_burning": "14% winter, 12% summer", "industry": "10-12% both seasons", "secondary_ions": "23-25% winter, 11-15% summer", "others_incl_dg_sets": "4-5%" },
+        "agreement": "The report calls the two approaches 'consistent for most sectors': transport 17-28% by dispersion against 20-30% by receptor for PM2.5; dust 25-41% against 31-43% for PM10."
+      }
+    },
+    {
+      "id": "iitk-2016",
+      "short": "IIT Kanpur",
+      "title": "Comprehensive Study on Air Pollution and Green House Gases (GHGs) in Delhi",
+      "by": "Mukesh Sharma and Onkar Dikshit, Department of Civil Engineering, IIT Kanpur",
+      "commissioned_by": "Department of Environment, Government of NCT of Delhi, and the Delhi Pollution Control Committee",
+      "published": "January 2016",
+      "monitoring_period": "Winter 2013-14 and summer 2014",
+      "method": "Receptor modelling, chemical mass balance (CMB8.2), at six sites across Delhi",
+      "url": "https://cerca.iitd.ac.in/uploads/Reports/1576211826iitk.pdf",
+      "table": "Section 4.6, 'Overall Summary and Source Apportionment at a Glance', page 241",
+      "unit": "percent of ambient concentration",
+      "sums_to_100": false,
+      "publishes_single_numbers": false,
+      "why_ranges": "This study does not publish one split. Section 4.6 reports each source as a RANGE across its six sites and two seasons, because the answer was different at every site. That is a finding about Delhi, not a shortcoming of the study: the split under one monitor is not the split under another.",
+      "ranges": {
+        "pm25": [
+          { "sector": "Secondary particle formation", "lo": 13, "hi": 39 },
+          { "sector": "Biomass burning", "lo": 3, "hi": 35 },
+          { "sector": "Coal and flyash", "lo": 1, "hi": 35 },
+          { "sector": "Soil and road dust", "lo": 1, "hi": 36 },
+          { "sector": "Vehicles", "lo": 6, "hi": 29 },
+          { "sector": "Solid waste burning", "lo": 3, "hi": 15 },
+          { "sector": "Construction material", "lo": 0.6, "hi": 5 }
+        ],
+        "pm10": [
+          { "sector": "Coal and flyash", "lo": 7, "hi": 50 },
+          { "sector": "Soil and road dust", "lo": 8, "hi": 34 },
+          { "sector": "Secondary particle formation", "lo": 8, "hi": 32 },
+          { "sector": "Biomass burning", "lo": 2, "hi": 28 },
+          { "sector": "Vehicles", "lo": 4, "hi": 24 },
+          { "sector": "Solid waste burning", "lo": 2, "hi": 18 },
+          { "sector": "Construction material", "lo": 2, "hi": 5 }
+        ]
+      },
+      "seasonality": [
+        "Secondary particles, biomass burning and vehicles all contribute more in winter than in summer, for both PM2.5 and PM10.",
+        "Coal and flyash contribute more in SUMMER - PM10 24-50% and PM2.5 18-35% - than in winter, where they fall to PM10 7-15% and PM2.5 1-10%.",
+        "Soil and road dust also peak in summer: PM10 19-34% and PM2.5 21-36%, against winter's PM10 8-24% and PM2.5 1-11%."
+      ]
+    }
+  ],
+
+  "disagreements": [
+    { "sector": "Vehicles / transport, PM2.5", "iitk": "6-29%", "teri": "17-28% (dispersion), 18-23% (receptor)", "note": "TERI states its transport figure is higher than IIT Kanpur's because TERI counted secondary particulates alongside primary emissions. The two studies are not measuring quite the same thing." },
+    { "sector": "Coal, flyash and industry", "iitk": "coal and flyash 1-35% of PM2.5", "teri": "industry 22-30% of PM2.5", "note": "The categories do not line up. TERI's 'industry' bundles power plants, brick kilns and stone crushers, and includes biomass burned as industrial fuel; IIT Kanpur's 'coal and flyash' is a fuel signature, not a sector." },
+    { "sector": "Dust", "iitk": "soil and road dust 1-36% of PM2.5", "teri": "dust 17% winter, 38% summer", "note": "Both agree dust roughly doubles in summer. Neither says how much of it originated in Delhi - TERI attributes a large share to trans-boundary transport." },
+    { "sector": "Agricultural burning", "iitk": "inside 'biomass burning', 3-35%", "teri": "4% winter - explicitly under-counted, October excluded", "note": "Neither study is a source for what stubble burning does on a bad November day. That question needs a daily system, not a seasonal average." }
+  ],
+
+  "live_system": {
+    "name": "Decision Support System (DSS)",
+    "by": "Indian Institute of Tropical Meteorology, Pune, Ministry of Earth Sciences",
+    "url": "https://ews.tropmet.res.in/dss/index.php",
+    "paper": "https://gmd.copernicus.org/articles/17/2617/2024/",
+    "what": "A daily, operational source apportionment for Delhi: the absolute contribution of 29 sectors and surrounding districts to Delhi's PM2.5, plus a forecast, with the stubble-burning share derived from the previous evening's VIIRS fire counts.",
+    "why_not_wired": "It is the answer to the question the two static studies cannot answer, and it has no documented public API. Its host was unreachable from the machine that built this page, so it is named and linked and never restated - the same rule this page applies to SAFAR.",
+    "reported_skill": "The published evaluation reports AQI forecast accuracy up to 80% with a false-alarm ratio around 20% from day 1 to day 5, best when AQI is above 300."
+  },
+
+  "what_this_page_will_not_do": [
+    "Blend the two studies into one average. They use different methods, different years, different site sets and different category boundaries; an average of them would be a number no study supports.",
+    "Present a single pie chart as 'the causes of Delhi's air pollution'.",
+    "Attach either study's percentages to today's reading. Neither is a measurement of today. The most recent monitoring behind them ended in February 2017.",
+    "Update the split from the daily feed. There is no feed that carries it."
+  ]
+}

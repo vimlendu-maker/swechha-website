@@ -1,0 +1,63 @@
+name: Watch your ward — hourly alert check
+
+# GitHub Actions rather than Vercel cron: Vercel's Hobby plan caps scheduled
+# functions at one a day, and CPCB publishes hourly.
+#
+# ★ THIS WORKFLOW CANNOT SEND ANYTHING UNTIL THREE SECRETS EXIST. Until then
+# every run stops at the guard in scripts/ward-alerts.mjs with a clear message,
+# which is the intended behaviour — a scheduled job that quietly does nothing is
+# worse than one that says why.
+#
+#   DATA_GOV_IN_KEY   the CPCB feed, from data.gov.in
+#   DATABASE_URL      Neon Postgres; run db/001-ward-subscriptions.sql first
+#   RESEND_API_KEY    Resend, for the two emails
+#
+# Add them under Settings → Secrets and variables → Actions.
+
+on:
+  schedule:
+    # Hourly at :20. Deliberately not :00 — CPCB stamps the hour and publishes
+    # a little after it, and every cron on earth fires at :00.
+    - cron: '20 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Check and report without sending or writing'
+        type: boolean
+        default: true
+
+concurrency:
+  # Two overlapping runs could both see the same crossing and both mail it.
+  group: ward-alerts
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  alerts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci --omit=dev
+
+      - name: Check for crossings and send
+        env:
+          DATA_GOV_IN_KEY: ${{ secrets.DATA_GOV_IN_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          WARD_MAIL_FROM: ${{ vars.WARD_MAIL_FROM }}
+          SITE_ORIGIN: ${{ vars.SITE_ORIGIN }}
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            node scripts/ward-alerts.mjs --dry-run
+          else
+            node scripts/ward-alerts.mjs
+          fi

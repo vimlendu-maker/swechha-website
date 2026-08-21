@@ -3010,3 +3010,119 @@ canonical path and needed no change.
 controller and liveness upgrade together. Checking only the extracted half left the
 hand-written half unchecked, which is the same bug that killed the SECTIONS panel once,
 waiting on a different line.
+
+---
+
+## 21 August — the apportionment split, and Watch your ward built
+
+### D-22.1 THE SPLIT IS TWO STUDIES, NOT ONE PIE
+**Owner: "finish the apportionment split, take IIT Kanpur study as well as teri study, as well
+as any other study available."** Both were found, downloaded and transcribed from the primary
+PDFs — not from secondary reporting, which contradicted itself within two search results.
+
+**The two studies, exactly:**
+
+| | TERI–ARAI | IIT Kanpur |
+|---|---|---|
+| Report | ARAI/16-17/DHI-SA-NCR, August 2018 | *Comprehensive Study on Air Pollution and GHGs in Delhi*, January 2016 |
+| Commissioned by | Department of Heavy Industry, GoI | Dept of Environment, GNCTD + DPCC |
+| Monitoring | April 2016 – February 2017 | Winter 2013-14, summer 2014 |
+| Method | receptor (CMB8.2) **and** dispersion (WRF-CMAQ) | receptor (CMB8.2), six sites |
+| Publishes | a complete split, summing to 100 | **ranges only** |
+
+**Ruled: publish both, side by side, and never average them.** Different methods, different
+years, different site sets, different category boundaries — a mean of them is a number no study
+supports. And no pie chart: a pie says the question is settled.
+
+**★ THE STRONGEST GRAPHIC ON THE PAGE CAME OUT OF THE SECOND STUDY REFUSING TO ANSWER.**
+IIT Kanpur's section 4.6 reports every source as a range across its six sites, because the
+answer was different under every monitor. Drawn as low–high lines on one axis, the *length* is
+the uncertainty: **vehicles 6–29% of PM2.5.** That is the range in which every argument about
+Delhi's traffic is actually being conducted. TERI puts transport at 17–28% and says plainly its
+figure is higher **because it counted secondary particles alongside primary ones** — the two
+studies are not measuring the same quantity.
+
+**The four caveats TERI states about itself, all published on the page:**
+1. **Agricultural burning at 4% is a floor, not an estimate** — the monitoring never covered
+   October, when burning peaks, and the report says so in as many words. This matters more here
+   than anywhere: the page has a whole stubble band.
+2. The shares are period averages, so **they cannot describe a bad day.**
+3. The model reproduces only **82–87% of the mass actually measured.**
+4. "Industry" includes biomass burned as industrial fuel, which the report itself calls an
+   overestimate.
+
+**The counter-intuitive finding, kept because it is sourced:** inside transport's 28%, **trucks
+are 8%, two-wheelers 7%, three-wheelers 5% and cars 3.4%.** Run the study's own arithmetic and
+**every BS-IV diesel car in Delhi is about 0.5–0.9% of PM2.5.** Stated with its conclusion —
+that this is an argument about where a policy rupee buys the most air, not an argument for more
+cars.
+
+**A shape assert caught an error in my own data file**, not in the transcription: I declared
+every split sums to 100, and TERI's PM10 columns sum to 99 and 101 because the study rounds to
+whole percent. Tolerance is now ±2 **and** the declared sum must match the arithmetic, so the
+two cannot drift apart.
+
+**IITM's DSS** — daily, 29 sectors, stubble share from the previous evening's VIIRS counts — is
+the system that answers what the static studies cannot. It has no public API and its host was
+unreachable from the build machine, so it is **named and linked and never restated**, the same
+rule this page applies to SAFAR.
+
+### D-22.2 WATCH YOUR WARD IS BUILT — AND IT ASKS FOR A MONITOR, NOT A PIN CODE
+**Owner: "Finish watch your ward too."** Built. The interesting part is what the build found.
+
+**★ INDIA POST PUBLISHES NO COORDINATES FOR DELHI.** The official All India Pincode Directory
+on data.gov.in returns **562 Delhi post offices and no latitude or longitude column at all**
+(fields: officename, pincode, officetype, deliverystatus, divisionname, regionname, circlename,
+taluk, districtname, statename). So there is no official, checkable way to turn a Delhi pin code
+into a point on the ground.
+
+The options were a third-party centroid file of unknown provenance, or asking for something the
+page can stand behind. **Ruled: ask for the monitor.** Importing an unsourced geography to power
+the one interactive feature on a page about provenance would have been the page contradicting
+itself — and a monitor is the better question anyway, because this page's own finding is that
+two monitors 3.9 km apart read 392 and 110. The reason is printed on the page, with the number.
+
+The picker immediately reproduced the argument: **searching "Dwarka" returns two monitors, 165
+and 85 — one over the limit and one not, both called Dwarka.**
+
+**What works with no credentials:** `GET /api/ward` — all 44 monitors, live readings, band, and
+**each one's distance to the next nearest**, which is the honest width of what a single monitor
+can claim to describe.
+
+**What needs two credentials:** the subscription. `DATABASE_URL` (Neon, per the standing
+architecture ruling — Supabase's free tier pauses and would kill the cron) and `RESEND_API_KEY`.
+**Until they exist the form names what is missing and stores nothing.** A form that accepts an
+address it cannot store or email is the one genuinely dishonest thing this page could do, and it
+is exactly what a "coming soon" input does.
+
+**Four design rules in the subscription, each load-bearing:**
+1. **Double opt-in, no exceptions.** A row cannot receive an alert until confirmed, so nobody
+   can subscribe somebody else's address.
+2. **Alert on a BAND CHANGE, not a reading.** Delhi is above the limit most of the year; "alert
+   when over the limit" would mean an email an hour, forever, and the page's promise — *one
+   message when something crosses* — would be a lie inside a day. Improvements are recorded but
+   never mailed.
+3. **Only the address is stored.** No name, no IP, no coordinates, no ward. The schema comment
+   says why: a column that exists gets used eventually.
+4. **Only token HASHES are stored**, so a database leak cannot be replayed to confirm or
+   unsubscribe a stranger. Consequence accepted and documented: an unsubscribe token is minted
+   fresh per message, so only the newest message's link is live.
+
+The subscribe route also **verifies the monitor against the live feed** before storing. Without
+that check it would happily store a monitor that does not exist, and the alert job would then
+never fire — a subscription that appears to work and cannot.
+
+### D-22.3 THE GENERATOR MOVES INTO THE REPO, AND THE TEMPLATE IS WRITTEN
+The build script lived in a session scratchpad, which meant **the Air page was unreproducible
+by anyone but the session that made it.** Ported to `scripts/build-situation-air.mjs` with
+repo-relative paths, wired as `npm run build:situation-air`, and verified **byte-identical**
+output. Also added: `npm run data:air`, `data:air-all`, `ward:dry`.
+
+`docs/design/SITUATION-PAGE-TEMPLATE.md` is the handoff for the next situation page — what to
+copy, what to rebuild, the four build gates, the honesty rules, and the two constraints already
+on the record for Yamuna (no real-time public water-quality feed exists, and `LIVE` is earned by
+delivery, not cadence).
+
+`lib/air.ts` now holds the AQI — breakpoints, CO exclusion, worst-sub-index, the self-check —
+because `/api/air` and `/api/ward` both need it and **a page that disagrees with itself about a
+station's reading is worse than a page with one fewer feature.**
