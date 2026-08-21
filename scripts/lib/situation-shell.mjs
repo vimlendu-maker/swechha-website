@@ -651,14 +651,20 @@ export const disclose = (summary, body) => `      <details class="dx">
  * one half leaves the other unchecked, which is the same bug on a different
  * line (SITUATION-PAGE-TEMPLATE.md §2).
  */
-export async function assemble({ file, title, bands, sectionFor, index, sh, pageCss = '', script = '', clashes, note = '' }) {
+export async function assemble({ file, title, bands, sectionFor, index, sh, pageCss = '', script = '', clashes, note = '', navMark = null }) {
   /* WHICH NAV WORD THIS PAGE IS STANDING UNDER, derived from the file being
      written rather than passed in, so a generator cannot mark the wrong one.
      The index and all six situations live under `Now`; anything else built
      through this shell (about.html) is not a nav word and marks nothing. */
   const own = file === INDEX_PAGE.file ? INDEX_PAGE.route
     : (FAMILY.find(f => f.file === file)?.route ?? null);
-  const navMark = { current: own ? INDEX_PAGE.label : null, url: own };
+  /* A page that IS a nav word cannot be derived from the family list, because
+     the family is the six situations. `impact.html` is `/impact`, which is a
+     nav word in its own right, and AD-19 §5 requires `aria-current="page"`
+     exactly where the href equals the URL being built. So a generator may
+     pass its own mark; passing nothing keeps the derived behaviour, which is
+     what the index, the six situations and about.html all rely on. */
+  const mark = navMark ?? { current: own ? INDEX_PAGE.label : null, url: own };
 
   const section = ([id, cls]) => {
     const body = sectionFor(id);
@@ -685,7 +691,7 @@ ${pageCss}</style>
 <body>
 ${sh.SVG_DEFS}
 ${sh.SKIP}
-${header(index, navMark)}
+${header(index, mark)}
 <main id="main" tabindex="-1">
 ${bands.map(section).join('\n')}
 </main>

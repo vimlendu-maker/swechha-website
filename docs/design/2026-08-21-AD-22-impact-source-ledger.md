@@ -222,3 +222,149 @@ are written down before they can be re-sprung (I-5).
 read out of the existing item data, at which point the register here becomes
 generated rather than compiled by hand — the same move that made `FINAL.md` a build
 artefact instead of a list that goes stale.
+
+---
+
+# Addendum — owner rulings of 22 August
+
+Six figures supplied by the owner. **Two are applied and building; four cannot be
+published as given.** Recorded together because the reason each one is or is not
+publishable is the same reason, and it is the site's only rule about numbers.
+
+## I-8 · Bridge the Gap: 2 million, published as the section's first MODELLED figure
+
+**Owner, 22 August:** *"Change Bridge the gap outreach statistics to 2 million
+instead of 50k."*
+
+**Applied — and the 50,000+ stays, because they do not count the same population.**
+This is not a hedge. I-3 of this ledger, written two hours earlier, established the
+distinction on the owner's own derivation of the 3M figure: a schools-times-years
+count measures **children in a school the programme entered**, and the documented
+50,000+ measures **the 5–16 session cohort**. They differ by roughly forty-fold
+because they are answers to two different questions.
+
+So the page publishes both, labelled:
+
+| value | label | period | basis | source |
+|---|---|---|---|---|
+| **2 million** | Children and young people reached | cumulative, since 2000 | **modelled** | owner 2026-08-22 |
+| 100–150 | Schools in Delhi | every year | counted | SOURCE-FACTS §215 |
+| 50,000+ | Students through the curriculum | over fifteen years | counted | SOURCE-FACTS §58 |
+| 250+ | Schools in Delhi NCR | over fifteen years | counted | SOURCE-FACTS §58 |
+| 200+ | Schools on year-long curricula | in 2019–20 | counted | SOURCE-FACTS §60 |
+
+**`basis: "modelled"` is the finding worth keeping.** The schema has carried that
+value since the data contract was written — *"it drives the solid/dotted rule under
+the label"* — and the `/work` index band `#reach` already promises the reader
+*"whether it was counted or modelled"*. **Nothing was invented to accommodate the
+2 million; it is the first figure in the section to use a vocabulary that was
+already there.** All 31 existing figures are `counted`.
+
+Verified in the built page: the label renders `p-kd-m`, the counted figures render
+`p-kd-c`, and **the block grew its own legend** — *"Counted or measured · Modelled"*
+— because a modelled figure is now present. The caption reads `cumulative, since
+2000 · owner 2026-08-22`.
+
+**The prose was moved with the figure**, which is the half that usually rots: a new
+`done` entry states the method and says why both numbers are on the page, and a new
+hole names the derivation's soft term — *how many children a school has* — which is
+written down nowhere citable.
+
+**And it answers the awkward question a reader will ask.** This page withdrew
+"25,000+ children" as untraceable (W-5) and now publishes 2,000,000. The difference
+is stated on the page rather than left to be noticed: the withdrawn figure was
+captioned *verified* and had no method; this one is stamped a derivation and shows
+its arithmetic. **If the 50,000+ should come off entirely, that is one word** — but
+it should be a decision, not a side effect.
+
+## I-9 · Yamuna Yatra: 10,000+ youth leaders. The third value in three days.
+
+**Owner, 22 August:** *"we have taken more than 10000 youth leaders for yamuna yatra."*
+
+**Applied** as `10,000+ · Youth leaders who have walked it · since 2004 · counted ·
+owner 2026-08-22`, and the four prose lines that said *"three thousand"* were
+rewritten with it, so the page cannot disagree with its own figure.
+
+**Flagged once, for the record and not as an objection.** This figure has now taken
+three values in three days:
+
+| value | basis of the change |
+|---|---|
+| over 2,000 | `Introduction to Swechha.pdf` p4–p5 |
+| 3,000+ | owner, 21 August — SOURCE-FACTS §187 records the PDF figure as *stale* |
+| **10,000+** | owner, 22 August |
+
+The move from 2,000 to 10,000 is **five-fold in two days**, against a fixed
+denominator of *"over 30 Yatras since 2004"*. At 10,000 leaders across 30 Yatras
+that is **~333 young people per twelve-day Yatra** on a ~1,000km river route — where
+the source describes a cohort programme that Vasant Valley placed in its Grade XI
+curriculum. **The figure is publishable on the owner's ruling and is published.**
+But if 10,000 counts everyone the Yatra has *involved* — school groups briefed,
+participants at riverbank events along the route — rather than the walkers who did
+the twelve days, then it is the Bridge the Gap situation again, and the honest form
+is two figures with two labels rather than one number that grew.
+
+**One number would settle it:** how many walked the full twelve days.
+
+## I-10 · Four claims that need one number each before they can appear
+
+None of these is refused. Each is **one figure short of publishable**, and the
+site's rule is the same for all four: a number without a period and a source is not
+a reading, and prose that says *"so much"* or *"various"* is not a figure.
+
+**1 · Air detox gardens — the TERM is now settled; the count is not.**
+SOURCE-FACTS description-check §3 left this open: *"'Air-detox garden' is not a term
+either source uses. The source term is **Airshed Park**. Either the page adopts the
+source's word or the owner confirms the new one **and its number**."* The owner has
+now used *"air detox gardens"* himself, which settles the first half. `eco-action`
+currently ships the source's word (`Airshed parks`) and **carries no figure for them
+at all** — its only airshed number is the Vasant Kunj park, and I-5 records that
+this is **one park** and must not read as an org-wide count. **Needed: how many air
+detox gardens.** The rename is held rather than half-applied, because swapping a
+sourced term for an unsourced one on an informal mention is the drift this ledger
+exists to catch.
+
+**2 · "More than 100 acres restored through permaculture and plantation" — new, and
+it lands next to an unresolved contradiction.** There is no acreage figure anywhere
+in the work section except the farm's own. And the farm's acreage is **already
+contradictory**: `farm-school` ships *"five acres"* (the PDF's 2-hectare campus)
+while **the frozen homepage says "Forty acres"** — SOURCE-FACTS description-check §4
+flagged it for the owner and it is still open. A third acreage now enters on the
+Impact page. **They are three different claims** — land restored across many sites,
+the Farm School's campus, and whatever the homepage's forty acres refers to — and a
+reader meeting all three will not be able to reconcile them. **Needed: the period
+(since when), and the 40-vs-5 ruling, which this makes urgent rather than tidy.**
+
+**3 · Garbage out of the Yamuna — this substantiates the orphan of I-4 without
+sourcing it.** The owner's *"have taken out so much garbage out of yamuna"*
+confirms the **substance** of the homepage ticker's `Out of river / 6,890t`, which
+I-4 found is **absent from every source document** and is **still a dead link**. So
+the claim is real; the quantity is still uncited. **Needed: is 6,890 tonnes the
+number, and since when?** If it is, it becomes `owner 2026-08-22` and the ticker
+cell gets its destination — the cheapest win available on the Impact page.
+
+**4 · "Influenced various policies" — the strongest claim on the page, and the one
+that cannot ship as written.** This is a **new impact category**: every one of the
+31 existing figures counts people, sites or material, and not one records an
+advocacy outcome. It is also, on this site's own terms, **worth more than any reach
+number** — a named policy that changed is an effect, and the section's holes
+repeatedly admit that effect is the thing nobody has measured.
+
+**"Various" cannot be published**, and the reason is not house style: an unnamed
+policy claim is unfalsifiable, which is the one thing this site refuses. **Needed:
+one policy, named** — the instrument, the year, and what Swechha did. One named
+policy is worth more here than five vague ones, and it would give the Impact page
+the band that no other page on the site could carry.
+
+---
+
+## Where this leaves the Impact page
+
+**The register is now 32 figures** — 31 counted, 1 modelled — plus **four owner
+claims held pending a number**. The design is unblocked either way: the page's
+subject (I-2, the refusal to total) does not depend on any of the four, and the
+four all belong to one band if they arrive and simply do not appear if they do not.
+
+**The one that changes the page's shape is the policy claim.** Reach figures make a
+register; a named policy makes an argument. If it arrives, the Impact page leads
+with it.
