@@ -265,3 +265,121 @@ zero times in the file).
 No LinkedIn link appears on the live site. **Do not invent one**, and do not invent
 follower counts, post embeds or "latest from Instagram" feeds — nothing on this page may
 imply a live feed that is not wired.
+
+---
+
+# READINGS AND LIMITS — the environmental fact base
+
+Added 21 August 2026. The D-11 block noted this file had **no environmental figures at
+all**, so gate #11 ("every figure traced") could not be met for a single reading. This
+section closes that. **Everything below is transcribed from the cited document, not from
+memory**, and each row names what it is: a **STANDARD** (fixed by notification), a **STUDY**
+(one-off, dated), or a **READING** (a measurement, and therefore a specimen until a feed
+exists).
+
+## S-1 · STANDARD · The CPCB AQI breakpoint table
+
+Source: **CPCB, "About National Air Quality Index"**, cpcb.gov.in — the Board's own
+methodology document. Transcribed in full because the page derives verdict, multiplier and
+the six-band scale from it.
+
+**Six categories. Eight pollutants.** *"AQ sub-index and health breakpoints are evolved for
+eight pollutants (PM10, PM2.5, NO2, SO2, CO, O3, NH3, and Pb) for which short-term (upto
+24-hours) National Ambient Air Quality Standards are prescribed."*
+
+| category | AQI | PM10 | PM2.5 | NO2 | O3 | CO | SO2 | NH3 | Pb |
+|---|---|---|---|---|---|---|---|---|---|
+| Good | 0–50 | 0–50 | 0–30 | 0–40 | 0–50 | 0–1.0 | 0–40 | 0–200 | 0–0.5 |
+| Satisfactory | 51–100 | 51–100 | 31–60 | 41–80 | 51–100 | 1.1–2.0 | 41–80 | 201–400 | 0.5–1.0 |
+| Moderately Polluted | 101–200 | 101–250 | 61–90 | 81–180 | 101–168 | 2.1–10 | 81–380 | 401–800 | 1.1–2.0 |
+| Poor | 201–300 | 251–350 | 91–120 | 181–280 | 169–208 | 10–17 | 381–800 | 801–1200 | 2.1–3.0 |
+| Very Poor | 301–400 | 351–430 | 121–250 | 281–400 | 209–748 | 17–34 | 801–1600 | 1200–1800 | 3.1–3.5 |
+| Severe | 401–500 | 430+ | 250+ | 400+ | 748+ | 34+ | 1600+ | 1800+ | 3.5+ |
+
+**CO in mg/m³, every other pollutant in µg/m³. 24-hour averages for PM10, PM2.5, NO2, SO2,
+NH3 and Pb; 8-hour values for CO and O3.**
+
+**S-1a · The aggregation rule, verbatim: *"The worst sub-index determines the overall
+AQI."*** This is CPCB's own sentence and it is the licence for band 3's whole device. Note
+the correction it forces: the index is the worst of **eight**, not of six. Six is the number
+of *categories*.
+
+**S-1b · The sub-index is linear in concentration**, and CPCB gives its own worked example:
+for PM2.5 the sub-index is **51 at 31 µg/m³, 75 at 45 µg/m³, and 100 at 60 µg/m³.** So the
+multiplier and the breach are **derivable** and must never be typed.
+
+**S-1c · THE FINDING THAT REFRAMES THE PAGE. AQI 100 *is* the legal limit.**
+The Satisfactory/Moderately-Polluted boundary sits at **PM2.5 = 60 µg/m³ and PM10 = 100
+µg/m³** — which are exactly the **NAAQS 24-hour standards** for those pollutants (S-2). So
+"AQI above 100" is not a judgement or a rule of thumb: **it is arithmetically identical to
+"above the standard India set for itself."** The masthead's promise — *every reading against
+its published limit* — is therefore satisfied by the index itself, with no editorial
+addition. Use this. It is the cleanest true thing on the page.
+
+## S-2 · STANDARD · NAAQS 2009, the pollutants this page uses
+
+Source: **National Ambient Air Quality Standards, CPCB notification 2009** (12 pollutants in
+full; only those used here are listed). Residential/rural/industrial areas.
+
+| pollutant | annual | 24-hour |
+|---|---|---|
+| PM2.5 | **40 µg/m³** | **60 µg/m³** |
+| PM10 | **60 µg/m³** | **100 µg/m³** |
+| NO2 | 40 µg/m³ | 80 µg/m³ |
+| SO2 | 50 µg/m³ | 80 µg/m³ |
+
+**S-2a · Averaging period must be stated with every comparison to the WHO guideline.**
+The WHO 2021 guideline for PM2.5 is **5 µg/m³ annual** and **15 µg/m³ 24-hour**. So India's
+standard is **8× the WHO's on the annual figure** and **4× on the 24-hour figure.** D-14.2's
+device rests on the *annual* comparison, because the Lancet study models annual exposure —
+so **"eight times looser" is correct there and only there.** A 24-hour reading compared to
+the WHO number is a 4× gap. Getting these two crossed is the easiest error on this page.
+
+## S-3 · STUDY · Mortality, against two limits
+**Lancet Planetary Health, December 2024** — *"Estimating the effect of annual PM2·5
+exposure on mortality in India: a difference-in-differences approach."*
+- Against the **WHO guideline**: **~1.5 million deaths per year.**
+- Against **India's own NAAQS**: **3.8 million deaths across 2009–2019 — 5.0% of total
+  mortality** (95% CI 2.9–4.9m; 3.8–6.4%).
+- The entire Indian population lives above the WHO guideline.
+
+## S-4 · STUDY · Delhi adolescent lung function
+**Lung Care Foundation (New Delhi) with Pulmocare Research and Education Foundation (Pune),
+*Lung India*, September 2021.** 4,300+ children **aged 13–17, in Delhi.**
+- **29.4% spirometry-defined asthma or airflow obstruction**; 21.7% by ISAAC questionnaire.
+- **The study's own strongest association was obesity, not air pollution** (39.8% vs 16.4%
+  overweight/obese). **Per D-14.3 this must be stated in the same breath as the figure.**
+  The population is Delhi adolescents 13–17 — not "children", and not India.
+
+## S-5 · STUDY · Life expectancy
+**Air Quality Life Index, Energy Policy Institute at the University of Chicago (EPIC), 2025
+edition.** **India 3.5 years** lost; **Delhi-NCR 8.2 years.** Nearly twice the toll of
+childhood and maternal malnutrition; more than five times unsafe water and sanitation.
+Measured against the WHO guideline.
+
+## S-6 · STUDY · Economic cost
+**Dalberg Advisors with Clean Air Fund and CII, 2021.** **~$95 billion a year ≈ ₹7 lakh
+crore ≈ 3% of GDP** — the report's own framings: **50% of all tax collected annually** and
+**150% of India's healthcare budget.** Components: 1.3bn work days lost/yr (~$6bn),
+productivity loss up to $24bn, lost working years $44bn. **This figure is ANNUAL.**
+
+## S-7 · RECORD · NCAP and XV-FC funds
+Sources: PIB releases, CPCB **PRANA** funding guidelines, CREA *Tracing the Hazy Air*
+progress reports.
+- **₹13,415 crore released** under NCAP + XV-FC since inception; **₹9,929 crore utilised —
+  74%.** *(Cumulative since FY2019-20.)*
+- The **82 NCAP cities**: **₹831.42 crore utilised of ₹1,615.47 crore released — 51%**
+  (to 3 May 2024).
+- **These figures are CUMULATIVE. S-6 is ANNUAL.** Any comparison must say so — see D-14.8.
+
+## S-8 · The AQI record begins in 2015
+India's National AQI launched **April 2015**. Pre-2015 NAMP monitoring measured SPM / RSPM /
+PM10 — **a different quantity by a different method**, and not spliced into the series
+(D-13.3).
+
+## S-9 · READINGS have no source yet, and that is the honest state
+No feed is wired (D-10.1). Every *measurement* on the page — the current AQI, the eight
+sub-indices, station coverage, the city ranking, farm-fire counts — is a **specimen stamped
+`DEMO DATA`** until the job in D-13.1 runs. The **standards and studies above are real**, so
+the page's limits, verdicts, multipliers and health figures are genuine from day one.
+**That is the intended asymmetry: the argument is sourced, the reading is stamped.**
