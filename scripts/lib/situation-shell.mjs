@@ -249,12 +249,19 @@ export function shell() {
  * ABSOLUTELY — `/#farm` is a same-page jump from the homepage and a
  * navigate-plus-jump from here, and it is the SAME destination either way.
  */
+/* AD-24, 22 August: `Farm` was `/#farm` — a homepage anchor — for as long as
+ * there was no farm page. `/farm` now exists (the page D-07.13 promised on
+ * 21 August and nobody built), so the nav word points at the page. Leaving it
+ * on the anchor would repeat the `/impact` defect exactly: the nav says a word
+ * on every page of this site, and for as long as the route is unmapped or the
+ * href is stale, clicking it opens something other than the page. `Record` is
+ * still an anchor because there is still no record page. */
 export const NAV = [
   ['Now', '/now'],
   ['Work', '/work'],
   ['Journeys', '/work/journeys'],
   ['Impact', '/impact'],
-  ['Farm', '/#farm'],
+  ['Farm', '/farm'],
   ['Record', '/#record'],
 ];
 

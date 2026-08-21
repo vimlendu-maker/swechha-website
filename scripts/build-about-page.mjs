@@ -516,7 +516,9 @@ ${HOLES.map(h => hole(h)).join('\n')}
 const DOORS = [
   ['/now', 'The readings', 'Six situations, each against the limit somebody published for it.'],
   ['/#impact', 'The record', 'What the work adds up to, with a method note behind every figure.'],
-  ['/#farm', 'The farm', 'Five acres, an hour and a half from Delhi. You can come to it.'],
+  /* AD-24: `/farm` is a page now, and this door already says "you can come to
+     it" — which the homepage band could only promise and the page can answer. */
+  ['/farm', 'The farm', 'Five acres, an hour and a half from Delhi. You can come to it.'],
 ];
 
 B.act = () => `${opener('act', 'Turn up',

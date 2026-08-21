@@ -112,13 +112,18 @@ The shared description, in the owner's own words:
 
 ## 3 · Contradictions, and which way they now fall
 
-**3.1 The acreage — resolved in favour of five, and the ledger should say so.**
-Four numbers were in play: the frozen homepage's **forty acres**, the prototype's
-**twelve**, the PDF's **2 hectares**, and D-07.3's **five**. Two hectares is **4.94
-acres**. So the PDF and the owner's own Airbnb listing ("a 5 acre organic farm") and
-D-07.3 all say the same thing in different units. **Forty and twelve are the outliers
-and neither has a source.** AD-22's worry about a third acreage entering was a unit
-mismatch, not a conflict.
+**3.1 The acreage was already ruled, and this ledger only corroborates it.**
+D-07.3 settled it on 21 August — *"swechha farm is 5 acres and 1.5 hours from delhi,
+use this"* — and recorded that **neither** the frozen homepage's *"Forty acres… 60km"*
+**nor** the PDF's *"2-hectare campus at Ladpuri Village, Alwar"* stands. An earlier
+draft of this section claimed the acreage was resolved HERE, on the arithmetic that two
+hectares is 4.94 acres. That reasoning is sound but it is not the ruling and must not be
+mistaken for one.
+
+What today's sources add is corroboration from a third, independent, owner-written
+place: the Airbnb listings say **"a 5 acre organic farm"** in his own words. Forty and
+twelve remain the outliers and neither has a source. AD-22's worry about a third
+acreage entering the section was a unit mismatch, not a conflict.
 
 **3.2 The distance — both "60 km" and "90 minutes" are true, of different things.**
 From the coordinates, the farm is **~60 km from central Delhi in a straight line** and
@@ -132,10 +137,22 @@ listing. The owner said "over 5,000 trees" on 21 August 2026. A growing farm pro
 exactly this. **The page needs a date against the 5,000, or it inherits an argument
 with a listing that is still live and still says two thousand.**
 
-**3.4 "Manesar" and "Alwar District" are both in the address and both are loose.**
-The coordinates put the farm in Ladpuri at the Haryana–Rajasthan edge; the postal code
-301707 is Rajasthan; Manesar is the landmark, ~35 km north. Google's own listing says
-Ladpuri, Rajasthan. Nothing here is wrong, but the page should pick one phrasing.
+**3.4 The location is a SEPARATE question from the acreage, and D-07.3 closed it by
+accident.** The PDF sentence D-07.3 struck — *"a 2-hectare campus near Manesar, at
+Ladpuri Village, Alwar District"* — carried **two** claims: a size and a place. The
+ruling was about size and distance, and the place went down with it. So the site now
+names no location for the farm at all.
+
+Two independent sources say the place part was right. **Google's own listing** puts it
+at *Ladpuri, Rajasthan 301707*, plus code 4WGH+Q3, coordinates 28.1269309 / 76.927649.
+**The owner's Airbnb listings** are titled *Ladpuri, India*. The coordinates sit at the
+Haryana–Rajasthan edge; 301707 is Rajasthan; Manesar is a landmark ~35 km north, and
+"Alwar District" is the administrative frame, not the address anyone would use.
+
+**This needs its own ruling, and it is not the same ruling as D-07.3.** Options: name
+Ladpuri; name nothing and keep only "an hour and a half from Delhi", which is the status
+quo and what the page will ship with absent a decision; or give the full address, which
+is already public on the farm's own Google listing.
 
 **3.5 The day visit's length.** swechha.in says **half-day**. The live
 `farm-school.json` says "ninety minutes out, and back by evening" — a full day. One of
@@ -194,7 +211,26 @@ land" is the owner's own wording, published, and still live.
 
 ---
 
-## 6 · Rulings, owner, 22 August 2026 — F-1 to F-4
+## 6 · The governing brief — D-07.13, 21 August
+
+**This page was commissioned nine months' worth of decisions ago and never built.**
+D-07.13 reopened homepage band 8 and required it to carry **two stories, "both detailed
+further on the inner page"**:
+
+1. **The transformation** — barren land into a flourishing **Food Forest** and farm.
+   *Food Forest is the client's own proper noun and is capitalised in the ruling.*
+2. **A place you can come to** — "overnight school camps and day visits for students
+   **and educators**; team meetings and retreats."
+
+Plus: *"A good hook and call to action button."* The band delivers the hook (*"Nothing
+grew here"*) and the button (*"Visits, camps and retreats"*), and the button has pointed
+at `href="#"` ever since. **`/farm` is the page D-07.13 promised.** The two stories are
+its spine and its order, not two sections among several. "Educators" is a named audience
+in the brief and must survive into the page.
+
+---
+
+## 7 · Rulings, owner, 22 August 2026 — F-1 to F-4
 
 **F-1 · Two pages, place and programme.** This closes AD-17 question 6 and
 `farm-school.json` `holes[1]`, both of which have been open since 21 August.
@@ -222,3 +258,64 @@ are Swechha originals and enter `content/photo-library.json` with alt text writt
 from the frame, on the same consent basis as ruling W-14. This is what makes a stay
 section possible at all: the ten catalogued farm frames contain no interior, no bed
 and no group.
+
+**F-5 · The farm is at Ladpuri, and the page says so.** This is the ruling §3.4 asked
+for, and it is deliberately NOT a reversal of D-07.3: that ruling struck a sentence
+about *size*, and the place name went down with it as collateral. Ladpuri is
+corroborated by the farm's own Google listing (*Ladpuri, Rajasthan 301707*) and by both
+of the owner's Airbnb listings (*Ladpuri, India*). Owner, 22 August: "yes it's ladpuri."
+
+The page names **Ladpuri and the Aravallis**, with the ninety minutes. It does not print
+the postal address, the plus code or a map link — F-2 puts a phone number at the foot of
+the page, and a person who is coming will be told the way.
+
+---
+
+## 8 · What was built, 22 August 2026 — AD-24
+
+**`/farm`, nine bands, on the `/impact` architecture.** `data/farm.json` holds every
+sentence and every fact; `scripts/build-farm-page.mjs` resolves them and writes
+`public/design/v3/farm.html`; `npm run build:farm`. Nothing is typed in the generator.
+
+**The two stories are the spine and the order.** Bands 2–4 are the transformation (the
+ground, what grows there now, how the place keeps itself); bands 5–7 are the place you
+can come to (four ways to come, it is not a hotel, what we cannot tell you yet); then
+the frames and the way in.
+
+**Two figures are resolved, not copied.** The composted leaves and the honey are read
+out of `data/work/projects/farm-school.json` by label, and the build **dies** if either
+is renamed or removed. F-1 splits one place across two pages, and a split is exactly
+where a number drifts.
+
+**Sixteen gates, and two of them earned their keep.** The acreage gate caught the
+masthead readout on the first run — correctly, since "5" and "five" are the same ruled
+figure and the gate had only been taught the word. The kilometre gate passed while the
+page said "a couple of kilometres" of the nearest shop, because it was anchored on a
+digit: it is now two gates, one forbidding any numeric kilometre figure and one
+asserting the shop is the *only* kilometre on the page. A gate whose name overstates
+what it checks is worse than no gate, because it is believed.
+
+**The nav word, the built file and the route are one change.** `Farm` pointed at
+`/#farm` in **both** shells and therefore on all 26 built pages. Repointing it means
+every page was rebuilt: 15 work pages, 7 situations, About, Impact. Two further doors
+were still reaching the teaser band and now reach the page — the Farm School's own
+"the evidence" door (`build-work-pages.mjs`) and About's farm door
+(`build-about-page.mjs`) — and `onward.json`'s route contract carries `/farm`.
+
+**Consequences applied.** `farm-school.json` lost the hole F-1 answered (3 → 2) and its
+`invite.second` and `act` now point at `/farm`. The frozen homepage's band 8 button is
+no longer `href="#"`.
+
+**Verified.** All 16 gates green; `npm run verify:final` 7/7 pages, 12/12 checks; the
+work build's 32 link-contract failures cleared; `designRoutes()` resolves `/farm` →
+`/design/v3/farm.html`. Rendered and read at 1280×860 across the masthead, the four
+doors, the conditions band and the foot.
+
+**Known, and NOT this work:** `npm run test` fails 6 of 52, all in `lib/brand.test.ts`,
+all `ENOENT` on `public/brand/swechha-{horizontal,stacked,stacked-tagline}.svg`. Those
+vector masters are absent from the working tree and were before this session;
+`public/brand/` is untouched here.
+
+**Still open after this page ships:** the school-camp capacity (F-3, named on the page),
+a participation figure for the farm, and whether the ₹300/₹375/₹375 meal rates and the
+two Airbnb listings are ever named on the site. None blocks the page; each is one fact.

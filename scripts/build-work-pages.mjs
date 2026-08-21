@@ -955,10 +955,14 @@ function situationDoor(slug) {
 }
 const EVIDENCE = {
   '/#record': { href: '/#record', eyebrow: 'The evidence', head: 'The record', body: 'Every reading, every source and the paper behind them, kept whether or not anybody writes a post.', foot: 'Nothing here is unsourced' },
-  '/#farm': { href: '/#farm', eyebrow: 'The evidence', head: 'Swechha Farm', body: 'The five acres this happens on. The composting, the nursery and the apiary are the teaching material, and they have to actually produce.', foot: 'Five acres, ninety minutes out' },
+  /* AD-24: was `/#farm`, the homepage teaser band. `/farm` is now a page, and
+     this door's own copy ("the five acres this happens on") promises the place
+     rather than a paragraph about it. An anchor here would land a reader who
+     clicked "the evidence" on a band whose own button is the real destination. */
+  '/farm': { href: '/farm', eyebrow: 'The evidence', head: 'Swechha Farm', body: 'The five acres this happens on. The composting, the nursery and the apiary are the teaching material, and they have to actually produce.', foot: 'Five acres, ninety minutes out' },
 };
 const atFarm = new Set(ONWARD.evidence && ONWARD.evidence.at_farm || []);
-const evidenceFor = (slug) => EVIDENCE[atFarm.has(slug) ? '/#farm' : (ONWARD.evidence && ONWARD.evidence.default) || '/#record'] || EVIDENCE['/#record'];
+const evidenceFor = (slug) => EVIDENCE[atFarm.has(slug) ? '/farm' : (ONWARD.evidence && ONWARD.evidence.default) || '/#record'] || EVIDENCE['/#record'];
 
 function threeDoors({ siblings, situation, evidence }) {
   const out = [];

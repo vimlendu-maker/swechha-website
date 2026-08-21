@@ -46,6 +46,16 @@ import { join } from 'node:path'
  * placeholder — the same defect, on the same nav bar, that this whole file was
  * written to fix for `Work`. Building a page is not shipping it; routing it
  * is.
+ *
+ * `/farm` JOINED ON 22 AUGUST (AD-24), the same lesson a third time with one
+ * extra turn of the screw. `Farm` has been a nav word on every page of this
+ * site since AD-23, but unlike `Impact` it pointed at `/#farm` — a homepage
+ * ANCHOR — because there was no farm page to point at. So the failure here was
+ * not a 404 and not a placeholder: it was a link that worked perfectly and
+ * delivered the reader to a teaser band whose own button was `href="#"`.
+ * AD-24 builds the page D-07.13 promised, repoints the nav word in BOTH
+ * shells, and maps the route. Those are one change, not three: a nav word, a
+ * built file and a route — and any two of them without the third is a defect.
  */
 
 const ROOT = __dirname
@@ -88,6 +98,7 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
     ...workRoutes(),
     '/about': 'about.html',
     '/impact': 'impact.html',
+    '/farm': 'farm.html',
   }
 
   /* THE GATE. Every generator in this repo refuses to write on a failed check
