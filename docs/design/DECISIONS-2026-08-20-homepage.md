@@ -3357,3 +3357,67 @@ is confirmed:**
 inverse and the stronger one because it is the only one that is true: *every reading against
 its published limit, every gap named.* This re-verification is recorded so the claim in AD-14
 §1 rests on a dated test rather than on a previous session's memory.
+
+---
+
+# D-24 — THE TICKER'S AIR CELL REFRESHES ITSELF
+
+### D-24.1 ONE CELL MOVES HOURLY. IT NOW FETCHES. THE OTHER FIVE DO NOT NEED TO.
+Client question: should the ticker not refresh itself from the Air page's data? Yes — and the
+mechanism already existed. `/api/air` was built for exactly this (D-17.4) and the Air page has
+consumed it since. The homepage never did, so its Air cell was hand-typed **412** against the
+page's **387**.
+
+**It is a one-cell problem, not a ticker-wide one.** The other five cells are annual, biennial
+or cumulative — CPCB's yearly Yamuna compilation, a 2001–2025 forest-loss total, one fire
+season's burnt area, a completed rainfall year. **For those, a committed value IS the current
+value** until the source republishes, and `watch:documents` is what tells us when that happens.
+Air is the only figure on the rail that is wrong within the day.
+
+So the Air cell alone upgrades from the route, and it inherits that route's whole design: the
+CPCB key never reaches the browser, and the value can change between two page views.
+
+### D-24.2 IT ADDS NO STATE MARK, AND AD-05 R4 IS THEREFORE UNTOUCHED
+R4 deleted the ticker's page-level `LIVE` dot with a full argument: the strip **mixes
+cadences**, the frozen vocabulary is four words, and none of them means *"some live, some
+periodic, one record"*. An honest aggregate was considered and rejected.
+
+**That ruling stands, and this change does not test it.** Nothing added here writes a badge, a
+dot or a state word. R4 forbade *claiming* liveness over a mixed strip; it did not require the
+figures to go stale — and its own conclusion is *"the cells keep their own figures"*. Replacing
+a stale figure with a current one is the opposite of over-claiming.
+
+The vocabulary stays where R4 put it: **the hero keeps the stamps, the ticker keeps the
+figures.**
+
+### D-24.3 THE FALLBACK IS THE COMMITTED FIGURE, AND EVERY FAILURE PATH KEEPS IT
+D-16.4 applied to the homepage. Tested against eight hostile response shapes — a null body,
+`ok:false`, a missing reading, `aqi` of 0, negative, `NaN`, a numeric string, and a missing
+band. **All eight leave the rendered figure exactly as served.** Only a well-formed reading
+writes. Nothing can put a dash, an empty string or a 0 on the rail.
+
+Proven the other way too: with the committed value deliberately set to 111, the served HTML
+carried 111 and the DOM showed 387 — so the upgrade demonstrably fires rather than
+coincidentally agreeing.
+
+**The `aria-label` moves with the number**, because it hardcodes the value and updating one
+without the other would read 412 to a screen reader while the screen said 387. And `is-over`
+follows the reading rather than staying where the committed value left it, because the red is
+the breach.
+
+### D-24.4 THE SCRIPT IS APPENDED AFTER THE LAST IIFE, WHICH IS WHY NOTHING BROKE
+`situation-shell.mjs` lifts `JS_NAVIDX` and `JS_UNDERLINE` out of this file by **text marker**,
+each terminating at its own `})();`. A new IIFE appended after the last one cannot move either.
+**Verified: all six situation pages rebuild, and `situation-air.html` is byte-identical.**
+
+### D-24.5 WHAT IS STILL HAND-TYPED, AND THE ONE REAL FIX FOR IT
+The fallback figure in the markup is still typed by hand. It is now only visible if the route
+fails, so the exposure is small — but the root cause is that **`home.html` is not generated**.
+It is the frozen design source every situation page extracts *from*, so making it a build
+artefact is a real architectural change and is not taken here.
+
+Also unchanged, and both correctly stamped `Demo data` so neither is dishonest: the hero deck's
+`h-air` (412) and `h-fire` (118). Making `h-air` live would mean changing a **stamp** on the
+frozen hero from `Demo data` to `LIVE` — and R4 is explicit that the hero is where the
+vocabulary lives. **That is a vocabulary decision on a signed-off component and it is the
+client's to make, not a side effect of this one.**

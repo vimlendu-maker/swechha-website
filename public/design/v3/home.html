@@ -3388,7 +3388,7 @@ main{display:block;margin:0;padding:0}
          otherwise announces as "one point six five M H A"; the Impact
          slot's has to be rewritten whenever its figure is rotated. -->
     <div class="s-ticker-rail">
-      <a class="s-ticker-cell" href="/design/v3/situation-air.html" aria-label="Delhi's air, 412 air quality index, over the limit"><span class="lbl s-ticker-name">Air</span><span class="s-ticker-v is-over"><b>412</b></span></a>
+      <a class="s-ticker-cell" id="tk-air" href="/design/v3/situation-air.html" aria-label="Delhi's air, 387 air quality index, over the limit"><span class="lbl s-ticker-name">Air</span><span class="s-ticker-v is-over" id="tk-air-v"><b>387</b></span></a>
       <a class="s-ticker-cell" href="/design/v3/situation-yamuna.html" aria-label="Yamuna dissolved oxygen, 0.3 milligrams per litre, below the detection limit, against a legal minimum of 5"><span class="lbl s-ticker-name">Yamuna DO</span><span class="s-ticker-v is-over"><b>0.3</b></span></a>
       <a class="s-ticker-cell" href="/design/v3/situation-forest-fire.html" aria-label="Forest fire, 34,562 square kilometres of forest burnt in the 2023 to 2024 season"><span class="lbl s-ticker-name">Forest burnt</span><span class="s-ticker-v is-over"><b>34,562</b></span></a>
       <a class="s-ticker-cell" href="/design/v3/situation-forest-loss.html" aria-label="Forest loss, 2.43 million hectares of tree cover, 2001 to 2025"><span class="lbl s-ticker-name">Forest loss</span><span class="s-ticker-v is-over"><b>2.43M ha</b></span></a>
@@ -4646,6 +4646,58 @@ document.querySelectorAll('.rig').forEach(rig);
   var t; addEventListener('resize',function(){
     clearTimeout(t); t=setTimeout(build,150);
   },{passive:true});
+})();
+
+/* ── D-24.1. THE AIR CELL REFRESHES ITSELF. ──────────────────────────
+   The ticker's five other cells are annual, biennial or cumulative: the
+   Yamuna table is CPCB's yearly compilation, forest loss is a 2001-2025
+   total, burnt area is a season, Climate Event is a completed year. A
+   committed value for those IS the current value until the source
+   republishes. **Air is the only cell that moves hourly**, and a
+   hand-typed number in it is wrong within the day — it was showing 412
+   against the page's 387.
+
+   So this cell, alone, upgrades from the same server route the Air page
+   uses. /api/air exists precisely so the CPCB key never reaches the
+   browser (D-17.4), and the value it returns can change between two page
+   views, which is what earned that page its LIVE badge.
+
+   ★ THIS ADDS NO STATE MARK, AND THAT IS DELIBERATE.
+   AD-05 R4 deleted the ticker's page-level LIVE dot because the strip
+   MIXES cadences and the frozen four-word vocabulary has no word for
+   "some live, some periodic, one record". That ruling stands untouched
+   here: nothing below writes a badge, a dot or a state word. It replaces
+   a stale number with a current one. R4 forbade CLAIMING liveness over a
+   mixed strip; it did not require the figures to go stale, and its own
+   words are "the cells keep their own figures".
+
+   ★ AN ERROR IS NOT A ZERO (D-16.4). Every failure path returns early
+   and leaves the committed figure exactly as rendered. Nothing here can
+   write a dash, an empty string or a 0 into the rail. The shape is
+   validated the same way the Air page validates it — a number, finite,
+   above zero, with a band — because a route that answers 200 with a
+   malformed body must not be able to blank the homepage.
+
+   ★ THE ARIA LABEL MOVES WITH THE NUMBER. It hardcodes the value, so
+   updating one without the other would give a screen reader 412 while
+   the screen said 387. Both, or neither.
+   ──────────────────────────────────────────────────────────────────── */
+(function(){
+  var cell=document.getElementById('tk-air'), v=document.getElementById('tk-air-v');
+  if(!cell||!v||!window.fetch) return;
+  var b=v.querySelector('b'); if(!b) return;
+  fetch('/api/air',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
+    if(!d||d.ok!==true) return;
+    var r=d.reading;
+    if(!r||typeof r.aqi!=='number'||!isFinite(r.aqi)||r.aqi<=0||!r.band) return;
+    var limit=(typeof d.aqiLimit==='number'&&d.aqiLimit>0)?d.aqiLimit:100;
+    b.textContent=String(r.aqi);
+    // The red is the breach, so it has to follow the reading rather than
+    // stay where the committed value left it.
+    if(r.aqi>limit) v.classList.add('is-over'); else v.classList.remove('is-over');
+    cell.setAttribute('aria-label','Delhi\u2019s air, '+r.aqi+' air quality index, '
+      +(r.aqi>limit?'over the limit':'within the limit'));
+  }).catch(function(){ /* leave the committed figure alone */ });
 })();
 </script>
 </body>
