@@ -3126,3 +3126,181 @@ delivery, not cadence).
 `lib/air.ts` now holds the AQI — breakpoints, CO exclusion, worst-sub-index, the self-check —
 because `/api/air` and `/api/ward` both need it and **a page that disagrees with itself about a
 station's reading is worse than a page with one fewer feature.**
+
+
+---
+
+# D-23 — THE OTHER FIVE SITUATIONS
+
+Built 21 August 2026: Yamuna, Heatwave, Forest fire, Forest loss, Climate event. Full source
+work in `2026-08-21-AD-16-situation-source-ledger.md`; build mechanics in
+`SITUATION-PAGE-TEMPLATE.md` Part Two.
+
+### D-23.1 A SHELL, EXTRACTED FROM AIR THE WAY AIR IS EXTRACTED FROM THE HOMEPAGE
+`scripts/lib/situation-shell.mjs`. Air is 1,444 lines and about four hundred were never about
+air. Copying that scaffold five times would have produced six diverging copies of one design
+language — the exact drift D-10.3 exists to prevent.
+
+So the pattern is applied one level up: the shell reads the situation-page CSS and the tab
+controller **out of `build-situation-air.mjs`**, with the same asserted-range discipline Air
+uses on `home.html`. Air was not edited. **Rebuilding it after all five pages were finished
+produced a byte-identical file**, which is the proof the ranges are intact.
+
+**It deliberately does NOT take Air's whole page script.** The guard fired on the first attempt:
+the block still contained `${AIR.aqiLimit}` and `${JSON.stringify(n0(IND.totals.cities))}` —
+Air's liveness upgrade, which calls `/api/air`. None of these five pages has a live endpoint, so
+carrying that code would have shipped five pages calling an air-quality API for no reason and
+smuggled in the one thing D-10.1 forbids. Only the tab controller is taken.
+
+### D-23.2 EVERY BAND HEADING WAS RENDERING AT x=0, ON ALL FIVE PAGES
+`.im-head` has no horizontal padding; the gutter is `.wrap`'s `padding:0 var(--gut)`. The
+frozen homepage and Air both nest one inside the other. The shell's first version returned a
+bare `.im-head` and left the `.wrap` to the caller, so every heading on every band sat hard
+against the screen edge.
+
+**The client saw it before any measurement did**, and that is the interesting part: it survives
+a contrast audit, an overflow check, a document-height measurement and a diff. Nothing
+automated was looking at horizontal position.
+
+`opener()` now carries its own `.wrap`, and **`assemble()` gates on it structurally** — the
+build refuses to write if any `.im-head` is not inside a `.wrap`. **The general rule this
+establishes: measure the thing you would not think to measure.**
+
+### D-23.3 THE HEATWAVE PAGE IS PAN-INDIA, AND GOING NATIONAL REVERSED ITS FINDING
+Built first as one Delhi grid point. On that instrument, days meeting IMD's heat criteria are
+**flat to falling** over 1991–2026 and the hottest day on record is 1998. That was published
+with its four caveats, because a page that only publishes the trend it expected is not an
+instrument.
+
+**Across 14 stations the picture inverts.** Qualifying days rose at 8 of 14, nights that never
+fall below 28 °C at 9 of 14, felt-temperature peaks at 8 of 14. **Delhi was the outlier, not
+the pattern.** And *8 of the 14 cities set their all-time record in 2024* — the same year
+NCRB's heat death toll doubled. Two independent sources, one year.
+
+**IMD's threshold is not one number** and this is why the rebuild was necessary: plains 40 °C,
+coastal 37 °C, hills 30 °C, each requiring a ≥4.5 °C departure from the *local* normal.
+Applying the plains rule nationally silently under-counts every coastal city, so each station
+carries its own zone and its own computed normal.
+
+### D-23.4 AN OUT-OF-SEASON PAGE LEADS ON A RECORD, NOT ON AN APOLOGY
+Heatwave's window is shut for eight months. The first build spent three paragraphs explaining
+that, which the client correctly called "odd to have so much text on Out of season".
+
+**The fix is to make the reading a RECORD rather than a season.** A record is true on every day
+of the year and is still a real measured value against a published limit — 48.3 °C at Jodhpur
+against IMD's severe threshold of 47 °C. The `OUT OF SEASON` chip appears once and the page
+gets on with it.
+
+**Corollary, learned immediately afterwards on the climate page: that only works if the record
+is recent.** Its first build led on 336 mm at Patna on 30 June 1996 — the true archive maximum,
+and stale on sight. **A page about a worsening problem cannot open on a thirty-year-old
+number.** It now leads on the most recent complete year, 13 days over IMD's heavy-rain
+threshold at Mangaluru in 2025, and keeps the archive record in the panel beside it, dated.
+
+### D-23.5 GFW IS REACHABLE WITHOUT A KEY, AND THE PROVENANCE SAYS SO
+AD-16 §2.3 recorded Hansen/UMD tree-cover loss as unobtainable — `data-api.globalforestwatch.org`
+answers 403 without a key, and this build would not create an account.
+
+The client pointed at `globalnaturewatch.org`. Its network layer — read end to end, the method
+the Air build used on `vayu-gamma` — reaches the same datasets through a **keyless same-origin
+proxy**. So the figure is on the page: **2.43 M ha lost 2001–2025 at 30% canopy density, 93.7%
+of it outside any planted forest, and roughly doubled since 2013.**
+
+**And it is labelled as what it is.** A public web client's proxy is not a documented API
+contract; it can close without notice. The dataset name and version are printed so anyone with
+a key can check the number. Getting one remains the right answer.
+
+**The trap this nearly walked into:** the dataset's canopy-density thresholds are *cumulative
+nested subsets*, not buckets. Summing across them returns **19.27 M ha** — eight times the
+truth, and plausible. The fetcher now pins one threshold and **asserts the ladder is
+monotonically decreasing before it writes.**
+
+### D-23.6 HASHING A DOCUMENT DOES NOT TELL YOU A NEWER EDITION EXISTS
+NCRB's 2023 report was transcribed and hashed, and the watcher reported "unchanged" — correctly,
+about the wrong question. **The 2024 edition existed the whole time**, and the figures are not
+close: heat deaths **804 → 1,832 (+127.9%)**, floods +35.7%, landslides +46.9%, the whole table
++22.6%.
+
+`watch-documents.mjs` now does a second job: every annual or biennial source declares how to
+construct its **next** edition's URL and the watcher probes for it. `unchanged and current` and
+`unchanged but superseded` are different states, reported differently, and `--strict` fails on
+either.
+
+**Verified 21 August 2026:** ADSI 2025, ISFR 2025 and CPCB river-data 2026 do not exist yet.
+Every source on this site is on its newest published edition.
+
+### D-23.7 THE YAMUNA PAGE OPENS ON EVERY OTHER RIVER
+Client instruction, and it was right: a reader's first honest question about one river is "is
+this one unusually bad, or is this what a river in India looks like?" — and that cannot be
+answered from the Yamuna table.
+
+Band two is now **47 rivers ranked by worst measured BOD**, from the 630-station CPCB-derived
+table. **Sabarmati tops it at 82 mg/L, 27× the limit — not the Yamuna.** With the flaw
+published beside it: the compiled table carries **no Delhi Yamuna station**, so the Yamuna's own
+row understates it at 26 against CPCB's direct Delhi reading of 72. The two numbers are shown
+together rather than one being swapped for the other, because a ranking whose rows come from
+two different tables is not a ranking.
+
+The same band carries the layer no river table has — **WHO's WASH mortality, 36.4 per 100,000
+in 2019, about 505,600 people**, multiplied out against the population *of the same year* with
+the arithmetic shown — and **CGWB's groundwater**: Delhi extracts **92.1%** of its annual
+recharge, with 21 of 34 assessment units Critical or Over-Exploited. The sentence the two
+documents make together and neither makes alone: *the river is dead and the aquifer is at 92%.*
+Stated as a correlation of two official assessments, explicitly not as a causal claim.
+
+### D-23.8 THE STP FIGURE IS 38 PER CENT, NOT "MOST" — AND THE TRUE VERSION IS WORSE
+The client asked for the fact that most of Delhi's sewage plants fail their quality test. On the
+government's own July 2025 reply that is **not accurate — 14 of 37, 38%** — and the accurate
+version is worse:
+
+- **941 MLD of sewage goes through a treatment plant and comes out failing the standard**
+  (2,955 treated − 2,014 compliant).
+- **1,582 MLD — 44% of everything Delhi produces** — reaches the river untreated or below
+  standard. The circulating figure is 641 MLD.
+- **519 MLD of built capacity sits unused** while 641 MLD goes untreated: the idle capacity is
+  81% of the untreated flow.
+
+All four are subtraction on one paragraph of one reply. **The page states the arithmetic rather
+than the adjective.** A claim the source does not support is not improved by being more
+striking.
+
+### D-23.9 THE TICKER'S DEMO VALUES ARE CORRECTED, AND THE THREE STALE ANCHORS RETIRED
+AD-13 §8 flagged `#h-fire`, `#h-forestloss` and `#h-monsoon` as **BLOCKING** — anchors into a
+page where those IDs do not exist. All three now point at the situation pages that exist.
+
+And the values: **`Yamuna DO 0.0` was a figure CPCB never published.** The measured floor is
+**0.3**, written by the government itself as `0.3(BDL)` — below detection limit. The hero deck
+carried the same 0.0 **stamped `Periodic`**, which made it a false claim rather than a labelled
+specimen; both are corrected, along with the monsoon panel's 512 mm (now 501 mm against a
+normal of 396 for the same dates). Forest fire and forest loss cells moved to real measured
+figures.
+
+**`h-air` (412) and `h-fire` (118) still carry demo values and are left alone** — both are
+correctly stamped `Demo data`, so neither is dishonest. Real figures now exist for both, which
+is a follow-up rather than a defect.
+
+### D-23.10 FIVE MEASURED DEFECTS, RECORDED SO THEY ARE NOT REPEATED
+Beyond D-23.2: **ten contrast failures on the Yamuna page, worst 2.11:1**, from components
+authored on paper ink tokens and used on a dark band — every shared component now states its
+colour for both grounds and inherits nothing. **Mustard spent as a highlight tint**, which both
+misused the hue (mustard means a human act) and dropped a caption to 3.91:1. **Copy reading
+"green bar" when the bars are off-white** and green is reserved. **A hero claiming rain arrives
+"in fewer, heavier bursts"** when the same page's data shows concentration *falling* at 8 of 12
+cities. **A malformed-row detector reporting 20 defects where there were 3**, because confluence
+stations are legitimately named "RIVER … RIVER …".
+
+And one that had been live on Air too: **`--zh` / `--zt` are inert on `.pic`.** Those properties
+belong to `.s-hero-shot img`; `.pic > img` is a plain centre crop and reads neither. Every hero
+on every situation page was a centre crop whether or not that was the right crop. The shell now
+wires `--op`, which is the property that actually decides it.
+
+### D-23.11 BOUNDARY: NO ACCOUNT WAS CREATED, AND ONE KEY CAME FROM THE INBOX
+The client asked whether API keys could be generated using their email. **Reading the inbox for
+a key already issued: done, at their instruction** — NASA FIRMS, 21 August, and it works.
+**Completing a pending registration: refused.** Clicking "confirm your email address" *is* the
+account-creation step, and that is true of the WAQI token sitting one click away in the same
+inbox. **Creating an account from scratch: refused.** GFW was the only source that needed one,
+and D-23.5 made it unnecessary.
+
+**Consequence on the record:** the FIRMS key has now passed through a chat transcript, which
+`SITUATION-PAGE-TEMPLATE.md` §6 already names as the rotate trigger. **Rotate it at sign-off.**
