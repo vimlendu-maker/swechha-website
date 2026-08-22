@@ -1,0 +1,173 @@
+name: Data refresh — the situations re-read their sources
+
+# WHY THIS EXISTS
+# Air is the only situation with a runtime feed: /api/air fetches CPCB per
+# request, so the hero, the ticker, /now and /now/air are already live and
+# nothing about air is hardcoded. The other five build from committed datasets
+# in data/, and until now those only moved when somebody ran `npm run data:*`
+# by hand and remembered to rebuild the pages afterwards.
+#
+# This is the "or whenever the data changes in the backend" half of that: it
+# re-reads every source on a schedule, and if a figure actually moved it
+# rebuilds the affected pages and commits. Vercel deploys the commit. No human
+# is in the loop, and no page can go out of step with the dataset under it,
+# because the same run does both.
+#
+# ★ IT COMMITS FIGURES, NOT CLOCKS.
+# Every fetch script stamps `fetched: { epochMs }`, so a naive job would commit
+# all 30-odd datasets every single day and the history would be unreadable.
+# scripts/data-refresh-changed.mjs reverts the files whose only change is that
+# stamp. A quiet day produces NO commit at all.
+#
+# ★ A FAILED GATE IS NEVER COMMITTED.
+# The page generators validate what they read and refuse to write on a failed
+# check. They run BEFORE the commit step, so a dataset that would produce a
+# wrong page fails the run and lands nothing. That is the whole reason the
+# rebuild lives in this job rather than being left to the next deploy.
+#
+# ★ ONE FLAKY SOURCE DOES NOT BLOCK THE OTHERS.
+# The eight fetch groups run independently rather than as one && chain, so
+# NASA being down does not cost you the CPCB refresh. Failures are collected
+# and the run is marked failed at the END — after the data that did arrive has
+# been committed.
+#
+# SECRETS IT NEEDS (Settings → Secrets and variables → Actions):
+#   DATA_GOV_IN_KEY   CPCB, via data.gov.in        — air, coverage
+#   WAQI_TOKEN        aqicn.org                    — the air cross-check
+#   FIRMS_MAP_KEY     NASA FIRMS                   — fire detections
+# Missing keys are reported by name at the start of the run. The affected
+# fetches then fail and are skipped; everything else still refreshes.
+
+on:
+  schedule:
+    # Daily, 01:40 UTC = 07:10 IST. Off the hour on purpose, like the ward job.
+    # DAILY, NOT HOURLY, and that is proportionate rather than lazy: of these
+    # sources the fastest-moving is FIRMS, whose near-real-time product is a
+    # rolling 5-day window, and the slowest are annual publications — ISFR
+    # 2023, NCRB 2024, CPCB's yearly compilation. Hourly would re-download
+    # annual datasets 24 times a day to write the same number back.
+    - cron: '40 1 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Fetch and report what changed, but commit nothing'
+        type: boolean
+        default: true
+
+concurrency:
+  # Two overlapping runs would both rebuild and both try to push.
+  group: data-refresh
+  cancel-in-progress: false
+
+permissions:
+  # Needed to push the refreshed data and the rebuilt pages.
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # The fetch scripts and the page generators use node built-ins only, so
+      # dev dependencies are not needed. The test suite is not run here: nothing
+      # in this job changes code, and the generators' own gates are what
+      # protects the data.
+      - run: npm ci --omit=dev
+
+      - name: Report any missing keys, by name and not by value
+        env:
+          DATA_GOV_IN_KEY: ${{ secrets.DATA_GOV_IN_KEY }}
+          WAQI_TOKEN: ${{ secrets.WAQI_TOKEN }}
+          FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
+        run: |
+          missing=""
+          for k in DATA_GOV_IN_KEY WAQI_TOKEN FIRMS_MAP_KEY; do
+            if [ -z "$(printenv "$k")" ]; then missing="$missing $k"; fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::warning::Missing secret(s):$missing — the fetches that need them will fail and be skipped."
+          else
+            echo "All three data keys are present."
+          fi
+
+      - name: Re-read every source
+        env:
+          DATA_GOV_IN_KEY: ${{ secrets.DATA_GOV_IN_KEY }}
+          WAQI_TOKEN: ${{ secrets.WAQI_TOKEN }}
+          FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
+        run: |
+          # The eight groups as package.json defines them — the file lists live
+          # there and are not restated here. Run individually rather than via
+          # `data:situations`, which chains them with && so the first failure
+          # would silence the rest.
+          failed=""
+          for s in data:air-all data:yamuna data:heat data:climate \
+                   data:forest data:forest-fire data:attention data:coverage; do
+            echo "::group::npm run $s"
+            if npm run "$s"; then echo "ok"; else echo "::warning::$s failed"; failed="$failed $s"; fi
+            echo "::endgroup::"
+          done
+          echo "FETCH_FAILED=${failed# }" >> "$GITHUB_ENV"
+
+      - name: Discard timestamp-only churn, keep real changes
+        id: changed
+        run: |
+          node scripts/data-refresh-changed.mjs | tee /tmp/changed.log
+          n=$(grep -oE '^CHANGED=[0-9]+' /tmp/changed.log | tail -1 | cut -d= -f2)
+          echo "count=${n:-0}" >> "$GITHUB_OUTPUT"
+          {
+            echo '### Data refresh'
+            echo ''
+            echo '```'
+            cat /tmp/changed.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Every generator, because a dataset feeds more than one page and the
+      # cheap thing to get wrong is rebuilding only the obvious one. A page
+      # whose inputs did not move re-emits byte-identically and produces no
+      # diff, so rebuilding all of them costs seconds and removes a judgement
+      # call. Any gate failure fails the step, and the commit step below never
+      # runs — which is the point of rebuilding here rather than at deploy.
+      - name: Rebuild the pages the data feeds
+        if: steps.changed.outputs.count != '0'
+        run: |
+          for t in situations work about impact farm act stories publications; do
+            echo "::group::npm run build:$t"
+            npm run "build:$t"
+            echo "::endgroup::"
+          done
+          npm run verify:final
+
+      - name: Commit and push
+        if: steps.changed.outputs.count != '0' && github.event.inputs.dry_run != 'true'
+        run: |
+          git config user.name  'swechha-data-refresh[bot]'
+          git config user.email 'actions@github.com'
+          git add -A data public/_pages docs/design/FINAL.md
+          if git diff --cached --quiet; then
+            echo "Nothing staged after the rebuild — no commit."
+            exit 0
+          fi
+          files=$(git diff --cached --name-only -- data | sed 's|^data/||' | tr '\n' ' ')
+          git commit -m "data: the situations re-read their sources" \
+            -m "Changed: ${files:-none}" \
+            -m "Automated by .github/workflows/data-refresh.yml. Only datasets whose figures actually moved are here — timestamp-only churn is reverted before this commit. The pages were rebuilt in the same run and every generator gate passed, so no page is out of step with the dataset under it."
+          git push
+
+      - name: Report what did not refresh
+        if: always()
+        run: |
+          if [ -n "${FETCH_FAILED:-}" ]; then
+            echo "::error::These sources did not refresh:${FETCH_FAILED}"
+            echo "Whatever else changed has been committed. Re-run, or check the source." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "Every source answered."
