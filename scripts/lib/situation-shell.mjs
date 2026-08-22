@@ -256,13 +256,27 @@ export function shell() {
  * on every page of this site, and for as long as the route is unmapped or the
  * href is stale, clicking it opens something other than the page. `Record` is
  * still an anchor because there is still no record page. */
+/* RECORD IS REMOVED FROM THE NAV (owner, 22 August), so the set is five.
+   AD-19 settled six and AD-26 §5 Q4 recorded that the count is the owner's
+   call; this is that call being made. The word was the weakest of the six by
+   the design audit's own test — it pointed at `/#record`, a homepage band whose
+   two live doors both went to `/now`, duplicating the first nav word, and whose
+   other two were dead until they were changed to name their holes.
+   THE BAND ITSELF STAYS. It is real content — where the readings come from, and
+   what of the paper archive is scanned — and `onward.json`'s `evidence.default`
+   still sends WORK pages to it, which works because the anchor is still there.
+   Only the nav word goes.
+   ONE CONSEQUENCE, HARMLESS: Record was the only nav word with a `#` href, so
+   home.html's active-band observer now finds no band-linked nav link, and its
+   own guard (`if(!ids.length) return`) makes it a no-op. It is left in place
+   rather than deleted, because it comes back the moment a band-linked word
+   does. */
 export const NAV = [
   ['Now', '/now'],
   ['Work', '/work'],
   ['Journeys', '/work/journeys'],
   ['Impact', '/impact'],
   ['Farm', '/farm'],
-  ['Record', '/#record'],
 ];
 
 /* THE HOMEPAGE, AND THE GIVE CHIP. The wordmark is the site root, matching
@@ -282,8 +296,8 @@ export const GIVE_HREF = '/act';
 const navCurrent = (label, href, current, url) => label !== current ? ''
   : (href === url ? ' aria-current="page"' : ' aria-current="true"');
 
-export const header = (index, { current = null, url = null } = {}) => `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
-<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav></div><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${index.map(([t, h]) => `<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>`;
+export const header = (index, { current = null, url = null, page = null } = {}) => `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
+<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav></div><a class="nl navsearch" href="/search"${page === '/search' ? ' aria-current="page"' : ''}><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${index.map(([t, h]) => `<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>`;
 
 /* ═══ GROUND ADJACENCY ═══════════════════════════════════════════════════ */
 
@@ -546,7 +560,51 @@ export const FAMILY_CSS = `
    band measured 2.11:1. So every colour below is stated for the dark ground
    and overridden under `.paper`, and neither is left to inherit.
    ═══════════════════════════════════════════════════════════════════════ */
+/* ═══ THE HEADER'S SEARCH CONTROL ════════════════════════════════════════
+   ITS OWN EXPORT, because two generated surfaces need it and only one of them
+   gets SHARED_PAGE_CSS. build-situation-air.mjs builds its own head out of
+   CSS + PAGE_CSS + FAMILY_CSS and has never included the shared block — so the
+   first version of this shipped a bar control that was display:none everywhere
+   except /now/air, where at 375px it crowded the bar with a fourth item.
+   One definition, included in both places. home.html keeps a hand-maintained
+   copy because it is not generated and its stylesheet is extracted by line
+   range; those two are kept byte-identical. */
+export const NAV_SEARCH_CSS = `
+/* ── SEARCH IN THE HEADER, AT EVERY WIDTH. ───────────────────────────────
+   A WORD ON DESKTOP, A GLASS ON THE PHONE (owner, 22 August). Above 940 the
+   bar has room for a label and the label is unambiguous, so it reads "Search",
+   separated from the five section words and lighter, because it is a utility
+   and not a sixth section. Below 940 the bar holds the wordmark, MENU and GIVE
+   with 81px free at 375px — measured, not assumed — which is a 44px target and
+   a gap, so the glass fits and the word would not.
+   THE LABEL NEVER LEAVES THE ACCESSIBILITY TREE. On the phone the text is
+   moved off-screen with the same treatment the site's own ".sr" class uses
+   rather than display:none, so the control is still "Search" to a screen
+   reader and the icon carries aria-hidden. An icon-only control with no name
+   is the usual way this goes wrong.
+   The glass matches ARROW's drawing conventions exactly — 24x24, no fill,
+   currentColor, 2.2 stroke, round caps — so it is the same hand as the one
+   other icon in the site rather than a second style. */
+/* 44x44, NOT 19x44. AD-09's touch-target pass gave every control in this bar a
+   44px minimum and an icon-only link is 19px wide without a min-width — the one
+   place in the bar where the visual size and the target size come apart. The
+   measurement said 81px free at 375px, so this costs nothing. */
+.navsearch{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:44px;min-width:44px;opacity:.66}
+.navsearch:hover,.navsearch[aria-current]{opacity:1}
+.navsearch-i{width:19px;height:19px;flex:none}
+.navsearch-t{position:absolute;width:1px;height:1px;overflow:hidden;
+  clip:rect(0 0 0 0);white-space:nowrap}
+@media (min-width:941px){
+  .navsearch{margin-left:clamp(10px,1.6vw,22px);min-width:0}
+  .navsearch-i{display:none}
+  .navsearch-t{position:static;width:auto;height:auto;overflow:visible;clip:auto}
+}
+`;
+
 export const SHARED_PAGE_CSS = `
+${NAV_SEARCH_CSS}
+
 /* ── THE MENU PANEL IS THE MOBILE NAV, AND IT IS SIX ROWS. ───────────────
    Below 940 the six nav words are display:none, so this panel is the only way
    to reach another page on a phone. It used to hold the page's own bands and
@@ -746,7 +804,7 @@ ${pageCss}</style>
 <body>
 ${sh.SVG_DEFS}
 ${sh.SKIP}
-${header(index, mark)}
+${header(index, { ...mark, page: canonical })}
 <main id="main" tabindex="-1">
 ${bands.map(section).join('\n')}
 </main>

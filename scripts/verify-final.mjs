@@ -177,6 +177,39 @@ export const NOT_FINAL = [
   { file: 'work/', why: 'FINISHED — 15 pages from scripts/build-work-pages.mjs, merged in PR #5 and serving under /work. It was in progress in a concurrent session when this line first read that way. It carries its own acceptance gate, the LINKS.json manifest, which fails the build on any unlisted or dead href.' },
 ];
 
+/* ═══ NO BACKTICK INSIDE SHARED_PAGE_CSS ════════════════════════════════
+   SHARED_PAGE_CSS is one template literal and a backtick anywhere inside it —
+   including inside a comment — terminates it and every generator in the repo
+   fails to parse. The block's own first line says so in capitals, it records
+   that three builds were broken that way, and it has now happened twice more
+   in one session. A warning that keeps being ignored is a missing check, so
+   this is the check.
+   Scoped to the literal, not the file: the module legitimately uses backticks
+   everywhere else, including in the header template two hundred lines above. */
+{
+  const src = readFileSync(join(ROOT, 'scripts/lib/situation-shell.mjs'), 'utf8');
+  const open = src.indexOf('export const SHARED_PAGE_CSS = `');
+  if (open < 0) {
+    console.error('  FAIL could not find SHARED_PAGE_CSS to check it for backticks');
+    fail++;
+  } else {
+    const body = src.slice(open + 'export const SHARED_PAGE_CSS = `'.length);
+    const end = body.indexOf('`');
+    const after = body.slice(end + 1, end + 40).trim();
+    /* The literal must end at a semicolon. If the first backtick after the
+       opening one is followed by anything else, it closed the literal early —
+       which is exactly what a backtick in a comment does. */
+    const ok = after.startsWith(';');
+    if (!ok) {
+      console.error(`  FAIL SHARED_PAGE_CSS closes early — a backtick inside it, probably in a comment. `
+        + `Text after the closing backtick: ${JSON.stringify(after.slice(0, 30))}`);
+      fail++;
+    } else {
+      console.log('  ok   SHARED_PAGE_CSS contains no stray backtick');
+    }
+  }
+}
+
 /* ═══ THE CENSUS ═════════════════════════════════════════════════════════
    FINAL and NOT_FINAL are a register, and AD-23 already recorded what a
    register costs when it is not also a census: FINAL.md's generated text said

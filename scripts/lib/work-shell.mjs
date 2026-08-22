@@ -429,13 +429,27 @@ export function workShell() {
  * on every page of this site, and for as long as the route is unmapped or the
  * href is stale, clicking it opens something other than the page. `Record` is
  * still an anchor because there is still no record page. */
+/* RECORD IS REMOVED FROM THE NAV (owner, 22 August), so the set is five.
+   AD-19 settled six and AD-26 §5 Q4 recorded that the count is the owner's
+   call; this is that call being made. The word was the weakest of the six by
+   the design audit's own test — it pointed at `/#record`, a homepage band whose
+   two live doors both went to `/now`, duplicating the first nav word, and whose
+   other two were dead until they were changed to name their holes.
+   THE BAND ITSELF STAYS. It is real content — where the readings come from, and
+   what of the paper archive is scanned — and `onward.json`'s `evidence.default`
+   still sends WORK pages to it, which works because the anchor is still there.
+   Only the nav word goes.
+   ONE CONSEQUENCE, HARMLESS: Record was the only nav word with a `#` href, so
+   home.html's active-band observer now finds no band-linked nav link, and its
+   own guard (`if(!ids.length) return`) makes it a no-op. It is left in place
+   rather than deleted, because it comes back the moment a band-linked word
+   does. */
 export const NAV = [
   ['Now', '/now'],
   ['Work', '/work'],
   ['Journeys', '/work/journeys'],
   ['Impact', '/impact'],
   ['Farm', '/farm'],
-  ['Record', '/#record'],
 ];
 export const GIVE_HREF = '/act';
 export const HOME_HREF = '/';
@@ -481,7 +495,7 @@ export const workHeader = (sections, current, url) => {
      to also fill the Menu panel, which duplicated the row already on screen —
      the panel is the six pages and nothing else. */
   return `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(nl).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
-<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(nl).join('')}</nav></div><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${sections.map(([t, h]) => `<li><a class="nl" href="${h}">${esc(t)}</a></li>`).join('')}</ul></nav></header>`;
+<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(nl).join('')}</nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${sections.map(([t, h]) => `<li><a class="nl" href="${h}">${esc(t)}</a></li>`).join('')}</ul></nav></header>`;
 };
 
 /* ═══ THE WORK LAYER — the only CSS this section AUTHORS ══════════════════

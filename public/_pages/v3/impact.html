@@ -1343,6 +1343,39 @@ button.b[disabled]{opacity:.55;cursor:default}
   .p-fc-v{font-size:10px}
 }
 
+
+/* ── SEARCH IN THE HEADER, AT EVERY WIDTH. ───────────────────────────────
+   A WORD ON DESKTOP, A GLASS ON THE PHONE (owner, 22 August). Above 940 the
+   bar has room for a label and the label is unambiguous, so it reads "Search",
+   separated from the five section words and lighter, because it is a utility
+   and not a sixth section. Below 940 the bar holds the wordmark, MENU and GIVE
+   with 81px free at 375px — measured, not assumed — which is a 44px target and
+   a gap, so the glass fits and the word would not.
+   THE LABEL NEVER LEAVES THE ACCESSIBILITY TREE. On the phone the text is
+   moved off-screen with the same treatment the site's own ".sr" class uses
+   rather than display:none, so the control is still "Search" to a screen
+   reader and the icon carries aria-hidden. An icon-only control with no name
+   is the usual way this goes wrong.
+   The glass matches ARROW's drawing conventions exactly — 24x24, no fill,
+   currentColor, 2.2 stroke, round caps — so it is the same hand as the one
+   other icon in the site rather than a second style. */
+/* 44x44, NOT 19x44. AD-09's touch-target pass gave every control in this bar a
+   44px minimum and an icon-only link is 19px wide without a min-width — the one
+   place in the bar where the visual size and the target size come apart. The
+   measurement said 81px free at 375px, so this costs nothing. */
+.navsearch{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:44px;min-width:44px;opacity:.66}
+.navsearch:hover,.navsearch[aria-current]{opacity:1}
+.navsearch-i{width:19px;height:19px;flex:none}
+.navsearch-t{position:absolute;width:1px;height:1px;overflow:hidden;
+  clip:rect(0 0 0 0);white-space:nowrap}
+@media (min-width:941px){
+  .navsearch{margin-left:clamp(10px,1.6vw,22px);min-width:0}
+  .navsearch-i{display:none}
+  .navsearch-t{position:static;width:auto;height:auto;overflow:visible;clip:auto}
+}
+
+
 /* ── THE MENU PANEL IS THE MOBILE NAV, AND IT IS SIX ROWS. ───────────────
    Below 940 the six nav words are display:none, so this panel is the only way
    to reach another page on a phone. It used to hold the page's own bands and
@@ -1560,8 +1593,8 @@ button.b[disabled]{opacity:.55;cursor:default}
      tabindex="-1" so the focus actually lands rather than only moving
      the sequential-navigation start point. -->
 <a class="skip" href="#main">Skip to the content</a>
-<header class="nav"><div class="nav-in"><a class="mark" href="/" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact" aria-current="page">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/#record">Record</a></nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
-<div class="navidx" id="navidx" hidden><nav aria-label="Pages"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact" aria-current="page">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/#record">Record</a></nav></div><a class="give" href="/act">Give</a></div><nav class="navscroll" aria-label="Sections"><ul><li><a class="nl" href="#top">No total</a></li><li><a class="nl" href="#refuse">Why not</a></li><li><a class="nl" href="#pair">Two numbers</a></li><li><a class="nl" href="#register">Every figure</a></li><li><a class="nl" href="#waiting">Waiting</a></li><li><a class="nl" href="#sheet">The archive</a></li><li><a class="nl" href="#act">Hold us to it</a></li></ul></nav></header>
+<header class="nav"><div class="nav-in"><a class="mark" href="/" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact" aria-current="page">Impact</a><a class="nl" href="/farm">Farm</a></nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
+<div class="navidx" id="navidx" hidden><nav aria-label="Pages"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact" aria-current="page">Impact</a><a class="nl" href="/farm">Farm</a></nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="/act">Give</a></div><nav class="navscroll" aria-label="Sections"><ul><li><a class="nl" href="#top">No total</a></li><li><a class="nl" href="#refuse">Why not</a></li><li><a class="nl" href="#pair">Two numbers</a></li><li><a class="nl" href="#register">Every figure</a></li><li><a class="nl" href="#waiting">Waiting</a></li><li><a class="nl" href="#sheet">The archive</a></li><li><a class="nl" href="#act">Hold us to it</a></li></ul></nav></header>
 <main id="main" tabindex="-1">
   <section class="t1" id="top">
     <div class="pic ht">
