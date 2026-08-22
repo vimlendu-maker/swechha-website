@@ -33,7 +33,7 @@
  * It needs NO credentials. Builds read committed JSON; only the fetchers need
  * keys. So this runs in CI.
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { resolve, join } from 'node:path';
 import { FAMILY, INDEX_PAGE } from './lib/situation-shell.mjs';
@@ -168,11 +168,40 @@ export const FINAL = [...INDEX, ...SITUATIONS];
 export const NOT_FINAL = [
   { file: 'home.html', why: 'THE FROZEN DESIGN SOURCE. Not a deliverable in this set — it is the language every page above extracts from. Hand-maintained, and D-24.5 records that making it a build artefact is a real architectural change nobody has taken.' },
   { file: 'situation-soon.html', why: 'SUPERSEDED AND DEAD. It was the "coming soon" stub for situations with no page. All six now have pages, so nothing links here. Safe to delete; left in place because deleting another session\'s prototype is not this work\'s call.' },
-  { file: 'about.html', why: 'Prototype, outside this work.' },
-  { file: 'system.html', why: 'Prototype, outside this work.' },
+  { file: 'about.html', why: 'FINISHED, and not a prototype — AD-21 built it and it serves at /about. It is outside THIS test because the twelve checks above are situation-specific (crumb, five siblings, the four-word state vocabulary); none of them describe an About page. Its own gates live in scripts/build-about-page.mjs.' },
+  { file: 'impact.html', why: 'FINISHED (AD-22), serving at /impact. Outside this test for the same reason as about.html — and worth naming, because it is the page that refuses the number it is named for, so a "reading" check would assert the opposite of its design.' },
+  { file: 'farm.html', why: 'FINISHED (AD-24), serving at /farm. Outside this test for the same reason as about.html.' },
+  { file: 'act.html', why: 'FINISHED (AD-25), serving at /act. Outside this test for the same reason as about.html.' },
+  { file: 'work/', why: 'FINISHED — 15 pages from scripts/build-work-pages.mjs, merged in PR #5 and serving under /work. It was in progress in a concurrent session when this line first read that way. It carries its own acceptance gate, the LINKS.json manifest, which fails the build on any unlisted or dead href.' },
+  { file: 'system.html', why: 'Prototype, outside this work. Nothing in the finished set links to it except the footer\'s "The system sheet", which is the last /design/ path on the site and 404s at the port — an open item, and the owner\'s call because it is a visible footer change.' },
   { file: '_mobile.html', why: 'Prototype, outside this work.' },
-  { file: 'work/', why: 'In progress in a concurrent session (AD-17). Not this work.' },
 ];
+
+/* ═══ THE CENSUS ═════════════════════════════════════════════════════════
+   FINAL and NOT_FINAL are a register, and AD-23 already recorded what a
+   register costs when it is not also a census: FINAL.md's generated text said
+   "nothing links here" about situation-soon.html while two hero slides did.
+   The same gap ran the other way here — about.html sat in NOT_FINAL reading
+   "Prototype, outside this work" for a day after it shipped, and impact.html,
+   farm.html and act.html were built, routed and merged without ever appearing
+   in either list, so this file could report "7 of 7 pass" over a design set of
+   ten pages and be telling the truth about a fraction of it.
+
+   So: every page on disk must be accounted for by name. A new page fails this
+   run until somebody says which list it belongs to and why. That is a
+   deliberately annoying gate — being forced to write the sentence is the
+   point, because the sentence is what the next session reads.
+   ═══════════════════════════════════════════════════════════════════════ */
+export function census(dir) {
+  const known = new Set([...FINAL.map(f => f.file), ...NOT_FINAL.map(n => n.file)]);
+  const onDisk = readdirSync(dir, { withFileTypes: true })
+    .filter(e => (e.isFile() && e.name.endsWith('.html')) || (e.isDirectory() && known.has(e.name + '/')))
+    .map(e => (e.isDirectory() ? e.name + '/' : e.name));
+  return {
+    unaccounted: onDisk.filter(f => !known.has(f)),
+    missing: [...known].filter(f => !f.endsWith('/') && !existsSync(join(dir, f))),
+  };
+}
 
 const VOCAB = ['LIVE', 'PERIODIC', 'DEMO DATA', 'OUT OF SEASON'];
 
@@ -306,6 +335,23 @@ console.log(`\n${results.length - bad.length} of ${results.length} pages pass al
 if (NOT_FINAL.length) {
   console.log(`\nNot in the final set (${NOT_FINAL.length}):`);
   for (const n of NOT_FINAL) console.log(`  ${n.file.padEnd(24)} ${n.why.split('.')[0]}.`);
+}
+
+/* The census runs LAST so its verdict is the final word on screen, and it
+   counts toward `fail` — an unaccounted page is a failure, not a warning.
+   A warning is what the previous four stale entries effectively were. */
+const { unaccounted, missing } = census(V3);
+if (unaccounted.length || missing.length) {
+  fail += unaccounted.length + missing.length;
+  console.log('\nCENSUS FAILED — the register does not describe what is on disk.');
+  for (const f of unaccounted) {
+    console.log(`  ${f.padEnd(24)} on disk, in neither FINAL nor NOT_FINAL. Add it to one, with a reason.`);
+  }
+  for (const f of missing) {
+    console.log(`  ${f.padEnd(24)} named in the register, not on disk. Rebuild it, or remove the entry.`);
+  }
+} else {
+  console.log(`\nCensus: all ${FINAL.length + NOT_FINAL.length} pages in public/design/v3 are accounted for.`);
 }
 /* ═══ THE DOCUMENT, GENERATED FROM THE REGISTER ══════════════════════════
    docs/design/FINAL.md is written FROM the arrays above, so the prose and the
