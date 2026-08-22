@@ -84,52 +84,37 @@ const FILMS = D.films.entries.map((e) => {
   return { ...e, vids, mode: vids.length > PLAYER_MAX ? 'list' : 'players' };
 });
 
-/* ── THE WRITTEN STORIES, READ OFF DISK ───────────────────────────────────
-   content/story/*.md is the source. Not restated here: a story that is added
-   or renamed over there must not need an edit in this file to appear. */
-const STORY_DIR = join(S.ROOT, 'content/story');
-const fm = (raw) => {
-  const m = raw.match(/^---\n([\s\S]*?)\n---/);
-  if (!m) return {};
-  const out = {};
-  for (const line of m[1].split('\n')) {
-    const kv = line.match(/^([a-zA-Z_]+):\s*(.*)$/);
-    if (!kv) continue;
-    let v = kv[2].trim().replace(/^['"]|['"]$/g, '');
-    if (v) out[kv[1]] = v;
-  }
-  return out;
-};
-const WRITTEN = readdirSync(STORY_DIR)
-  .filter((f) => f.endsWith('.md'))
-  .map((f) => {
-    const meta = fm(readFileSync(join(STORY_DIR, f), 'utf8'));
-    const slug = f.replace(/\.md$/, '');
-    if (!meta.title) dataFail(`content/story/${f} has no title in its frontmatter.`);
-    return { slug, title: meta.title, summary: meta.summary || '', date: meta.date || '' };
-  })
-  .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+/* ── THE ESSAYS, READ OUT OF THEIR OWN INDEX ──────────────────────────────
+   content/essay/_index.json is written by the same crawl that recovered the
+   prose, and scripts/build-essays.mjs builds a page per entry. This band lists
+   them; it does not restate their titles, so the list and the pages cannot
+   disagree. The three placeholder markdown files in content/story/ that this
+   used to read were retired on 22 August. */
+const WRITTEN = JSON.parse(readFileSync(join(S.ROOT, 'content/essay/_index.json'), 'utf8'))
+  .map((e) => ({ ...e, summary: '' }));
+for (const e of WRITTEN) {
+  if (!e.byline) dataFail(`essay "${e.slug}" has no byline.`);
+  if (!e.date) dataFail(`essay "${e.slug}" has no date.`);
+}
 
 /* ── JPEG DIMENSIONS, READ OUT OF THE FILE ────────────────────────────────
-   `width`/`height` on an <img> is what lets the browser reserve the box before
-   the bytes arrive; without it a grid of eleven lazy images reflows the page
-   under the reader's thumb. The design audit named that defect across the rest
-   of this site, so a new page may not add to it. Read from the JPEG's own SOF
-   marker rather than typed into the data or shelled out to `sips`: a typed
-   figure drifts the first time an image is re-exported, and a build that needs
-   a macOS binary is a build that fails on the deploy host. */
+   width/height on an <img> is what lets the browser reserve the box before the
+   bytes arrive; without it a grid of eleven lazy images reflows the page under
+   the reader's thumb. Read from the JPEG's own SOF marker rather than typed
+   into the data or shelled out to sips: a typed figure drifts the first time an
+   image is re-exported, and a build that needs a macOS binary fails on the
+   deploy host.
+   (Restored after a block replacement in this file deleted it — it sat between
+   the two comment banners the replacement spanned.) */
 function jpegSize(abs) {
   const b = readFileSync(abs);
-  if (b[0] !== 0xFF || b[1] !== 0xD8) return null;      // not a JPEG
+  if (b[0] !== 0xFF || b[1] !== 0xD8) return null;
   let i = 2;
   while (i < b.length - 9) {
-    if (b[i] !== 0xFF) { i++; continue; }               // resync on padding
+    if (b[i] !== 0xFF) { i++; continue; }
     const marker = b[i + 1];
     if (marker === 0xD8 || marker === 0x01 || (marker >= 0xD0 && marker <= 0xD7)) { i += 2; continue; }
     const len = b.readUInt16BE(i + 2);
-    /* SOF0/1/2/3 and the rarer 5-7, 9-11, 13-15 all carry height then width at
-       the same offset. DHT (0xC4), JPG (0xC8) and DAC (0xCC) sit in the same
-       0xCn range and do NOT, so they are excluded rather than matched loosely. */
     const isSOF = marker >= 0xC0 && marker <= 0xCF
       && marker !== 0xC4 && marker !== 0xC8 && marker !== 0xCC;
     if (isSOF) return { h: b.readUInt16BE(i + 5), w: b.readUInt16BE(i + 7) };
@@ -260,7 +245,7 @@ B.written = () => `${opener('written', D.written.head, D.written.lead)}
     <div class="wrap">
 ${PUBLISH_WRITTEN
     ? `      <ul class="st-ws">
-${WRITTEN.map((w) => `        <li class="st-w"><a href="/stories/${esc(w.slug)}"><span class="st-w-h">${esc(w.title)}</span><span class="st-w-s">${esc(w.summary)}</span><span class="lbl st-w-d">${esc(w.date)}</span></a></li>`).join('\n')}
+${WRITTEN.map((w) => `        <li class="st-w"><a href="/stories/${esc(w.slug)}"><span class="st-w-h">${esc(w.title)}</span><span class="st-w-s">By ${esc(w.byline)}</span><span class="lbl st-w-d">${esc(w.date)}</span></a></li>`).join('\n')}
       </ul>`
     : hole(D.written.hole)}
     </div>`;
@@ -394,27 +379,35 @@ gate(noAlt.length === 0, `every image has alt text${noAlt.length ? `; FOUND: ${n
       come back. */
 gate(!/href="tel:/i.test(OUT), 'no tel: link (the struck number does not return)');
 
-/* 10a. A PUBLISHED STORY MUST CARRY A SOURCE. The three files in
-       content/story/ carry none, and one of them — delhi-air-victory — claims a
-       policy victory AD-17 §3 recorded as unsupported and put in the same class
-       as the fabricated court citations D-11.1 cut from the air page. So
-       publishing is gated on sourcing rather than on the files existing, and
-       flipping `written.publish` without adding sources fails the build. */
+/* 10a. A PUBLISHED ESSAY MUST CARRY PROVENANCE. The owner ruled on 22 August
+       that unsourced data is allowed off the situation pages, so this no longer
+       demands a source per piece. It demands the three things that make a
+       re-host honest instead: a name, a date, and where it first appeared. An
+       essay published under none of those is anonymous assertion, which is a
+       different thing from a signed argument. */
 if (PUBLISH_WRITTEN) {
-  const unsourced = WRITTEN.filter((w) => !w.source);
-  gate(unsourced.length === 0,
-    `every published story carries a source${unsourced.length ? `; UNSOURCED: ${unsourced.map((w) => w.slug).join(', ')}` : ''}`);
+  const thin = WRITTEN.filter((w) => !w.byline || !w.date || !w.original);
+  gate(thin.length === 0,
+    `every published essay carries a byline, a date and its original link${thin.length ? `; THIN: ${thin.map((w) => w.slug).join(', ')}` : ''}`);
+  gate(WRITTEN.every((w) => OUT.includes(`/stories/${w.slug}`)),
+    `all ${WRITTEN.length} essays are linked from the band`);
+  gate(typeof D.written.hole === 'string' && /staging domain/.test(D.written.hole),
+    'the band says why the essays have no illustrations');
 } else {
-  gate(!/href="\/stories\//.test(OUT),
-    'no link to an unpublished story detail page');
-  gate(typeof D.written.hole === 'string' && D.written.hole.length > 40,
-    'the written section names the hole instead of listing unsourced drafts');
+  gate(!/href="\/stories\//.test(OUT), 'no link to an unpublished story detail page');
 }
 
-/* 10. THE UNPORTED DETAIL PAGES ARE ADMITTED, NOT HIDDEN. These links leave
-       the frozen design; the register records that, so the note must exist. */
-gate(typeof D.written.note_unported === 'string' && D.written.note_unported.length > 40,
-  'the register records that /stories/<slug> is not yet in this design');
+/* 10. EVERY LINKED ESSAY PAGE EXISTS ON DISK. The band's links are built from
+       the essay index and the pages from the same index, so they cannot drift
+       in name — but they can drift in existence if this page is rebuilt and
+       build:essays is not. A link to a page nobody generated is a 404 at a URL
+       that looks routed, which is the defect design-routes' own gate exists to
+       stop. */
+{
+  const missing = WRITTEN.filter((w) => !existsSync(join(S.V3, 'stories', `${w.slug}.html`)));
+  gate(missing.length === 0,
+    `all ${WRITTEN.length} linked essay pages exist${missing.length ? `; MISSING: ${missing.map((w) => w.slug).join(', ')} — run npm run build:essays` : ''}`);
+}
 
 /* 11. THE GROUND CHAIN DOES NOT CLASH. */
 gate(clashes === 0, `${clashes} ground clash(es)`);
