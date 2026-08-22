@@ -172,7 +172,11 @@ const ALL_BANDS = [
    The band still renders, because a section that vanishes tells the reader
    nothing; it names the hole instead, the device /work/events and /act use. */
 const PUBLISH_WRITTEN = D.written.publish === true;
-const LIVE = { written: WRITTEN.length > 0 };
+/* ALWAYS LIVE, even with zero files. The band's job now is to say that there
+   are no finished written pieces; a band that disappears when the directory
+   empties says nothing at all, and the reader cannot tell absence from
+   omission. It renders the list when there is something sourced to list. */
+const LIVE = {};
 const BANDS = ALL_BANDS.filter(([id]) => LIVE[id] !== false);
 const clashes = S.groundChain(BANDS);
 
