@@ -3160,7 +3160,7 @@ main{display:block;margin:0;padding:0}
                      the bands) and in full on the situation page. Word for
                      word unchanged, and >=561 renders the whole paragraph
                      in its original order. -->
-                <p class="s-hero-why"><span class="s-hero-cut">Nearly four times the limit the Central Pollution Control Board sets for a safe day. </span>Schools in this ward are three kilometres from the monitor that recorded it.</p>
+                <p class="s-hero-why"><span class="s-hero-cut">3.9 times the limit the Central Pollution Control Board sets for a safe day. </span>Schools in this ward are three kilometres from the monitor that recorded it.</p>
                 <div class="s-hero-scale">
                   <div class="bands bad" role="img" aria-label="Band 5 of 6, Very Poor"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on tip"></i><i></i></div>
                   <span class="limit">CPCB safe limit 100. <b>Limit broken.</b></span>
@@ -3182,7 +3182,7 @@ main{display:block;margin:0;padding:0}
                    the cadence stay — they describe the instrument CPCB runs,
                    which is true whether or not this page has read it. The day
                    the feed exists, the hour and the age come back with it. -->
-              <p class="cap s-hero-src">CPCB continuous monitor<span class="s-hero-loc">, Anand Vihar</span>. <span class="s-hero-cad">Hourly. </span>Committed reading.</p>
+              <p class="cap s-hero-src">CPCB continuous monitor<span class="s-hero-loc">, Anand Vihar</span>. <span class="s-hero-cad">Hourly. </span><span class="s-hero-prov">Committed reading.</span></p>
               <span class="tag tag-season">Year round</span>
               <p class="s-hero-act"><a class="act" href="/now/air">The full instrument <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
             </div>
@@ -4745,6 +4745,79 @@ document.querySelectorAll('.rig').forEach(rig);
     cell.setAttribute('aria-label','Delhi\u2019s air, '+r.aqi+' air quality index, '
       +(r.aqi>limit?'over the limit':'within the limit'));
   }).catch(function(){ /* leave the committed figure alone */ });
+})();
+
+/* ── THE HERO'S AIR SLIDE READS THE FEED TOO (owner, 22 August). ──────
+   D-24.1 made the TICKER's air cell self-refresh and said why: air is the
+   only figure on this page that moves hourly, so a hand-typed number in it
+   is wrong within the day. That reasoning always applied to the hero as
+   well, and the hero was the last place the stale 412 survived.
+
+   ★ THE BADGE IS EARNED HERE, NOT TYPED.
+   It renders `state periodic` — the word data/air-delhi.json declares for
+   the committed figure — and becomes `state live`, with its blink, only
+   when a fetch actually returns a reading. So the claim is about THIS
+   reading, which is the rule the demo badge was written under. A failed
+   fetch leaves Periodic standing rather than promising liveness the page
+   cannot deliver. The blink already has its prefers-reduced-motion
+   override, so nothing new is needed for that.
+
+   ★ SEVEN VALUES MOVE, OR NONE DO.
+   The numeral is not the reading; it is one seventh of it. The multiplier,
+   the verdict word, the six-pip scale and its aria-label, the prose clause,
+   the station name and the screen-reader sentence are all derived from the
+   same number, and the ticker's one-value update does not generalise. This
+   is why the slide could not simply be renumbered by hand: at 387 the old
+   markup still said Severe, 4.1x and band 6 of 6, all three of which
+   belonged to 412.
+
+   ★ AN UNKNOWN BAND WRITES NOTHING. The pip index comes from CPCB's
+   published National AQI scale, in order. A band name that is not on that
+   scale returns early rather than guessing an index, on the same principle
+   as D-16.4: an error is not a zero, and a malformed body must not be able
+   to rewrite the first screen.
+   ──────────────────────────────────────────────────────────────────── */
+(function(){
+  var slide=document.getElementById('h-air');
+  if(!slide||!window.fetch) return;
+  var out=slide.querySelector('.readout'), sr=slide.querySelector('.sr'),
+      mult=slide.querySelector('.mult b'), verdict=slide.querySelector('.verdict'),
+      bands=slide.querySelector('.bands'), rail=slide.querySelector('.s-hero-rail'),
+      cut=slide.querySelector('.s-hero-cut'), loc=slide.querySelector('.s-hero-loc'),
+      prov=slide.querySelector('.s-hero-prov'), badge=slide.querySelector('.s-hero-stamp .state'),
+      broken=slide.querySelector('.limit b');
+  if(!out||!sr||!mult||!verdict||!bands||!badge) return;
+  // CPCB's National AQI bands, in published order. The API returns the band
+  // NAME; the pip scale needs its position, and this is the scale that
+  // defines it (the same list data/air-delhi.json carries).
+  var SCALE=['Good','Satisfactory','Moderately Polluted','Poor','Very Poor','Severe'];
+  fetch('/api/air',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
+    if(!d||d.ok!==true) return;
+    var r=d.reading;
+    if(!r||typeof r.aqi!=='number'||!isFinite(r.aqi)||r.aqi<=0||!r.band) return;
+    var i=SCALE.indexOf(r.band);
+    if(i<0) return;
+    var limit=(typeof d.aqiLimit==='number'&&d.aqiLimit>0)?d.aqiLimit:100;
+    var mx=(r.aqi/limit).toFixed(1), over=r.aqi>limit;
+    out.textContent=String(r.aqi);
+    verdict.textContent=r.band;
+    mult.textContent=mx;
+    var pips=bands.querySelectorAll('i'), k;
+    for(k=0;k<pips.length;k++){ pips[k].className = k<i ? 'on' : (k===i ? 'on tip' : ''); }
+    bands.setAttribute('aria-label','Band '+(i+1)+' of '+pips.length+', '+r.band);
+    // The breach styling and the "limit broken" clause are claims about the
+    // reading, so they follow it rather than staying where 412 left them.
+    if(rail){ if(over) rail.classList.add('breach'); else rail.classList.remove('breach'); }
+    if(bands){ if(over) bands.classList.add('bad'); else bands.classList.remove('bad'); }
+    if(verdict){ if(over) verdict.classList.add('bad'); else verdict.classList.remove('bad'); }
+    if(broken) broken.hidden=!over;
+    if(cut) cut.textContent=mx+' times the limit the Central Pollution Control Board sets for a safe day. ';
+    if(loc&&r.station) loc.textContent=', '+String(r.station).split(',')[0];
+    if(prov) prov.textContent='Live reading.';
+    sr.textContent='Delhi-NCR / Air quality index. '+r.aqi+' AQI, 24-hour rolling. '+r.band+'.';
+    badge.className='state live';
+    badge.innerHTML='<i></i>Live';
+  }).catch(function(){ /* the committed reading stands, badge included */ });
 })();
 </script>
 </body>

@@ -441,10 +441,19 @@ export const GIVE_HREF = '/act';
 export const HOME_HREF = '/';
 
 /**
- * The three nav surfaces, all six links in each. `sections` is THIS PAGE'S own
- * bands — on a WORK page the SECTIONS control lists the page you are standing
- * on, which is what finally makes both sentences true at once: the nav goes to
- * pages, SECTIONS goes to bands (AD-17 §2).
+ * The three nav surfaces. `sections` is THIS PAGE'S own bands — on a WORK page
+ * the SECTIONS control lists the page you are standing on, which is what makes
+ * both sentences true at once: the nav goes to pages, SECTIONS goes to bands
+ * (AD-17 §2).
+ *
+ * THIS SAID "all six links in each" AND IT WAS NOT TRUE OF THE PANEL. Below
+ * 940 the six words are display:none and the SECTIONS panel held only the
+ * page's own bands, so on a phone 26 of 27 pages had NO primary navigation at
+ * all: the panel opened a duplicate of the chip row already on screen. The
+ * homepage was the single exception, and only by accident — its bands ARE the
+ * six words. The panel now carries the six first, then the page's sections,
+ * which is what this paragraph always claimed. AD-19's six words and their
+ * count are untouched.
  *
  * `aria-current` NOW HAS TWO LEVELS, because Work no longer points at a page.
  * `aria-current="page"` is a claim that THIS LINK'S HREF IS THIS URL, and it
@@ -462,7 +471,7 @@ export const workHeader = (sections, current, url) => {
   const nl = ([t, h]) => `<a class="nl" href="${h}"${cur(t, h)}>${t}</a>`;
   const idx = sections.map(([t, h]) => `<a class="nl" href="${h}">${esc(t)}</a>`).join('');
   return `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(nl).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Sections</button>
-<div class="navidx" id="navidx" hidden><nav aria-label="All sections">${idx}</nav></div><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${sections.map(([t, h]) => `<li><a class="nl" href="${h}">${esc(t)}</a></li>`).join('')}</ul></nav></header>`;
+<div class="navidx" id="navidx" hidden><nav class="navidx-g" aria-label="Site"><p class="lbl navidx-h">Site</p>${NAV.map(nl).join('')}</nav><nav class="navidx-g" aria-label="Sections on this page"><p class="lbl navidx-h">This page</p>${idx}</nav></div><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${sections.map(([t, h]) => `<li><a class="nl" href="${h}">${esc(t)}</a></li>`).join('')}</ul></nav></header>`;
 };
 
 /* ═══ THE WORK LAYER — the only CSS this section AUTHORS ══════════════════
