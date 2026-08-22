@@ -166,6 +166,12 @@ const ALL_BANDS = [
   ['written', 'paper-2 t3', '#ECEBE8'],
   ['act',     't3',         '#0D0D0B'],
 ];
+/* THE WRITTEN SECTION IS A CLAIM ABOUT SOURCING, so it is gated on one.
+   `written.publish` is false while the three files in content/story/ carry no
+   source between them — see the reason recorded beside it in data/stories.json.
+   The band still renders, because a section that vanishes tells the reader
+   nothing; it names the hole instead, the device /work/events and /act use. */
+const PUBLISH_WRITTEN = D.written.publish === true;
 const LIVE = { written: WRITTEN.length > 0 };
 const BANDS = ALL_BANDS.filter(([id]) => LIVE[id] !== false);
 const clashes = S.groundChain(BANDS);
@@ -248,9 +254,11 @@ ${POSTERS.map((p) => `        <li class="st-po"><img src="${p.src}" alt="${esc(p
    notices deserves to know it is unfinished work and not a different site. */
 B.written = () => `${opener('written', D.written.head, D.written.lead)}
     <div class="wrap">
-      <ul class="st-ws">
+${PUBLISH_WRITTEN
+    ? `      <ul class="st-ws">
 ${WRITTEN.map((w) => `        <li class="st-w"><a href="/stories/${esc(w.slug)}"><span class="st-w-h">${esc(w.title)}</span><span class="st-w-s">${esc(w.summary)}</span><span class="lbl st-w-d">${esc(w.date)}</span></a></li>`).join('\n')}
-      </ul>
+      </ul>`
+    : hole(D.written.hole)}
     </div>`;
 
 /* ── BAND 5. ACT. ────────────────────────────────────────────────────────── */
@@ -307,7 +315,7 @@ const OUT = await S.assemble({
       + `(${FILMS.filter((f) => f.mode === 'players').length} embedded, `
       + `${FILMS.filter((f) => f.mode === 'list').length} listed), `
       + `${D.films.holes.length} named holes, ${POSTERS.length} posters, `
-      + `${WRITTEN.length} written stories.`,
+      + `${WRITTEN.length} written ${PUBLISH_WRITTEN ? 'stories published' : 'drafts, none published (unsourced)'}.`,
 });
 
 /* ═══ POST-WRITE GATES ═══════════════════════════════════════════════════ */
@@ -381,6 +389,23 @@ gate(noAlt.length === 0, `every image has alt text${noAlt.length ? `; FOUND: ${n
       the /act generator gates on it; a new page is exactly where it would
       come back. */
 gate(!/href="tel:/i.test(OUT), 'no tel: link (the struck number does not return)');
+
+/* 10a. A PUBLISHED STORY MUST CARRY A SOURCE. The three files in
+       content/story/ carry none, and one of them — delhi-air-victory — claims a
+       policy victory AD-17 §3 recorded as unsupported and put in the same class
+       as the fabricated court citations D-11.1 cut from the air page. So
+       publishing is gated on sourcing rather than on the files existing, and
+       flipping `written.publish` without adding sources fails the build. */
+if (PUBLISH_WRITTEN) {
+  const unsourced = WRITTEN.filter((w) => !w.source);
+  gate(unsourced.length === 0,
+    `every published story carries a source${unsourced.length ? `; UNSOURCED: ${unsourced.map((w) => w.slug).join(', ')}` : ''}`);
+} else {
+  gate(!/href="\/stories\//.test(OUT),
+    'no link to an unpublished story detail page');
+  gate(typeof D.written.hole === 'string' && D.written.hole.length > 40,
+    'the written section names the hole instead of listing unsourced drafts');
+}
 
 /* 10. THE UNPORTED DETAIL PAGES ARE ADMITTED, NOT HIDDEN. These links leave
        the frozen design; the register records that, so the note must exist. */
