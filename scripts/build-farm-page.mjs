@@ -328,8 +328,7 @@ ${F.come.triad.map(t => `        <div class="fm-triad-c">
       </div>
       <div class="fm-doors">
 ${F.come.doors.map(d => `        <div class="fm-door">
-          <figure class="fm-door-f"><img class="duo" src="${d.frame.src}" alt="${esc(d.frame.alt)}" loading="lazy"></figure>
-          <h3 class="fm-door-h">${esc(d.name)}</h3>
+${d.frame ? `          <figure class="fm-door-f"><img class="duo" src="${d.frame.src}" alt="${esc(d.frame.alt)}" loading="lazy"></figure>\n` : ''}${d.frame ? '' : '          <p class="lbl fm-door-nf">No photograph of this yet</p>\n'}          <h3 class="fm-door-h">${esc(d.name)}</h3>
           <p class="body fm-door-p">${esc(d.p)}</p>
 ${[d.capacity, d.figure].filter(Boolean).map(g => `          <p class="fm-door-fig"><span class="num">${esc(g.value)}</span> <span class="lbl">${esc(g.label)}</span></p>`).join('\n')}
           <p class="cap fm-door-w">${esc(d.who)}</p>
@@ -594,6 +593,11 @@ const PAGE_CSS = `
 .fm-door-a{display:block;text-decoration:none;color:inherit;border:1px solid var(--hair);
   padding:clamp(16px,2vw,24px);min-width:0}
 .fm-door-a:hover{border-color:var(--fg-2)}
+/* A DOOR MAY HAVE NO PHOTOGRAPH. W-18 caps this page at 12 and it sits at 12,
+   so the fifth door is text — and the library has no frame of volunteering
+   labour to give it anyway. Labelled rather than left as a silent gap, so the
+   cell reads as a decision instead of a broken image. */
+.fm-door-nf{color:var(--fg-2);margin:0 0 8px}
 /* ONE CHANNEL, after the phone number came off (owner, 22 August). Not a
    two-column grid with an empty cell. */
 .fm-ways-1{grid-template-columns:minmax(0,1fr)}

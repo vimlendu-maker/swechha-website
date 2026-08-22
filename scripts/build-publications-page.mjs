@@ -111,6 +111,7 @@ ${ITEMS.map((it) => `        <article class="pb-i" id="pub-${esc(it.slug)}">
           <p class="lbl pb-k">${esc(it.kind)} &middot; ${esc(it.year)}</p>
           <h3 class="d2 pb-h">${esc(it.title)}</h3>
           <p class="pb-l">${esc(it.lead)}</p>
+${it.credit ? `          <p class="cap pb-cr">${esc(it.credit)}${it.credit_url ? ` <a class="act" href="${esc(it.credit_url)}" rel="noopener">${'' }${esc(new URL(it.credit_url).host)}${ARROW}</a>` : ''}</p>` : ''}
           <p><a class="b b-1" href="${esc(it.file)}">${esc(it.cta)} <span class="pb-sz">PDF, ${it.mb} MB</span>${ARROW}</a></p>
         </article>`).join('\n')}
       </div>
@@ -138,6 +139,10 @@ const PAGE_CSS = `
 .pb-h{margin:0}
 .pb-l{margin:0;max-width:56ch}
 .pb-sz{opacity:.72;font-variant-numeric:tabular-nums}
+/* WHO PUBLISHED IT, where that is not Swechha. Only the IGES entry carries this
+   today, and it is rendered rather than left to the lead sentence because
+   "published by" is a different kind of fact from a description. */
+.pb-cr{margin:0;color:var(--ink-2)}
 @media (max-width:640px){.pb-set{grid-template-columns:minmax(0,1fr)}}
 `;
 
@@ -210,6 +215,13 @@ gate(!/<form/i.test(OUT) && !/type="email"/i.test(OUT),
 /* 10. THE BUTTONS DO WHAT THEY SAY. "Read" must not force a save. */
 gate(!/<a[^>]+\/docs\/[^>]*\sdownload[\s>]/.test(OUT),
   'no download attribute — "Read the book" opens the reader, it does not force a save');
+
+/* 11. A DOCUMENT SWECHHA DID NOT PUBLISH MUST SAY WHO DID. The IGES scenario
+       is hosted here on the owner's instruction; hosting someone else's report
+       without naming them is the part that would not be defensible. */
+for (const it of ITEMS.filter((i) => i.credit)) {
+  gate(RENDERED.includes(it.credit), `"${it.slug}" names its publisher on the page`);
+}
 
 /* 9. THE GROUND CHAIN DOES NOT CLASH. */
 gate(clashes === 0, `${clashes} ground clash(es)`);
