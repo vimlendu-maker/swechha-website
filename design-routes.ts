@@ -48,9 +48,19 @@ import { join } from 'node:path'
  * hook, and the scaffold routes come back exactly as they were.
  *
  * ROUTES WITH NO FINISHED PAGE ARE LEFT ALONE, deliberately: `/explore`,
- * `/search`, `/stories` and `/work/campaigns/<slug>` keep their real app
- * routes. Shadowing a route with a page that does not exist would trade a
- * scaffold for a 404.
+ * `/search` and `/work/campaigns/<slug>` keep their real app routes.
+ * Shadowing a route with a page that does not exist would trade a scaffold
+ * for a 404.
+ *
+ * `/stories` LEFT THAT LIST ON 22 AUGUST (AD-26) and `/publications` joined
+ * the map with it. Both are the owner's answers to AD-26 §5 made buildable:
+ * the nav STAYS at AD-19's six words and these two are reached from the
+ * footer, whose "Stories and films" and "Publications" links had been
+ * pointing at `/now` — an air-and-river index — since commit 812235a.
+ * `/stories/<slug>` is still the app route and still the pre-design shell:
+ * the three written stories are real, their detail pages are the remaining
+ * half of the port, and `data/stories.json` records that rather than hiding
+ * it.
  *
  * `/impact` JOINED THE MAP ON 22 AUGUST (AD-22). It was in the paragraph above
  * until its page existed, and this is the failure mode that paragraph was
@@ -127,6 +137,8 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
     '/': 'home.html',
     ...SITUATIONS,
     ...workRoutes(),
+    '/stories': 'stories.html',
+    '/publications': 'publications.html',
     '/about': 'about.html',
     '/impact': 'impact.html',
     '/farm': 'farm.html',
