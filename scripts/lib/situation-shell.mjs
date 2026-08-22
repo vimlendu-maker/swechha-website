@@ -282,8 +282,8 @@ export const GIVE_HREF = '/act';
 const navCurrent = (label, href, current, url) => label !== current ? ''
   : (href === url ? ' aria-current="page"' : ' aria-current="true"');
 
-export const header = (index, { current = null, url = null } = {}) => `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Sections</button>
-<div class="navidx" id="navidx" hidden><nav class="navidx-g" aria-label="Site"><p class="lbl navidx-h">Site</p>${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav><nav class="navidx-g" aria-label="Sections on this page"><p class="lbl navidx-h">This page</p>${index.map(([t, h]) => `<a class="nl" href="${h}">${t}</a>`).join('')}</nav></div><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${index.map(([t, h]) => `<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>`;
+export const header = (index, { current = null, url = null } = {}) => `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
+<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav></div><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${index.map(([t, h]) => `<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>`;
 
 /* ═══ GROUND ADJACENCY ═══════════════════════════════════════════════════ */
 
@@ -547,21 +547,25 @@ export const FAMILY_CSS = `
    and overridden under `.paper`, and neither is left to inherit.
    ═══════════════════════════════════════════════════════════════════════ */
 export const SHARED_PAGE_CSS = `
-/* ── THE SECTIONS PANEL IS ALSO THE MOBILE NAV. ──────────────────────────
-   Below 940 the six nav words are display:none and only the wordmark, the
-   SECTIONS button and Give remain, so this panel is the only way to reach
-   another page on a phone. It used to list the page's own bands only, which
-   made it a duplicate of the chip row already visible below the bar.
-   Two groups, each labelled, so the reader can tell a page from a band. The
-   first-of-type reset replaces home.html's a.nl:first-child rule, which no
-   longer matches now that a heading precedes the links. */
-/* A HEADING MUST NOT LOOK TAPPABLE. At the .lbl size it read as another
-   44px row in the list, which is worse than no heading: the reader taps it.
-   Smaller, dimmer, and no minimum height, so the eye sorts it as a label. */
-.navidx-h{margin:0;padding:16px var(--gut) 4px;color:var(--fg-2);opacity:.6;
-  font-size:10px;letter-spacing:.16em}
-.navidx-g + .navidx-g{border-top:1px solid var(--hair)}
-.navidx-g a.nl:first-of-type{border-top:0}
+/* ── THE MENU PANEL IS THE MOBILE NAV, AND IT IS SIX ROWS. ───────────────
+   Below 940 the six nav words are display:none, so this panel is the only way
+   to reach another page on a phone. It used to hold the page's own bands and
+   nothing else, which made it a duplicate of the chip row already visible
+   under the bar — and the first attempt at fixing that stacked the six pages
+   ON TOP of the bands, producing a fourteen-row panel that filled the entire
+   viewport. Both versions were wrong in the same way: two answers on one
+   surface.
+   So the panel is the six pages, flat, unlabelled. The page's own sections
+   stay where they already were, in the .navscroll chip row under the bar. One
+   surface per question, and nothing is listed twice.
+   NO CSS IS NEEDED FOR IT, which is the point — home.html's own
+   "navidx a.nl" rows and its "first-child" border reset both apply again now
+   that the links are direct children of a single nav. The group and heading
+   rules that used to sit here are deleted rather than left matching nothing.
+   (And the backticks that first version of this note used broke the build in
+   exactly the way the warning at the top of this block predicts.)
+   The button says Menu, not Sections: it opens pages, and the sections are the
+   chip row. */
 
 /* NO BACKTICKS ANYWHERE BELOW — this whole block is one template literal and a
    backtick in a comment silently terminates it. Three separate builds were

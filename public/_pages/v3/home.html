@@ -3076,7 +3076,7 @@ main{display:block;margin:0;padding:0}
      tabindex="-1" so the focus actually lands rather than only moving
      the sequential-navigation start point. -->
 <a class="skip" href="#main">Skip to the content</a>
-<header class="nav"><div class="nav-in"><a class="mark" href="/" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/#record">Record</a></nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Sections</button><!-- D-09.1. THE PHONE'S WAY OUT. The chip row above is non-sticky by
+<header class="nav"><div class="nav-in"><a class="mark" href="/" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/#record">Record</a></nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button><!-- D-09.1. THE PHONE'S WAY OUT. The chip row above is non-sticky by
      D-01.1 and stays that way, so between y=105.8 and the footer's link
      grid at y=9,518 a phone reader had navigation to exactly ONE
      destination — the GIVE chip — for 9,412px, or 91.9% of the document.
@@ -4801,7 +4801,10 @@ document.querySelectorAll('.rig').forEach(rig);
     var mx=(r.aqi/limit).toFixed(1), over=r.aqi>limit;
     out.textContent=String(r.aqi);
     verdict.textContent=r.band;
-    mult.textContent=mx;
+    // The multiplication sign lives INSIDE this element, so assigning the bare
+    // number deletes it and the slide reads "3.1 the limit". The static markup
+    // has it as an entity; textContent needs the character.
+    mult.textContent=mx+'\u00d7';
     var pips=bands.querySelectorAll('i'), k;
     for(k=0;k<pips.length;k++){ pips[k].className = k<i ? 'on' : (k===i ? 'on tip' : ''); }
     bands.setAttribute('aria-label','Band '+(i+1)+' of '+pips.length+', '+r.band);

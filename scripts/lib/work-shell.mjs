@@ -447,13 +447,21 @@ export const HOME_HREF = '/';
  * (AD-17 §2).
  *
  * THIS SAID "all six links in each" AND IT WAS NOT TRUE OF THE PANEL. Below
- * 940 the six words are display:none and the SECTIONS panel held only the
- * page's own bands, so on a phone 26 of 27 pages had NO primary navigation at
- * all: the panel opened a duplicate of the chip row already on screen. The
- * homepage was the single exception, and only by accident — its bands ARE the
- * six words. The panel now carries the six first, then the page's sections,
- * which is what this paragraph always claimed. AD-19's six words and their
- * count are untouched.
+ * 940 the six words are display:none and the panel held only the page's own
+ * bands, so on a phone 26 of 27 pages had NO primary navigation at all: the
+ * panel opened a duplicate of the chip row already on screen. The homepage was
+ * the single exception, and only by accident — its bands ARE the six words.
+ *
+ * THE FIRST FIX OVERCORRECTED and is worth recording, because it is the
+ * obvious thing to do: it put the six pages ON TOP of the page's bands, which
+ * made a fourteen-row panel that filled the entire phone viewport. Two answers
+ * on one surface is not better than one wrong answer.
+ *
+ * SO: the panel is the six pages, flat and unlabelled, and the page's own
+ * sections stay in the .navscroll chip row under the bar where they already
+ * were. One surface per question, nothing listed twice, and the button says
+ * Menu rather than Sections because it opens pages. AD-19's six words and
+ * their count are untouched throughout.
  *
  * `aria-current` NOW HAS TWO LEVELS, because Work no longer points at a page.
  * `aria-current="page"` is a claim that THIS LINK'S HREF IS THIS URL, and it
@@ -469,9 +477,11 @@ export const workHeader = (sections, current, url) => {
   const cur = (label, href) => label !== current ? ''
     : (href === url ? ' aria-current="page"' : ' aria-current="true"');
   const nl = ([t, h]) => `<a class="nl" href="${h}"${cur(t, h)}>${t}</a>`;
-  const idx = sections.map(([t, h]) => `<a class="nl" href="${h}">${esc(t)}</a>`).join('');
-  return `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(nl).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Sections</button>
-<div class="navidx" id="navidx" hidden><nav class="navidx-g" aria-label="Site"><p class="lbl navidx-h">Site</p>${NAV.map(nl).join('')}</nav><nav class="navidx-g" aria-label="Sections on this page"><p class="lbl navidx-h">This page</p>${idx}</nav></div><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${sections.map(([t, h]) => `<li><a class="nl" href="${h}">${esc(t)}</a></li>`).join('')}</ul></nav></header>`;
+  /* `sections` now reaches only the .navscroll chip row below the bar. It used
+     to also fill the Menu panel, which duplicated the row already on screen —
+     the panel is the six pages and nothing else. */
+  return `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(nl).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
+<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(nl).join('')}</nav></div><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${sections.map(([t, h]) => `<li><a class="nl" href="${h}">${esc(t)}</a></li>`).join('')}</ul></nav></header>`;
 };
 
 /* ═══ THE WORK LAYER — the only CSS this section AUTHORS ══════════════════
