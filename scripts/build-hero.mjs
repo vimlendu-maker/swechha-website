@@ -163,9 +163,30 @@ const SLIDES = [
   {
     id: 'h-monsoon',
     figure: rainTotal,
+    /* THE NORMAL IS STATED ONLY WHEN IT IS SETTLED (owner, 22 August).
+       The slide gave two different normals — 396 in its sentence, 434 in its
+       limit line — so it stops stating one at all until `normal_mm` is filled
+       in, and names the hole instead: the device /work/events, /act and the
+       Record band already use. Supplying the figure in the dataset flips both
+       lines back automatically; nothing here needs editing again.
+
+       THE VERDICT SURVIVES, and that is derived rather than assumed: 501 is
+       above BOTH candidate normals, so "Above normal" holds whichever turns
+       out to be right. If a future reading falls between them the check below
+       fails, because then the word would depend on the unsettled figure. */
     edits: [
       [/(<span class="readout" aria-hidden="true">)[^<]*(?:<span class="dp">\.<\/span>[^<]*)?(<\/span>)/,
         `$1${readout(rainTotal)}$2`, 'readout'],
+      [/(<span class="sr">Delhi \/ Rainfall, season to date\. )[\d.,]+( millimetres since 1 June)(?:, against a normal of [\d.,]+ for the same dates)?/,
+        rainNormal === null
+          ? `$1${rainTotal}$2`
+          : `$1${rainTotal}$2, against a normal of ${rainNormal} for the same dates`,
+        'sentence: the reading, and the normal only if settled'],
+      [/(<span class="limit">)[^<]*(<\/span>)/,
+        rainNormal === null
+          ? '$1No legal threshold. The normal for these dates is not confirmed here.$2'
+          : `$1Normal to ${RAIN.reading?.as_of_label || 'date'} is ${rainNormal}mm.$2`,
+        'limit line: the normal, or the named hole'],
     ],
     crossCheck: null,
   },
@@ -210,6 +231,22 @@ for (const slide of SLIDES) {
   if (block !== before) changed++;
   src = src.slice(0, start) + block + src.slice(end);
   ok(`${slide.id.padEnd(10)} ${slide.figure}${block === before ? '  (already in step)' : '  (updated)'}`);
+}
+
+/* ── "ABOVE NORMAL" MUST HOLD UNDER EVERY CANDIDATE NORMAL ──────────────
+   While the normal is unsettled, the verdict may only stand if it is true of
+   all the candidates. 501 is above both 396 and 434, so it stands. A reading
+   that fell between them would make the word depend on the figure nobody has
+   confirmed, and that is a failure rather than a judgement call. */
+if (rainNormal === null) {
+  const cands = (RAIN.normal_candidates || []).map((c) => c.value).filter((v) => typeof v === 'number');
+  if (!cands.length) {
+    fail('rainfall-delhi.json has no normal_mm and no normal_candidates to test the verdict against');
+  } else if (!cands.every((v) => rainTotal > v)) {
+    fail(`h-monsoon: "Above normal" does not hold for every candidate normal (${rainTotal} vs ${cands.join(', ')})`);
+  } else {
+    ok(`h-monsoon  "Above normal" holds under every candidate normal (${cands.join(', ')})`);
+  }
 }
 
 /* ── THE FLOOR CLAUSE MUST MATCH THE DATA ───────────────────────────────
