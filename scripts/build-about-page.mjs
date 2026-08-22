@@ -534,7 +534,7 @@ ${DOORS.map(([h, n, t]) => `        <a class="a-door" href="${h}">
         </a>`).join('\n')}
       </div>
       <p class="a-foot a-foot-2"><a class="b b-1" href="/#give">Give monthly</a>
-        <a class="b b-2" href="mailto:info@swechha.in">Write to us</a></p>
+        <a class="b b-2" href="mailto:swechhaindia@gmail.com">Write to us</a></p>
     </div>`;
 
 /* ═══ PAGE CSS ════════════════════════════════════════════════════════════

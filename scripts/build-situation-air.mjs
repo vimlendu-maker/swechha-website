@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os';
 import { crumb, siblings, FAMILY_CSS, NAV as SHELL_NAV, HOME_HREF, GIVE_HREF, INDEX_PAGE } from './lib/situation-shell.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const V3 = join(ROOT, 'public/design/v3');
+const V3 = join(ROOT, 'public/_pages/v3');
 const DATA = join(ROOT, 'data');
 const src = readFileSync(`${V3}/home.html`, 'utf8').split('\n');
 const J = (f) => JSON.parse(readFileSync(`${DATA}/${f}`, 'utf8'));

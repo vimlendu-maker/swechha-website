@@ -49,7 +49,7 @@ import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-export const V3 = join(ROOT, 'public/design/v3');
+export const V3 = join(ROOT, 'public/_pages/v3');
 export const DATA = join(ROOT, 'data');
 
 /** Read a committed dataset. */

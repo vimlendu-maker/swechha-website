@@ -86,7 +86,7 @@ describe('brand lockups', () => {
        components, the page generators and the JSON-LD in lib/org.ts all name a
        brand file by path; renaming an asset without updating them is a broken
        image on every page, and nothing else in the repo would notice. */
-    const roots = ['public/design/v3', 'components', 'lib/org.ts', 'scripts/lib']
+    const roots = ['public/_pages/v3', 'components', 'lib/org.ts', 'scripts/lib']
     const files: string[] = []
     const walk = (p: string) => {
       const full = join(process.cwd(), p)

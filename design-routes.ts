@@ -23,7 +23,22 @@ import { join } from 'node:path'
  * be the URL people copied and shared.
  *
  * ── THIS IS A BRIDGE, AND ITS EXPIRY IS KNOWN ──────────────────────────────
- * AD-17 §6.4 records that `public/design/` is deleted before any deploy, and
+ * AD-17 §6.4 IS NOW SATISFIED, and this is how: `public/design/` no longer
+ * exists. The 27 built pages moved to `public/_pages/v3/`, the 12 superseded
+ * prototypes and the orphaned `credits.json` were deleted, and the four
+ * harnesses (`system.html`, `_mobile.html`, `situation-soon.html`,
+ * `work/_index-proposal.html`) moved to `docs/prototypes/` — out of `public/`,
+ * so none of them is served, and none of them was destroyed.
+ *
+ * The ruling's INTENT — no second, shareable URL for a page that has a
+ * canonical route — is held by `next.config.ts`'s unconditional
+ * `X-Robots-Tag: noindex` on `/_pages/*` plus the `Disallow` in `app/robots.ts`,
+ * because a rewrite destination must be a path Next can serve and files outside
+ * `public/` are not. Serving them from a route handler instead would turn 27
+ * CDN-cached static pages into a serverless invocation each, which is a real
+ * cost paid for a cosmetic reading of the rule.
+ *
+ * The original note read: `public/design/` is deleted before any deploy, and
  * the real port — these pages as React routes, with one shared stylesheet and
  * a layout component — has not been done. So this makes the finished set live
  * for review at its real URLs TODAY; it is not the port, and it does not
@@ -70,7 +85,11 @@ import { join } from 'node:path'
  * mattered.
  */
 
-const ROOT = __dirname
+/* `process.cwd()`, not `__dirname`: this module is now imported by
+   `app/sitemap.ts` as well as `next.config.ts`, and a bundled module's
+   `__dirname` is not the project root. Next runs both from the root, so
+   `cwd()` is the same directory the literal used to resolve to. */
+const ROOT = process.cwd()
 const PUBLIC = join(ROOT, 'public')
 
 /* The six and their index. Slugs are NOT derived from the filenames — the
@@ -120,12 +139,12 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
      looks routed, which is harder to notice than no route at all. So a bad
      map fails the build instead. */
   const missing = Object.entries(map).filter(
-    ([, file]) => !existsSync(join(PUBLIC, 'design/v3', file)),
+    ([, file]) => !existsSync(join(PUBLIC, '_pages/v3', file)),
   )
   if (missing.length) {
     throw new Error(
       'design-routes: no built file for ' +
-        missing.map(([route, file]) => `${route} -> design/v3/${file}`).join(', ') +
+        missing.map(([route, file]) => `${route} -> _pages/v3/${file}`).join(', ') +
         '. Run `npm run build:work` / `npm run build:situations` / `npm run build:about`.',
     )
   }
@@ -147,6 +166,14 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
 
   return Object.entries(map).map(([source, file]) => ({
     source,
-    destination: `/design/v3/${file}`,
+    destination: `/_pages/v3/${file}`,
   }))
+}
+
+/* THE SITEMAP READS THIS, so a page cannot be routed and left out of the map —
+   the failure `app/sitemap.ts` shipped with, which advertised `/explore` and
+   `/search` (both unbuilt) while omitting `/farm` and all six situations. One
+   list, one source, checked by the same gate above. */
+export function designRoutePaths(): string[] {
+  return designRoutes().map((r) => r.source)
 }

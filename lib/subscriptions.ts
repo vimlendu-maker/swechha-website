@@ -167,7 +167,7 @@ export const confirmMail = (station: string, token: string) => ({
     `What you will get: one message when the band changes for the worse, and`,
     `nothing else. Not a newsletter. Your address is never shared.`,
     ``,
-    `Why this exists: ${SITE}/design/v3/situation-air.html`,
+    `Why this exists: ${SITE}/now/air`,
   ].join('\n'),
 });
 
@@ -184,7 +184,7 @@ export const alertMail = (station: string, aqi: number, band: string, prev: stri
     `because the index is piecewise-linear. The concentration is on the page.`,
     ``,
     `The reading, how it is made, and what it is made of:`,
-    `${SITE}/design/v3/situation-air.html`,
+    `${SITE}/now/air`,
     ``,
     `You will not hear from us again until the band changes again.`,
     `Stop these: ${SITE}/api/ward/unsubscribe?t=${encodeURIComponent(unsubToken)}`,
