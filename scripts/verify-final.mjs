@@ -39,7 +39,7 @@ import { resolve, join } from 'node:path';
 import { FAMILY, INDEX_PAGE } from './lib/situation-shell.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..');
-const V3 = join(ROOT, 'public/design/v3');
+const V3 = join(ROOT, 'public/_pages/v3');
 const DATA = join(ROOT, 'data');
 const J = (f) => JSON.parse(readFileSync(join(DATA, f), 'utf8'));
 const NO_BUILD = process.argv.includes('--no-build');
@@ -167,14 +167,14 @@ export const FINAL = [...INDEX, ...SITUATIONS];
    the directory rather than a flattering subset. */
 export const NOT_FINAL = [
   { file: 'home.html', why: 'THE FROZEN DESIGN SOURCE. Not a deliverable in this set — it is the language every page above extracts from. Hand-maintained, and D-24.5 records that making it a build artefact is a real architectural change nobody has taken.' },
-  { file: 'situation-soon.html', why: 'SUPERSEDED AND DEAD. It was the "coming soon" stub for situations with no page. All six now have pages, so nothing links here. Safe to delete; left in place because deleting another session\'s prototype is not this work\'s call.' },
   { file: 'about.html', why: 'FINISHED, and not a prototype — AD-21 built it and it serves at /about. It is outside THIS test because the twelve checks above are situation-specific (crumb, five siblings, the four-word state vocabulary); none of them describe an About page. Its own gates live in scripts/build-about-page.mjs.' },
   { file: 'impact.html', why: 'FINISHED (AD-22), serving at /impact. Outside this test for the same reason as about.html — and worth naming, because it is the page that refuses the number it is named for, so a "reading" check would assert the opposite of its design.' },
   { file: 'farm.html', why: 'FINISHED (AD-24), serving at /farm. Outside this test for the same reason as about.html.' },
   { file: 'act.html', why: 'FINISHED (AD-25), serving at /act. Outside this test for the same reason as about.html.' },
+  { file: 'search.html', why: 'FINISHED, serving at /search. Outside this test for the same reason as about.html \u2014 the twelve checks above are situation-specific. Its own gates live in scripts/build-search-page.mjs; the load-bearing ones assert that every built page on disk is in the index, that all 29 rows render server-side so the page reads without JavaScript, and that it does not index itself.' },
+  { file: 'stories.html', why: 'FINISHED (AD-26), serving at /stories. Outside this test for the same reason as about.html \u2014 the twelve checks above are situation-specific. Its own gates live in scripts/build-stories-page.mjs, including the two that matter: every YouTube id resolves against data/media/youtube-index.json, and the page may not claim six films when two of R-3\'s six have no source on the channel.' },
+  { file: 'publications.html', why: 'FINISHED (AD-26), serving at /publications. Its own gates live in scripts/build-publications-page.mjs; the load-bearing one reads every linked PDF\'s size off disk rather than trusting a typed figure, and refuses anything large enough to be a print master.' },
   { file: 'work/', why: 'FINISHED — 15 pages from scripts/build-work-pages.mjs, merged in PR #5 and serving under /work. It was in progress in a concurrent session when this line first read that way. It carries its own acceptance gate, the LINKS.json manifest, which fails the build on any unlisted or dead href.' },
-  { file: 'system.html', why: 'Prototype, outside this work. Nothing in the finished set links to it except the footer\'s "The system sheet", which is the last /design/ path on the site and 404s at the port — an open item, and the owner\'s call because it is a visible footer change.' },
-  { file: '_mobile.html', why: 'Prototype, outside this work.' },
 ];
 
 /* ═══ THE CENSUS ═════════════════════════════════════════════════════════
@@ -351,7 +351,7 @@ if (unaccounted.length || missing.length) {
     console.log(`  ${f.padEnd(24)} named in the register, not on disk. Rebuild it, or remove the entry.`);
   }
 } else {
-  console.log(`\nCensus: all ${FINAL.length + NOT_FINAL.length} pages in public/design/v3 are accounted for.`);
+  console.log(`\nCensus: all ${FINAL.length + NOT_FINAL.length} pages in public/_pages/v3 are accounted for.`);
 }
 /* ═══ THE DOCUMENT, GENERATED FROM THE REGISTER ══════════════════════════
    docs/design/FINAL.md is written FROM the arrays above, so the prose and the

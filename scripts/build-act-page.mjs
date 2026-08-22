@@ -53,9 +53,12 @@
 // that is not a real docs.google.com/forms URL, because a guessed form URL is a
 // 404 behind a live-looking button, which is this page's own founding defect.
 //
-// ★ ONLY @swechha.in EMAIL MAY BE PUBLISHED. `data/about-people.json`'s
-// email_policy is the site's rule and gate 10 enforces it here. Note /farm
-// publishes swechhaindia@gmail.com — flagged in the ledger, not changed here.
+// ★ ONLY @swechha.in EMAIL MAY BE PUBLISHED, plus the addresses named in
+// `data/about-people.json`'s published_email_exceptions. That file holds the
+// rule and the reason; gate 10 reads it rather than restating the domain.
+// The /farm-vs-everywhere-else split this note used to flag is RESOLVED: on
+// 22 August 2026 the owner replaced info@swechha.in with swechhaindia@gmail.com
+// site-wide, so /farm's address is now the site's address.
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
@@ -662,6 +665,7 @@ const PAGE_CSS = `
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */
 const OUT = await S.assemble({
   file: 'act.html',
+  route: '/act',
   title: 'Get involved &mdash; Swechha',
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
@@ -780,10 +784,17 @@ gate(holes >= 4 + FORMATS.filter(f => f.hole).length,
 gate(/cannot give money on this site yet/i.test(RENDERED), 'G-1: the page says giving is not connected');
 gate(/no calendar on this site/i.test(RENDERED), 'G-2: the page says there is no calendar');
 
-/* 10. ONLY @swechha.in EMAIL IS PUBLISHED (about-people.json's email_policy). */
+/* 10. ONLY @swechha.in EMAIL IS PUBLISHED, plus the exceptions the policy
+       names (about-people.json's email_policy + published_email_exceptions).
+       READ, NOT RESTATED: the rule lives in the data beside the addresses it
+       governs, so relaxing it requires editing the recorded policy — where the
+       reason is written down next to it — rather than editing this line. */
+const EMAIL_POLICY = JSON.parse(
+  readFileSync(join(S.ROOT, 'data/about-people.json'), 'utf8'));
+const ALLOWED = new Set(EMAIL_POLICY.published_email_exceptions || []);
 const mails = [...new Set([...OUT.matchAll(/mailto:([^"?]+)/g)].map(m => m[1]))];
-const offsite = mails.filter(e => !e.endsWith('@swechha.in'));
-gate(offsite.length === 0, `every published address is @swechha.in${offsite.length ? `; FOUND: ${offsite.join(', ')}` : ''} (${mails.join(', ')})`);
+const offsite = mails.filter(e => !e.endsWith('@swechha.in') && !ALLOWED.has(e));
+gate(offsite.length === 0, `every published address is @swechha.in or a named exception${offsite.length ? `; FOUND: ${offsite.join(', ')}` : ''} (${mails.join(', ')})`);
 
 /* 11. NO DEAD OR PROTOTYPE HREF. This page exists because of href="#"; it may
        not ship one of its own. The footer's remaining ones are the frozen P-1

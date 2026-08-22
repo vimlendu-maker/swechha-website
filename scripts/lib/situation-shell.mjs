@@ -49,7 +49,7 @@ import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-export const V3 = join(ROOT, 'public/design/v3');
+export const V3 = join(ROOT, 'public/_pages/v3');
 export const DATA = join(ROOT, 'data');
 
 /** Read a committed dataset. */
@@ -282,8 +282,8 @@ export const GIVE_HREF = '/act';
 const navCurrent = (label, href, current, url) => label !== current ? ''
   : (href === url ? ' aria-current="page"' : ' aria-current="true"');
 
-export const header = (index, { current = null, url = null } = {}) => `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Sections</button>
-<div class="navidx" id="navidx" hidden><nav aria-label="All sections">${index.map(([t, h]) => `<a class="nl" href="${h}">${t}</a>`).join('')}</nav></div><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${index.map(([t, h]) => `<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>`;
+export const header = (index, { current = null, url = null } = {}) => `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
+<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav></div><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${index.map(([t, h]) => `<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>`;
 
 /* ═══ GROUND ADJACENCY ═══════════════════════════════════════════════════ */
 
@@ -547,6 +547,26 @@ export const FAMILY_CSS = `
    and overridden under `.paper`, and neither is left to inherit.
    ═══════════════════════════════════════════════════════════════════════ */
 export const SHARED_PAGE_CSS = `
+/* ── THE MENU PANEL IS THE MOBILE NAV, AND IT IS SIX ROWS. ───────────────
+   Below 940 the six nav words are display:none, so this panel is the only way
+   to reach another page on a phone. It used to hold the page's own bands and
+   nothing else, which made it a duplicate of the chip row already visible
+   under the bar — and the first attempt at fixing that stacked the six pages
+   ON TOP of the bands, producing a fourteen-row panel that filled the entire
+   viewport. Both versions were wrong in the same way: two answers on one
+   surface.
+   So the panel is the six pages, flat, unlabelled. The page's own sections
+   stay where they already were, in the .navscroll chip row under the bar. One
+   surface per question, and nothing is listed twice.
+   NO CSS IS NEEDED FOR IT, which is the point — home.html's own
+   "navidx a.nl" rows and its "first-child" border reset both apply again now
+   that the links are direct children of a single nav. The group and heading
+   rules that used to sit here are deleted rather than left matching nothing.
+   (And the backticks that first version of this note used broke the build in
+   exactly the way the warning at the top of this block predicts.)
+   The button says Menu, not Sections: it opens pages, and the sections are the
+   chip row. */
+
 /* NO BACKTICKS ANYWHERE BELOW — this whole block is one template literal and a
    backtick in a comment silently terminates it. Three separate builds were
    broken this way. Quote CSS selectors in prose without them. */
@@ -658,7 +678,7 @@ export const disclose = (summary, body) => `      <details class="dx">
  * one half leaves the other unchecked, which is the same bug on a different
  * line (SITUATION-PAGE-TEMPLATE.md §2).
  */
-export async function assemble({ file, title, bands, sectionFor, index, sh, pageCss = '', script = '', clashes, note = '', navMark = null }) {
+export async function assemble({ file, title, bands, sectionFor, index, sh, pageCss = '', script = '', clashes, note = '', navMark = null, route = null }) {
   /* WHICH NAV WORD THIS PAGE IS STANDING UNDER, derived from the file being
      written rather than passed in, so a generator cannot mark the wrong one.
      The index and all six situations live under `Now`; anything else built
@@ -672,6 +692,33 @@ export async function assemble({ file, title, bands, sectionFor, index, sh, page
      pass its own mark; passing nothing keeps the derived behaviour, which is
      what the index, the six situations and about.html all rely on. */
   const mark = navMark ?? { current: own ? INDEX_PAGE.label : null, url: own };
+
+  /* ── THE PAGE CARRIES ITS OWN CANONICAL ROUTE. ──────────────────────────
+     Two things needed this and neither could have it before. The design audit
+     found rel=canonical on 0 of 29 pages while `/` and the raw built path
+     answered byte-identically — duplicate content at two indexable URLs. And
+     the search generator needs to know which route each built file serves,
+     which it cannot ask design-routes.ts because that is TypeScript and CI
+     runs Node 22, where a .mjs cannot import it. A second copy of the route
+     map is the wrong answer to both; the page stating its own route is the
+     right one.
+
+     RELATIVE, NOT ABSOLUTE, and that is deliberate: the origin is only known
+     at request time (SITE_ORIGIN, or Vercel's VERCEL_URL), so an absolute
+     canonical baked in at build time would advertise the wrong host on every
+     preview deploy — the exact defect lib/org.ts was just fixed for.
+
+     DERIVED WHERE IT CAN BE, REQUIRED WHERE IT CANNOT. The index and the six
+     situations are in the family register; /impact and /farm pass their own
+     nav mark. Anything else has to say so, and the build stops rather than
+     emitting a page that cannot say what URL it is. */
+  const canonical = route ?? own ?? mark?.url ?? null;
+  if (!canonical) {
+    console.error(`REFUSING TO WRITE: ${file} has no canonical route. Pass `
+      + `route: '/its-path' to assemble() — a page that cannot state its own URL `
+      + `cannot be indexed correctly and cannot be found by the search index.`);
+    process.exit(1);
+  }
 
   const section = ([id, cls]) => {
     const body = sectionFor(id);
@@ -688,6 +735,7 @@ export async function assemble({ file, title, bands, sectionFor, index, sh, page
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>${title}</title>
+<link rel="canonical" href="${canonical}">
 ${sh.HEAD_FONTS}
 <style>
 ${sh.CSS}

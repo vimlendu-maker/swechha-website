@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os';
 import { crumb, siblings, FAMILY_CSS, NAV as SHELL_NAV, HOME_HREF, GIVE_HREF, INDEX_PAGE } from './lib/situation-shell.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const V3 = join(ROOT, 'public/design/v3');
+const V3 = join(ROOT, 'public/_pages/v3');
 const DATA = join(ROOT, 'data');
 const src = readFileSync(`${V3}/home.html`, 'utf8').split('\n');
 const J = (f) => JSON.parse(readFileSync(`${DATA}/${f}`, 'utf8'));
@@ -123,8 +123,8 @@ const NAV = SHELL_NAV;
 const INDEX = [['The reading','#top'],['Who is in it','#people'],['How the number is made','#measured'],
   ['Where it comes from','#sources'],['Where it is going','#trend'],['The geography','#geography'],
   ['What it costs','#money'],['What you can do','#act']];
-const HEADER = `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Sections</button>
-<div class="navidx" id="navidx" hidden><nav aria-label="All sections">${INDEX.map(([t,h])=>`<a class="nl" href="${h}">${t}</a>`).join('')}</nav></div><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${INDEX.map(([t,h])=>`<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>`;
+const HEADER = `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
+<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav></div><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${INDEX.map(([t,h])=>`<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>`;
 
 /* ═══ SHARED FRAGMENTS ═══════════════════════════════════════════════════ */
 // MEASURED vs MODELLED, carried by the rule itself (D-17.6). Solid = a
@@ -1431,6 +1431,7 @@ const OUT = `<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>Delhi&rsquo;s air &mdash; Swechha</title>
+<link rel="canonical" href="/now/air">
 ${HEAD_FONTS}
 <style>
 ${CSS}

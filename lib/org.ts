@@ -21,7 +21,22 @@ export function yearsSinceFounding(now: Date = new Date()): number {
  * even more here, since a mistyped domain in structured data or a sitemap is
  * a silent SEO bug, not a build failure.
  */
-export const SITE_URL = 'https://swechha.in'
+/* ENV-DRIVEN, because the literal was wrong on every deploy that is not the
+ * production domain. A preview or staging deploy that hardcodes this puts
+ * `https://swechha.in` in its own sitemap, robots.txt and structured data —
+ * advertising the OLD WordPress site from the new one, which is the silent SEO
+ * bug this comment block was already worried about, one layer up.
+ *
+ * `SITE_ORIGIN` is the override, named to match `lib/subscriptions.ts`'s
+ * existing use of the same variable rather than inventing a second name for
+ * one idea. `VERCEL_URL` is filled in automatically on every Vercel
+ * deployment, so preview builds describe themselves correctly with no config
+ * at all. The literal stays as the last fallback: production is still
+ * swechha.in, and a missing env var must not produce a relative-URL sitemap.
+ */
+export const SITE_URL =
+  process.env.SITE_ORIGIN ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://swechha.in')
 
 /** The site-wide description used for the root `<meta name="description">`
  * and as the fallback description for share cards and structured data. */
@@ -47,4 +62,12 @@ export function organizationJsonLd() {
     foundingDate: String(FOUNDED_YEAR),
     description: SITE_DESCRIPTION,
   }
+}
+
+/* ONE PLACE ASKS THE QUESTION. `robots.ts` and `next.config.ts`'s headers both
+   need to know whether this deploy may be indexed, and two independent reads of
+   an env var is how a site ends up serving `Disallow: /` alongside an
+   indexable header. Anything other than the exact string `true` means no. */
+export function isIndexable(): boolean {
+  return process.env.SITE_INDEXABLE === 'true'
 }

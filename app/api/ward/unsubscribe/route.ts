@@ -28,7 +28,7 @@ function page(title: string, body: string, status = 200) {
     + `small{color:#8C8A85;display:block;margin-top:22px;font-size:14px}`
     + `a{color:#E1A32B}`
     + `</style></head><body><main><h1>${title}</h1>${body}`
-    + `<small><a href="/design/v3/situation-air.html">The reading stays public, either way</a></small>`
+    + `<small><a href="/now/air">The reading stays public, either way</a></small>`
     + `</main></body></html>`,
     { status, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } },
   );

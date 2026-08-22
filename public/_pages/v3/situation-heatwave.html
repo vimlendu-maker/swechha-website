@@ -1,0 +1,2482 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>India&rsquo;s heat &mdash; Swechha</title>
+<link rel="canonical" href="/now/heat">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   SWECHHA v3. C's intensity, A's structure.
+   The ground alternates and DARK LEADS. Photography is full-bleed and
+   halftoned. Every surface has grain in it. The system underneath is
+   unchanged from v2: rail, multiplier, band counter, validity window,
+   slider, three-tense colour grammar.
+   ══════════════════════════════════════════════════════════════════ */
+:root{
+  /* GROUNDS. Dark is the default now, not the exception. */
+  --ground:#0D0D0B;          /* the page */
+  --ground-2:#151512;        /* the alternate dark band */
+  --paper:#F3F2F0;           /* off-white. Long reading and section breaks only. */
+  --paper-2:#ECEBE8;         /* tuned so every hue still clears AA on it */
+
+  /* INK on the dark ground */
+  --fg:#FBF8F0;              /* 18.3:1 */
+  --fg-2:#CDC7B7;            /* 11.2:1 */
+  --fg-3:#9C9585;            /*  6.4:1  - 12px floor */
+  --hair:rgba(251,248,240,.20);
+  --hair-2:rgba(251,248,240,.10);
+
+  /* INK on paper */
+  --ink:#141310;             /* 16.6:1 */
+  --ink-2:#4C473F;           /*  8.2:1 */
+  --ink-3:#615B50;           /*  6.0:1 - captions, 13.5px floor */
+  --rule:#DEDDD9; --rule-2:#C6C4BF;
+
+  /* ── THE THREE HUES ────────────────────────────────────────────────
+     Same three colours as approved, same three meanings, same band rule.
+     Every value below is lifted from app/globals.css. Nothing was
+     re-picked because the ground changed; where a hue needed a different
+     value for a different canvas, the file already carried both, exactly
+     as it already does for --swechha-teal / --swechha-teal-ink.
+
+     MUSTARD  a human act.  Second person. THE INTERACTIVE COLOUR.
+     RED      a published limit broken. Third person present. Never a control.
+     GREEN    what came back. Past perfect. */
+  --mustard:#E1A32B;         /* globals --mustard.      8.78:1 on ground */
+  --mustard-2:#F1C33B;       /* globals --yellow.      11.68:1, small text on dark */
+  --mustard-ink:#8A6410;     /* globals --mustard-ink.  4.72:1 on paper.
+                                DEMOTED. The one licensed accent cannot have
+                                three faces: #E1A32B is the mark on BOTH
+                                canvases, and a paper band buys its contrast
+                                with weight, an underline or a filled chip in
+                                #E1A32B with --on-mustard ink, never by
+                                darkening the hue. This value survives only as
+                                a focus ring on paper, where it has to clear
+                                AA against #F3F2F0 as a 2px outline. */
+  --on-mustard:#12110F;      /* globals --on-mustard.   8.51:1 on mustard */
+  --red:#F1484E;             /* globals --sev.          5.35:1 on ground */
+  --red-ink:#c81e3a;         /* globals --signal-critical. 4.98:1 on paper */
+  --green:#5FBE85;           /* globals --signal-nature-bright. 8.51:1 on ground */
+  --green-ink:#1F6B45;       /* darkened --signal-nature: the base is 4.43:1 on
+                                paper and fails AA, so this follows the file's
+                                existing -ink convention. 5.68:1. */
+
+  /* TYPE. Unchanged from v2. 14.9:1 display to body is already right; the
+     blankness is not solved by making this bigger. */
+  --t-readout:clamp(6.2rem,21vw,17rem);
+  --t-d1:clamp(2.7rem,8vw,6.5rem);
+  --t-num:clamp(2.6rem,6vw,4.6rem);
+  --t-d2:clamp(1.5rem,3.4vw,2.75rem);
+  --t-h2:clamp(1rem,1.9vw,1.45rem);
+  --t-lead:clamp(1.06rem,1.55vw,1.28rem);
+  --t-body:18px; --t-cap:13.5px; --t-micro:11.5px;
+
+  /* 16px at 375 is an app margin, not a document margin. */
+  --gut:clamp(20px,3.4vw,46px);
+
+  /* THE FOUR VERTICAL TIERS. One --pad token applied to every band is
+     the root defect this page exists to correct; see the tier classes
+     below. T2:T4 is 3:1, wide enough to read as intent. */
+  --pad-t2:clamp(88px,9vw,136px);
+  --pad-t3:clamp(64px,6.5vw,96px);
+  --pad-t4:clamp(28px,3vw,44px);
+
+  /* THE THREE INTERNAL GAPS. Only three. A fourth is a pattern this
+     page does not have. Four of the nine partials arrived carrying a
+     private copy of exactly these numbers. */
+  --gap-head:clamp(18px,1.6vw,28px);   /* headline -> its lead/body     */
+  --gap-block:clamp(36px,4vw,64px);    /* block -> block                */
+  --gap-row:clamp(24px,2.6vw,40px);    /* row -> row inside a grid      */
+
+  /* THE KISS. .06em of the NUMERAL'S OWN font-size, everywhere the
+     rail appears. One value, nothing else. */
+  --kiss:.06em;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--fg);
+  font:400 var(--t-body)/1.6 Newsreader,Georgia,'Times New Roman',serif;
+  font-optical-sizing:auto;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{max-width:100%;display:block}
+a{color:inherit}
+p{margin:0 0 1em}
+h1,h2,h3{margin:0;font-weight:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:0 var(--gut)}
+.wide{max-width:1580px;margin:0 auto;padding:0 var(--gut)}
+
+
+/* ── VOICES. Unchanged. ──────────────────────────────────────────────*/
+.d1{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 68,'wght' 850;
+  font-size:var(--t-d1);line-height:.86;letter-spacing:-.032em;text-transform:uppercase;margin:0}
+.d2{font-family:Newsreader,Georgia,serif;font-weight:300;font-size:var(--t-d2);
+  line-height:1.12;letter-spacing:-.015em;margin:0}
+.h2{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 100,'wght' 680;
+  font-size:var(--t-h2);letter-spacing:.24em;text-transform:uppercase;line-height:1.35;margin:0}
+.readout{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 62,'wght' 800;
+  font-size:var(--t-readout);line-height:.74;letter-spacing:-.038em;
+  font-variant-numeric:tabular-nums;display:block}
+.num{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 64,'wght' 800;
+  font-size:var(--t-num);line-height:.8;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.lbl{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
+  font-size:var(--t-micro);letter-spacing:.15em;text-transform:uppercase;line-height:1.5}
+.lead{font-size:var(--t-lead);line-height:1.48;font-weight:300;max-width:46ch;margin:0}
+.body{max-width:62ch}
+.cap{font-size:var(--t-cap);line-height:1.45;color:var(--fg-3);margin:0}
+.on-paper .cap,.paper .cap{color:var(--ink-3)}
+
+/* ── GROUND BANDS. Dark leads, paper is for long reading only. ───────*/
+/* overflow-x:clip, not hidden: it stops any band widening the document
+   without creating a scroll container, so scroll-snap and sticky
+   children inside a section keep working. */
+/* NO PADDING ON `section` ITSELF. Every band declares its tier (.t1 to
+   .t4, defined below); a band that forgets to say what it is looks
+   obviously wrong rather than quietly average. */
+section{padding:0;position:relative;overflow-x:clip}
+.paper{background:var(--paper);color:var(--ink)}
+.paper-2{background:var(--paper-2);color:var(--ink)}
+.dark-2{background:var(--ground-2)}
+.paper .lbl,.paper-2 .lbl{color:var(--ink-3)}
+.eyebrow{color:var(--fg-3);margin:0 0 20px}
+.paper .eyebrow,.paper-2 .eyebrow{color:var(--ink-3)}
+
+/* ── PHOTOGRAPHY ─────────────────────────────────────────────────────
+   BLACK AND WHITE, WITHOUT EXCEPTION.
+
+   THESE TWO RULES ARE LOad-BEARING. They are the only thing joining the
+   `duo` / `duo-dim` class names to the <filter> definitions in the SVG
+   defs block. Without them every photograph renders in full colour while
+   the markup still looks correct, which is exactly what happened in
+   v3.0: a source read passes, and only getComputedStyle(img).filter or a
+   colour-aware look at a screenshot catches it. Do not remove them, and
+   if you touch the defs block, re-check `filter` computes to url(#duo).
+
+   Two ramps and nothing else: `duo` for a frame with the scrim doing the
+   contrast work, `duo-dim` for a frame where type sits on an unveiled
+   area. Selective colour is retired from photography; hue lives only in
+   type, data, marks and controls. */
+.duo{filter:url(#duo)}
+.duo-dim{filter:url(#duo-dim)}
+
+.ht{position:relative;overflow:hidden}
+.ht>img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* The halftone is for FULL-BLEED FRAMES ONLY. Every other photograph on
+   the site is clean monochrome: a dot screen turns a busy mid-tone frame
+   to mud and buys nothing on a thumbnail. Composited NORMALLY, per
+   Direction C: mix-blend-mode is visually identical for a pure black
+   pattern, materially more expensive, and unreliable once several
+   halftoned frames are on screen at once. */
+.ht.scrim::after,.ht.scrim-l::after{content:'';position:absolute;inset:0;z-index:2;
+  pointer-events:none;
+  background-image:radial-gradient(circle at 50% 50%,rgba(0,0,0,.62) 1.5px,transparent 1.7px);
+  background-size:6px 6px}
+@media (max-width:700px){.ht.scrim::after,.ht.scrim-l::after{background-size:4px 4px;
+  background-image:radial-gradient(circle at 50% 50%,rgba(0,0,0,.62) 1px,transparent 1.2px)}}
+
+/* ── THE PICTURE BAND ────────────────────────────────────────────────
+   Copy floating over a full frame was tried twice and failed contrast
+   both times, measured. The reason is structural, not a tuning problem:
+   the reading block is 450 to 500px tall, so on an 800px hero it covers
+   the frame edge to edge, and any scrim strong enough to carry 12px
+   metadata over a bright pixel darkens the entire photograph to a
+   rectangle. That is the client's "too blank" arriving in a new costume.
+
+   The rule now, and it is simple enough to hold:
+     DISPLAY TYPE MAY SIT ON A PHOTOGRAPH. NOTHING ELSE MAY.
+   A headline at 44px or more needs 3:1, which a short top gradient
+   delivers while leaving the lower half of the frame completely
+   untouched. Everything smaller sits on solid ground directly beneath
+   the picture, where it is at full contrast and cannot drift.
+
+   The result is a photograph you can actually see AND type that is
+   never marginal, which is what neither previous attempt managed. */
+.pic{position:relative;overflow:hidden;height:clamp(240px,40vh,440px)}
+.pic>img{width:100%;height:100%;object-fit:cover;display:block}
+/* No gradient on the frame itself. A band gradient has to guess how tall
+   the headline is, and a two-line headline overruns it: measured, the
+   farm headline dropped to alpha 0 at its second line. The scrim belongs
+   to the TEXT BLOCK instead, so it scales itself to one line or three and
+   the rest of the photograph is completely untouched. */
+/* Halftone, full-bleed frames only, composited normally per Direction C. */
+.pic::after{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
+  background-image:radial-gradient(circle at 50% 50%,rgba(0,0,0,.62) 1.5px,transparent 1.7px);
+  background-size:6px 6px}
+@media (max-width:700px){.pic::after{background-size:4px 4px;
+  background-image:radial-gradient(circle at 50% 50%,rgba(0,0,0,.62) 1px,transparent 1.2px)}}
+.pic-over{position:absolute;top:0;left:0;right:0;z-index:3;
+  padding:clamp(16px,2.4vw,32px) 0 clamp(20px,2.6vw,40px);
+  background:linear-gradient(180deg,
+    rgba(11,11,9,.92) 0%,
+    rgba(11,11,9,.88) 74%,
+    rgba(11,11,9,.72) 88%,
+    rgba(11,11,9,0)   100%)}
+.pic-over .d1{text-shadow:0 2px 26px rgba(11,11,9,.5)}
+/* The band under the picture. Solid ground, so every measurement, label
+   and caption on it is at full contrast by construction. */
+.pic-body{background:var(--ground);padding:clamp(24px,3.2vw,42px) 0 clamp(22px,2.8vw,36px)}
+.pic-body.alt{background:var(--ground-2)}
+
+figure{margin:0}
+
+/* ══════════════════════════════════════════════════════════════════════
+   THE RAIL.  ONE CONTRACT, EVERY PLACE IT APPEARS.
+
+   THE RULE BELONGS TO THE NUMERAL, NOT TO THE COLUMN.
+
+   `.rl` is a box that shrink-wraps its digits (width:max-content) and
+   draws the rule as its OWN ::after at left:100% plus --kiss, where
+   --kiss is .06em of THE NUMERAL'S OWN font-size. Because the rule
+   starts at 100% of a max-content box it is geometrically incapable of
+   crossing a digit — at every viewport width and for every value
+   length: 412, 0.0, 512, 6,890, 14 of 18. And because every account
+   column's clearance is measured FROM THE RULE rather than from a
+   column edge, the rule can never touch the text either.
+
+   That is the reported defect fixed in both of the directions it
+   failed. It used to fail in two: in the hero
+   `.rail-l>.readout{margin-right:calc(-1*var(--rp) - .28em)}` pulled a
+   272px numeral 76px over a rule that was really `.rail-r`'s
+   border-left, so the rule sliced a third of the way into the "2" of
+   412; in the timeline the identical intent failed inverted, because
+   `.cut-yr` was nested one level too deep for the `.rail-l > *`
+   selector to reach it and the rule floated 215px to the RIGHT of
+   "2000" with nothing between them. Same component, two failures, one
+   cause: the rule was drawn by a fixed-percentage column and the
+   numeral was positioned against it.
+
+   --ovh is gone. --lw as a positioning input is gone. The negative
+   margins are gone. .rail-r draws no border.
+
+   STATE changes the rule's COLOUR and its WIDTH, and nothing else. The
+   width grows RIGHTWARD, away from the numeral, so the kiss gap is
+   identical in every state — a breach must never shift the numeral.
+
+   Five numerals on this page use it, each getting its kiss for free
+   from its own size: the hero readout (302px -> an 18px kiss), the
+   timeline year (95px -> 6px), the four impact figures (109px ->
+   6.5px), the two farm ledger figures (66px -> 4px). The ticker carries
+   the same mark laid FLAT — the rule under the numeral rather than
+   beside it — which is the one rotation of the contract and is drawn in
+   the ticker's own block below.
+
+   THE RAIL DOES NOT DISAPPEAR ON A PHONE. It rotates. See the hero and
+   the timeline at <=860 and <=767.
+   ══════════════════════════════════════════════════════════════════ */
+.rl{position:relative;display:block;width:max-content;max-width:100%}
+.rl::after{content:'';position:absolute;left:100%;margin-left:var(--kiss);
+  top:var(--rl-top,0);bottom:var(--rl-bottom,0);height:var(--rl-h,auto);
+  width:0;border-left:var(--rl-w,1px) solid var(--rl-c,var(--hair))}
+.paper .rl::after,.paper-2 .rl::after{--rl-c:var(--rule-2)}
+/* BREACH: colour and weight only, growing away from the digits. */
+.breach .rl::after{--rl-w:6px;--rl-c:var(--red)}
+.paper .breach .rl::after,.paper-2 .breach .rl::after{--rl-c:var(--red-ink)}
+/* A closed window is a dashed rule, still owned by the numeral. */
+.closed .rl::after{border-left-style:dashed}
+.rl .readout,.rl .num{white-space:nowrap;display:block}
+
+/* ── STATE MARKS. Shape, never hue. ──────────────────────────────────
+   FOUR WORDS, FOUR CLASS NAMES, AND THEY MATCH: live / periodic / demo /
+   closed render LIVE / PERIODIC / DEMO DATA / OUT OF SEASON. The PERIODIC
+   badges were marked `state delayed` until AD-12 — a survivor of the
+   abandoned RECENT/DELAYED vocabulary, rendering a word it did not name.
+   Nothing in this file ever selected `.delayed`, which is exactly why it
+   survived a freeze and two sweeps unnoticed, and also why the rename is
+   provably free: PERIODIC's hollow 9x9 square is the `.state i` DEFAULT,
+   not a rule of its own. Do not add `.state.periodic i` to "complete the
+   set" — the absence of a fill is the state's shape.
+   `live` / `periodic` / `demo` / `closed` are class names and must never
+   become copy. */
+.state{display:inline-flex;align-items:center;gap:.5em;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 650;font-size:var(--t-micro);letter-spacing:.13em;
+  text-transform:uppercase;color:var(--fg-2)}
+.paper .state,.paper-2 .state{color:var(--ink-2)}
+.state i{width:9px;height:9px;flex:none;border:1.5px solid currentColor}
+.state.live i{background:currentColor}
+.state.demo i{background:repeating-linear-gradient(45deg,currentColor 0 1.5px,transparent 1.5px 3.5px)}
+.state.closed i{background:none;border-style:dashed;border-width:2px}
+
+/* ── BANDS, LIMIT, VERDICT, WINDOW. Unchanged. ───────────────────────*/
+.verdict{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 78,'wght' 800;
+  font-size:clamp(1.15rem,2.4vw,1.85rem);letter-spacing:.03em;text-transform:uppercase;margin:14px 0 0}
+.verdict.bad{color:var(--red)}
+.paper .verdict.bad{color:var(--red-ink)}
+.unit{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
+  font-size:var(--t-micro);letter-spacing:.15em;text-transform:uppercase;color:var(--fg-2);
+  display:block;margin-top:14px}
+.paper .unit,.paper-2 .unit{color:var(--ink-2)}
+.bands{display:flex;gap:3px;margin:20px 0 10px;max-width:340px}
+.bands i{flex:1;height:12px;border:1px solid var(--fg-2);background:none}
+.bands i.on{background:var(--fg-2)}
+.paper .bands i{border-color:var(--ink)} .paper .bands i.on{background:var(--ink)}
+.bands.bad i.tip{background:var(--red);border-color:var(--red)}
+.paper .bands.bad i.tip{background:var(--red-ink);border-color:var(--red-ink)}
+.limit{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;
+  font-size:var(--t-micro);letter-spacing:.13em;text-transform:uppercase;color:var(--fg-2)}
+.paper .limit{color:var(--ink-2)}
+.limit b{font-variation-settings:'wdth' 88,'wght' 800;color:var(--red)}
+.paper .limit b{color:var(--red-ink)}
+.src{border-top:1px solid var(--hair);padding-top:12px;margin-top:18px}
+.paper .src{border-top-color:var(--rule)}
+.win{border-top:1px solid var(--hair);margin:20px 0 0;padding-top:12px;
+  font-size:15px;line-height:1.5;color:var(--fg-2);max-width:46ch}
+.paper .win{border-top-color:var(--rule);color:var(--ink-2)}
+.win b{display:block;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 800;font-size:var(--t-micro);
+  letter-spacing:.15em;text-transform:uppercase;margin-bottom:6px;color:var(--fg-3)}
+.paper .win b{color:var(--ink-3)}
+.win.closed b{color:var(--mustard)}
+.paper .win.closed b{color:var(--ink)}
+/* THE DECIMAL POINT TAKES A DIGIT SLOT. tabular-nums makes the digits
+   monospaced but not the separator, so "0.0" shrink-wrapped 59.2px
+   narrower than "412" — and because the readout is width:max-content and
+   the rule is anchored to it, the whole account column moved 59.2px
+   sideways when the reader arrowed to that slide. A deck whose premise
+   is that only the reading changes cannot lurch. This pads the glyph; it
+   does NOT pin the account to a grid line, which would break the
+   "clearance measured from the rule" contract.
+
+   THE TWO CORRECTIONS IN THE calc ARE BOTH REAL, do not simplify it to
+   1ch. A tabular digit occupies .3915em here (advance .4295em plus the
+   readout's -.038em tracking) while `1ch` reports .42665em, and an
+   inline-block is NOT given the letter-spacing a glyph gets. 1ch minus
+   .0351em is the difference, and because every term scales with
+   font-size the slot is exact at 272px and at the 99.2px floor alike:
+   measured, "0.0" and "412" are both 319.469px at 1440. */
+.readout .dp{display:inline-block;width:calc(1ch - .0351em);text-align:center}
+.readout.quiet{color:var(--fg-2)}
+.paper .readout.quiet{color:var(--ink-2)}
+
+/* ── CHROME. Dark, and it stays dark. ────────────────────────────────*/
+/* THE HEADER'S HEIGHT IS A TOKEN, NOT TWO LITERALS.
+   --bar-h is the bar's own box; --nav-h is the strip that actually
+   OCCLUDES the top of the viewport, which is not the same number:
+   above the breakpoint .nav is sticky and its 1px border-bottom paints
+   too, so 62 + 1 = 63; below it .nav-in is fixed and border-box already
+   contains its hairline, so the occluding strip is 56 flat. Both were
+   literals in two places before, which is how the anchor bug below went
+   unnoticed — there was no single number to reason about. */
+:root{--bar-h:62px;--nav-h:63px}
+/* THE ANCHOR LANDING. Reported by the client on #farm: "it crops the
+   section title SWECHHA FARM."
+   Every in-page jump put the band's top edge at the viewport's top and
+   the header then covered the first --nav-h of it. Measured before the
+   fix, at the resting position AFTER the jump, not in passing:
+     #farm  at 375 -> 34.0px of a 37.1px masthead headline hidden (92%)
+     #farm  at 1440 -> 20.0px of 89.4px hidden (22%)
+     #work #journeys #impact #record #give -> the band's whole top tier
+     padding eaten, 55.5-63.5px at every width tested
+   scroll-padding-top on the scroll container is the whole fix: it is a
+   SCROLL offset, so it adds no layout height, costs no document height,
+   changes nothing until an anchor is used, and covers anchors added
+   later. It is set on both html and body because body{overflow-x:hidden}
+   makes body a scroll container too, and whichever of the two the UA
+   scrolls has to carry the offset.
+   Transient overlap while free-scrolling is what a sticky header IS and
+   is left alone. Overlap on ARRIVAL is a defect, because it hides the
+   one word that tells the reader they got there. */
+html,body{scroll-padding-top:var(--nav-h)}
+.nav{position:sticky;top:0;z-index:60;background:var(--ground);
+  border-bottom:1px solid var(--hair)}
+.nav-in{max-width:1580px;margin:0 auto;padding:0 var(--gut);height:var(--bar-h);
+  display:flex;align-items:center;gap:clamp(12px,2.2vw,30px)}
+.mark{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 850;
+  font-size:22px;letter-spacing:-.01em;text-transform:uppercase;text-decoration:none;
+  margin-right:auto;color:var(--fg)}
+/* THE LOGO IS AN ASSET, NOT TYPE. Approved horizontal lockup, 2048x512. Never
+   re-set as live type, never redrawn, never substituted. */
+.mark img{height:30px;width:auto;display:block}
+.foot .mark img{height:42px}
+
+.navlinks{display:flex;align-items:center;gap:clamp(12px,2.2vw,30px)}
+.nav a.nl{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 92,'wght' 620;
+  font-size:12px;letter-spacing:.13em;text-transform:uppercase;text-decoration:none;
+  color:var(--fg-2);padding:5px 0;border-bottom:2px solid transparent}
+.nav a.nl:hover,.nav a.nl[aria-current]{color:var(--fg);border-bottom-color:var(--mustard)}
+.give{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 92,'wght' 700;
+  font-size:12px;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;
+  background:var(--mustard);color:var(--on-mustard);padding:9px 18px;white-space:nowrap}
+.give:hover{background:var(--fg);color:var(--ground)}
+.navscroll{display:none}
+@media (max-width:940px){
+  /* Below the breakpoint the pattern inverts: the bar goes fixed, so the
+     occluding strip and the bar's own box are the same 56px. */
+  :root{--bar-h:56px;--nav-h:56px}
+  .navlinks{display:none!important}
+  /* 44px FLOOR ON THE ONE PERSISTENT TARGET. GIVE measured 70x37 and the
+     wordmark 92x35 — under the floor on the single control the whole
+     one-row mobile nav strategy is built around, and a reach compromise
+     is only worth making for a target you can actually hit. The bar is
+     57px tall, so 44px fits inside it without touching the 56px one-row
+     doctrine or the row height. */
+  .give{min-height:44px;display:inline-flex;align-items:center;padding:0 18px}
+  .mark{min-height:44px;display:inline-flex;align-items:center}
+
+  /* THE THUMB, AND THE INDEX. The objection to the chip row was never
+     that it existed: it was that 107px of chrome stuck permanently to an
+     812px screen is 13% of the viewport, that the row was clipped
+     mid-word at the right edge, and that it carried no affordance saying
+     it scrolled. All three are answered without deleting the navigation.
+
+     ONLY THE 56px BAR STICKS. The row sits under it on arrival and
+     scrolls away with the page — 56px of permanent chrome, ~37px of
+     one-time chrome, no JS and no drawer. A hamburger was considered and
+     rejected: it would be this site's only modal pattern, and it buries
+     the index behind an icon on a page that is meant to read as an
+     instrument rather than as an app.
+
+     Deleting the row was tried and was a defect, not a trade: the footer
+     link grid it deferred to begins at y 8,992 of a 9,507px document —
+     94.6% of the way down — so on a phone Work, Journeys, Impact, Farm
+     and Record were unreachable, and Environmental Intelligence, which
+     lives on another page entirely, had no route from the homepage at
+     all. GIVE remains the one persistent thumb target in the bar.
+
+     FIXED, NOT STICKY, AND THAT IS NOT A STYLE CHOICE. Moving
+     `position:sticky` from .nav down to .nav-in does not work: a sticky
+     box is constrained to its own containing block, and .nav is only
+     105.8px tall, so the "sticky" bar leaves the screen with the header
+     — measured at 375, scrollY 400 put .nav-in at top -350. Fixed, with
+     .nav reserving the 56px it no longer occupies, is what actually
+     leaves one row on screen and lets the chip row scroll away.
+
+     Safe HERE and only here: .nav-in's max-width:1580px is inert below
+     940 because the viewport is already narrower, so the fixed bar still
+     paints full-bleed. Above 940 the same move would pull the bar's
+     background into a centred box — do not lift it out of this media
+     query. */
+  .nav{position:static;border-bottom:0;padding-top:var(--bar-h)}
+  .nav-in{position:fixed;top:0;left:0;right:0;z-index:60;background:var(--ground);
+    border-bottom:1px solid var(--hair)}
+  .navscroll{display:block;border-bottom:1px solid var(--hair);background:var(--ground);
+    overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+    /* the affordance it was criticised for lacking — the same 8px hard
+       fade the hero's own tab row uses, not a second invention. */
+    -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 8px),transparent);
+    mask-image:linear-gradient(90deg,#000 calc(100% - 8px),transparent)}
+  .navscroll::-webkit-scrollbar{display:none}
+  .navscroll ul{display:flex;gap:20px;margin:0;padding:10px var(--gut);list-style:none;
+    white-space:nowrap}
+}
+
+/* AD-11: a duplicate `:focus-visible` pair sat here. The FOCUS block below
+   restates it at equal specificity and later, so it could never win. */
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   COMPONENTS. The three hues at work in the interface itself.
+
+   MUSTARD IS THE INTERACTIVE COLOUR, and it always was: "second person,
+   a human act" is the definition of a button. Primary buttons, links on
+   the dark ground, hover, active, focus rings, the Give chip, form
+   submits. RED IS NEVER A CONTROL: a red Give button teaches a reader
+   that red means "click me", and three screens later red has to mean the
+   river is dead. GREEN reaches the interface only where the interface is
+   about recovery, which is still past perfect, so the rule holds.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── BUTTONS ─────────────────────────────────────────────────────────*/
+.b{display:inline-flex;align-items:center;gap:9px;text-decoration:none;cursor:pointer;
+  font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 92,'wght' 700;
+  font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;padding:14px 24px;
+  border:1px solid transparent;white-space:nowrap;background:none;
+  transition:background .16s,color .16s,border-color .16s}
+.b svg{width:16px;height:16px;flex:none}
+.b:active:not(:disabled){transform:translateY(1px)}
+.b:disabled,.b[aria-disabled=true]{cursor:default;transform:none}
+
+/* Primary: mustard. The one call to action per band. */
+.b-1{background:var(--mustard);color:var(--on-mustard);border-color:var(--mustard)}
+.b-1:hover{background:var(--mustard-2);border-color:var(--mustard-2)}
+/* On paper the primary is the SAME #E1A32B chip as on the dark ground,
+   with --on-mustard ink on it. 8.51:1 inside the chip; the hue never
+   darkens to buy that. */
+.paper .b-1,.paper-2 .b-1{background:var(--mustard);color:var(--on-mustard);border-color:var(--mustard)}
+.paper .b-1:hover,.paper-2 .b-1:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+/* Secondary: outlined in mustard, ink fill on hover. */
+.b-2{background:none;color:var(--mustard);border-color:var(--mustard)}
+.b-2:hover{background:var(--mustard);color:var(--on-mustard)}
+/* Outlined on paper: the RULE carries the hue at 2px, the label carries
+   the contrast in --ink. #E1A32B as a hairline on off-white is the one
+   place the accent needs weight rather than a darker value. */
+.paper .b-2,.paper-2 .b-2{color:var(--ink);border-color:var(--mustard);
+  border-width:2px;padding:13px 23px}
+.paper .b-2:hover,.paper-2 .b-2:hover{background:var(--mustard);color:var(--on-mustard)}
+
+/* Ghost: neutral until touched, then mustard. For tertiary rows. */
+.b-3{background:none;color:var(--fg-2);border-color:var(--hair)}
+.b-3:hover{color:var(--mustard);border-color:var(--mustard)}
+.paper .b-3,.paper-2 .b-3{color:var(--ink-2);border-color:var(--rule-2)}
+.paper .b-3:hover,.paper-2 .b-3:hover{color:var(--ink);border-color:var(--mustard)}
+
+/* RETIRED, AND DELIBERATELY NOT USED. Green is applied by DATA — it is
+   what has been recovered — and a control is an act, which is mustard.
+   A green button teaches a reader that green means "click me", which is
+   exactly the failure the never-red-on-a-control rule forbids, and it
+   spends the distinction that makes the four green numerals in #impact
+   mean anything. This is the only band that ever reached for it, and it
+   uses .b-2 now. Kept only so the retirement is on the record. */
+.b-g{background:none;color:var(--green);border-color:var(--green)}
+.b-g:hover{background:var(--green);color:var(--ground)}
+.paper .b-g,.paper-2 .b-g{color:var(--green-ink);border-color:var(--green-ink)}
+.paper .b-g:hover,.paper-2 .b-g:hover{background:var(--green-ink);color:var(--paper)}
+
+/* Disabled: no hue at all. A disabled control is not a human act. */
+.b-1:disabled,.b-2:disabled,.b-3:disabled,.b-g:disabled,
+.b-1[aria-disabled=true],.b-2[aria-disabled=true]{
+  background:none;color:var(--fg-3);border-color:var(--hair-2);opacity:1}
+.paper .b-1:disabled,.paper .b-2:disabled,.paper .b-3:disabled{
+  color:var(--ink-3);border-color:var(--rule)}
+
+/* ── LINKS ───────────────────────────────────────────────────────────*/
+.lk{color:var(--mustard);text-decoration:none;border-bottom:1px solid rgba(225,163,43,.42)}
+.lk:hover{border-bottom-color:var(--mustard)}
+.lk:visited{color:var(--mustard-2)}
+/* On paper the link is ink with a 2px #E1A32B underline: the mark is the
+   same hue as the mustard field, and the reading is not paid for by
+   darkening it. */
+.paper .lk,.paper-2 .lk{color:var(--ink);border-bottom:2px solid var(--mustard)}
+.paper .lk:hover,.paper-2 .lk:hover{border-bottom-color:var(--ink)}
+.paper .lk:visited{color:var(--ink-2)}
+/* Standalone action link. Same as .act, kept as one component. */
+.act{display:inline-flex;align-items:center;gap:9px;text-decoration:none;
+  font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 92,'wght' 680;
+  font-size:12.5px;letter-spacing:.13em;text-transform:uppercase;
+  border-bottom:2px solid var(--mustard);padding-bottom:5px;color:var(--fg)}
+.act:hover{color:var(--mustard)}
+.paper .act,.paper-2 .act{color:var(--ink);border-bottom-color:var(--mustard)}
+.paper .act:hover,.paper-2 .act:hover{color:var(--ink-2)}
+.act svg{width:16px;height:16px;flex:none}
+
+/* ── TAGS AND PILLS ──────────────────────────────────────────────────
+   Square, 2px radius, never a SaaS pill. Feed state is carried by SHAPE
+   (see .state) so it cannot borrow red's meaning; these tags carry
+   category and severity, which are different questions. */
+.tag{display:inline-flex;align-items:center;gap:.5em;border:1px solid currentColor;
+  padding:5px 10px;border-radius:2px;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 700;font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--fg-2)}
+.paper .tag,.paper-2 .tag{color:var(--ink-2)}
+.tag-breach{color:var(--red);border-color:var(--red)}
+.paper .tag-breach{color:var(--red-ink);border-color:var(--red-ink)}
+.tag-breach-solid{background:var(--red);border-color:var(--red);color:#1A0507}
+.tag-recovered{color:var(--green);border-color:var(--green)}
+.paper .tag-recovered{color:var(--green-ink);border-color:var(--green-ink)}
+.tag-act{color:var(--mustard);border-color:var(--mustard)}
+.paper .tag-act{color:var(--ink-2);border-color:var(--mustard)}
+/* SOLID, NOT DASHED. Dashed is already spoken for in this file and it
+   means A WINDOW THAT IS SHUT — `.closed .rl::after` and `.state.closed i`
+   both use it that way. "YEAR ROUND" / "IN WINDOW" say the opposite, and
+   a dashed rectangle around micro-caps beside a live link also reads as a
+   disabled button. The tag keeps its box: the validity window is what
+   decides whether a situation appears at all, so it is a discrete object,
+   not decoration. */
+.tag-season{border-style:solid}
+.tag-demo{border-style:dotted;color:var(--fg-3)}
+.paper .tag-demo{color:var(--ink-3)}
+
+/* ── FORM FIELDS ─────────────────────────────────────────────────────*/
+.f-lab{display:block;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 700;font-size:var(--t-micro);letter-spacing:.14em;
+  text-transform:uppercase;margin-bottom:8px;color:var(--fg-2)}
+.paper .f-lab,.paper-2 .f-lab{color:var(--ink-2)}
+.f{width:100%;max-width:380px;font:400 17px/1.5 Newsreader,Georgia,serif;
+  padding:13px 14px;border-radius:2px;background:rgba(251,248,240,.05);
+  border:1px solid var(--hair);color:var(--fg);
+  transition:border-color .16s,background .16s}
+.f::placeholder{color:var(--fg-3);opacity:1}
+.f:hover{border-color:var(--fg-3)}
+.f:focus{outline:none;border-color:var(--mustard);background:rgba(251,248,240,.08)}
+.paper .f,.paper-2 .f{background:#FFFCF4;border-color:var(--rule-2);color:var(--ink)}
+.paper .f::placeholder,.paper-2 .f::placeholder{color:var(--ink-3)}
+.paper .f:focus,.paper-2 .f:focus{border-color:var(--mustard-ink);background:#fff}
+.f-help{font-size:13.5px;line-height:1.45;color:var(--fg-3);margin:8px 0 0}
+.paper .f-help,.paper-2 .f-help{color:var(--ink-3)}
+/* Error is the ONE place red touches a control, and it is not a control,
+   it is a reading of the control: the field is out of limit. */
+.f-err{border-color:var(--red)}
+.paper .f-err{border-color:var(--red-ink)}
+.f-errmsg{font-size:14px;color:var(--red);margin:8px 0 0;
+  display:flex;align-items:baseline;gap:.5em}
+.paper .f-errmsg{color:var(--red-ink)}
+.f-search{max-width:100%;padding-left:40px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%239C9585' stroke-width='2'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Cpath d='M12.5 12.5L17 17'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:13px 50%}
+.paper .f-search{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%23615B50' stroke-width='2'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Cpath d='M12.5 12.5L17 17'/%3E%3C/svg%3E")}
+
+/* ── FOCUS ───────────────────────────────────────────────────────────
+   A mustard ring on a mustard button is invisible, so the ring is the
+   GROUND colour with a mustard halo outside it. That reads on both
+   canvases and on top of any hue. */
+:focus-visible{outline:2px solid var(--mustard);outline-offset:3px;border-radius:1px}
+.paper :focus-visible,.paper-2 :focus-visible{outline-color:var(--mustard-ink)}
+.b-1:focus-visible,.tag-breach-solid:focus-visible,.give:focus-visible{
+  outline-color:var(--fg);outline-offset:2px;
+  box-shadow:0 0 0 5px var(--mustard)}
+.paper .b-1:focus-visible{outline-color:var(--paper);box-shadow:0 0 0 5px var(--mustard-ink)}
+
+/* ── FOOTER ──────────────────────────────────────────────────────────*/
+.foot{background:var(--ground-2);color:var(--fg);padding:var(--pad-t4) 0 30px;
+  border-top:1px solid var(--hair)}
+.foot-g{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:30px}
+.foot h3{margin:0 0 12px;color:var(--fg-3)}
+.foot a{color:var(--fg-2);text-decoration:none;font-size:15.5px;line-height:1.8;display:block}
+.foot a:hover{color:var(--mustard)}
+/* ══ SOCIAL ROW. Added AD-08, 21 August. ═══════════════════════════════
+   WORDMARKS, NOT AN ICON SET. This page's whole vocabulary is type, rules
+   and photographs; the only non-type marks it allows anywhere are the
+   arrow, the six-band scale and the halftone. Four borrowed platform
+   logos would be four foreign trademarks arriving with their own colour
+   and geometry, and would be the site's first icon set — so the accounts
+   are set as words, in the footer's own link treatment. Real text: it
+   inherits the contrast, needs no SVG or alt string, and scales with the
+   type rather than against it.
+
+   IT SITS BETWEEN .foot-g AND .foot-b, not as a fifth column. A fifth
+   column takes the four existing ones from 352.7/235.1 to 280/187 at
+   1440, at which width "Environmental Intelligence" wraps — the row
+   would have reflowed every link already in the footer to hold four
+   words. As its own sub-row it costs one hairline and touches nothing.
+
+   THE SEPARATOR IS A HAIRLINE, because every division on this page is a
+   rule. Left-borders are only safe while the row does not wrap: a wrapped
+   line would open with a stray leading rule. Verified unwrapped from 521
+   up; at ≤520 the borders come off and the row becomes the same 1fr 1fr
+   grid .foot-g already uses there, on the same 44px rows. */
+.foot-soc{margin-top:30px;padding-top:20px;border-top:1px solid var(--hair)}
+.foot-soc-x{display:flex;flex-wrap:wrap;gap:16px 40px;
+  align-items:flex-end;justify-content:space-between}
+.foot-soc-t{max-width:62ch}
+.foot-soc-t .cap{margin-top:3px}
+/* not <strong>: the handle is the same on all four accounts, which is a
+   fact worth one word of weight, not an emphasis. */
+.foot-soc-t b{color:var(--fg-2);font-weight:inherit;
+  font-variation-settings:'wght' 650}
+.foot-soc-r{margin:0;display:flex;flex-wrap:wrap;align-items:center}
+.foot-soc-r a{display:inline-flex;align-items:center;min-height:44px;
+  padding:0 16px;line-height:1.35;border-left:1px solid var(--hair)}
+.foot-soc-r a:first-child{padding-left:0;border-left:0}
+.foot-soc-r a:last-child{padding-right:0}
+.foot-b{margin-top:42px;padding-top:18px;border-top:1px solid var(--hair);
+  display:flex;flex-wrap:wrap;gap:12px 28px;color:var(--fg-3);font-size:13.5px}
+@media (max-width:820px){.foot-g{grid-template-columns:1fr 1fr}}
+/* 856px at 375 — two and a half times its desktop height and taller
+   than impact or farm — was four columns stacked. Two-column link grid
+   instead, with the address block spanning, and the link leading tuned
+   for a phone rather than for a 1.8 desktop rhythm. */
+@media (max-width:520px){
+  .foot-g{grid-template-columns:1fr 1fr}
+  .foot h3{margin-bottom:4px}
+  /* Thirteen links rendered 159x23 with a MEASURED 0px gap between
+     vertical siblings — a guaranteed mis-tap column, and caused by this
+     very rule dropping line-height from the desktop 1.8 to 1.55 while
+     keeping display:block, which made the phone treatment strictly
+     worse than the desktop one. 44px rows instead. Four rows per column
+     go from ~92px to 176px, and the ~84px that costs is taken back out
+     of this footer's own padding below. */
+  .foot a{font-size:15px;line-height:1.35;display:flex;align-items:center;
+    min-height:44px}
+  .foot{padding-top:12px;padding-bottom:14px}
+  .foot-g{gap:4px 18px}
+  /* the wrap-proof form: no borders to strand at a line start, and the
+     same two-column 44px grid the link block above uses at this width. */
+  .foot-soc{margin-top:14px;padding-top:12px}
+  /* flex:1 1 100% FIRST, and it is load-bearing. .foot-soc-x is still a
+     flex row at this width, so the row was sizing to its own content
+     (~160px) and the 1fr 1fr inside it resolved to 71px columns — tidy
+     by accident, and NOT on the same two columns as .foot-g above it.
+     Taking the full wrap width puts the grid back on 158.5px columns at
+     x 20 and 196.5, which is where READ / GO / REACH US already sit. */
+  .foot-soc-r{flex:1 1 100%;display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+  .foot-soc-r a{padding:0;border-left:0;min-height:44px}
+  .foot-b{margin-top:12px;padding-top:10px;gap:4px 20px;font-size:13px}
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   THE VERTICAL TIERS.  ADDED AT INTEGRATION.
+
+   The root defect the whole exercise exists to correct: one --pad token
+   applied by `section{padding:var(--pad) 0}` gave a 526px mustard ask
+   and a 2,132px project index identical top and bottom padding, so
+   nothing on the page had a weight. There are four tiers now, and every
+   band declares which one it is. `section` itself carries NO padding, so
+   a band that forgets to say what it is looks obviously wrong rather
+   than quietly average.
+
+     T1 ARRIVAL  0            heroes — the photograph runs to the seam
+     T2 MAJOR    88-136 (56)  journeys, work, timeline, record
+     T3 MINOR    64-96  (44)  impact, give
+     T4 STRIP    28-44  (22)  green the map, footer
+   T2:T4 is 3:1, which is wide enough to read as intent.
+
+   The ticker is the one exception and it is deliberate: it is not a
+   band, it is a rule between bands, and its own spec fixes it at
+   96-120px. T4 padding alone would be 88px of that, so the strip keeps
+   its chrome padding the way the nav does. Ruled at integration; see
+   the report.
+   ══════════════════════════════════════════════════════════════════ */
+.t1{padding:0}
+.t2{padding:var(--pad-t2) 0}
+.t3{padding:var(--pad-t3) 0}
+.t4{padding:var(--pad-t4) 0}
+/* The phone floors are the direction's own numbers, and they have to be
+   stated: a clamp whose vw term is 9vw bottoms out at its 88px MINIMUM
+   on a 375 screen, so without this every T2 band arrived on the phone
+   carrying its desktop padding. 4 x T2 + 2 x T3 + 2 x T4 = 360px of
+   phone height that was not buying anything. */
+@media (max-width:767px){
+  :root{--pad-t2:56px;--pad-t3:44px;--pad-t4:22px}
+}
+
+/* ── THE SECTION OPENER. ONE GESTURE, EIGHT TIMES. ───────────────────
+   Formalised at integration. Five of the nine partials arrived with a
+   private near-identical copy of this grid (.s-journeys-open,
+   .s-work-head, .s-impact-open, .s-timeline-open, and .im-head itself),
+   each with its own column split and its own optical nudge. They are
+   one component now, so the eight section openings read as one move
+   instead of eight near-misses.
+
+   12 columns / 24px gutter. Display headline on 1-6, lead on 8-12,
+   tops aligned. EXACTLY TWO CHILDREN, always: a left group and a right
+   group. The .4em top padding on the right group is an optical match to
+   the display cap line rather than to its em box. */
+.im-head{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));
+  column-gap:24px;row-gap:var(--gap-head);align-items:start;
+  margin:0 0 var(--gap-block)}
+.im-head>*:first-child{grid-column:1/span 6;min-width:0}
+.im-head>*:last-child{grid-column:8/span 5;min-width:0;padding-top:.4em}
+.im-head .lead{margin:0}
+/* THE STRANDED LEAD. A 2-3 line display headline against a 1-2 line lead
+   left 183px (#work), 190px (#impact) and 231px (#give) of empty ground
+   under the lead — three to four times the largest internal gap this
+   page owns, which reads as unresolved rather than as air. The right
+   group is bottom-set instead, so the lead lands on the headline's last
+   line and the slack sits ABOVE it as deliberate air. When the lead is
+   the taller of the two it drives the row and end-alignment is
+   identical to start-alignment, so the .4em optical cap-line match
+   above still governs that case. Copy is untouched: every line is
+   approved and none of them got longer. */
+.im-head>*:last-child{align-self:end}
+/* The one-group opener. #journeys is the only band whose prose belongs
+   AFTER its rail rather than above it, so its opener carries the
+   headline alone and runs to 8 columns. `:only-child` matches both the
+   first- and last-child rules above and, being later, wins both. */
+.im-head>*:only-child{grid-column:1/span 8;padding-top:0;align-self:start}
+@media (max-width:1023px){
+  .im-head{row-gap:var(--gap-head)}
+  .im-head>*:first-child,.im-head>*:last-child{grid-column:1/-1;padding-top:0}
+  .im-head>*:last-child{max-width:64ch}
+  /* display type never takes a full-width measure */
+  .im-head .d1{max-width:min(640px,15ch)}
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   AD-09 FINAL PASS. TOUCH TARGETS.
+
+   The page already states a 44px floor and already enforces it in three
+   places — `.give` and `.mark` at <=940, `.s-hero-plate .act` at <=560,
+   `.w7-im-foot .act` at <=767, and the deck's own `.rig-tabs button`.
+   Six other controls never got it. Measured heights, at 375:
+
+     .navscroll a.nl        26.0px  (the six mobile nav destinations,
+                                     sitting in a 48.8px row: 11.4px of
+                                     the row above and below each chip
+                                     was not tappable)
+     .act x6                27.0px  (work, journeys, projects, campaigns
+                                     x2, about — each band's one CTA)
+     .w7-ce-lk x3           23.0px  (the campaign names; also under the
+                                     24px WCAG 2.5.8 AA floor)
+     .w7-ce-pre a x2        17.3px  (the two "Runs against ..." hooks —
+                                     the smallest targets on the page,
+                                     and under 24px at EVERY width)
+
+   THE HIT BOX GROWS, THE DRAWN BOX DOES NOT. Every one of these carries
+   a 2px mustard underline or an optical baseline that is part of the
+   composition, so raising `min-height` would drop the rule 8-17px and
+   add ~136px of document height across the page. A transparent absolutely
+   positioned ::after centred on the link expands what the finger hits and
+   changes no pixel and no band height — verified: document 10,244px at
+   375 before and after.
+
+   THE CLEARANCES WERE MEASURED FIRST, so no expander can steal a
+   neighbour's taps. Nearest interactive neighbour to each .act at 375:
+   work 37.0 · journeys 32.0 · projects 27.0 · campaigns 35.8 · events
+   267.0 · about 562.2 — all clear of the 8.5px each side that 27->44
+   costs.
+
+   THE CAMPAIGNS PAIR IS THE ONE PLACE 44px IS ARITHMETICALLY
+   IMPOSSIBLE. "Runs against the Yamuna" and "We for Yamuna" are two
+   different destinations 8.0px apart, inside a 48.3px envelope: two
+   44px targets need 88. They are brought to the 24px AA floor instead,
+   which fits (3.35 + 0.5 of the 8px gap, leaving 4.15px between them).
+   Closing the rest needs the composition opened, which is the client's
+   call, not this pass's. Logged in AD-09 as a ruling question.
+   ══════════════════════════════════════════════════════════════════ */
+.act,.w7-ce-lk,.w7-ce-pre a{position:relative}
+.act::after,.w7-ce-lk::after,.w7-ce-pre a::after{
+  content:'';position:absolute;left:0;right:0;top:50%;
+  transform:translateY(-50%);height:var(--hit,44px)}
+
+@media (max-width:940px){
+  .navscroll a.nl{position:relative}
+  .navscroll a.nl::after{content:'';position:absolute;left:0;right:0;
+    top:50%;transform:translateY(-50%);height:44px}
+  /* THE LAST CHIP MUST CLEAR THE FADE. `.navscroll ul` carries
+     `padding:10px var(--gut)`, but a flex container's trailing padding is
+     not honoured as scrollable overflow, so at full scroll-right the last
+     destination ("Record") landed at x 320.2 in a 320px strip — flush to
+     the edge with 8.2px of the word under the 8px mask, at both 320 and
+     375. A real trailing flex item restores the space the padding was
+     supposed to provide. The strip's own 20px flex gap already supplies
+     the gutter, so the spacer only has to cover the 8px the mask eats.
+     Measured: "Record" ends 8.2px INSIDE the fade before (clearance
+     -8.2px at 320, 375 and 414) and clears it by 19.8px after, with the
+     strip's scrollWidth going 416 -> 444. The document is unchanged at
+     every width; a scroll container's own overflow costs no page height. */
+  .navscroll ul::after{content:'';flex:none;width:8px;height:1px}
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   D-09.3. THE HERO OPENS FOR THE KEYBOARD, AND ONLY FOR THE KEYBOARD.
+
+   Everything in this block is invisible until something takes focus.
+   Nothing that is drawn moves: the hero's composition, copy, vocabulary
+   and visual state are frozen and were re-measured after every edit.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* THE SKIP LINK. Off-screen at -200px rather than hidden, so it is a
+   real link in the tab order at stop 1 and the first thing a keyboard
+   reader meets. It arrives flush to the top-left corner, which is where
+   the page's own instrument grammar puts a control that belongs to the
+   whole page rather than to a band.
+   THE RING IS INSET, not the .give halo. A mustard ring on a mustard
+   chip is invisible, and the .give treatment (outline-offset:2px plus a
+   5px mustard box-shadow) would put 7px of ring ABOVE y=0 and off the
+   screen on the one control that lives in the corner. Inset is the
+   pattern this file already uses for exactly that reason on
+   `.s-ticker-cell:focus-visible`. */
+.skip{position:fixed;top:-200px;left:0;z-index:100;
+  font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 92,'wght' 700;
+  font-size:12px;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;
+  background:var(--mustard);color:var(--on-mustard);
+  min-height:44px;display:inline-flex;align-items:center;padding:0 18px}
+.skip:focus{top:0}
+.skip:focus-visible{outline:2px solid var(--fg);outline-offset:-3px;box-shadow:none}
+/* <main> is a landmark, not a box. Stated rather than assumed, because a
+   UA default on an unknown element is exactly how a wrapper added for
+   accessibility ends up costing document height. */
+main{display:block;margin:0;padding:0}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   D-09.1. ONE COMPACT INDEX CONTROL, IN THE BAR'S OWN UNUSED SPACE.
+
+   The measurement that bought it: at 375 the bar carries a 120px
+   wordmark and a 70.4px GIVE chip inside 335px of content width, so
+   ~165px was already paid for and empty. The control goes there and
+   costs the page NO height at all — the panel is `hidden` when closed,
+   which is why this is not the sticky chip row (+37px of permanent
+   chrome, 14.6% of a 635px screen) that was rejected.
+
+   NO NEW ICONOGRAPHY, WHICH IS A RULING AND NOT AN OVERSIGHT. There is
+   no hamburger, no caret, no chevron: this page's only non-type marks
+   anywhere are the arrow, the six-band scale and the halftone, and a
+   disclosure glyph would be its first icon. The control is the word the
+   page already uses for these six things — `.navscroll` is
+   `aria-label="Sections"` — set in the nav's own micro-caps.
+   ITS OPEN STATE IS THE PAGE'S OWN MARK. `.nav a.nl` already carries a
+   2px transparent bottom border that goes mustard on hover and on
+   `[aria-current]`. The button borrows exactly that declaration for
+   `[aria-expanded=true]`, so "this is the live thing" is said in the
+   vocabulary eleven bands have already established, and a sighted reader
+   gets a state marker without a glyph being invented for it.
+
+   NOT MODAL, AND THAT IS THE POINT. The file's own comment rejects a
+   hamburger drawer as "this site's only modal pattern". So: no scrim, no
+   focus trap, no `aria-modal`, no scroll lock. Tab runs through the six
+   rows and then out into the page, and focus leaving the panel closes it
+   — a reader who has tabbed past the index is done with it. Escape
+   closes it and hands focus back to the button that opened it.
+
+   IT SITS UNDER THE BAR, NOT OVER IT: z-index 59 against `.nav-in`'s 60,
+   so the wordmark, the control and GIVE stay visible and the reader can
+   always see the thing they pressed. 44px rows, hairline-ruled, which is
+   the same ruled-rows grammar as the footer grid and the record doors.
+   ══════════════════════════════════════════════════════════════════ */
+.navidx-t{display:none}
+.navidx{position:fixed;left:0;right:0;top:var(--bar-h);z-index:59;
+  background:var(--ground);border-bottom:1px solid var(--hair);
+  max-height:calc(100vh - var(--bar-h));overflow-y:auto}
+/* stated explicitly so no later `display` on .navidx can defeat the
+   attribute that makes the whole thing free when closed. */
+.navidx[hidden]{display:none}
+@media (max-width:940px){
+  .navidx-t{display:inline-flex;align-items:center;min-height:44px;
+    appearance:none;background:none;border:0;border-bottom:2px solid transparent;
+    padding:0;cursor:pointer;white-space:nowrap;
+    font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 92,'wght' 620;
+    font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--fg-2)}
+  .navidx-t:hover{color:var(--fg)}
+  .navidx-t[aria-expanded=true]{color:var(--fg);border-bottom-color:var(--mustard)}
+  /* full-width 44px rows: the whole row is the target, not the word. */
+  .navidx a.nl{display:flex;align-items:center;min-height:44px;
+    padding:0 var(--gut);border-top:1px solid var(--hair)}
+  .navidx a.nl:first-child{border-top:0}
+}
+/* ABOVE 940 THE BAR IS NOT THE NAVIGATION. `.navlinks` carries the six
+   destinations there, so the control is display:none — no extra tab stop
+   on desktop, where the header order was already correct — and the panel
+   cannot paint even if a stale `aria-expanded` survived a resize. The JS
+   closes it on resize as well; this is the belt to that braces. */
+@media (min-width:941px){
+  .navidx,.navidx-t{display:none}
+}
+
+/* ══ AD-14 / D-19.3 — THIS PAGE'S OWN BLOCK ═══════════════════════════════
+   Everything above was EXTRACTED from the frozen home.html. Six sub-blocks
+   were left behind deliberately and are named in the build script.
+   Every voice, hue, rule and mark below is a frozen component. Layout only.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* MEASURED vs MODELLED, carried by the rule (D-17.6). Solid = measured.
+   DOTTED = modelled. Dashed is NOT reused: §5.7 gives dashed to a shut
+   window, and dotted is already the placeholder grammar — the nearer
+   neighbour to "not a direct measurement". Three styles, three meanings. */
+.p-kind{display:inline-block;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 650;font-size:var(--t-micro);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--fg-2);
+  border-bottom:2px solid var(--hair);padding-bottom:3px}
+.p-kind-m{border-bottom-style:dotted;border-bottom-color:var(--fg-3)}
+.paper .p-kind,.paper-2 .p-kind{color:var(--ink-2);border-bottom-color:var(--rule-2)}
+
+/* HERO. THE PICTURE BAND, not a photograph behind the readout.
+   The frozen CSS states the rule and the measurements behind it:
+   "DISPLAY TYPE MAY SIT ON A PHOTOGRAPH. NOTHING ELSE MAY." — copy over a
+   full frame failed contrast twice, because the reading block is tall enough
+   to cover the frame edge to edge and any scrim strong enough for 12px
+   metadata darkens the whole photograph to a rectangle. So: h1 only, over the
+   frame, on .pic-over's ramp; the readout, the scale, the provenance and the
+   national panel all sit on solid ground in .pic-body directly beneath it,
+   where contrast cannot drift. .pic and .pic-over are the homepage's own,
+   extracted verbatim — this page adds no new photographic treatment.
+   T1 carries no padding by contract; padding-block never the shorthand, or
+   .wrap's horizontal gutter is reset to zero. */
+.p2-hero{padding-block:0 var(--pad-t3);display:grid;gap:var(--gap-block)}
+.p2-top{display:flex;flex-wrap:wrap;gap:12px var(--gap-block);align-items:baseline;
+  justify-content:space-between}
+.p2-method{color:var(--fg-2);margin:0}
+/* The reading and the national panel, one row. The reading is the subject and
+   keeps the wider column; the panel is context and is ruled off, not boxed. */
+.p2-cols{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);
+  gap:var(--gap-block) clamp(28px,4vw,72px);align-items:start}
+.p2-nat{border-top:1px solid var(--hair);padding-top:var(--gap-row)}
+.p2-nat>*{margin:0}
+.p2-nat-h{color:var(--fg-2)}
+.p2-nat-l{color:var(--fg-3);max-width:38ch;margin:10px 0 var(--gap-row)!important}
+.p-nr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:0 14px;align-items:baseline;
+  border-bottom:1px solid var(--hair);padding:9px 0}
+.p-nr-n{font-family:Newsreader,Georgia,serif;font-size:16px;min-width:0}
+.p-nr-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 800;
+  font-size:19px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;text-align:right}
+.p-nr-v.is-red{color:var(--red)}
+.p-nr-s{color:var(--fg-3);min-width:3.4em;text-align:right}
+/* MUSTARD IS THE HUMAN ACT, so it cannot mark "this is the city you are
+   reading" — that is a position in a table, not an act. The row Delhi is on
+   is marked by WEIGHT and a left rule in the ground's own ink instead. */
+.p-nr.is-me{border-left:2px solid var(--fg);padding-left:12px}
+.p-nr.is-me .p-nr-n{font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 80,'wght' 700;font-size:15px;letter-spacing:.02em;
+  text-transform:uppercase}
+.p2-nat-c{color:var(--fg-3);max-width:40ch;margin:var(--gap-row) 0!important}
+.p2-read{position:relative;border-top:1px solid var(--hair);
+  padding-top:var(--gap-row);display:grid;gap:10px;justify-items:start}
+.p2-state{position:absolute;top:var(--gap-row);right:0;margin:0}
+.p2-read>*{margin:0}
+.p2-read .bands{width:100%}
+.p2-read .bands i{flex:1 1 0;min-width:0}
+.p2-src{color:var(--fg-3);max-width:60ch;border-top:1px solid var(--hair-2);
+  padding-top:10px;margin-top:4px}
+
+/* THE STRIP. Not a band: a rule between bands, on chrome padding. Caged —
+   own hex, hairline top and bottom, micro type, never any mustard. Red only:
+   Swechha's outcomes are not on this page at all, so no exemption is used. */
+#strip{background:var(--ground-2);border-top:1px solid var(--hair);
+  border-bottom:1px solid var(--hair);padding:14px 0}
+.p-strip-in{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 18px}
+.p-cell{display:grid;gap:2px;text-decoration:none;color:inherit;min-width:0;position:relative}
+.p-cell-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 64,'wght' 800;
+  font-size:clamp(1.3rem,3.4vw,2rem);letter-spacing:-.02em;line-height:1;
+  font-variant-numeric:tabular-nums;border-bottom:1px solid var(--hair);padding-bottom:6px}
+.p-cell-v.is-red{border-bottom-color:var(--red)}
+.p-cell-l{color:var(--fg-2)}
+.p-cell-s{color:var(--fg-3)}
+.p-strip-note{grid-column:1/-1;color:var(--fg-3);margin:4px 0 0}
+
+/* TWO-UP AND ROWS. Shared by people / sources / money. */
+.p-two{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap-row) clamp(24px,4vw,64px);
+  border-top:1px solid var(--hair);padding-top:var(--gap-row)}
+.p-two-c>*{margin:0}
+.p-two-c .num{margin-bottom:6px}
+.p-two-c .cap{color:var(--fg-2);margin-top:8px}
+.p-ratio{max-width:62ch;margin:var(--gap-row) 0 0}
+.p-cite{color:var(--fg-3)}
+.paper .p-cite,.paper-2 .p-cite{color:var(--ink-3)}
+.p-rows{margin-top:var(--gap-block)}
+.p-row{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);
+  gap:8px clamp(20px,3vw,44px);align-items:start;border-top:1px solid var(--hair);padding:18px 0}
+.p-row:last-child{border-bottom:1px solid var(--hair)}
+.p-row>*{margin:0}
+.p-row .body{max-width:52ch}
+.p-row .cap{color:var(--fg-2);margin-top:8px;max-width:58ch}
+
+/* THE KIND RULE (D-17.6 standout 1). SOLID = counted or measured. DOTTED =
+   modelled. Dashed is deliberately NOT reused: §5.7 gives dashed to a shut
+   window, and dotted is already the placeholder grammar — the nearer
+   neighbour to "not a direct measurement". Ink and never hue: the kind of a
+   figure is not the same question as whether a limit fell. */
+.p-kd{display:inline-block;padding-bottom:5px;border-bottom:2px solid var(--hair)}
+.p-kd-m{border-bottom-style:dotted;border-bottom-color:var(--fg-3)}
+.paper .p-kd,.paper-2 .p-kd{border-bottom-color:var(--rule-2)}
+.paper .p-kd-m,.paper-2 .p-kd-m{border-bottom-color:var(--ink-3)}
+.p-legend{display:flex;flex-wrap:wrap;gap:10px 26px;margin:0 0 var(--gap-row);color:var(--fg-3)}
+.p-row .p-kd,.p-map .p-kd{margin-left:8px;font-size:var(--t-micro)}
+.p-hole{border-left:2px dotted var(--hair);padding-left:14px;margin-top:var(--gap-row)!important;
+  color:var(--fg-3);max-width:62ch}
+.paper .p-hole,.paper-2 .p-hole{border-left-color:var(--rule-2);color:var(--ink-3)}
+
+/* MEASURED. Explainers, sub-indices, the two-scale device, the method table. */
+.p-expl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;
+  border-top:1px solid var(--rule);margin-bottom:var(--gap-block)}
+.p-expl>div{padding:var(--gap-row) clamp(14px,2vw,28px) var(--gap-row) 0;border-right:1px solid var(--rule)}
+.p-expl>div:last-child{border-right:0}
+.p-expl-h{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 800;
+  font-size:20px;letter-spacing:-.01em;margin:0;text-transform:uppercase}
+/* NOT ON MUSTARD. The page this replaces put this line on a mustard fill at
+   1.31:1 (D-18.1). It sits on the band's own ground. */
+.p-expl-s{font-size:19px;font-weight:300;color:var(--ink-2);margin:6px 0 10px}
+.p-expl-b{font-size:16px;line-height:1.5;color:var(--ink-2);margin:0}
+.p-quote{max-width:62ch;margin:0 0 var(--gap-row)}
+.p-subs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border-top:1px solid var(--rule)}
+.p-sub{padding:var(--gap-row) 10px var(--gap-row) 0;border-right:1px solid var(--rule);min-width:0}
+.p-sub:last-child{border-right:0}
+.p-sub>*{margin:0}
+.p-sub-n,.p-sub-c{color:var(--ink-3)}
+.p-sub-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 800;
+  font-size:clamp(1.4rem,2.6vw,2.2rem);letter-spacing:-.02em;line-height:1;color:var(--ink-3);
+  margin:8px 0 6px;font-variant-numeric:tabular-nums}
+/* Weight and ink, never hue: which pollutant decided the number is not a
+   question of whether a limit fell. */
+.p-sub.is-gov .p-sub-n,.p-sub.is-gov .p-sub-v,.p-sub.is-gov .p-sub-c{color:var(--ink)}
+.p-sub-g{color:var(--ink);margin-top:8px}
+.p-miss{color:var(--ink-3);max-width:64ch;margin:14px 0 0}
+.p-key{max-width:62ch;margin:var(--gap-row) 0 0}
+.p-scales{border-top:1px solid var(--rule);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.p-scales-l{color:var(--ink-3)}
+.p-scales-r{display:grid;grid-template-columns:1fr 1fr;gap:clamp(20px,3vw,48px);margin:14px 0}
+.p-scales-r>div>*{margin:0}
+.p-scales .cap{color:var(--ink-2);max-width:62ch}
+.p-method{border-top:1px solid var(--rule);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.p-tbl{width:100%;border-collapse:collapse;margin:14px 0;font-size:var(--t-cap);
+  font-family:Newsreader,Georgia,serif}
+.p-tbl th{text-align:left;font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 650;font-size:var(--t-micro);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--rule-2);padding:0 10px 8px 0}
+.p-tbl td{padding:9px 10px 9px 0;border-bottom:1px solid var(--rule);color:var(--ink-2);vertical-align:top}
+.p-method .cap{color:var(--ink-3);max-width:62ch}
+
+/* THE APPORTIONMENT SPLIT. Registers and bars — width and ink only. Hue is
+   not available: red means a published limit was broken, and a sector holding
+   a large share is not that. */
+.p-ap>*{margin:0 0 var(--gap-row)}
+.p-ap>*:last-child{margin-bottom:0}
+.p-ap-k,.p-ap-f{max-width:62ch}
+.p-ap-h,.p-ap-r{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr) minmax(0,1fr) 2.6em;
+  gap:0 14px;align-items:center}
+.p-ap-h{border-bottom:1px solid var(--hair);padding-bottom:8px;margin-bottom:0}
+.p-ap-h .lbl{color:var(--fg-3)}
+.p-ap-r{border-bottom:1px solid var(--hair);padding:10px 0;margin:0}
+.p-ap-n{font-family:Newsreader,Georgia,serif;font-size:16px;min-width:0}
+.p-ap-w{display:flex;align-items:center;gap:8px;min-width:0}
+.p-ap-b{display:block;height:9px;background:var(--fg-2);flex:none;min-width:1px}
+.p-ap-s .p-ap-b{background:var(--fg-3)}
+.p-ap-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 700;
+  font-size:var(--t-micro);color:var(--fg);font-style:normal;font-variant-numeric:tabular-nums;flex:none}
+.p-ap-d{color:var(--fg-3);text-align:right;font-variant-numeric:tabular-nums}
+.p-ap-r2{grid-template-columns:minmax(0,11em) minmax(0,1fr)}
+.p-ap .cap{color:var(--fg-3);max-width:64ch}
+/* THE RANGE CHART. A line from low to high on a shared axis: the LENGTH is
+   the uncertainty, which is the whole point of the panel. */
+.p-rg{border-top:1px solid var(--hair)}
+.p-rg-r{display:grid;grid-template-columns:minmax(0,12em) minmax(0,1fr) 5.2em;gap:0 14px;
+  align-items:center;border-bottom:1px solid var(--hair);padding:11px 0}
+.p-rg-n{font-family:Newsreader,Georgia,serif;font-size:16px;min-width:0}
+.p-rg-t{position:relative;height:11px;min-width:0}
+.p-rg-t::before{content:'';position:absolute;left:0;right:0;top:5px;height:1px;background:var(--hair-2)}
+.p-rg-l{position:absolute;top:3px;height:5px;background:var(--fg);display:block}
+.p-rg-l::before,.p-rg-l::after{content:'';position:absolute;top:-3px;width:1.5px;height:11px;background:var(--fg)}
+.p-rg-l::before{left:0}
+.p-rg-l::after{right:0}
+.p-rg-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 700;
+  font-size:var(--t-micro);color:var(--fg);text-align:right;font-variant-numeric:tabular-nums}
+.p-rg-ax{display:flex;justify-content:space-between;padding-top:8px;
+  font-family:Archivo,system-ui,sans-serif;font-size:var(--t-micro);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--fg-3)}
+.p-ap-sub{border-top:1px solid var(--hair)}
+
+/* SOURCES / FIRES. */
+.p-fire{border-top:1px solid var(--hair);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.p-fire .lbl{color:var(--fg-2)}
+.p-gapkey{max-width:62ch;margin:var(--gap-row) 0}
+.p-yy-l{margin-top:var(--gap-block)!important;color:var(--fg-2)}
+.p-yy{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:end;
+  height:150px;margin:14px 0;border-bottom:1px solid var(--hair)}
+.p-yy-c{display:grid;align-content:end;gap:4px;height:100%;min-width:0}
+.p-yy-bar{display:block;background:var(--fg-2);width:100%;align-self:end}
+.p-yy-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 700;
+  font-size:var(--t-micro);color:var(--fg);font-variant-numeric:tabular-nums}
+.p-yy-y{color:var(--fg-3)}
+.p-fire .cap{color:var(--fg-3);max-width:64ch;margin-top:10px}
+
+/* TREND. The day grid, the attention series, the forecast. */
+.p-grid-wrap .lbl,.p-attn .lbl,.p-fc .lbl{color:var(--fg-2)}
+.p-grid{display:grid;grid-template-columns:repeat(31,1fr);gap:2px;margin:14px 0;max-width:620px}
+.p-grid i{aspect-ratio:1;background:var(--hair-2);border-radius:1px}
+.p-grid i.p-g-on{background:var(--red)}
+.p-grid-wrap .cap{color:var(--fg-3);max-width:62ch}
+.p-attn{border-top:1px solid var(--hair);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.p-attn-c{display:flex;gap:3px;align-items:flex-end;height:132px;margin:14px 0 6px;
+  border-bottom:1px solid var(--hair)}
+.p-attn-b{flex:1 1 0;background:var(--fg-3);min-width:0}
+.p-attn-x{display:flex;justify-content:space-between;font-family:Archivo,system-ui,sans-serif;
+  font-size:var(--t-micro);letter-spacing:.14em;color:var(--fg-3)}
+.p-attn .body{max-width:62ch;margin:var(--gap-row) 0 0}
+.p-attn .cap{color:var(--fg-3);max-width:64ch;margin-top:10px}
+.p-fc{border-top:1px solid var(--hair);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.p-fc-c{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:end;
+  height:140px;margin:14px 0;border-bottom:1px solid var(--hair)}
+.p-fc-d{display:grid;align-content:end;gap:4px;height:100%;min-width:0}
+.p-fc-bar{position:relative;display:block;width:100%;background:var(--fg-3);align-self:end}
+.p-fc-rng{position:absolute;left:0;right:0;background:var(--hair);display:block}
+.p-fc-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 700;
+  font-size:var(--t-micro);color:var(--fg);font-variant-numeric:tabular-nums}
+.p-fc-x{color:var(--fg-3)}
+.p-fc .body{max-width:62ch;margin:var(--gap-row) 0 0}
+.p-fc .cap{color:var(--fg-3);margin-top:8px}
+
+/* GEOGRAPHY. Register rows, worst first. */
+.p-rank .lbl,.p-nat .lbl{color:var(--fg-2)}
+.p-rank-r{display:grid;grid-template-columns:4.2em minmax(0,1fr) auto;gap:0 16px;align-items:baseline;
+  border-bottom:1px solid var(--hair);padding:11px 0}
+.p-rank-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 800;
+  font-size:22px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;text-align:right}
+.p-rank-v.is-red{color:var(--red)}
+.p-rank-n{font-family:Newsreader,Georgia,serif;font-size:16.5px;min-width:0}
+.p-rank-g{color:var(--fg-3)}
+.p-rank-more{color:var(--fg-3);text-align:center;padding:10px 0;margin:0;
+  border-bottom:1px solid var(--hair)}
+.p-rank .cap,.p-nat .cap{color:var(--fg-3);max-width:64ch;margin-top:12px}
+.p-nat{border-top:1px solid var(--hair);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.p-nat .body{max-width:62ch;margin:12px 0 0}
+
+/* THE MAP. Real positions, equal scale on both axes. Squares, hairlines and
+   type — the same three marks the rest of the page is built from, so the map
+   is not a new visual system. No fill, no gradient, no plume. */
+.p-map{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:var(--gap-row) clamp(28px,4vw,64px);align-items:start}
+.p-map-s{display:block;width:100%;max-width:480px;height:auto;margin:0 0 14px;overflow:visible}
+.p-map-lg{margin:0}
+.p-sw{display:inline-block;width:9px;height:9px;margin-right:8px;vertical-align:baseline}
+.p-sw-hi{background:var(--red)}
+.p-sw-lo{background:var(--fg-3)}
+.p-m-fr{fill:none;stroke:var(--hair);stroke-width:1}
+.p-m-ln{stroke:var(--red);stroke-width:1;stroke-dasharray:3 3}
+.p-m-lo{fill:var(--fg-3)}
+.p-m-hi{fill:var(--red)}
+/* The two labelled numerals sit in the densest part of the map, so one of
+   them landed on a neighbouring monitor. Separated by a stroke in the BAND'S
+   OWN GROUND, drawn under the fill — the same principle as .pic-over's ramp
+   (type over a busy field needs separation), not a decorative outline. The
+   map only ever renders inside #geography, whose ground is --ground-2. */
+.p-m-lb text{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 800;
+  font-size:14px;fill:var(--fg);font-variant-numeric:tabular-nums;
+  stroke:var(--ground-2);stroke-width:3.5px;paint-order:stroke fill}
+.p-m-sc line{stroke:var(--fg-3);stroke-width:1}
+.p-m-sc text{font-family:Archivo,system-ui,sans-serif;font-size:9px;letter-spacing:.14em;
+  text-transform:uppercase;fill:var(--fg-3)}
+.p-map-k{max-width:62ch;margin:0 0 12px}
+.p-map .cap{color:var(--fg-3);max-width:64ch;margin:0 0 10px}
+
+/* MONEY. Three registers at wildly different scales; the gap does the work. */
+.p-money{border-top:1px solid var(--rule);margin-top:0}
+.p-money-r{border-bottom:1px solid var(--rule);padding:var(--gap-row) 0}
+.p-money-r>*{margin:0}
+.p-money-r .lbl{color:var(--ink-3)}
+.p-money-r .num{margin:8px 0}
+.p-money-r .cap{color:var(--ink-2);max-width:60ch}
+
+/* ACT. */
+.p-act{display:grid;grid-template-columns:1.4fr 1fr;gap:var(--gap-row) clamp(28px,4vw,64px);
+  border-top:1px solid var(--hair);padding-top:var(--gap-row)}
+.p-act-c>*{margin:0 0 12px}
+.p-act-c>*:last-child{margin-bottom:0}
+.p-act-c .lbl{color:var(--fg-2)}
+.p-act-c .body{max-width:48ch}
+.p-act-c .cap{color:var(--fg-3)}
+.p-news{border-top:1px solid var(--hair);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.p-news .lbl{color:var(--fg-2)}
+.p-news-o{border-left:2px solid var(--hair);padding-left:16px;margin:14px 0 var(--gap-row)}
+.p-news-o>*{margin:0 0 8px}
+.p-news-ol{color:var(--fg-3)}
+.p-news-o .cap{color:var(--fg-3);max-width:62ch}
+.p-news-r{display:grid;gap:3px;border-bottom:1px solid var(--hair);padding:12px 0}
+.p-news-m{color:var(--fg-3)}
+.p-news .cap{color:var(--fg-3);max-width:64ch;margin-top:12px}
+.p-sib{border-top:1px solid var(--hair);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.p-sib .lbl{color:var(--fg-2)}
+.p-sib-n{color:var(--fg-2);margin:10px 0}
+.p-sib .cap{color:var(--fg-3)}
+.p-cite-b{color:var(--fg-3);border-top:1px solid var(--hair-2);margin-top:var(--gap-block);
+  padding-top:14px;max-width:64ch}
+/* WATCH YOUR MONITOR. A register of monitors, each with its live reading, so
+   choosing one is also reading the page's argument. 44px targets throughout. */
+.p-ward{margin:0 0 12px}
+.p-ward-l{border-top:1px solid var(--hair);margin:12px 0 10px}
+.p-ward-r{display:grid;grid-template-columns:minmax(0,1fr) 3.2em auto;gap:0 14px;
+  align-items:baseline;width:100%;text-align:left;appearance:none;background:none;
+  border:0;border-bottom:1px solid var(--hair);padding:12px 0;min-height:44px;
+  cursor:pointer;color:inherit;font:inherit}
+.p-ward-r:hover .p-ward-n,.p-ward-r:focus-visible .p-ward-n{text-decoration:underline;
+  text-underline-offset:3px}
+.p-ward-n{font-family:Newsreader,Georgia,serif;font-size:16.5px;min-width:0}
+.p-ward-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 800;
+  font-size:19px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;text-align:right}
+.p-ward-v.is-red{color:var(--red)}
+.p-ward-b{color:var(--fg-3)}
+.p-ward-hint,.p-ward-none{color:var(--fg-3);padding:10px 0 0;margin:0}
+.p-ward-p{border-top:1px solid var(--hair-2);margin-top:var(--gap-row);padding-top:var(--gap-row)}
+.p-ward-p>*{margin:0 0 12px}
+.p-ward-p>*:last-child{margin-bottom:0}
+.p-ward-p .lbl{color:var(--fg-2)}
+.p-ward-p .body{max-width:52ch}
+.p-ward-p .cap{color:var(--fg-3);max-width:56ch}
+/* The submit is a real <button>; the frozen .b pill is styled for <a>. */
+button.b{appearance:none;border:0;font:inherit;cursor:pointer}
+button.b[disabled]{opacity:.55;cursor:default}
+
+/* THE DIY BANK. A register, not cards: three rows on hairlines. */
+.p-do-r{border-top:1px solid var(--hair);padding:var(--gap-row) 0}
+.p-do-r:last-child{border-bottom:1px solid var(--hair)}
+.p-do-r>*{margin:0 0 10px}
+.p-do-r>*:last-child{margin-bottom:0}
+.p-do-r .lbl{color:var(--fg-2)}
+.p-do-r .body{max-width:58ch}
+.p-do-r .cap{color:var(--fg-3);max-width:64ch}
+/* THE CLOSE. Two registers on the band's own hairline, below the tabs, so
+   they are never hidden behind a tab — a citation must not be a panel. */
+.p-close{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap-row) clamp(28px,4vw,64px);
+  border-top:1px solid var(--hair-2);margin-top:var(--gap-block);padding-top:var(--gap-row)}
+.p-close-r>*{margin:0 0 10px}
+.p-close-r>*:last-child{margin-bottom:0}
+.p-close-r .lbl{color:var(--fg-2)}
+.p-close-r .cap{color:var(--fg-3);max-width:56ch}
+
+/* ══ TABS (D-21.1) ═════════════════════════════════════════════════════
+   The frozen deck's tab grammar, reused for long data objects. Marker is a
+   3px border-top in the ground's own ink — THERE IS NO RED VARIANT AND NO
+   MUSTARD VARIANT (§5.2). The negative margin and the equal padding are the
+   deck's own fix for a focus ring clipped by a scroll container, and they
+   MUST move together: dropping either re-clips the ring. */
+.p-tabs-l{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;
+  margin:-5px -5px 0;padding:5px 5px 0;scroll-padding-inline:5px;
+  border-bottom:1px solid var(--hair)}
+.paper .p-tabs-l,.paper-2 .p-tabs-l{border-bottom-color:var(--rule)}
+.p-tabs-l::-webkit-scrollbar{display:none}
+.p-tabs-l button{appearance:none;background:none;border:0;border-top:3px solid transparent;
+  color:var(--fg-3);font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 92,'wght' 650;font-size:12.5px;letter-spacing:.13em;
+  text-transform:uppercase;padding:14px 18px 14px 0;cursor:pointer;white-space:nowrap;
+  min-height:44px;flex:none}
+.paper .p-tabs-l button,.paper-2 .p-tabs-l button{color:var(--ink-3)}
+.p-tabs-l button[aria-selected=true]{color:var(--fg);border-top-color:var(--fg)}
+.paper .p-tabs-l button[aria-selected=true],.paper-2 .p-tabs-l button[aria-selected=true]{
+  color:var(--ink);border-top-color:var(--ink)}
+.p-tabs [role=tabpanel]{padding-top:var(--gap-row)}
+
+/* ── PHONE ─────────────────────────────────────────────────────────────── */
+@media (max-width:900px){
+  .p-subs{grid-template-columns:1fr}
+  .p-sub{display:grid;grid-template-columns:5.5em minmax(0,1fr) auto;gap:0 14px;align-items:baseline;
+    border-right:0;border-bottom:1px solid var(--rule);padding:14px 0}
+  .p-sub:last-child{border-bottom:0}
+  .p-sub-v{font-size:1.5rem;margin:0}
+  .p-sub-g{margin:0;text-align:right}
+  .p-expl{grid-template-columns:1fr}
+  .p-expl>div{border-right:0;border-bottom:1px solid var(--rule);padding-right:0}
+  .p-expl>div:last-child{border-bottom:0}
+  .p-act{grid-template-columns:1fr}
+  .p-close{grid-template-columns:1fr}
+  .p-map{grid-template-columns:1fr}
+  .p2-cols{grid-template-columns:1fr}
+  .p-grid{grid-template-columns:repeat(21,1fr)}
+}
+@media (max-width:640px){
+  /* The strip goes two-up rather than four; four cells at 375 give each
+     numeral 78px, which the account column cannot hold. */
+  .p-strip-in{grid-template-columns:1fr 1fr}
+  .p-scales-r{grid-template-columns:1fr}
+  .p-yy{grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+  .p-yy-v{font-size:10px}
+}
+@media (max-width:560px){
+  /* .p-two does NOT stack: the device IS the side-by-side comparison, and
+     the numerals were kept short so a 158px column holds them. */
+  .p-two{column-gap:18px}
+  .p-two-c .cap{max-width:none}
+  .p-row{grid-template-columns:1fr}
+  .p-rank-r{grid-template-columns:3.4em minmax(0,1fr) auto;gap:0 12px}
+  .p-grid{grid-template-columns:repeat(14,1fr)}
+  .p-fc-c{gap:5px}
+  .p-fc-v{font-size:10px}
+}
+
+/* ── THE MENU PANEL IS THE MOBILE NAV, AND IT IS SIX ROWS. ───────────────
+   Below 940 the six nav words are display:none, so this panel is the only way
+   to reach another page on a phone. It used to hold the page's own bands and
+   nothing else, which made it a duplicate of the chip row already visible
+   under the bar — and the first attempt at fixing that stacked the six pages
+   ON TOP of the bands, producing a fourteen-row panel that filled the entire
+   viewport. Both versions were wrong in the same way: two answers on one
+   surface.
+   So the panel is the six pages, flat, unlabelled. The page's own sections
+   stay where they already were, in the .navscroll chip row under the bar. One
+   surface per question, and nothing is listed twice.
+   NO CSS IS NEEDED FOR IT, which is the point — home.html's own
+   "navidx a.nl" rows and its "first-child" border reset both apply again now
+   that the links are direct children of a single nav. The group and heading
+   rules that used to sit here are deleted rather than left matching nothing.
+   (And the backticks that first version of this note used broke the build in
+   exactly the way the warning at the top of this block predicts.)
+   The button says Menu, not Sections: it opens pages, and the sections are the
+   chip row. */
+
+/* NO BACKTICKS ANYWHERE BELOW — this whole block is one template literal and a
+   backtick in a comment silently terminates it. Three separate builds were
+   broken this way. Quote CSS selectors in prose without them. */
+/* ── THE HERO CROP, AND A FINDING ABOUT IT.
+      The situation pages all carry style="--zh:...;--zt:..." on their hero
+      image, copied from the Air build. Those three custom properties belong to
+      .s-hero-shot img on the frozen homepage, which reads them as height,
+      top and object-position. .pic > img reads NONE of them: its rule is a
+      plain width:100%;height:100%;object-fit:cover. So the zoom values are
+      INERT on every situation page including Air's, and every hero is a
+      centre crop whether or not that is the right crop.
+      Rather than delete the attributes (they are harmless, and the Air page is
+      signed off), the one property that actually decides the crop is wired up
+      here. A wide photograph cropped to a portrait band loses its subject if
+      the subject is not dead centre — which is exactly what happened to the
+      flooded-field hero, whose pylon sits at 70% across. ─────────────────── */
+.pic>img{object-position:var(--op,50% 50%)}
+
+/* ── THE DISCLOSURE. Native details/summary: no JS, keyboard and
+      screen-reader support for free, and it is what keeps a long table off a
+      phone's critical path. The summary is held at var(--hit) so it meets the
+      44px touch target the frozen page sets for every control. ─────────── */
+.dx{margin:clamp(14px,1.6vw,20px) 0 0;border-top:1px solid var(--hair-2)}
+.paper .dx{border-top-color:var(--rule-2)}
+.dx-s{cursor:pointer;list-style:none;display:flex;align-items:center;gap:9px;
+  min-height:var(--hit,44px);font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--fg-2)}
+.paper .dx-s{color:var(--ink-2)}
+.dx-s::-webkit-details-marker{display:none}
+.dx-s::before{content:'';flex:none;width:9px;height:9px;border-right:2px solid currentColor;
+  border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .16s}
+.dx[open]>.dx-s::before{transform:rotate(-135deg) translateY(-2px)}
+.dx-s:hover,.dx-s:focus-visible{color:var(--mustard)}
+.paper .dx-s:hover,.paper .dx-s:focus-visible{color:var(--ink)}
+.dx-b{padding:2px 0 clamp(12px,1.4vw,18px)}
+
+/* ── THE MEASURE ROW. A label, a bar, its value, and A TICK WHERE THE
+      PUBLISHED LIMIT SITS. The tick is the whole point: a bar on its own is a
+      quantity, and this site only publishes a quantity against its limit.
+      Bar ink is neutral by default — weight, not red — because a large value
+      is not automatically a breach. .is-over is the opt-in for a row that
+      genuinely crosses a published threshold. ─────────────────────────── */
+.mr-h,.mr{display:grid;grid-template-columns:minmax(0,1fr) minmax(70px,1.2fr) 4.2em 3.2em;
+  gap:0 clamp(7px,.9vw,13px);align-items:center}
+.mr-h{padding:0 0 7px;border-bottom:1px solid var(--hair)}
+.paper .mr-h{border-bottom-color:var(--rule-2)}
+.mr-h .lbl{font-size:10px;color:var(--fg-3)}
+.paper .mr-h .lbl{color:var(--ink-3)}
+.mr{padding:9px 0;border-bottom:1px solid var(--hair-2)}
+.paper .mr{border-bottom-color:var(--rule)}
+.mr-n{font-size:clamp(13px,.93vw,15px);color:var(--fg);min-width:0;overflow-wrap:break-word}
+.paper .mr-n{color:var(--ink)}
+.mr-n i{display:block;font-size:9.5px;font-style:normal;letter-spacing:.05em;color:var(--fg-3);line-height:1.2}
+.paper .mr-n i{color:var(--ink-3)}
+.mr-b{position:relative;display:block;height:8px;background:var(--hair-2)}
+.paper .mr-b{background:var(--rule)}
+.mr-f{position:absolute;inset:0 auto 0 0;width:var(--w);background:var(--fg-2)}
+.paper .mr-f{background:var(--ink-2)}
+.mr.is-over .mr-f{background:var(--red)}
+.paper .mr.is-over .mr-f{background:var(--red-ink)}
+.mr.is-me .mr-f{background:var(--mustard)}
+.mr-l{position:absolute;top:-3px;bottom:-3px;left:var(--x);width:2px;background:var(--fg)}
+.paper .mr-l{background:var(--red-ink)}
+.mr-v,.mr-x{font-variant-numeric:tabular-nums;text-align:right}
+.mr-v{font-size:clamp(12.5px,.9vw,14px);color:var(--fg)}
+.paper .mr-v{color:var(--ink)}
+.mr-x{font-size:11px;color:var(--fg-3)}
+.paper .mr-x{color:var(--ink-3)}
+.mr.is-over .mr-x{color:var(--red)}
+.paper .mr.is-over .mr-x{color:var(--red-ink)}
+@media (max-width:639px){
+  .mr-h{display:none}
+  .mr{grid-template-columns:minmax(0,1fr) 4em 3em;grid-template-areas:'n v x' 'b b b';
+    gap:5px 8px;padding:11px 0}
+  .mr-n{grid-area:n}.mr-v{grid-area:v}.mr-x{grid-area:x}.mr-b{grid-area:b}
+}
+
+/* ── THE FAMILY: PARENT CRUMB AND SIBLING RAIL. Both work on either ground. ── */
+.fam-crumb{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px;
+  margin:0 0 clamp(16px,1.8vw,24px)}
+.fam-crumb-up{font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--mustard);text-decoration:none;min-height:var(--hit,44px);display:inline-flex;align-items:center}
+.fam-crumb-up:hover,.fam-crumb-up:focus-visible{color:var(--mustard-2);text-decoration:underline}
+.fam-crumb-sep{color:var(--fg-3);font-style:normal;font-size:11px}
+.paper .fam-crumb-sep{color:var(--ink-3)}
+.fam-crumb-here{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--fg-2)}
+.paper .fam-crumb-here{color:var(--ink-2)}
+.fam-crumb-n{margin-left:auto;color:var(--fg-3)}
+.paper .fam-crumb-n{color:var(--ink-3)}
+
+.fam-sibs{margin:clamp(28px,3.2vw,44px) 0 0;border-top:1px solid var(--hair);padding-top:clamp(16px,1.8vw,24px)}
+.paper .fam-sibs{border-top-color:var(--rule-2)}
+.fam-sibs-h{display:block;color:var(--fg-3);margin:0 0 clamp(12px,1.4vw,18px)}
+.paper .fam-sibs-h{color:var(--ink-3)}
+.fam-sibs-r{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--hair-2);
+  margin:0 0 clamp(16px,1.8vw,24px)}
+.paper .fam-sibs-r{background:var(--rule)}
+.fam-sib{display:block;background:var(--ground);padding:12px 14px;text-decoration:none;
+  transition:background .14s}
+.paper .fam-sib{background:var(--paper)}
+.dark-2 .fam-sib{background:var(--ground-2)}
+.fam-sib:hover,.fam-sib:focus-visible{background:rgba(251,248,240,.05)}
+.paper .fam-sib:hover,.paper .fam-sib:focus-visible{background:var(--paper-2)}
+.fam-sib:focus-visible{outline:2px solid var(--fg);outline-offset:-3px}
+.paper .fam-sib:focus-visible{outline-color:var(--ink)}
+.fam-sib-n{display:block;font-size:clamp(13.5px,.98vw,15.5px);color:var(--fg)}
+.paper .fam-sib-n{color:var(--ink)}
+.fam-sib-w{display:block;color:var(--fg-3);margin-top:1px}
+.paper .fam-sib-w{color:var(--ink-3)}
+@media (min-width:760px){ .fam-sibs-r{grid-template-columns:repeat(5,1fr)} }
+
+
+
+
+/* ══ AD-16 — THE HEAT PAGE'S OWN BLOCK ════════════════════════════════════
+   Tokens, chrome, tabs, disclosure and measure row all inherited. Every
+   component states its colour for its own ground rather than inheriting.
+   ═══════════════════════════════════════════════════════════════════════ */
+.h-deg{font-size:.34em;vertical-align:.52em;color:var(--fg-3);font-weight:500;margin-left:.04em}
+.h-plain{font-size:clamp(15px,1.05vw,17px);line-height:1.6;color:var(--fg-2);max-width:46ch;margin:0 0 .7em}
+.h-lead{font-size:clamp(16px,1.15vw,18.5px);line-height:1.55;max-width:60ch;margin:0 0 1.1em;color:var(--fg-2)}
+.paper .h-lead{color:var(--ink-2)}
+.h-note{border-left:2px solid var(--hair);padding:2px 0 2px 16px;margin:clamp(20px,2.2vw,30px) 0;
+  font-size:clamp(15px,1.05vw,17px);line-height:1.58;color:var(--fg-2);max-width:60ch}
+.paper .h-note{border-left-color:var(--rule-2);color:var(--ink-2)}
+.h-cap{color:var(--fg-3);max-width:60ch;margin:.8em 0 0}
+.paper .h-cap{color:var(--ink-3)}
+.h-lbl{display:block;color:var(--fg-3);margin:clamp(22px,2.4vw,32px) 0 .6em}
+.paper .h-lbl{color:var(--ink-3)}
+.h-big{font-size:clamp(40px,4.6vw,64px);line-height:.94;margin:0 0 .16em;font-variant-numeric:tabular-nums}
+.h-big i{font-size:.4em;font-style:normal}
+.h-src-p{max-width:62ch;color:var(--fg-3);margin:clamp(18px,2vw,26px) 0 clamp(20px,2.2vw,28px)}
+.paper .h-src-p{color:var(--ink-3)}
+.h-close{max-width:60ch;color:var(--fg-3);margin:clamp(22px,2.4vw,32px) 0 0}
+.h-two{display:grid;grid-template-columns:1fr;gap:clamp(18px,2vw,30px)}
+.h-two-c{border-top:2px solid var(--hair);padding-top:14px}
+.h-two-c .cap{color:var(--fg-3);max-width:44ch}
+.h-rows{margin:0 0 2px}
+.is-red{color:var(--red)}
+.paper .is-red{color:var(--red-ink)}
+
+/* ON PAPER: the definition panels. */
+.h-panel{max-width:64ch}
+.h-panel>p{font-size:clamp(14.5px,1vw,16.5px);line-height:1.58;color:var(--ink-2);margin:0 0 .85em}
+.h-warn{border-left:2px solid var(--rule-2);padding-left:14px}
+.h-ol{margin:.2em 0 .4em;padding-left:1.3em}
+.h-ol li{font-size:clamp(13.5px,.95vw,15px);line-height:1.52;color:var(--fg-2);margin:0 0 .5em}
+.paper .h-ol li{color:var(--ink-2)}
+
+/* THE THREE ZONE FLOORS. */
+.h-zones{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);margin:.4em 0 .3em}
+.h-zone{background:var(--paper);padding:11px 12px;text-align:center}
+.h-zone-v{display:block;font-size:clamp(20px,1.9vw,28px);line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+.h-zone-l{display:block;font-size:10px;color:var(--ink-3);margin-top:4px}
+
+/* THE CONSENSUS BARS. A three-part stack: rose / flat / fell, across cities.
+   No hue is spent — direction is carried by position and by the count beside
+   it, because "more cities got hotter" is not a broken limit. */
+.h-conss{margin:.2em 0 .2em}
+.h-cons{display:grid;grid-template-columns:minmax(0,1fr) minmax(90px,1.1fr) 3.2em 3.2em;
+  gap:0 clamp(7px,.9vw,13px);align-items:center;padding:10px 0;border-bottom:1px solid var(--hair-2)}
+.h-cons-n{font-size:clamp(13px,.93vw,15px);color:var(--fg)}
+.h-cons-b{display:flex;height:10px;background:var(--hair-2);overflow:hidden}
+.h-cons-b>i{display:block;width:var(--w);height:100%}
+.h-cons-b>i.is-up{background:var(--fg)}
+.h-cons-b>i.is-flat{background:var(--fg-3)}
+.h-cons-b>i.is-down{background:var(--hair)}
+.h-cons-v,.h-cons-x{font-variant-numeric:tabular-nums;text-align:right;font-size:clamp(13px,.95vw,15px)}
+.h-cons-v{color:var(--fg)}
+.h-cons-x{color:var(--fg-3)}
+.h-cons-v i,.h-cons-x i{font-style:normal;font-size:.72em;margin-left:.15em}
+
+/* THE CITY TABLE, inside the disclosure. */
+.h-tbl{margin:.2em 0 0}
+.h-tr{display:grid;grid-template-columns:minmax(0,1.5fr) repeat(5,minmax(0,1fr));gap:0 6px;
+  align-items:baseline;padding:8px 0;border-bottom:1px solid var(--hair-2);font-variant-numeric:tabular-nums}
+.h-tr.is-head{border-bottom:1px solid var(--hair)}
+.h-tr.is-head .lbl{font-size:9.5px;color:var(--fg-3)}
+.h-tr>span{font-size:12px;color:var(--fg-2);text-align:right}
+.h-tr>span:first-child{text-align:left}
+.h-td-y{color:var(--fg)!important}
+
+/* ATTENTION. */
+.h-att{display:flex;align-items:flex-end;gap:2px;height:86px;margin:.3em 0 .2em}
+.h-ab{flex:1 1 0;min-width:2px;height:var(--h);background:var(--fg-3);border-radius:1px 1px 0 0}
+.h-ab.is-season{background:var(--fg-2)}
+.h-ab.is-peak{background:var(--mustard)}
+.h-reg-i,.h-pub{max-width:62ch;color:var(--fg-3)}
+.h-reg{margin:.5em 0 .4em}
+
+/* BHUVAN'S LAYERS AND COVERAGE. */
+.h-layers{display:grid;grid-template-columns:1fr;gap:1px;background:var(--hair-2)}
+.h-layer{background:var(--ground-2);padding:11px 13px}
+.h-layer-n{display:block;font-size:clamp(13px,.93vw,15px);color:var(--fg)}
+.h-layer-x{display:block;color:var(--fg-3);margin-top:2px}
+/* Marked without a hue: mustard means a human act, and highlighting two rows of
+   a source's layer list is not one. It also lightened the ground toward the
+   caption ink and measured 3.91:1. A rule and a label cost neither. */
+.h-layer.is-moist{box-shadow:inset 2px 0 0 var(--fg-2)}
+.h-layer-t{display:block;font-size:9.5px;font-style:normal;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--fg-3);margin-top:3px}
+.h-cov{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:clamp(5px,.8vw,10px);align-items:end}
+.h-cov-c{display:grid;grid-template-rows:auto 62px auto;justify-items:center;gap:4px}
+.h-cov-v{font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-2)}
+.h-cov-b{display:flex;align-items:flex-end;width:100%;height:62px}
+.h-cov-b>i{display:block;width:100%;height:var(--h);background:var(--fg-3)}
+.h-cov-y{color:var(--fg-3)}
+
+@media (min-width:760px){
+  .h-two{grid-template-columns:1fr 1fr}
+  .h-layers{grid-template-columns:1fr 1fr}
+}
+@media (max-width:639px){
+  .h-cons{grid-template-columns:minmax(0,1fr) 3em 3em;grid-template-areas:'n v x' 'b b b';gap:5px 8px}
+  .h-cons-n{grid-area:n}.h-cons-v{grid-area:v}.h-cons-x{grid-area:x}.h-cons-b{grid-area:b}
+  .h-tr{grid-template-columns:minmax(0,1.4fr) repeat(3,minmax(0,1fr));font-size:11.5px}
+  .h-tr>span:nth-child(5),.h-tr>span:nth-child(6){display:none}
+  .h-tr.is-head .lbl:nth-child(5),.h-tr.is-head .lbl:nth-child(6){display:none}
+  .h-att{height:72px}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><!-- AD-11: duo-m and five sig-* selective-colour filters were defined here and referenced by nothing (0 of 40 filtered elements). Two ramps only, per the CSS. Selective colour is still live on the journeys-*/project-* pages, which carry their own defs. --><filter id="duo" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/><feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/><feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/></feComponentTransfer></filter><filter id="duo-dim" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0.11 0.18 0.255 0.325 0.385 0.43"/><feFuncG type="table" tableValues="0.10 0.165 0.235 0.30 0.355 0.40"/><feFuncB type="table" tableValues="0.085 0.14 0.20 0.26 0.31 0.35"/></feComponentTransfer></filter></defs></svg>
+<!-- D-09.3. BYPASS BLOCKS (WCAG 2.4.1). There are 8 tab stops before the
+     first piece of content at every width, in front of a 10,244px
+     document with a header repeated on every page of the site. The skip
+     link is the whole remedy and it costs nothing that is drawn: it is
+     off-screen until it takes focus, so no reader who is not using a
+     keyboard will ever see it. It targets <main> rather than #top
+     because #top is the hero SECTION — landing focus on the landmark is
+     what a screen-reader user is being offered, and <main> carries
+     tabindex="-1" so the focus actually lands rather than only moving
+     the sequential-navigation start point. -->
+<a class="skip" href="#main">Skip to the content</a>
+<header class="nav"><div class="nav-in"><a class="mark" href="/" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/now" aria-current="true">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/#record">Record</a></nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
+<div class="navidx" id="navidx" hidden><nav aria-label="Pages"><a class="nl" href="/now" aria-current="true">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/#record">Record</a></nav></div><a class="give" href="/act">Give</a></div><nav class="navscroll" aria-label="Sections"><ul><li><a class="nl" href="#top">The record</a></li><li><a class="nl" href="#people">Who it kills</a></li><li><a class="nl" href="#measured">What counts as heat</a></li><li><a class="nl" href="#cities">Fourteen cities</a></li><li><a class="nl" href="#trend">What is rising</a></li><li><a class="nl" href="#official">Who is watching</a></li><li><a class="nl" href="#act">What you can do</a></li></ul></nav></header>
+<main id="main" tabindex="-1">
+  <section class="t1" id="top">
+    <div class="pic ht">
+      <img class="duo" src="/images/photos/ridge-road-dusk.jpg" alt="An empty road in heavy late-afternoon light" style="--op:50% 58%">
+      <div class="pic-over"><div class="wrap">
+        <h1 class="d1">India&rsquo;s heat</h1>
+      </div></div>
+    </div>
+    <div class="pic-body"><div class="wrap p2-hero">
+      <nav class="fam-crumb" aria-label="Where this page sits">
+        <a class="fam-crumb-up" href="/now">Now</a>
+        <i class="fam-crumb-sep" aria-hidden="true">/</i>
+        <span class="fam-crumb-here">Heat</span>
+        <span class="cap fam-crumb-n">3 of 6 situations</span>
+      </nav>
+      <div class="p2-top">
+        <p class="lbl p2-method">Every reading against its published limit. Every gap named.</p>
+        <p style="margin:0"><span class="tag tag-season">1 March to 15 July</span></p>
+      </div>
+      <div class="p2-cols">
+      <div class="p2-read breach">
+        <p class="state p2-state"><span class="lbl tag tag-closed">OUT OF SEASON</span><span class="sr"> &mdash; the season is shut; this is the record</span></p>
+        <p class="readout rl">48.3<span class="h-deg">&deg;C</span></p>
+        <p class="unit p-kd p-kd-m">the hottest reading in this record &middot; Jodhpur, Rajasthan &middot; 27 May 2024</p>
+        <p class="verdict bad">Above IMD&rsquo;s severe threshold</p>
+        <p class="limit">IMD: <b>45&deg;C</b> is a heat wave anywhere,
+          <b>47&deg;C</b> is severe. <b>Limit broken by 1.3&deg;C.</b></p>
+        <p class="cap p2-src">14 grid points, ECMWF ERA5 / ERA5-Land reanalysis.
+          <a class="lk" href="#measured">What counts as heat</a>.</p>
+      </div>
+      <div class="p2-nat">
+        <p class="lbl p2-nat-h">The one that is coming, not the one that came</p>
+        <p class="h-plain">Air kills more. The river is worse. <b>But heat is the only situation on
+          this site whose death toll more than doubled in a single year</b> &mdash; and it is the one
+          nobody can move away from, insulate against, or filter.</p>
+        <p class="h-plain">A heatwave has no plume, no smell and no photograph. It leaves no damage
+          to survey. It kills indoors, at night, in people who were already ill, and it is recorded
+          as something else.</p>
+        <p class="cap p-hole"><b>8 of these 14 cities set their
+          all-time record in 2024.</b> Not spread across thirty-five years. One year.</p>
+        <p style="margin:0"><a class="act" href="#cities">All 14 cities <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+      </div>
+      </div>
+      <p style="margin:0"><a class="act" href="#people">Who it kills <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+    </div></div>
+  </section>
+  <section id="strip" aria-label="Readings on this page">
+    <div class="wide p-strip-in">
+      <a class="p-cell" href="#people">
+        <span class="p-cell-v is-red">1,832</span>
+        <span class="lbl p-cell-l">Deaths</span><span class="cap p-cell-s">recorded, India, 2024</span></a>
+      <a class="p-cell" href="#people">
+        <span class="p-cell-v is-red">+127.9%</span>
+        <span class="lbl p-cell-l">In one year</span><span class="cap p-cell-s">on 2023</span></a>
+      <a class="p-cell" href="#cities">
+        <span class="p-cell-v is-red">48.3&deg;</span>
+        <span class="lbl p-cell-l">Hottest</span><span class="cap p-cell-s">Jodhpur, 2024</span></a>
+      <a class="p-cell" href="#trend">
+        <span class="p-cell-v">9/14</span>
+        <span class="lbl p-cell-l">Nights that never cool</span><span class="cap p-cell-s">cities where they rose</span></a>
+      <p class="cap p-strip-note">One reading, one label. <a class="lk" href="#measured">What is behind them</a>.</p>
+    </div>
+  </section>
+  <section class="t2" id="people" aria-labelledby="people-h">
+    <div class="wrap"><div class="im-head">
+        <h2 class="d1" id="people-h">Who it kills</h2>
+        <p class="lead">1,832 people in 2024. It was 804 the year before.</p>
+      </div></div>
+    <div class="wrap">
+      <div class="h-two">
+        <div class="h-two-c">
+          <p class="num h-big is-red">1,832</p>
+          <p class="unit p-kd p-kd-c">deaths recorded as heat or sunstroke, 2024</p>
+          <p class="cap">The second largest killer in India&rsquo;s national table of deaths from
+            forces of nature, after lightning.</p>
+        </div>
+        <div class="h-two-c">
+          <p class="num h-big is-red">+127.9<i>%</i></p>
+          <p class="unit p-kd p-kd-c">in one year</p>
+          <p class="cap">The largest rise of any cause in the table. Heat&rsquo;s share of all such
+            deaths went from 12.5%
+            to 23.2%.</p>
+        </div>
+      </div>
+      <p class="p-legend"><span class="lbl p-kd p-kd-c">Counted or measured</span><span class="lbl p-kd p-kd-m">Modelled</span></p>
+      <p class="h-note"><b>1,832 is what was filed, not what happened.</b> Heat rarely reaches a death
+        certificate. It kills through heart failure, kidney failure and stroke, in people who were
+        already ill. <b>This number is a floor, not an estimate.</b></p>
+      <p class="lbl h-lbl">Every death from a force of nature, India, 2024</p>
+      <div class="mr-h"><span class="lbl">Cause</span><span class="lbl">Recorded deaths</span><span class="lbl">Deaths</span><span class="lbl">vs 2023</span></div>
+      <div class="h-rows">
+        <div class="mr">
+          <span class="mr-n">Lightning</span>
+          <span class="mr-b" role="img" aria-label="Lightning, 2825 recorded deaths in 2024"><i class="mr-f" style="--w:100%"></i></span>
+          <span class="mr-v">2,825</span>
+          <span class="mr-x">+10.4%</span>
+        </div>
+        <div class="mr is-over is-me">
+          <span class="mr-n">Heat/Sun Stroke<i>this page</i></span>
+          <span class="mr-b" role="img" aria-label="Heat/Sun Stroke, 1832 recorded deaths in 2024"><i class="mr-f" style="--w:65%"></i></span>
+          <span class="mr-v">1,832</span>
+          <span class="mr-x">+127.9%</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Causes other than above<i>no cause recorded</i></span>
+          <span class="mr-b" role="img" aria-label="Causes other than above, 1626 recorded deaths in 2024"><i class="mr-f" style="--w:58%"></i></span>
+          <span class="mr-v">1,626</span>
+          <span class="mr-x">-7.0%</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Exposure to Cold</span>
+          <span class="mr-b" role="img" aria-label="Exposure to Cold, 833 recorded deaths in 2024"><i class="mr-f" style="--w:29%"></i></span>
+          <span class="mr-v">833</span>
+          <span class="mr-x">+13.6%</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Flood</span>
+          <span class="mr-b" role="img" aria-label="Flood, 361 recorded deaths in 2024"><i class="mr-f" style="--w:13%"></i></span>
+          <span class="mr-v">361</span>
+          <span class="mr-x">+35.7%</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Landslide</span>
+          <span class="mr-b" role="img" aria-label="Landslide, 351 recorded deaths in 2024"><i class="mr-f" style="--w:12%"></i></span>
+          <span class="mr-v">351</span>
+          <span class="mr-x">+46.9%</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Torrential Rain</span>
+          <span class="mr-b" role="img" aria-label="Torrential Rain, 39 recorded deaths in 2024"><i class="mr-f" style="--w:2%"></i></span>
+          <span class="mr-v">39</span>
+          <span class="mr-x">-36.1%</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Cyclone</span>
+          <span class="mr-b" role="img" aria-label="Cyclone, 18 recorded deaths in 2024"><i class="mr-f" style="--w:2%"></i></span>
+          <span class="mr-v">18</span>
+          <span class="mr-x">+800.0%</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Forest Fire</span>
+          <span class="mr-b" role="img" aria-label="Forest Fire, 11 recorded deaths in 2024"><i class="mr-f" style="--w:2%"></i></span>
+          <span class="mr-v">11</span>
+          <span class="mr-x">+83.3%</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Avalanche</span>
+          <span class="mr-b" role="img" aria-label="Avalanche, 6 recorded deaths in 2024"><i class="mr-f" style="--w:2%"></i></span>
+          <span class="mr-v">6</span>
+          <span class="mr-x">-75.0%</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Tornado</span>
+          <span class="mr-b" role="img" aria-label="Tornado, 1 recorded deaths in 2024"><i class="mr-f" style="--w:2%"></i></span>
+          <span class="mr-v">1</span>
+          <span class="mr-x">0.0%</span>
+        </div>
+      </div>
+      <p class="cap h-cap"><b>Lightning kills more than everything else combined</b>
+        &mdash; 2,825 deaths, and almost never a
+        story. <b>And 1,626 deaths
+        (20.6%) have no named cause at
+        all.</b></p>
+      <p class="p-hole">Nobody publishes heat-related hospital admissions, lost work or school days missed in India. Those are the numbers a city needs to plan with, and they do not exist publicly.</p>
+      <p style="margin:0"><a class="act" href="#measured">What counts as heat <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+    </div>
+  </section>
+  <section class="paper t2" id="measured" aria-labelledby="measured-h">
+    <div class="wrap"><div class="im-head">
+        <h2 class="d1" id="measured-h">What counts as heat</h2>
+        <p class="lead">India does not define a heatwave by a temperature. It defines it by a distance from normal &mdash; and the temperature it starts from depends on where you are.</p>
+      </div></div>
+    <div class="wrap">
+            <div class="p-tabs" data-tabs>
+        <div class="p-tabs-l" role="tablist" aria-label="What counts as heat"><button type="button" role="tab" id="tb1-t0" aria-controls="tb1-p0" aria-selected="true">The rule</button><button type="button" role="tab" id="tb1-t1" aria-controls="tb1-p1" aria-selected="false" tabindex="-1">The normal</button><button type="button" role="tab" id="tb1-t2" aria-controls="tb1-p2" aria-selected="false" tabindex="-1">What this is not</button></div>
+<div role="tabpanel" id="tb1-p0" aria-labelledby="tb1-t0"><div class="h-panel">
+          <p>A day is a <b>heat wave</b> when the maximum clears its local floor
+            <i>and</i> stands <b>4.5&deg;C above the normal</b> for that place and
+            date. <b>6.5&deg;C</b> above makes it severe.</p>
+          <div class="h-zones">
+            <div class="h-zone">
+              <span class="h-zone-v">40&deg;C</span>
+              <span class="lbl h-zone-l">plains</span></div>
+            <div class="h-zone">
+              <span class="h-zone-v">37&deg;C</span>
+              <span class="lbl h-zone-l">coastal</span></div>
+            <div class="h-zone">
+              <span class="h-zone-v">30&deg;C</span>
+              <span class="lbl h-zone-l">hills</span></div>
+          </div>
+          <p class="cap h-cap">The floor by zone. Applying the plains figure to Chennai would
+            under-count every coastal city on this page.</p>
+          <p>There is also an absolute rule, with no reference to normal:
+            <b>45&deg;C</b> anywhere is a heat wave, <b>47&deg;C</b>
+            is severe.</p>
+          <p class="h-warn">So the same 41&deg;C afternoon is a heatwave in March and an ordinary day
+            in June. <b>That is the point, not a loophole.</b> A body acclimatised to June heat is
+            not the body that meets it in March.</p>
+        </div></div>
+<div role="tabpanel" id="tb1-p1" aria-labelledby="tb1-t1" hidden><div class="h-panel">
+          <p>A departure needs a normal. Each city gets its own, computed from
+            <b>1991-2020</b>: for every calendar day, the mean maximum over a
+            &plusmn;7-day window. About <b>450 samples</b> per day.</p>
+          <p>A departure is meaningless against somebody else's normal. Chennai's normal and Jodhpur's are 10 C apart.</p>
+          <p class="h-warn"><b>Reproducible, not quoted.</b> Because the normal comes from the same
+            archive as the readings, you can recompute every departure on this page from the source.
+            It is not IMD&rsquo;s published departure and does not claim to be.</p>
+        </div></div>
+<div role="tabpanel" id="tb1-p2" aria-labelledby="tb1-t2" hidden><div class="h-panel">
+          <p class="h-warn"><b>IMD declares for a subdivision on two or more stations. These are single grid points, so these are days MEETING the temperature criteria at each location, not IMD declarations.</b></p>
+          <p>So every figure here is <i>days meeting IMD&rsquo;s criteria at this location</i>, never
+            <i>heatwave days declared by IMD</i>. Different quantities. The second is not ours to
+            publish.</p>
+          <p><b>And it is modelled.</b> ERA5 reanalysis — a model constrained by observations, not a station thermometer. An IMD station series would outrank this, not confirm it. Reanalysis also smooths extremes hardest at the tail this subject lives in, and contains no urban heat island.</p>
+          <p><b>A grid point is not a city.</b> Fourteen grid points are not a country.</p>
+        </div></div>
+      </div>
+      <p class="cap h-src-p"><b>Sources.</b> Criteria: India Meteorological Department — heat wave criteria. Readings:
+        <a class="lk" href="https://archive-api.open-meteo.com/v1/archive">Open-Meteo ERA5 archive</a>. Deaths:
+        <a class="lk" href="https://www.ncrb.gov.in/uploads/files/1ADSIPublication-2024.pdf">Accidental Deaths &amp; Suicides in India 2024</a>, Table 1.0 — Number and Share of Accidental Deaths due to Forces of Nature and Other Causes, 2023 &amp; 2024.</p>
+      <p style="margin:0"><a class="act" href="#cities">Fourteen cities <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+    </div>
+  </section>
+  <section class="dark-2 t3" id="cities" aria-labelledby="cities-h">
+    <div class="wrap"><div class="im-head">
+        <h2 class="d1" id="cities-h">Fourteen cities</h2>
+        <p class="lead">The desert, the plateau, the Gangetic plain, both coasts and one hill station. Each measured against the threshold for its own zone.</p>
+      </div></div>
+    <div class="wrap">
+      <p class="h-lead">Sorted by the hottest reading each city has recorded since
+        1991. The tick marks IMD&rsquo;s severe threshold,
+        47&deg;C.</p>
+      <div class="mr-h"><span class="lbl">City</span><span class="lbl">Hottest on record, against 47&deg;C</span><span class="lbl">Peak</span><span class="lbl">Year</span></div>
+      <div class="h-rows">
+        <div class="mr is-over">
+          <span class="mr-n">Jodhpur<i>Rajasthan &middot; plains, floor 40&deg;C</i></span>
+          <span class="mr-b" role="img" aria-label="Jodhpur, record 48.3 degrees in 2024, 0 qualifying days last season"><i class="mr-f" style="--w:100%"></i><i class="mr-l" style="--x:97%"></i></span>
+          <span class="mr-v">48.3&deg;</span>
+          <span class="mr-x">2024</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Delhi<i>Delhi &middot; plains, floor 40&deg;C</i></span>
+          <span class="mr-b" role="img" aria-label="Delhi, record 46.8 degrees in 1998, 2 qualifying days last season"><i class="mr-f" style="--w:97%"></i><i class="mr-l" style="--x:97%"></i></span>
+          <span class="mr-v">46.8&deg;</span>
+          <span class="mr-x">1998</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Nagpur<i>Maharashtra &middot; plains, floor 40&deg;C</i></span>
+          <span class="mr-b" role="img" aria-label="Nagpur, record 46.7 degrees in 2010, 1 qualifying days last season"><i class="mr-f" style="--w:97%"></i><i class="mr-l" style="--x:97%"></i></span>
+          <span class="mr-v">46.7&deg;</span>
+          <span class="mr-x">2010</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Jaipur<i>Rajasthan &middot; plains, floor 40&deg;C</i></span>
+          <span class="mr-b" role="img" aria-label="Jaipur, record 46.6 degrees in 2024, 0 qualifying days last season"><i class="mr-f" style="--w:96%"></i><i class="mr-l" style="--x:97%"></i></span>
+          <span class="mr-v">46.6&deg;</span>
+          <span class="mr-x">2024</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Ahmedabad<i>Gujarat &middot; plains, floor 40&deg;C</i></span>
+          <span class="mr-b" role="img" aria-label="Ahmedabad, record 46.5 degrees in 2024, 2 qualifying days last season"><i class="mr-f" style="--w:96%"></i><i class="mr-l" style="--x:97%"></i></span>
+          <span class="mr-v">46.5&deg;</span>
+          <span class="mr-x">2024</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Lucknow<i>Uttar Pradesh &middot; plains, floor 40&deg;C</i></span>
+          <span class="mr-b" role="img" aria-label="Lucknow, record 46.4 degrees in 2024, 4 qualifying days last season"><i class="mr-f" style="--w:96%"></i><i class="mr-l" style="--x:97%"></i></span>
+          <span class="mr-v">46.4&deg;</span>
+          <span class="mr-x">2024</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Patna<i>Bihar &middot; plains, floor 40&deg;C</i></span>
+          <span class="mr-b" role="img" aria-label="Patna, record 45 degrees in 1998, 0 qualifying days last season"><i class="mr-f" style="--w:93%"></i><i class="mr-l" style="--x:97%"></i></span>
+          <span class="mr-v">45.0&deg;</span>
+          <span class="mr-x">1998</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Bhubaneswar<i>Odisha &middot; coastal, floor 37&deg;C</i></span>
+          <span class="mr-b" role="img" aria-label="Bhubaneswar, record 45 degrees in 1998, 0 qualifying days last season"><i class="mr-f" style="--w:93%"></i><i class="mr-l" style="--x:97%"></i></span>
+          <span class="mr-v">45.0&deg;</span>
+          <span class="mr-x">1998</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Kolkata<i>West Bengal &middot; coastal, floor 37&deg;C</i></span>
+          <span class="mr-b" role="img" aria-label="Kolkata, record 43.9 degrees in 2024, 0 qualifying days last season"><i class="mr-f" style="--w:91%"></i><i class="mr-l" style="--x:97%"></i></span>
+          <span class="mr-v">43.9&deg;</span>
+          <span class="mr-x">2024</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Hyderabad<i>Telangana &middot; plains, floor 40&deg;C</i></span>
+          <span class="mr-b" role="img" aria-label="Hyderabad, record 42.2 degrees in 1995, 0 qualifying days last season"><i class="mr-f" style="--w:87%"></i><i class="mr-l" style="--x:97%"></i></span>
+          <span class="mr-v">42.2&deg;</span>
+          <span class="mr-x">1995</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Chennai<i>Tamil Nadu &middot; coastal, floor 37&deg;C</i></span>
+          <span class="mr-b" role="img" aria-label="Chennai, record 42 degrees in 2020, 1 qualifying days last season"><i class="mr-f" style="--w:87%"></i><i class="mr-l" style="--x:97%"></i></span>
+          <span class="mr-v">42.0&deg;</span>
+          <span class="mr-x">2020</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Mumbai<i>Maharashtra &middot; coastal, floor 37&deg;C</i></span>
+          <span class="mr-b" role="img" aria-label="Mumbai, record 41.3 degrees in 2024, 8 qualifying days last season"><i class="mr-f" style="--w:86%"></i><i class="mr-l" style="--x:97%"></i></span>
+          <span class="mr-v">41.3&deg;</span>
+          <span class="mr-x">2024</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Bengaluru<i>Karnataka &middot; plains, floor 40&deg;C</i></span>
+          <span class="mr-b" role="img" aria-label="Bengaluru, record 39.5 degrees in 2024, 0 qualifying days last season"><i class="mr-f" style="--w:82%"></i><i class="mr-l" style="--x:97%"></i></span>
+          <span class="mr-v">39.5&deg;</span>
+          <span class="mr-x">2024</span>
+        </div>
+        <div class="mr">
+          <span class="mr-n">Shimla<i>Himachal Pradesh &middot; hills, floor 30&deg;C</i></span>
+          <span class="mr-b" role="img" aria-label="Shimla, record 29.6 degrees in 2024, 0 qualifying days last season"><i class="mr-f" style="--w:61%"></i><i class="mr-l" style="--x:97%"></i></span>
+          <span class="mr-v">29.6&deg;</span>
+          <span class="mr-x">2024</span>
+        </div>
+      </div>
+      <p class="cap h-cap"><b>8 of 14 set their record in
+        2024.</b> All requested stations answered.</p>
+            <details class="dx">
+        <summary class="dx-s">Last season, city by city</summary>
+        <div class="dx-b"><div class="h-tbl">
+            <div class="h-tr is-head"><span class="lbl">City</span><span class="lbl">Days</span>
+              <span class="lbl">Severe</span><span class="lbl">Peak</span><span class="lbl">Felt</span>
+              <span class="lbl">Warm nights</span></div>
+            <div class="h-tr"><span class="h-td-y">Mumbai</span>
+              <span>8</span><span>4</span>
+              <span>39.8</span><span>43.7</span>
+              <span>42</span></div>
+            <div class="h-tr"><span class="h-td-y">Lucknow</span>
+              <span>4</span><span>0</span>
+              <span>43.7</span><span>47.1</span>
+              <span>39</span></div>
+            <div class="h-tr"><span class="h-td-y">Delhi</span>
+              <span>2</span><span>0</span>
+              <span>44.4</span><span>46.2</span>
+              <span>41</span></div>
+            <div class="h-tr"><span class="h-td-y">Ahmedabad</span>
+              <span>2</span><span>2</span>
+              <span>44.6</span><span>45.2</span>
+              <span>59</span></div>
+            <div class="h-tr"><span class="h-td-y">Nagpur</span>
+              <span>1</span><span>0</span>
+              <span>44.8</span><span>45.8</span>
+              <span>57</span></div>
+            <div class="h-tr"><span class="h-td-y">Chennai</span>
+              <span>1</span><span>0</span>
+              <span>40.2</span><span>47.3</span>
+              <span>60</span></div>
+            <div class="h-tr"><span class="h-td-y">Jaipur</span>
+              <span>0</span><span>0</span>
+              <span>43.7</span><span>43.6</span>
+              <span>29</span></div>
+            <div class="h-tr"><span class="h-td-y">Jodhpur</span>
+              <span>0</span><span>0</span>
+              <span>43.5</span><span>44.6</span>
+              <span>55</span></div>
+            <div class="h-tr"><span class="h-td-y">Patna</span>
+              <span>0</span><span>0</span>
+              <span>42.1</span><span>46.3</span>
+              <span>23</span></div>
+            <div class="h-tr"><span class="h-td-y">Hyderabad</span>
+              <span>0</span><span>0</span>
+              <span>40.0</span><span>42.4</span>
+              <span>14</span></div>
+            <div class="h-tr"><span class="h-td-y">Bhubaneswar</span>
+              <span>0</span><span>0</span>
+              <span>40.9</span><span>48.4</span>
+              <span>20</span></div>
+            <div class="h-tr"><span class="h-td-y">Kolkata</span>
+              <span>0</span><span>0</span>
+              <span>38.3</span><span>45.5</span>
+              <span>20</span></div>
+            <div class="h-tr"><span class="h-td-y">Bengaluru</span>
+              <span>0</span><span>0</span>
+              <span>36.9</span><span>38.6</span>
+              <span>0</span></div>
+            <div class="h-tr"><span class="h-td-y">Shimla</span>
+              <span>0</span><span>0</span>
+              <span>28.0</span><span>26.6</span>
+              <span>0</span></div>
+          </div>
+          <p class="cap h-cap"><b>The sum of qualifying days across all 14 stations. It is a count of station-days, NOT a national number of heatwave days — those are different quantities and this site does not blur them.</b> 18
+            station-days across 14 cities, the last completed season.</p></div>
+      </details>
+      <p style="margin:0"><a class="act" href="#trend">What is rising <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+    </div>
+  </section>
+  <section class="t2" id="trend" aria-labelledby="trend-h">
+    <div class="wrap"><div class="im-head">
+        <h2 class="d1" id="trend-h">What is rising</h2>
+        <p class="lead">Not the afternoons. The nights.</p>
+      </div></div>
+    <div class="wrap">
+      <p class="h-lead">Five measures, the first eighteen seasons against the last, counted across
+        all 14 cities. <b>The pale bar is cities where it rose</b>, the grey where it did
+        not move, the dark where it fell.</p>
+      <div class="h-conss">
+        <div class="h-cons is-up">
+          <span class="h-cons-n">Days meeting the criteria</span>
+          <span class="h-cons-b" role="img" aria-label="up at 8 cities, down at 3, flat at 3">
+            <i class="is-up" style="--w:57.14285714285714%"></i><i class="is-flat" style="--w:21.428571428571427%"></i><i class="is-down" style="--w:21.428571428571427%"></i></span>
+          <span class="h-cons-v">8<i>&uarr;</i></span>
+          <span class="h-cons-x">3<i>&darr;</i></span></div>
+        <div class="h-cons">
+          <span class="h-cons-n">Hottest afternoon</span>
+          <span class="h-cons-b" role="img" aria-label="up at 6 cities, down at 6, flat at 2">
+            <i class="is-up" style="--w:42.857142857142854%"></i><i class="is-flat" style="--w:14.285714285714285%"></i><i class="is-down" style="--w:42.857142857142854%"></i></span>
+          <span class="h-cons-v">6<i>&uarr;</i></span>
+          <span class="h-cons-x">6<i>&darr;</i></span></div>
+        <div class="h-cons is-up">
+          <span class="h-cons-n">Hottest afternoon, felt</span>
+          <span class="h-cons-b" role="img" aria-label="up at 8 cities, down at 6, flat at 0">
+            <i class="is-up" style="--w:57.14285714285714%"></i><i class="is-flat" style="--w:0%"></i><i class="is-down" style="--w:42.857142857142854%"></i></span>
+          <span class="h-cons-v">8<i>&uarr;</i></span>
+          <span class="h-cons-x">6<i>&darr;</i></span></div>
+        <div class="h-cons">
+          <span class="h-cons-n">Days that felt over 45&deg;C</span>
+          <span class="h-cons-b" role="img" aria-label="up at 5 cities, down at 5, flat at 4">
+            <i class="is-up" style="--w:35.714285714285715%"></i><i class="is-flat" style="--w:28.57142857142857%"></i><i class="is-down" style="--w:35.714285714285715%"></i></span>
+          <span class="h-cons-v">5<i>&uarr;</i></span>
+          <span class="h-cons-x">5<i>&darr;</i></span></div>
+        <div class="h-cons is-up">
+          <span class="h-cons-n">Nights that never fell below 28&deg;C</span>
+          <span class="h-cons-b" role="img" aria-label="up at 9 cities, down at 3, flat at 2">
+            <i class="is-up" style="--w:64.28571428571429%"></i><i class="is-flat" style="--w:14.285714285714285%"></i><i class="is-down" style="--w:21.428571428571427%"></i></span>
+          <span class="h-cons-v">9<i>&uarr;</i></span>
+          <span class="h-cons-x">3<i>&darr;</i></span></div>
+      </div>
+      <p class="h-note"><b>Dry-bulb heat is not the measure that is rising. Humid heat and warm nights are.</b> Across these 14 stations, the number that moves most consistently upward is not the hottest afternoon — it is the number of nights that never fall below 28°C, and the number of days whose apparent temperature clears 45°C. Peak daytime maxima are close to flat at most stations and fall at some.</p>
+      <p class="cap h-cap"><b>Counted as cities, not averaged.</b>
+        How many of the 14 stations move each way between the first and second halves of the record. Published as a count of stations rather than a national average, because averaging 14 grid points does not produce a national trend.</p>
+            <details class="dx">
+        <summary class="dx-s">Why the afternoons are the wrong thing to watch</summary>
+        <div class="dx-b"><ol class="h-ol">
+            <li>It is not evidence that heat is not intensifying. Three of the four things that make heat dangerous are not dry-bulb maximum: humidity, night-time recovery, and duration.</li>
+            <li>A reanalysis smooths local extremes hardest at exactly the tail this metric lives in, and contains no urban heat island for cities that have doubled their built area.</li>
+            <li>A grid point is not a city, and 14 grid points are not a country.</li>
+            <li>IMD's own declarations are made on station data across subdivisions and are a different quantity from this one.</li>
+          </ol></div>
+      </details>
+      <p class="lbl h-lbl">And who is looking</p>
+      <div class="h-att" role="img" aria-label="Monthly attention over three years, peaking at 78,038 views"><i class="h-ab" style="--h:25%" title="Aug 2023: 19,356 views"></i><i class="h-ab" style="--h:17%" title="Sep 2023: 13,446 views"></i><i class="h-ab" style="--h:14%" title="Oct 2023: 11,028 views"></i><i class="h-ab" style="--h:16%" title="Nov 2023: 12,813 views"></i><i class="h-ab" style="--h:12%" title="Dec 2023: 9,123 views"></i><i class="h-ab" style="--h:11%" title="Jan 2024: 8,292 views"></i><i class="h-ab" style="--h:13%" title="Feb 2024: 10,330 views"></i><i class="h-ab is-season" style="--h:19%" title="Mar 2024: 14,590 views"></i><i class="h-ab is-season" style="--h:69%" title="Apr 2024: 53,466 views"></i><i class="h-ab is-season" style="--h:95%" title="May 2024: 73,760 views"></i><i class="h-ab is-peak is-season" style="--h:100%" title="Jun 2024: 78,038 views"></i><i class="h-ab is-season" style="--h:49%" title="Jul 2024: 38,028 views"></i><i class="h-ab" style="--h:27%" title="Aug 2024: 20,907 views"></i><i class="h-ab" style="--h:25%" title="Sep 2024: 19,192 views"></i><i class="h-ab" style="--h:19%" title="Oct 2024: 14,689 views"></i><i class="h-ab" style="--h:13%" title="Nov 2024: 9,757 views"></i><i class="h-ab" style="--h:13%" title="Dec 2024: 10,098 views"></i><i class="h-ab" style="--h:14%" title="Jan 2025: 11,067 views"></i><i class="h-ab" style="--h:14%" title="Feb 2025: 11,158 views"></i><i class="h-ab is-season" style="--h:23%" title="Mar 2025: 17,814 views"></i><i class="h-ab is-season" style="--h:30%" title="Apr 2025: 23,497 views"></i><i class="h-ab is-season" style="--h:38%" title="May 2025: 29,287 views"></i><i class="h-ab is-season" style="--h:43%" title="Jun 2025: 33,182 views"></i><i class="h-ab is-season" style="--h:31%" title="Jul 2025: 24,420 views"></i><i class="h-ab" style="--h:24%" title="Aug 2025: 18,734 views"></i><i class="h-ab" style="--h:16%" title="Sep 2025: 12,454 views"></i><i class="h-ab" style="--h:10%" title="Oct 2025: 7,854 views"></i><i class="h-ab" style="--h:7%" title="Nov 2025: 5,781 views"></i><i class="h-ab" style="--h:7%" title="Dec 2025: 5,260 views"></i><i class="h-ab" style="--h:8%" title="Jan 2026: 6,550 views"></i><i class="h-ab" style="--h:7%" title="Feb 2026: 5,174 views"></i><i class="h-ab is-season" style="--h:9%" title="Mar 2026: 7,369 views"></i><i class="h-ab is-season" style="--h:15%" title="Apr 2026: 11,648 views"></i><i class="h-ab is-season" style="--h:32%" title="May 2026: 25,189 views"></i><i class="h-ab is-season" style="--h:48%" title="Jun 2026: 37,393 views"></i><i class="h-ab is-season" style="--h:34%" title="Jul 2026: 26,568 views"></i></div>
+      <p class="cap h-cap">Lighter bars are months inside the season. Peak
+        <b>78,038</b> in Jun 2024, floor
+        <b>5,174</b> in Feb 2026 &mdash;
+        <b>15.1&times;</b>. <b>Attention peaks with the season and is gone by August.
+        NCRB publishes the death count the following year, when nobody is looking.</b></p>
+      <p class="cap h-reg-i">100 items from
+        55 publishers.
+        Reporting is tagged as reporting; no figure here came from a headline.</p>
+            <details class="dx">
+        <summary class="dx-s">Read the 40 most recent items</summary>
+        <div class="dx-b"><ol class="p-news-ol h-reg">
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMitwFBVV95cUxNc2NkUVdza0Q0OXBDVXZWUlhwMjZXb3dmaU0wQ1Z6T1pSZk95ZFpVUjlMRDhXMngzMER6Y1J4dXhNU19kaUliOTR4VVk1MDFMMDV2ZzIwMXNNaFNfWWlwbWFfTENDVnNiRVBtemRPVVdTWG1xeUdndURHd292X0dzOXhGTEJuN0tMUDFMOFcwRDZFalpmQWYwN3cxOHozSlFWQmtQaTRHN0F1NXBHQ056cTlLbFlRWVU?oc=5">One Day Of Extreme Heat Causes 3,400 Excess Deaths Across India, Study Estimates</a><span class="cap p-news-m">NDTV &middot; 29 May 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMiqgFBVV95cUxPT09GVU1ySkVNM3IybXE5N3FNYm9OY0MycUJPS3p2MXRrSDNSRXVhR1RNLXlhY0diWXR6UC1BTXA1Rjg1bFh4aWxFZVJ6M01kTU5JVlVSYnFhTGxpQXdlVnNqbEZvUlhwZDczRHRLbHFXdlR3WlBVelJ1Q24zZEFPU2VNX3dRMkZmMTYxSE9aZGtPQXI2MGtqaVBoNG9iY2w4akpaS0JydktWUdIBsAFBVV95cUxNdXl5WC1tVlNEanlCa0pqbWRLOVpRa0NTSzY3UXplR1RXaFlycU1LTlRhQ0E2RU5nbHk5RDhCUW5uQW9oWEVqTTZFczdXRmFwZ0RNbzVFU2taeVpMV0ZfaF9JbGlFdXdCaTBjNDZHek0zTkR2ay1ReUMtM0ZvbWFtXzdDbHJyWlNXQVhRVHZQUFlkSFhiX1lVUXZwRldzNmUtbWVseVEzYVlCbFR6UFFjVA?oc=5">Experts explain | Why India struggles to count heatwave deaths as climate change intensifies</a><span class="cap p-news-m">The Indian Express &middot; 07 Jul 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMia0FVX3lxTE9xdEVHSTZpM3hyRlFxaWlfbFNqQzUxcTNFVHBXMVhBalNXUGZ6bjdCTWRXRXNKZjJsSmNMNGpYYkpKUmNqdl9qaDl3SE0zV2Njd2h6QXlNLUUyM0J1TlVpc3RiWG01RjYzUkNn?oc=5">Workers Are Dying in the Heat in India</a><span class="cap p-news-m">Jacobin &middot; 25 Jun 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMiuAFBVV95cUxOX2FyLTZVbmhqV0RpWGxwQU53STJNZHZwNkdweldoUkpOS0hfUGdsNDlidFJfTmNldHhJNHFabTJvQVBwSXhyTGpTSnN4R2p0NkJ3M0ltX3JZV1VyOE1QSzBUTEtpSjF6QTVEOHp2dF81Rm9aX3BYLVV2b2JQNkpOV2NHR1p1N1hPeFhyNE9MeVFTNElTWkVWb0g5dXJCX25BaV9wWnpHRTFvUW42U2xjM0VmQ1llOWVE?oc=5">Too hot, too humid: why the sustained heatwave in India and Pakistan is so dangerous</a><span class="cap p-news-m">The Conversation &middot; 28 May 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMi4AFBVV95cUxOS3NWRTBQWUN2dWcwVGw3eUc5MDl2eWV3RmZFUElQZFVDZ1lTMjV6NG1mLVN4aktLTHBhMVJzYWNtR2VWdDh6YnRTbEdtX3JycFdmMDZ2eHVFZG03SDRjVk9WQUs5MEVSRXlWVVd2U0NRY0d6cjVqbElJOXgtemszQm53TF9DdWN4QzdiSU5OaV9LWl82V0RpdkRKUG9aVENXdHpoRXQ5RHVvZ1IzSnRiNGYwQzZuUWpXbVExYW9aMmxrM0JyaWd6NlptdU45dXZJWjVHTmhVNXBqYk5DSjRHWtIB5gFBVV95cUxNbFU1b0hUSjlvcE9lVjNpR2puWUFtY09MaWF2eHk5cC0wOWFESy0wVmVFdmgza09FeUdISkJMdkUtQnhIZlUtMVBNUjBvLTFmVDhrY3cwRk1ROE5LOWswNmJPdWFydXlWeERuNUJMSGJOR1hjd2V3Wk5fRVBfYkgyNmVFTkhWTjFZYUV1Mmp5NjZOOWsyZEY0amVsM01EU3JMWVM5OVhGdk9ReDVrN2E4OUtnU1JMUFdIQXhQdUZUbU9LelVWVlJORUtqQVc2azlrVk9wcWczaWRIaHJ6V3F1SDlXaWtoQQ?oc=5">Depending on Their Duration, Heatwaves May Be Causing 3,400 to 30,000 Excess Deaths Every Year in India: Study</a><span class="cap p-news-m">TheWire.in &middot; 30 May 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMiwwFBVV95cUxQMC1KX2dwN2NLYTRFeDl0cmpkWkM5LWlVd0M3RlkzVFlWekNjM0pOVVRPWGZrc3NDM2hGZ2k4OWF4LWpqMDc2ckJJaEg2ckFMbzZxVUNaZ2IwQ1lycm44OWItcHVpQnhWRmlacXpDY0xRek14Mmo4aGFDUW54T1QxbDhqVVZPOGZPOVFyRjVKV21DamFCN1pOaWpkVnpyNGFQZGt5ZmJKVFdwTGF1Smh4cUZzX1NwT1VGQlZRcHJwakFyRVXSAcgBQVVfeXFMT0tXVXoySUdUSnFlZnpPcFJIOF9heDlvdGFWRG1oYWdTbEpEbHA0cUl2NzlEeFdEeFhza2xqMVBabHRVeGhYOVRIeUUzNGRTdGtUdnEwQ0hSWkpBLTN3dUZQY2xIc0FQYWw5ZFpEd2wtTVBOMjFTNG0xdUxZT3VOZ3FIbTltWVFSQUJfNXgzT1dFdHV4MFZhTmltNlpyLWQ2NG52cGl1UXNlRnVTVk5BRkJhYjVlMUhQR2UyOWhVRFBhdkQ4SGUxRmQ?oc=5">18 killed, 2 children found dead in hot car as France reels under severe heatwave</a><span class="cap p-news-m">India Today &middot; 23 Jun 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMivAFBVV95cUxOOGtmLWJKNWRIVlpqQ2VlRXZobDNiRnlYTUJ1QmV5UENXZEdoZG54Z0UxcDB0b3Q5dmdxemF5ZXJsb2I3eVNrOEtyM0p2S3FjT2pTaFlpdGRFWklMY3N3YkRtSS03MlBPamQ1SlkxVlk3ZnJwX2ViWWd4ZkVyeGZpVndpeTF2Z05pdnVMRnA3VGxOMUl0dmxtejlQY1QwOU5oRzFxVU1kTVhjLU51OFd1X1VzaVN3RWVldG5IRw?oc=5">DeBriefed 29 May 2026: Europe’s ‘mind-boggling’ May | Indian heat deaths | Nigeria’s solar mini-grids</a><span class="cap p-news-m">Carbon Brief &middot; 29 May 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMiX0FVX3lxTE1od2luSElYa2FheHI0cGZjWFpzQ3huMm1wTUpoUHcwU2l6WE9kSWJFam1JRkZYYUhIY0t5dUlrbFZ1YjZoTFMyVGVwWk1md0xIWUczREFMQ1ZKUjRHU0tJ?oc=5">India’s poorest states could bear the brunt of severe heatwaves</a><span class="cap p-news-m">Nature &middot; 27 May 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMinwFBVV95cUxPbW1MTnN2Y2FjS1R0Mm9OQ3dKOERQcVBGYlhlc01kcm11eTUwajh0UUJjMUlfUHBWNEFCdWZndlRmUnVGYzczcDRwc29FMFlQMjF4UTJhTy1BRmhPZHduS1ppbmZiQUwtR2pvLW50UHFEbFFoTnBXWVItOFB1b2pjYmdsTENxcS05QmxkMElIS1g4Q2JDd1kzZF9FLWExdXM?oc=5">Estimating heatwave-induced excess mortality in India's districts</a><span class="cap p-news-m">Frontiers &middot; 11 May 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMiwgFBVV95cUxPTDhKOGgzcDZTQ285bmdVWjkzN2RqOG5nWjFyT1VRdjVqSWlaTGhYVG9SN1N2OERNcGRJMlo5LWhUX2FxbC1iMTYtVmUtQzhnY3hSX3ZrNDJJdlJxRFMxSmN0TmN6T3hmT2ZmS29nemxyVjg5N3UyN1lQa0xvdHRtb0FjTldxa2t6aUozdEpDeWdJSlFmZ2w4ZV91OExUX3h2WG9CWjdCN3BvLWNVUXVKbkk4YVFucDZSbF9GY2J3MVNmdw?oc=5">Climate change triples chance of deadly 2026 South Asia pre-monsoon heatwave: Report</a><span class="cap p-news-m">news - Mongabay &middot; 21 May 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMi8wFBVV95cUxPZW1MNWl2eENzTDgzTVp4OTZ0TmJkNlBwMUdLRTh4ZzB1Z053NEZCa1JBNVhpWnJxbXVScVprbllYQmlvM2xIb1NmM3BJU0NwVnZSVFE3alZGRXRZTFVDTWlhUXVISFF3dzNuNzBpZ0JkVXVWYWlrSWZRRDFXSzBoc05ER2Y4dmdWc3Z4RzdTOEdEaGpRWWtVNldEU2lYcTRoWTJiSnFvX1lUS3MyUDNIcE9CTHhSUVYtVUk2d2Q1R1FkRVo0WTA2MDYtaWk3ZDFYNlRVTVg0NVY0a3dfTHdLWDBFTDlUTnVYLWtDVjFuOFIwT3fSAfgBQVVfeXFMT0tUNVIwN3FGTTBoRWdiNjJhbHh0R0MyTTAxaUtUS2xTNTc1bUxsb0xQZHhISlliNklvTVpqZDhXZGFsSGFaanNRUHNBU2pYLW5HS0hxUkw5bjdJdUNab2dWcnYxZHNvX3c5SnpBbTlPLWMyY2xvLXdKSk1xdEtzT1lUMFYyem9TcXI3NnY5WGc2emFiZkRjaVFjeEtOUUZMZlJQSkxHcmRtaU9CalNkaFg1YUpQam5BVGlibTR0MlZzUW1VTC1SajV2NUdsdU8wRTNCUkU5bU1EZ0J2V2xQbHoyOFhJZWVqWHRiOHZobF9lVU1zbkd2TU8?oc=5">India's deadly heatwaves are getting worse: Here's what extreme heat actually does to your body</a><span class="cap p-news-m">The Times of India &middot; 11 Jun 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMi2gFBVV95cUxPUkZ5VmJJTTF4Ti16Qktibm90STdwNXMzR19mSURGZ3BXSzJnTTQtQ0F2eThUUXZ5WmVpTU5LVTJpZURDTGI1eDdRbE9hNm54RXAzVzlqTVk5RFFqV2hxcS1qWjBqQ0hjdVREWWRGYXF5Y1huVWJIcWJTNGprV0tIWEp6ZXh5eGlxb0d0eEJUMVUtOWo4Ri01Q2hSWEtSOUtlZ2RNS3NsdTZQREQ4bEViRzRZMnFfdTQyTk9xLWVndG55SjN0YzVwd2dMZnU2bURRbC1BYUZLRmdGd9IB5wFBVV95cUxPdl8wTHQ2RThxM3NNU2Jsb0x6RHFKbUlvNnlDejJuOGxCTF9JX3h1bjVCNUFkWnE2Y0hnSGZlcnRHb0ZVRkNveU1yOTJRTEhZdXExUkRLM29oMWloYmlyZGFncmRjanlOSkc4bFp4QTJTeWZlMEd0VEFEQS1CUHRfS1N3OTd4dnlsRms4ZnpIQTlpRkRzTzhVTDEtbGd4RXlvR1pUeDhrSkg5UEc3Y3RZd09xUHRjaU1Wa0M0c2h4TGZ1LTNrVVRKR1pTSzVnblEyTlBFa3BySUJickExekcybGZNMm4tYkk?oc=5">Heatwaves may have driven ozone exposure linked to 26,500 deaths in India in 2024, finds IIT study</a><span class="cap p-news-m">Down To Earth &middot; 16 Jun 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMiowFBVV95cUxPeUtzaVRneDZVYXNTTElHNUd1azdqdUJjMWNEVzFNMVZsOTJlTGR5WElpMmVSNFc1WHA4RWtrZG1GUXN1c0NSSS15cFBrZFBfT21tZXdpWU16VHhtUW01dWRySG83eWJLMXRLQ1dTZmhtQ1ZxY0ZuVl9qWVRvbVNPNWlEeWNDVkotM1lyaWM5WDBzcksxbGhzQlZVVW1mRkszcnJ30gGqAUFVX3lxTE80R0UzSjJXSldtMTM2WHdhT2xEb2ZfaGQ1OXp3QzAycmRQZXlackZxcVRQOGcxbmE4dklXNkNLTDEwTFNyRld4LU1XcGR5elRqWExNNXE4SzJ4cmRha1MtVWZIT1FmZXItUHhyRzJraHhUQXBMZzJ2NDdUY1ppU2hkVkVBMVBQX1lkNXp5VXFtOFR3eXppZmpXbFBqYzZ4NzlNYlF4WmpzdTVR?oc=5">Europe heatwave 2026: France reports 30% rise in deaths as temperatures shatter records</a><span class="cap p-news-m">The Indian Express &middot; 04 Jul 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMirwFBVV95cUxOcDFLOFNzSWlzNDVfcW5RQ0xtMW9HM3JyYmtTTXYtVGdkaWR5QjJLTERWeG0yTTJ5aUVVbU41VFFvX2tKQmxvak15SERneGs2VUJqNm1NRmNNV3hLbURRREpiaXpoWU9jZm5RQWhOVFNmZFNfcHJVNWlZbFdsdklTcUJpNHAxcVd1cDQzVFNjd05OMDNTYm9QeUptRzFmd0E5dTJ2NVZ0MnE0YTRrb3VB0gG3AUFVX3lxTE83Ym1oMHN6RGxvTnV6RTZMTHVHNWU5Z3hZUExRSzEzVm5lcC00RUdhUnlHNzNaZ2xpR1ZhWWpqMXNKV2U5clhQcjdvTEcyTnZ5YjdTN2V1VVRqV1ZEbTk4UGJyWnR0OTBIVUl1My0zUnRRYjFZUFp5MEFMcnBCR1pvZERMeUs2X2lXWld0N2lOUEhZTXFhNXZ2bHFzc0RFdnRFWmk3eXNGbi1KZ2ZfN3lzM1hkMzc3QQ?oc=5">1,000 More Deaths In France's Worst Heatwave, Total Rises To Over 4,000</a><span class="cap p-news-m">NDTV &middot; 28 Jun 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMivwFBVV95cUxNRGY3b3ozNUJxNkdxd1A1Z0NHOGZFdU5acjQ4YnUybDlfQlhGQm5vSlJHRVdZZF9mZTI4azBrRTd1Z2hNM3kxTUgzaWtlSkk4WVFUWUNiM1lZQ09pamJMRzExbHVrVWRjZ25RaTNVMEFiREZQQ3Z3Tk5fenc0alQ0cG4wRS1yZll3Q3VqS2NMLVZfMTFmUW1GYkM3S1hhTk55VUF4aV8zMjRWS1JIRjI1N1o5Q3JxSWMzV3l3WkZfc9IBxAFBVV95cUxQcHp1VlpicEctMEs4WU4wZW40QmN3U3NZNjNheW5xaDlnbHh0M0pvLVJDZEhMLVdDaDBGOExuTnRTMXROYS15OXZPdTBYVmtabVc2ajdES2NwcHQtbTl5UkRRektSbnpXcWp0SHhFVTVWQmlLX1JHcVVpeU5kMHJXYzRqS0M5eGwzVUJ5bmVqeGhsU2I1dWR5NDZYSWozbTFGLVFYeHM1ZVNzekF5bUtLeW9tSG5lc2NLVTZsamtLZFhLVjRq?oc=5">Europe heatwave linked to over 10,000 excess deaths in late June</a><span class="cap p-news-m">India Today &middot; 17 Jul 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMizgFBVV95cUxNNlNKT2FBaWNPVXJCVTZlenl3SFVjV1cwOHFES3BjQUlRZW8yd3VKd3ZMSEZwOUttMzdlUVg3UDJLYkc4OTNwcHp0Qzl3LUUyRkU5d2Q2T045TDhQZ3NjYkxQeUlidXJwTkNIRzZxNThkVnB2clBCajhhWVNEaERRWWZfMzBiVktMQXg0Y3RrbUxKdHRjcDVqU2JWdW5hYnhJcHRPaWJOR3dZdndPQ3VPcXo5WlZTbEs0WThUbGhtUUE4dldNRVB1OTNBLUt3QdIB0wFBVV95cUxOQzlYQUtBeVMwRWdVSlBuZWpsMVJxS1Z3VXpaWnpsTjNDY284dmk4MVp1LWlHbkVqWGpnN1ZWWWlUV3NMam1GTmN4SkV3TXRxVGtYVF9MVFhicEpJQm9BMWNLRzd0SEVoQ3d1d3YxZ1lUX3dxd21yMGp3MXBUZ3hrZ09JbGFPaEx1azBTUE9NaU1McmxGdmpIckhmTm1NcHlZZHJzbFdSTHBNdENBME1JdkRuaHVGTXpSbnctb3lETXNnZEV4R0VzNmo5Z0gzQzB3aXpr?oc=5">Heatwave Across India to Abate Soon But Leaves Trail of Deaths, Power Demand Hits Record Peak</a><span class="cap p-news-m">TheWire.in &middot; 27 Apr 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMi2gFBVV95cUxNNXdQdVVLcTBuWjVpNzFScHM3TkpRUy1SVEdfOERneFlreVZFWFpYeE5LTnhBV2xqRUd0SWswUkdXTlNTa0lORlNIUjdlUDVQSWJTLXk0Z0RxS1UyVzdSSjFnUFpGLURaUFBxd1p6eVpkbWtjN3RjZXRhVjlqdUtPUlpiQk55TDh3c3lSbGpoX2JmbXk0NXBKZHhsMVI2dkZJVTNWcFJGZzBpV1AzYW5uZlNiTktJTVpxR0l6YnBsYmxxY3BsamU1dThaN0o4YWRWOE91b3hJY2J3UdIB4AFBVV95cUxQdEg3aGZHcks0N25qLWhBVzluWjJvLVZDQWhDZE9vM01INktoYVYwOHQ0SEZZRkhnYUhqOVA5ODE4UXluWGJxQ1JBcnJURW1PTU5OV1ZaOWk2dElWbVBMX2tIa1lja0NaZHBobUZxR1doaklLajVsLTRQallnYTNSdUlveWNXTVl4TXNwWUpuLVBwbDdPMVcwVFZpeUtYcDNTT3pwT2hzeUN3R1dVckV0emNLdURfVmEzbk95eHdYRjhMYnpia2FxR1R3d3FQZ0tDaEY5S2FaaVNXRGlYazNncA?oc=5">Europe’s deadly heatwave: 40 drown in France. Which countries are worst hit and what’s causing it?</a><span class="cap p-news-m">The Indian Express &middot; 23 Jun 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMisAFBVV95cUxNTTQyR2ZwYXFYN1ItckprdlFWbVVVVUVwNXhaVDdRcHpWcWx4alB3WE50M3RDM2loaVVYLXh1NGpweGF1Q1JNU1ktdldLZUlaMGpnS2RZYWttZWNxRUR3aUExcm0yb05zWWlBU2dOOExpUWFYbXRDQ0ZOUmI0SlktdlZHYURFU0pyQjBsZW12M3JHRjVVaGJBTmgyb1BOY0dmNmQwTnRwVTh0d0lnOFlZaNIBtgFBVV95cUxPRThnRlE3bXlnZVVDNnFGMGRuOXlVczcyTFU3c1VfTTNjWEZ6VVBrcVFTaERaN1RjWTJGaG5VWEpoSmN2NEU4WmVLMWxEYW9HU1lpT0xrd3cya2NSNXJfS1p6dUNGOFdNLUhHaDNrYjdrMTQ5WG9EZkRsNHBDTnRJSkZ0Q2VmQ2FTdG5TUWdlRm5aT2h4RVRmUDIzc0VXcG1pYmVDbmYtV2tZLWYtdFJ3NnJxNG45Zw?oc=5">Europe heatwave sends urgent warning to India as heat deaths rise</a><span class="cap p-news-m">India Today &middot; 29 Jun 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMivgFBVV95cUxPWk4zSHBPN3VrSGFTWFRSUk1tZDNJQnlEcDdFWjFiSmdZTGd2MFNJbnpZcVhVM3M2WXFMY0d0bGlyVDNpakFXdUdsU2hUU1BwZUJrZWcxY1dCd19uTWs4cVg4eEV1cFlYWkxsNTFEbmdKb2VaeTJ6ekVQTnFGV09QWTFxaDc0QnIzWU9iQkFDVXluRVBuRTBULVVMVHNaT0x4MTQ4cWlZc3lhT3QxWC1hVGVTSnVhZDVSclZFV0t30gHDAUFVX3lxTE5NaTdCQ2xwcHFnU0RfVTRsRmpET2twU2RWbTQyZU40alJmcDR1QkFjbHVENGpBeDBVOEk4R3A4Z3ZHaUNZRHV3cWNMcU1UYnBZejBibmMzcTYwOHdTdVlBNXExdE9ZZmc4WThqUF9oVW14RWJLMHpDMFhXS2NxbzJ4Z0ZGcC1NRkpERWNLVUp0ZFVIX1dLVEN0ZnRmWnphbWpQLW41d2U4VDQ0YUpDUnEwVUpLeWphNTFPTTFfbk1obUZJQQ?oc=5">France heat wave causes 1,000 extra deaths as WHO warns Europe</a><span class="cap p-news-m">India Today &middot; 28 Jun 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMizwFBVV95cUxNaVI0N1lQN0RqQU5NMm82SkhGSnNaWF9FVndZUzM3STZ1a0ctVXctdVVhdTdWWU5zLVpHRkEzTzVPNVlSdDJIWnE0MjJiS2p6bW1SM3hYSDhjN0h4R0t3cE9GWG42TEIyc3RmQk9kUTNSQzFacUN0YVY3d09SZldNUDc0SENNSktJRDQ0RlVlSzhDWUNaT2ljTGxEbjdXSWNfZG03QVNZZUlpMjE1bnRMU2ZHSDhpN051eXlwa3VDVV9RUEdnR0NwUWlJbHdxam_SAdQBQVVfeXFMTWVBRmJjUmxwZnc3VFhMLUJ1NnRyQm5pdUZUWWhxNXdDTUJHVEdsRk5NLWRnZzdtcEZxRUJ3bkp5WFdQcXFDbVlNOS1qOTF5M2l1bm1LbHFHaFlLRjNaRjFYdFEtV0kxTUc3bzkwM2RkTWdMdkxnYlpURFNaaE5DNDlCTHJJTjFxd2FVZGFVdWNWNW1aTHU3WUVHWjlDRjh0ajJERTFMMHVHODBpUHF4VGRpUk40UnhMLTYxY3QtQmxlWDBDQ0VSQU52RnpWMzVxNlhVMkQ?oc=5">Europe bakes under deadly 44°C heat dome; death toll mounts, schools shut</a><span class="cap p-news-m">India Today &middot; 24 Jun 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMinwFBVV95cUxPQTJLbUdWeGtBN1laOWd3cmhUaFVYTFBVcmVtSndHeFVaRTZLY2dnNnVMeHVEVHRfNlQ5bk9hT0E2Z18xY0tjRnV3NThQYWpWT2x5cjlrNUxKeExxeWtsSDdwX1NHMmgwRkFxS25teUVwcWVqdHNvMUVkZHZmM3A0Q3VCbmREODRoZjNiMzRxamd0U19BMVBLaEN4ZEl6RGfSAaYBQVVfeXFMTU9HSEZ4NEhoNjVxWEdVRkNpVnByZzVPWmZYdVAwaXgwbGZhWV9rSmttclAxWGtCcU1WQWVrcDdDb0RwWjZIdTVOM0M4UEZmUGpYMkdZelRoUGt4QnBqYjlLeHB3VzNCQmRaUmZ6SWMycXF3OFd6dWJUMzdxa0VfQjZoUFN5U3dFWndrenRQMjRoUWFWdnB1R2FEckoycTR1RkhzM0FQUQ?oc=5">France heatwave kills 18 as temperatures hit record highs across Europe</a><span class="cap p-news-m">The Indian Express &middot; 23 Jun 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMi7gFBVV95cUxPcFlWbThqMlNKY3pCazRiREdNNXljYUkyX0FUQUhxNXFPQlZrNi0yeENpZVRRV0VaSmVfbXF2MlNxR3pSSnJ4UHJyMEdQZTdzT21aV1hFS2lXRk05cnhJUDEtMGMtakE4OTc4TmZQVHZscmlSbTFQRWp0NUZoRDVIQXBXaXpFOTl0VndLTlowak5VQWVlVWRaa1dFak1uWU8yMC11dlhDU3R1OFVNTlpPdXhIMHJoU1NDaVdfalBHTWc2WUI4T0UtU3ZJTDR1bDBTeHBVRkRpWUoydGt3ZlFaNlhOZGoyWlVIVXRKc0dR0gHzAUFVX3lxTFBpRnp5dzcxUWQ1SG1Tb2VXdUJhUUJyWWpxRm9SSTZIajZxcDNMZVlZM0ljN0p6UHFDREhsVGFGZ1ZiQ1dJNEtsb2JxMFhMTkJSbUdPOTlaQnREU0VoMkJocWlMWXFLcXhSTVFmRXdhSlNkdUNqX3d2bzh4Y21VQlg1UGVhcUlHSm1IVTRKaE9qaGtXOUFXRjA1N0p4cWp4c0NKLU11cy1MUnpXQjV1Y29qbWZiZlZZZ0tQZUN6SmdGM3lIWkR5OG43RU1BWVkxYjJuRzYyS1AxTGUwTm0zOFlQMVF3R1JCVmt5dlVJdzZ6RjREcw?oc=5">Germany records over 5,100 heat deaths as Europe reels under record-breaking summer</a><span class="cap p-news-m">The Times of India &middot; 09 Jul 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMixAFBVV95cUxOY2FMcUc4MjFjZXFObnJUbW55VFhCOHZjb0hSdWg2aTBzSDI4aGswcFlMaks3QVNPc1MxWDRILV82cUt0UDRPNEp6TmY4R05iSGxmMldPQUYxbW1yeFk3N1UtTUI5aTlsbDRzZDNsMFRJZjdDWU4yY28yLWtYRGthUjlnYWpVRE85LXlnbFRYOEtPVTVSWW9Yd21tLW9ub09qWXJ2bGNEMExmWmFTdll4SjhfeGpBTHBOalMzWG5YcFlXR1Rh0gHLAUFVX3lxTE5jU3NhN2xTdmlTV2FKd3psUFZaZzgyWGdsQVlfWlpUOHlfWER2a0oza08wYU5yVEVqM2k4Z190TUZwcGhseHRXY1FUSzBGUllvVXNhazhLbWtaUUZRczk5cGZ3QTctYmtJMmtyS3FUN2d2eS1sWk5FN1ZuYzZ4bDNFNHZwbU9aZEk5dnktb0dQYmkyUjcxUHRyT0VNaHhyQktzcjMyS1kyVnUwbkNvNDRqV2h3eVhoU3RCV3NqSHpvTDhJbHZWTlpWeXFB?oc=5">Extreme heatwave in Europe: Seven dead in France, temperature shatters record in UK</a><span class="cap p-news-m">The Indian Express &middot; 26 May 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMisAFBVV95cUxQN1RwV2pLLVN1UUxZdnhCRGZObW05R3JHN1lpVFo0QW5oRV92OWJYazBaMWt4MHdLTTJhMkZ6QWlKTEhxek84RnJhUDlyMmRhTTJ2UVBTTDVWZElfSFVwYTdoWTVfamNMTC01TXMxdlJFMW51c0R6dExSeE5BTHVEMDl0c2E1MmVHS1Zwc2F0N3g4WmhQbEN4eEVoNjdoUDZKSWNuTWR0Tzl4MjQ0NnNubNIBtgFBVV95cUxOYng5NDM4M1JjdDhpeGV4ZGs4M1M0ZFc4LWRiaFR5Qmt6b2NtM1QzSWNCaXFNVGxJa01CckVoZXd4NnZKRVM0VEdQa2JmblVmVHl3ODBPWTFvTzZldjZ2UXlDdEREcUM5aWktZ1hJNkExVFBKRFVBdEdEWUJvNmt5V0xRXzlhV1M4Yng5SjYtRW5qOEl0TEdFMEJDUjgtSlVaTnJPZ2Z5bWtYOXoyUXlYQU4tVXZ6QQ?oc=5">France records around 1,000 excess deaths during record heatwave</a><span class="cap p-news-m">India Today &middot; 28 Jun 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMiwAFBVV95cUxPSDEzT3c1NUI0SG1kaFBrR0Y4dVZGbXFDdnR4YS1SaVNCa1gxbzBBQ2F0TXkzZEh4TnpyUWxDSmE1TloxbnBFS0NmbGFvU3pjRnRfblhFZU00RUozWWlMTk5Ic1hiN0N3QVR6cXFzeXJEbFdNVDdQY2xReDhVOVI5UXNleElOamZyVU1Hamo3SjRqUmdyNjJieVh2MFpKVXJ3bzUyUk1Ud1d5U09OaEFBUzVGWXBoMDJlWHlPSzFoSEI?oc=5">India records over 300 suspected heatstroke cases as summer temperatures spike</a><span class="cap p-news-m">Reuters &middot; 22 May 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMi8wFBVV95cUxNQjRralhJVlMxZGliZ3BnZG5qRDlsUkFsODFwcTI1MWN1Z3liODZpdFlsUGFoblJobGNzdkh5MjlJZ3Z5cmtrRlgzNzBCWmRRRUdFUzRRRlREN1lOLUh2Zy02dkgzclAzaDI4WHdTTmR3YUNVVWdsc0JidkdnaXNNM2hnOTZhQ3c5eEdkWEFWZndGOHV4RzdScVdSRGlMQXJ4X1NlTlNQOWZHN0ZjQUYySXh1MlZMUjd4VVNmQjVoTGpmRzdnTzFaSkpzR2ZCU3NHMGFBTXBvb2JrNEpOem5jTDRXSVdOVVNUZUFwWk8wVlZ2MUHSAfgBQVVfeXFMT1gxVTEtNktLZWFSamxVYVAyd09rZVl6Zm9zbS0zZFJqcnZLenVQV2lUcG5WM1JXU1JKc0ZhUjNLNFo5WXlPTW5HMlFMdHJpQ2RfMDlFdFUxSGRXdVdTaXF3eUMwdmphUDVtOWhNd2ZhdlhwVDNsLXFkalp0Qkt6OWwtc2xXVEd6MEdjcTBDM05vc3lFVnNLQm9qenlwY0JJYms3ZkN0bmFUajV2OU5hNTdwQmxaUVVuNVVUY3I4bmdGYWRfWVBVS19JcDljb1k0V183bDJfb1RkWlJNTzVUcjExYnRzVFU0clhfbzVybXZBXzlwaG9RM2I?oc=5">Heatwave, deaths and political turmoil: France's scorching summer worsens</a><span class="cap p-news-m">India Today &middot; 01 Jul 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMie0FVX3lxTFBRU0xWNnM5eFhhOTQyVXRaQ250Y2oxYjdxQnM4bVZCWnBldVN4c1JoVlA2UkpjeGMtZG9ZbmF2RHJzaFp3dW4yZXNTSXNXMldheElkS3ZGcWI4NlFja1pLVmF2ZEQ2OEdFTG9ydzJYM2ZneU9feXcyQ291QQ?oc=5">India records 3,400 per day excess heat deaths</a><span class="cap p-news-m">Nagaland Post &middot; 11 Jun 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMi3gFBVV95cUxORy1TZkFDMEpadmJ3VUdZRGtkd1c2anBfOF9rMW9ZRExQR09GRGhQYTJ5ZWNCaEhrbWFfcWx3dGxLX19McVpUd210WThpdngza0U4d3lDRWZqYkFHMTVLbWRfX3hyNnUyakdTQlRqeVNfSS1UYnN3SGlSTjlVYmRyY3RrYzBpZzRxOFEyZ3FTeC00bEtLQ1dJaE54V0phUTdCNVQ1MGI0cjNvZ1FZVnFpZHJpYmQ3M0xhb3AzSHlFd1lWWHlJZ1oxbDBYTldZVUkwVG9tX1VBaHRKNThBcFHSAeMBQVVfeXFMTjZvNUFNakUzdmRXakR2b0NLOEhJc1FYX0RLN0cwNlMtTExydlltOFNvLWwzMmVPWVFfX2FkVXd5TTNRZkVHTnAtQm1IVDZHNFNhM2g4eXl2SnQ5Yl9KaTcwMXlJODRuTTFsdUY3YVVOTXc1dEd6bXlaN2pfRi1JTmc2NnF2QjloQXkzcnVLdmJuR2JRQi04U0FZb2JUbS14NXVsQlhFRVVqS3lqeEFPeWJ4ZnV2eE9nOUpSZVpQdzlNc3A5TTBVb2VUWGZzZ0h6eHFRUVBLSDBoSUVBS2FZb0NpOUk?oc=5">Exceptionally early heat wave shatters records, brings deaths in Europe</a><span class="cap p-news-m">The Times of India &middot; 27 May 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMipwFBVV95cUxOYnJxUDhCUkh2aTRZejFTY3BrRk94cFdUZk9jdU5mUnNEY0pRMjRONjZJeTZ4VE5TV0dwYUFEZDk0N0l2aHJqNWJCYWUxV0dnQjVHTWY0S0xMc0k2cG9IVVlCSV85b1MwdlFkVmJUcm4tV0wzZ3E5ZTh4NG5reW5UclFxVkdVUXdNVTMzblFVV1FKUHVNNnhfQUNwd2tDYi1OME1rNmFqWdIBrAFBVV95cUxPdk1ZdW40OEJQVHZfV2tRMF9sQmJDOEd5MDNmTXU5c0FtdkFlcjY4WWlqTnFLd2I5WEhkaHU0VWpoOVdtU1ctbFM1UzRleDhqaWZfME5ldi12RXo0TGQwWjVKd1BiOUVSeG9NdDlXdUFkeHBaZ3hnbXJkd1NiNTVoV0w4eElYYzlieERmZ1ZleHBxZlZna3BWSGc4Zmo1ajg3d0tUN29LZjBzbHRT?oc=5">HEAT TOLL IS HIGHER THAN YOU THINK</a><span class="cap p-news-m">Mumbai Mirror &middot; 05 Jun 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMi7wFBVV95cUxQR2FmaGs4TFNxUE5QR3hIbWpxYWFDMnRiVEdtR2J1VGJFUVlyYWw0R1VMN19UN3ljNjZuZGFGNlRFZ1E1RjVfVk1QMWRqcHFpM2J6RF95aFdQMm8xRG90S1NsLWJINnhFejZBek1nWFkxMXV0WXpVWkQ2bk5aUHdnU3AxeUZFM0dsTmdLNUtsdXVhSWxZSWU4czZSLVB1SC1RR192RF9za3VINHhNRHg4U3RJZGwxSlQwb3BUS0Y0ZjB5Ny0yQ05tVEhqRS1iVWJXRE1CbWpDUy1LY0g0SXkybXRVRFpoVHRjdEVfZjBZRdIB9AFBVV95cUxPYVdTYkRjQm1SYXAwOFg1SkhISDI0R3VPUGVObGw5dUs4SVZMaEFrZzdLM3duS1VLQ2VRZ2VuZDVoRHdBZmFGS2FjNV83cnlET2h6RVk1STlJVDJvbmx1dWE2d0ZoeXNqVTZveGdxOE5xbkgzeGI5YjluVlBpUTI4Sk45THVlVlNUOVlZeG1JLXoyOVVxc0hJYUlWV2FpdE41aTVUWmZWTzFTY0UyNDc3cEh4emczZFgwNXk0NHg0dEtPYmw4QjJOaWVBLW5oU0l1WHo3eDNqRFhqMmRVaXVSUlE0VFRuLW1JSGd2WUpwMDJhcFMz?oc=5">Europe bakes under deadly ‘Omega’ heatwave as temperatures shatter records, death toll rises</a><span class="cap p-news-m">Telegraph India &middot; 24 Jun 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMizgFBVV95cUxNSkJXS0ZHM2V6aS1lMGxULWNBQXJ2eHRzczMwVUtYdV9WWmd2d0hXYjlKamwycVUteHBBQkdhbWpWalFlVXVjclNRU1JkSjFocHo3eVg4cFI3T3FJZlFpZ0NZYzhEOFlPblN3bnpKRXRXTjlaMzlKUGtabHdZU2lqMGstbXkxbTFELWlxMTlmMEYybFZIZm9sUlNBWDA5SEtlWWw0RGoyV2R6bEpiNE1LSUV5bWp3Ujl2N0hnaW5TTlpET2g5QVdPZmN6cnM4UdIB0wFBVV95cUxNaU9mZ1N2Z3VwWTdfaERJRF9WTVRQMDljR3JObllLcmFOV0ZoVmFQUE1vZG9aZEZnODkzZTk3c2RGdElPQzJxWWxWZWcxVmxhdjBLRHIwSzN0czl2OG5Td3JLS3M1WENXYlBDT1ZTQ3NwREFxT2Q0Z1MzN1UzT2lHWDNPTFdLb3Nsa3U5eF8xbGZBdVU3Y3RHOTF4aWlLTW0yU1BYcW1famRXQkhLQkZHUktuZHVmUDFrdWVPZnl1Q3o4MUktTVlfRnlNQmZJbE01SF9n?oc=5">40 drown in France trying to cool off as Europe bakes under record heat</a><span class="cap p-news-m">India Today &middot; 24 Jun 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMiqgFBVV95cUxNU0Uwc1l0STlpX1N0UldzUWpEMnZ3WHNjZEdfYlZuc1E5ZFVjdzhQejlwbDJaNnFhemZnN1ExTGFseHpVclZJRVNiRi15V2lNSXJ0MmF5bDRuVVlVR1dabjBiYnpzRFlISHU5R1NMR3pnenRWVDI0bldkS01JYkJBVzEyS2MzVllYWXBGeE1DS2FpckY4cnZ1R0FUVEVYaGpBRmJuWlpLQW1Wd9IBrwFBVV95cUxQUnVUWkNnSkptLUZiZHViTG1vS3BOeTlaR1MySEdWd29QVUkxemNPZUFaUFZkODJna3pqcW1xSTg0RFFsNmtYajRhYnRZYU1yc2s3ZVFwN1NxV0RvUkhRNnIwQ3kxSkJtWGtWblU0NTNpcTRvVVJrWDZoOUZRTUpQRjc4a2xFUUpoUGxkaHdxZ3BWdTVTQ01uYVNPQnBPMS1NNnZZeEEyelJlS1E1MGIw?oc=5">What makes 43°C in Europe more unbearable than 43°C in India?</a><span class="cap p-news-m">Firstpost &middot; 30 Jun 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMi2AFBVV95cUxQRC1JS1pWX0dRWFY5WDVsQ0lGWkhrSXJhOGJHTzk5ckpxS1pKMlNKSS10RWdCbU5qTmNEaHhIWktjVmJOclVqMFA4QzJtcGFyUDhHVkZlQjZFUjdKT0laY0RIU3pQTW5rZFdaaWZLN242c3JibVZMRktpcG9sX3UxTnhFeFE5cHdNZHZ2dEtNNndEb1YzazM2Q010WXpsUnhXYUtmNE84cFBjU1MwdTE3V05FU2ZzSGpLSFdFdUNCSWxkQkxrVVlhX1ZiSmNaRklFTGoxR28xc0zSAd4BQVVfeXFMUGFpMm1LdzFrcEpnY1NGU2FmazNlX3ZtbHVlakhZZjJBbHdDWWNQVHdTMVF1TmtNc0JBQ2dISGR6WnZEWlNSdkFodUFqbmJXNGtDVzNDTndmN2dtd2tNb0x2YnVEMW91UkZnS1VJVjUxNWdYQThEOWVQTlJQcEx1UklFYnN4ZkxHbDNYRTdQV3ZqaDNuMnNjVExhclVsc2dTcWFXSTZ1bnRFZDFzMWRqbURldUoxNzFzMWFJQllIZHpsSlZsY002aU9tZ05WYllzSG92dnBBZHlTNEZsOW5B?oc=5">Heatwave Intensity, Frequency and Hotspot Extent Have Increased in India Over the Last 26 Years: Study</a><span class="cap p-news-m">TheWire.in &middot; 18 Apr 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMixAFBVV95cUxQNDZ0c2kyRXkzUndSYXNTYkVDZzJVM0hlN0dSeHM5OXZnYjQxbnVPcWE2U3E1WENQZ3lxTE9XaEJhdzdNZ0FQUUpVTTlRR2YtUE83bGxQZlN5R3JSRTFsODJOQmdMcEx4ZnJyQ0lGSkVvV3ljVWJIODAtV2RBeWltUWloMjBIMDl1ZDYyRTRPN01VVmpqMFNFQWNEbk9QS0pmRy1IVDk1X3owb29Nc0hPTm9taW5QS0RDWEpucXZ0RDY1cWZY0gHKAUFVX3lxTE91SjZURC1FUXdEYTY2MFQyM1BJN0p0UHhaMnBWUmRGbGZpeHJ0cC1fV3RjWEVqMDM2SVdjeU1XLW5RU05MQ0lUMVZhU2VWMEluY05Dc3V5RGc5ckRCNHRDeERnQUQ1SExHeFRjZC1xLVRzZGNTZUlzZ0hOM190bzZhQ1ZQck81TVgwNE9oWVdoZjlVZ2FSU3pHRWpkZC1FWGRGU2JyNjR3LXlNSExvVTd4S3ZYVkhqR3JqQ2g0NGd4T3BCN1RLV0FqWFE?oc=5">Chhattisgarh heatwave turns deadly for wildlife: Over 700 birds, bats, animals dead</a><span class="cap p-news-m">India Today &middot; 28 May 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMi8wFBVV95cUxNbWQxa3NHenFDQ1FzckdlaUtraHRJRDB2dUZ0NEk2Y2hIVHNfM0lLLUpza2N0MXFVcDhDRlh3TXJTT2k5U3JldDhmczVfVHppMkNuaEg3TmF4akxSYXBNM3NOUUpxLUxYMUt0YjVUZ3VtS05Xek1RM1AxNmZhWWpiMnFZMW1yRURGelNBNy1CRE5PTzlhTEFRZjQ0cXNqZ3czLUtyN3VYT2Z5VjVqOTJkRFFHVW8xLVpjNUJ0TnlTaks0YndET0VVZWplWWtwTGdpTjVQRFZIVWxxcnR2Yl94RWhSOHJQalpHTGkyT2EzM3pfM2M?oc=5">Over 1,300 dead in Europe: How 'Omega Block' turned a heatwave into a continent-wide death trap</a><span class="cap p-news-m">The Times of India &middot; 29 Jun 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMixgFBVV95cUxOb3hySWpNdFFRSlp6T3h3YkZWWUlkZEdaekxWSXRHSFBVNEVRdVBTSUs2bFpxb3UxdHVqUnNvTnVnTE1PZEY1S08xcF8xVUsxYmVsSlVaR09rNGNscUdkNlkxZlpTRldXdE1ZaXRMRkZ0VDljakJ3NlZqdzc4YzZxTGgwREZ2c1UwVWVYc2V6OGQ5MVFKSDZ6VFp0ME5yeks2SHhIN2g4RndSeXZrSnRZdnNub3RHM1NZM0g2QVlOcFJiTXlPbkHSAcsBQVVfeXFMT1hDaXh2cDE4RW5ZaldXNWpoVmkzSzk4VEFZaVNLZmlUMnJOY19VZ2NaZ2xBNHVNN0VyWW5KdUVSRWpya256QU9oM0dWN2N2UXlTN3d0dU5uZlpJQ2NtRWF2Z0VnV0NvalBxOWI1b0U5bU01V3BDa2tnVEticzJPVGpOYm4tdGhUU2w0X1FJQ3hXQS1VTGZoUklka2xWMm5vQWhKX0hEYW9MOVB0aHF0dFJmNXRmNkNGWEEtYWlxSTBBam9tclJFMVh0VEU?oc=5">17 deaths in Nagpur amid heatwave under scrutiny; cops say extreme temperature may be culprit</a><span class="cap p-news-m">ThePrint &middot; 27 May 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMi8gFBVV95cUxPQjFma2Q4ek5Gczl4TnFUellTVFBQVEVlbFZUWmdCN3UwRVRMX0hKM2NlX0dQLVR2cTdDMzlzVUZrZFJEc0hEN0NKRzN4U25nRi1EbWYyaVhpc2hXNkhBb2tzNXNVa05GSDV4VUNTU2ppSHR4SU5wZE02dW9fZ2hVWU9hMTZORFlLdTBnbVdvV2Q4T2RiLXVzYkVhc2VWNnlUQlBsd1lHaUx4WVNLSHJ4Q05IbjRPeHRoSk02bk1iVHNxaXg4bnc1Z1NseE80RERWdGFHd3NiSEw2MTg4SFpsbDBXNEI4ajJvMFdzMmJYbWJ1d9IB9wFBVV95cUxOLWpnTGNYMnJlVjI5QWt0MlFodGRsQlVuQnRydFhRdW1FRFctOE9vUmVjZFc1cVpHQTM1MUw0Ul9FanExXzBTOFMxZ1FzLWhuWGg5UjcwU1hwQ0sxY0xyQkp0QnJ6SXBDakRUMXpCdU5SR2o1TmhERTIxczM0NkF3bWVKWVVKWjdGMmlVRU4zRDBDYWw4MXFFTjlvVnlDU1FJcC0zYUp1NjhleTJ3UV9VMHlSNEF3d2pvNXYzUk9FNGpMQndOZjB5cTRreUNNZDFiTzByLWFqZkVMQ053NVhkYVpNRGtPdzVWelMxNURrZDlZOHhmeXlB?oc=5">Prepare for above-normal heatwave days to prevent deaths, Centre tells states</a><span class="cap p-news-m">livemint.com &middot; 24 May 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMigwJBVV95cUxPMl9UcUdpZkpqLWo4MEM0VnBuVHR1V2NXQUdrY05PeHozR0hhSlBmVHBzQ2dlaUxTUkt0bmF4LXhSTkRyUFVGaUp1WHlLdHVsR1pyN3RJYmVMM1czcE4wRkd0VmcyeG5rbV91eFhOY08zdXpFNGs3amVxOWNIQ2J3TTBnbllmVWxubGF2bVZBRFhlcFQzdEVmX2FBeXN0ODRIeWJmazFueHRmZm8wSzVCNDl1d2RjUUYtMkdfb3RodkZ2em1tc0ZoZjczTnZReV8xTWlfT3daS3BkSXlmclV6b3lyNGpFNFBFSlJCSF90UUNNOTNBRmxrUXhkY0JUTXpoNE040gGIAkFVX3lxTE1qUmRmYTRpUVVWM3VHc3RWVnVFS3NFME0yWXRaMktFMHU4bEFEX2NuWVQtYlpWQWxqSTVZQUIyY3d3Snc3bTRDMGhPMG9HOE5RRE95V184YnBfeWo0Z0JhQ1h5dk5jZ013S1F6bE1PZ0FhcWdUbFR5NWt6TEF3T1NPZEdqZGNQa0tGeFhZRGxtc0tHZGhSV2hOcGZzeFAzUXFWWDNrcHh5NGpZRmxXcEVuMWFtWEd0TnNtRjRjX1FiV1JMNzNlbTZNOXJzbE85MVhCNG56cFMyN29tZEwzZWs2TE1kTGNjenRNVUJZRXpTRUtCWHBhdGVSNmFuUXNVS240UVJFcGxoQg?oc=5">Heatwave tightens grip on Europe: Over 20 weather-linked deaths in France &amp; Germany, red alerts issued</a><span class="cap p-news-m">The Times of India &middot; 22 Jun 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMi1wFBVV95cUxNWWlpYlVHUWdObTE3TmhxWWwtUEI5Yk0zTG1fSGpPTEJDTEdTTHYwVjJpcGpGUnpKZ2o4aHk1T1hsUW9kTFVEZHAyT2Y0RE1uQXFCUHgxeHJCMjBpV2QyQkVfazM0TFRFN2xVX05tem91elpsLUl0UGRJMU5td3VrNVlxU1RNYWtReGY5V0RmUzdRV0N3OHFsMGgybXFXRmZRN0o3N0RiSVdkUHdTb284Z01jcFBReGJYYXo4TS1DNU5vYzdTbzB5eGtKVkR0Z2p4Rm1tQ0NrONIB3AFBVV95cUxPODk0Und1YmNhQnF3c0tZdFVXYjRORVlSQ0lTcnAyTnk3a1FISXpMSENjblAxNUtpVnNSbEV3QUlIZk1sQ1U0c1lJSkh0R2t0SDIta25RVHFEbFdQZXhUaUdramhLZkNjMFJ1X3ZvQnlvWEVCd20tbzhkZm1NNXBudmxwc3l6Y3Y4dHdNaVZqV1BrZnRscGp6cWw1SHAwa3BNY2hVQnd4Zk53TmlEdE0zVXFBOVNVa3VYdzF2b3BMUkc0X1U5X3FzdXFhVTgyV0NpSF9qcnNMZUpxdS1z?oc=5">Severe heatwave grips Europe; over 1,300 deaths, wildfires rage across continent</a><span class="cap p-news-m">India Today &middot; 28 Jun 2026</span></li>
+            <li class="p-news-r"><a class="p-news-o" href="https://news.google.com/rss/articles/CBMi3AFBVV95cUxQU1RxWGhOeVNoTWJVZUVBMDBibWNmdW5WSGRadkxtclRaVndncFJjQ29vaXdwSDdLSlZacVJ5NEFTa2lhMlFVTDZ4NzV2eDJXQUU1NUZUVkpXMXRwX2t4RmQ0VXF6ZWt2b1REWkY2eFpad1RXLXZwOGJXdkZVRFlWeDNzeXJ0SnVjWkFlUkdBbkQxVnVqVzE1b0RHTzItTnktb1VDZVh2bF93VjdtN2hBTFpVb2pZaDhNV3JMR0xiWEhuYXBVR1JXWTJ3SDBSd1htcGJ1TDhTREFBdzJS0gHiAUFVX3lxTE91NTNPcDlJSGN1TkVXUmdGMXZrTnFwS18yeHBXTTl4THpkbXVabXRpY0dLdzlndXBwbHU2OUh0QWx2NzJTX2NsbmNFRXZTdXlmTllYVy04VlNBcWNSeDdqRWgyaHJlRUVMdEFTbGk2Y3RoTzRKLXpuaUtQSVVvX3NoVEpzOEpkNFZSaEYyQmJvV2FSSGNVWTZjMUduVlhWU0w4LVdnWURWSU1QRnRkNzNXdERFYTA3R1pMdWZNeG5yTjJ0ZnpCZW1RTm1xbU4wSU5kaEZERkpxUFAtNnVOSzJDYlE?oc=5">Heatwaves and humans: When does it become too hot to handle? Explained</a><span class="cap p-news-m">livemint.com &middot; 24 May 2026</span></li>
+          </ol>
+          <p class="cap h-pub"><b>Publishers:</b> India Today (15) &middot; The Indian Express (8) &middot; The Times of India (7) &middot; TheWire.in (4) &middot; Down To Earth (4) &middot; livemint.com (4) &middot; Business Standard (3) &middot; NDTV (2) &middot; Nature (2) &middot; ABC News &amp; Headlines – Australian Broadcasting Corporation (2) &middot; 아시아경제 (2) &middot; Al Jazeera (2) &middot; CNN (2) &middot; FACTLY (2) &middot; Jacobin (1) &middot; The Conversation (1) &middot; Carbon Brief (1) &middot; Frontiers (1) &middot; news - Mongabay (1) &middot; Reuters (1) &middot; Nagaland Post (1) &middot; Mumbai Mirror (1) &middot; Telegraph India (1) &middot; Firstpost (1) &middot; ThePrint (1) &middot; Mahabahu.com (1) &middot; theweek.in (1) &middot; Vibes Of India (1) &middot; Outlook India (1) &middot; Gulf Today (1) &middot; ESG News.earth (1) &middot; The Independent (1) &middot; The Straits Times (1) &middot; weekendargus.co.za (1) &middot; tabla.com.sg (1) &middot; News18 (1) &middot; The Cool Down (1) &middot; Yale Program on Climate Change Communication (1) &middot; The Washington Post (1) &middot; AP News (1) &middot; Health Policy Watch (1) &middot; BBC (1) &middot; ET HealthWorld (1) &middot; World Weather Attribution (1) &middot; VOA - Voice of America English News (1) &middot; Anadolu Ajansı (1) &middot; The Water Diplomat (1) &middot; Frontline Magazine (1) &middot; PBS (1) &middot; The Swaddle (1) &middot; Business Today (1) &middot; Vajiram &amp; Ravi (1) &middot; India.com (1) &middot; AccuWeather (1) &middot; Medical Xpress (1)</p></div>
+      </details>
+      <p style="margin:0"><a class="act" href="#official">Who is watching <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+    </div>
+  </section>
+  <section class="dark-2 t2" id="official" aria-labelledby="official-h">
+    <div class="wrap"><div class="im-head">
+        <h2 class="d1" id="official-h">Who is watching</h2>
+        <p class="lead">India runs a daily satellite heat outlook. Its layer list makes the same argument this page does.</p>
+      </div></div>
+    <div class="wrap">
+      <div class="h-layers">
+        <div class="h-layer">
+          <span class="h-layer-n">Temperature Based Heat</span>
+          <span class="cap h-layer-x">daily maximum temperature</span></div>
+        <div class="h-layer is-moist">
+          <span class="h-layer-n">Moisture and Temperature Based Heat<i class="h-layer-t">includes humidity</i></span>
+          <span class="cap h-layer-x">temperature with humidity — what a body experiences</span></div>
+        <div class="h-layer">
+          <span class="h-layer-n">Temperature Based Heat, deviation from climatology</span>
+          <span class="cap h-layer-x">the departure, which is what IMD's own heatwave criteria are built on</span></div>
+        <div class="h-layer is-moist">
+          <span class="h-layer-n">Moisture and Temperature Based Heat, deviation from climatology<i class="h-layer-t">includes humidity</i></span>
+          <span class="cap h-layer-x">both at once</span></div>
+      </div>
+      <p class="h-note"><b>India's own heat product does not measure heat with temperature alone.</b> Two of its four layers add moisture.
+        Two express the answer as a departure from normal. That is the official instrument agreeing,
+        in its design, with the two things this page had to compute for itself.</p>
+      <p class="lbl h-lbl">What it covers, read from its own index</p>
+      <div class="h-cov">
+        <div class="h-cov-c">
+          <span class="h-cov-v">95</span><span class="h-cov-b"><i style="--h:30%"></i></span>
+          <span class="cap h-cov-y">2022</span></div>
+        <div class="h-cov-c">
+          <span class="h-cov-v">288</span><span class="h-cov-b"><i style="--h:92%"></i></span>
+          <span class="cap h-cov-y">2023</span></div>
+        <div class="h-cov-c">
+          <span class="h-cov-v">219</span><span class="h-cov-b"><i style="--h:70%"></i></span>
+          <span class="cap h-cov-y">2024</span></div>
+        <div class="h-cov-c">
+          <span class="h-cov-v">314</span><span class="h-cov-b"><i style="--h:100%"></i></span>
+          <span class="cap h-cov-y">2025</span></div>
+        <div class="h-cov-c">
+          <span class="h-cov-v">111</span><span class="h-cov-b"><i style="--h:35%"></i></span>
+          <span class="cap h-cov-y">2026</span></div>
+      </div>
+      <p class="cap h-cap"><b>1,027 days, 2022-04-29 to 2026-06-19.</b>
+        Read from the application&rsquo;s date index, not described &mdash; a portal that stopped
+        publishing and one that is current look identical from outside. This one is current.
+        <b>It serves map images, so no reading on this page comes from it.</b></p>
+      <p class="cap h-src-p"><b>Source.</b>
+        <a class="lk" href="https://bhuvan-app1.nrsc.gov.in/heatwave/">Bhuvan, National Remote Sensing Centre, ISRO &mdash; Heatwave / Hot Weather Outlook</a>.</p>
+      <p style="margin:0"><a class="act" href="#act">What you can do <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+    </div>
+  </section>
+  <section class="t3" id="act" aria-labelledby="act-h">
+    <div class="wrap"><div class="im-head">
+        <h2 class="d1" id="act-h">What you can do</h2>
+        <p class="lead">Heat kills the people who cannot leave it.</p>
+      </div></div>
+    <div class="wrap">
+      <div class="p-act">
+        <div class="p-act-c">
+          <p class="lbl">The season starts 1 March</p>
+          <p>Not May, when the headlines arrive. Construction and delivery workers, street vendors,
+            anyone whose room does not cool at night &mdash; they are exposed from the first week.</p>
+          <p style="margin:0"><a class="act" href="https://bhuvan-app1.nrsc.gov.in/heatwave/">India&rsquo;s heat outlook <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+        </div>
+        <div class="p-act-c">
+          <p class="lbl">Ask for the plan</p>
+          <p>Cities write Heat Action Plans. Ask if yours has one, whether it names shaded spaces and
+            water points near your ward, and whether outdoor workers were consulted. A plan nobody
+            can find is not a plan.</p>
+          <p style="margin:0"><a class="act" href="/#work">What we work on <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+        </div>
+        <div class="p-act-c">
+          <p class="lbl">Shade is infrastructure</p>
+          <p>A tree over a bus stop does more for a waiting body than any advisory. It is the one
+            place a heat page and a forest page meet.</p>
+          <p style="margin:0"><a class="act" href="/#give">Support the work <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+        </div>
+      </div>
+      <p class="cap h-close">Every figure here is public, dated and reproducible from the source
+        named beside it &mdash; including the ones that do not support the argument.</p>
+      <nav class="fam-sibs" aria-label="The other situations">
+        <p class="lbl fam-sibs-h">The other 5</p>
+        <div class="fam-sibs-r">
+          <a class="fam-sib" href="/now/air">
+            <span class="fam-sib-n">Air</span>
+            <span class="cap fam-sib-w">Delhi</span></a>
+          <a class="fam-sib" href="/now/yamuna">
+            <span class="fam-sib-n">Yamuna</span>
+            <span class="cap fam-sib-w">Delhi</span></a>
+          <a class="fam-sib" href="/now/forest-fire">
+            <span class="fam-sib-n">Forest fire</span>
+            <span class="cap fam-sib-w">India</span></a>
+          <a class="fam-sib" href="/now/forest-loss">
+            <span class="fam-sib-n">Forest loss</span>
+            <span class="cap fam-sib-w">India</span></a>
+          <a class="fam-sib" href="/now/climate-event">
+            <span class="fam-sib-n">Climate event</span>
+            <span class="cap fam-sib-w">India</span></a>
+        </div>
+        <p style="margin:0"><a class="act" href="/now">All 6, side by side <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+      </nav>
+    </div>
+  </section>
+</main>
+<footer class="foot" id="footer">
+  <div class="wrap">
+    <div class="foot-g">
+      <div>
+        <div class="mark" style="font-size:34px;display:block;margin-bottom:12px"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></div>
+        <p class="cap" style="max-width:34ch">Swechha We for Change Foundation. Khirki Extension,
+          New Delhi. Working since 2000. Registered under sections 12A and 80G.</p>
+      </div>
+      <div><h3 class="lbl">Read</h3>
+        <a href="/now">Environmental Intelligence</a>
+        <a href="/work">Projects and campaigns</a><a href="/stories">Stories and films</a>
+        <a href="/publications">Publications</a></div>
+      <div><h3 class="lbl">Go</h3><a href="/work/journeys/yamuna-yatra">Yamuna Yatra</a>
+        <a href="/work/journeys/naturescapes">NatureScapes</a><a href="/work/journeys/cityscapes">CityScapes</a>
+        <a href="/work/journeys/gram-anubhav">Gram Anubhav</a></div>
+      <div><h3 class="lbl">Reach us</h3><a href="mailto:swechhaindia@gmail.com">swechhaindia@gmail.com</a>
+        <a href="/farm">Swechha Farm visits</a><a href="/act#partner">Work with us</a></div>
+    </div>
+    <!-- ══ SOCIAL. Added AD-08, 21 August. See §9 of that document. ══
+         FOUR REAL ACCOUNTS, SCRAPED FROM THE LIVE SITE. No LinkedIn —
+         none exists, and one may not be invented. No follower counts, no
+         post embeds, no "latest from Instagram" strip: this page cut a
+         typed "today" rather than imply a feed it does not have, and the
+         closing sentence says so in the same voice as .foot-b. -->
+    <div class="foot-soc">
+      <div class="foot-soc-x">
+        <div class="foot-soc-t">
+          <h3 class="lbl">Follow the work</h3>
+          <p class="cap">Journeys, clean-up dates and film go out on these four accounts
+            &mdash; all of them <b>@swechhaindia</b>. Nothing on this page is pulled from them.</p>
+        </div>
+        <p class="foot-soc-r">
+          <a href="https://www.instagram.com/swechhaindia/" rel="noopener" target="_blank">Instagram<span class="sr"> (opens in a new tab)</span></a>
+          <a href="https://www.facebook.com/SwechhaIndia/" rel="noopener" target="_blank">Facebook<span class="sr"> (opens in a new tab)</span></a>
+          <a href="https://x.com/swechhaindia" rel="noopener" target="_blank">X / Twitter<span class="sr"> (opens in a new tab)</span></a>
+          <a href="https://www.youtube.com/@swechhaindia" rel="noopener" target="_blank">YouTube<span class="sr"> (opens in a new tab)</span></a>
+        </p>
+      </div>
+    </div>
+    <!-- THE BUILD STAMP AND THE SAMPLE-VALUE DISCLAIMER ARE GONE (owner, 22
+         August). Both shells extract this footer verbatim, so all 27 pages told
+         the reader this was not the real website and that every reading on it
+         was invented. Neither is true: the hero's two slides now carry the
+         committed readings the situation pages publish. If a figure is ever a
+         placeholder again it is labelled AT the figure, which is what the state
+         vocabulary is for, and not in a footer that indicts 27 pages at once. -->
+    <div class="foot-b">
+      <span>Swechha, Khirki Extension, New Delhi. Working since 2000.</span>
+    </div>
+  </div>
+</footer>
+<script>
+/* ── TABS. Canonical ARIA tabs with a roving tabindex. Panels use the
+   'hidden' attribute rather than the deck's tabindex trick, and that is
+   deliberate: the deck keeps four READINGS in the accessibility tree at once
+   because a reader should have all of them; these panels are alternative
+   VIEWS of one object, where one at a time is the point and the height
+   saving is the reason the band fits at all. */
+(function(){
+  var groups=[].slice.call(document.querySelectorAll('[data-tabs]'));
+  if(!groups.length) return;
+  groups.forEach(function(g){
+    var tabs=[].slice.call(g.querySelectorAll('[role=tab]'));
+    var panels=tabs.map(function(t){ return document.getElementById(t.getAttribute('aria-controls')); });
+    function select(i,focus){
+      tabs.forEach(function(t,k){
+        var on=k===i;
+        t.setAttribute('aria-selected',on?'true':'false');
+        if(on) t.removeAttribute('tabindex'); else t.setAttribute('tabindex','-1');
+        if(panels[k]){ if(on) panels[k].removeAttribute('hidden'); else panels[k].setAttribute('hidden',''); }
+      });
+      if(focus) tabs[i].focus();
+    }
+    tabs.forEach(function(t,i){ t.addEventListener('click',function(){ select(i,false); }); });
+    g.querySelector('[role=tablist]').addEventListener('keydown',function(e){
+      var i=tabs.indexOf(document.activeElement); if(i<0) return;
+      var n=null;
+      if(e.key==='ArrowRight'||e.key==='ArrowDown') n=(i+1)%tabs.length;
+      if(e.key==='ArrowLeft'||e.key==='ArrowUp') n=(i-1+tabs.length)%tabs.length;
+      if(e.key==='Home') n=0;
+      if(e.key==='End') n=tabs.length-1;
+      if(n!==null){ e.preventDefault(); select(n,true); }
+    });
+  });
+})();
+
+/* ── D-09.1. THE MOBILE INDEX CONTROL. ───────────────────────────────
+   A DISCLOSURE, NOT A DIALOG. Everything below is deliberately NOT the
+   modal playbook: no focus trap, no aria-modal, no scrim, no scroll
+   lock, no inerting of the page behind it. Tab runs through the six rows
+   and then leaves into the document, which is correct for a non-modal
+   disclosure and is the requirement this control was ruled under.
+   Four ways out, because a control that is easy to open and awkward to
+   close is worse than no control: press it again, press Escape, choose a
+   destination, or touch anything else on the page.
+   NO JS, NO CONTROL — `hidden` is in the markup, so a reader without
+   JavaScript gets the status quo (the non-sticky chip row) and never
+   sees a button that cannot open. */
+(function(){
+  var t=document.querySelector('.navidx-t'), p=document.getElementById('navidx');
+  if(!t||!p) return;
+  // ONE INDEX IN THE TAB ORDER AT A TIME — the property AD-09 recorded
+  // as true of `.navlinks`/`.navscroll` and which this control would
+  // otherwise have broken. The chip row sits BETWEEN the bar and the
+  // panel in the DOM, so with the panel open a Tab out of the button
+  // landed on the six chips first. Measured, that is two defects, not an
+  // untidiness: at the top of the page the chips are underneath the open
+  // panel, so focus went somewhere the reader cannot see; and anywhere
+  // further down the row has scrolled away entirely, so focusing a chip
+  // SCROLLS THE PAGE BACK TO THE TOP — the reader opens an index to keep
+  // their place and loses it to the second Tab. Withdrawing the row from
+  // sequential focus while the panel is open is the same move, for the
+  // same reason, as D-09.3 on the deck's off-screen panels.
+  var chips=[].slice.call(document.querySelectorAll('.navscroll a.nl'));
+  function show(v){
+    t.setAttribute('aria-expanded',v?'true':'false');
+    if(v) p.removeAttribute('hidden'); else p.setAttribute('hidden','');
+    chips.forEach(function(a){
+      if(v) a.setAttribute('tabindex','-1'); else a.removeAttribute('tabindex');
+    });
+  }
+  function shut(){ return p.hasAttribute('hidden'); }
+  function inside(n){ return p.contains(n)||t.contains(n)||n===t; }
+  t.addEventListener('click',function(){ show(shut()); });
+  // ESCAPE RETURNS FOCUS TO THE BUTTON. Without this the reader who
+  // dismisses the panel from the keyboard is left with focus on a node
+  // that has just become display:none, which hands it to <body> and
+  // restarts the next Tab from the top of a 10,244px document.
+  addEventListener('keydown',function(e){
+    if((e.key==='Escape'||e.key==='Esc')&&!shut()){ show(false); t.focus(); }
+  });
+  // Choosing a destination closes it. The anchor jump itself is left
+  // entirely alone — scroll-padding-top does the landing (A-1) and
+  // nothing here calls scrollTo or preventDefault.
+  p.addEventListener('click',function(e){ if(e.target.closest('a')) show(false); });
+  // A touch anywhere else closes it. The containment test is what keeps
+  // the opening click — which bubbles to document — from closing it again
+  // in the same tick.
+  document.addEventListener('click',function(e){ if(!shut()&&!inside(e.target)) show(false); });
+  // Focus leaving the panel closes it. This is the non-trapping half of
+  // the contract: Tab is never blocked, it just tidies up behind itself.
+  document.addEventListener('focusin',function(e){ if(!shut()&&!inside(e.target)) show(false); });
+  // Above 940 `.navlinks` is the navigation and this control is
+  // display:none, so an open panel must not survive the crossing.
+  var r; addEventListener('resize',function(){
+    clearTimeout(r); r=setTimeout(function(){ if(innerWidth>940&&!shut()) show(false); },150);
+  },{passive:true});
+})();
+
+/* ── D-09.4. WHERE AM I? THE ACTIVE-SECTION UNDERLINE. ───────────────
+   The vocabulary was already drawn and nothing ever set it:
+     .nav a.nl:hover, .nav a.nl[aria-current]
+       {color:var(--fg);border-bottom-color:var(--mustard)}
+   `aria-current` was present on ZERO elements at every width, so seven
+   nav items over fourteen bands and 10,244px told a reader 8,000px down
+   nothing about where they were. This lights the underline the design
+   already owns. NO NEW COLOUR, NO NEW MARK, NO NEW BREAKPOINT — the
+   only thing this code does is add and remove one attribute.
+
+   NOT A REVEAL SYSTEM. Nothing here observes anything for the purpose of
+   animating it, nothing adds a class that transitions, and no rule in
+   this file puts a transition on `.nav a.nl` — the underline appears on
+   the frame it is set. This file has no motion language (AD-08 refused
+   auto-advancing the hero) and does not acquire one here.
+
+   A READING LINE, NOT A RATIO. The root is shrunk to a single row of
+   pixels sitting exactly at the bar's bottom edge, so the observer fires
+   once per band boundary crossed — which is exactly when the answer
+   changes — and "which section am I in" needs no tie-break between
+   competing intersection ratios.
+
+   THE OBSERVER IS THE TRIGGER; GEOMETRY IS THE ANSWER. A first version
+   read the answer straight off `isIntersecting` and it was WRONG at
+   phone widths, in the one case that matters most: a same-page click on
+   JOURNEYS lands the band's top at 56.47 against a line at 56.0, so the
+   1px line is crossed by the boundary itself and BOTH bands intersect it
+   — `work` over [56, 56.47] and `journeys` over [56.47, 57]. Whichever
+   went live first won, and that was Work. Measured: clicking JOURNEYS at
+   375 and at 375x635 underlined WORK, while 1440 (where the landing was
+   0.47px the other side of the line) was correct — a defect that a
+   desktop-only check would have shipped.
+   So each callback recomputes from the rects with an explicit
+   containment test, `top <= line+0.5 < bottom`. Bands are contiguous and
+   non-overlapping, so exactly one can satisfy it, and the half-pixel
+   bias points at the band the reader is ARRIVING in — which is the same
+   half-pixel slack the anchor landing itself has (measured error -0.48
+   to +0.47px across five widths). The two edges of the document are
+   handled by the same one test rather than by special cases: below
+   `record`, `bottom` is above the line and nothing qualifies.
+
+   IT IS DRIVEN BY THE SAME TOKEN AS THE ANCHOR OFFSET, WHICH IS WHY THE
+   TWO CANNOT FIGHT. `html,body{scroll-padding-top:var(--nav-h)}` lands
+   an anchor jump with the band's top edge at exactly --nav-h; the
+   reading line is at exactly --nav-h. So the band a reader has just
+   jumped to is the band that lights, by construction rather than by
+   luck — and if --nav-h is ever retuned, both move together. It is read
+   from the custom property rather than re-typed, so the 56/63 split
+   across the 940 breakpoint is inherited, not duplicated.
+
+   IT LIGHTS THE BAND THE READER IS ACTUALLY IN, AND NOTHING OTHERWISE.
+   The nav is a SELECTION of five bands (work, journeys, impact, farm,
+   record), not a partition of all fourteen, so a reader inside
+   `projects`, `campaigns`, `about` or `gtm` is in a band no nav item
+   names. Considered and refused: holding the last-lit item until the
+   next one arrives, which would leave JOURNEYS underlined through
+   Projects, Campaigns and About — three bands that are Work's children,
+   not Journeys'. `aria-current` is announced to a screen reader as the
+   current location; pointing it at the wrong section is worse than
+   pointing it nowhere. So the underline is dark in the hero, the ticker,
+   the statement, Projects, Campaigns, About, Green the Map, Give and the
+   footer. That is the honest reading of an IA that does not partition.
+
+   `location`, not `true`: these are positions within one page, so the
+   ARIA token for a location in an environment is the correct one. The
+   CSS matches on attribute presence, so the value is free to be right.
+
+   SILENT WHERE IntersectionObserver IS NOT AVAILABLE. The guard is the
+   whole degradation: no observer, no attribute, no error, and a nav that
+   behaves exactly as it did before this was written. (The two older
+   observers in this file are unguarded; this one is guarded because it
+   is the only one whose absence a reader would never notice.) */
+(function(){
+  if(!('IntersectionObserver' in window)) return;
+  var byId={}, links=[];
+  [].forEach.call(document.querySelectorAll('.nav a.nl[href*="#"]'),function(a){
+    var id=a.getAttribute('href').split('#')[1]||'';
+    if(!id||!document.getElementById(id)) return;   // never invent a target
+    (byId[id]=byId[id]||[]).push(a); links.push(a);
+  });
+  var ids=Object.keys(byId);
+  if(!ids.length) return;
+  // Both nav rows carry the same six destinations and only one row is
+  // displayed at a time, so every id maps to a LIST of links and both
+  // get the attribute. Setting it on the hidden row costs nothing and
+  // means the state is already correct if the viewport crosses 940.
+  var current=null;
+  function set(id){
+    if(id===current) return;
+    current=id;
+    links.forEach(function(a){ a.removeAttribute('aria-current'); });
+    if(id) byId[id].forEach(function(a){ a.setAttribute('aria-current','location'); });
+  }
+  var io=null, line=0;
+  // WHICH BAND HOLDS THE LINE. Not "which band intersects it" — see the
+  // note above on the JOURNEYS click. Returns null above `work` and
+  // below `record`, which is the honest answer there.
+  function pick(){
+    for(var i=0;i<ids.length;i++){
+      var r=document.getElementById(ids[i]).getBoundingClientRect();
+      if(r.top<=line+0.5 && r.bottom>line+0.5) return ids[i];
+    }
+    return null;
+  }
+  function build(){
+    if(io) io.disconnect();
+    line=parseFloat(getComputedStyle(document.documentElement)
+          .getPropertyValue('--nav-h'))||0;
+    // bottom margin pulls the root's foot up to 1px below its head.
+    var bottom=-(Math.max(0,innerHeight-line-1));
+    io=new IntersectionObserver(function(){ set(pick()); },
+      {rootMargin:(-line)+'px 0px '+bottom+'px 0px',threshold:0});
+    ids.forEach(function(id){ io.observe(document.getElementById(id)); });
+  }
+  build();
+  // --nav-h changes across the 940 breakpoint and innerHeight changes
+  // when mobile browser chrome collapses, so the line is rebuilt rather
+  // than measured once. Debounced: a resize storm must not rebuild an
+  // observer per frame.
+  var t; addEventListener('resize',function(){
+    clearTimeout(t); t=setTimeout(build,150);
+  },{passive:true});
+})();
+</script>
+</body>
+</html>

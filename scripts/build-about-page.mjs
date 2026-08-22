@@ -534,7 +534,7 @@ ${DOORS.map(([h, n, t]) => `        <a class="a-door" href="${h}">
         </a>`).join('\n')}
       </div>
       <p class="a-foot a-foot-2"><a class="b b-1" href="/#give">Give monthly</a>
-        <a class="b b-2" href="mailto:info@swechha.in">Write to us</a></p>
+        <a class="b b-2" href="mailto:swechhaindia@gmail.com">Write to us</a></p>
     </div>`;
 
 /* ═══ PAGE CSS ════════════════════════════════════════════════════════════
@@ -771,6 +771,7 @@ const PAGE_CSS = `
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */
 const OUT = await S.assemble({
   file: 'about.html',
+  route: '/about',
   title: 'About &mdash; Swechha',
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,

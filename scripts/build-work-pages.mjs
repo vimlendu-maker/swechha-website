@@ -74,7 +74,7 @@ const argv = process.argv.slice(2);
 const argOf = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
 const DATA_DIR = argOf('--data', join(ROOT, 'data/work'));
 const OUT_DIR = argOf('--out', join(V3, 'work'));
-const LINKS_OUT = argOf('--links', join(OUT_DIR, 'LINKS.json'));
+const LINKS_OUT = argOf('--links', join(ROOT, 'data/work-links.json'));
 const DRY = argv.includes('--dry');
 /* W-14. THE FLAG IS GONE. The owner, verbatim, 21 August: "In india we dont
    have restriction or requirement of written consent. Please hardcode that i
