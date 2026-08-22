@@ -139,6 +139,12 @@ jobs:
       - name: Rebuild the pages the data feeds
         if: steps.changed.outputs.count != '0'
         run: |
+          # HERO FIRST. Every other generator extracts the nav, the footer and
+          # the token block out of home.html, so the hero's readings must be
+          # written before anything reads that file.
+          echo "::group::npm run build:hero"
+          npm run build:hero
+          echo "::endgroup::"
           for t in situations work about impact farm act stories publications; do
             echo "::group::npm run build:$t"
             npm run "build:$t"
