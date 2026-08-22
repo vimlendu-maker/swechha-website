@@ -47,10 +47,17 @@ import { join } from 'node:path'
  * Nothing else in the app depends on it: delete the file and the `rewrites()`
  * hook, and the scaffold routes come back exactly as they were.
  *
- * ROUTES WITH NO FINISHED PAGE ARE LEFT ALONE, deliberately: `/explore`,
- * `/search` and `/work/campaigns/<slug>` keep their real app routes.
- * Shadowing a route with a page that does not exist would trade a scaffold
- * for a 404.
+ * ROUTES WITH NO FINISHED PAGE ARE LEFT ALONE, deliberately: `/explore` and
+ * `/work/campaigns/<slug>` keep their real app routes. Shadowing a route with
+ * a page that does not exist would trade a scaffold for a 404.
+ *
+ * `/search` LEFT THAT LIST and is now built. It indexes the 29 BUILT PAGES,
+ * read out of each page's own `rel=canonical` — not `content/`, which
+ * `lib/search.ts` indexes and which holds four entries because five of the six
+ * content directories are empty. `lib/search.ts` and `app/search/page.tsx` are
+ * superseded by that and serve nothing now this route is mapped; they are left
+ * in place because `lib/search.test.ts` covers the function, and deleting
+ * tested code is its own decision.
  *
  * `/stories` LEFT THAT LIST ON 22 AUGUST (AD-26) and `/publications` joined
  * the map with it. Both are the owner's answers to AD-26 §5 made buildable:
@@ -137,6 +144,7 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
     '/': 'home.html',
     ...SITUATIONS,
     ...workRoutes(),
+    '/search': 'search.html',
     '/stories': 'stories.html',
     '/publications': 'publications.html',
     '/about': 'about.html',

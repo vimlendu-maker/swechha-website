@@ -1431,6 +1431,7 @@ const OUT = `<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>Delhi&rsquo;s air &mdash; Swechha</title>
+<link rel="canonical" href="/now/air">
 ${HEAD_FONTS}
 <style>
 ${CSS}

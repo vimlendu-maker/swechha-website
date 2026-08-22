@@ -144,6 +144,7 @@ const PAGE_CSS = `
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */
 const OUT = await S.assemble({
   file: 'publications.html',
+  route: '/publications',
   title: 'Publications &mdash; Swechha',
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,

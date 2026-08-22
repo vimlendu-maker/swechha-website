@@ -771,6 +771,7 @@ const PAGE_CSS = `
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */
 const OUT = await S.assemble({
   file: 'about.html',
+  route: '/about',
   title: 'About &mdash; Swechha',
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,

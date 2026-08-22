@@ -678,7 +678,7 @@ export const disclose = (summary, body) => `      <details class="dx">
  * one half leaves the other unchecked, which is the same bug on a different
  * line (SITUATION-PAGE-TEMPLATE.md §2).
  */
-export async function assemble({ file, title, bands, sectionFor, index, sh, pageCss = '', script = '', clashes, note = '', navMark = null }) {
+export async function assemble({ file, title, bands, sectionFor, index, sh, pageCss = '', script = '', clashes, note = '', navMark = null, route = null }) {
   /* WHICH NAV WORD THIS PAGE IS STANDING UNDER, derived from the file being
      written rather than passed in, so a generator cannot mark the wrong one.
      The index and all six situations live under `Now`; anything else built
@@ -692,6 +692,33 @@ export async function assemble({ file, title, bands, sectionFor, index, sh, page
      pass its own mark; passing nothing keeps the derived behaviour, which is
      what the index, the six situations and about.html all rely on. */
   const mark = navMark ?? { current: own ? INDEX_PAGE.label : null, url: own };
+
+  /* ── THE PAGE CARRIES ITS OWN CANONICAL ROUTE. ──────────────────────────
+     Two things needed this and neither could have it before. The design audit
+     found rel=canonical on 0 of 29 pages while `/` and the raw built path
+     answered byte-identically — duplicate content at two indexable URLs. And
+     the search generator needs to know which route each built file serves,
+     which it cannot ask design-routes.ts because that is TypeScript and CI
+     runs Node 22, where a .mjs cannot import it. A second copy of the route
+     map is the wrong answer to both; the page stating its own route is the
+     right one.
+
+     RELATIVE, NOT ABSOLUTE, and that is deliberate: the origin is only known
+     at request time (SITE_ORIGIN, or Vercel's VERCEL_URL), so an absolute
+     canonical baked in at build time would advertise the wrong host on every
+     preview deploy — the exact defect lib/org.ts was just fixed for.
+
+     DERIVED WHERE IT CAN BE, REQUIRED WHERE IT CANNOT. The index and the six
+     situations are in the family register; /impact and /farm pass their own
+     nav mark. Anything else has to say so, and the build stops rather than
+     emitting a page that cannot say what URL it is. */
+  const canonical = route ?? own ?? mark?.url ?? null;
+  if (!canonical) {
+    console.error(`REFUSING TO WRITE: ${file} has no canonical route. Pass `
+      + `route: '/its-path' to assemble() — a page that cannot state its own URL `
+      + `cannot be indexed correctly and cannot be found by the search index.`);
+    process.exit(1);
+  }
 
   const section = ([id, cls]) => {
     const body = sectionFor(id);
@@ -708,6 +735,7 @@ export async function assemble({ file, title, bands, sectionFor, index, sh, page
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>${title}</title>
+<link rel="canonical" href="${canonical}">
 ${sh.HEAD_FONTS}
 <style>
 ${sh.CSS}

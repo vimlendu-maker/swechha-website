@@ -665,6 +665,7 @@ const PAGE_CSS = `
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */
 const OUT = await S.assemble({
   file: 'act.html',
+  route: '/act',
   title: 'Get involved &mdash; Swechha',
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,

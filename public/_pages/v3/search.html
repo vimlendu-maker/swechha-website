@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>Delhi&rsquo;s air &mdash; Swechha</title>
-<link rel="canonical" href="/now/air">
+<title>Search &mdash; Swechha</title>
+<link rel="canonical" href="/search">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..700&display=swap" rel="stylesheet">
 <style>
 /* ══════════════════════════════════════════════════════════════════════
@@ -1343,6 +1343,102 @@ button.b[disabled]{opacity:.55;cursor:default}
   .p-fc-v{font-size:10px}
 }
 
+/* ── THE MENU PANEL IS THE MOBILE NAV, AND IT IS SIX ROWS. ───────────────
+   Below 940 the six nav words are display:none, so this panel is the only way
+   to reach another page on a phone. It used to hold the page's own bands and
+   nothing else, which made it a duplicate of the chip row already visible
+   under the bar — and the first attempt at fixing that stacked the six pages
+   ON TOP of the bands, producing a fourteen-row panel that filled the entire
+   viewport. Both versions were wrong in the same way: two answers on one
+   surface.
+   So the panel is the six pages, flat, unlabelled. The page's own sections
+   stay where they already were, in the .navscroll chip row under the bar. One
+   surface per question, and nothing is listed twice.
+   NO CSS IS NEEDED FOR IT, which is the point — home.html's own
+   "navidx a.nl" rows and its "first-child" border reset both apply again now
+   that the links are direct children of a single nav. The group and heading
+   rules that used to sit here are deleted rather than left matching nothing.
+   (And the backticks that first version of this note used broke the build in
+   exactly the way the warning at the top of this block predicts.)
+   The button says Menu, not Sections: it opens pages, and the sections are the
+   chip row. */
+
+/* NO BACKTICKS ANYWHERE BELOW — this whole block is one template literal and a
+   backtick in a comment silently terminates it. Three separate builds were
+   broken this way. Quote CSS selectors in prose without them. */
+/* ── THE HERO CROP, AND A FINDING ABOUT IT.
+      The situation pages all carry style="--zh:...;--zt:..." on their hero
+      image, copied from the Air build. Those three custom properties belong to
+      .s-hero-shot img on the frozen homepage, which reads them as height,
+      top and object-position. .pic > img reads NONE of them: its rule is a
+      plain width:100%;height:100%;object-fit:cover. So the zoom values are
+      INERT on every situation page including Air's, and every hero is a
+      centre crop whether or not that is the right crop.
+      Rather than delete the attributes (they are harmless, and the Air page is
+      signed off), the one property that actually decides the crop is wired up
+      here. A wide photograph cropped to a portrait band loses its subject if
+      the subject is not dead centre — which is exactly what happened to the
+      flooded-field hero, whose pylon sits at 70% across. ─────────────────── */
+.pic>img{object-position:var(--op,50% 50%)}
+
+/* ── THE DISCLOSURE. Native details/summary: no JS, keyboard and
+      screen-reader support for free, and it is what keeps a long table off a
+      phone's critical path. The summary is held at var(--hit) so it meets the
+      44px touch target the frozen page sets for every control. ─────────── */
+.dx{margin:clamp(14px,1.6vw,20px) 0 0;border-top:1px solid var(--hair-2)}
+.paper .dx{border-top-color:var(--rule-2)}
+.dx-s{cursor:pointer;list-style:none;display:flex;align-items:center;gap:9px;
+  min-height:var(--hit,44px);font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--fg-2)}
+.paper .dx-s{color:var(--ink-2)}
+.dx-s::-webkit-details-marker{display:none}
+.dx-s::before{content:'';flex:none;width:9px;height:9px;border-right:2px solid currentColor;
+  border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .16s}
+.dx[open]>.dx-s::before{transform:rotate(-135deg) translateY(-2px)}
+.dx-s:hover,.dx-s:focus-visible{color:var(--mustard)}
+.paper .dx-s:hover,.paper .dx-s:focus-visible{color:var(--ink)}
+.dx-b{padding:2px 0 clamp(12px,1.4vw,18px)}
+
+/* ── THE MEASURE ROW. A label, a bar, its value, and A TICK WHERE THE
+      PUBLISHED LIMIT SITS. The tick is the whole point: a bar on its own is a
+      quantity, and this site only publishes a quantity against its limit.
+      Bar ink is neutral by default — weight, not red — because a large value
+      is not automatically a breach. .is-over is the opt-in for a row that
+      genuinely crosses a published threshold. ─────────────────────────── */
+.mr-h,.mr{display:grid;grid-template-columns:minmax(0,1fr) minmax(70px,1.2fr) 4.2em 3.2em;
+  gap:0 clamp(7px,.9vw,13px);align-items:center}
+.mr-h{padding:0 0 7px;border-bottom:1px solid var(--hair)}
+.paper .mr-h{border-bottom-color:var(--rule-2)}
+.mr-h .lbl{font-size:10px;color:var(--fg-3)}
+.paper .mr-h .lbl{color:var(--ink-3)}
+.mr{padding:9px 0;border-bottom:1px solid var(--hair-2)}
+.paper .mr{border-bottom-color:var(--rule)}
+.mr-n{font-size:clamp(13px,.93vw,15px);color:var(--fg);min-width:0;overflow-wrap:break-word}
+.paper .mr-n{color:var(--ink)}
+.mr-n i{display:block;font-size:9.5px;font-style:normal;letter-spacing:.05em;color:var(--fg-3);line-height:1.2}
+.paper .mr-n i{color:var(--ink-3)}
+.mr-b{position:relative;display:block;height:8px;background:var(--hair-2)}
+.paper .mr-b{background:var(--rule)}
+.mr-f{position:absolute;inset:0 auto 0 0;width:var(--w);background:var(--fg-2)}
+.paper .mr-f{background:var(--ink-2)}
+.mr.is-over .mr-f{background:var(--red)}
+.paper .mr.is-over .mr-f{background:var(--red-ink)}
+.mr.is-me .mr-f{background:var(--mustard)}
+.mr-l{position:absolute;top:-3px;bottom:-3px;left:var(--x);width:2px;background:var(--fg)}
+.paper .mr-l{background:var(--red-ink)}
+.mr-v,.mr-x{font-variant-numeric:tabular-nums;text-align:right}
+.mr-v{font-size:clamp(12.5px,.9vw,14px);color:var(--fg)}
+.paper .mr-v{color:var(--ink)}
+.mr-x{font-size:11px;color:var(--fg-3)}
+.paper .mr-x{color:var(--ink-3)}
+.mr.is-over .mr-x{color:var(--red)}
+.paper .mr.is-over .mr-x{color:var(--red-ink)}
+@media (max-width:639px){
+  .mr-h{display:none}
+  .mr{grid-template-columns:minmax(0,1fr) 4em 3em;grid-template-areas:'n v x' 'b b b';
+    gap:5px 8px;padding:11px 0}
+  .mr-n{grid-area:n}.mr-v{grid-area:v}.mr-x{grid-area:x}.mr-b{grid-area:b}
+}
 
 /* ── THE FAMILY: PARENT CRUMB AND SIBLING RAIL. Both work on either ground. ── */
 .fam-crumb{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px;
@@ -1377,6 +1473,27 @@ button.b[disabled]{opacity:.55;cursor:default}
 .fam-sib-w{display:block;color:var(--fg-3);margin-top:1px}
 .paper .fam-sib-w{color:var(--ink-3)}
 @media (min-width:760px){ .fam-sibs-r{grid-template-columns:repeat(5,1fr)} }
+
+
+
+
+.sr-mast{padding-top:clamp(28px,6vw,72px);padding-bottom:clamp(24px,4vw,48px)}
+.sr-field{margin:clamp(20px,3vw,32px) 0 0;display:grid;gap:8px;max-width:34rem}
+.sr-lbl{color:var(--fg-2)}
+.sr-in{width:100%;min-height:52px;padding:0 14px;background:transparent;color:var(--fg);
+  border:1px solid var(--rule);border-radius:0;font:inherit;font-size:clamp(15px,2vw,17px)}
+.sr-in:focus{outline:2px solid var(--mustard);outline-offset:2px;border-color:var(--mustard)}
+.sr-count{margin:12px 0 0;color:var(--fg-2)}
+.sr-g{margin-top:clamp(24px,3vw,40px)}
+.sr-gh{margin:0 0 8px;color:var(--ink-2)}
+.sr-list{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.sr-row{border-top:1px solid var(--rule)}
+.sr-row a{display:grid;gap:4px;padding:clamp(12px,1.6vw,18px) 0;text-decoration:none;color:inherit}
+.sr-row a:hover .sr-t{color:var(--mustard)}
+.sr-t{font-weight:600}
+.sr-r{color:var(--ink-2);font-variant-numeric:tabular-nums}
+.sr-l{color:var(--ink-2);max-width:74ch}
+.sr-none{margin-top:clamp(20px,3vw,32px)}
 </style>
 </head>
 <body>
@@ -1392,586 +1509,277 @@ button.b[disabled]{opacity:.55;cursor:default}
      tabindex="-1" so the focus actually lands rather than only moving
      the sequential-navigation start point. -->
 <a class="skip" href="#main">Skip to the content</a>
-<header class="nav"><div class="nav-in"><a class="mark" href="/" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/now" aria-current="true">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/#record">Record</a></nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
-<div class="navidx" id="navidx" hidden><nav aria-label="Pages"><a class="nl" href="/now" aria-current="true">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/#record">Record</a></nav></div><a class="give" href="/act">Give</a></div><nav class="navscroll" aria-label="Sections"><ul><li><a class="nl" href="#top">The reading</a></li><li><a class="nl" href="#people">Who is in it</a></li><li><a class="nl" href="#measured">How the number is made</a></li><li><a class="nl" href="#sources">Where it comes from</a></li><li><a class="nl" href="#trend">Where it is going</a></li><li><a class="nl" href="#geography">The geography</a></li><li><a class="nl" href="#money">What it costs</a></li><li><a class="nl" href="#act">What you can do</a></li></ul></nav></header>
+<header class="nav"><div class="nav-in"><a class="mark" href="/" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/#record">Record</a></nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
+<div class="navidx" id="navidx" hidden><nav aria-label="Pages"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/#record">Record</a></nav></div><a class="give" href="/act">Give</a></div><nav class="navscroll" aria-label="Sections"><ul><li><a class="nl" href="#top">Search</a></li><li><a class="nl" href="#index">Everything on this site</a></li></ul></nav></header>
 <main id="main" tabindex="-1">
   <section class="t1" id="top">
-    <div class="pic ht">
-      <img class="duo" src="/images/photos/india-gate-hero.jpg" alt="India Gate seen through Delhi haze" style="--zh:150%;--zt:-30%">
-      <div class="pic-over"><div class="wrap">
-        <h1 class="d1">Delhi&rsquo;s air</h1>
+    <div class="wrap sr-mast">
+      <p class="lbl eyebrow">Search</p>
+      <h1 class="d1">What are you<br>looking for?</h1>
+      <p class="lead">29 pages. Typing matches their titles, their section headings and their opening lines &mdash; not every word on them. Or read the list below: it is all of them, in the order the site is arranged.</p>
+      <div class="sr-field">
+        <label class="lbl sr-lbl" for="sr-q">Filter by word</label>
+        <input id="sr-q" class="sr-in" type="search" autocomplete="off" spellcheck="false"
+               placeholder="air, yamuna, farm, school, film&hellip;">
+      </div>
+      <p class="lbl sr-count" id="sr-count" role="status" aria-live="polite">29 pages</p>
+    </div>
+  </section>
+  <section class="paper t2" id="index" aria-labelledby="index-h">
+    <div class="wrap"><div class="im-head">
+        <h2 class="d1" id="index-h">Everything on this site</h2>
+        <p class="lead">Grouped as the site is, not alphabetically — a reader looking for something is usually looking for a section.</p>
       </div></div>
-    </div>
-    <div class="pic-body"><div class="wrap p2-hero">
-      <nav class="fam-crumb" aria-label="Where this page sits">
-        <a class="fam-crumb-up" href="/now">Now</a>
-        <i class="fam-crumb-sep" aria-hidden="true">/</i>
-        <span class="fam-crumb-here">Air</span>
-        <span class="cap fam-crumb-n">1 of 6 situations</span>
-      </nav>
-      <div class="p2-top">
-        <p class="lbl p2-method">Every reading against its published limit. Every gap named.</p>
-        <p style="margin:0"><span class="tag tag-season">Year round</span></p>
-      </div>
-      <div class="p2-cols">
-      <div class="p2-read breach">
-        <p class="state p2-state" id="air-state"><i aria-hidden="true"></i><span id="air-state-w">Periodic</span><span class="sr" id="air-state-x"> &mdash; updated on a cadence, not continuously</span></p>
-        <p class="readout rl" id="air-aqi">311</p>
-        <p class="unit">AQI &middot; 24-hour &middot; worst of eight</p>
-        <p class="verdict bad" id="air-band">Very Poor</p>
-        <div class="bands bad" id="air-bands" role="img" aria-label="Very Poor, band 5 of 6"><i class="on" title="Good"></i><i class="on" title="Satisfactory"></i><i class="on" title="Moderately Polluted"></i><i class="on" title="Poor"></i><i class="on tip" title="Very Poor"></i><i class="" title="Severe"></i></div>
-        <p class="limit" id="air-limit">CPCB safe limit 100. <b>Limit broken.</b></p>
-        <p class="cap p2-src" id="air-src"><span id="air-src-w">Anand Vihar, Delhi - DPCC. Observed 10:00 IST, 22 August 2026.</span>
-          <a class="lk" href="#measured">How this number is made</a>.</p>
-      </div>
-      <div class="p2-nat">
-        <p class="lbl p2-nat-h">India, right now</p>
-        <p class="cap p2-nat-l"><span id="air-nat-rank">266 cities report to CPCB. Delhi is
-          <b>ranked 7 of them</b>,
-          and that changes between hours.</span></p>
-        <div class="p-nr" data-aqi="423"><span class="p-nr-n">Sasaram, Bihar</span>
-          <span class="p-nr-v is-red">423</span>
-          <span class="cap p-nr-s">1&thinsp;st</span></div>
-        <div class="p-nr" data-aqi="340"><span class="p-nr-n">Gaya, Bihar</span>
-          <span class="p-nr-v is-red">340</span>
-          <span class="cap p-nr-s">2&thinsp;st</span></div>
-        <div class="p-nr" data-aqi="340"><span class="p-nr-n">Gummidipoondi, Tamil Nadu</span>
-          <span class="p-nr-v is-red">340</span>
-          <span class="cap p-nr-s">1&thinsp;st</span></div>
-        <div class="p-nr" data-aqi="336"><span class="p-nr-n">Samastipur, Bihar</span>
-          <span class="p-nr-v is-red">336</span>
-          <span class="cap p-nr-s">1&thinsp;st</span></div>
-        <div class="p-nr" data-aqi="333"><span class="p-nr-n">Ludhiana, Punjab</span>
-          <span class="p-nr-v is-red">333</span>
-          <span class="cap p-nr-s">1&thinsp;st</span></div>
-        <div class="p-nr" data-aqi="320"><span class="p-nr-n">Faridabad, Haryana</span>
-          <span class="p-nr-v is-red">320</span>
-          <span class="cap p-nr-s">3&thinsp;st</span></div>
-        <div class="p-nr is-me" id="air-nr-delhi" data-aqi="311"><span class="p-nr-n">Delhi</span>
-          <span class="p-nr-v is-red" id="air-nr-delhi-v">311</span>
-          <span class="cap p-nr-s">43&thinsp;st</span></div>
-        <div class="p-nr" data-aqi="306"><span class="p-nr-n">Chennai, Tamil Nadu</span>
-          <span class="p-nr-v is-red">306</span>
-          <span class="cap p-nr-s">7&thinsp;st</span></div>
-        <p class="cap p2-nat-c"><b>76 of 266 above the limit
-          India set for itself.</b> 53 read &ldquo;Good&rdquo;. Sasaram reports from one
-          station and Delhi from 43 &mdash; a city with one monitor is
-          measured <b>less</b>, not better.</p>
-        <p class="cap p-hole p2-nat-t"><b>Delhi&rsquo;s row is live. The others are not.</b> The eight
-          cities above were read together at 22-08-2026 10:00:00; Delhi&rsquo;s
-          figure updates when this page loads. So the order can be an hour out of date even when
-          Delhi&rsquo;s number is not &mdash; which is the honest version of a ranking, and the reason the
-          rank is printed as a reading rather than as a claim.</p>
-        <p style="margin:0"><a class="act" href="#geography">All 266 cities <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
-      </div>
-      </div>
-      <p style="margin:0"><a class="act" href="#people">Who is in it <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
-    </div></div>
-  </section>
-  <section id="strip" aria-label="Readings on this page">
-    <div class="wide p-strip-in">
-      <a class="p-cell" href="#top">
-        <span class="p-cell-v is-red" id="air-c-aqi">311</span>
-        <span class="lbl p-cell-l">AQI</span><span class="cap p-cell-s" id="air-c-band">Very Poor</span></a>
-      <a class="p-cell" href="#top">
-        <span class="p-cell-v is-red" id="air-c-above">10 of 43</span>
-        <span class="lbl p-cell-l">Above the limit</span><span class="cap p-cell-s">Delhi stations</span></a>
-      <a class="p-cell" href="#geography">
-        <span class="p-cell-v is-red">1st</span>
-        <span class="lbl p-cell-l">In India</span><span class="cap p-cell-s">of 266 cities</span></a>
-      <a class="p-cell" href="#trend">
-        <span class="p-cell-v">10.8×</span>
-        <span class="lbl p-cell-l">Attention</span><span class="cap p-cell-s">winter against summer</span></a>
-      <p class="cap p-strip-note">One reading, one label. <a class="lk" href="#measured">What is behind them</a>.</p>
-    </div>
-  </section>
-  <section class="t2" id="people" aria-labelledby="people-h">
     <div class="wrap">
-      <div class="im-head">
-        <h2 class="d1" id="people-h">Who is in it?</h2>
-        <p class="lead">The consequence comes before the measurement, because the measurement is not the point. Every figure here is measured against a limit India has not adopted.</p>
-      </div>
-      <p class="p-legend"><span class="lbl p-kd p-kd-c">Counted or measured</span><span class="lbl p-kd p-kd-m">Modelled</span></p>
-      <div class="p-two">
-        <div class="p-two-c"><p class="num rl">1.5</p><p class="unit p-kd p-kd-m">million deaths a year</p>
-          <p class="cap">about 1.5 million, against <b>the WHO guideline</b> &mdash; 5 µg/m³ annual.
-          <span class="p-cite">Lancet Planetary Health, December 2024.</span></p></div>
-        <div class="p-two-c"><p class="num rl">5.0%</p><p class="unit p-kd p-kd-m">of all mortality</p>
-          <p class="cap">against <b>India&rsquo;s own standard</b> &mdash; 40 µg/m³ annual. Same study, same deaths.</p></div>
-      </div>
-      <p class="body p-ratio">India&rsquo;s standard is eight times the WHO guideline, so the same harm counts twice over.</p>
-      <div class="p-rows">
-        <div class="p-row"><p class="num rl">29.4%</p>
-          <div><p class="body">of <b>Delhi adolescents aged 13&ndash;17</b> showed spirometry-defined asthma or airflow obstruction. <span class="lbl p-kd p-kd-c">Counted</span></p>
-          <p class="cap">The study&rsquo;s own strongest association was obesity, not air pollution &mdash; 39.8% overweight against 16.4%.
-          <span class="p-cite">Lung Care Foundation with Pulmocare Research, Lung India, September 2021.</span></p></div></div>
-        <div class="p-row"><p class="num rl">8.2 years</p>
-          <div><p class="body">of life expectancy lost in <b>Delhi-NCR</b>. 3.5 years across India. <span class="lbl p-kd p-kd-m">Modelled</span></p>
-          <p class="cap">Nearly twice the toll of childhood and maternal malnutrition.
-          <span class="p-cite">Air Quality Life Index, EPIC, University of Chicago, 2025.</span></p></div></div>
-      </div>
-      <p class="body p-key"><b>Three of those four figures are models.</b> The one that was counted is the one
-        about children&rsquo;s lungs, because somebody put real adolescents in front of a spirometer. A model
-        is not a lesser thing than a count, but it is a different thing, and a dashboard that sets them at
-        the same weight is telling you they are the same.</p>
-      <p class="cap p-hole">A counted figure for <b>exposure</b> would need the Directorate of Education
-        school register with coordinates, joined to the station list by distance. It is not published in a
-        machine-readable form, so this page does not carry one.</p>
-      <p style="margin:var(--gap-row) 0 0"><a class="act" href="#measured">What is actually being measured <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
-    </div>
-  </section>
-  <section class="paper t2" id="measured" aria-labelledby="measured-h">
-    <div class="wrap">
-      <div class="im-head">
-        <h2 class="d1" id="measured-h">How the number is made</h2>
-        <p class="lead">One number stands in for eight, and it is not their average &mdash; it is the worst of them. Everything on this page is either measured or modelled, and the two are set differently on purpose.</p>
-      </div>
-      <div class="p-tabs" data-tabs>
-        <div class="p-tabs-l" role="tablist" aria-label="Method"><button type="button" role="tab" id="tb1-t0" aria-controls="tb1-p0" aria-selected="true">What they are</button><button type="button" role="tab" id="tb1-t1" aria-controls="tb1-p1" aria-selected="false" tabindex="-1">Today's eight</button><button type="button" role="tab" id="tb1-t2" aria-controls="tb1-p2" aria-selected="false" tabindex="-1">Every figure</button></div>
-<div role="tabpanel" id="tb1-p0" aria-labelledby="tb1-t0"><div class="p-expl"><div><h3 class="p-expl-h">AQI</h3><p class="p-expl-s">One number for eight poisons</p><p class="p-expl-b">Eight pollutants folded into one 0&ndash;500 figure that reports <b>whichever is worst</b>. It is not a concentration. 311 today; the limit is 100.</p></div><div><h3 class="p-expl-h">PM2.5</h3><p class="p-expl-s">Small enough to enter blood</p><p class="p-expl-b">Particles under two and a half microns pass the lung wall into the bloodstream. <b>134 µg/m³</b> today. The Indian daily standard is 60.</p></div><div><h3 class="p-expl-h">PM10</h3><p class="p-expl-s">Dust you can feel</p><p class="p-expl-b">Coarser particles from roads, construction and soil, stopping in the upper airway. <b>152 µg/m³</b> today. The standard is 100.</p></div></div></div>
-<div role="tabpanel" id="tb1-p1" aria-labelledby="tb1-t1" hidden><p class="body p-quote">&ldquo;The worst sub-index determines the overall AQI.&rdquo;
-          <span class="p-cite">CPCB, <i>About National Air Quality Index</i>.</span></p>
-        <div class="p-subs"><div class="p-sub is-gov">
-            <p class="lbl p-sub-n">PM2.5</p><p class="p-sub-v">311</p>
-            <p class="cap p-sub-c">134 µg/m³</p><p class="lbl p-sub-g">governing</p></div><div class="p-sub">
-            <p class="lbl p-sub-n">PM10</p><p class="p-sub-v">135</p>
-            <p class="cap p-sub-c">152 µg/m³</p></div><div class="p-sub">
-            <p class="lbl p-sub-n">SO₂</p><p class="p-sub-v">36</p>
-            <p class="cap p-sub-c">29 µg/m³</p></div><div class="p-sub">
-            <p class="lbl p-sub-n">NO₂</p><p class="p-sub-v">28</p>
-            <p class="cap p-sub-c">22 µg/m³</p></div><div class="p-sub">
-            <p class="lbl p-sub-n">O₃</p><p class="p-sub-v">2</p>
-            <p class="cap p-sub-c">2 µg/m³</p></div><div class="p-sub">
-            <p class="lbl p-sub-n">NH₃</p><p class="p-sub-v">2</p>
-            <p class="cap p-sub-c">9 µg/m³</p></div></div>
-        <p class="cap p-miss">Eight pollutants, 6 in this number. <b>Pb</b> is not reported at this
-          station. <b>CO</b> is reported &mdash; 111 &mdash; but left out: the feed
-          states no unit for it, CPCB&rsquo;s CO breakpoints are in mg/m³ where everything else here is µg/m³, and
-          on either reading the value is not credible. Read as mg/m³ it alone would put almost every station in
-          the top band.</p>
-        <p class="body p-key"><b>AQI 100 is not a rule of thumb.</b> The boundary sits at PM2.5
-          60 µg/m³ and PM10 100 µg/m³ &mdash; exactly the 24-hour
-          standards India set for itself. <b>Above 100 is above the law.</b></p></div>
-<div role="tabpanel" id="tb1-p2" aria-labelledby="tb1-t2" hidden><div class="p-method">
-        <table class="p-tbl"><thead><tr><th>Figure</th><th>Kind</th><th>Source</th><th>Cadence</th></tr></thead><tbody>
-          <tr><td>AQI, 311</td><td>Derived</td><td>computed from CPCB concentrations</td><td>Hourly</td></tr>
-          <tr><td>Station concentrations</td><td>Measured</td><td>CPCB, 43 Delhi stations</td><td>Hourly</td></tr>
-          <tr><td>Published limit, 100</td><td>Standard</td><td>CPCB, NAAQS 2009</td><td>Fixed</td></tr>
-          <tr><td>Source split</td><td>Modelled</td><td>published apportionment study</td><td>Per study</td></tr>
-          <tr><td>Farm-fire counts</td><td>Measured</td><td>NASA FIRMS, per sensor</td><td>Daily</td></tr>
-          <tr><td>Attention</td><td>Measured</td><td>Wikipedia pageviews</td><td>Daily</td></tr>
-          <tr><td>Forecast</td><td>Modelled</td><td>WAQI&rsquo;s model, not CPCB&rsquo;s</td><td>Daily</td></tr>
-        </tbody></table>
-        <p class="cap"><b>Not CPCB&rsquo;s published AQI.</b> The feed returns concentrations and no index, so the
-          number at the top of this page is computed here using CPCB&rsquo;s own breakpoint table.</p></div></div>
-      </div>
-    </div>
-  </section>
-  <section class="dark-2 t3" id="sources" aria-labelledby="sources-h">
-    <div class="wrap">
-      <div class="im-head">
-        <h2 class="d1" id="sources-h">Where does it come from?</h2>
-        <p class="lead">A source apportionment is a model: it takes measured concentrations, wind and an emissions inventory and works backwards to a plausible split. Biomass burning is one segment, and it has a season.</p>
-      </div>
-      <div class="p-tabs" data-tabs>
-        <div class="p-tabs-l" role="tablist" aria-label="Sources"><button type="button" role="tab" id="tb2-t0" aria-controls="tb2-p0" aria-selected="true">The split</button><button type="button" role="tab" id="tb2-t1" aria-controls="tb2-p1" aria-selected="false" tabindex="-1">Two studies</button><button type="button" role="tab" id="tb2-t2" aria-controls="tb2-p2" aria-selected="false" tabindex="-1">Inside transport</button><button type="button" role="tab" id="tb2-t3" aria-controls="tb2-p3" aria-selected="false" tabindex="-1">Farm fires now</button><button type="button" role="tab" id="tb2-t4" aria-controls="tb2-p4" aria-selected="false" tabindex="-1">Year on year</button></div>
-<div role="tabpanel" id="tb2-p0" aria-labelledby="tb2-t0"><div class="p-ap">
-          <p><span class="p-kind p-kind-m">Modelled, not measured</span></p>
-          <p class="body p-ap-k"><b>This is the only complete split anyone has published for Delhi, and its
-            newest measurement is from February 2017.</b> Six sectors, summing to a hundred, from the study
-            the Government of India commissioned to settle the question.</p>
-          <div class="p-ap-h"><span></span><span class="lbl">Winter</span><span class="lbl">Summer</span><span class="lbl p-ap-d">&Delta;</span></div>
-          <div class="p-ap-r"><span class="p-ap-n">Industry</span>
-            <span class="p-ap-w"><span class="p-ap-b" style="width:30%"></span><i class="p-ap-v">30%</i></span>
-            <span class="p-ap-w p-ap-s"><span class="p-ap-b" style="width:22%"></span><i class="p-ap-v">22%</i></span>
-            <span class="cap p-ap-d">-8</span></div>
-          <div class="p-ap-r"><span class="p-ap-n">Transport</span>
-            <span class="p-ap-w"><span class="p-ap-b" style="width:28%"></span><i class="p-ap-v">28%</i></span>
-            <span class="p-ap-w p-ap-s"><span class="p-ap-b" style="width:17%"></span><i class="p-ap-v">17%</i></span>
-            <span class="cap p-ap-d">-11</span></div>
-          <div class="p-ap-r"><span class="p-ap-n">Dust</span>
-            <span class="p-ap-w"><span class="p-ap-b" style="width:17%"></span><i class="p-ap-v">17%</i></span>
-            <span class="p-ap-w p-ap-s"><span class="p-ap-b" style="width:38%"></span><i class="p-ap-v">38%</i></span>
-            <span class="cap p-ap-d">+21</span></div>
-          <div class="p-ap-r"><span class="p-ap-n">Others</span>
-            <span class="p-ap-w"><span class="p-ap-b" style="width:11%"></span><i class="p-ap-v">11%</i></span>
-            <span class="p-ap-w p-ap-s"><span class="p-ap-b" style="width:8%"></span><i class="p-ap-v">8%</i></span>
-            <span class="cap p-ap-d">-3</span></div>
-          <div class="p-ap-r"><span class="p-ap-n">Residential</span>
-            <span class="p-ap-w"><span class="p-ap-b" style="width:10%"></span><i class="p-ap-v">10%</i></span>
-            <span class="p-ap-w p-ap-s"><span class="p-ap-b" style="width:8%"></span><i class="p-ap-v">8%</i></span>
-            <span class="cap p-ap-d">-2</span></div>
-          <div class="p-ap-r"><span class="p-ap-n">Agricultural burning</span>
-            <span class="p-ap-w"><span class="p-ap-b" style="width:4%"></span><i class="p-ap-v">4%</i></span>
-            <span class="p-ap-w p-ap-s"><span class="p-ap-b" style="width:7%"></span><i class="p-ap-v">7%</i></span>
-            <span class="cap p-ap-d">+3</span></div>
-          <p class="body p-ap-f"><b>Dust more than doubles in summer and industry stays put.</b> The season
-            does not just change how much there is &mdash; it changes what it is. A control measure aimed at
-            the winter split is aimed at a different problem in June.</p>
-          <p class="cap">TERI-ARAI, August 2018 &mdash; PM2.5, Delhi, dispersion model
-            (WRF&ndash;CMAQ), monitoring April 2016 to February 2017. Commissioned by the
-            Department of Heavy Industry, Ministry of Heavy Industries and Public Enterprises.
-            <a class="lk" href="https://prana.cpcb.gov.in/ncapDashboard/downloadEmissionFiles/Delhi.pdf" rel="noopener" target="_blank">The report</a>, Table E.2, page E13, executive summary.</p>
-          <p class="cap p-hole"><b>Four things the study says about itself.</b>
-            Agricultural burning at 4% is <b>a floor, not an estimate</b> &mdash; the monitoring never covered
-            October, when burning peaks, and the report says so in as many words. The shares are averaged
-            across the whole period, so <b>they cannot describe a bad day</b>. The model reproduces only
-            <b>82&ndash;87% of the mass actually measured</b>. And &ldquo;industry&rdquo; includes biomass
-            burned as industrial fuel, which the report itself calls an overestimate.</p>
-        </div></div>
-<div role="tabpanel" id="tb2-p1" aria-labelledby="tb2-t1" hidden><div class="p-ap">
-          <p><span class="p-kind p-kind-m">Modelled, not measured</span></p>
-          <p class="body p-ap-k"><b>The other government study will not give you a single number.</b>
-            IIT Kanpur sampled six sites across Delhi and reported every source as a <b>range</b>,
-            because the answer was different under every monitor. The width of each line below is how much
-            the two studies, and the six sites, fail to agree.</p>
-          <div class="p-rg">
-            <div class="p-rg-r"><span class="p-rg-n">Secondary particle formation</span>
-              <span class="p-rg-t"><i class="p-rg-l" style="left:33.3%;right:0.0%"></i></span>
-              <span class="p-rg-v">13&ndash;39%</span></div>
-            <div class="p-rg-r"><span class="p-rg-n">Biomass burning</span>
-              <span class="p-rg-t"><i class="p-rg-l" style="left:7.7%;right:10.3%"></i></span>
-              <span class="p-rg-v">3&ndash;35%</span></div>
-            <div class="p-rg-r"><span class="p-rg-n">Coal and flyash</span>
-              <span class="p-rg-t"><i class="p-rg-l" style="left:2.6%;right:10.3%"></i></span>
-              <span class="p-rg-v">1&ndash;35%</span></div>
-            <div class="p-rg-r"><span class="p-rg-n">Soil and road dust</span>
-              <span class="p-rg-t"><i class="p-rg-l" style="left:2.6%;right:7.7%"></i></span>
-              <span class="p-rg-v">1&ndash;36%</span></div>
-            <div class="p-rg-r"><span class="p-rg-n">Vehicles</span>
-              <span class="p-rg-t"><i class="p-rg-l" style="left:15.4%;right:25.6%"></i></span>
-              <span class="p-rg-v">6&ndash;29%</span></div>
-            <div class="p-rg-r"><span class="p-rg-n">Solid waste burning</span>
-              <span class="p-rg-t"><i class="p-rg-l" style="left:7.7%;right:61.5%"></i></span>
-              <span class="p-rg-v">3&ndash;15%</span></div>
-            <div class="p-rg-r"><span class="p-rg-n">Construction material</span>
-              <span class="p-rg-t"><i class="p-rg-l" style="left:1.5%;right:87.2%"></i></span>
-              <span class="p-rg-v">0.6&ndash;5%</span></div>
-            <div class="p-rg-ax"><span>0</span><span>39% of PM2.5</span></div>
-          </div>
-          <p class="body p-ap-f"><b>Vehicles are somewhere between 6% and 29%.</b> That is the range in
-            which every argument about Delhi&rsquo;s cars, buses and trucks is actually being conducted.
-            TERI-ARAI puts transport at 17&ndash;28% and says plainly that its figure is higher than
-            IIT Kanpur&rsquo;s <b>because it counted secondary particles alongside primary ones</b> &mdash;
-            the two studies are not quite measuring the same thing.</p>
-          <p class="cap">IIT Kanpur, January 2016 &mdash; PM2.5, receptor modelling (chemical mass
-            balance) at six Delhi sites, monitoring Winter 2013-14 and summer 2014. Commissioned by the
-            Government of NCT of Delhi, and the Delhi Pollution Control Committee.
-            <a class="lk" href="https://cerca.iitd.ac.in/uploads/Reports/1576211826iitk.pdf" rel="noopener" target="_blank">The report</a>, Section 4.6, 'Overall Summary and Source Apportionment at a Glance', page 241.</p>
-          <p class="cap p-hole"><b>And the categories do not line up.</b> IIT Kanpur&rsquo;s
-            &ldquo;coal and flyash&rdquo; is a fuel signature; TERI-ARAI&rsquo;s &ldquo;industry&rdquo;
-            is a sector that bundles power plants, brick kilns and stone crushers. They are not two
-            estimates of one quantity. <b>This page will not average them</b>, and it will not attach either
-            to today&rsquo;s reading &mdash; neither is a measurement of today.</p>
-        </div></div>
-<div role="tabpanel" id="tb2-p2" aria-labelledby="tb2-t2" hidden><div class="p-ap">
-          <p><span class="p-kind p-kind-m">Modelled, not measured</span></p>
-          <p class="body p-ap-k"><b>Inside the 28% that transport contributes, cars are 3.4.</b>
-            Trucks are more than twice that and two-wheelers twice that. Winter PM2.5, Delhi.</p>
-          <div class="p-ap-sub">
-            <div class="p-ap-r p-ap-r2"><span class="p-ap-n">Trucks</span>
-              <span class="p-ap-w"><span class="p-ap-b" style="width:100.0%"></span><i class="p-ap-v">8%</i></span></div>
-            <div class="p-ap-r p-ap-r2"><span class="p-ap-n">Two-wheelers</span>
-              <span class="p-ap-w"><span class="p-ap-b" style="width:87.5%"></span><i class="p-ap-v">7%</i></span></div>
-            <div class="p-ap-r p-ap-r2"><span class="p-ap-n">Three-wheelers</span>
-              <span class="p-ap-w"><span class="p-ap-b" style="width:62.5%"></span><i class="p-ap-v">5%</i></span></div>
-            <div class="p-ap-r p-ap-r2"><span class="p-ap-n">Cars</span>
-              <span class="p-ap-w"><span class="p-ap-b" style="width:42.5%"></span><i class="p-ap-v">3.4%</i></span></div>
-          </div>
-          <p class="body p-ap-f">Of the car share, <b>diesel is 67&ndash;74%</b> and the oldest cars dominate
-            &mdash; BS-II and earlier account for 31&ndash;50% of it. Run the study&rsquo;s own arithmetic and
-            <b>every BS-IV diesel car in Delhi comes to about 0.5&ndash;0.9% of PM2.5.</b> That is not an
-            argument for more cars. It is an argument about <b>where a policy rupee buys the most air</b>,
-            and the answer in this table is trucks, brick kilns and generators, not hatchbacks.</p>
-          <p class="cap">Also inside the totals: within industry&rsquo;s 30%, <b>brick kilns 8%</b>, power
-            stations 6%, stone crushers 2%, and 14% from other industries burning coal, biomass, pet-coke
-            and furnace oil. Within &ldquo;others&rdquo;, <b>diesel generators 5%</b> and refuse burning 3%.
-            And within dust&rsquo;s 17%, road dust is 4 and construction 1 &mdash; the report attributes much
-            of the remainder to <b>dust that did not originate in Delhi at all</b>.
-            <span class="p-cite">TERI-ARAI, section E7.3.</span></p>
-          <p class="cap p-hole"><b>The question neither study answers.</b> What is in the air <i>today</i>.
-            Both are seasonal averages whose last measurement is eight years old. There is a system that does
-            answer it &mdash; <a class="lk" href="https://ews.tropmet.res.in/dss/index.php" rel="noopener" target="_blank">Decision Support System (DSS)</a>,
-            run by the Indian Institute of Tropical Meteorology, Pune, which publishes
-            a daily split across 29 sectors with the stubble share taken from the previous evening&rsquo;s
-            satellite fire counts. <b>It has no public API and its host was unreachable from the machine that
-            built this page</b>, so it is named and linked and never restated.</p>
-        </div></div>
-<div role="tabpanel" id="tb2-p3" aria-labelledby="tb2-t3" hidden><div class="p-two">
-          <div class="p-two-c"><p class="num rl">0</p><p class="unit">MODIS &middot; 1 km</p>
-            <p class="cap">last 5 days</p></div>
-          <div class="p-two-c"><p class="num rl">24</p><p class="unit">VIIRS &middot; 375 m</p>
-            <p class="cap"><b>null&times; MODIS</b>, same fires</p></div>
-        </div>
-        <p class="body p-gapkey"><b>The disagreement is itself a measurement.</b> Out of season the sensors run
-          null:1 apart. At peak &mdash; 2025-11-05 +5d &mdash;
-          1,170 against 2,222, only 1.9:1. MODIS
-          misses almost everything when fires are small and catches most of it when they are large, so
-          <b>the gap measures fire size</b>, not instrument error.</p>
-        <p class="cap">A detection is a thermal anomaly, not a confirmed crop fire. The two VIIRS satellites see
-          the same fires at different overpass times and <b>must not be added</b>.</p></div>
-<div role="tabpanel" id="tb2-p4" aria-labelledby="tb2-t4" hidden><div class="p-yy"><div class="p-yy-c"><span class="p-yy-bar" style="height:32%"></span><span class="p-yy-v">2,149</span><span class="lbl p-yy-y">2019</span></div><div class="p-yy-c"><span class="p-yy-bar" style="height:60%"></span><span class="p-yy-v">4,087</span><span class="lbl p-yy-y">2020</span></div><div class="p-yy-c"><span class="p-yy-bar" style="height:100%"></span><span class="p-yy-v">6,776</span><span class="lbl p-yy-y">2021</span></div><div class="p-yy-c"><span class="p-yy-bar" style="height:27%"></span><span class="p-yy-v">1,833</span><span class="lbl p-yy-y">2022</span></div><div class="p-yy-c"><span class="p-yy-bar" style="height:35%"></span><span class="p-yy-v">2,386</span><span class="lbl p-yy-y">2023</span></div><div class="p-yy-c"><span class="p-yy-bar" style="height:16%"></span><span class="p-yy-v">1,071</span><span class="lbl p-yy-y">2024</span></div><div class="p-yy-c"><span class="p-yy-bar" style="height:17%"></span><span class="p-yy-v">1,170</span><span class="lbl p-yy-y">2025</span></div></div>
-        <p class="cap">MODIS, five days from 5 November each year, same region. <b>A fixed five-day window is a
-          sample, not a season total</b> &mdash; burning dates shift with monsoon withdrawal and harvest timing,
-          so a fixed window can miss a peak. 2024 and 2025 run at roughly a sixth of 2021.</p></div>
-      </div>
-    </div>
-  </section>
-  <section class="t2" id="trend" aria-labelledby="trend-h">
-    <div class="wrap">
-      <div class="im-head">
-        <h2 class="d1" id="trend-h">Where it has been, and where it is going</h2>
-        <p class="lead">The record starts today; the forecast reaches seven days ahead. For now this page sees further forward than back &mdash; that inverts in a week.</p>
-      </div>
-      <div class="p-tabs" data-tabs>
-        <div class="p-tabs-l" role="tablist" aria-label="Time"><button type="button" role="tab" id="tb3-t0" aria-controls="tb3-p0" aria-selected="true">The record</button><button type="button" role="tab" id="tb3-t1" aria-controls="tb3-p1" aria-selected="false" tabindex="-1">Attention</button><button type="button" role="tab" id="tb3-t2" aria-controls="tb3-p2" aria-selected="false" tabindex="-1">Forecast</button></div>
-<div role="tabpanel" id="tb3-p0" aria-labelledby="tb3-t0"><div class="p-grid-wrap">
-          <div class="p-grid" role="img" aria-label="Daily record, one square per day, beginning today">
-            <i class="p-g-on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i>
-          </div>
-          <p class="cap"><b>One square.</b> The record begins today and fills as the job runs. It draws no
-            square it does not have &mdash; an empty cell is absence, not zero. There is no retrospective
-            series: the CPCB feed publishes the latest hour only.</p></div></div>
-<div role="tabpanel" id="tb3-p1" aria-labelledby="tb3-t1" hidden><div class="p-attn">
-          <div class="p-attn-c"><span class="p-attn-b" style="height:12%" title="202408: 3,635"></span><span class="p-attn-b" style="height:14%" title="202409: 4,303"></span><span class="p-attn-b" style="height:23%" title="202410: 7,276"></span><span class="p-attn-b" style="height:96%" title="202411: 29,709"></span><span class="p-attn-b" style="height:35%" title="202412: 10,949"></span><span class="p-attn-b" style="height:33%" title="202501: 10,198"></span><span class="p-attn-b" style="height:18%" title="202502: 5,611"></span><span class="p-attn-b" style="height:16%" title="202503: 4,925"></span><span class="p-attn-b" style="height:12%" title="202504: 3,855"></span><span class="p-attn-b" style="height:12%" title="202505: 3,869"></span><span class="p-attn-b" style="height:13%" title="202506: 4,112"></span><span class="p-attn-b" style="height:12%" title="202507: 3,834"></span><span class="p-attn-b" style="height:12%" title="202508: 3,640"></span><span class="p-attn-b" style="height:14%" title="202509: 4,494"></span><span class="p-attn-b" style="height:33%" title="202510: 10,142"></span><span class="p-attn-b" style="height:100%" title="202511: 31,052"></span><span class="p-attn-b" style="height:86%" title="202512: 26,551"></span><span class="p-attn-b" style="height:41%" title="202601: 12,817"></span><span class="p-attn-b" style="height:18%" title="202602: 5,704"></span><span class="p-attn-b" style="height:15%" title="202603: 4,598"></span><span class="p-attn-b" style="height:13%" title="202604: 3,944"></span><span class="p-attn-b" style="height:12%" title="202605: 3,788"></span><span class="p-attn-b" style="height:12%" title="202606: 3,706"></span><span class="p-attn-b" style="height:24%" title="202607: 7,579"></span></div>
-          <div class="p-attn-x"><span>2024</span><span>2026</span></div>
-          <p class="body"><b>Attention is not air.</b> Searches peak every November at 39,084
-            and fall to 3,633 in summer &mdash; a <b>10.8&times; swing</b> &mdash;
-            while the readings stay above the limit all twelve months. And the swing is <b>widening</b>:
-            2022 4.7×, 2023 5.6×, 2024 7.2×, 2025 8×.</p>
-          <p class="cap">Wikipedia pageviews, 55 complete months. It measures what people
-            <b>seek</b>, not what outlets publish. A quiet month is not a clean month. The current month is
-            incomplete and excluded, never plotted.</p></div></div>
-<div role="tabpanel" id="tb3-p2" aria-labelledby="tb3-t2" hidden><div class="p-fc">
-          <div class="p-fc-c"><div class="p-fc-d"><span class="p-fc-bar" style="height:87%"></span><span class="p-fc-v">151</span><span class="lbl p-fc-x">22</span></div><div class="p-fc-d"><span class="p-fc-bar" style="height:86%"></span><span class="p-fc-v">150</span><span class="lbl p-fc-x">23</span></div><div class="p-fc-d"><span class="p-fc-bar" style="height:89%"></span><span class="p-fc-v">154</span><span class="lbl p-fc-x">24</span></div><div class="p-fc-d"><span class="p-fc-bar" style="height:86%"></span><span class="p-fc-v">149</span><span class="lbl p-fc-x">25</span></div><div class="p-fc-d"><span class="p-fc-bar" style="height:91%"></span><span class="p-fc-v">159</span><span class="lbl p-fc-x">26</span></div><div class="p-fc-d"><span class="p-fc-bar" style="height:95%"></span><span class="p-fc-v">166</span><span class="lbl p-fc-x">27</span></div></div>
-          <p class="cap">PM2.5 daily mean, 6 days.</p>
-          <p><span class="p-kind p-kind-m">Modelled, not measured</span></p>
-          <p class="body"><b>Somebody is forecasting this. Not us, and not the government.</b> The curve is
-            <b>WAQI&rsquo;s own model</b>. India&rsquo;s official forecaster is
-            <a class="lk" href="https://safar.tropmet.res.in/" rel="noopener" target="_blank">SAFAR</a>,
-            which publishes a 72-hour Delhi forecast with <b>no public API</b> &mdash; so it is named and linked,
-            never restated.</p></div></div>
-      </div>
-    </div>
-  </section>
-  <section class="dark-2 t2" id="geography" aria-labelledby="geography-h">
-    <div class="wrap">
-      <div class="im-head">
-        <h2 class="d1" id="geography-h">Which part of the city, and where the city sits</h2>
-        <p class="lead">There are 43 monitors reporting for Delhi and they do not agree with each other. <b>Every figure in this band was read at 10:00 IST, 22 August 2026</b> &mdash; one hour, all 43 stations together, which is what makes them comparable. The reading at the top of the page updates when you load it, so it can be an hour newer than the numbers here.</p>
-      </div>
-      <div class="p-tabs" data-tabs>
-        <div class="p-tabs-l" role="tablist" aria-label="Geography"><button type="button" role="tab" id="tb4-t0" aria-controls="tb4-p0" aria-selected="true">The map</button><button type="button" role="tab" id="tb4-t1" aria-controls="tb4-p1" aria-selected="false" tabindex="-1">Every station</button><button type="button" role="tab" id="tb4-t2" aria-controls="tb4-p2" aria-selected="false" tabindex="-1">India</button></div>
-<div role="tabpanel" id="tb4-p0" aria-labelledby="tb4-t0"><div class="p-map">
-          <div class="p-map-f">
-          <svg viewBox="0 0 420 415" class="p-map-s" role="img"
-            aria-label="43 Delhi monitors at their true positions. 10 read above the limit.">
-            <rect x="26" y="26" width="368" height="363" class="p-m-fr"/>
-            <line x1="394.0" y1="206.7" x2="368.1" y2="231.3" class="p-m-ln"/>
-            <rect x="390.5" y="203.2" width="7" height="7" class="p-m-hi"><title>Anand Vihar — 311</title></rect><rect x="259.0" y="115.5" width="7" height="7" class="p-m-hi"><title>Jahangirpuri — 245</title></rect><rect x="254.3" y="149.5" width="7" height="7" class="p-m-hi"><title>Wazirpur — 138</title></rect><rect x="286.6" y="214.8" width="7" height="7" class="p-m-hi"><title>Mandir Marg — 135</title></rect><rect x="248.1" y="193.2" width="7" height="7" class="p-m-hi"><title>North Campus, DU — 111</title></rect><rect x="243.1" y="30.5" width="7" height="7" class="p-m-hi"><title>Alipur — 108</title></rect><rect x="273.8" y="290.1" width="7" height="7" class="p-m-hi"><title>R K Puram — 108</title></rect><rect x="213.1" y="115.8" width="7" height="7" class="p-m-hi"><title>Rohini — 104</title></rect><rect x="278.1" y="311.6" width="7" height="7" class="p-m-hi"><title>IIT Delhi — 104</title></rect><rect x="169.6" y="282.1" width="7" height="7" class="p-m-hi"><title>Dwarka-Sector 8 — 103</title></rect><rect x="310.3" y="193.8" width="7" height="7" class="p-m-lo"><title>Chandni Chowk — 98</title></rect><rect x="352.3" y="302.6" width="7" height="7" class="p-m-lo"><title>CRRI Mathura Road — 98</title></rect><rect x="237.0" y="211.4" width="7" height="7" class="p-m-lo"><title>Pusa — 95</title></rect><rect x="300.1" y="303.4" width="7" height="7" class="p-m-lo"><title>Sirifort — 92</title></rect><rect x="331.4" y="285.4" width="7" height="7" class="p-m-lo"><title>Nehru Nagar — 91</title></rect><rect x="378.5" y="168.7" width="7" height="7" class="p-m-lo"><title>IHBAS, Dilshad Garden — 88</title></rect><rect x="173.9" y="165.1" width="7" height="7" class="p-m-lo"><title>Mundka — 84</title></rect><rect x="344.3" y="356.8" width="7" height="7" class="p-m-lo"><title>Dr. Karni Singh Shooting Range — 84</title></rect><rect x="316.3" y="272.6" width="7" height="7" class="p-m-lo"><title>Jawaharlal Nehru Stadium — 83</title></rect><rect x="390.0" y="177.8" width="7" height="7" class="p-m-lo"><title>Vivek Vihar — 79</title></rect><rect x="22.5" y="258.5" width="7" height="7" class="p-m-lo"><title>NSUT Jaffarpur — 78</title></rect><rect x="269.0" y="154.0" width="7" height="7" class="p-m-lo"><title>Ashok Vihar — 78</title></rect><rect x="350.8" y="236.0" width="7" height="7" class="p-m-lo"><title>Commonwealth Sports Complex — 78</title></rect><rect x="276.7" y="323.0" width="7" height="7" class="p-m-lo"><title>Sri Aurobindo Marg — 77</title></rect><rect x="196.9" y="22.7" width="7" height="7" class="p-m-lo"><title>Narela — 76</title></rect><rect x="350.2" y="323.6" width="7" height="7" class="p-m-lo"><title>Okhla Phase-2 — 76</title></rect><rect x="310.4" y="260.7" width="7" height="7" class="p-m-lo"><title>IMD Lodhi Road — 76</title></rect><rect x="211.4" y="290.6" width="7" height="7" class="p-m-lo"><title>IGI Airport (T3) — 74</title></rect><rect x="364.6" y="227.8" width="7" height="7" class="p-m-lo"><title>Patparganj — 74</title></rect><rect x="223.2" y="176.0" width="7" height="7" class="p-m-lo"><title>Punjabi Bagh — 73</title></rect><rect x="286.7" y="122.9" width="7" height="7" class="p-m-lo"><title>Burari Crossing — 72</title></rect><rect x="286.7" y="361.9" width="7" height="7" class="p-m-lo"><title>IGNOU_Maidan Garhi — 71</title></rect><rect x="330.4" y="138.5" width="7" height="7" class="p-m-lo"><title>Sonia Vihar — 70</title></rect><rect x="280.6" y="229.8" width="7" height="7" class="p-m-lo"><title>Talkatora Garden — 70</title></rect><rect x="204.1" y="385.5" width="7" height="7" class="p-m-lo"><title>Aya Nagar — 69</title></rect><rect x="217.8" y="258.3" width="7" height="7" class="p-m-lo"><title>Cantonment Area — 69</title></rect><rect x="257.1" y="313.4" width="7" height="7" class="p-m-lo"><title>JNU — 68</title></rect><rect x="319.8" y="240.7" width="7" height="7" class="p-m-lo"><title>Major Dhyan Chand National Stadium — 67</title></rect><rect x="237.9" y="199.3" width="7" height="7" class="p-m-lo"><title>Shadipur — 65</title></rect><rect x="44.5" y="283.0" width="7" height="7" class="p-m-lo"><title>Najafgarh — 65</title></rect><rect x="205.3" y="97.7" width="7" height="7" class="p-m-lo"><title>DTU — 61</title></rect><rect x="261.5" y="215.1" width="7" height="7" class="p-m-lo"><title>Pusa — 59</title></rect><rect x="134.0" y="242.9" width="7" height="7" class="p-m-lo"><title>NSIT Dwarka — 57</title></rect>
-            <g class="p-m-lb">
-              <text x="385.0" y="200.7" text-anchor="end">311</text>
-              <text x="359.1" y="245.3" text-anchor="end">74</text>
-            </g>
-            <g class="p-m-sc"><line x1="26" y1="406" x2="118.6" y2="406"/>
-              <text x="26" y="401">10 km</text></g>
-          </svg>
-          <p class="p-legend p-map-lg"><span class="lbl"><i class="p-sw p-sw-hi"></i>Above the limit</span><span class="lbl"><i class="p-sw p-sw-lo"></i>Within it</span></p>
-          </div>
-          <div class="p-map-t">
-          <p class="body p-map-k"><b>311 and 74, 3.9 km apart.</b>
-            Anand Vihar and Patparganj are the same hour of the same city and they differ by
-            237 points &mdash; Patparganj sits inside the limit while Anand Vihar is
-            very poor. Whichever one is
-            nearest to you is the only one describing your air.</p>
-          <p class="cap">43 monitors, true positions, equal scale on both axes; the
-            40&nbsp;&times;&nbsp;39 km frame is <b>the box the monitors
-            describe, not Delhi&rsquo;s boundary</b>. Median spacing between neighbouring monitors
-            2.4 km &mdash; but inside that same box you can stand <b>19.4 km
-            from the nearest one</b>. Red is above the limit.</p>
-          <p class="cap p-hole"><b>Two layers are missing on purpose.</b> There is no ward layer &mdash;
-            the boundary file is not published in a usable form, and a hand-drawn one would be a claim
-            about where you live. There is no plume &mdash; a plume is a model, and this page does not
-            draw a model on top of measurements without saying so.</p></div></div></div>
-<div role="tabpanel" id="tb4-p1" aria-labelledby="tb4-t1" hidden><div class="p-rank">
-          <div class="p-rank-r"><span class="p-rank-v is-red">311</span><span class="p-rank-n">Anand Vihar</span><span class="cap p-rank-g">PM2.5</span></div><div class="p-rank-r"><span class="p-rank-v is-red">245</span><span class="p-rank-n">Jahangirpuri</span><span class="cap p-rank-g">PM2.5</span></div><div class="p-rank-r"><span class="p-rank-v is-red">138</span><span class="p-rank-n">Wazirpur</span><span class="cap p-rank-g">PM10</span></div><div class="p-rank-r"><span class="p-rank-v is-red">135</span><span class="p-rank-n">Mandir Marg</span><span class="cap p-rank-g">PM2.5</span></div><div class="p-rank-r"><span class="p-rank-v is-red">111</span><span class="p-rank-n">North Campus, DU</span><span class="cap p-rank-g">NO₂</span></div>
-          <p class="cap p-rank-more">&hellip; 35 more &hellip;</p>
-          <div class="p-rank-r"><span class="p-rank-v">61</span><span class="p-rank-n">DTU</span><span class="cap p-rank-g">PM2.5</span></div><div class="p-rank-r"><span class="p-rank-v">59</span><span class="p-rank-n">Pusa</span><span class="cap p-rank-g">PM2.5</span></div><div class="p-rank-r"><span class="p-rank-v">57</span><span class="p-rank-n">NSIT Dwarka</span><span class="cap p-rank-g">PM10</span></div>
-          <p class="cap">43 stations, <b>10 above the limit</b>.
-            The quietest reads 57, the loudest 311 &mdash;
-            <b>one city, a fivefold spread</b>. A city average hides it. Red is above the limit.</p></div></div>
-<div role="tabpanel" id="tb4-p2" aria-labelledby="tb4-t2" hidden><div class="p-nat">
-          <p class="body"><b>Delhi is first of 266 cities. Nine of the next twelve are its
-            neighbours</b> &mdash; Gurugram, Charkhi Dadri, Faridabad, Manesar, Noida, Khora, Panipat, Baraut,
-            Meerut. This is not a city problem. It is an airshed.</p>
-          <p class="cap">87 of 266 cities are above the limit India set for itself, and
-            51 are &ldquo;Good&rdquo; &mdash; the country is not uniformly polluted, which is what makes
-            the cluster around Delhi legible. Computed from 502 stations on CPCB&rsquo;s scale,
-            CO excluded.</p></div></div>
-      </div>
-      <p style="margin:var(--gap-row) 0 0"><a class="act" href="#money">What has been spent on it <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
-    </div>
-  </section>
-  <section class="paper t2" id="money" aria-labelledby="money-h">
-    <div class="wrap">
-      <div class="im-head">
-        <h2 class="d1" id="money-h">The cost of inaction is more than the action</h2>
-        <p class="lead">Allocated is the claim. Utilised is the record. Both are dwarfed by the damage — and all three numbers are the government&rsquo;s own.</p>
-      </div>
-      <div class="p-money">
-        <div class="p-money-r"><p class="lbl">The damage, each year</p><p class="num rl">&#8377;7 lakh crore</p>
-          <p class="cap">about $95 billion, roughly <b>3% of GDP</b> &mdash; the report&rsquo;s own comparisons are
-          50% of all tax collected annually, and 150% of India&rsquo;s health budget.
-          <span class="p-cite">Dalberg with Clean Air Fund and CII, 2021.</span></p></div>
-        <div class="p-money-r"><p class="lbl">Released for it since 2019</p><p class="num rl">&#8377;13,415 crore</p>
-          <p class="cap">NCAP and the 15th Finance Commission air-quality grants, <b>cumulative</b>.</p></div>
-        <div class="p-money-r"><p class="lbl">Actually spent</p><p class="num rl">&#8377;9,929 crore</p>
-          <p class="cap"><b>74%</b> of what was released. The 82 NCAP cities used
-          &#8377;831 crore of &#8377;1,615 crore &mdash; <b>51%</b>.</p></div>
-      </div>
-      <p class="body p-key"><b>One year of damage costs about fifty times everything released for it since
-        2019</b>, and about seventy times what has been spent. Both periods are stated because the comparison
-        only holds if they are: the damage figure is annual, the spending figures are cumulative.</p>
-      <p class="cap p-hole"><b>What this is not.</b> It is not a cost-benefit study &mdash; nobody has
-        published a costed abatement plan for Delhi-NCR, so this page cannot tell you what fixing the air
-        would cost. It is the narrower claim, and the only one the figures support: <b>what the damage costs
-        each year, beside what has actually been released and spent against it.</b> Sources: PIB releases,
-        CPCB&rsquo;s PRANA funding guidelines, CREA&rsquo;s <i>Tracing the Hazy Air</i>, Dalberg with Clean
-        Air Fund and CII. No inference is drawn beyond the arithmetic.</p>
-    </div>
-  </section>
-  <section class="t3" id="act" aria-labelledby="act-h">
-    <div class="wrap">
-      <div class="im-head">
-        <h2 class="d1" id="act-h">What you can do</h2>
-        <p class="lead">Nobody visits a record every morning. This is the part that asks something of you.</p>
-      </div>
-      <div class="p-tabs" data-tabs>
-        <div class="p-tabs-l" role="tablist" aria-label="Act"><button type="button" role="tab" id="tb5-t0" aria-controls="tb5-p0" aria-selected="true">Watch your ward</button><button type="button" role="tab" id="tb5-t1" aria-controls="tb5-p1" aria-selected="false" tabindex="-1">Do it yourself</button><button type="button" role="tab" id="tb5-t2" aria-controls="tb5-p2" aria-selected="false" tabindex="-1">What is being said</button></div>
-<div role="tabpanel" id="tb5-p0" aria-labelledby="tb5-t0"><div class="p-act">
-          <div class="p-act-c">
-            <p class="lbl">Watch your monitor</p>
-            <p class="body">One message when your monitor&rsquo;s band changes for the worse. Not when it is
-              merely over the limit &mdash; it is over the limit most of the year, and an alert every hour is
-              not an alert. <b>Nothing else, ever</b>, and no address is shared with anybody.</p>
-            <div class="p-ward" data-ward>
-              <p class="f-lab" id="ward-l">Find the monitor nearest you</p>
-              <p><input class="f" id="ward-q" type="text" aria-labelledby="ward-l"
-                  autocomplete="off" placeholder="Type a locality &mdash; Dwarka, Anand Vihar, Rohini&hellip;"></p>
-              <div id="ward-list" class="p-ward-l" role="listbox" aria-labelledby="ward-l"></div>
-              <p class="cap" id="ward-state">Loading the 43 monitors&hellip;</p>
-              <div id="ward-pick" class="p-ward-p" hidden>
-                <p class="lbl">Your monitor</p>
-                <p class="body" id="ward-pick-n"></p>
-                <p class="f-lab" id="ward-el">Where to write</p>
-                <p><input class="f" id="ward-e" type="email" aria-labelledby="ward-el"
-                    autocomplete="email" placeholder="you@example.com"></p>
-                <p><button type="button" class="b b-1" id="ward-go">Watch this monitor <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></p>
-                <p class="cap" id="ward-msg" role="status" aria-live="polite"></p>
-              </div>
-            </div>
-            <p class="cap p-hole"><b>Why it asks for a monitor and not a pin code.</b> India Post&rsquo;s own
-              All India Pincode Directory publishes <b>562 post offices for Delhi and no latitude or longitude
-              column at all</b>, so there is no official way to turn a Delhi pin code into a point on the
-              ground. The alternative was a third-party centroid file of unknown provenance &mdash; on this
-              page, of all pages. A monitor is the better question anyway: two of them
-              <a class="lk" href="#geography">3.9 km apart</a> read 392 and 110.</p>
-          </div>
-          <div class="p-act-c">
-            <p class="lbl">The campaign</p>
-            <p class="body"><b>Delhi I Can&rsquo;t See You</b> is Swechha&rsquo;s campaign on this. This page is
-              the why; the campaign is the what.</p>
-            <p><a class="b b-2" href="/work/campaigns#delhi-i-cant-see-you">Delhi I Can&rsquo;t See You <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
-            <p class="lbl" style="margin-top:var(--gap-row)">Five more situations</p>
-            <p class="body p-sib-n">Yamuna &middot; Heatwave &middot; Forest fires &middot; Forest loss &middot; Climate event</p>
-            <p class="cap">Named, not linked, until their pages exist.</p>
-            <p><a class="act" href="/now">All situations <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
-          </div></div></div>
-<div role="tabpanel" id="tb5-p1" aria-labelledby="tb5-t1" hidden><div class="p-do">
-          <div class="p-do-r">
-            <p class="lbl">Build a monitor, and then distrust it</p>
-            <p class="body">A classroom-grade PM sensor costs a few thousand rupees &mdash; an optical
-              particle counter, a microcontroller, a power supply. It will give you a PM2.5 number within
-              minutes of switching on. <b>That number means nothing yet.</b></p>
-            <p class="cap">Low-cost optical sensors read high in humidity and drift as their chamber
-              fouls. To turn a reading into a measurement you <b>co-locate</b> it beside a reference
-              station for a fortnight and fit your device against theirs. That is the whole difference
-              between the 43 instruments on this page and a gadget on a windowsill,
-              and it is why this page will not accept a crowd-sourced reading as equivalent.</p>
-          </div>
-          <div class="p-do-r">
-            <p class="lbl">File a complaint that lands somewhere</p>
-            <p class="body">Open burning, a construction site without sheeting, a generator running in
-              a residential block, a road left unswept &mdash; each is already prohibited under rules
-              somebody is meant to enforce.</p>
-            <p class="cap"><b>Sameer</b>, CPCB&rsquo;s own app, publishes the same station data this page
-              reads and takes a geotagged photograph as a complaint. <b>Green Delhi</b>, the Delhi
-              government&rsquo;s app, routes the same thing to the responsible department with a
-              trackable number. Neither is Swechha&rsquo;s and neither is endorsed &mdash; they are
-              named because a complaint with a reference number is harder to lose than a complaint
-              without one.</p>
-          </div>
-          <div class="p-do-r">
-            <p class="lbl">Read the objection window</p>
-            <p class="body">Environmental clearances carry a public-consultation stage with a fixed
-              window for written objections. Most close unopposed because nobody was watching.</p>
-            <p class="cap">This page does not yet track those windows for Delhi-NCR. It is named here
-              because it is the highest-leverage thing on the list, not because it is built.</p>
-          </div></div></div>
-<div role="tabpanel" id="tb5-p2" aria-labelledby="tb5-t2" hidden><div class="p-news">
-          <div class="p-news-o"><p class="lbl p-news-ol">Most recent order, as reported</p>
-            <p class="body"><a class="lk" href="https://news.google.com/rss/articles/CBMi2gFBVV95cUxOWVd5QUF0YjFxM18yTTFnZnVvVmRtaVRLTGlCSFEtWGdEM1Bka0tPS3hPalBXemN3a1ZydjMwdzJiRHhqejdTRnR6V2tsNzVZRUFNSUdlcG40bVB5OVJ5OVdsR3oyeFJDazluUHRIZU8tYzJRb3R4Nk94WW1nTGZKUUI2cnpoYVkyVDBjRzlLa3hzcDJTQWg2ZFBIWHA5bHpTOTZiNl9PMkRCeGpULURaVTFDdFk4eDljRHUyT2VmWmE1ZjhYVHNtYmw4bVRWazBpUjFqUVZCbkdad9IB3wFBVV95cUxOLW9YY1BmUjNocmEyY3BjYVJmbzlkTHJ3MENnUklPVHBLZUxaanNZbkFJanlMbVhfYlNQdE40c1pHZVBnenR3Tjlfc05FTVRjaGNUZzFKT0xpNXc3RWVLWXR2TklxcUZFU0JWVHl2d1d6OGxoSkkzUnBGUUFuYnZhdkZxODVDeXJhcEdqNU9vT1poRmVWbHJUVE0yVl9lNmlaNktnZmhtWklOVjlCd2NsMklrYnFWbVRHcV9waVNjOUs0NFh3MllCMDZHNnVtQmdVT1ktTlh4T3pDZHk5MHM4?oc=5" rel="noopener" target="_blank">Delhi-NCR Pollution: CAQM Announces Phased Ban On New Petrol, Diesel, CNG Light Goods Vehicles</a></p>
-            <p class="cap">ETV Bharat &middot; Thu, 20 Aug 2026. <b>Reported, not
-              filed.</b> This page keeps no docket and attaches no judgement &mdash; it records that a court was
-              reported to have said something, and links whoever reported it.</p></div>
-          <div class="p-news-r"><a class="lk" href="https://news.google.com/rss/articles/CBMivgFBVV95cUxOZU5fZGxrY2NrakhsLTd0NWdjdzFVWDJkMnFvM2trVGZ4N2xkby0zcktNUjdIT0lidERmNVhYeWI5TUFKeHB5ZERHRDcyMF9GdTk0NXhqS0REZ19NaVZfN01HZFNTenBWZEJaeGNBWWpST3ZwNDZQOU9wdlFvN1hvN3FyY2NkV25TRUx4NHQwLVVRTTRNOGtQelA2bXd3LXdINU91YjVxanRhR1htWk9qOEJ6YzFYRzBaLUZ4T0ln?oc=5" rel="noopener" target="_blank">Delhi to Phase Out CNG Light Duty Trucks; Other Indian States Demand Delhi-like Airshed Battleplan</a>
-            <span class="cap p-news-m">Health Policy Watch &middot; 21 Aug 2026</span></div><div class="p-news-r"><a class="lk" href="https://news.google.com/rss/articles/CBMi5gFBVV95cUxPcm8zMkFnYkUyVHZtdVByem1xcWk4bHFZSmRSV0E2UVlkTlFLY1B2cUZGczZXeE81MXdubGJUN0Z2SmxpQ2VvekRyZ2gxSTB5Vkg3QlVTRG9FQ0pKQXJZS3RCVm0zVE9TSm91dzVfWlRVX0F2R2ptd2o2Q3IwSnp0UkNHZnJjVzgtaUE4aThzSGxpNDBUNTEtMEZBV0J1WmJmZ3JnRmwtR0I3dGZka0RXQVBGS0RsQnNubmV4U0x6bDB1M0ozaEtwckNwRzJBMTBxd1VzVl9vLXhmVkFOOHpaX1VmdGcxd9IB6wFBVV95cUxQeDlOcHVmM3ZKM3JEeHMxWUo3c0tFVlM0M1k2Yi1jTm5abFlyUlRLZWRCS2tDU3hSS3ZaVjlNSHl3OHI0RU5NdUVqU0Y1NTVRTV9LUnVRRjNDNWx0bEVsRVc3NXdVRUpBLTJzZGhMMXBlWF9waGhVNEVqbndkMHoyaGc1NG5zcHlYMFpyeGItSmtEVzhHLUtjaHRoNGcyUXFSNnZSS0pWNHRTZnNpSGl2WmljQ21wQWNiVEFOM2JVaDdzbnRUd1d0bnltX0o4bXlJZnlubGNtdE5oX1V4WFIyVWVxTGh6QkI1bzA0?oc=5" rel="noopener" target="_blank">Delhi government orders construction ban for 42 days to tackle winter air pollution</a>
-            <span class="cap p-news-m">The Times of India &middot; 21 Aug 2026</span></div><div class="p-news-r"><a class="lk" href="https://news.google.com/rss/articles/CBMiqAFBVV95cUxPMFlkSDdkbjFHTmc4cjdVZ2sxM1RPanNMaklRd2NlcU94ZEtLRXZXM25qLVRaeFlHcUZRMmUtYUtUN3ctdFBuNExLMTQwWGRadW4zT2RNZGd2dnhINURnZ0NCcTRiZFRTbVVJYnhhOXJTUUQ2bXBZWnlLOC1ocnRXNmFzOS1LRl9XcXk1Y0I3YkNqQVVVQndSSFE4M0JxcFdfRWxmVjlEaVLSAasBQVVfeXFMUFVEVVJ0bnFlRUZqMURzWWlhcjU5dUdkYnZzTVZLVmFTRlhSYmRlUEoyZ2FkWW41ekpuelFGc3VQMUNxVDUzdWl1N3c5S0lNVDFuS2xUeEVXU1JlekNGN0hCSW9fRWJxUFBnbDc5WVluUVJQOExVNm9DRksyMUFVTmVfQzJZdHhjcGYtb2d1aEdadnA1TVp3NWpJNGxqXzZLak15WWk1N3YzdUh3?oc=5" rel="noopener" target="_blank">Delhi to ban construction during winter to curb pollution</a>
-            <span class="cap p-news-m">Rediff &middot; 21 Aug 2026</span></div><div class="p-news-r"><a class="lk" href="https://news.google.com/rss/articles/CBMingFBVV95cUxNT1l1M3BJYXBEWDloSHpBYzhoQXNGRVpYSW4tNkQ3T25qS2V1ZWdpUXMyRzdBSEtHRHZJblZoOXJ1VjFQWHdiLWt4R1NCYmNUY1k3TlM3ZnlvaTMyLThUenJRTjRwR3JDVTd3YlFESUl4N2s1SGl6amM2bmtoaDJmVlBrQkk0bG01QnVzeHVpRHByUjVqX3lGbV9NS0I3Z9IBpAFBVV95cUxPTVZxd0lyb1NkN0xsREo2Z1FDSU9UeVFWYXRJRm5zYVhtbTR2b2tCbkQxdnZiVXhnWWZ2TmZ0U21laVJibWYySlBKajVvVngwM290dHo2eTRfVWdnWWQ3bk1NZllJM1FGdzdBSC16aDVLQUt5WG1UNEFURnh2bml5bWdJaUdqdFNtU1JGaUVQZlVjbUlEc0lldGFNc1lPLVdOblNXYg?oc=5" rel="noopener" target="_blank">September 13 nears, extension of fuel relaxation unlikely for Delhi eateries</a>
-            <span class="cap p-news-m">The Indian Express &middot; 22 Aug 2026</span></div><div class="p-news-r"><a class="lk" href="https://news.google.com/rss/articles/CBMi5wFBVV95cUxONFJJYW0xdkROTHNiZEFwdlhPSENVOWpXS1FpTGpZRG1MakdzcUZxRlppTHdKNXd4bnNCTWlBVlNpRWV4WmpHZHFJLXFhMDAzMVVpRDhwTmpZUzRBdG9NZWpySnZrTFhOVFFXWmFaYm5yeEtDeVRxbXc5bmNOWkJBcWVuWko0cENGcUEweHFoSVprQkVhQnV2Vl9yd1N2aGxJU3poWTRsZnJ0alNwNWoyNHFGM0F1a1ZPanp4MklKSWVob25zS0NXaDhycTdCY3cwbUdiWHVSTXFqb1dFUXJRQ1BrYTdEUUHSAfcBQVVfeXFMUGJpV2pKU21EVVhnN01xa2EwY2t3QURQSnRlQzZab3VhRktocWgzMkNyMzZhU0tCRExyUHVJOTltVUowb1hPS04zeEZkRnF5UE52WFV5QlN3enFPMHZMYkVOR29JR0t6bDI3bTEzRVBqcGhfZ3YxOFFGTWFEVUE3LVdlazNBOWZZeFJKMy1kel83bFEwM0htTUo3RzBXQXBzWWw3Y0pUUmxpZU1HWkgyZTdaSGE5NUd6WG5fRVBXUmJvZFhmeVc2cHo4THhGUGRIaklTTnpXWGJ6ZW1pNFl0dWI4cVpWbU9XU0JFampxOFpiRVlQX3dIdw?oc=5" rel="noopener" target="_blank">Delhi Winter Air Pollution Control Plan: Construction Ban From 10 December To 20 January, Large Sites To Face AI Monitoring</a>
-            <span class="cap p-news-m">Swarajya &middot; 21 Aug 2026</span></div><div class="p-news-r"><a class="lk" href="https://news.google.com/rss/articles/CBMiugFBVV95cUxQU3J0UG9XMEJ3STc0bDM5WnZzVUt3S2hXZ0xtMWxOUnpkUEZJZEdwLTlhanZacnlZa3JGaVV0NDZJN2pEOEswYV9iS2F3SEhHbDZDbmJWSTFCTlJBT2t5QWVrQnppT1dnSTIzd2p4ZzR5cXdDWmlOdHdGU0FKVHp5RlpiU1BtdUJrLUUwNXJoNUhaeGFacFl4NnlBRUN4aWVtUHpmY0JzT0NfRndBS0pRMGpmVFR4TlZaQUHSAb8BQVVfeXFMTUFlZFdTWmhqRnlVU1NhaWZSTlFGMmg0eHNNam01RzBwY2gySWc4TTRlckczOEs0LXBSQVNNQVZQcTR2Tk9DT20xWDkzcTZNa3gtb2lNdGoya0FMSEFpaFNXMmRrSzQ1SzhlLUY4Y2VKSUxlUm9saVp6S29PV3RPSlF2c1ozWXEyVU5IbkZ6MGloczV5aU5YbVJaSzZDVjlINWdPc0xhZTNYTDN5M1V5Q2k5SURoM3BvamFSNnJWN0E?oc=5" rel="noopener" target="_blank">Ban on construction activities in Delhi from Dec 10 to Jan 20 to curb air pollution</a>
-            <span class="cap p-news-m">ThePrint &middot; 21 Aug 2026</span></div>
-          <p class="cap">100 items from 45 publishers, via Google News.
-            <b>Reporting is tagged as reporting. Never presented as Swechha&rsquo;s finding.</b> A headline is
-            evidence that something was said, not that it is true.</p></div></div>
-      </div>
-      <div class="p-close">
-        <div class="p-close-r">
-          <p class="lbl">Every reading, kept</p>
-          <p class="cap">Each day&rsquo;s reading keeps its own address, with the station that produced it,
-            the hour it was observed, and the limit it was judged against. Nothing is overwritten when it
-            improves and nothing is quietly restated when it gets worse. <b>An empty day stays empty</b>
-            &mdash; a gap in the record is a gap in the record, never a zero.</p>
-        </div>
-        <div class="p-close-r">
-          <p class="lbl">Cite this page</p>
-          <p class="cap"><b>Reuse freely &mdash; CC BY 4.0.</b> Every figure carries its source and its
-            cadence in <a class="lk" href="#measured">how the number is made</a>, and every figure carries
-            whether it was counted or modelled on the rule beneath it. If you quote a number from here,
-            quote the kind with it.</p>
-        </div>
-      </div>
-      <nav class="fam-sibs" aria-label="The other situations">
-        <p class="lbl fam-sibs-h">The other 5</p>
-        <div class="fam-sibs-r">
-          <a class="fam-sib" href="/now/yamuna">
-            <span class="fam-sib-n">Yamuna</span>
-            <span class="cap fam-sib-w">Delhi</span></a>
-          <a class="fam-sib" href="/now/heat">
-            <span class="fam-sib-n">Heat</span>
-            <span class="cap fam-sib-w">India</span></a>
-          <a class="fam-sib" href="/now/forest-fire">
-            <span class="fam-sib-n">Forest fire</span>
-            <span class="cap fam-sib-w">India</span></a>
-          <a class="fam-sib" href="/now/forest-loss">
-            <span class="fam-sib-n">Forest loss</span>
-            <span class="cap fam-sib-w">India</span></a>
-          <a class="fam-sib" href="/now/climate-event">
-            <span class="fam-sib-n">Climate event</span>
-            <span class="cap fam-sib-w">India</span></a>
-        </div>
-        <p style="margin:0"><a class="act" href="/now">All 6, side by side <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
-      </nav>
+      <div id="sr-none" class="sr-none" hidden><p class="p-hole">Nothing here matches that word. The list is every page on the site, so a word that finds nothing is not on any of them.</p></div>
+      <section class="sr-g" data-g="the record">
+        <h3 class="lbl sr-gh">The record</h3>
+        <ul class="sr-list">
+          <li class="sr-row" data-t="we keep the record  from where it originates and is pristine, down to the point where it reaches agra and is almost a toxic body of water. twelve days. a thousand kilometres. since 2004. a number is not a smell go and see what is running in public swechha farm green the map the record three ways in projects campaigns journeys events yamuna yatra gram anubhav naturescapes cityscapes bridge the gap farm school eco action me to we influence she leads change food systems, with unep we for yamuna monsoon wooding delhi i can’t see you today’s readings where the readings come from do it yourself give volunteer partner read go reach us follow the work">
+            <a href="/">
+              <span class="sr-t">We keep the record</span>
+              <span class="cap sr-r">/</span>
+              <span class="sr-l">From where it originates and is pristine, down to the point where it reaches Agra and is almost a toxic body of water. Twelve days. A thousand kilometres. Since 2004.</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+      <section class="sr-g" data-g="now">
+        <h3 class="lbl sr-gh">Now</h3>
+        <ul class="sr-list">
+          <li class="sr-row" data-t="now every situation we read one card each. the line that matters on every one of them is not the reading — it is what kind of limit the reading is being held to. the six what we do about it read go reach us follow the work">
+            <a href="/now">
+              <span class="sr-t">Now</span>
+              <span class="cap sr-r">/now</span>
+              <span class="sr-l">One card each. The line that matters on every one of them is not the reading — it is what kind of limit the reading is being held to.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="delhi’s air  the consequence comes before the measurement, because the measurement is not the point. every figure here is measured against a limit india has not adopted. who is in it? how the number is made where does it come from? where it has been, and where it is going which part of the city, and where the city sits the cost of inaction is more than the action what you can do aqi pm2.5 pm10 read go reach us follow the work">
+            <a href="/now/air">
+              <span class="sr-t">Delhi’s air</span>
+              <span class="cap sr-r">/now/air</span>
+              <span class="sr-l">The consequence comes before the measurement, because the measurement is not the point. Every figure here is measured against a limit India has not adopted.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="india’s extreme rain  3,594 people in 2024, from five named causes in one official table. four of the five rose. who it kills what counts as extreme twelve cities what is changing what is being said what you can do read go reach us follow the work">
+            <a href="/now/climate-event">
+              <span class="sr-t">India’s extreme rain</span>
+              <span class="cap sr-r">/now/climate-event</span>
+              <span class="sr-l">3,594 people in 2024, from five named causes in one official table. Four of the five rose.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="india’s forest fires  11 people are recorded as having died in a forest fire in india, in a period the country mapped 34,562 square kilometres of burnt forest. both figures are official. what it costs what a fire even is fourteen seasons and the forest itself what is being said what you can do read go reach us follow the work">
+            <a href="/now/forest-fire">
+              <span class="sr-t">India’s forest fires</span>
+              <span class="cap sr-r">/now/forest-fire</span>
+              <span class="sr-l">11 people are recorded as having died in a forest fire in India, in a period the country mapped 34,562 square kilometres of burnt forest. Both figures are official.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="india’s forest loss  three, in fact — and two of them are not independent, which matters more than the disagreement. two sources what each one measures twenty-five years where it went what the law says what you can do and who is looking read go reach us follow the work">
+            <a href="/now/forest-loss">
+              <span class="sr-t">India’s forest loss</span>
+              <span class="cap sr-r">/now/forest-loss</span>
+              <span class="sr-l">Three, in fact — and two of them are not independent, which matters more than the disagreement.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="india’s heat  1,832 people in 2024. it was 804 the year before. who it kills what counts as heat fourteen cities what is rising who is watching what you can do read go reach us follow the work">
+            <a href="/now/heat">
+              <span class="sr-t">India’s heat</span>
+              <span class="cap sr-r">/now/heat</span>
+              <span class="sr-l">1,832 people in 2024. It was 804 the year before.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="delhi’s yamuna  before the rest of this page asks for your attention: the yamuna is not an exception. it is the one delhi has to look at. every other river who is in it how the number is made the stretch where it is going where it comes from what has been spent what you can do and the river it flows into what is being said read go reach us follow the work">
+            <a href="/now/yamuna">
+              <span class="sr-t">Delhi’s Yamuna</span>
+              <span class="cap sr-r">/now/yamuna</span>
+              <span class="sr-l">Before the rest of this page asks for your attention: the Yamuna is not an exception. It is the one Delhi has to look at.</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+      <section class="sr-g" data-g="work">
+        <h3 class="lbl sr-gh">Work</h3>
+        <ul class="sr-list">
+          <li class="sr-row" data-t="campaigns  public pressure with a name on it, since we for yamuna in 2000. a campaign pushes. an event invites. what each one pushes against nobody hands a river back. what we cannot yet say what it looks like get involved we for yamuna monsoon wooding delhi i can't see you no more waste hills no plastic park restoration sustainable shopping this girl can journeys events the record read go reach us follow the work">
+            <a href="/work/campaigns">
+              <span class="sr-t">Campaigns</span>
+              <span class="cap sr-r">/work/campaigns</span>
+              <span class="sr-l">Public pressure with a name on it, since We for Yamuna in 2000.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="monsoon wooding  the verb is ours and it is the whole campaign: planted and survived. anybody can plant. what we do what it sets out to do anybody can plant. strategy and activities who it is for impact what it looks like who it is with get involved forest loss the record read go reach us follow the work">
+            <a href="/work/campaigns/monsoon-wooding">
+              <span class="sr-t">Monsoon Wooding</span>
+              <span class="cap sr-r">/work/campaigns/monsoon-wooding</span>
+              <span class="sr-l">The verb is ours and it is the whole campaign: planted and survived. Anybody can plant.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="events  workshops, concerts and plays. one night at a time. on the record it happened, or it did not. why there are no dates here what it looks like get involved yamunotsav cyclothon greenathon yamuna shramdaan projects campaigns the record read go reach us follow the work">
+            <a href="/work/events">
+              <span class="sr-t">Events</span>
+              <span class="cap sr-r">/work/events</span>
+              <span class="sr-l">Workshops, concerts and plays. One night at a time.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="the work  everything swechha runs, in one place. four kinds of it, and every one of them named. everything, in one view one river taught us everything else. every figure we can source what it looks like get involved bridge the gap farm school eco action me to we influence she leads change food systems, with unep we for yamuna monsoon wooding delhi i can't see you no more waste hills no plastic park restoration sustainable shopping this girl can yamuna yatra gram anubhav naturescapes cityscapes yamunotsav cyclothon greenathon yamuna shramdaan projects journeys the record read go reach us follow the work">
+            <a href="/work">
+              <span class="sr-t">The work</span>
+              <span class="cap sr-r">/work</span>
+              <span class="sr-l">Everything Swechha runs, in one place. Four kinds of it, and every one of them named.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="journeys  a thousand kilometres on one river, or five days in a village. what a journey is here every one of them you cannot brief someone into caring. what it adds up to what it looks like get involved yamuna yatra gram anubhav naturescapes cityscapes events projects the record read go reach us follow the work">
+            <a href="/work/journeys">
+              <span class="sr-t">Journeys</span>
+              <span class="cap sr-r">/work/journeys</span>
+              <span class="sr-l">A thousand kilometres on one river, or five days in a village.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="cityscapes  the eco-walks, renamed. a river bank, a landfill, a ridge forest, a heritage water system — all of it already inside delhi, all of it reachable before lunch. what we do what it sets out to do distance was never the reason nobody went. strategy and activities who it is for impact what it looks like get involved yamuna landfill forest bird watching heritage restoration park yamuna yatra gram anubhav the record read go reach us follow the work">
+            <a href="/work/journeys/cityscapes">
+              <span class="sr-t">CityScapes</span>
+              <span class="cap sr-r">/work/journeys/cityscapes</span>
+              <span class="sr-l">The eco-walks, renamed. A river bank, a landfill, a ridge forest, a heritage water system — all of it already inside Delhi, all of it reachable before lunch.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="gram anubhav  purely experiential, which here means you are not shown a village. you stay in one, eat in one, and do a day's work in one. what we do what it sets out to do strategy and activities who it is for impact get involved yamuna yatra naturescapes the record read go reach us follow the work">
+            <a href="/work/journeys/gram-anubhav">
+              <span class="sr-t">Gram Anubhav</span>
+              <span class="cap sr-r">/work/journeys/gram-anubhav</span>
+              <span class="sr-l">Purely experiential, which here means you are not shown a village. You stay in one, eat in one, and do a day's work in one.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="naturescapes  six destinations, four ecosystems, one school group at a time. none of the six explains itself from a classroom, which is the only reason to take a bus that far. what we do what it sets out to do the ecosystem sets the length, not us. strategy and activities who it is for impact what it looks like who it is with get involved sariska ranthambore mukteshwar, sirmaur jim corbett sunderbans jaisalmer yamuna yatra gram anubhav the record read go reach us follow the work">
+            <a href="/work/journeys/naturescapes">
+              <span class="sr-t">NatureScapes</span>
+              <span class="cap sr-r">/work/journeys/naturescapes</span>
+              <span class="sr-l">Six destinations, four ecosystems, one school group at a time. None of the six explains itself from a classroom, which is the only reason to take a bus that far.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="yamuna yatra  from where it originates and is pristine, down to the point where it reaches agra and is almost a toxic body of water. twelve days. the river makes the argument. we only walk beside it. what we do what it sets out to do the river makes the argument. strategy and activities who it is for impact what it looks like who it is with get involved gram anubhav the yamuna the record read go reach us follow the work">
+            <a href="/work/journeys/yamuna-yatra">
+              <span class="sr-t">Yamuna Yatra</span>
+              <span class="cap sr-r">/work/journeys/yamuna-yatra</span>
+              <span class="sr-l">From where it originates and is pristine, down to the point where it reaches Agra and is almost a toxic body of water. Twelve days. The river makes the argument. We only walk beside it.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="projects  curriculum, campus and garden. the work that runs for years. what a project is here every one of them fifteen years is not a pilot. what it adds up to what it looks like get involved bridge the gap farm school eco action me to we influence she leads change food systems, with unep campaigns journeys the record read go reach us follow the work">
+            <a href="/work/projects">
+              <span class="sr-t">Projects</span>
+              <span class="cap sr-r">/work/projects</span>
+              <span class="sr-l">Curriculum, campus and garden. The work that runs for years.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="bridge the gap  between a hundred and a hundred and fifty delhi schools every year. land, water, air, waste, climate change — and who gets left out of all five. what we do what it sets out to do five sessions, or sixteen. the school decides. strategy and activities who it is for impact what it looks like who it is with get involved farm school eco action the record read go reach us follow the work">
+            <a href="/work/projects/bridge-the-gap">
+              <span class="sr-t">Bridge the Gap</span>
+              <span class="cap sr-r">/work/projects/bridge-the-gap</span>
+              <span class="sr-l">Between a hundred and a hundred and fifty Delhi schools every year. Land, water, air, waste, climate change — and who gets left out of all five.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="eco action  one public park in vasant kunj went from five per cent green cover to ninety, over a decade. that is the whole argument for this project, and we do not have a photograph of either state. what we do what it sets out to do a park nobody needs gets paved. strategy and activities who it is for impact what it looks like who it is with get involved bridge the gap farm school the record read go reach us follow the work">
+            <a href="/work/projects/eco-action">
+              <span class="sr-t">Eco Action</span>
+              <span class="cap sr-r">/work/projects/eco-action</span>
+              <span class="sr-l">One public park in Vasant Kunj went from five per cent green cover to ninety, over a decade. That is the whole argument for this project, and we do not have a photograph of either state.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="farm school  our own words for it are an organic, experiential, deconstructed un'education learning lab. in practice: five acres, an hour and a half from delhi, and a farm that has to actually produce or the lesson is wrong. what we do what it sets out to do a farm that stops producing stops teaching. strategy and activities who it is for impact what it looks like get involved bridge the gap eco action swechha farm read go reach us follow the work">
+            <a href="/work/projects/farm-school">
+              <span class="sr-t">Farm School</span>
+              <span class="cap sr-r">/work/projects/farm-school</span>
+              <span class="sr-l">Our own words for it are an organic, experiential, deconstructed un'education Learning Lab. In practice: five acres, an hour and a half from Delhi, and a farm that has to actually produce or the lesson is wrong.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="influence  ten fellows a year, each one running at a problem in their own neighbourhood. climate, air, environment, waste. pick one, then build something. what we do what it sets out to do not our groups. theirs. strategy and activities who it is for impact what it looks like get involved bridge the gap farm school the record read go reach us follow the work">
+            <a href="/work/projects/influence">
+              <span class="sr-t">Influence</span>
+              <span class="cap sr-r">/work/projects/influence</span>
+              <span class="sr-l">Ten fellows a year, each one running at a problem in their own neighbourhood. Climate, air, environment, waste. Pick one, then build something.</span>
+            </a>
+          </li>
+          <li class="sr-row" data-t="me to we  it started in 2007 as a volunteer school on the banks of the yamuna. some of the children who came to it are now core team members here. what we do what it sets out to do some of them work here now. strategy and activities who it is for impact what it looks like who it is with get involved bridge the gap farm school the record read go reach us follow the work">
+            <a href="/work/projects/me-to-we">
+              <span class="sr-t">ME to WE</span>
+              <span class="cap sr-r">/work/projects/me-to-we</span>
+              <span class="sr-l">It started in 2007 as a volunteer school on the banks of the Yamuna. Some of the children who came to it are now core team members here.</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+      <section class="sr-g" data-g="stories and films">
+        <h3 class="lbl sr-gh">Stories and films</h3>
+        <ul class="sr-list">
+          <li class="sr-row" data-t="stories and films some of it we filmed. the readings are one kind of record. these are the others — films made with the people in them, and a poster series that said the same things on paper, in a city that reads walls before it reads reports. the films the poster series written bring us a story jijivisha wasted waste it naturescapes podcasts read go reach us follow the work">
+            <a href="/stories">
+              <span class="sr-t">Stories and films</span>
+              <span class="cap sr-r">/stories</span>
+              <span class="sr-l">The readings are one kind of record. These are the others — films made with the people in them, and a poster series that said the same things on paper, in a city that reads walls before it reads reports.</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+      <section class="sr-g" data-g="publications">
+        <h3 class="lbl sr-gh">Publications</h3>
+        <ul class="sr-list">
+          <li class="sr-row" data-t="publications two we printed. not a catalogue. one book about a neighbourhood we worked in for years, and one guide written to be carried into a shop. both open whole, free, with no address asked for. the publications what is not here print with us khirki extension, delhi the sustainable shopping basket read go reach us follow the work">
+            <a href="/publications">
+              <span class="sr-t">Publications</span>
+              <span class="cap sr-r">/publications</span>
+              <span class="sr-l">Not a catalogue. One book about a neighbourhood we worked in for years, and one guide written to be carried into a shop. Both open whole, free, with no address asked for.</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+      <section class="sr-g" data-g="impact">
+        <h3 class="lbl sr-gh">Impact</h3>
+        <ul class="sr-list">
+          <li class="sr-row" data-t="impact thirty-two figures. no total. every figure swechha can source, on one page, with the span it counts and where it comes from. what is not here is the one number an impact page normally exists to print, and the reason is the whole of this page. why there is no total two numbers, one programme every figure we can source four claims waiting on one number each what it looked like hold us to it read go reach us follow the work">
+            <a href="/impact">
+              <span class="sr-t">Impact</span>
+              <span class="cap sr-r">/impact</span>
+              <span class="sr-l">Every figure Swechha can source, on one page, with the span it counts and where it comes from. What is not here is the one number an impact page normally exists to print, and the reason is the whole of this page.</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+      <section class="sr-g" data-g="farm">
+        <h3 class="lbl sr-gh">Farm</h3>
+        <ul class="sr-list">
+          <li class="sr-row" data-t="swechha farm nothing grew here. five acres of barren ground at ladpuri, in the mewat country where the aravallis cross from haryana into rajasthan, ninety minutes from delhi. one tree stood on it — which is the only reason the line above is not literal a story of change what grows there now how the place keeps itself live, learn, lead it is not a hotel the nursery, the hives, the herd come and see day visits, half a day or a whole one overnight school camps retreats for small organisations stays and internships what a group actually does the farm school the rest of the work read go reach us follow the work">
+            <a href="/farm">
+              <span class="sr-t">Swechha Farm</span>
+              <span class="cap sr-r">/farm</span>
+              <span class="sr-l">Five acres of barren ground at Ladpuri, in the Mewat country where the Aravallis cross from Haryana into Rajasthan, ninety minutes from Delhi. One tree stood on it — which is the only reason the line above is not literal</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+      <section class="sr-g" data-g="get involved">
+        <h3 class="lbl sr-gh">Get involved</h3>
+        <ul class="sr-list">
+          <li class="sr-row" data-t="get involved three ways in. the monitoring and the archive are the two things nobody funds. they are the two things that outlast us. give money, give a morning, or bring us a ward, a river stretch or a cohort — and every ask on this site, wherever  what five hundred rupees pays for turn up once, or every month bring us a ward, a river stretch or a cohort what you would be giving to where an ask actually goes asks that land here the four things that gather people asks that land here schools companies organisations and researchers asks that land here the register of work what it has added up to who receives it read go reach us follow the work">
+            <a href="/act">
+              <span class="sr-t">Get involved</span>
+              <span class="cap sr-r">/act</span>
+              <span class="sr-l">The monitoring and the archive are the two things nobody funds. They are the two things that outlast us. Give money, give a morning, or bring us a ward, a river stretch or a cohort — and every ask on this site, wherever </span>
+            </a>
+          </li>
+        </ul>
+      </section>
+      <section class="sr-g" data-g="about">
+        <h3 class="lbl sr-gh">About</h3>
+        <ul class="sr-list">
+          <li class="sr-row" data-t="about of one’s own free will that is roughly what swechha means. nobody was assigned to the river. everyone who has ever cleaned it turned up — and the organisation that grew out of that is named after the reason they came. what we say we are the record since 2000 who does the work who governs it the boring and necessary part turn up read go reach us follow the work">
+            <a href="/about">
+              <span class="sr-t">About</span>
+              <span class="cap sr-r">/about</span>
+              <span class="sr-l">That is roughly what swechha means. Nobody was assigned to the river. Everyone who has ever cleaned it turned up — and the organisation that grew out of that is named after the reason they came.</span>
+            </a>
+          </li>
+        </ul>
+      </section>
     </div>
   </section>
 </main>
@@ -2061,201 +1869,6 @@ button.b[disabled]{opacity:.55;cursor:default}
   });
 })();
 
-/* ── LIVENESS (D-17.4). The page ships a committed reading and UPGRADES.
-   LIVE describes the fetch; the age describes the observation, and the badge
-   is never allowed to replace the age — both are printed.
-   AN ERROR IS NOT A ZERO (D-16.4): every failure path returns early and
-   leaves the committed reading and the PERIODIC badge exactly as rendered.
-   Nothing here can write a dash, an empty string or a 0 into the readout. */
-(function(){
-  var BANDS=["Good","Satisfactory","Moderately Polluted","Poor","Very Poor","Severe"], LIMIT=100;
-  var CITIES="266";
-  var el=function(i){return document.getElementById(i);};
-  var aqi=el('air-aqi'), state=el('air-state');
-  if(!aqi||!state||!window.fetch) return;
-  fetch('/api/air',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
-    if(!d||d.ok!==true) return;
-    var r=d.reading;
-    if(!r||typeof r.aqi!=='number'||!isFinite(r.aqi)||r.aqi<=0||!r.band) return;
-    var i=BANDS.indexOf(r.band); if(i<0) return;
-
-    aqi.textContent=String(r.aqi);
-    var b=el('air-band'); if(b) b.textContent=r.band;
-    var over=r.aqi>LIMIT;
-    var lim=el('air-limit');
-    if(lim) lim.innerHTML='CPCB safe limit '+LIMIT+'. '+(over?'<b>Limit broken.</b>':'Within the limit.');
-    var scale=el('air-bands');
-    if(scale){
-      var cells=scale.children;
-      for(var k=0;k<cells.length;k++){
-        cells[k].className=(k<=i?'on':'')+(k===i?' tip':'');
-      }
-      scale.setAttribute('aria-label',r.band+', band '+(i+1)+' of '+BANDS.length);
-    }
-    /* The age, not the badge, carries how old the observation is. */
-    var src=el('air-src-w');
-    if(src&&r.station) src.textContent=r.station+'. Observed '+(r.observed||'time not stated')+'.';
-    var ca=el('air-c-aqi'); if(ca) ca.textContent=String(r.aqi);
-    var cb=el('air-c-band'); if(cb) cb.textContent=r.band;
-    var cv=el('air-c-above');
-    if(cv&&d.spread&&typeof d.spread.above_limit==='number'&&typeof d.spread.stations==='number'){
-      cv.textContent=d.spread.above_limit+' of '+d.spread.stations;
-    }
-    /* ── THE NATIONAL PANEL MUST NOT CONTRADICT THE HERO.
-       The panel is drawn from a committed national snapshot and the hero from
-       the live fetch, so the same city appeared twice with two numbers — 389
-       in the hero and 388 in the table, on one screen. Delhi's row is updated
-       and MOVED to where its live value puts it among the snapshot rows, and
-       the rank sentence is recomputed from the DOM. The other cities are not
-       re-fetched and the caption says so. Ordinal words only to eighth,
-       because the panel only ever renders eight rows. */
-    var row=el('air-nr-delhi'), rv=el('air-nr-delhi-v');
-    if(row&&rv){
-      rv.textContent=String(r.aqi);
-      rv.className='p-nr-v'+(r.aqi>LIMIT?' is-red':'');
-      row.setAttribute('data-aqi',String(r.aqi));
-      var list=row.parentNode;
-      var rows=[].slice.call(list.querySelectorAll('.p-nr'));
-      /* The anchor is taken BEFORE sorting — it is whatever sits immediately
-         above the first row in document order, and the sorted rows are laid
-         back in after it one at a time. Appending would drop them below the
-         captions that follow. */
-      var anchor=rows[0].previousSibling;
-      rows.sort(function(a,b){ return Number(b.getAttribute('data-aqi'))-Number(a.getAttribute('data-aqi')); });
-      rows.forEach(function(n){ list.insertBefore(n, anchor?anchor.nextSibling:list.firstChild); anchor=n; });
-      var pos=rows.indexOf(row)+1;
-      var ORD=['first','second','third','fourth','fifth','sixth','seventh','eighth'];
-      var rk=el('air-nat-rank');
-      /* LAST PLACE AMONG EIGHT IS NOT A NATIONAL RANK. If Delhi's live value
-         falls below every snapshot row, its true position is somewhere below
-         eighth and this panel cannot say where — so it says that, instead of
-         printing "eighth" and being wrong. */
-      /* A TIE IS NOT A PLACE. Delhi and Sasaram both read 389 on the first
-         run of this code, and calling that "second" is a sort order dressed
-         up as a finding. Equal numbers get equal billing. */
-      var above=rows[pos-2], tie=above&&Number(above.getAttribute('data-aqi'))===r.aqi;
-      if(rk&&tie){
-        rk.innerHTML=CITIES+' cities report to CPCB. Delhi is <b>level with '
-          +above.querySelector('.p-nr-n').textContent.trim().replace(/,.*$/,'')
-          +'</b> at the top of them, and that changes between hours.';
-      } else if(rk){
-        rk.innerHTML = (pos < rows.length)
-          ? CITIES+' cities report to CPCB. Delhi is <b>'+ORD[pos-1]+' of them</b>, and that changes between hours.'
-          : CITIES+' cities report to CPCB. Delhi now reads <b>below all eight cities listed</b>, which were '
-            +'read an hour earlier &mdash; so its place in the full table is lower than this panel can show.';
-      }
-    }
-    /* Badge last, so it only ever claims LIVE over a value that landed. */
-    state.className='state p2-state live';
-    var w=el('air-state-w'); if(w) w.textContent='Live';
-    var x=el('air-state-x');
-    if(x) x.textContent=' — fetched when this page loaded; the observation time is printed below';
-  }).catch(function(){ /* keep the committed reading. */ });
-})();
-
-/* ── WATCH YOUR MONITOR (D-22.2). Loads the 43 monitors with their live
-   readings, filters as you type, and submits one address for one monitor.
-   THE READING BESIDE EACH MONITOR IS THE POINT: it turns "pick a monitor" from
-   a form field into the page's own argument — the numbers under two nearby
-   names are different, so which one covers you matters.
-   A FORM THAT CANNOT DELIVER SAYS SO. If /api/ward/subscribe answers
-   not_configured, the message names what the site is missing rather than
-   thanking the reader for an address that went nowhere. */
-(function(){
-  var root=document.querySelector('[data-ward]'); if(!root||!window.fetch) return;
-  var q=document.getElementById('ward-q'), list=document.getElementById('ward-list'),
-      state=document.getElementById('ward-state'), pick=document.getElementById('ward-pick'),
-      pickN=document.getElementById('ward-pick-n'), mail=document.getElementById('ward-e'),
-      go=document.getElementById('ward-go'), msg=document.getElementById('ward-msg');
-  var all=[], chosen=null;
-
-  fetch('/api/ward',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
-    if(!d||d.ok!==true||!Array.isArray(d.stations)||!d.stations.length){
-      /* NOT AN EMPTY LIST. An empty picker would read as "no monitors exist". */
-      state.textContent='The monitor list is not available just now, so this cannot be set up. '
-        +'It is the feed that is down, not the air.';
-      q.disabled=true; return;
-    }
-    all=d.stations;
-    state.textContent=all.length+' monitors, read at '+(d.observed||'the latest hour')
-      +'. '+d.totals.above_limit+' of them are above the limit.';
-    render(all.slice(0,6), true);
-  }).catch(function(){
-    state.textContent='The monitor list could not be loaded.'; q.disabled=true;
-  });
-
-  function render(rows, initial){
-    list.innerHTML='';
-    if(!rows.length){ list.innerHTML='<p class="cap p-ward-none">No monitor matches that. '
-      +'Try a shorter word, or the name of a neighbouring area.</p>'; return; }
-    rows.forEach(function(s){
-      var b=document.createElement('button');
-      b.type='button'; b.className='p-ward-r'; b.setAttribute('role','option');
-      b.setAttribute('aria-selected','false');
-      b.innerHTML='<span class="p-ward-n">'+esc(s.label)+'</span>'
-        +'<span class="p-ward-v'+(s.overLimit?' is-red':'')+'">'+s.aqi+'</span>'
-        +'<span class="cap p-ward-b">'+esc(s.band)+'</span>';
-      b.addEventListener('click',function(){ choose(s); });
-      list.appendChild(b);
-    });
-    if(initial){
-      var n=document.createElement('p');
-      n.className='cap p-ward-hint';
-      n.textContent='Worst first. Type to find yours.';
-      list.appendChild(n);
-    }
-  }
-
-  function choose(s){
-    chosen=s;
-    pick.removeAttribute('hidden');
-    /* The next-nearest distance is printed because it is the honest width of
-       what one monitor can claim to describe. */
-    pickN.innerHTML='<b>'+esc(s.label)+'</b> — reading '+s.aqi+', '+esc(s.band).toLowerCase()+'.'
-      +(s.nextNearest?' The next nearest monitor is '+s.nextNearest.km
-        +' km away and reads separately.':'');
-    msg.textContent='';
-    mail.focus();
-  }
-
-  go&&go.addEventListener('click',function(){
-    if(!chosen){ msg.textContent='Pick a monitor first.'; return; }
-    var e=(mail.value||'').trim();
-    if(e.length<6||e.indexOf('@')<1){ msg.textContent='That does not look like an address an email could reach.'; return; }
-    go.disabled=true; msg.textContent='Sending a confirmation…';
-    fetch('/api/ward/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({email:e,station:chosen.station})})
-      .then(function(r){ return r.json().then(function(j){ return {s:r.status,j:j}; }); })
-      .then(function(o){
-        go.disabled=false;
-        if(o.j&&o.j.ok){ msg.textContent=o.j.message; mail.value=''; return; }
-        if(o.j&&o.j.state==='not_configured'){
-          /* Name the hole. Do not thank them for an address that went nowhere. */
-          msg.innerHTML='<b>Not wired yet, and it will not pretend.</b> This site has no '
-            +esc((o.j.missing||[]).join(' and '))+', so the alert cannot be promised. '
-            +'Your address was not stored and nothing was sent.';
-          return;
-        }
-        msg.textContent=(o.j&&(o.j.reason||o.j.detail))||'That did not work. Nothing was stored.';
-      }).catch(function(){
-        go.disabled=false; msg.textContent='That did not work. Nothing was stored.';
-      });
-  });
-
-  var t=null;
-  q.addEventListener('input',function(){
-    clearTimeout(t);
-    t=setTimeout(function(){
-      var v=q.value.trim().toLowerCase();
-      if(!v){ render(all.slice(0,6), true); return; }
-      render(all.filter(function(s){ return s.label.toLowerCase().indexOf(v)>-1; }).slice(0,8), false);
-    },110);
-  });
-
-  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-})();
-
 /* ── D-09.1. THE MOBILE INDEX CONTROL. ───────────────────────────────
    A DISCLOSURE, NOT A DIALOG. Everything below is deliberately NOT the
    modal playbook: no focus trap, no aria-modal, no scrim, no scroll
@@ -2318,6 +1931,7 @@ button.b[disabled]{opacity:.55;cursor:default}
     clearTimeout(r); r=setTimeout(function(){ if(innerWidth>940&&!shut()) show(false); },150);
   },{passive:true});
 })();
+
 /* ── D-09.4. WHERE AM I? THE ACTIVE-SECTION UNDERLINE. ───────────────
    The vocabulary was already drawn and nothing ever set it:
      .nav a.nl:hover, .nav a.nl[aria-current]
@@ -2441,6 +2055,46 @@ button.b[disabled]{opacity:.55;cursor:default}
     clearTimeout(t); t=setTimeout(build,150);
   },{passive:true});
 })();
-</script>
+
+/* THE PAGE IS AN INDEX FIRST AND A SEARCH SECOND. Every row is already in the
+   document, so this only hides rows — there is no index to fetch, nothing to
+   fail at request time, and no JavaScript needed to read the site's contents.
+   A group with no visible row hides its own heading, or the page shows a
+   heading over nothing. */
+(function(){
+  var q=document.getElementById('sr-q'), count=document.getElementById('sr-count'),
+      none=document.getElementById('sr-none');
+  if(!q||!count) return;
+  var rows=[].slice.call(document.querySelectorAll('.sr-row')),
+      groups=[].slice.call(document.querySelectorAll('.sr-g'));
+  var total=rows.length;
+  function apply(){
+    var v=q.value.trim().toLowerCase();
+    var shown=0;
+    for(var i=0;i<rows.length;i++){
+      var hit = !v || rows[i].getAttribute('data-t').indexOf(v)!==-1;
+      rows[i].hidden=!hit;
+      if(hit) shown++;
+    }
+    for(var g=0;g<groups.length;g++){
+      var any=groups[g].querySelector('.sr-row:not([hidden])');
+      groups[g].hidden=!any;
+    }
+    if(none) none.hidden = shown!==0;
+    count.textContent = v
+      ? shown+' of '+total+(shown===1?' page matches':' pages match')
+      : total+' pages';
+  }
+  q.addEventListener('input',apply);
+  /* A word in the address bar, so a filtered list can be linked. Read once on
+     load; not written back on every keystroke, which would fill the history. */
+  var pre=new URLSearchParams(location.search).get('q');
+  if(pre){ q.value=pre; apply(); }
+  q.addEventListener('change',function(){
+    var u=new URL(location.href);
+    if(q.value.trim()) u.searchParams.set('q',q.value.trim()); else u.searchParams.delete('q');
+    history.replaceState(null,'',u);
+  });
+})();</script>
 </body>
 </html>
