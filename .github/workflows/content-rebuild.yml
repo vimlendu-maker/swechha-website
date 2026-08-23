@@ -1,0 +1,127 @@
+# The CMS writes JSON. This turns that JSON back into pages.
+#
+# WHY IT IS NEEDED AT ALL. `/keystatic` commits `data/**.json`, but this site
+# serves GENERATED HTML out of `public/_pages/v3/`. Without this workflow an
+# editor's save changes a data file and nothing visible happens — the edit is
+# invisible until someone runs the generators by hand. That would make the CMS
+# look broken in exactly the way that destroys trust in it.
+#
+# ★ IT ALSO GUARDS THE EDIT. Keystatic SERIALISES ITS SCHEMA rather than
+# patching the file, so a key the schema does not declare is dropped on save,
+# and `null` becomes `""` because Keystatic has no `string | null`. On this data
+# that is not cosmetic: `holes[]`, `basis`, `source` and `period` are the
+# provenance the site argues from, and `situation: ""` fails the work build
+# outright. So every content commit is normalised and then CHECKED against its
+# own parent commit before anything is rebuilt.
+
+name: Content rebuild — the CMS writes JSON, this writes the pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/**'
+      - 'content/**'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Normalise, check and rebuild, but commit nothing'
+        type: boolean
+        default: true
+
+concurrency:
+  # Two overlapping runs would both rebuild and both try to push.
+  group: content-rebuild
+  cancel-in-progress: false
+
+permissions:
+  # Needed to push the normalised data and the rebuilt pages.
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Do not answer our own commits, or the two bots would rebuild each other
+    # forever. data-refresh already rebuilds the pages it touches in its own
+    # run, so its commits need nothing from here either.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      ( github.event.head_commit.author.name != 'swechha-content-rebuild[bot]' &&
+        github.event.head_commit.author.name != 'swechha-data-refresh[bot]' )
+    steps:
+      # depth 2, because the fidelity check needs the PARENT commit as its
+      # reference — "what did this file look like before the editor saved it".
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # The generators use node built-ins only; dev dependencies are not needed.
+      - run: npm ci --omit=dev
+
+      - name: Take the parent commit's data as the reference
+        id: ref
+        run: |
+          if ! git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+            echo "No parent commit — nothing to compare against. Skipping the guard."
+            echo "have=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          mkdir -p /tmp/ref
+          git archive HEAD~1 data | tar -x -C /tmp/ref
+          echo "have=1" >> "$GITHUB_OUTPUT"
+          echo "Reference: $(find /tmp/ref/data -name '*.json' | wc -l | tr -d ' ') json file(s) from $(git rev-parse --short HEAD~1)"
+
+      # Keystatic cannot express `null`. Put the nulls back BEFORE the guard
+      # runs, or the guard would correctly fail on every single save.
+      - name: Restore the nulls Keystatic cannot write
+        if: steps.ref.outputs.have == '1'
+        run: node scripts/normalize-cms-output.mjs /tmp/ref/data data
+
+      # THE GATE. A save may change a value; it may not delete one.
+      - name: Refuse a save that lost anything
+        if: steps.ref.outputs.have == '1'
+        run: node scripts/verify-data-fidelity.mjs /tmp/ref/data data
+
+      - name: Rebuild the pages the content feeds
+        run: |
+          # HERO FIRST — same constraint as data-refresh.yml: every other
+          # generator extracts the nav, the footer and the token block out of
+          # home.html, so the hero's readings must be written before anything
+          # reads that file.
+          #
+          # Its cross-check against situation-air.html is safe here in a way it
+          # is NOT in data-refresh: this workflow never touches the fetched
+          # datasets, so the hero recomputes the SAME air figure the committed
+          # situation page already shows, and the two agree. data-refresh is the
+          # run where that ordering bites.
+          echo "::group::npm run build:hero"
+          npm run build:hero
+          echo "::endgroup::"
+          for t in situations work about impact farm act stories publications search essays; do
+            echo "::group::npm run build:$t"
+            npm run "build:$t"
+            echo "::endgroup::"
+          done
+          npm run verify:final
+
+      - name: Commit the rebuilt pages
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          git config user.name  'swechha-content-rebuild[bot]'
+          git config user.email 'actions@github.com'
+          git add -A data public/_pages
+          if git diff --cached --quiet; then
+            echo "Nothing staged after the rebuild — the edit needed no page change."
+            exit 0
+          fi
+          changed=$(git diff --cached --name-only -- data | sed 's|^data/||' | tr '\n' ' ')
+          git commit -m "content: the pages catch up with the edit" \
+            -m "Edited: ${changed:-none}" \
+            -m "Automated by .github/workflows/content-rebuild.yml, answering a content commit. The nulls Keystatic cannot express were restored, no key was lost against the parent commit, and every generator gate passed — so no page is out of step with the data under it."
+          git push

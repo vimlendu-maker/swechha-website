@@ -38,6 +38,18 @@ const nextConfig: NextConfig = {
         source: '/_pages/:path*',
         headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
       },
+      /* The editor, ALWAYS noindex — indexable deploy or not. Today the blanket
+         `/:path*` rule below happens to cover it, but that rule disappears the
+         moment SITE_INDEXABLE=true, and an indexed /keystatic is a login screen
+         in search results advertising where the CMS lives. */
+      {
+        source: '/keystatic/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
+      {
+        source: '/keystatic',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
     ]
     if (isIndexable()) return always
     return [

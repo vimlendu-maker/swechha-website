@@ -41,6 +41,13 @@
  */
 import { config, collection, fields } from '@keystatic/core';
 
+/** All three, or GitHub storage cannot be constructed at all. See `storage`. */
+const HAS_GITHUB_APP = Boolean(
+  process.env.KEYSTATIC_GITHUB_CLIENT_ID &&
+    process.env.KEYSTATIC_GITHUB_CLIENT_SECRET &&
+    process.env.KEYSTATIC_SECRET,
+);
+
 /* ── SHARED PIECES ────────────────────────────────────────────────────────── */
 
 /** `{ src, alt }`. Nullable at the top level of an item; the normalizer
@@ -224,23 +231,83 @@ const workItem = {
   ),
 };
 
-const workCollection = (label: string, dir: string) =>
-  collection({
-    label,
-    slugField: 'slug',
-    path: `data/work/${dir}/*`,
-    format: { data: 'json' },
-    schema: workItem,
-  });
+/* ── PER-COLLECTION SCHEMAS ───────────────────────────────────────────────────
+ * One shared schema across all four kinds was the first attempt and it is
+ * wrong, for a reason worth writing down: Keystatic writes a UNIFORM key set
+ * per collection, so saving a project would add `gathering: ""`, `when: {}`,
+ * `route: []`, `duration: {}` and `scale: []` to a file that never had them —
+ * and would show an editor of a project six field groups that mean nothing
+ * there ("Gathering", "When (events only)", "Route", "Scale", "Duration",
+ * "Geography").
+ *
+ * It is NOT a correctness bug. Tested: adding `gathering:""` and `when:{}` to
+ * `projects/eco-action.json` and running `npm run build:work` still produced
+ * `15 page(s) — every other gate green`. `build-work-pages.mjs` validates the
+ * keys it cares about and tolerates extras. So this split is for the editor's
+ * sake and to keep the data files honest, not to stop a build failure.
+ *
+ * The division is the KEY CENSUS across all 23 files, not a guess:
+ *   all four kinds  slug kind name page anchor figures holes situation
+ *   projects only   scale (2/7)
+ *   journeys only   duration (4/4) geography (4/4) route (2/4)
+ *   events only     gathering (4/4) belongs_to (1/4) when (1/4)
+ *   events LACK     act deck done frame line with, and all of
+ *                   aims who gallery gallery_note statement invite activities
+ */
+const { scale, duration, geography, route, gathering, belongs_to, when, ...shared } = workItem;
+
+const projectsSchema = { ...shared, scale };
+const journeysSchema = { ...shared, duration, geography, route };
+const campaignsSchema = shared;
+
+/* Events are a thinner kind — twelve keys, and `how` is the only body field
+   any of them carries (1 of 4). */
+const eventsSchema = {
+  slug: workItem.slug,
+  kind: workItem.kind,
+  name: workItem.name,
+  page: workItem.page,
+  anchor: workItem.anchor,
+  figures: workItem.figures,
+  holes: workItem.holes,
+  situation: workItem.situation,
+  how: workItem.how,
+  gathering,
+  belongs_to,
+  when,
+};
+
+/* The four are spelled out rather than built by a helper. A helper needs the
+   schema widened to a parameter, and widening it detaches `slugField: 'slug'`
+   from the schema's keys — `Type 'string' is not assignable to type 'never'`.
+   Inline, every collection is fully inferred and typechecked. */
+const workCollectionOpts = (dir: string) =>
+  ({ slugField: 'slug', path: `data/work/${dir}/*`, format: { data: 'json' } }) as const;
 
 export default config({
   /* Direct commits to `main`. A PR per edit would need a developer to merge,
      which is the thing this exists to remove. Change `branchPrefix`/storage
-     here if that trade stops being the right one. */
-  storage:
-    process.env.NODE_ENV === 'development'
-      ? { kind: 'local' }
-      : { kind: 'github', repo: { owner: 'vimlendu-maker', name: 'swechha-website' } },
+     here if that trade stops being the right one.
+     *
+     * ★ GATED ON THE CREDENTIALS EXISTING, NOT ON NODE_ENV — and that is a
+     * correctness fix, not a preference. `github` storage throws at MODULE LOAD
+     * without all three of KEYSTATIC_GITHUB_CLIENT_ID,
+     * KEYSTATIC_GITHUB_CLIENT_SECRET and KEYSTATIC_SECRET:
+     *
+     *     Missing required config in Keystatic API setup when using the
+     *     'github' storage mode: - clientId - clientSecret - secret
+     *
+     * Keyed on NODE_ENV, deploying this before the GitHub App exists would
+     * break the production build rather than the editor. Keyed on the env vars,
+     * a deployment without them simply runs the editor in local mode — no
+     * persistence on Vercel's read-only filesystem, but nothing else breaks —
+     * and switches to GitHub the moment the three are set. Same shape as
+     * `/api/air` returning 503 without DATA_GOV_IN_KEY, and
+     * `config.missing()` in lib/subscriptions.ts: a designed state, not a
+     * break. */
+  storage: HAS_GITHUB_APP
+    ? { kind: 'github', repo: { owner: 'vimlendu-maker', name: 'swechha-website' } }
+    : { kind: 'local' },
 
   ui: {
     brand: { name: 'Swechha' },
@@ -250,9 +317,25 @@ export default config({
   },
 
   collections: {
-    projects: workCollection('Work — Projects', 'projects'),
-    journeys: workCollection('Work — Journeys', 'journeys'),
-    campaigns: workCollection('Work — Campaigns', 'campaigns'),
-    events: workCollection('Work — Events', 'events'),
+    projects: collection({
+      label: 'Work — Projects',
+      ...workCollectionOpts('projects'),
+      schema: projectsSchema,
+    }),
+    journeys: collection({
+      label: 'Work — Journeys',
+      ...workCollectionOpts('journeys'),
+      schema: journeysSchema,
+    }),
+    campaigns: collection({
+      label: 'Work — Campaigns',
+      ...workCollectionOpts('campaigns'),
+      schema: campaignsSchema,
+    }),
+    events: collection({
+      label: 'Work — Events',
+      ...workCollectionOpts('events'),
+      schema: eventsSchema,
+    }),
   },
 });
