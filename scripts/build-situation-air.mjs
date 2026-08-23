@@ -286,13 +286,56 @@ const SECTION_SPY = `<script>
 })();
 </script>`
 
+/* ── AD-38. THE INTERACTION LANGUAGE REACHES THE OTHER 33 PAGES.
+   AD-30 gave the homepage a chevron and a press state, but its rules live below
+   the pinned ranges in design/home.html, so they shipped to the homepage and
+   nowhere else -- while the COMPONENTS are shared. Measured on the built pages:
+   /work carried 23 zero-cue links, its entire index, at 59px each; every
+   situation page carried four zero-cue `.p-cell` strip cells at 69px. Same
+   classes as the homepage, same defect, none of the fix.
+
+   SCOPE IS DELIBERATELY NARROWER THAN AD-30. `.act` is left alone: at 27px it
+   already clears WCAG 2.5.8's 24px AA target, it carries an arrow glyph and a
+   mustard rule, and this file's own AD-27.16 note set 24px as the floor for
+   links that sit in prose ("24 AND NOT 44"). Forcing a 44px hit box on those
+   sitewide would risk stealing taps from adjacent lines to fix something that
+   is not broken. Inline `.lk` links are excluded for the same reason.
+
+   Chevrons are absolute because both row families are `display:grid`, so an
+   in-flow `::after` would become an extra grid item and break the column
+   template it inherits.
+
+   ★ THE COMMENT STAYS UP HERE, IN THE MODULE, AND NOT IN THE EMITTED CSS.
+   First draft put it inside the <style> block and every builder refused to
+   write: AD-28 §7 gates internal ledger ids out of reader-visible bytes, and
+   `stripCssComments()` only reaches the shells' own CSS consts, not a <style>
+   injected through the markup. The gate is right and its advice is followed --
+   the record is here, the shipped bytes carry none of it. */
+const AFFORD_CSS = `<style>.w7-pj-rows>li>a,.w7-do-list>li>a,.p-cell{padding-right:24px}
+.w7-pj-rows>li>a::after,.w7-do-list>li>a::after,.p-cell::after{
+content:'';position:absolute;right:3px;top:50%;margin-top:-5px;width:7px;height:7px;
+border-right:2px solid currentColor;border-top:2px solid currentColor;transform:rotate(45deg);
+opacity:.38;pointer-events:none;transition:opacity .16s,translate .16s}
+.w7-pj-rows>li>a:hover::after,.w7-do-list>li>a:hover::after,.p-cell:hover::after{
+opacity:.85;translate:2px 0}
+.w7-pj-rows>li>a:active::before,.w7-do-list>li>a:active::before{background:rgba(20,19,16,.075)}
+.wk-dark .w7-pj-rows>li>a:active::before,.wk-dark .w7-do-list>li>a:active::before{
+background:rgba(251,248,240,.07)}
+.p-cell::before{content:'';position:absolute;inset:0 -8px;background:transparent;
+pointer-events:none;transition:background .12s}
+.p-cell:active::before{background:rgba(251,248,240,.07)}
+@media (prefers-reduced-motion:reduce){
+.w7-pj-rows>li>a::after,.w7-do-list>li>a::after,.p-cell::after,.p-cell::before{transition:none}
+.w7-pj-rows>li>a:hover::after,.w7-do-list>li>a:hover::after,.p-cell:hover::after{translate:none}}
+</style>`
+
 const NAV = SHELL_NAV;
 // Seven rows for eight bands — the index carries the argument, not the DOM.
 const INDEX = [['The reading','#top'],['Who is in it','#people'],['How the number is made','#measured'],
   ['Where it comes from','#sources'],['Where it is going','#trend'],['The geography','#geography'],
   ['What it costs','#money'],['What you can do','#act']];
 const HEADER = `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
-<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}">Act</a></div><nav class="navscroll" aria-label="Sections"><ul>${INDEX.map(([t,h])=>`<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>${SECTION_SPY}`;
+<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}">Act</a></div><nav class="navscroll" aria-label="Sections"><ul>${INDEX.map(([t,h])=>`<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>${AFFORD_CSS}${SECTION_SPY}`;
 
 /* ═══ SHARED FRAGMENTS ═══════════════════════════════════════════════════ */
 // MEASURED vs MODELLED, carried by the rule itself (D-17.6). Solid = a
