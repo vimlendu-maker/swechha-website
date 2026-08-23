@@ -108,7 +108,7 @@ ${crumb('yamuna')}
       </div>
       <div class="p2-cols">
       <div class="p2-read breach">
-        <p class="state p2-state">${stateChip('PERIODIC')}<span class="sr"> &mdash; sampled on a cadence, not continuously</span></p>
+        <p class="state p2-state">${stateChip(S.cadence('yamuna'))}<span class="sr"> &mdash; sampled on a cadence, not continuously</span></p>
         <p class="readout rl">0.3<span class="y-bdl">&thinsp;BDL</span></p>
         <p ${kd('counted')}>mg/L dissolved oxygen &middot; the lowest the meter can report</p>
         <p class="verdict bad">No measurable oxygen</p>
@@ -557,7 +557,7 @@ B.sources = () => {
         <div class="y-find-c">
           <p class="num y-find-n is-red">${SW.stps_non_compliant} <i class="cap">of ${SW.stps_operational}</i></p>
           <p class="lbl">sewage plants that fail Delhi&rsquo;s own discharge standard</p>
-          <p class="cap">${D.non_compliant_stp_share_pct}% of the city&rsquo;s working plants do not
+          <p class="cap">${D.non_compliant_stp_share_pct.value}% of the city&rsquo;s working plants do not
             meet the limits set by Delhi&rsquo;s own pollution control committee. A plant that runs
             and does not clean is counted as capacity.</p>
         </div>
@@ -581,7 +581,7 @@ B.sources = () => {
         saying plainly, because it is not what most coverage implies.</p>
       <p class="cap y-sub-note">Of those ${PARL.industry.gpis_inspected},
         ${PARL.industry.operational} were operating and ${PARL.industry.non_complying} of those
-        &mdash; ${D.gpi_non_compliance_pct}% &mdash; were breaking their discharge conditions or had
+        &mdash; ${D.gpi_non_compliance_pct.value}% &mdash; were breaking their discharge conditions or had
         no valid consent. ${PARL.industry.show_cause_notices} received a show-cause notice and
         ${PARL.industry.closure_directions} were ordered shut.</p>
       <details class="dx">
@@ -725,13 +725,15 @@ B.act = () => `${opener('act', 'What you can do', 'The river is downstream of a 
           <p class="lbl">Stop sending it there</p>
           <p>Idols, ashes, flowers, plastic and oil all arrive at the same water. It is the smallest
             of the causes on this page and the only one an individual fully controls.</p>
-          <p style="margin:0"><a class="act" href="/#give">Support the work ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/act">Support the work ${ARROW}</a></p>
         </div>
       </div>
       <p class="cap y-close">Every figure on this page is public, dated and linked. If one is wrong,
         the source is named so you can prove it &mdash; which is the only kind of number worth
         publishing.</p>
+${S.closing('yamuna')}
 ${siblings('yamuna')}
+${S.newsletter('yamuna')}
     </div>`;
 
 /* ═══ HELPERS ════════════════════════════════════════════════════════════ */
@@ -1011,7 +1013,7 @@ await S.assemble({
   file: 'situation-yamuna.html',
   title: 'Delhi&rsquo;s Yamuna &mdash; Swechha',
   bands: BANDS, index: INDEX, sh, clashes,
-  pageCss: PAGE_CSS,
+  pageCss: PAGE_CSS, script: S.NEWSLETTER_JS,
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),
   note: `9 bands + footer. Reading: dissolved oxygen 0.3 BDL against ${L.do.label}, `
       + `at ${atFloor.length} of ${stretch.length} Delhi stations. ${monthlyBdl.length} of `

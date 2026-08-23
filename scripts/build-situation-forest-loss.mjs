@@ -83,7 +83,7 @@ ${crumb('loss')}
       </div>
       <div class="p2-cols">
       <div class="p2-read breach">
-        <p class="state p2-state">${stateChip('PERIODIC')}<span class="sr"> &mdash; annual satellite series, biennial official report</span></p>
+        <p class="state p2-state">${stateChip(S.cadence('loss'))}<span class="sr"> &mdash; annual satellite series, biennial official report</span></p>
         <p class="readout rl">${GFW.total.loss_mha}<span class="l-u">M ha</span></p>
         <p ${kd(GFW.kind)}>tree cover lost, ${GFW.total.from}&ndash;${GFW.total.to} &middot; ${n0(lossKm2)} km&sup2;</p>
         <p class="verdict bad">${lossShareOfCover}% of India&rsquo;s recorded forest cover</p>
@@ -367,12 +367,14 @@ B.act = () => `${opener('act', 'What you can do', 'A forest is lost with paperwo
           <p>An approval usually comes with compensatory afforestation elsewhere. A sixty-year-old
             forest and a two-year-old plantation are the same line in a ledger and not the same
             thing on the ground.</p>
-          <p style="margin:0"><a class="act" href="/#give">Support the work ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/act">Support the work ${ARROW}</a></p>
         </div>
       </div>
       <p class="cap l-close">Every figure on this page is public, dated and linked &mdash; including
         the two that disagree.</p>
+${S.closing('loss')}
 ${siblings('loss')}
+${S.newsletter('loss')}
     </div>`;
 
 /* ═══ HELPERS ════════════════════════════════════════════════════════════ */
@@ -495,7 +497,7 @@ await S.assemble({
   file: 'situation-forest-loss.html',
   title: 'India&rsquo;s forest loss &mdash; Swechha',
   bands: BANDS, index: INDEX, sh, clashes,
-  pageCss: PAGE_CSS,
+  pageCss: PAGE_CSS, script: S.NEWSLETTER_JS,
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),
   note: `8 bands + footer. THE DISAGREEMENT: satellite -${lossKm2} km2 over `
       + `${GFW.total.from}-${GFW.total.to} against ISFR +${gainKm2} km2. `

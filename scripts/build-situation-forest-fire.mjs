@@ -84,7 +84,7 @@ ${crumb('fire')}
       </div>
       <div class="p2-cols">
       <div class="p2-read breach">
-        <p class="state p2-state">${stateChip('PERIODIC')}<span class="sr"> &mdash; an annual assessment, not a feed</span></p>
+        <p class="state p2-state">${stateChip(S.cadence('fire'))}<span class="sr"> &mdash; an annual assessment, not a feed</span></p>
         <p class="readout rl">${n0(Math.round(BURNT.total))}<span class="f-u">km&sup2;</span></p>
         <p ${kd('counted')}>burnt in one fire season &middot; ${esc(BURNT.season)}</p>
         <p class="verdict bad">${burntShare}% of India&rsquo;s forest and scrub</p>
@@ -396,11 +396,13 @@ B.act = () => `${opener('act', 'What you can do', 'Almost every forest fire in I
           <p>A ${n1(PRONE.top_three_pct)}%-fire-prone country does not need more monoculture on dry
             slopes. Swechha&rsquo;s nursery grows native species for the places people actually
             live and walk.</p>
-          <p style="margin:0"><a class="act" href="/#give">Support the work ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/act">Support the work ${ARROW}</a></p>
         </div>
       </div>
       <p class="cap f-close">Every figure on this page is public, dated and linked.</p>
+${S.closing('fire')}
 ${siblings('fire')}
+${S.newsletter('fire')}
     </div>`;
 
 /* ═══ HELPERS ════════════════════════════════════════════════════════════ */
@@ -507,7 +509,7 @@ await S.assemble({
   file: 'situation-forest-fire.html',
   title: 'India&rsquo;s forest fires &mdash; Swechha',
   bands: BANDS, index: INDEX, sh, clashes,
-  pageCss: PAGE_CSS,
+  pageCss: PAGE_CSS, script: S.NEWSLETTER_JS,
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),
   note: `8 bands + footer. Reading: ${BURNT.total} km2 burnt (${burntShare}% of forest and scrub), `
       + `no legal threshold. Cross-sensor: ${sensors.map(s => `${s.label} ${s.count}`).join(', ')}. `

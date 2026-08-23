@@ -36,7 +36,7 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { resolve, join } from 'node:path';
-import { FAMILY, INDEX_PAGE } from './lib/situation-shell.mjs';
+import { FAMILY, INDEX_PAGE, cadence } from './lib/situation-shell.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const V3 = join(ROOT, 'public/_pages/v3');
@@ -159,6 +159,27 @@ export const SITUATIONS = [
     readingNote: 'the worst city’s breach count and the death toll',
   },
 ];
+
+/* ═══ THE CADENCE WORD IS DERIVED, NOT RESTATED ══════════════════════════
+   This verifier is the FIFTH consumer of situation-shell.mjs's cadence(),
+   and the reason it has to be is the defect it failed to catch.
+
+   Each entry above used to type its own `states` list. Air's said PERIODIC,
+   the index's allowed all four words, and build-intelligence.mjs hardcoded
+   LIVE — so on 23 August the homepage hero said Periodic, /now said LIVE and
+   called Air "the only reading on this site that can change while you look
+   at it", and /now/air said "Periodic — updated on a cadence, not
+   continuously". Three surfaces, one reading, two contradictory claims about
+   its freshness, and this file passed all of it, because a hand-typed
+   expectation agreeing with a hand-typed page proves only that one person
+   typed the same word twice.
+
+   Restating a value is not verification. So the expectation now comes from
+   the register the pages render from, and this check asks the only question
+   worth asking: does the page on disk say what the register says it should. */
+for (const p of SITUATIONS) {
+  p.states = [cadence(p.famId)];
+}
 
 /** Parent first, then children — the order the register reports in. */
 export const FINAL = [...INDEX, ...SITUATIONS];
@@ -297,6 +318,40 @@ for (const p of FINAL) {
   add('states', strays.length === 0 && p.states.every(w => chips.includes(w)),
     strays.length ? `stray: ${strays.join(', ')}` : chips.join(', ') || 'none');
 
+  /* NO VALUE REACHES THE READER AS ITS OWN TYPE NAME.
+     On 23 August /now/yamuna printed "[object Object]% of the city's working
+     plants" — twice — because two `derived` figures are {value, sum, reading}
+     objects and the template interpolated the object. /now/air printed
+     "null× MODIS" and "the sensors run null:1 apart", because fetch-fires.mjs
+     correctly refuses to divide 24 VIIRS detections by 0 MODIS and stores
+     `ratio: null`, and the template rendered the refusal instead of reading
+     it. Both shipped on the pages whose whole proposition is that every
+     figure is exact, and nothing here noticed.
+
+     ALLOWLIST, NOT A PATTERN. `null` is a legitimate English word on this
+     site — forest-fire's method section says a failed response "is stored as
+     null", which is true and worth publishing. So the exceptions are named
+     one by one, in full, and everything else is a failure. A new one is a
+     decision somebody has to make on purpose. */
+  /* `\[object [A-Z][a-z]+\]` is matched WHOLE and outside the word-boundary
+     alternation on purpose: an earlier `\[object [A-Z]` sharing the trailing
+     `(?![A-Za-z])` could never fire, because the character after "[object O"
+     is "b". Verified by reintroducing the Yamuna bug — it passed 12 of 12. */
+  const TYPE_LEAK = /\[object [A-Z][a-z]+\]|(?<![A-Za-z])(null|NaN|undefined|Infinity)(?![A-Za-z])/g;
+  const LEAK_OK = {
+    'situation-forest-fire.html': ['a failure is stored as null'],
+  };
+  const prose = html
+    .replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '')
+    .replace(/<!--[\s\S]*?-->/g, '').replace(/<[^>]+>/g, ' ')
+    .replace(/&[a-z]+;|&#\d+;/g, ' ').replace(/\s+/g, ' ');
+  const allowed = LEAK_OK[p.file] || [];
+  const leaks = [...prose.matchAll(TYPE_LEAK)]
+    .map(m => prose.slice(Math.max(0, m.index - 60), m.index + m[0].length + 40).trim())
+    .filter(ctx => !allowed.some(a => ctx.includes(a)));
+  add('no leaked values', leaks.length === 0,
+    leaks.length ? leaks.map(l => `…${l}…`).join(' | ') : 'none');
+
   // Money band only where D-27 scopes it.
   const hasMoney = /<section[^>]*id="money"/.test(html);
   add('money', hasMoney === p.money, hasMoney ? 'present' : 'absent');
@@ -341,7 +396,7 @@ for (const p of FINAL) {
 }
 
 /* ═══ REPORT ═════════════════════════════════════════════════════════════ */
-const NAMES = ['builds', 'h1', 'bands', 'reading', 'states', 'money', 'headings in gutter',
+const NAMES = ['builds', 'h1', 'bands', 'reading', 'states', 'no leaked values', 'money', 'headings in gutter',
   'no placeholders', 'links up to /now', 'links to 5 siblings', 'carries its crumb', 'links down to all 6'];
 console.log(`\nFINAL PAGES — 1 index + ${SITUATIONS.length} situations born out of it` +
   `${NO_BUILD ? ' (asserted on disk)' : ', all rebuilt'}\n`);
@@ -366,6 +421,54 @@ if (bad.length) {
   }
 }
 console.log(`\n${results.length - bad.length} of ${results.length} pages pass all ${NAMES.length} checks.`);
+
+/* ═══ ONE READING, ONE CADENCE, ACROSS ALL THREE SURFACES ════════════════
+   THE CHECK THAT WOULD HAVE CAUGHT THE 23 AUGUST DEFECT, and the reason the
+   per-page `states` check did not.
+
+   The index carries the whole four-word vocabulary in its teaching strip, so
+   `chips` for intelligence.html is always ["LIVE","PERIODIC","OUT OF SEASON",
+   "DEMO DATA"] — every expectation is satisfied by the strip no matter what
+   the six CARDS say. Verified by deliberately re-hardcoding LIVE on the Air
+   card against a register reading PERIODIC: 7 of 7 passed. A check that
+   cannot fail is not a check.
+
+   So this one reads the chip out of each CARD, keyed by the route the card
+   links to, and holds it against both the register and the situation page's
+   own badge. Three surfaces, one word, or the build fails. */
+{
+  const ix = readFileSync(join(V3, INDEX_PAGE.file), 'utf8');
+  const rows = [];
+  for (const p of SITUATIONS) {
+    const want = cadence(p.famId);
+    /* The card, by the route it links to — the same identity FAMILY gives it. */
+    const card = new RegExp(
+      `<a[^>]*href="${p.route}"[\\s\\S]*?class="lbl tag tag-(?:live|periodic|demo|closed)">([^<]+)<`)
+      .exec(ix);
+    const onIndex = card ? card[1].trim().toUpperCase() : null;
+    /* The situation page's own badge: .tag in caps on the five shell pages,
+       .state in title case on Air. Both normalise to the vocabulary word. */
+    const pg = readFileSync(join(V3, p.file), 'utf8');
+    const badge =
+      /class="lbl tag tag-(?:live|periodic|demo|closed)">([^<]+)</.exec(pg)
+      || /class="state[^"]*"[^>]*>(?:<i[^>]*><\/i>)?<span[^>]*>([^<]+)</.exec(pg);
+    const onPage = badge ? badge[1].trim().toUpperCase() : null;
+    const ok = onIndex === want && onPage === want;
+    if (!ok) fail++;
+    rows.push({ ok, id: p.famId, want, onIndex, onPage });
+  }
+  console.log('\nONE READING, ONE CADENCE — register vs /now card vs situation page');
+  for (const r of rows) {
+    console.log(`  ${r.ok ? 'ok  ' : 'FAIL'} ${r.id.padEnd(9)} register ${String(r.want).padEnd(14)}`
+      + `/now ${String(r.onIndex).padEnd(14)}page ${r.onPage}`);
+  }
+  if (rows.some(r => !r.ok)) {
+    console.log('  A situation cannot have two cadences. The register is '
+      + 'situation-shell.mjs\'s cadence(), read from each dataset\'s state_label; '
+      + 'every surface must render it rather than restate it.');
+  }
+}
+
 if (NOT_FINAL.length) {
   console.log(`\nNot in the final set (${NOT_FINAL.length}):`);
   for (const n of NOT_FINAL) console.log(`  ${n.file.padEnd(24)} ${n.why.split('.')[0]}.`);

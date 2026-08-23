@@ -12,10 +12,31 @@ import { tmpdir } from 'node:os';
    extract PAGE_CSS and the tab controller. It never imports it, and Air never
    calls shell(). */
 import { crumb, siblings, FAMILY_CSS, NAV_SEARCH_CSS, NAV as SHELL_NAV, HOME_HREF, GIVE_HREF, INDEX_PAGE,
-  stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC } from './lib/situation-shell.mjs';
+  stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, cadence, STATES,
+  closing, CLOSING_CSS } from './lib/situation-shell.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const V3 = join(ROOT, 'public/_pages/v3');
+
+/* ── THIS PAGE'S CADENCE WORD, FROM THE REGISTER AND NOT FROM THIS FILE ───
+   Read situation-shell.mjs's cadence() comment for why this is not typed
+   here any more. In short: this page said "Periodic — updated on a cadence,
+   not continuously" while /now said LIVE and called Air "the only reading on
+   this site that can change while you look at it", off the same dataset, in
+   the same second. One reading cannot have two cadences.
+
+   Title Case for the chip because that is how this page has always set it
+   (the five shell-built pages use .tag in caps; verify-final.mjs:284 knows
+   about both forms). The screen-reader gloss is chosen by the word, so it
+   cannot describe a state the chip is not in. */
+const AIR_STATE = cadence('air');
+const AIR_STATE_WORD = AIR_STATE.charAt(0) + AIR_STATE.slice(1).toLowerCase();
+const AIR_STATE_GLOSS = {
+  LIVE: 'the source publishes hourly; the observation time is printed below',
+  PERIODIC: 'updated on a cadence, not continuously',
+  'OUT OF SEASON': 'the window is shut; the record still stands',
+  'DEMO DATA': 'a specimen, not a reading',
+}[AIR_STATE];
 const DATA = join(ROOT, 'data');
 /* AD-28 §7: the HAND-MAINTAINED SOURCE, `design/home.html`, not the artefact
    under public/. The seven line ranges below are pinned to the maintained file;
@@ -240,7 +261,7 @@ ${crumb('air')}
       </div>
       <div class="p2-cols">
       <div class="p2-read breach">
-        <p class="state p2-state" id="air-state"><i aria-hidden="true"></i><span id="air-state-w">Periodic</span><span class="sr" id="air-state-x"> &mdash; updated on a cadence, not continuously</span></p>
+        <p class="state p2-state ${STATES[AIR_STATE]}" id="air-state" data-state="${STATES[AIR_STATE]}"><i aria-hidden="true"></i><span id="air-state-w">${AIR_STATE_WORD}</span><span class="sr" id="air-state-x"> &mdash; ${AIR_STATE_GLOSS}</span></p>
         <p class="readout rl" id="air-aqi" data-committed="${rd.aqi}">${rd.aqi}</p>
         <p class="unit">AQI &middot; 24-hour &middot; worst of eight</p>
         <p class="verdict bad" id="air-band">${rd.band}</p>
@@ -378,6 +399,33 @@ ${tabs('Method', [['What they are', pWhat], ['Today\'s eight', pEight], ['Two sc
 B.sources = () => {
   const g = FIRE.sensor_gap, yy = FIRE.year_on_year;
   const mx = Math.max(...yy.series.filter(x=>x.ok).map(x=>x.count));
+  /* ── A QUOTIENT WITH NO DENOMINATOR IS NOT A NUMBER, AND IS NOT A ZERO.
+     fetch-fires.mjs already refuses to divide by a MODIS count of 0 and
+     stores `ratio: null` (fetch-fires.mjs:174-177). That null is a real
+     state, not a gap in the data: out of season the fires are routinely
+     below what a 1 km MODIS pixel can resolve, so the coarse sensor sees
+     none and the ratio is undefined rather than large.
+
+     Interpolating it produced "null× MODIS" and "the sensors run null:1
+     apart" in the body prose of the page whose whole claim is precision.
+     So the null is rendered as the sentence it means — which says more
+     than the ratio would have — and never as a figure. This is D-16.4's
+     rule ("an error is not a zero") applied to an undefined quotient.
+
+     Both branches are live: off_season.ratio is null today and a number
+     in stubble season, and peak_season.ratio carries the same guard. */
+  const ratioPair = (r) => (r === null ? null : `${r}:1`);
+  const offRatio = g.off_season.ratio;
+  const peakRatio = g.peak_season.ratio;
+  const offGap = offRatio === null
+    ? 'MODIS resolves none of them at all'
+    : `${ratioPair(offRatio)} apart`;
+  const offCap = offRatio === null
+    ? '<b>MODIS saw none</b>, same fires'
+    : `<b>${offRatio}&times; MODIS</b>, same fires`;
+  const peakGap = peakRatio === null
+    ? 'MODIS saw none of those either'
+    : `only ${ratioPair(peakRatio)}`;
   /* ── THE SPLIT (D-22.1). Two government-commissioned studies, side by side,
      because they disagree and the disagreement is the finding. No blended
      average: different methods, different years, different site sets and
@@ -480,11 +528,11 @@ B.sources = () => {
           <div class="p-two-c"><p class="num rl">${n0(g.off_season.modis)}</p><p class="unit">MODIS &middot; 1 km</p>
             <p class="cap">last ${FIRE.window.days} days</p></div>
           <div class="p-two-c"><p class="num rl">${n0(g.off_season.viirs)}</p><p class="unit">VIIRS &middot; 375 m</p>
-            <p class="cap"><b>${g.off_season.ratio}&times; MODIS</b>, same fires</p></div>
+            <p class="cap">${offCap}</p></div>
         </div>
-        <p class="body p-gapkey"><b>The disagreement is itself a measurement.</b> Out of season the sensors run
-          ${g.off_season.ratio}:1 apart. At peak &mdash; ${esc(g.peak_season.window)} &mdash;
-          ${n0(g.peak_season.modis)} against ${n0(g.peak_season.viirs)}, only ${g.peak_season.ratio}:1. MODIS
+        <p class="body p-gapkey"><b>The disagreement is itself a measurement.</b> Out of season
+          ${offGap}. At peak &mdash; ${esc(g.peak_season.window)} &mdash;
+          ${n0(g.peak_season.modis)} against ${n0(g.peak_season.viirs)}, ${peakGap}. MODIS
           misses almost everything when fires are small and catches most of it when they are large, so
           <b>the gap measures fire size</b>, not instrument error.</p>
         <p class="cap">A detection is a thermal anomaly, not a confirmed crop fire. The two VIIRS satellites see
@@ -829,6 +877,7 @@ ${tabs('Act', [['Watch your ward', pAsk], ['Do it yourself', pDo], ['What is bei
             quote the kind with it.</p>
         </div>
       </div>
+${closing('air')}
 ${siblings('air')}
     </div>`;
 };
@@ -1428,6 +1477,19 @@ const SCRIPT = `/* ── TABS. Canonical ARIA tabs with a roving tabindex. Pane
   var aqi=el('air-aqi'), state=el('air-state');
   if(!aqi||!state||!window.fetch) return;
 
+  /* ★ THE CHIP IS A BUILD ARTEFACT NOW (D-26.1), SO THIS BLOCK STANDS DOWN
+     WHEN THE BUILD ALREADY WROTE THE WORD IT WOULD HAVE WRITTEN.
+     The state chip names how CPCB delivers, not what this fetch found, and
+     situation-shell.mjs's cadence() writes it from data/air-delhi.json at
+     build time. When that word is already 'live' there is nothing here to
+     upgrade: running on would either be a no-op or, worse, log "the chip
+     stays PERIODIC" about a chip that reads Live.
+     The block is kept rather than deleted because the cadence register is
+     data-driven — set state_label back to PERIODIC in the fetch and this
+     page returns to shipping Periodic and confirming its way to Live, with
+     the two AD-27.6-A regex gates below still guarding that path. */
+  if((state.getAttribute('data-state')||'')==='live') return;
+
   /* THE COMMITTED VALUE, AS THE MARKUP STATED IT. Read from the attribute and
      not from textContent: the attribute is what the build wrote, and it is the
      only value this page is entitled to have confirmed. */
@@ -1680,7 +1742,7 @@ const OUT = stripHtmlComments(`<!doctype html>
 ${OG}
 ${HEAD_FONTS}
 <style>
-${stripCssComments([CSS, PAGE_CSS, NAV_SEARCH_CSS, FAMILY_CSS].join('\n'))}</style>
+${stripCssComments([CSS, PAGE_CSS, NAV_SEARCH_CSS, FAMILY_CSS, CLOSING_CSS].join('\n'))}</style>
 </head>
 <body>
 ${SVG_DEFS}

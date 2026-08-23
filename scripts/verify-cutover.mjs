@@ -98,7 +98,11 @@ else {
 console.log('\n5. THE WORDPRESS REDIRECTS')
 const map = JSON.parse(readFileSync('docs/legacy/redirect-map.json', 'utf8'))
 let live = map.filter((r) => r.to)
-let dead = map.filter((r) => !r.to && !['attachment', 'soliloquy', 'post_tag', 'pj-categs', 'pl-categs'].includes(r.type))
+/* `/` is in the map with `to: null` because home-to-home is a loop, not a
+   mapping — but it obviously answers 200, so it is not a "deliberate 404". */
+let dead = map.filter(
+  (r) => !r.to && r.from !== '/' && !['attachment', 'soliloquy', 'post_tag', 'pj-categs', 'pl-categs'].includes(r.type),
+)
 if (SAMPLE) { live = live.slice(0, SAMPLE); dead = dead.slice(0, Math.ceil(SAMPLE / 3)) }
 
 /* Old URLs carry WordPress's trailing slash, so each costs two hops: Next
