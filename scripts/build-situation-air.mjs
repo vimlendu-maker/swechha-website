@@ -305,28 +305,55 @@ const SECTION_SPY = `<script>
    in-flow `::after` would become an extra grid item and break the column
    template it inherits.
 
+   /act CAME IN A SECOND PASS: its 23 ask rows are .ac-asks>li>a, a bold label
+   plus a lighter context line, which is structure and not an affordance -- and
+   they were the last 23 zero-cue links on the site. They need position:relative
+   added because, alone of the four families, they were static, so an absolute
+   chevron would have escaped to the nearest positioned ancestor. /impact,
+   /farm, /about, /now and every WORK detail page measured 0 zero-cue links and
+   are untouched.
+
+   /search AND /stories JOINED IN THE SAME PASS: 34 result rows (.sr-list>li>a)
+   and 5 story cards (.st-w>a), both display:grid and both position:static, so
+   both need the positioning context too. A page-by-page census settled the
+   final list at six families -- /impact, /farm, /about, /publications,
+   /work/journeys and every WORK detail page measured zero and are untouched.
+
+   THE LAST UNCLASSED ADDRESS WAS FIXED AT THE SOURCE, not here. /act rendered
+   its address as bare ink with no class, so it read as plain text while every
+   other address on the site is a .lk and already carries a cue. A CSS rule
+   matching on the href was the first attempt and build-act-page refused it:
+   that page gates every published address, and the selector's own literal
+   scanned as one. The gate was right -- the defect was a missing class, and
+   the fix is the class.
+
    ★ THE COMMENT STAYS UP HERE, IN THE MODULE, AND NOT IN THE EMITTED CSS.
    First draft put it inside the <style> block and every builder refused to
    write: AD-28 §7 gates internal ledger ids out of reader-visible bytes, and
    `stripCssComments()` only reaches the shells' own CSS consts, not a <style>
    injected through the markup. The gate is right and its advice is followed --
    the record is here, the shipped bytes carry none of it. */
-const AFFORD_CSS = `<style>.w7-pj-rows>li>a,.w7-do-list>li>a,.p-cell{padding-right:24px}
-.w7-pj-rows>li>a::after,.w7-do-list>li>a::after,.p-cell::after{
+const AFFORD_CSS = `<style>.w7-pj-rows>li>a,.w7-do-list>li>a,.p-cell,.ac-asks>li>a,.sr-list>li>a,.st-w>a{padding-right:24px}
+.ac-asks>li>a,.sr-list>li>a,.st-w>a{position:relative}
+.w7-pj-rows>li>a::after,.w7-do-list>li>a::after,.p-cell::after,.ac-asks>li>a::after,
+.sr-list>li>a::after,.st-w>a::after{
 content:'';position:absolute;right:3px;top:50%;margin-top:-5px;width:7px;height:7px;
 border-right:2px solid currentColor;border-top:2px solid currentColor;transform:rotate(45deg);
 opacity:.38;pointer-events:none;transition:opacity .16s,translate .16s}
-.w7-pj-rows>li>a:hover::after,.w7-do-list>li>a:hover::after,.p-cell:hover::after{
-opacity:.85;translate:2px 0}
+.w7-pj-rows>li>a:hover::after,.w7-do-list>li>a:hover::after,.p-cell:hover::after,
+.ac-asks>li>a:hover::after,.sr-list>li>a:hover::after,.st-w>a:hover::after{opacity:.85;translate:2px 0}
 .w7-pj-rows>li>a:active::before,.w7-do-list>li>a:active::before{background:rgba(20,19,16,.075)}
 .wk-dark .w7-pj-rows>li>a:active::before,.wk-dark .w7-do-list>li>a:active::before{
 background:rgba(251,248,240,.07)}
-.p-cell::before{content:'';position:absolute;inset:0 -8px;background:transparent;
+.p-cell::before,.ac-asks>li>a::before,.sr-list>li>a::before,.st-w>a::before{content:'';position:absolute;inset:0 -8px;background:transparent;
 pointer-events:none;transition:background .12s}
 .p-cell:active::before{background:rgba(251,248,240,.07)}
+.ac-asks>li>a:active::before,.sr-list>li>a:active::before,.st-w>a:active::before{background:rgba(20,19,16,.075)}
 @media (prefers-reduced-motion:reduce){
-.w7-pj-rows>li>a::after,.w7-do-list>li>a::after,.p-cell::after,.p-cell::before{transition:none}
-.w7-pj-rows>li>a:hover::after,.w7-do-list>li>a:hover::after,.p-cell:hover::after{translate:none}}
+.w7-pj-rows>li>a::after,.w7-do-list>li>a::after,.p-cell::after,.p-cell::before,
+.ac-asks>li>a::after,.ac-asks>li>a::before,.sr-list>li>a::after,.st-w>a::after{transition:none}
+.w7-pj-rows>li>a:hover::after,.w7-do-list>li>a:hover::after,.p-cell:hover::after,
+.ac-asks>li>a:hover::after,.sr-list>li>a:hover::after,.st-w>a:hover::after{translate:none}}
 </style>`
 
 const NAV = SHELL_NAV;
