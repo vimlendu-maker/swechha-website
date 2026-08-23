@@ -1179,7 +1179,24 @@ ${NAV_SEARCH_CSS}
 .mr.is-over .mr-x{color:var(--red)}
 .paper .mr.is-over .mr-x{color:var(--red-ink)}
 @media (max-width:639px){
-  .mr-h{display:none}
+  /* ── AD-35. THE COLUMN LABELS SURVIVE THE PHONE. This rule used to read
+     .mr-h{display:none}, and the header was hidden for a real reason: its
+     four-column grid does not match the three-column row the phone reflows to
+     below, so it sat misaligned. But the ROWS keep all four values, so hiding
+     the header left bare numbers with nothing naming them. Measured on the
+     built pages at 375: the climate table read "Mangaluru / 13 / 4,283mm" --
+     13 is "days over 130mm" and there is nothing on screen that says so -- and
+     the heatwave table read "Delhi / 46.8 / 1998", where 1998 is a year with
+     no label. THREE of the four measure tables carry a temporal fourth column
+     ('Year', '<year> total', 'vs <year>'), so this was also the one place on
+     the site where a mobile trim removed temporal context rather than prose.
+     THE FIX IS ALIGNMENT, NOT REVIVAL: the header takes the same grid as the
+     row, and the SECOND label is dropped because on the phone its column is
+     the bar, which moves to a full-width row of its own and is already named
+     by each table's own standfirst. Nothing invented, nothing restated. */
+  .mr-h{grid-template-columns:minmax(0,1fr) 4em 3em;gap:5px 8px}
+  .mr-h .lbl:nth-child(2){display:none}
+  .mr-h .lbl:nth-child(3),.mr-h .lbl:nth-child(4){text-align:right}
   .mr{grid-template-columns:minmax(0,1fr) 4em 3em;grid-template-areas:'n v x' 'b b b';
     gap:5px 8px;padding:11px 0}
   .mr-n{grid-area:n}.mr-v{grid-area:v}.mr-x{grid-area:x}.mr-b{grid-area:b}
