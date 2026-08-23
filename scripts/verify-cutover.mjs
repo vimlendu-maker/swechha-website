@@ -51,6 +51,25 @@ try {
     : warn('Google verification TXT missing', 'Search Console may need re-verifying')
 } catch { fail('TXT lookup failed') }
 
+/* ★ THE APP'S OWN MAIL, WHICH IS NOT THE ORGANISATION'S MAIL.
+   Ward alerts and the digest send as air@ and hello@swechha.in through Resend,
+   and DMARC is p=quarantine — so an unsigned send does not bounce, it silently
+   goes to spam, which is the worst failure mode a subscribe box has. Relaxed
+   alignment (adkim=r) means the apex DKIM key is what earns the pass; the SPF
+   record above stays Google-only on purpose. Verified 2026-08-23; asserted here
+   so deleting the key shows up as a FAIL and not as an unread alert. */
+try {
+  await resolveTxt('resend._domainkey.swechha.in')
+  pass('Resend DKIM key published', 'ward alerts and digest align under DMARC')
+} catch {
+  fail('Resend DKIM key GONE', 'resend._domainkey.swechha.in — app mail will be quarantined')
+}
+try {
+  const bounce = (await resolveTxt('send.swechha.in')).flat().join(' ')
+  bounce.includes('v=spf1') ? pass('Resend bounce subdomain SPF intact', 'send.swechha.in')
+    : warn('send.swechha.in has no SPF', 'bounce handling degraded, DKIM still carries DMARC')
+} catch { warn('send.swechha.in does not resolve', 'Resend Return-Path unconfigured') }
+
 /* ------------------------------------------------------------ 2. THE SITE */
 console.log('\n2. THE SITE')
 const home = await head('/', 'follow')
