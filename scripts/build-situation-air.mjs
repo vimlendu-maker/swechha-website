@@ -37,6 +37,29 @@ const AIR_STATE_GLOSS = {
   'OUT OF SEASON': 'the window is shut; the record still stands',
   'DEMO DATA': 'a specimen, not a reading',
 }[AIR_STATE];
+/* ── AD-31. THE CHIP'S MEANING MUST BE VISIBLE, NOT JUST AUDIBLE. ────────
+   The gloss above is the ONLY text that explains what LIVE means here -- that
+   CPCB publishes hourly, not that this number is refreshing while you read --
+   and it lives in a `class="sr"` span, so a SIGHTED reader never sees it. That
+   left a green LIVE chip sitting beside "Observed 18:00 IST, 23 August 2026"
+   with nothing on screen to say the two are compatible. Read a day later, as
+   any static page eventually is, that is a page claiming to be live over a
+   reading from yesterday evening.
+   THE FIX IS A WORD, NOT A REPAINT. AD-27.6-A stands: nothing on this page is
+   written by the client, and no tensed claim is baked into static markup. A
+   cadence is neither -- "Hourly" is a standing fact about CPCB, true whenever
+   the page is read. The homepage hero has carried exactly this word in its
+   provenance plate all along; the situation page was the one that did not, so
+   this is the site's own pattern applied where it was missing rather than a
+   new device.
+   DERIVED FROM AIR_STATE, not restated, so the visible word and the chip
+   cannot drift into disagreeing about the same dataset. */
+const AIR_CADENCE_VIS = {
+  LIVE: 'Hourly.',
+  PERIODIC: 'Not continuous.',
+  'OUT OF SEASON': 'Window shut.',
+  'DEMO DATA': 'Specimen, not a reading.',
+}[AIR_STATE];
 const DATA = join(ROOT, 'data');
 /* AD-28 §7: the HAND-MAINTAINED SOURCE, `design/home.html`, not the artefact
    under public/. The seven line ranges below are pinned to the maintained file;
@@ -267,7 +290,7 @@ ${crumb('air')}
         <p class="verdict bad" id="air-band">${rd.band}</p>
         <div class="bands bad" id="air-bands" role="img" aria-label="${rd.band}, band ${catIdx+1} of ${AIR.bands.length}">${bands}</div>
         <p class="limit" id="air-limit">CPCB safe limit ${AIR.aqiLimit}. <b>Limit broken.</b></p>
-        <p class="cap p2-src" id="air-src"><span id="air-src-w">${esc(rd.station)}. Observed ${OBS}.</span>
+        <p class="cap p2-src" id="air-src"><span id="air-src-w">${esc(rd.station)}. ${AIR_CADENCE_VIS} Observed ${OBS}.</span>
           <a class="lk" href="#measured">How this number is made</a>.</p>
       </div>
       <div class="p2-nat">
@@ -1554,7 +1577,16 @@ const SCRIPT = `/* ── TABS. Canonical ARIA tabs with a roving tabindex. Pane
     state.className='state p2-state live';
     var w=el('air-state-w'); if(w) w.textContent='Live';
     var x=el('air-state-x');
-    if(x) x.textContent=' — confirmed against CPCB when this page loaded; the observation time is printed below';
+    /* AD-31. THIS SENTENCE USED TO SAY "the observation time is printed
+       below", and it could not know that. The time printed below is the
+       BUILD's observation; the freshness test above passes anything under two
+       hours old, so CPCB's newest hour may be later than the one on screen.
+       Condition one guarantees the FIGURE still matches -- not the hour. And
+       AD-27.6-A forbids writing the newer hour in, so the honest move is to
+       stop claiming it. */
+    if(x) x.textContent=' — CPCB was still publishing this same reading when this page loaded. '
+      + 'The time printed below is when the reading on this page was observed; CPCB may since '
+      + 'have published a newer hour.';
   }).catch(function(e){
     clearTimeout(deadline);
     giveUp((e&&e.name==='AbortError')?'the live fetch was aborted at the 6s deadline':(e&&e.message)||'the live fetch failed');
