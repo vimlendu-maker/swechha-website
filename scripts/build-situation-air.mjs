@@ -147,6 +147,23 @@ const mult = govLimit ? (gov.conc / govLimit.h24).toFixed(1) : null;
 const catIdx = AIR.bands.findIndex(b => b.name === rd.band);
 const OBS = (() => { const o = AIR.observed; return o ? `${String(o.hh).padStart(2,'0')}:${String(o.mi).padStart(2,'0')} IST, ${o.d} ${MON[o.m-1]} ${o.y}` : 'time not stated'; })();
 
+/* ── AD-36. A RELATIVE WINDOW ON A STATIC PAGE HAS TO NAME ITS END.
+   These pages are BUILT AHEAD OF TIME, so "last 5 days" and "the record
+   begins today" are read by somebody whose today is not the build's. The
+   reader has no way to tell how stale either is, which is the same defect
+   AD-31 fixed for the LIVE chip, arrived at from the other side.
+   BOTH DATES ARE DERIVED FROM DATA ALREADY IN THE FILE, never typed. The
+   fire window ends at the FETCH, because FIRMS near-real-time returns the
+   last five days as of the request and says so in its own note -- the
+   detections themselves land on 18-21 August against a 22 August fetch,
+   which is exactly the one-day gap a zero-detection final day produces.
+   The record grid is anchored to the OBSERVATION date instead, so the one
+   date the page states twice is the same date in both places. */
+const istDay = (ms) => { const d = new Date(ms + 19800000);
+  return `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
+const FIRE_TO = FIRE.fetched?.epochMs ? istDay(FIRE.fetched.epochMs) : null;
+const REC_FROM = AIR.observed ? `${AIR.observed.d} ${MON[AIR.observed.m - 1]} ${AIR.observed.y}` : null;
+
 /* ── THE HERO AND THE NATIONAL PANEL MUST BE ONE HOUR (AD-27.6-A) ────────
    Delhi's row in "India, right now" used to be repainted from the live fetch
    so it could not contradict the hero. Nothing repaints anything now, so the
@@ -622,7 +639,7 @@ B.sources = () => {
         </div>`;
   const pNow = `<div class="p-two">
           <div class="p-two-c"><p class="num rl">${n0(g.off_season.modis)}</p><p class="unit">MODIS &middot; 1 km</p>
-            <p class="cap">last ${FIRE.window.days} days</p></div>
+            <p class="cap">${FIRE.window.days} days${FIRE_TO ? ` to ${FIRE_TO}` : ''}</p></div>
           <div class="p-two-c"><p class="num rl">${n0(g.off_season.viirs)}</p><p class="unit">VIIRS &middot; 375 m</p>
             <p class="cap">${offCap}</p></div>
         </div>
@@ -650,10 +667,10 @@ B.trend = () => {
   const amx = Math.max(...recent.map(m => m.views));
   const fmx = days.length ? Math.max(...days.map(d => d.max)) : 1;
   const pRecord = `<div class="p-grid-wrap">
-          <div class="p-grid" role="img" aria-label="Daily record, one square per day, beginning today">
+          <div class="p-grid" role="img" aria-label="Daily record, one square per day, beginning ${REC_FROM ?? 'when the job first ran'}">
             ${Array.from({length:365},(_,i)=>`<i class="${i===0?'p-g-on':''}"></i>`).join('')}
           </div>
-          <p class="cap"><b>One square.</b> The record begins today and fills as the job runs. It draws no
+          <p class="cap"><b>One square.</b> The record begins ${REC_FROM ? `on ${REC_FROM}` : 'when the job first ran'} and fills as the job runs. It draws no
             square it does not have &mdash; an empty cell is absence, not zero. There is no retrospective
             series: the CPCB feed publishes the latest hour only.</p></div>`;
   const pAttn = `<div class="p-attn">
@@ -676,7 +693,7 @@ B.trend = () => {
             which publishes a 72-hour Delhi forecast with <b>no public API</b> &mdash; so it is named and linked,
             never restated.</p></div>`;
   return `    <div class="wrap">
-${opener('trend','Where it has been, and where it is going','The record starts today; the forecast reaches seven days ahead. For now this page sees further forward than back &mdash; that inverts in a week.')}
+${opener('trend','Where it has been, and where it is going',`The record starts ${REC_FROM ? `on ${REC_FROM}` : 'when the job first runs'}; the forecast reaches seven days ahead. For now this page sees further forward than back &mdash; that inverts in a week.`)}
 ${tabs('Time', [['The record', pRecord], ['Attention', pAttn], ['Forecast', pFc]])}
     </div>`;
 };
