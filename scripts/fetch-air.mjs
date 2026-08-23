@@ -231,7 +231,18 @@ const out = {
   derivation: 'AQI computed from station concentrations using the CPCB breakpoint '
     + 'table in "About National Air Quality Index"; the station AQI is the worst '
     + 'sub-index, and the city figure is the worst station.',
-  state_label: 'PERIODIC',
+  /* LIVE, PER D-26.1 — AND THE WORD DESCRIBES CPCB, NOT THIS SCRIPT.
+     The state chip names how the source delivers. CPCB publishes this
+     feed hourly, which is what earned Air the badge at D-21.5, so the
+     word is LIVE for the same reason Yamuna's is PERIODIC: that is the
+     cadence of the publisher, and it does not change between runs.
+
+     This field is now read by situation-shell.mjs's cadence('air'), which
+     is the single source the situation page, the /now card and the
+     homepage hero deck all render from. It said PERIODIC until 23 August,
+     while /now hardcoded LIVE — the contradiction the cadence register
+     was extracted to make impossible. */
+  state_label: 'LIVE',
   observed: worst?.stamp ?? null,     // the station's own stamp
   fetched: { epochMs: Date.now() },   // when this job ran — a different thing
   limits: {

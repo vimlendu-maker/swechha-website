@@ -93,7 +93,7 @@ ${crumb('heatwave')}
       </div>
       <div class="p2-cols">
       <div class="p2-read breach">
-        <p class="state p2-state">${stateChip(W.open ? 'PERIODIC' : 'OUT OF SEASON')}<span class="sr"> &mdash; the season is shut; this is the record</span></p>
+        <p class="state p2-state">${stateChip(S.cadence('heatwave'))}<span class="sr"> &mdash; the season is shut; this is the record</span></p>
         <p class="readout rl">${n1(REC.tmax)}<span class="h-deg">&deg;C</span></p>
         <p ${kd(HI.kind)}>the hottest reading in this record &middot; ${esc(REC.name)}, ${esc(esc(REC.state))} &middot; ${esc(fmtDate(REC.date))}</p>
         <p class="verdict bad">${overSevere ? 'Above IMD&rsquo;s severe threshold' : 'Above IMD&rsquo;s heat wave threshold'}</p>
@@ -400,18 +400,20 @@ B.act = () => `${opener('act', 'What you can do', 'Heat kills the people who can
           <p>Cities write Heat Action Plans. Ask if yours has one, whether it names shaded spaces and
             water points near your ward, and whether outdoor workers were consulted. A plan nobody
             can find is not a plan.</p>
-          <p style="margin:0"><a class="act" href="/#work">What we work on ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/work">What we work on ${ARROW}</a></p>
         </div>
         <div class="p-act-c">
           <p class="lbl">Shade is infrastructure</p>
           <p>A tree over a bus stop does more for a waiting body than any advisory. It is the one
             place a heat page and a forest page meet.</p>
-          <p style="margin:0"><a class="act" href="/#give">Support the work ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/act">Support the work ${ARROW}</a></p>
         </div>
       </div>
       <p class="cap h-close">Every figure here is public, dated and reproducible from the source
         named beside it &mdash; including the ones that do not support the argument.</p>
+${S.closing('heatwave')}
 ${siblings('heatwave')}
+${S.newsletter('heatwave')}
     </div>`;
 
 /* ═══ HELPERS ════════════════════════════════════════════════════════════ */
@@ -536,7 +538,7 @@ await S.assemble({
   file: 'situation-heatwave.html',
   title: 'India&rsquo;s heat &mdash; Swechha',
   bands: BANDS, index: INDEX, sh, clashes,
-  pageCss: PAGE_CSS,
+  pageCss: PAGE_CSS, script: S.NEWSLETTER_JS,
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),
   note: `8 bands + footer. PAN-INDIA, ${ST.length} stations. Window ${W.open ? 'OPEN' : 'SHUT'}, `
       + `state = ${W.open ? 'PERIODIC' : 'OUT OF SEASON'}. Hero: ${REC.tmax}C at ${REC.name} `

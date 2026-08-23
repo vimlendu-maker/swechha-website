@@ -3204,7 +3204,7 @@ main{display:block;margin:0;padding:0}
                the slide reads the feed at request time rather than carrying
                the committed figure, and the word, fill and blink return
                together. Its one mirror is the .sr sentence below. -->
-          <div class="s-hero-stamp" aria-hidden="true"><div class="wrap"><p class="state periodic"><i></i>Periodic</p></div></div>
+          <div class="s-hero-stamp" aria-hidden="true"><div class="wrap"><p class="state live"><i></i>Live</p></div></div>
           <div class="s-hero-panel"><div class="wrap">
             <div class="s-hero-rail breach">
               <div class="s-hero-read">
@@ -3214,7 +3214,9 @@ main{display:block;margin:0;padding:0}
                      have CONFIRMED: the script at the foot of this file reads
                      /api/air and flips the state chip to LIVE only if CPCB is
                      publishing this exact number from an observation inside
-                     two hours. It never writes a digit. Both the attribute and
+                     two hours — and it now stands down entirely while the
+                     cadence register ships the chip LIVE already (D-26.1).
+                     It never writes a digit. Both the attribute and
                      the digits are written together by build-hero.mjs from
                      data/air-delhi.json, so they cannot drift, and the hourly
                      job keeps them current. If you find yourself adding a
@@ -3268,9 +3270,21 @@ main{display:block;margin:0;padding:0}
                    carries its provenance AND ITS HOUR (BRANDING §3.4). The
                    observed hour is written by build-hero.mjs out of
                    data/air-delhi.json, so it moves with the committed value it
-                   describes and can never be a typed time again. The badge
-                   above reads PERIODIC in static markup — no LIVE may appear in
-                   static markup on any page (D-10.1), by construction. -->
+                   describes and can never be a typed time again.
+
+                   THE BADGE ABOVE IS NO LONGER TYPED HERE EITHER, and it no
+                   longer reads PERIODIC. D-10.1 forbade LIVE in static markup
+                   because a LIVE badge then meant "this render is fresh".
+                   D-26.1 reframed the chip: it names HOW THE SOURCE DELIVERS,
+                   not how the page was built — Yamuna is PERIODIC because
+                   CPCB publishes yearly, Air is LIVE because CPCB publishes
+                   hourly. Under that reading a static LIVE is not a claim
+                   about this paint at all, and D-26.2 names the residual it
+                   accepts. The word is injected by build-hero.mjs from
+                   situation-shell.mjs's cadence(), off data/air-delhi.json —
+                   the same register /now and /now/air read, because this deck
+                   said Periodic while /now said LIVE about one reading until
+                   23 August. The hour below is where freshness is stated. -->
               <p class="cap s-hero-src">CPCB continuous monitor<span class="s-hero-loc">, Jahangirpuri</span>. <span class="s-hero-cad">Hourly. </span><span class="s-hero-prov">Observed 03:00 IST, 23 August 2026.</span></p>
               <span class="tag tag-season">Year round</span>
               <p class="s-hero-act"><a class="act" href="/now/air">The full instrument <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
@@ -4850,6 +4864,17 @@ document.querySelectorAll('.rig').forEach(rig);
   if(!slide||!window.fetch) return;
   var out=slide.querySelector('.readout'), badge=slide.querySelector('.s-hero-stamp .state');
   if(!out||!badge) return;
+  /* ★ THE CHIP IS A BUILD ARTEFACT NOW (D-26.1), SO THIS BLOCK STANDS DOWN
+     WHEN THE BUILD ALREADY WROTE THE WORD IT WOULD HAVE WRITTEN.
+     build-hero.mjs injects the cadence word from situation-shell.mjs's
+     cadence(), off data/air-delhi.json — the same register /now and /now/air
+     read. When it already says live there is nothing to upgrade, and running
+     on would log "the chip stays PERIODIC" about a chip that reads Live.
+     Kept rather than deleted because the register is data-driven: set
+     state_label back to PERIODIC in fetch-air.mjs and this deck returns to
+     shipping Periodic and confirming its way to Live. /now/air carries the
+     identical guard for the identical reason. */
+  if(badge.className.indexOf('live')>-1) return;
   /* Read off the ATTRIBUTE, never off the element: the attribute is what the
      build wrote, and it is the only value this page is entitled to confirm. */
   var committed=(out.getAttribute('data-committed')||'').trim();

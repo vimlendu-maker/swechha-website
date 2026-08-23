@@ -1,7 +1,13 @@
--- Watch your ward: the only table this site has.
+-- Watch your ward: the first of the site's two tables.
+-- (The second is db/002-newsletter-subscriptions.sql, the monthly digest.)
 --
--- Run once against the Neon database named by DATABASE_URL:
---   psql "$DATABASE_URL" -f db/001-ward-subscriptions.sql
+-- Apply with:  npm run db:migrate      (applies every db/*.sql, safe to re-run)
+--
+-- NOT with psql: there is none on the development machine (no Homebrew), which
+-- is why the line that used to be here never ran anywhere. And `vercel env pull`
+-- will not supply DATABASE_URL — it is marked SENSITIVE, so the pull writes the
+-- literal string "[SENSITIVE]". Take the connection string from the Neon
+-- dashboard:  DATABASE_URL='postgresql://…' npm run db:migrate
 --
 -- WHAT IS AND IS NOT STORED, and why the columns stop where they do.
 -- The page promises: "One message when something crosses. One digest a month.

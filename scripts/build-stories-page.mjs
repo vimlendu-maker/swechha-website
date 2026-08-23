@@ -275,6 +275,7 @@ ${WRITTEN.map((w) => `        <li class="st-w"><a href="/stories/${esc(w.slug)}"
 B.act = () => `${opener('act', D.act.head, D.act.lead)}
     <div class="wrap">
       <p><a class="b b-1" href="${esc(D.act.href)}">${esc(D.act.cta)}${ARROW}</a></p>
+${S.newsletter('stories')}
     </div>`;
 
 /* ═══ PAGE CSS ═══════════════════════════════════════════════════════════ */
@@ -331,6 +332,7 @@ const OUT = await S.assemble({
   title: 'Stories and films &mdash; Swechha',
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
+  script: S.NEWSLETTER_JS,
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),
   note: `${BANDS.length} bands + footer. ${FILMS.length} film entries `
       + `(${FILMS.filter((f) => f.mode === 'players').length} embedded, `

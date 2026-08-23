@@ -108,7 +108,7 @@ ${crumb('climate')}
       </div>
       <div class="p2-cols">
       <div class="p2-read breach">
-        <p class="state p2-state">${stateChip('PERIODIC')}<span class="sr"> &mdash; an archive, not a live gauge</span></p>
+        <p class="state p2-state">${stateChip(S.cadence('climate'))}<span class="sr"> &mdash; an archive, not a live gauge</span></p>
         <p class="readout rl">${WC.extreme_days}<span class="c-u">days</span></p>
         <p ${kd(CL.kind)}>over IMD&rsquo;s heavy-rain threshold in ${LASTYR} &middot; ${esc(worstCity.name)}, ${esc(worstCity.state)}</p>
         <p class="verdict bad">${n0(Math.round(WC.annual_mm))} mm in the year${wcDep != null ? `, ${wcDep > 0 ? '+' : ''}${wcDep}% on its normal` : ''}</p>
@@ -378,19 +378,21 @@ B.act = () => `${opener('act', 'What you can do', 'Rainfall is weather. A flood 
           <p>${n0(DTH.causes.find(c => c.cause === 'Lightning').y2024)} deaths a year, mostly
             outdoors, mostly avoidable with thirty minutes of shelter. It is the largest killer on
             this page and the cheapest to reduce.</p>
-          <p style="margin:0"><a class="act" href="/#work">What we work on ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/work">What we work on ${ARROW}</a></p>
         </div>
         <div class="p-act-c">
           <p class="lbl">Ask who signed it off</p>
           <p>Every building on a floodplain has an approval with a name on it. That is a public
             record, and it is a more useful question than how much it rained.</p>
-          <p style="margin:0"><a class="act" href="/#give">Support the work ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/act">Support the work ${ARROW}</a></p>
         </div>
       </div>
       <p class="cap c-close">Every figure here is public, dated and reproducible from the source
         named beside it &mdash; and the three things that could not be counted are named where they
         would have gone.</p>
+${S.closing('climate')}
 ${siblings('climate')}
+${S.newsletter('climate')}
     </div>`;
 
 /* ═══ HELPERS ════════════════════════════════════════════════════════════ */
@@ -496,7 +498,7 @@ await S.assemble({
   file: 'situation-climate-event.html',
   title: 'India&rsquo;s extreme rain &mdash; Swechha',
   bands: BANDS, index: INDEX, sh, clashes,
-  pageCss: PAGE_CSS,
+  pageCss: PAGE_CSS, script: S.NEWSLETTER_JS,
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),
   note: `8 bands + footer. PAN-INDIA, ${ST.length} stations. Hero: ${WC.extreme_days} days over `
       + `${CAT.heavy}mm at ${worstCity.name} in ${LASTYR} (${WC.annual_mm}mm, ${wcDep}% on normal). `

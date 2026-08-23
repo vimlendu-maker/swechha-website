@@ -43,7 +43,7 @@
  * Air build (a concurrent edit shifted a range by ten lines and an extracted
  * IIFE began mid-function), which is why the assertions exist at all.
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
@@ -240,6 +240,45 @@ export function shell() {
       'interpolation in it ships to every page built on this shell as literal characters. ' +
       'Move it out of PAGE_CSS and into Air\'s own document assembly.');
     air.state.bad++;
+  }
+
+  /* ── AND A THIRD, ADDED 23 AUGUST AFTER IT BIT TOO: CLASS-NAME COLLISION.
+     Every component in this shell writes into ONE flat stylesheet shared by
+     every page built on it, so a new component's class names are global. The
+     digest band shipped as `.nl` — which is the class the site's own NAV LINKS
+     have carried since AD-19. Its rule
+         .nl{margin:clamp(28px,3.2vw,44px) 0 0;border-top:1px solid var(--hair)}
+     therefore applied to every nav link on all eight pages that carried the
+     block: measured, the header links picked up a 44px top margin and a 1px
+     rule, while /about and /work — which do not carry it — stayed at 0. The
+     component itself looked perfect; the damage was 4,000px away at the top of
+     the page, which is exactly the kind of bug nobody finds by looking at the
+     thing they just built.
+
+     So: every top-level class a shared component block defines is checked
+     against the chrome that every page already ships. A collision fails the
+     build and names both sides. It cannot check rules that only exist in a
+     page's own PAGE_CSS — those are not shared — and it does not try to; the
+     shared blocks are where a global name can do global damage. */
+  {
+    /* header() is a template function; render one with a throwaway index so the
+       check sees the real emitted markup rather than the source of it. */
+    const CHROME = [CSS, FOOTER, header([['Sample', '#sample']])].join('\n');
+    const chromeClasses = new Set(
+      [...CHROME.matchAll(/class="([^"]+)"/g)].flatMap(m => m[1].split(/\s+/)).filter(Boolean));
+    for (const [name, block] of [['CLOSING_CSS', CLOSING_CSS], ['NEWSLETTER_CSS', NEWSLETTER_CSS]]) {
+      /* Top-level selectors only: `.dg{`, `.dg-h{`, `.paper .dg{` — the ones
+         that can match an element the component does not own. */
+      const defined = new Set([...block.matchAll(/(?:^|[\s,{}])\.([a-z][\w-]*)/gm)].map(m => m[1]));
+      const clash = [...defined].filter(c => chromeClasses.has(c));
+      if (clash.length) {
+        console.error(`CLASS COLLISION: ${name} styles .${clash.join(', .')} — which the site's `
+          + 'own chrome (nav, footer, band openers) already uses. This stylesheet is shared by '
+          + 'every page built on this shell, so those rules will hit elements the component does '
+          + 'not own, far from the component itself. Rename the component\'s classes.');
+        air.state.bad++;
+      }
+    }
   }
 
   return {
@@ -508,6 +547,64 @@ export const familyHref = (id) => {
   return m.route;
 };
 
+/* ═══ THE CADENCE WORD ═══════════════════════════════════════════════════
+   ONE definition of each situation's state chip, with FOUR consumers: the
+   situation page itself, build-intelligence.mjs's card on /now, the homepage
+   hero deck via build-hero.mjs, and verify-final.mjs's assertion.
+
+   WHY THIS EXISTS. All four used to state the word independently, and on
+   23 August they disagreed about Air in the worst possible way: the homepage
+   hero said PERIODIC, /now said LIVE and called Air "the only reading on this
+   site that can change while you look at it", and /now/air said "Periodic —
+   updated on a cadence, not continuously". Three pages, one reading, two
+   contradictory claims about its freshness — on a site whose entire
+   proposition is that every figure is exact and every label is earned. That
+   is the same class of drift FAMILY was extracted to stop for routes, one
+   field further along, so it is fixed the same way.
+
+   THE SOURCE OF TRUTH IS THE DATASET, NOT THIS FILE. Every fetch script
+   already writes a `state_label`, and heat's is computed from the same
+   `windowOpen` that sets `window.open`, so a seasonal situation cannot have
+   a chip that disagrees with its own season. Reading the word from the data
+   means the chip moves when the delivery moves and at no other time — which
+   is exactly what D-26.1 says the chip is for.
+
+   WHAT THE WORD MEANS, per D-26.1 (client instruction, 21 August): it names
+   HOW THE SOURCE DELIVERS, never how this page was rendered. Yamuna reads
+   PERIODIC because CPCB publishes that table once a year, not because the
+   card was fetched periodically. Air reads LIVE because CPCB publishes it
+   hourly. The residual D-26.2 names — a LIVE chip over the last committed
+   reading if /api/air is unreachable — is the accepted cost of that ruling,
+   and the observation hour beside the badge is where the age is stated. */
+const CADENCE_DATASET = {
+  air:      'air-delhi.json',
+  yamuna:   'yamuna-cpcb-2025.json',
+  heatwave: 'heat-india.json',
+  fire:     'forest-fire-india.json',
+  loss:     'forest-loss-india.json',
+  climate:  'climate-india.json',
+};
+export const cadence = (id) => {
+  const file = CADENCE_DATASET[id];
+  if (!file) {
+    throw new Error(`cadence: "${id}" is not in FAMILY: ${FAMILY.map(f => f.id).join(', ')}`);
+  }
+  const word = J(file).state_label;
+  /* A MISSING LABEL IS A BUILD FAILURE, NOT A DEFAULT. Falling back to
+     PERIODIC here would be a page quietly asserting a cadence nobody wrote
+     down — the tensed-claim-in-static-markup failure, arrived at by a
+     different road. */
+  if (!word) {
+    throw new Error(`cadence: data/${file} has no state_label, so ${id} cannot state its cadence`);
+  }
+  if (!(word in STATES)) {
+    throw new Error(
+      `cadence: data/${file} states "${word}", which is not one of the four state `
+      + `words: ${Object.keys(STATES).join(' / ')}`);
+  }
+  return word;
+};
+
 /**
  * THE PARENT CRUMB. Sits directly under the hero, above the reading, and says
  * where the reader is in the set. Two links, not a decoration: the index, and
@@ -542,6 +639,271 @@ export const siblings = (id) => {
         <p style="margin:0"><a class="act" href="${INDEX_PAGE.route}">All ${FAMILY.length}, side by side ${ARROW}</a></p>
       </nav>`;
 };
+
+/* ═══ THE CLOSING BAND ════════════════════════════════════════════════════
+   "This is what we are doing. It is not enough."
+
+   WHY IT EXISTS. Audit, 23 August: five of the six situation pages carried
+   forty Google News links each and one or two links into Swechha's own work.
+   Heat, forest fire and forest loss had none at all, and no situation page
+   linked to /about. So the pages did data -> understanding -> implications
+   very well and then handed the stranger they had just earned to a news
+   aggregator. These are the pages people arrive on from search; this is the
+   ending they were missing.
+
+   WHY IT IS NOT A CTA. A promotional band would contradict the page it sits
+   on. Every entry states what Swechha does AND why that is not a reply to the
+   number at the top — the same rule /now already runs on when it says fifty
+   thousand surviving trees is not a reply to 2.43 million hectares. The copy
+   lives in data/work/onward.json's `closing`; an entry missing either half
+   fails the build rather than rendering as an advert.
+
+   THE THREE DOORS ARE FIXED AND IN THIS ORDER: the work, then the
+   organisation, then taking part. A reader who has just been told the work is
+   not enough should meet the evidence before the ask. /about is here because
+   the nav has no word for it and these pages are where strangers land.
+
+   HREFS ARE RESOLVED, NOT TYPED: a slug that is neither a built page nor a
+   known anchor throws, so this band cannot ship a dead link. */
+const ONWARD = J('work/onward.json');
+const workHref = (slug) => {
+  const built = ONWARD.routes.find(r => r.endsWith(`/${slug}`) && r.split('/').length === 4);
+  if (built) return built;
+  const index = ONWARD.anchors && ONWARD.anchors[slug];
+  if (index) return `${index}#${slug}`;
+  throw new Error(`closing: "${slug}" is neither a built WORK page nor an anchor in onward.json`);
+};
+const WORK_KINDS = ['projects', 'campaigns', 'journeys', 'events'];
+const workName = (slug) => {
+  for (const k of WORK_KINDS) {
+    const f = join(DATA, 'work', k, `${slug}.json`);
+    if (existsSync(f)) return JSON.parse(readFileSync(f, 'utf8')).name;
+  }
+  throw new Error(`closing: no data/work/*/${slug}.json, so its name cannot be read`);
+};
+const ESSAYS = JSON.parse(readFileSync(join(ROOT, 'content/essay/_index.json'), 'utf8'));
+
+export const closing = (id) => {
+  const c = (ONWARD.closing || {})[id];
+  if (!c) {
+    throw new Error(`closing: no entry for "${id}" in onward.json's closing register. `
+      + 'Every situation page carries this band; add the entry rather than omitting the band.');
+  }
+  for (const half of ['doing', 'limit']) {
+    if (!c[half] || !String(c[half]).trim()) {
+      throw new Error(`closing: "${id}" has no ${half}. Both halves are required — a band that `
+        + 'says what we do without saying what it does not answer is an advert, not this site.');
+    }
+  }
+  const items = (c.items || []).map(s => ({ href: workHref(s), name: workName(s) }));
+  if (!items.length) throw new Error(`closing: "${id}" names no work at all`);
+  const essays = (c.essays || []).map((slug) => {
+    const e = ESSAYS.find(x => x.slug === slug);
+    if (!e) throw new Error(`closing: "${id}" cites essay "${slug}", which is not in content/essay/_index.json`);
+    return { href: `/stories/${e.slug}`, name: e.title, by: e.byline };
+  });
+  return `      <section class="cl" aria-labelledby="cl-h-${id}">
+        <h2 class="cl-h" id="cl-h-${id}">This is what we are doing.<br><i>It is not enough.</i></h2>
+        <div class="cl-cols">
+          <div class="cl-c">
+            <p class="lbl cl-k">The work against this reading</p>
+            <p class="cl-b">${c.doing}</p>
+            <ul class="cl-list">
+              ${items.map(i => `<li><a class="cl-i" href="${i.href}">${esc(i.name)}</a></li>`).join('\n              ')}
+              ${essays.map(e => `<li><a class="cl-i" href="${e.href}">${esc(e.name)}<span class="cap cl-by"> ${esc(e.by)}</span></a></li>`).join('\n              ')}
+            </ul>
+          </div>
+          <div class="cl-c">
+            <p class="lbl cl-k">And why it is not a reply</p>
+            <p class="cl-b">${c.limit}</p>
+          </div>
+        </div>
+        <div class="cl-doors">
+          <a class="cl-door" href="/work"><span class="cl-door-n">Explore the work</span><span class="cap cl-door-w">Fifteen pages, four kinds</span>${ARROW}</a>
+          <a class="cl-door" href="/about"><span class="cl-door-n">Who is Swechha</span><span class="cap cl-door-w">Working since 2000, and who runs it</span>${ARROW}</a>
+          <a class="cl-door" href="/act"><span class="cl-door-n">Take part</span><span class="cap cl-door-w">Give, volunteer or partner</span>${ARROW}</a>
+        </div>
+      </section>`;
+};
+
+/* ═══ THE MONTHLY DIGEST ══════════════════════════════════════════════════
+   The one thing on this site that asks a reader to come back.
+
+   WHY IT EXISTS. Audit, 23 August: no RSS, no feed, no newsletter, no alert,
+   and nothing anywhere marked new or changed. The stated strategy is that the
+   situation pages become a reason to return, and a reason to return with no
+   mechanism to return is a hope. This is the mechanism.
+
+   ★ IT IS A REAL SUBSCRIPTION OR IT SAYS SO. Behind it: double opt-in, a
+   token-link unsubscribe, one row holding one address and nothing else, and a
+   `last_digest_month` column that makes "one a month" enforceable rather than
+   intended (db/002-newsletter-subscriptions.sql, lib/newsletter.ts). Without
+   DATABASE_URL and RESEND_API_KEY the endpoint answers 503 naming what is
+   missing and THIS FORM PRINTS THAT, rather than thanking somebody for an
+   address that went nowhere. A "coming soon" subscribe box on a site whose
+   whole argument is that its claims are checkable would be the worst single
+   thing here — worse than not having one.
+
+   ★ IT IS NOT ON /now/air. That page already carries "watch your monitor",
+   which is a better-targeted subscription for the reader who got that far, and
+   two email fields on one page is a choice nobody wants to make. Air's readers
+   reach the digest from /now instead. `newsletter()` throws if it is called on
+   a page whose id is in NO_DIGEST, so that decision cannot be quietly undone.
+
+   THE PROMISE IS STATED IN FULL, ABOVE THE FIELD, not in a privacy policy
+   nobody opens: what arrives, how often, and that the address is never shared. */
+const NO_DIGEST = new Set(['air']);
+export const newsletter = (id) => {
+  if (NO_DIGEST.has(id)) {
+    throw new Error(`newsletter: "${id}" is in NO_DIGEST — ${id} already carries its own `
+      + 'subscription and must not offer two email fields on one page. Remove it from NO_DIGEST '
+      + 'deliberately, or leave the band off this page.');
+  }
+  return `      <section class="dg" aria-labelledby="dg-h">
+        <div class="dg-in">
+          <div class="dg-say">
+            <h2 class="dg-h" id="dg-h">Once a month, what these numbers did.</h2>
+            <p class="dg-b">One email. What the six readings did that month, what moved and what
+              did not, and what we did about it. Nothing else, ever &mdash; no appeals between
+              digests, and your address is never shared with anybody.</p>
+            <p class="cap dg-fine">Confirm by email before anything is stored. Every message
+              carries a one-click link to stop them.</p>
+          </div>
+          <form class="dg-form" id="dg-form" novalidate>
+            <label class="lbl dg-l" for="dg-mail">Your email</label>
+            <div class="dg-row">
+              <input class="dg-in-f" id="dg-mail" type="email" name="email" autocomplete="email"
+                inputmode="email" placeholder="you@example.com" required>
+              <button class="dg-go" id="dg-go" type="submit">Subscribe</button>
+            </div>
+            <p class="cap dg-msg" id="dg-msg" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+      </section>`;
+};
+
+/* The form's behaviour. Emitted as a string so every page that carries the
+   band carries the identical script — the same reason the markup is a function
+   and not six copies. */
+export const NEWSLETTER_JS = `
+/* ── THE MONTHLY DIGEST FORM. One field, one request, and it never lies about
+   what happened to the address. Mirrors the ward form's contract: a
+   not_configured reply NAMES THE HOLE instead of thanking the reader. */
+(function(){
+  var f=document.getElementById('dg-form'); if(!f||!window.fetch) return;
+  var mail=document.getElementById('dg-mail'), go=document.getElementById('dg-go'),
+      msg=document.getElementById('dg-msg');
+  if(!mail||!go||!msg) return;
+  var esc=function(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); };
+  f.addEventListener('submit',function(ev){
+    ev.preventDefault();
+    var e=(mail.value||'').trim();
+    if(e.length<6||e.indexOf('@')<1){
+      msg.textContent='That does not look like an address an email could reach.'; mail.focus(); return; }
+    go.disabled=true; msg.textContent='Sending a confirmation…';
+    fetch('/api/newsletter/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:e})})
+      .then(function(r){ return r.json().then(function(j){ return {s:r.status,j:j}; }); })
+      .then(function(o){
+        go.disabled=false;
+        if(o.j&&o.j.ok){ msg.textContent=o.j.message; mail.value=''; return; }
+        if(o.j&&o.j.state==='not_configured'){
+          /* Name the hole. Do not thank them for an address that went nowhere. */
+          msg.innerHTML='<b>Not wired yet, and it will not pretend.</b> This site has no '
+            +esc((o.j.missing||[]).join(' and '))+', so the digest cannot be promised. '
+            +'Your address was not stored and nothing was sent.';
+          return;
+        }
+        msg.textContent=(o.j&&o.j.reason)||'That did not work. Nothing was stored.';
+      }).catch(function(){
+        go.disabled=false; msg.textContent='That did not work. Nothing was stored.';
+      });
+  });
+})();
+`;
+
+export const NEWSLETTER_CSS = `
+/* ── THE MONTHLY DIGEST. Works on either ground. ── */
+.dg{margin:clamp(28px,3.2vw,44px) 0 0;border-top:1px solid var(--hair);
+  padding-top:clamp(22px,2.4vw,32px)}
+.paper .dg{border-top-color:var(--rule-2)}
+.dg-in{display:grid;gap:clamp(16px,2vw,34px)}
+@media (min-width:820px){ .dg-in{grid-template-columns:1.15fr 1fr;align-items:start} }
+.dg-h{font-size:clamp(20px,2.3vw,30px);line-height:1.1;letter-spacing:-.015em;
+  margin:0 0 10px;max-width:22ch;color:var(--fg)}
+.paper .dg-h{color:var(--ink)}
+.dg-b{margin:0 0 8px;font-size:clamp(14px,1vw,16px);line-height:1.55;
+  color:var(--fg-2);max-width:52ch}
+.paper .dg-b{color:var(--ink-2)}
+.dg-fine{color:var(--fg-3);max-width:52ch;margin:0}
+.paper .dg-fine{color:var(--ink-3)}
+.dg-l{display:block;color:var(--fg-3);margin:0 0 7px}
+.paper .dg-l{color:var(--ink-3)}
+.dg-row{display:flex;flex-wrap:wrap;gap:8px}
+.dg-in-f{flex:1 1 15em;min-width:0;min-height:var(--hit,44px);
+  background:transparent;color:var(--fg);border:1px solid var(--hair-2);
+  padding:10px 13px;font:inherit;font-size:clamp(14px,1vw,16px);border-radius:0}
+.paper .dg-in-f{color:var(--ink);border-color:var(--rule)}
+.dg-in-f::placeholder{color:var(--fg-3)}
+.paper .dg-in-f::placeholder{color:var(--ink-3)}
+.dg-in-f:focus-visible{outline:2px solid var(--mustard);outline-offset:-1px;border-color:var(--mustard)}
+.dg-go{min-height:var(--hit,44px);padding:10px 20px;font:inherit;
+  font-size:clamp(13.5px,.95vw,15px);cursor:pointer;border:1px solid var(--mustard);
+  background:var(--mustard);color:#0D0D0B;border-radius:0;transition:opacity .14s}
+.dg-go:hover{opacity:.86}
+.dg-go:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.paper .dg-go:focus-visible{outline-color:var(--ink)}
+.dg-go[disabled]{opacity:.55;cursor:default}
+.dg-msg{margin:10px 0 0;color:var(--fg-2);max-width:46ch;min-height:1.4em}
+.paper .dg-msg{color:var(--ink-2)}
+.dg-msg b{color:var(--fg)}
+.paper .dg-msg b{color:var(--ink)}
+`;
+
+export const CLOSING_CSS = `
+/* ── THE CLOSING BAND. Works on either ground; the dark one is the default. ── */
+.cl{margin:clamp(30px,3.6vw,52px) 0 0;border-top:1px solid var(--hair);
+  padding-top:clamp(22px,2.4vw,34px)}
+.paper .cl{border-top-color:var(--rule-2)}
+.cl-h{font-size:clamp(26px,3.5vw,46px);line-height:1.04;letter-spacing:-.02em;
+  margin:0 0 clamp(18px,2vw,28px);max-width:18ch;color:var(--fg)}
+.paper .cl-h{color:var(--ink)}
+.cl-h i{font-style:italic;color:var(--mustard)}
+.paper .cl-h i{color:var(--ink-2)}
+.cl-cols{display:grid;gap:clamp(18px,2.4vw,38px);margin:0 0 clamp(22px,2.6vw,34px)}
+@media (min-width:760px){ .cl-cols{grid-template-columns:1fr 1fr} }
+.cl-k{display:block;color:var(--fg-3);margin:0 0 8px}
+.paper .cl-k{color:var(--ink-3)}
+.cl-b{margin:0;font-size:clamp(14.5px,1.05vw,17px);line-height:1.55;color:var(--fg-2);max-width:56ch}
+.paper .cl-b{color:var(--ink-2)}
+.cl-b i{font-style:italic}
+.cl-list{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.cl-i{display:inline-flex;align-items:center;min-height:var(--hit,44px);
+  padding:6px 13px;border:1px solid var(--hair-2);text-decoration:none;
+  font-size:clamp(13px,.95vw,15px);color:var(--fg);transition:background .14s,border-color .14s}
+.paper .cl-i{border-color:var(--rule);color:var(--ink)}
+.cl-i:hover,.cl-i:focus-visible{background:rgba(251,248,240,.06);border-color:var(--fg-3)}
+.paper .cl-i:hover,.paper .cl-i:focus-visible{background:var(--paper-2);border-color:var(--ink-3)}
+.cl-i:focus-visible{outline:2px solid var(--fg);outline-offset:-3px}
+.paper .cl-i:focus-visible{outline-color:var(--ink)}
+.cl-by{color:var(--fg-3);margin-left:6px}
+.paper .cl-by{color:var(--ink-3)}
+.cl-doors{display:grid;gap:1px;background:var(--hair-2)}
+.paper .cl-doors{background:var(--rule)}
+@media (min-width:700px){ .cl-doors{grid-template-columns:repeat(3,1fr)} }
+.cl-door{display:flex;flex-direction:column;gap:3px;background:var(--ground);
+  padding:16px 18px 18px;text-decoration:none;color:var(--fg);transition:background .14s}
+.paper .cl-door{background:var(--paper);color:var(--ink)}
+.dark-2 .cl-door{background:var(--ground-2)}
+.cl-door:hover,.cl-door:focus-visible{background:rgba(251,248,240,.05)}
+.paper .cl-door:hover,.paper .cl-door:focus-visible{background:var(--paper-2)}
+.cl-door:focus-visible{outline:2px solid var(--fg);outline-offset:-3px}
+.paper .cl-door:focus-visible{outline-color:var(--ink)}
+.cl-door-n{font-size:clamp(15px,1.15vw,18px);color:var(--mustard)}
+.paper .cl-door-n{color:var(--ink)}
+.cl-door-w{color:var(--fg-3)}
+.paper .cl-door-w{color:var(--ink-3)}
+`;
 
 /* THE FAMILY'S OWN CSS, exported separately because build-situation-air.mjs
    assembles its own document and needs the crumb and rail without the
@@ -768,6 +1130,8 @@ ${NAV_SEARCH_CSS}
   transform:translateY(-50%);height:24px}
 @media (prefers-reduced-motion:reduce){.ask-ar{transition:none}}
 ${FAMILY_CSS}
+${CLOSING_CSS}
+${NEWSLETTER_CSS}
 
 `;
 

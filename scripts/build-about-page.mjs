@@ -457,7 +457,7 @@ ${WHEEL.map(t => `            <li>${t}</li>`).join('\n')}
           their perceptions and simultaneously in the environment &mdash; both social and human.&rdquo;</p>
       </div>
 
-      <p class="a-foot"><a class="act" href="/#work">What that looks like as work ${ARROW}</a></p>
+      <p class="a-foot"><a class="act" href="/work">What that looks like as work ${ARROW}</a></p>
     </div>`;
 
 /* ── BAND 3. THE RECORD. ─────────────────────────────────────────────────
@@ -478,7 +478,7 @@ ${RUNGS.map(r => `        <li class="a-rung rl${r.green ? ' is-now' : ''}">
           </div>
         </li>`).join('\n')}
       </ol>
-      <p class="a-foot"><a class="act" href="/#impact">What the record adds up to ${ARROW}</a></p>
+      <p class="a-foot"><a class="act" href="/impact">What the record adds up to ${ARROW}</a></p>
     </div>`;
 
 /* ── BAND 4. WHO DOES THE WORK. ──────────────────────────────────────────
@@ -662,7 +662,7 @@ const PERSON_LD = '      <script type="application/ld+json">'
 
 const DOORS = [
   ['/now', 'The readings', 'Six situations, each against its published limit.'],
-  ['/#impact', 'The record', 'What the work adds up to.'],
+  ['/impact', 'The record', 'What the work adds up to.'],
   /* AD-24: `/farm` is a page now, and this door already says "you can come to
      it" — which the homepage band could only promise and the page can answer. */
   ['/farm', 'The farm', 'Five acres, an hour and a half from Delhi. You can come to it.'],
@@ -708,7 +708,7 @@ ${DOORS.map(([h, n, t]) => `        <a class="a-door" href="${h}">
         </a>`).join('\n')}
       </div>
 ${ask({ audience: 'media', label: 'Ask for an interview', page: 'About Swechha', path: '/about', level: 1 })}
-      <p class="a-foot a-foot-2"><a class="b b-2" href="/#give">Give monthly</a></p>
+      <p class="a-foot a-foot-2"><a class="b b-2" href="/act">Give monthly</a></p>
 ${PERSON_LD}
     </div>`;
 

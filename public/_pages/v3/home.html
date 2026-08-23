@@ -1258,7 +1258,7 @@ main{display:block;margin:0;padding:0}
         <article class="sit s-hero-sit" id="h-air" data-id="air" data-tab="Air" data-breach="true" role="tabpanel" aria-label="Delhi-NCR / Air quality index">
           <figure class="s-hero-shot"><img class="duo" src="/images/photos/india-gate-hero.jpg" alt="India Gate through Delhi haze" style="--zh:134%;--zt:-33%"></figure>
 
-          <div class="s-hero-stamp" aria-hidden="true"><div class="wrap"><p class="state periodic"><i></i>Periodic</p></div></div>
+          <div class="s-hero-stamp" aria-hidden="true"><div class="wrap"><p class="state live"><i></i>Live</p></div></div>
           <div class="s-hero-panel"><div class="wrap">
             <div class="s-hero-rail breach">
               <div class="s-hero-read">
@@ -2362,6 +2362,17 @@ document.querySelectorAll('.rig').forEach(rig);
   if(!slide||!window.fetch) return;
   var out=slide.querySelector('.readout'), badge=slide.querySelector('.s-hero-stamp .state');
   if(!out||!badge) return;
+  /* ★ THE CHIP IS A BUILD ARTEFACT NOW (note), SO THIS BLOCK STANDS DOWN
+     WHEN THE BUILD ALREADY WROTE THE WORD IT WOULD HAVE WRITTEN.
+     build-hero.mjs injects the cadence word from situation-shell.mjs's
+     cadence(), off data/air-delhi.json — the same register /now and /now/air
+     read. When it already says live there is nothing to upgrade, and running
+     on would log "the chip stays PERIODIC" about a chip that reads Live.
+     Kept rather than deleted because the register is data-driven: set
+     state_label back to PERIODIC in fetch-air.mjs and this deck returns to
+     shipping Periodic and confirming its way to Live. /now/air carries the
+     identical guard for the identical reason. */
+  if(badge.className.indexOf('live')>-1) return;
   /* Read off the ATTRIBUTE, never off the element: the attribute is what the
      build wrote, and it is the only value this page is entitled to confirm. */
   var committed=(out.getAttribute('data-committed')||'').trim();

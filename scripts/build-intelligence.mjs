@@ -97,8 +97,18 @@ const SITUATIONS = [
 
        The fetch still runs — see IX_LIVE — but only to keep the NUMBER
        current. The chip no longer moves, because the cadence it names does
-       not move. The residual is recorded at D-26.2. */
-    state: 'LIVE',
+       not move. The residual is recorded at D-26.2.
+
+       ★ THE WORD IS NO LONGER TYPED HERE. D-26 was applied to this file and
+       to no other, so for two days /now said LIVE while the homepage hero
+       and /now/air both said Periodic — one reading, two contradictory
+       claims about its freshness, on the page that defines the vocabulary.
+       All six cards now read situation-shell.mjs's cadence(), which reads
+       each situation's own dataset; changing a cadence means changing the
+       fetch that publishes it, and every consumer follows. Heat keeps its
+       seasonal behaviour: fetch-heat-india.mjs sets state_label from the
+       same windowOpen that sets window.open. */
+    state: S.cadence('air'),
     upgrades: true,
     line: 'The only reading on this site that can change while you look at it.',
   },
@@ -111,7 +121,7 @@ const SITUATIONS = [
     authority: 'Primary Water Quality Criteria, E(P) Rules 1986',
     verdict: 'no measurable oxygen',
     breach: true,
-    state: 'PERIODIC',
+    state: S.cadence('yamuna'),
     line: 'The one number here that has to be read downwards. Lower is worse, and it is at the bottom.',
   },
   {
@@ -123,7 +133,7 @@ const SITUATIONS = [
     authority: 'IMD, severe heat wave',
     verdict: `${n1(heatRec.tmax - HEAT.criteria.absolute_severe)} °C above it`,
     breach: heatRec.tmax >= HEAT.criteria.absolute_severe,
-    state: HEAT.window.open ? 'PERIODIC' : 'OUT OF SEASON',
+    state: S.cadence('heatwave'),
     line: `The season is shut until ${esc(HEAT.window.returns)}. The record is true either way.`,
   },
   {
@@ -135,7 +145,7 @@ const SITUATIONS = [
     authority: 'no statute publishes one',
     verdict: 'nothing to be over',
     breach: false,
-    state: 'PERIODIC',
+    state: S.cadence('fire'),
     line: 'The only situation here with no threshold to break. That is not reassurance.',
   },
   {
@@ -147,7 +157,7 @@ const SITUATIONS = [
     authority: 'Forest (Conservation) Act, 1980',
     verdict: `India’s own report says +${n1(ISFR.change_2021_to_2023.net_change_forest_cover)} km²`,
     breach: false,
-    state: 'PERIODIC',
+    state: S.cadence('loss'),
     line: 'Two official sources, opposite directions. Neither is lying.',
   },
   {
@@ -159,7 +169,7 @@ const SITUATIONS = [
     authority: 'IMD rainfall day categories',
     verdict: `crossed ${clWorst.last_complete.extreme_days} times in one year`,
     breach: true,
-    state: 'PERIODIC',
+    state: S.cadence('climate'),
     line: 'Not one breach. A count of them.',
   },
 ];
@@ -302,12 +312,12 @@ B.campaigns = () => `${opener('campaigns', 'What we do about it', 'Three campaig
             <b>over 50,000 planted and survived</b> in total.
             <i>Survived</i> is the organisation&rsquo;s own word for it, and it is the honest one
             &mdash; planting is not the same measurement as living.</p>
-          <p style="margin:0"><a class="act" href="/#impact">The record ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/impact">The record ${ARROW}</a></p>
         </div>
         <div class="ix-camp">
           <p class="ix-camp-n">Delhi I Can&rsquo;t See You</p>
           <p class="ix-camp-x">One of the three current campaigns.</p>
-          <p style="margin:0"><a class="act" href="/#work">What we work on ${ARROW}</a></p>
+          <p style="margin:0"><a class="act" href="/work">What we work on ${ARROW}</a></p>
         </div>
       </div>
       <p class="ix-note"><b>The gap between a campaign and a national figure is the honest
@@ -316,7 +326,8 @@ B.campaigns = () => `${opener('campaigns', 'What we do about it', 'Three campaig
         neither is used to cancel the other.</p>
       <p class="cap ix-close">Every reading here is public, dated and linked to the document it
         came from.</p>
-      <p style="margin:0"><a class="act" href="/#give">Support the work ${ARROW}</a></p>
+      <p style="margin:0"><a class="act" href="/act">Support the work ${ARROW}</a></p>
+${S.newsletter('index')}
     </div>`;
 
 /* ═══ THE ONE PIECE OF PAGE SCRIPT ═══════════════════════════════════════
@@ -455,7 +466,7 @@ await S.assemble({
   title: 'Now &mdash; Swechha',
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
-  script: IX_LIVE,
+  script: [IX_LIVE, S.NEWSLETTER_JS].join('\n'),
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),
   note: `3 bands + footer. ${SITUATIONS.length} situations, ${UNITS.length} units, `
       + `${KINDS.length} kinds of limit (all distinct: ${kindsAllDistinct}). `

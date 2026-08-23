@@ -288,6 +288,38 @@ const SLIDES = [
   },
 ];
 
+/* ═══ THE STATE CHIP, FROM THE REGISTER ══════════════════════════════════
+   The fourth consumer of situation-shell.mjs's cadence(). Read that comment
+   for why: on 23 August this deck's Air slide said Periodic while /now said
+   LIVE about the same reading from the same dataset, because the word was
+   typed into design/home.html by hand and nothing derived it.
+
+   IT IS INJECTED FOR THE SAME REASON THE READINGS ARE. A hand-typed cadence
+   is wrong the first time a source changes how it delivers, and nothing
+   catches it — which is precisely what happened. Now the word comes from
+   each situation's own dataset, so the deck cannot contradict the card on
+   /now or the badge on the situation page.
+
+   Each slide already links to exactly one situation, so the mapping is the
+   href, restated. If a fifth slide is added without an entry here the build
+   fails rather than shipping an unstated cadence. */
+const HERO_CADENCE = {
+  'h-air': 'air', 'h-yamuna': 'yamuna', 'h-monsoon': 'climate', 'h-fire': 'fire',
+};
+for (const slide of SLIDES) {
+  const id = HERO_CADENCE[slide.id];
+  if (!id) fail(`${slide.id} has no entry in HERO_CADENCE, so its state chip cannot be derived`);
+  const word = S.cadence(id);
+  const cls = S.STATES[word];
+  /* Title Case, because that is how this deck has always set the chip — the
+     shell-built pages use .tag in caps. verify-final.mjs:284 knows both. */
+  const shown = word.charAt(0) + word.slice(1).toLowerCase();
+  slide.edits.push([
+    /(<p class="state )[a-z-]+("><i><\/i>)[^<]*(<\/p>)/,
+    `$1${cls}$2${shown}$3`, 'state chip: the cadence word and its class'],
+  );
+}
+
 /* ═══ APPLY ══════════════════════════════════════════════════════════════ */
 let src = readFileSync(HOME, 'utf8');
 const linesBefore = src.split('\n').length;

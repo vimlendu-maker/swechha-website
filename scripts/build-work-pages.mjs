@@ -1270,7 +1270,14 @@ const EVIDENCE = {
   /* AD-28. The foot read "Nothing here is unsourced" — a claim about our
      method, on a card. The body kept its subject (the readings) and lost the
      clause about keeping the paper behind them. */
-  '/#record': { href: '/#record', eyebrow: 'The evidence', head: 'The record', body: 'Every reading the situation pages are built on, in one place.', foot: 'Every situation, side by side' },
+  /* AD-24 again, and for the same reason it was applied to `/farm` below: was
+     `/#record`, a band on a 9,889px homepage. `/now` is the page that band
+     advertises — the six situations with their limits, sources and dates —
+     and this door's own foot ("Every situation, side by side") promises that
+     page, not a paragraph about it. A reader who clicks "the evidence" from a
+     WORK page should land on the evidence, with a heading above it, not
+     mid-scroll on the front page they may never have seen. */
+  '/now': { href: '/now', eyebrow: 'The evidence', head: 'The record', body: 'Every reading the situation pages are built on, in one place.', foot: 'Every situation, side by side' },
   /* AD-24: was `/#farm`, the homepage teaser band. `/farm` is now a page, and
      this door's own copy ("the five acres this happens on") promises the place
      rather than a paragraph about it. An anchor here would land a reader who
@@ -1278,7 +1285,7 @@ const EVIDENCE = {
   '/farm': { href: '/farm', eyebrow: 'The evidence', head: 'Swechha Farm', body: 'The five acres this happens on. The composting, the nursery and the apiary are the teaching material, and they have to actually produce.', foot: 'Five acres, ninety minutes out' },
 };
 const atFarm = new Set(ONWARD.evidence && ONWARD.evidence.at_farm || []);
-const evidenceFor = (slug) => EVIDENCE[atFarm.has(slug) ? '/farm' : (ONWARD.evidence && ONWARD.evidence.default) || '/#record'] || EVIDENCE['/#record'];
+const evidenceFor = (slug) => EVIDENCE[atFarm.has(slug) ? '/farm' : (ONWARD.evidence && ONWARD.evidence.default) || '/now'] || EVIDENCE['/now'];
 
 function threeDoors({ siblings, situation, evidence }) {
   const out = [];
@@ -1771,7 +1778,7 @@ function pageIndex() {
        band 2's register. The two doors are THE TWO MOST-LINKED DESTINATIONS IN
        THE SECTION, which is measured and not preferred: the frozen homepage
        points 8 links at /work/projects and 6 at /work/journeys. */
-    doors: [kdoor('projects', 'The most-linked page in the section'), kdoor('journeys', 'Two hours to twelve days'), EVIDENCE['/#record']],
+    doors: [kdoor('projects', 'The most-linked page in the section'), kdoor('journeys', 'Two hours to twelve days'), EVIDENCE['/now']],
     act, actNote: 'If you would rather start than read, the shortest way in is a walk that takes an afternoon.',
     /* AD-27.18-A. "Book a journey" resolves here. The secondary goes with it:
        the Ask's own tertiary link is /act#partner, which is the destination
@@ -1843,7 +1850,7 @@ function pageKind(k) {
        the situation page names the SAME SUBJECT, and this page's subject is a
        KIND — no situation page names Projects or Journeys. The per-item
        situation links live on the items, where the claim is actually true. */
-    doors: threeDoors({ siblings: otherKindDoors(k), situation: null, evidence: EVIDENCE['/#record'] }),
+    doors: threeDoors({ siblings: otherKindDoors(k), situation: null, evidence: EVIDENCE['/now'] }),
     act: deepen(url, def.act || { label: 'Get involved', href: '/act' }),
     actNote: 'Reading this page is not the point of it.',
     /* AD-27.18-A. /work/projects and /work/journeys resolve their ask in place;
@@ -1910,7 +1917,7 @@ function pageCampaigns() {
     ],
   };
   body.onward = onwardBand({
-    doors: threeDoors({ siblings: otherKindDoors('campaigns'), situation: null, evidence: EVIDENCE['/#record'] }),
+    doors: threeDoors({ siblings: otherKindDoors('campaigns'), situation: null, evidence: EVIDENCE['/now'] }),
     act: deepen(PATHS.campaigns.url, def.act || { label: 'Plant with us', href: '/act' }),
     actNote: 'A campaign is people turning up. That is the only figure it really has.',
     /* AD-27.18-A. "Plant with us" is one person turning up in the rain, not one
@@ -2167,7 +2174,7 @@ function pageEvents() {
     ],
   };
   body.onward = onwardBand({
-    doors: threeDoors({ siblings: otherKindDoors('events'), situation: null, evidence: EVIDENCE['/#record'] }),
+    doors: threeDoors({ siblings: otherKindDoors('events'), situation: null, evidence: EVIDENCE['/now'] }),
     act: deepen(PATHS.events.url, def.act || { label: 'Volunteer with us', href: '/act' }),
     /* AD-28. Was "There is no date on this page to hold you to, and no list here
        to join. Dates go out on the four accounts..." — two clauses of what this
