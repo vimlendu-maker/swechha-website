@@ -37,7 +37,10 @@ import { randomBytes, createHash, timingSafeEqual } from 'node:crypto';
 export const DB_URL = process.env.DATABASE_URL;
 export const RESEND_KEY = process.env.RESEND_API_KEY;
 export const MAIL_FROM = process.env.WARD_MAIL_FROM || 'Swechha air <air@swechha.in>';
-export const SITE = process.env.SITE_ORIGIN || 'https://swechha.in';
+/* `.trim()` for the reason given at `lib/org.ts`'s SITE_URL: the production
+   value carried a leading tab, and this constant is the one that ends up in
+   the confirm and unsubscribe links inside email. */
+export const SITE = process.env.SITE_ORIGIN?.trim() || 'https://swechha.in';
 
 export const config = {
   get db() { return Boolean(DB_URL); },

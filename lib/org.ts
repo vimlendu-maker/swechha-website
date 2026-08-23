@@ -34,9 +34,20 @@ export function yearsSinceFounding(now: Date = new Date()): number {
  * at all. The literal stays as the last fallback: production is still
  * swechha.in, and a missing env var must not produce a relative-URL sitemap.
  */
+/* TRIMMED, AND NOT DEFENSIVELY. Measured in production 23 August: the Vercel
+   value carried a leading TAB, so every one of the 35 `<loc>` values in
+   sitemap.xml read `<loc>\thttps://swechha.in…</loc>` and robots.txt advertised
+   `Sitemap: \thttps://swechha.in/sitemap.xml`. A `<loc>` is required to be a
+   valid absolute URL and a sitemap is the machine-readable index of the whole
+   site, so the cost of one invisible whitespace character was the entire index.
+   The env var was corrected too, but a value pasted from a dashboard will pick
+   up whitespace again and nothing here would notice, so the trim is the fix and
+   the dashboard is the housekeeping. Same reasoning, same line, in
+   `lib/subscriptions.ts` — which builds the confirm and unsubscribe links that
+   go out in email. */
 export const SITE_URL =
-  process.env.SITE_ORIGIN ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://swechha.in')
+  process.env.SITE_ORIGIN?.trim() ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL.trim()}` : 'https://swechha.in')
 
 /** The site-wide description used for the root `<meta name="description">`
  * and as the fallback description for share cards and structured data. */

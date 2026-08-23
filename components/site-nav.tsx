@@ -292,8 +292,14 @@ export function SiteNav({ current }: { current?: NavSection }) {
       </nav>
 
       <div className="flex items-center gap-2">
+        {/* `/act/donate` until 23 August 2026, which was a 404 — the fifteenth
+            and most expensive of the dead links this shell was serving, because
+            it is the one the header puts a button around. `/act` is the page
+            that exists and is the page the finished shell's GIVE chip has
+            always pointed at; its three ways in are #give, #hands and
+            #partner. */}
         <Link
-          href="/act/donate"
+          href="/act"
           className={`${CAPS} inline-block rounded-[2px] bg-mustard px-3 py-[7px] text-on-mustard`}
           style={WDTH}
         >

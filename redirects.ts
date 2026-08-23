@@ -46,9 +46,31 @@ export const legacyRedirects: Redirect[] = buildLegacyRedirects(
  * return 308 to their /work/campaigns equivalent.
  */
 export const movedRedirects: Redirect[] = [
+  /* ★ THE SLUG REDIRECT POINTS AT THE INDEX, NOT AT `/work/campaigns/:slug`,
+     AND THAT IS THE FIX RATHER THAN THE COMPROMISE.
+     Audited in production 23 August 2026: `/campaigns/delhi-air-quality-2026`
+     answered 308 to `/work/campaigns/delhi-air-quality-2026`, which answered
+     404. The destination route is `app/work/campaigns/[slug]/page.tsx`, whose
+     `generateStaticParams()` reads `getAllCampaigns()` — and `content/campaign/`
+     holds nothing but `.gitkeep`, so it generates NO slugs and 404s for every
+     one of them. (`/work/campaigns/monsoon-wooding` answers 200 only because it
+     is a static built page served by `design-routes.ts`, not by this route.)
+
+     The comment below still says both paths were "verified in dev". They were:
+     the REDIRECT fires correctly. What was never verified is that anything is
+     on the other end of it. That is the failure mode the file's own header
+     paragraph warns about for the legacy list — "a 308 into a 404 looks alive
+     to a crawler and is worse than the 404 it replaces" — and it landed here
+     because `buildLegacyRedirects()` enforces that rule against this site's
+     routes while this hand-written literal is checked by nothing.
+
+     `/work/campaigns` exists, is the umbrella the owner ruled for on 19 August,
+     and is where a reader looking for a campaign should arrive. Restoring the
+     campaign content file is the other way to fix this, and then the `:slug`
+     destination can come back. */
   {
     source: '/campaigns/:slug',
-    destination: '/work/campaigns/:slug',
+    destination: '/work/campaigns',
     permanent: true,
   },
   {
