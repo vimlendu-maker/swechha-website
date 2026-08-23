@@ -558,3 +558,54 @@ not written down.
 ### Open on this page
 **Nothing.** Every figure on `/farm` now carries a source and a period, and the page no
 longer names a hole — because it no longer has one.
+
+---
+
+## 13 · Owner confirmations, 23 August 2026 — the last two open facts close
+
+Both answers came in reply to direct questions, on the same day AD-28 stripped the
+provenance voice off this page.
+
+### F-19 · The district is Khairthal-Tijara. Confirmed.
+
+The owner's original brief said **"Kaithal Tijara"**. That reading could not be right:
+**Kaithal is a district in Haryana**, roughly 150 km north of the farm, and Tijara is not
+in it. AD-27.30 resolved it as **Khairthal-Tijara** — the Rajasthan district carved out
+of the erstwhile Alwar district — on the strength of the Google listing (§2.1) and the
+geography, and shipped it with gates in both directions: `/farm` must say
+`Khairthal-Tijara`, and must **not** say `Kaithal`.
+
+Asked directly whether the resolution was right, the owner **confirmed it on 23 August
+2026**: the district is Khairthal-Tijara, carved out of the erstwhile Alwar district, and
+**"Kaithal Tijara" in the brief was a transcription slip.**
+
+- **No page copy changes.** The built page already says the confirmed thing.
+- **The gates already enforce it** (`build-farm-page.mjs`: the district is named; the
+  Haryana district `Kaithal` is absent; the client's own qualifier *erstwhile Alwar*
+  survives). They were written against an inference and now stand on a confirmation.
+- **This closes the last unverified fact on `/farm`.**
+
+Worth recording *how* it was caught, because the class recurs: the slip was not found by
+doubting the owner, it was found by **checking a place name against a map**. A district
+name that is one plausible-looking token away from a real district 150 km away is exactly
+the error a spell-check, a reviewer and an LLM all wave through.
+
+### F-20 · The water-harvesting claim is retracted site-wide.
+
+On 23 August the owner struck the swales/bundhs/ponds row from `/farm`
+("*The following is not true in teh farm page, delete it from the root*"). Because he had
+named one page, the identical claim on `/work/projects/farm-school` was **left standing
+and flagged to him** rather than deleted on inference.
+
+Asked directly, he ruled on the rest: **"delete the water swales and bundhs part."** The
+claim is now retracted **everywhere on the site**, `data/work/projects/farm-school.json`
+included.
+
+`SOURCE-FACTS §72` carries the full note. The §72 *line itself* is deliberately not
+deleted: it records what the "Introduction to Swechha" PDF (p8–p9) says, and the PDF still
+says it. A source document asserting a thing and the thing being true are two different
+facts, and the owner — who runs the farm — says the infrastructure described there is not
+what is on the ground. **Do not restore the claim on the strength of the PDF.**
+
+The flag-rather-than-infer call is what produced the ruling. Deleting it everywhere on the
+first instruction would have been right by luck; asking made it right on the record.

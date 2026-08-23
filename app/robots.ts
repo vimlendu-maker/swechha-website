@@ -13,7 +13,15 @@ export default function robots(): MetadataRoute.Robots {
     return { rules: { userAgent: '*', disallow: '/' } }
   }
   return {
-    rules: { userAgent: '*', allow: '/', disallow: '/_pages/' },
+    /* `/keystatic` joins `/_pages/` as disallowed unconditionally: it is the
+       CMS login, it has no reader-facing content, and it should not be a search
+       result telling the world where the editor is. `next.config.ts` sets the
+       matching `X-Robots-Tag` for a crawler that already has the URL.
+       `/api/` joins them (AD-27.52): the endpoints are not content, and
+       `/api/air` returning a JSON blob into an index is noise. It is a
+       crawl-budget instruction, not a security boundary — the routes stay
+       reachable, and `/api/ward*` keeps its own no-store for its own reason. */
+    rules: { userAgent: '*', allow: '/', disallow: ['/_pages/', '/keystatic', '/api/'] },
     sitemap: `${SITE_URL}/sitemap.xml`,
   }
 }

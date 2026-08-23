@@ -31,7 +31,11 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
-const { esc, opener, hole, ARROW } = S;
+/* `hole` is deliberately NOT imported. AD-28 removed every named hole from
+   this page — the two missing films and the illustration note — and two build
+   gates refuse to write one; pulling the helper back in is the first half of
+   putting one on the page again. */
+const { esc, opener, ARROW } = S;
 
 const sh = S.shell();
 
@@ -205,6 +209,12 @@ const filmCard = (f) => {
   const count = f.mode === 'list'
     ? `        <p class="lbl st-n">${f.vids.length} in the playlist</p>`
     : (f.vids.length > 1 ? `        <p class="lbl st-n">${f.vids.length} parts</p>` : '');
+  /* ★ AD-28 — THE NOTE IS OPTIONAL. Four of the five entries carried one that
+     described the channel's filing rather than the film ("Two further uploads
+     of this film exist", "A separate playlist, carried here because…"). Where
+     there is nothing to say about the film itself, the card is the player and
+     its title. It does not explain why it is short. */
+  const note = f.note ? `        <p class="st-note">${esc(f.note)}</p>\n` : '';
   const also = f.also_at
     ? `        <p class="st-also"><a class="act" href="${esc(f.also_at.href)}">${esc(f.also_at.label)}${ARROW}</a></p>`
     : '';
@@ -213,8 +223,7 @@ const filmCard = (f) => {
         <p class="lbl st-sub">${esc(f.subtitle)}</p>
 ${count}
 ${body}
-        <p class="st-note">${esc(f.note)}</p>
-${also}
+${note}${also}
       </article>`;
 };
 
@@ -223,8 +232,16 @@ B.films = () => `${opener('films', D.films.head, D.films.lead)}
       <div class="st-fs">
 ${FILMS.map(filmCard).join('\n')}
       </div>
-${D.films.holes.map((h) => hole(h)).join('\n')}
     </div>`;
+/* ★ AD-28 — THE TWO NAMED HOLES USED TO RENDER HERE, and they are deleted.
+   `D.films.holes.map(hole)` printed "Disposable was asked for and is not on
+   the channel — zero matches across all indexed videos" and "Yatra is not a
+   film here… if a Yatra film was made, it is somewhere we have not found."
+   Both are the page reporting its own search to a visitor (§2.3), and the
+   second one's own subject is that there is nothing to show. The finding is
+   kept where a finding belongs — data/stories.json's `_holes` and AD-26 §4 —
+   and gate 3 below is the old gate inverted, so a hole coming back stops the
+   build. The film count is still derived and still never says six. */
 
 /* ── BAND 3. THE POSTERS. ─────────────────────────────────────────────────
    Raw <img> with width/height so the grid does not reflow as they arrive —
@@ -247,7 +264,11 @@ ${PUBLISH_WRITTEN
     ? `      <ul class="st-ws">
 ${WRITTEN.map((w) => `        <li class="st-w"><a href="/stories/${esc(w.slug)}"><span class="st-w-h">${esc(w.title)}</span><span class="st-w-s">By ${esc(w.byline)}</span><span class="lbl st-w-d">${esc(w.date)}</span></a></li>`).join('\n')}
       </ul>`
-    : hole(D.written.hole)}
+    /* ★ AD-28 §2.3 — nothing, not an explanation. This branch used to print
+       `hole(D.written.hole)`: a dotted marker telling a reader the essays'
+       illustrations were served from a staging domain that no longer resolves.
+       Where there is nothing to show, the band shows less. Gate 3b proves it. */
+    : ''}
     </div>`;
 
 /* ── BAND 5. ACT. ────────────────────────────────────────────────────────── */
@@ -287,6 +308,17 @@ const PAGE_CSS = `
 .st-w-h{font-weight:600}
 .st-w-s{color:var(--fg-2);max-width:70ch}
 .st-w-d{color:var(--fg-2)}
+/* ── THE BYLINE AND DATE ON PAPER-2. PRE-EXISTING CONTRAST DEFECT, FIXED.
+      The "written" band is paper-2 (#ECEBE8, a light ground) but both rules
+      above set var(--fg-2), which is the light ink meant for the dark bands.
+      Measured from rendered pixels at 1440: 1.41:1 against AA's 4.5:1, on the
+      byline of every essay in the list. It is the same shared-shell trap
+      build-about-page.mjs documents for its disclosures — SHARED_PAGE_CSS
+      states inks for dark and for .paper and stops, so .paper-2 silently
+      keeps the dark-band ink. Same house fix: name the paper inks explicitly.
+      Found by the AD-28 contrast sweep, not introduced by it. */
+.paper .st-w-s,.paper-2 .st-w-s,
+.paper .st-w-d,.paper-2 .st-w-d{color:var(--ink-2)}
 @media (max-width:640px){
   .st-ps{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
 }
@@ -339,8 +371,17 @@ gate(!embedded.includes('ZaANbZ7rhHE') && !embedded.includes('MbqeNl6ipLY'),
       source. Any bare "six films" on this page is the invented count. */
 gate(!/\b(six|6)\s+films?\b/i.test(RENDERED),
   'the page does not claim six films (two of R-3\'s six have no source)');
-gate(D.films.holes.length === 2 && /Disposable/.test(RENDERED) && /Yatra/.test(RENDERED),
-  'both missing films are named as holes rather than dropped');
+/* ★ AD-28 — THIS GATE IS THE OLD ONE INVERTED, AND THE INVERSION IS THE POINT.
+   It read `holes.length === 2 && /Disposable/ && /Yatra/`: its whole job was to
+   prove the page told a visitor which two films we had failed to find. The
+   owner struck that voice, so the same gate now proves neither confession came
+   back — including the phrasings a later session would reach for. Deleting it
+   instead would leave nothing between this page and the next editor who thinks
+   a five-card band looks like it is missing one. */
+gate((D.films.holes || []).length === 0 && !/class="p-hole"/.test(OUT),
+  'no named hole on the page — a film we cannot find is absent, not annotated');
+gate(!/asked for and is not on the channel|is not a film here|zero matches|we have not (?:established|found)|somewhere we have not/i.test(RENDERED),
+  'no "we could not find it" confession in the page\'s own voice');
 
 /* 4. WASTED IS ONE ENTRY WITH TWO PARTS, AND "WASTE IT" IS SEPARATE. */
 const wasted = FILMS.find((f) => f.slug === 'wasted');
@@ -391,8 +432,11 @@ if (PUBLISH_WRITTEN) {
     `every published essay carries a byline, a date and its original link${thin.length ? `; THIN: ${thin.map((w) => w.slug).join(', ')}` : ''}`);
   gate(WRITTEN.every((w) => OUT.includes(`/stories/${w.slug}`)),
     `all ${WRITTEN.length} essays are linked from the band`);
-  gate(typeof D.written.hole === 'string' && /staging domain/.test(D.written.hole),
-    'the band says why the essays have no illustrations');
+  /* ★ AD-28 — INVERTED. This required D.written.hole to exist and to explain
+     the dead staging domain to a reader. That is the page apologising for a
+     picture it does not have, so the requirement is now a prohibition. */
+  gate(D.written.hole === undefined && !/staging domain|no longer resolves/i.test(RENDERED),
+    'the band does not explain why the essays have no illustrations');
 } else {
   gate(!/href="\/stories\//.test(OUT), 'no link to an unpublished story detail page');
 }

@@ -52,6 +52,22 @@ export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 export const V3 = join(ROOT, 'public/_pages/v3');
 export const DATA = join(ROOT, 'data');
 
+/** ── THE HAND-MAINTAINED HOMEPAGE SOURCE ────────────────────────────────
+ *  `design/home.html`, and it is NOT the page the reader gets. AD-28 §7 moved
+ *  it out of `public/_pages/v3/` because the acceptance test is over the file
+ *  and this one carried 39 `AD-2`, 84 `D-0` and 3 `SOURCE-FACTS` in its
+ *  comments — and those comments could not simply be deleted, because seven CSS
+ *  ranges below are pinned to this file BY ABSOLUTE LINE NUMBER and deleting a
+ *  comment moves every line under it.
+ *
+ *  So the source keeps its record and stops shipping: `build-hero.mjs` writes
+ *  the source back in place with its line count unchanged, then emits
+ *  `public/_pages/v3/home.html` through `shipDocument()`. Everything that reads
+ *  the homepage for its footer, its nav names or its Give buttons reads THIS
+ *  file — the maintained one — not the artefact. `design/README.md` has the
+ *  whole argument. */
+export const HOME_SRC = join(ROOT, 'design/home.html');
+
 /** Read a committed dataset. */
 export const J = (f) => JSON.parse(readFileSync(join(DATA, f), 'utf8'));
 
@@ -123,7 +139,7 @@ export function extractor(sourcePath) {
  * pass that count to `assemble`, which refuses to write on any failure.
  */
 export function shell() {
-  const home = extractor(join(V3, 'home.html'));
+  const home = extractor(HOME_SRC);
   const air = extractor(join(ROOT, 'scripts/build-situation-air.mjs'));
 
   /* ── FROM THE FROZEN HOMEPAGE. The same six ranges the Air build takes,
@@ -144,7 +160,15 @@ export function shell() {
   const SKIP = home.between('D-09.3. BYPASS BLOCKS', 'class="skip"');
   const FOOTER = home.between('<footer class="foot"', '</footer>');
   const JS_NAVIDX = home.iife('D-09.1. THE MOBILE INDEX CONTROL');
-  const JS_UNDERLINE = home.iife('D-09.4. WHERE AM I? THE ACTIVE-SECTION UNDERLINE');
+  /* D-09.4's ACTIVE-SECTION UNDERLINE IS NO LONGER LIFTED. AD-27.2 deleted it
+     from home.html and from here in the same change. It selected
+     `.nav a.nl[href*="#"]`, which has matched zero elements on all 35 built
+     pages since AD-23 rewrote every nav href to a canonical route — so every
+     page built on this shell was carrying ~50 lines of script that could not
+     fire, described in its own comment as working. The CSS it existed to
+     trigger (`.nav a.nl[aria-current]`) is untouched and is now driven by the
+     static `aria-current` attributes `header()` writes, which cannot drift.
+     AD-27.1 retires the scroll-spy; it is not pending and must not come back. */
 
   /* ── FROM THE AIR GENERATOR. The situation-page CSS layer: what Air added
         on top of the homepage's tokens — the tab component, the
@@ -171,7 +195,7 @@ export function shell() {
         component — and the two homepage IIFEs are appended as themselves.
         The `${` guard stays, because it is what found this. ─────────────── */
   const JS_TABS = air.iife('── TABS. Canonical ARIA tabs with a roving tabindex');
-  const SCRIPT_BASE = [JS_TABS, JS_NAVIDX, JS_UNDERLINE].join('\n\n');
+  const SCRIPT_BASE = [JS_TABS, JS_NAVIDX].join('\n\n');
 
   // Prove the blocks are the ones we think they are. A range that still parses
   // but no longer contains the tab component would ship five pages whose tabs
@@ -293,11 +317,19 @@ export const GIVE_HREF = '/act';
  * which is not this page, and `"page"` there would be a lie. Pass
  * `current` as the nav label to mark, and `url` as this page's own route.
  * Pages outside the six (about) pass neither and mark nothing. */
+/* AD-27.3 completes the table for the two controls that are not nav WORDS.
+   The GIVE chip's href is `/act`, so on /act it takes `aria-current="page"` —
+   marked just above, where the chip is written. The search control already
+   took it. `/about`, `/stories` and `/publications` mark NOTHING and that is
+   deliberate: none of them is a nav word, so lighting the nearest word would
+   be false, and BRANDING §5.10 is explicit that pointing `aria-current` at the
+   wrong section is worse than pointing it nowhere. A page that marks nothing
+   is a legitimate state and must not be "fixed". */
 const navCurrent = (label, href, current, url) => label !== current ? ''
   : (href === url ? ' aria-current="page"' : ' aria-current="true"');
 
 export const header = (index, { current = null, url = null, page = null } = {}) => `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
-<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav></div><a class="nl navsearch" href="/search"${page === '/search' ? ' aria-current="page"' : ''}><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${index.map(([t, h]) => `<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>`;
+<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav></div><a class="nl navsearch" href="/search"${page === '/search' ? ' aria-current="page"' : ''}><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}"${page === GIVE_HREF ? ' aria-current="page"' : ''}>Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${index.map(([t, h]) => `<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>`;
 
 /* ═══ GROUND ADJACENCY ═══════════════════════════════════════════════════ */
 
@@ -701,6 +733,40 @@ ${NAV_SEARCH_CSS}
     gap:5px 8px;padding:11px 0}
   .mr-n{grid-area:n}.mr-v{grid-area:v}.mr-x{grid-area:x}.mr-b{grid-area:b}
 }
+
+/* ── AD-27.16 THE ASK. Do not edit one copy. Both shells carry this verbatim. ──
+   TWO RULES BELOW ARE AN AMENDMENT TO AD-27.16 AS PUBLISHED, made once, here,
+   and mirrored into work-shell.mjs: .ask-a .lk gets a 24px hit expander. Lane 4
+   measured the inline fallback address at 136.63x15px and lane 3 measured the
+   same 137x16 across six instances, on two different pages — under BRANDING
+   §10's 24px floor on about twenty pages. AD-09 does exclude inline-in-prose
+   links from the expander, and the signed-off situation pages ship 14-19px
+   inline links, so precedent would forgive it; it is allowed here anyway
+   because THIS link is not decoration in a sentence, it is the component's
+   whole fallback path — the reader who reaches it is the one whose mail app
+   did not open, on a phone, and the address is the only thing left that works.
+   24px AND NOT 44: the link sits mid-paragraph in a .cap, and a 44px box
+   centred on a 15px line would overlap the line above it. 24 is the floor and
+   the floor is what an inline target can carry. ── */
+.ask{margin:var(--gap-row) 0 0}
+.ask>.ask-s{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:9px}
+.ask>.ask-s::-webkit-details-marker{display:none}
+.ask-ar{flex:none;transition:transform .16s}
+.ask[open]>.ask-s .ask-ar{transform:rotate(90deg)}
+.ask-p{margin-top:var(--gap-row);padding-top:var(--gap-row);
+  border-top:1px solid var(--hair);max-width:52ch}
+.paper .ask-p,.paper-2 .ask-p{border-top-color:var(--rule-2)}
+.ask-p>*{margin:0 0 14px}
+.ask-p>*:last-child{margin-bottom:0}
+.ask-k{color:var(--fg-2)}
+.paper .ask-k,.paper-2 .ask-k{color:var(--ink-2)}
+.ask-l{max-width:52ch}
+.ask-a{color:var(--fg-3);max-width:56ch}
+.paper .ask-a,.paper-2 .ask-a{color:var(--ink-3)}
+.ask-a .lk{position:relative;display:inline-block}
+.ask-a .lk::after{content:'';position:absolute;left:0;right:0;top:50%;
+  transform:translateY(-50%);height:24px}
+@media (prefers-reduced-motion:reduce){.ask-ar{transition:none}}
 ${FAMILY_CSS}
 
 `;
@@ -727,6 +793,412 @@ export const disclose = (summary, body) => `      <details class="dx">
         <div class="dx-b">${body}</div>
       </details>`;
 
+/* ═══ THE ASK — AD-27.14 → AD-27.22 ══════════════════════════════════════
+   ONE CONTACT COMPONENT, and it resolves the ask IN PLACE. A reader who has
+   decided to work with Swechha is handed a 10,072px page today; the Ask
+   answers them where they asked, with no navigation and no JavaScript.
+
+   THE COPY BELOW IS FIXED TEXT FROM AD-27.17 AND IS NOT AN IMPLEMENTATION
+   CHOICE. Four audiences, one address, one subject-line pattern, four bodies.
+   Nobody invents a fifth audience, a second address, or a turnaround promise —
+   naming the person IS the honest form of "short turnaround".
+
+   LANES 3 AND 4 BUILD THROUGH THIS FILE AND SHOULD CALL `ask()` RATHER THAN
+   RETYPE AD-27.15's MARKUP. Lane 2 owns work-shell.mjs, which has no access to
+   this module, so it carries its own copy of the CSS (AD-27.16's sentinel
+   comment is how the two are proved identical) and of this markup.
+
+   THE HREF IS BUILT AT BUILD TIME, encodeURIComponent'd, and then `&` is
+   escaped to `&amp;` because it lands in an HTML attribute (AD-27.15). The
+   newlines become %0A through encodeURIComponent; they are never hand-written.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/** The four audiences. Subject word + body template, verbatim from AD-27.17. */
+export const ASK_AUDIENCES = {
+  school: {
+    subject: 'School enquiry',
+    body: [
+      'School, organisation, or just yourself:',
+      'Your name and role:',
+      'Year group, and roughly how many people:',
+      'What you have in mind (a walk, a day at the farm, a journey, a year of the curriculum):',
+      'When in the year:',
+    ],
+  },
+  funder: {
+    subject: 'Funding enquiry',
+    body: [
+      'Organisation:',
+      'Your name and role:',
+      'What you are considering supporting:',
+      'Rough scale, if you have one:',
+    ],
+  },
+  institution: {
+    subject: 'Partnership enquiry',
+    body: [
+      'Organisation:',
+      'Your name and role:',
+      'What you would like to do together:',
+      'Where, and roughly when:',
+    ],
+  },
+  media: {
+    subject: 'Media enquiry',
+    body: [
+      'Publication or programme:',
+      'Your name:',
+      'What you are working on:',
+      'Your deadline:',
+    ],
+  },
+};
+
+/** The one address, for all four. AD-27.17: it satisfies about-people.json's
+    email_policy, which /act's gate 10 enforces. swechhaindia@gmail.com is the
+    footer's general address and may never carry an Ask. */
+export const ASK_EMAIL = 'vimlendu@swechha.in';
+
+/** The one sentence, identical on all four. It promises a PERSON, not an
+    interval — see AD-27.17 on why no turnaround time is printed anywhere.
+
+    AD-28 CUT THE SECOND HALF. It used to continue: "One person reads it, and
+    the subject line already says which programme you are writing about." That
+    is this component's own mailto plumbing, narrated to the reader — the
+    subject line is routing WE chose, and how our inbox sorts is not the
+    visitor's business (COPY-STANDARD: "internal data provenance · internal
+    verification notes"; AD-28 category 5, the page describing its own
+    construction). WHO RECEIVES THE MAIL STAYS: a named person is what makes
+    this an Ask rather than a contact form, and it is the honest form of the
+    turnaround promise AD-27.17 forbids. */
+export const ASK_LINE = 'This goes to Vimlendu Jha, Swechha&rsquo;s Executive Director.';
+
+/** THE PLAIN ADDRESS, UNDER THE BUTTON. AD-28 rewrote it, and did NOT delete
+    it: a device with no mail client is a real case, this line is the only way
+    to the address without JavaScript, and it is the whole reason the Ask works
+    with scripting off.
+
+    What changed is the voice. It read: "If that button does nothing, your
+    device has no email app set up. The address is … — copy it into whatever
+    you use." Two sentences of apology and a troubleshooting instruction, to
+    explain a `mailto:` — the exact "unnecessary disclaimer" the copy standard
+    strikes, and it made the button look unreliable before the reader had
+    pressed it. An offer does the same work in four words: the address is right
+    there, and a reader who wants it takes it. */
+export const ASK_FALLBACK = `Or write to <a class="lk" href="mailto:${ASK_EMAIL}">${ASK_EMAIL}</a>.`;
+
+/** AD-27.15's arrow: the site's own drawing at 16px, rotating 90° on open.
+    It is the component's only motion. */
+export const ASK_ARROW = '<svg class="ask-ar" width="16" height="16" viewBox="0 0 16 16" '
+  + 'aria-hidden="true" focusable="false"><path d="M2 8h11M9 4l4 4-4 4" fill="none" '
+  + 'stroke="currentColor" stroke-width="2"/></svg>';
+
+/**
+ * One Ask.
+ *   audience  one of ASK_AUDIENCES' four keys — it decides the subject and body
+ *   label     the visible ask, e.g. "Bring your school". An ask, not a page name
+ *   page      the page name that goes in the subject line, e.g. "Bridge the Gap"
+ *   path      this page's own route, appended to the body as the provenance line
+ *   level     1 or 2 — .b-1 is the primary and there is ONE per band (BRANDING §5.8)
+ *   tertiary  the quiet link onward for the reader who DOES want to read more.
+ *             Defaults per audience (see ASK_ONWARD). Pass null only where the
+ *             default would point at the page the reader is already standing
+ *             on — /act#partner's own two Asks do exactly that.
+ */
+/* ── THE TERTIARY LINK IS PER AUDIENCE. An amendment to AD-27.15, and it is a
+      defect lane 4 found by building the thing: AD-27.15 hard-codes
+      "How partnerships work -> /act#partner" on every Ask, and on the MEDIA
+      door that is the wrong sentence AND the wrong destination. A journalist
+      asking for an interview is not considering a partnership; what they want
+      next is the checkable record, which is the page that carries every figure
+      with the span it counts and where it came from.
+      The other three audiences keep AD-27.15's link exactly as ruled — for a
+      school, a funder or an institution, /act#partner IS the long version of
+      the ask they just made. One variant, not four. */
+export const ASK_ONWARD = {
+  school: ['/act#partner', 'How partnerships work'],
+  funder: ['/act#partner', 'How partnerships work'],
+  institution: ['/act#partner', 'How partnerships work'],
+  media: ['/impact', 'Every figure Swechha holds'],
+};
+export const ask = ({ audience, label, page, path, level = 1, tertiary }) => {
+  const a = ASK_AUDIENCES[audience];
+  if (!a) {
+    console.error(`REFUSING TO BUILD: "${audience}" is not one of the four Ask audiences `
+      + `(${Object.keys(ASK_AUDIENCES).join(', ')}). AD-27.56: nobody invents a fifth.`);
+    process.exit(1);
+  }
+  /* `tertiary` undefined -> the audience's own default; `null` -> no link at
+     all, which is what /act's two Asks pass because the default would point at
+     the band the reader is standing in. */
+  const onward = tertiary === undefined ? ASK_ONWARD[audience]
+    : (tertiary ? [tertiary, 'How partnerships work'] : null);
+  const subject = `${a.subject} — ${page}`;
+  const body = `${a.body.join('\n')}\n\nSent from swechha.in${path}`;
+  const href = `mailto:${ASK_EMAIL}?subject=${encodeURIComponent(subject)}`
+    + `&body=${encodeURIComponent(body)}`;
+  if (href.length > 900) {
+    console.error(`REFUSING TO BUILD: the ${audience} mailto for "${page}" is ${href.length} `
+      + 'characters. AD-27.17 caps an encoded href at 900 to stay well inside Outlook\'s ceiling.');
+    process.exit(1);
+  }
+  return `      <details class="ask" data-ask="${audience}">
+        <summary class="b b-${level} ask-s">${esc(label)}${ASK_ARROW}</summary>
+        <div class="ask-p">
+          <p class="lbl ask-k">Straight to a person</p>
+          <p class="body ask-l">${ASK_LINE}</p>
+          <p><a class="b b-2 ask-go" href="${href.replace(/&/g, '&amp;')}">Open an email${ASK_ARROW}</a></p>
+          <p class="cap ask-a">${ASK_FALLBACK}</p>${onward
+    ? `\n          <p><a class="act ask-t" href="${onward[0]}">${onward[1]} &rarr;</a></p>` : ''}
+        </div>
+      </details>`;
+};
+
+/**
+ * AD-27.22's four assertions, run by every generator that emits an Ask.
+ * Returns the number of failures; the caller decides how to fail, because each
+ * generator already has its own gate reporter.
+ */
+export function askGates(html, report, { allowed = [] } = {}) {
+  let bad = 0;
+  const say = (ok, msg) => { if (report) report(ok, msg); if (!ok) bad++; };
+  /* Each Ask is read as a WHOLE BLOCK, not as two parallel lists of matches.
+     A page legitimately carries other mailto: links (act.html's own contact
+     band does), so pairing the Nth data-ask with the Nth subject on the page
+     would compare an Ask against somebody else's href and pass or fail by
+     accident. */
+  const blocks = [...html.matchAll(/<details class="ask" data-ask="([^"]*)"[\s\S]*?<\/details>/g)];
+  const asks = blocks.map(b => b[1]);
+
+  // 1 — the audience is one of the four, and the subject starts with its word.
+  const unknown = asks.filter(a => !Object.prototype.hasOwnProperty.call(ASK_AUDIENCES, a));
+  say(unknown.length === 0,
+    `every .ask names one of the four audiences${unknown.length ? `; FOUND: ${unknown.join(', ')}` : ''} (${asks.join(', ') || 'none'})`);
+  const mismatched = blocks.filter(([block, a]) => {
+    const m = /mailto:[^"?]*\?subject=([^&"]*)/.exec(block);
+    const subject = m ? decodeURIComponent(m[1].replace(/&amp;/g, '&')) : '';
+    return !ASK_AUDIENCES[a] || !subject.startsWith(ASK_AUDIENCES[a].subject);
+  }).map(b => b[1]);
+  say(mismatched.length === 0,
+    `every Ask subject line starts with its audience's word${mismatched.length ? `; WRONG: ${mismatched.join(', ')}` : ''}`);
+
+  // 2 — no address is published that the email policy does not allow. The
+  //     caller passes about-people.json's published_email_exceptions; with no
+  //     exceptions this is the plain @swechha.in rule AD-27.22 states.
+  const ok2 = new Set(allowed);
+  const mailtos = [...new Set([...html.matchAll(/href="mailto:([^"?]+)/g)].map(m => m[1]))];
+  const offsite = mailtos.filter(m => !m.endsWith('@swechha.in') && !ok2.has(m));
+  say(offsite.length === 0,
+    `every mailto: resolves to @swechha.in or a named exception${offsite.length ? `; FOUND: ${offsite.join(', ')}` : ''} (${mailtos.join(', ') || 'none'})`);
+
+  // 3 — at most two Asks, never two of the same audience.
+  say(asks.length <= 2, `no more than two Asks on the page (found ${asks.length})`);
+  say(new Set(asks).size === asks.length, 'no two Asks on the page share an audience');
+
+  // 4 — nothing unexpanded reaches the HTML. A mailto: with the literal string
+  //     SUBJECT in it looks exactly like a working button.
+  say(!/mailto:[^"]*(SUBJECT|BODY)/.test(html) && !/\{\{[A-Za-z_]+\}\}/.test(html),
+    'no unexpanded {{token}}, SUBJECT or BODY literal reaches the HTML');
+  return bad;
+}
+
+/**
+ * AD-28 §7. THE DESIGN RATIONALE STAYS IN THE SOURCE AND STOPS SHIPPING TO THE
+ * READER.
+ *
+ * The stylesheets these pages emit carried about 50KB of CSS comments per page,
+ * and those comments are where the ledger references live: 26 `AD-2x`, 11
+ * `D-0x` and 37 `§` on every one of the fifteen. AD-28's mechanical test is
+ * over the FILE, not over the visible text, and it is right to be — a reader
+ * who views source is still a reader, and a grep that has to special-case the
+ * rule's own documentation proves nothing.
+ *
+ * WRITTEN FOR THE WORK PAGES, NOW THE WHOLE SITE'S. These three functions
+ * lived in `work-shell.mjs` and only the fifteen WORK pages got them; the
+ * other twenty shipped 15–39 `AD-2` hits apiece, and `home.html` shipped three
+ * `SOURCE-FACTS` on top of that. Reader-visible text was clean on every one of
+ * them and the page source was not, so AD-28 §7's acceptance test failed
+ * site-wide while reading as if it passed. They moved here because `assemble()`
+ * below is where everything that is not a WORK page is built — one mechanism,
+ * one layer, nine generators that get it for free and cannot forget it.
+ *
+ * Hand-editing five hundred comments would have destroyed the engineering
+ * record and would have had to be redone by whoever writes the next one. So the
+ * comments stay in the .mjs — which is developer documentation, the same
+ * category as `docs/design/**`, explicitly out of AD-28's scope — and the
+ * emitted stylesheet is stripped of them at build time. The pages get smaller,
+ * the record survives intact, and nothing has to be remembered.
+ *
+ * The stripper is deliberately literal: it walks the string and only treats
+ * a slash-star as a comment opener when it is NOT inside a quoted value, so a
+ * `content:"/*"` or a url() containing the sequence survives. The AD-28 gate
+ * below then asserts the result is clean, so if this ever mis-fires the build
+ * says so rather than shipping a half-stripped sheet.
+ */
+export function stripCssComments(css) {
+  let out = '', i = 0, quote = null;
+  while (i < css.length) {
+    const c = css[i];
+    if (quote) {
+      out += c;
+      if (c === '\\') { out += css[i + 1] || ''; i += 2; continue; }
+      if (c === quote) quote = null;
+      i++; continue;
+    }
+    if (c === '"' || c === "'") { quote = c; out += c; i++; continue; }
+    if (c === '/' && css[i + 1] === '*') {
+      const end = css.indexOf('*/', i + 2);
+      i = end === -1 ? css.length : end + 2;
+      continue;
+    }
+    out += c; i++;
+  }
+  /* Collapse the blank lines the comments leave behind. Nothing else is
+     touched: this is not a minifier and must not become one. */
+  return out.replace(/[ \t]+$/gm, '').replace(/\n{2,}/g, '\n').trim();
+}
+
+/**
+ * AD-28 §7, the same rule applied to HTML comments.
+ *
+ * These pages lift the footer, the SVG filter defs and the skip link VERBATIM
+ * out of `home.html`, and that frozen markup carries its own commentary — "See
+ * §9 of that document", "AD-11: duo-m and five sig-* selective-colour filters
+ * were defined here". Extracting it verbatim is deliberate and stays; shipping
+ * the annotations is not, and they are not this file's to edit at source.
+ *
+ * `<script>` and `<style>` bodies are stepped over rather than scanned: a
+ * `<!--` inside a script string is not a comment, and cutting from there to the
+ * next `-->` would silently delete working code. The AD-28 gate runs after
+ * this, and `node --check` runs on the page script after that, so a mistake
+ * here stops the build instead of shipping.
+ */
+export function stripHtmlComments(html) {
+  let out = '', i = 0;
+  while (i < html.length) {
+    const lower = html.slice(i, i + 8).toLowerCase();
+    if (lower.startsWith('<script') || lower.startsWith('<style')) {
+      const tag = lower.startsWith('<script') ? 'script' : 'style';
+      const end = html.toLowerCase().indexOf(`</${tag}>`, i);
+      const stop = end === -1 ? html.length : end + tag.length + 3;
+      out += html.slice(i, stop); i = stop; continue;
+    }
+    if (html.startsWith('<!--', i)) {
+      const end = html.indexOf('-->', i + 4);
+      i = end === -1 ? html.length : end + 3;
+      continue;
+    }
+    out += html[i]; i++;
+  }
+  return out.replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n');
+}
+
+/**
+ * AD-28 §7 in the page script, and the ONE place this pass redacts rather than
+ * strips.
+ *
+ * The behaviours these pages run — the mobile index control, the tab
+ * controller — are lifted out of `home.html` by comment marker
+ * (`situation-shell.mjs`'s `iife()`), and the marker is a ruling id: "D-09.1.
+ * THE MOBILE INDEX CONTROL". The extraction is the right design and stays; the
+ * id must not ship.
+ *
+ * DELETING WHOLE JS COMMENTS WAS REJECTED. Doing it safely means correctly
+ * identifying regex literals, template literals and nested quotes, and getting
+ * that wrong deletes working code. Redacting only the struck substrings INSIDE
+ * a span the scanner believes is a comment has the same scanning risk and a
+ * blast radius of nothing: if the scanner is ever wrong about a span, the worst
+ * it can do is rewrite a ledger id that no code contains anyway.
+ *
+ * `node --check` runs on the result, and the AD-28 gate runs after that.
+ */
+export function redactScriptLedgerRefs(js) {
+  const LEDGER = /\bSOURCE-FACTS[^\s.,;)]*|\bAD-\d\d(\.\d+)?|\bD-\d\d?\.\d+|\bW-\d\d\b|§\s*\d*/g;
+  let out = '', i = 0;
+  const isRegexStart = () => {
+    for (let k = out.length - 1; k >= 0; k--) {
+      const c = out[k];
+      if (/\s/.test(c)) continue;
+      return '(,=:[!&|?{};+-*%~^'.includes(c);
+    }
+    return true;
+  };
+  while (i < js.length) {
+    const two = js.slice(i, i + 2);
+    if (two === '//') {
+      const end = js.indexOf('\n', i); const stop = end === -1 ? js.length : end;
+      out += js.slice(i, stop).replace(LEDGER, 'note'); i = stop; continue;
+    }
+    if (two === '/*') {
+      const end = js.indexOf('*/', i + 2); const stop = end === -1 ? js.length : end + 2;
+      out += js.slice(i, stop).replace(LEDGER, 'note'); i = stop; continue;
+    }
+    const c = js[i];
+    if (c === '"' || c === "'" || c === '`') {
+      out += c; i++;
+      while (i < js.length) {
+        if (js[i] === '\\') { out += js.slice(i, i + 2); i += 2; continue; }
+        out += js[i];
+        if (js[i] === c) { i++; break; }
+        i++;
+      }
+      continue;
+    }
+    if (c === '/' && isRegexStart()) {
+      out += c; i++;
+      let inClass = false;
+      while (i < js.length) {
+        if (js[i] === '\\') { out += js.slice(i, i + 2); i += 2; continue; }
+        if (js[i] === '[') inClass = true;
+        else if (js[i] === ']') inClass = false;
+        else if (js[i] === '/' && !inClass) { out += js[i]; i++; break; }
+        else if (js[i] === '\n') break;
+        out += js[i]; i++;
+      }
+      continue;
+    }
+    out += c; i++;
+  }
+  return out;
+}
+
+/**
+ * AD-28 §7 FOR A DOCUMENT NOBODY GENERATED.
+ *
+ * `assemble()` below calls the three strippers on the pieces it is holding —
+ * the stylesheet as a string, the script as a string, the document as a string.
+ * `design/home.html` arrives as one finished document instead, so the pieces
+ * have to be found inside it first. That is all this function is: locate every
+ * `<style>` body and strip its CSS comments, locate every `<script>` body and
+ * redact the ledger ids in its comments, then strip the HTML comments out of
+ * everything that is left.
+ *
+ * ORDER MATTERS AND IS NOT ARBITRARY. `stripHtmlComments` deliberately STEPS
+ * OVER `<script>` and `<style>` — a `<!--` inside a script string is not a
+ * comment, and cutting from there to the next `-->` deletes working code. So
+ * the two embedded languages are handled in their own terms first, and the
+ * HTML pass runs last over the result.
+ *
+ * THE BODIES ARE FOUND BY REGEX, WHICH IS THE ONE THING HERE THAT COULD BE
+ * WRONG: a literal `</script>` inside a JS string would end the match early.
+ * `build-hero.mjs` counts the tags before and after and refuses to write if
+ * either count moves, so that mistake stops the build instead of shipping half
+ * a page.
+ *
+ * WHY REDACT THE SCRIPT RATHER THAN CUT ITS COMMENTS: unchanged from the
+ * argument at `redactScriptLedgerRefs` — deleting JS comments safely means
+ * correctly parsing regex and template literals, and getting it wrong deletes
+ * working code. Rewriting a ledger id inside a span the scanner believes is a
+ * comment has the same scanning risk and a blast radius of nothing.
+ */
+export function shipDocument(html) {
+  const withStyles = html.replace(/(<style\b[^>]*>)([\s\S]*?)(<\/style>)/gi,
+    (_, open, body, close) => open + stripCssComments(body) + close);
+  const withScripts = withStyles.replace(/(<script\b[^>]*>)([\s\S]*?)(<\/script>)/gi,
+    (_, open, body, close) => open + redactScriptLedgerRefs(body) + close);
+  return stripHtmlComments(withScripts);
+}
+
 /* ═══ ASSEMBLE AND THE WRITE GATES ═══════════════════════════════════════ */
 
 /**
@@ -736,7 +1208,84 @@ export const disclose = (summary, body) => `      <details class="dx">
  * one half leaves the other unchecked, which is the same bug on a different
  * line (SITUATION-PAGE-TEMPLATE.md §2).
  */
-export async function assemble({ file, title, bands, sectionFor, index, sh, pageCss = '', script = '', clashes, note = '', navMark = null, route = null }) {
+/* ═══ THE HEAD TAGS EVERY BUILT PAGE OWES (AD-27.48, .49, .13) ═══════════
+   THE STATE THIS FIXES, MEASURED: 20 of 35 built pages carried no
+   `<meta name="description">` AT ALL — including the homepage, /about, /act,
+   /farm, /impact, /now and all six situations — and ZERO of 35 carried
+   `og:*`, `twitter:*` or `<link rel="icon">`. The mechanical reason for the
+   first was this file: `assemble()` had no `desc` parameter, so no caller
+   could have passed one.
+
+   ★ THE DESCRIPTIONS LIVE HERE, KEYED BY THE PAGE'S OWN CANONICAL ROUTE.
+   AD-27.48 asks for "one parameter", and `desc` is that parameter — a caller
+   may always pass its own and it wins. The register below is the default for
+   the pages that already existed when the parameter was added, so that the
+   twenty missing descriptions land in ONE change rather than in six
+   generators owned by four people working in parallel. A generator that
+   wants its description beside its own copy should pass `desc:` and delete
+   its row here; the two paths cannot both apply.
+
+   ★ REQUIRED, AND THE BUILD STOPS WITHOUT ONE. Same argument the canonical
+   check above makes about the URL: a page that cannot say what it is about
+   should not be published. A NEW page therefore has to write one — which is
+   the whole point, and is why the register is a default and not a fallback
+   string.
+
+   ★ EVERY DESCRIPTION IS 140-158 CHARACTERS, states the page's subject in the
+   reader's words, and carries one verifiable fact. NOTHING HERE IS TENSED,
+   DATED OR A SPECIMEN (BRANDING §3.5 applies to <head> exactly as it applies
+   to <body> — Google caches this text): no reading, no elapsed-years count,
+   no "today", no "currently", no DEMO DATA. Note how the situation rows are
+   written — they describe the INSTRUMENT, never the value, because the value
+   moves and the description does not. */
+export const DESCRIPTIONS = {
+  '/now': "Six environmental readings Swechha keeps: Delhi's air, the Yamuna, heat, forest fire, forest loss and extreme rain, each against the standard that governs it.",
+  '/now/yamuna': "The Yamuna through Delhi, read against CPCB's own class C standard, with the monitoring station, the sampling method and the date on every figure.",
+  '/now/heat': "India's heat, read from IMD's own heat-wave criteria and NCRB's death table, with the source, the year and the limits of the count on every figure.",
+  '/now/forest-fire': "India's forest fires, read from the Forest Survey of India's burnt-area record and NASA FIRMS detections, with what each source can and cannot count.",
+  '/now/forest-loss': "India's forest loss, read from three sources that disagree — and two of them are not independent, which matters more than the disagreement does.",
+  '/now/climate-event': "India's extreme rain, read against IMD's own 24-hour rainfall categories, with the official table behind every figure and what it leaves out.",
+  '/impact': 'Every figure Swechha holds, on one page, by programme and by the span it counts. No single total: the figures count overlapping groups of people.',
+  '/publications': "Three things Swechha has published, free and whole, with no address asked for: a book about a neighbourhood, a shopper's guide, and one piece of research.",
+  '/search': 'Search every page on swechha.in by title, section heading and opening line — or read the whole list below, in the order the site is arranged.',
+  '/stories': 'Films made with the people in them, and a poster series that said the same things on paper, in a city that reads walls before it reads reports.',
+  '/about': 'Founded in 2000 as We for Yamuna. Swechha is an environmental organisation in Delhi — who does the work, who governs it, and what it has done since.',
+  '/act': 'Three ways in: give to an NGO with 80G and 12A, turn up and volunteer, or bring us a ward, a river stretch or a cohort. Every ask on this site lands here.',
+  '/farm': 'Five acres in the Aravallis, ninety minutes from Delhi. Day visits, overnight school camps for a hundred students, retreats and stays. One tree became 5,000.',
+};
+
+/* THE SHARE CARD AND THE ICONS ARE RELATIVE, DELIBERATELY, and for the same
+   reason the canonical is: the origin is only known at request time, so an
+   absolute value baked in at build time advertises the preview host on every
+   preview deploy. Scrapers resolve a relative og:image against the document
+   URL. `og:url` is omitted for the same reason. If a later pass wants absolute
+   values they come from SITE_ORIGIN at build time, never from a literal. */
+/* ATTRIBUTE-SAFE, BUT NOT esc(). Titles arrive already carrying HTML entities
+   (`&mdash;`, `&rsquo;`), so esc()'s `&` -> `&amp;` would render the literal
+   text "&mdash;" in a share card. Only the two characters that can break an
+   attribute are touched, and an existing entity is left standing. */
+const attr = (s) => String(s ?? '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+/* JSON-LD is DATA, not markup: an entity inside a JSON string ships as the
+   literal characters "&rsquo;" to a machine reader. The four the titles on this
+   site actually use are turned back into their characters, and nothing else is
+   — an unknown entity should be visible in the output, not silently dropped. */
+const decodeEntities = (s) => String(s ?? '')
+  .replace(/&mdash;/g, '—').replace(/&rsquo;/g, '’')
+  .replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ');
+export const headTags = (title, desc) =>
+  '<link rel="icon" href="/icons/icon-32.png" sizes="32x32">'
+  + '<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">\n'
+  + `<meta name="description" content="${attr(desc)}">\n`
+  + '<meta property="og:type" content="website">'
+  + '<meta property="og:site_name" content="Swechha">'
+  + '<meta property="og:locale" content="en_IN">'
+  + `<meta property="og:title" content="${attr(title)}">`
+  + `<meta property="og:description" content="${attr(desc)}">`
+  + '<meta property="og:image" content="/images/og/og-default.png">'
+  + '<meta name="twitter:card" content="summary_large_image">'
+  + '<meta name="twitter:site" content="@swechhaindia">';
+
+export async function assemble({ file, title, desc = null, bands, sectionFor, index, sh, pageCss = '', script = '', clashes, note = '', navMark = null, route = null }) {
   /* WHICH NAV WORD THIS PAGE IS STANDING UNDER, derived from the file being
      written rather than passed in, so a generator cannot mark the wrong one.
      The index and all six situations live under `Now`; anything else built
@@ -778,6 +1327,22 @@ export async function assemble({ file, title, bands, sectionFor, index, sh, page
     process.exit(1);
   }
 
+  /* AD-27.48. REQUIRED, for the same reason the canonical is. */
+  const description = desc ?? DESCRIPTIONS[canonical] ?? null;
+  if (!description) {
+    console.error(`REFUSING TO WRITE: ${file} (${canonical}) has no meta description. `
+      + `Pass desc: '…' to assemble(), or add a row to DESCRIPTIONS in this file.\n`
+      + '  140-158 characters, the page\'s subject in the reader\'s words plus one\n'
+      + '  verifiable fact. Not tensed, not dated, no reading, no specimen — a\n'
+      + '  description is static markup that Google caches (BRANDING §3.5).');
+    process.exit(1);
+  }
+  if (description.length < 140 || description.length > 158) {
+    console.error(`REFUSING TO WRITE: ${file}'s description is ${description.length} characters; `
+      + 'AD-27.48 sets 140-158. Too short wastes the snippet, too long is truncated mid-clause.');
+    process.exit(1);
+  }
+
   const section = ([id, cls]) => {
     const body = sectionFor(id);
     const labelled = !['top', 'strip'].includes(id) ? ` aria-labelledby="${id}-h"` : '';
@@ -785,8 +1350,43 @@ export async function assemble({ file, title, bands, sectionFor, index, sh, page
     return `  <section${cls ? ` class="${cls}"` : ''} id="${id}"${aria}>\n${body}\n  </section>`;
   };
 
-  const SCRIPT = `${sh.SCRIPT_BASE}\n${script}`;
-  const OUT = `<!doctype html>
+  /* ── BREADCRUMBLIST, ON THE SIX SITUATION PAGES ONLY (AD-27.50). ───────
+     DERIVED FROM THE CANONICAL ROUTE THIS PAGE ALREADY COMPUTES, so a
+     breadcrumb cannot come to disagree with the URL it describes — which is
+     the only failure mode this markup has. Three levels: Swechha -> Now ->
+     the page. The leaf's name is the page's own <title> with the site suffix
+     removed, so it is the same words the reader sees in the tab.
+     ONLY /now/* GETS ONE. A breadcrumb on a top-level page would be a
+     one-item trail, and the WORK section's is lane 2's, emitted by
+     work-shell.mjs from its own route. Nothing else on this site has a
+     hierarchy to state.
+     THE URLS ARE RELATIVE for the same reason the canonical is: a preview
+     deploy must not advertise the production host. JSON-LD resolves a
+     relative `item` against the document. */
+  const crumbName = String(title).replace(/\s*&mdash;\s*Swechha\s*$/, '').replace(/\s*—\s*Swechha\s*$/, '');
+  const CRUMBS = /^\/now\/[a-z-]+$/.test(canonical)
+    ? '\n<script type="application/ld+json">' + JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Swechha', item: '/' },
+        { '@type': 'ListItem', position: 2, name: 'Now', item: INDEX_PAGE.route },
+        { '@type': 'ListItem', position: 3, name: decodeEntities(crumbName), item: canonical },
+      ],
+    }) + '</script>'
+    : '';
+
+  /* AD-28 §7. The extracted behaviours keep their comments; the ledger ids
+     inside them do not. `node --check` runs on the redacted text below, so a
+     scanner mistake stops the build rather than shipping broken script. */
+  const SCRIPT = redactScriptLedgerRefs(`${sh.SCRIPT_BASE}\n${script}`);
+  /* AD-28 §7. The document is assembled, then stripped of HTML comments, and
+     its stylesheet of CSS comments. The frozen chrome's annotations and this
+     shell's own design record are developer documentation; they are not the
+     reader's business and they are not what the acceptance test is over. Every
+     gate below runs on the STRIPPED text, so what is checked is exactly what is
+     written. */
+  const OUT = stripHtmlComments(`<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -794,12 +1394,10 @@ export async function assemble({ file, title, bands, sectionFor, index, sh, page
 <meta name="color-scheme" content="dark">
 <title>${title}</title>
 <link rel="canonical" href="${canonical}">
+${headTags(title, description)}
 ${sh.HEAD_FONTS}
 <style>
-${sh.CSS}
-${sh.SITUATION_CSS}
-${SHARED_PAGE_CSS}
-${pageCss}</style>
+${stripCssComments([sh.CSS, sh.SITUATION_CSS, SHARED_PAGE_CSS, pageCss].join('\n'))}</style>
 </head>
 <body>
 ${sh.SVG_DEFS}
@@ -808,12 +1406,12 @@ ${header(index, { ...mark, page: canonical })}
 <main id="main" tabindex="-1">
 ${bands.map(section).join('\n')}
 </main>
-${sh.FOOTER}
+${sh.FOOTER}${CRUMBS}
 <script>
 ${SCRIPT}</script>
 </body>
 </html>
-`;
+`);
 
   if (sh.bad > 0) {
     console.error(`\nREFUSING TO WRITE: ${sh.bad} extraction assertion(s) failed. The ranges moved — re-find them, do not delete the assertion.`);
@@ -846,6 +1444,48 @@ ${SCRIPT}</script>
       `so they would render with no left gutter. Lines: ${stray.join(', ')}.\n` +
       `  .im-head has no padding of its own — the gutter is .wrap's padding:0 var(--gut).\n` +
       `  Use opener(), which carries its own .wrap.`);
+    process.exit(1);
+  }
+
+  /* ═══ GATE — AD-28 §7. THE LEDGER MAY NOT COME BACK ═══════════════════
+     The mechanical acceptance test, applied to this page before it is written.
+     `lib/provenance.test.ts` runs the same five patterns over all thirty-five
+     built files on disk, which catches a page nobody rebuilt; this catches the
+     page being built RIGHT NOW and names the generator that did it, which is
+     the difference between a red suite and a fixable error.
+
+     IT RUNS ON THE STRIPPED TEXT, deliberately. The three strippers above are
+     the mechanism; this is the proof they fired. If a stripper ever mis-scans
+     and leaves half a comment behind, the build stops here instead of shipping
+     a page that reads clean and greps dirty.
+
+     INVERTED, NOT DELETED (AD-28 §6). Several gates in this repo used to
+     REQUIRE this material — build-about-page.mjs's Ask-CSS gate asserted the
+     presence of the sentinel comment "AD-27.16 THE ASK" and went red the moment
+     the strip landed. That gate now asserts the opposite. This is the same move
+     made once, centrally, for every page built through this shell. */
+  const AD28 = [
+    [/SOURCE-FACTS/, 'a citation into a working file in this repository. A reader cannot follow one, cannot check one, and was never meant to see one.'],
+    [/§/, 'a section-mark citation into a repository ledger. The line numbers behind them drift the moment the ledger is edited.'],
+    [/\bAD-2\d/, 'an internal design-ruling id.'],
+    [/\bD-0\d/, 'an internal decision id.'],
+    [/\bW-1\d/, 'an internal WORK-pass ruling id.'],
+  ];
+  const struck = [];
+  for (const [re, why] of AD28) {
+    const m = re.exec(OUT);
+    if (m) {
+      struck.push(`  ${JSON.stringify(m[0])} — ${why}\n    Context: `
+        + JSON.stringify(OUT.slice(Math.max(0, m.index - 80), m.index + 80).replace(/\s+/g, ' ')));
+    }
+  }
+  if (struck.length) {
+    console.error(`\nREFUSING TO WRITE: ${file} carries ${struck.length} internal ledger `
+      + `reference(s) that would ship to a reader (AD-28 §7).\n${struck.join('\n')}\n`
+      + '  These are normally stripped: HTML comments by stripHtmlComments(), CSS comments by\n'
+      + '  stripCssComments(), script comments redacted by redactScriptLedgerRefs(). One reaching\n'
+      + '  here means it is in reader-visible text, or a stripper mis-scanned. Do NOT delete the\n'
+      + '  comment in the .mjs — that is the design record and it is out of AD-28\'s scope.');
     process.exit(1);
   }
 

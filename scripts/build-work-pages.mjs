@@ -63,11 +63,19 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import {
-  ROOT, V3, workShell, buildPage, writePage, Links, opener, hole, esc, ARROW,
-  masthead, figures, regRows, displayRows, march, onwardBand, anc, KIND_LEGEND, disclose,
-  bandChain, tabs, panel, gallerySheet, doRows, readingLedger, rangeRow, inviteRow,
-  statementBand, splitBand, kindTag,
+  ROOT, V3, workShell, buildPage, writePage, Links, openBand as opener, esc, ARROW,
+  masthead, figures, regRows, displayRows, march, onwardBand, anc, disclose,
+  bandChain, tabs, panel, gallerySheet, doRows, rangeRow, inviteRow,
+  statementBand, splitBand, figureRail, ask, HOME_SRC,
 } from './lib/work-shell.mjs';
+/* AD-28. `hole`, `KIND_LEGEND` and `readingLedger` ARE DELIBERATELY NOT
+   IMPORTED. `hole()` renders `.p-hole`, the named-hole marker — an explanation
+   of an absence, which no organisational page may publish. `KIND_LEGEND`
+   explains the counted/modelled vocabulary, which is sourcing method. The
+   reading ledger no longer exists. The three are still exported by the shell
+   because the situation generators use them and there the source IS the
+   substance; this file may not reach for them, and the AD-28 gate fails the
+   build if their markup appears on a WORK page by any other route. */
 
 /* ═══ ARGUMENTS ══════════════════════════════════════════════════════════ */
 const argv = process.argv.slice(2);
@@ -202,6 +210,134 @@ const ROUTE_NOTES_WITHDRAWN = new Map([
    is DECISIONS-2026-08-21-work-section.md, W-9 / W-12 / W-14. ══════════════ */
 const CONSENT_FLAGGED = [];
 const KINDS_ORDER = ['projects', 'campaigns', 'journeys', 'events'];
+
+/* ═══ AD-27.18 · THE ASK PLACEMENT TABLE — A RULING, ASSERTED AGAINST DATA ══
+   The audiences live in `data/work/**`'s new `ask` array (AD-27.19), because
+   that is where AD-27.54 puts them. But WHICH audience each page asks is a
+   RULING, not a data field — same as page-versus-row — so the table is here and
+   the build asserts the data agrees with it. A page that quietly changes its
+   audience changes which inbox folder its enquiries land in, forever, silently.
+
+   AT MOST TWO PER PAGE AND NEVER TWO OF THE SAME AUDIENCE (AD-27.18). More than
+   two turns the page into a switchboard and spends the primary button's meaning.
+
+   THREE ROWS DIVERGE FROM AD-27.18's TABLE AND EACH IS RECORDED, because the
+   table assigned an audience without checking the label the page already
+   carries, and a label and a subject line that disagree is the one failure the
+   Ask cannot survive:
+
+     me-to-we — ruled `funder`, and its .b-1 label is "Volunteer with us". A
+       Funding-enquiry body under a volunteering label is a mis-sort by
+       construction. Its EXISTING secondary is "Support this work", which is the
+       funder ask in the page's own words, so that becomes the Ask's label and
+       "Volunteer with us" survives as the quiet .act link it always deserved.
+       No copy invented.
+
+     influence — ruled `institution`, and its .b-1 label is "Apply for a
+       fellowship". A fellowship applicant is a PERSON; the Partnership body
+       asks "Organisation:" and "What you would like to do together:". Its
+       existing secondary "Take our volunteers" IS the institutional ask, so the
+       two swap: the Ask is labelled "Take our volunteers" and the fellowship
+       keeps its route as the .act link. No copy invented, and AD-27.56's ban on
+       a fifth audience is respected rather than worked around.
+
+     farm-school — its .b-1 goes to `/farm`, not `/act`, so it is not the leak
+       AD-27.14 describes; but the table places two Asks there and they are the
+       right two. "Come for a day" becomes the school Ask and "The farm itself"
+       survives as the .act link, because AD-27.29 replaces the "Partner with us
+       -> /about" secondary specifically, and /farm is a real destination with
+       real content.
+
+   THE ONE PIECE OF NEW COPY IN THIS WHOLE LANE is the funder label, "Fund this
+   work", on the five pages whose funder Ask has no existing label to inherit.
+   Four words, a connective line (AD-17 §8), no superlative, no promise. ═══ */
+const ASK_PLACEMENT = {
+  'projects/bridge-the-gap': ['school', 'funder'],
+  'projects/farm-school': ['school', 'funder'],
+  'projects/eco-action': ['institution', 'funder'],
+  'projects/influence': ['institution', 'funder'],
+  'projects/me-to-we': ['funder'],
+  'campaigns/monsoon-wooding': ['institution', 'funder'],
+  'journeys/cityscapes': ['school'],
+  'journeys/yamuna-yatra': ['school'],
+  'journeys/gram-anubhav': ['school'],
+  'journeys/naturescapes': ['school'],
+};
+const ASK_AUDIENCE_SET = new Set(['school', 'funder', 'institution', 'media']);
+
+/* ═══ AD-27.18-A (THIS LANE) · THE FIVE INDEX PAGES ASK TOO ════════════════
+   THE CLIENT FOUND THIS, WHICH IS THE WORST WAY FOR IT TO BE FOUND. Verbatim,
+   23 August: "http://localhost:3000/work Book a journey still lands at a page."
+   He is right, and it was wider than the one control: the Ask reached the ten
+   DETAIL pages and none of the five INDEX pages, all of which still shipped the
+   navigating block — /work "Book a journey", /work/projects "Bring your school",
+   /work/journeys "Book a journey", /work/events "Volunteer with us",
+   /work/campaigns "Plant with us", every one of them at /act.
+
+   AD-27.18's table says an index page gets no Ask, "an index page has no single
+   ask to make", and the first implementation of `inviteRow` repeated that
+   reasoning. THE READING DOES NOT SURVIVE CONTACT WITH THE LABELS. Three of the
+   five make exactly one ask, in the imperative, to a reader who has already
+   decided — "Bring your school" is a school ask whether it is made from the
+   project page or the kind that contains it, and "Book a journey" is the same
+   ask as CityScapes' ruled-school "Book a walk" with a longer trip in it. What
+   AD-27.18 got right is the PRINCIPLE (an Ask needs one audience it can name);
+   what it got wrong is the assumption that a landing page cannot have one. The
+   test is the label, not the depth of the page — and on the page whose label the
+   client actually complained about, /work/projects, the old control opened a
+   10,072px page whose Partner band is 1,527px of reading, which is AD-27.14's
+   own words for the wrong thing to hand somebody who has stopped reading.
+
+   AT MOST ONE ASK PER INDEX PAGE, and it is always the audience the page's own
+   label already names. No funder Ask is added anywhere here: an index page has
+   no single project to fund, and AD-27.18's "at most two" is a ceiling, not a
+   quota.
+
+   THE TWO THAT KEEP NAVIGATING, and why. "Volunteer with us" (/work/events) and
+   "Plant with us" (/work/campaigns) are INDIVIDUAL actions — one person turning
+   up in the rain — and not one of the four audiences. AD-27.56 forbids inventing
+   a fifth, and dressing an individual volunteer as an `institution` would sort
+   their message into the partnership folder forever. They stay links; what is
+   fixed is WHERE they land (ACT_ANCHOR below).
+
+   NO NEW COPY. Every label here is the one the page already carried, read out of
+   kinds.json's `act.label`, so nothing in this table can drift from what /act's
+   derived ask list calls the same ask. ════════════════════════════════════ */
+const INDEX_ASK = {
+  '/work': { audience: 'school', page: 'The work', label: () => kindDef('journeys').act.label },
+  '/work/projects': { audience: 'school', page: 'Projects', label: () => kindDef('projects').act.label },
+  '/work/journeys': { audience: 'school', page: 'Journeys', label: () => kindDef('journeys').act.label },
+};
+
+/* ═══ THE TWO THAT STILL NAVIGATE LAND ON THE ANSWER ══════════════════════
+   A reader who presses "Volunteer with us" has decided; sending them to the TOP
+   of a 10,072px page and asking them to find the volunteering is the same defect
+   the Ask fixes, one degree weaker. /act's bands are #start, #give, #hands,
+   #standing, #partner, and BOTH of these labels are in /act's own WAYS table
+   under `hands` (build-act-page.mjs:120-126) — that band is where the reader's
+   own ask is answered AND where the row pointing back to the page they came from
+   is printed. So the anchor is not a guess: it is the band /act itself files
+   this ask in, named here so the two files cannot disagree.
+
+   THE DATA IS NOT TOUCHED. AD-27.19 is explicit that `act.href` in
+   data/work/** stays as it is, because /act's whole ask list is derived from
+   `act.href === '/act'` and its gate 1 is total: deepening the href in
+   kinds.json would silently drop Campaigns and Events out of /act#hands — the
+   band this very change sends readers to — and could empty a way. The anchor is
+   therefore applied at RENDER time, to the link this page prints, and the
+   derivation upstream is left alone. ════════════════════════════════════════ */
+const ACT_ANCHOR = {
+  '/work/events': '#hands',
+  '/work/campaigns': '#hands',
+};
+/* The reader who wants the long version of partnering still gets it — but at the
+   page that has one. AD-27.29: /about's bands are top, says, since, team, board,
+   legible, act, and the only occurrence of the word "partner" in the whole file
+   is a footer link. On the three index pages that gain an Ask the tertiary link
+   inside it already carries this, so the secondary comes off entirely; on the two
+   that do not, it is repointed rather than dropped, because otherwise those two
+   pages would have no route to the partnering content at all. */
+const PARTNER_SECOND = { label: 'Partner with us', href: '/act#partner' };
 const SOURCE_FORMS = [/^SOURCE-FACTS §\d+[\d\-–,. ]*$/, /^owner \d{4}-\d{2}-\d{2}$/, /^DECISIONS D-\d+\.\d+$/];
 
 /* ═══ FAILURES AND HOLES ══════════════════════════════════════════════════ */
@@ -478,7 +614,57 @@ for (const it of items) {
   if (it.when && typeof it.when === 'object' && it.when.source) WHEN_SOURCED.add(key);
   (it.figures || []).forEach((f, i) => checkFigure(key, f, i));
   checkFrame(key, it.frame);
+  /* ── REJECTION 14, INVERTED BY AD-28. `frame_note` IS NO LONGER A FIELD.
+     It carried one sentence, in the masthead and in the open: that this page has
+     no photograph. Gram Anubhav's read "No photograph, and that is a finding
+     rather than a gap." AD-28 §2.3 settles every empty state the other way —
+     where a card, band or page has nothing behind it, SHOW LESS, do not explain
+     the absence. Gram Anubhav now simply has no photograph.
+
+     THE GATE IS INVERTED RATHER THAN DELETED (AD-28 §6). It used to assert the
+     note was well-formed and that the page it sat on really had no frame; it now
+     refuses the field outright, so the sentence cannot come back by somebody
+     re-adding a key that still had plumbing behind it. */
+  if ('frame_note' in it || '_frame_note' in it) {
+    rej(key, '"frame_note" is not a field any more (AD-28). It published a sentence explaining that the page '
+      + 'has no photograph. Where there is no photograph, the page shows none and says nothing — delete the key.');
+  }
   if (it.act && (!it.act.href || !it.act.label)) rej(key, '"act" needs both a label and an href');
+  /* ── AD-27.19. THE `ask` SIBLING, AND WHY IT IS A SIBLING.
+     `/act`'s ENTIRE architecture is derived: build-act-page.mjs reads every
+     every data/work item file, takes every one whose act.href is /act, groups them
+     through its WAYS table and renders each as a link back to the page it came
+     from — and its gate 1 is TOTAL, so an ask label that no way claims stops
+     that build. If this lane rewrote act.href to a mailto:, /act would lose its
+     ask list and refuse to build. Adding a sibling key changes nothing
+     build-act-page.mjs reads, so the derivation survives untouched and the
+     return path a reader followed from /act#partner still lands on the page
+     that made the ask.
+     The audience is asserted against AD-27.18's ruled table above; the subject
+     line is DERIVED from the item's own name, never typed, so it cannot drift
+     from the page it names. */
+  if (it.ask != null) {
+    const ruled = ASK_PLACEMENT[key];
+    if (!Array.isArray(it.ask)) rej(key, '"ask" must be an array of {audience, label}');
+    else if (!ruled) rej(key, `carries "ask" but AD-27.18's placement table names no Ask for this page. Placement is a ruling, not a data field.`);
+    else {
+      if (it.ask.length > 2) rej(key, `${it.ask.length} Asks. AD-27.18 caps a page at two — more turns it into a switchboard and spends the primary button.`);
+      const got = it.ask.map(a => a && a.audience);
+      if (new Set(got.filter(Boolean)).size !== got.length) rej(key, `two Asks share an audience (${got.join(', ')}) — AD-27.18.`);
+      if (got.join('|') !== ruled.join('|')) {
+        rej(key, `"ask" audiences are [${got.join(', ')}] and AD-27.18 rules [${ruled.join(', ')}], in that order. ` +
+          `The order is the .b-1 / .b-2 order and it is not a preference.`);
+      }
+      it.ask.forEach((a, i) => {
+        if (!a || !ASK_AUDIENCE_SET.has(a.audience)) rej(key, `ask[${i}].audience is ${JSON.stringify(a && a.audience)} — one of school, funder, institution, media. AD-27.56: nobody invents a fifth.`);
+        if (!a || !a.label) rej(key, `ask[${i}] has no "label". The summary IS the ask, and it has to read as one.`);
+        checkProse(key, `ask[${i}].label`, a && a.label);
+      });
+    }
+  } else if (ASK_PLACEMENT[key]) {
+    rej(key, `AD-27.18 places [${ASK_PLACEMENT[key].join(', ')}] Ask(s) on this page and the data carries none. ` +
+      `Without it the page keeps the CTA that navigates to /act, which is the exact defect the client reported.`);
+  }
   for (const [fld, val] of [['deck', it.deck], ['line', it.line], ['gathering', it.gathering]]) checkProse(key, fld, val);
   for (const grp of ['how', 'done']) for (const r of (it[grp] || [])) { checkProse(key, `${grp}.h`, r.h); checkProse(key, `${grp}.p`, r.p); }
   for (const h of (it.holes || [])) checkProse(key, 'holes.what', h.what);
@@ -653,6 +839,98 @@ for (const k of KINDS_ORDER) PATHS[k] = { url: `/work/${k}`, file: `${k}.html` }
 const WORK_BAND = PATHS.index.url;
 const itemPath = (it) => ({ url: `/work/${it.kind}/${it.slug}`, file: `${it.kind}/${it.slug}.html` });
 
+/* ═══ AD-27.48 · A DESCRIPTION FOR EVERY PAGE, 140-158 CHARACTERS ═════════
+   All fifteen WORK pages carried one already — `it.line` or `def.line` — and
+   all fifteen were between 51 and 117 characters, which is a sentence Google
+   pads or truncates rather than the page's own answer. AD-27.48 sets the band
+   at 140-158 and requires each one to carry (a) the page's own subject in the
+   reader's words and (b) ONE VERIFIABLE FACT, which is the same standard the
+   page's copy is held to.
+
+   EVERY FACT BELOW IS ALREADY PUBLISHED ON THE PAGE IT DESCRIBES, with a source
+   in its own `figures` block or `line`. Nothing here introduces a number.
+
+   AND NOTHING IS TENSED, DATED OR A SPECIMEN. BRANDING §3.5 applies to <head>
+   exactly as it applies to <body> — a description is static markup that Google
+   caches — so no description carries a reading, "today", "currently" or a year
+   count. The two totals a page could state about its own SET are also absent:
+   D-03.2 forbids "eight campaigns" and "four events" for the same reason the
+   pages themselves refuse them — the sentence has to read the same at three or
+   at thirteen.
+
+   /work/journeys IS TAKEN VERBATIM FROM AD-27.47's PHRASE TABLE, which assigns
+   it the "School Adventure Camp" query and rules exactly how it is discharged:
+   the programmes are outdoor residential school journeys and camps, the pages
+   say so in those words, and the literal string "adventure camp" appears in no
+   source and is therefore not written. */
+const DESC = {
+  '/work':
+    'Everything Swechha runs, in one view: every project, campaign, journey and event, by name, with the kind of work it is set on the row beside it.',
+  '/work/projects':
+    'The work that runs for years rather than days: a school curriculum on land, water and air, a five-acre learning farm, butterfly parks, and a volunteer corps.',
+  '/work/campaigns':
+    'Public pressure with a name on it, from We for Yamuna in 2000 to Monsoon Wooding. The campaigns, by name, and what each one of them pushes against.',
+  '/work/journeys':
+    'School journeys and camps, two hours to twelve days: a city walk, a forest, a village, and a thousand kilometres down the Yamuna. The oldest runs since 2004.',
+  '/work/events':
+    'Workshops, concerts, plays and river clean-ups — the gatherings Swechha runs in public, from Yamunotsav to the Greenathon and the Yamuna Shramdaan.',
+  '/work/projects/bridge-the-gap':
+    'A module-based school curriculum on land, water and air: five to sixteen sessions, plus exposure trips and action projects. 100-150 Delhi schools every year.',
+  '/work/projects/farm-school':
+    'A learning lab on five acres, ninety minutes from Delhi. Day visits, short courses, internships and stays, with the composting and the nursery as the class.',
+  '/work/projects/eco-action':
+    'Butterfly parks and herb gardens built with schools and residents across Delhi NCR: over seventy parks and over twenty gardens planted so far.',
+  '/work/projects/me-to-we':
+    'A leadership programme run with children from one settlement in south Delhi. Over 3,000 through it in thirteen years, and over 200 back as peer leaders.',
+  '/work/projects/influence':
+    'Volunteering and a fellowship, nationwide: ten fellows a year, ten thousand volunteers a year, fifty colleges, and a network of over 300 youth groups.',
+  '/work/campaigns/monsoon-wooding':
+    'Planting through the monsoon across Delhi NCR. About 5,000 trees a year and over 50,000 planted and survived, counted as survivors against a planting count.',
+  '/work/journeys/yamuna-yatra':
+    'Twelve days and about a thousand kilometres down the Yamuna, from Yamunotri to Agra. Thirty Yatras since 2004, and ten thousand young people through them.',
+  '/work/journeys/gram-anubhav':
+    'Four to five days living in a village in Uttarakhand, Rajasthan, Gujarat or Himachal. Over sixty journeys run, with over a hundred partners in the villages.',
+  '/work/journeys/naturescapes':
+    'Two to five days in a forest, a mountain, a desert or a mangrove: Sariska, Ranthambore, Corbett, Jaisalmer, the Sunderbans. Over sixty journeys organised.',
+  '/work/journeys/cityscapes':
+    'Two to four hours inside Delhi, at six places it would rather you did not look at: the river, a landfill, a city forest. Over a thousand walks in two decades.',
+};
+/* AD-27.47. The one title the phrase table rewrites in this lane. Every other
+   WORK title is already correct and only the description is added. */
+const TITLE = {
+  '/work/journeys': 'Journeys — school camps and walks — Swechha',
+};
+
+/* AD-27.50 · BreadcrumbList, DERIVED FROM THE ROUTE. Two or three levels:
+   Swechha -> The work -> Projects -> Bridge the Gap. Built from `PATHS` and the
+   item's own name, so a breadcrumb cannot disagree with the URL. */
+const crumbsIndex = () => [['Swechha', '/'], ['The work', PATHS.index.url]];
+const crumbsKind = (k) => [...crumbsIndex(), [kindDef(k).name, PATHS[k].url]];
+const crumbsFor = (it) => [...crumbsKind(it.kind), [it.name, itemPath(it).url]];
+
+/* The description and the title are looked up by ROUTE, and a page whose route
+   is not in the table refuses to build rather than falling back to `line` —
+   which is what left fifteen pages at 51-117 characters with nobody noticing.
+   Both bounds are checked: 140 because a shorter one is padded by Google, 158
+   because a longer one is truncated mid-clause. */
+const descFor = (it) => DESC[itemPath(it).url];
+function checkDescriptions() {
+  const want = [PATHS.index.url, ...KINDS_ORDER.map(k => PATHS[k].url),
+    ...items.filter(i => i.page).map(i => itemPath(i).url)];
+  for (const u of want) {
+    const d = DESC[u];
+    if (!d) { rej('DESC', `no description for ${u}. AD-27.48 makes one required on every page.`); continue; }
+    if (d.length < 140 || d.length > 158) rej('DESC', `${u}'s description is ${d.length} characters; AD-27.48's band is 140-158.`);
+    if (/\b(today|currently|this year|as of|DEMO DATA)\b/i.test(d)) rej('DESC', `${u}'s description carries a tensed claim or a specimen marker (BRANDING §3.5 applies to <head>).`);
+  }
+  const seen = new Map();
+  for (const u of want) {
+    const d = DESC[u];
+    if (d && seen.has(d)) rej('DESC', `${u} and ${seen.get(d)} share a description. AD-27.53 condition 3 checks uniqueness mechanically.`);
+    else if (d) seen.set(d, u);
+  }
+}
+
 const canonical = new Set([PATHS.index.url, ...KINDS_ORDER.map(k => PATHS[k].url)]);
 for (const it of items) if (it.page) canonical.add(itemPath(it).url);
 
@@ -703,7 +981,7 @@ if (ONWARD.index) {
 /* The homepage's own anchors are READ OUT OF home.html, not typed here: /#farm
    and /#record are two of the six nav destinations and a typo in either would
    be a dead nav link on all fourteen pages. */
-const homeHtml = readFileSync(join(V3, 'home.html'), 'utf8');
+const homeHtml = readFileSync(HOME_SRC, 'utf8');
 const homeAnchors = new Set([...homeHtml.matchAll(/<section[^>]*\sid="([^"]+)"/g)].map(m => m[1]).concat(['main', 'footer']));
 
 /* ═══ THE ORDER IS EXTRACTED, NOT CHOSEN ══════════════════════════════════
@@ -827,12 +1105,16 @@ const SEQ = {
     ['sheet', (k) => (k.gallery || []).length >= GALLERY_MIN],
     ['onward', () => true],
   ],
+  /* AD-28. `holes` IS OUT OF THE SEQUENCE, not emptied — a band whose entire
+     subject was what we cannot yet say. Removing it from here is the whole
+     edit: `bandChain` re-derives the grounds and tiers from the surviving
+     count, and the adjacency gate checks the result, so the alternation cannot
+     silently break. Same for `nodates` on events, below. */
   campaigns: [
     ['top', () => true],
     ['frame', () => true],
     ['against', () => true],
     ['statement', hasStatement],
-    ['holes', () => true],
     ['sheet', (k) => (k.gallery || []).length >= GALLERY_MIN],
     ['onward', () => true],
   ],
@@ -840,7 +1122,6 @@ const SEQ = {
     ['top', () => true],
     ['record', () => true],
     ['statement', hasStatement],
-    ['nodates', () => true],
     ['sheet', (k) => (k.gallery || []).length >= GALLERY_MIN],
     ['onward', () => true],
   ],
@@ -880,10 +1161,14 @@ const GAP = {
    the register the rest of the site uses. */
 const LABEL = {
   top: 'Top', onward: 'Get involved', frame: 'What this is', list: 'The list',
-  weight: 'The figures', against: 'What each pushes against', holes: 'What we cannot say yet',
+  weight: 'The figures', against: 'What each pushes against',
   what: 'What we do', aim: 'What it sets out to do', how: 'Strategy and activities',
   who: 'Who it is for', done: 'Impact', sheet: 'The photographs', with: 'Who it is with',
-  record: 'The record', nodates: 'Why there are no dates',
+  record: 'The record',
+  /* AD-28. `holes` ("What we cannot say yet") and `nodates` ("Why there are no
+     dates") are gone from SEQ, so their labels go too — a label left behind for
+     a band that no longer exists is the next person's confusion, and the strict
+     check below would not catch it because it only fires the other way. */
   /* W-22. `statement` was missing, so the SECTIONS index printed the raw band id
      on all 15 pages. It is deliberately NOT a descriptive label like the rest —
      the band is one line of display type and the index should carry that line's
@@ -893,7 +1178,7 @@ const LABEL = {
   /* The two bands the /work index redesign added (W-16). The strict check above
      caught both the moment it replaced the raw-id fallback, which is the case it
      was written for. */
-  everything: 'Everything, in one view', reach: 'Every sourced figure',
+  everything: 'Everything, in one view', reach: 'The numbers',
 };
 /* W-22. A band id with no LABEL entry used to fall through to the raw id, which
    is how `statement` shipped visibly on 15 pages while every gate read green.
@@ -961,9 +1246,10 @@ function siblingDoor(s) {
     eyebrow: esc(kindDef(s.kind).name),
     head: s.name,
     body: s.line || s.gathering || '',
-    // Every door ends on a fact (BRANDING §5.6). Where an item has no published
-    // figure, the door says so — naming a hole is content, not an apology.
-    foot: fig ? `${fig.value} ${esc(fig.label).toLowerCase()}` : 'No figure published yet',
+    /* AD-28. A door with a figure ends on it. A door without one ends on
+       nothing — it used to read "No figure published yet", which is a card
+       apologising for our records to a reader who was about to click it. */
+    foot: fig ? `${fig.value} ${esc(fig.label).toLowerCase()}` : '',
   };
 }
 function situationDoor(slug) {
@@ -972,12 +1258,19 @@ function situationDoor(slug) {
   if (!s) { miss(`onward.json situations["${slug}"] — the situation door cannot be drawn without its canonical href`); return null; }
   return {
     href: s.href, eyebrow: 'The situation', head: s.name,
-    body: 'The reading, its published limit, and the gaps named. Our work is the answer to it, not the evidence for it.',
+    /* AD-28. Was "The reading, its published limit, and the gaps named. Our
+       work is the answer to it, not the evidence for it." — half a gap counter,
+       half an explanation of the site's own division of labour. The door now
+       says what is on the other side of it. */
+    body: 'The current readings, and what they are measured against.',
     foot: 'Every reading against its limit',
   };
 }
 const EVIDENCE = {
-  '/#record': { href: '/#record', eyebrow: 'The evidence', head: 'The record', body: 'Every reading, every source and the paper behind them, kept whether or not anybody writes a post.', foot: 'Nothing here is unsourced' },
+  /* AD-28. The foot read "Nothing here is unsourced" — a claim about our
+     method, on a card. The body kept its subject (the readings) and lost the
+     clause about keeping the paper behind them. */
+  '/#record': { href: '/#record', eyebrow: 'The evidence', head: 'The record', body: 'Every reading the situation pages are built on, in one place.', foot: 'Every situation, side by side' },
   /* AD-24: was `/#farm`, the homepage teaser band. `/farm` is now a page, and
      this door's own copy ("the five acres this happens on") promises the place
      rather than a paragraph about it. An anchor here would land a reader who
@@ -1081,13 +1374,23 @@ const subLabel = (t) => `      <p class="lbl" style="margin:var(--gap-block) 0 1
    go into the frozen disclosure, whose summary names what is inside and carries
    no numeral. The legend that states the solid/dotted vocabulary sits above
    both, once per band, so it governs the disclosed figures too. */
+/* AD-28. TWO THINGS CAME OFF THIS BLOCK.
+   The LEGEND, because it explains the counted/modelled vocabulary and that is
+   sourcing method, not work. And the ABSENCE SENTENCE: an empty figure list now
+   renders NOTHING. It used to render a named hole — "Not one project on this
+   register carries a figure with the span it counts and a source we can name" —
+   which is an apology about our records dressed as honesty. Where there is no
+   figure the band simply carries no figures. The `absence` parameter is kept in
+   the signature and ignored so no call site silently starts passing prose
+   somewhere else. */
 const FIGURES_VISIBLE = 4;
 const figureBlock = (list, absence, tailSummary = 'The rest of the figures') => {
-  if (!list.length) return hole(absence);
+  void absence;
+  if (!list.length) return '';
   const head = list.slice(0, FIGURES_VISIBLE), tail = list.slice(FIGURES_VISIBLE);
   return tail.length
-    ? `${KIND_LEGEND}\n${figures(head)}\n${disclose(`${esc(tailSummary)} ${ARROW}`, figures(tail))}`
-    : `${KIND_LEGEND}\n${figures(head)}`;
+    ? `${figures(head)}\n${disclose(`${esc(tailSummary)} ${ARROW}`, figures(tail))}`
+    : figures(head);
 };
 
 /* THE PROSE ROWS, AND THE PHONE BUDGET THEY RUN INTO. Measured at 375 on
@@ -1102,7 +1405,17 @@ const figureBlock = (list, absence, tailSummary = 'The rest of the figures') => 
    JS, keyboard and screen-reader support for free, a 44px summary, and ZERO
    HEIGHT WHEN CLOSED. The summary names what is inside and CARRIES NO NUMERAL,
    because a count of hidden rows is weight expressed as row count (D-03.2). */
-const PROSE_VISIBLE = 3;
+/* AD-27.24. THREE BECOMES TWO, AND IT IS THIS ONE CONSTANT.
+   `#done` has to reach 900px at 1440 from 2,726 on Bridge the Gap, and the
+   prose is the bulk of it — not the figures. The two rows that stay are the two
+   that explain the figures in the rail above them; the rest is provenance, and
+   provenance belongs in the provenance disclosure, which is exactly where the
+   figures should never have been.
+   Deleting the rows outright was rejected: they are sourced, they carry the
+   honest caveats (the two-million derivation, the fifty-thousand documented
+   count), and figures without their qualifications is the failure BRANDING §4.7
+   exists to stop. One click away is not hidden. */
+const PROSE_VISIBLE = 2;
 const proseRows = (rows, tailSummary) => {
   if (!rows.length) return '';
   const row = (r) => `        <div class="p-row"><p class="lbl">${r.h}</p>
@@ -1114,45 +1427,80 @@ const proseRows = (rows, tailSummary) => {
     : block(head);
 };
 
-const holeBlock = (holes) => holes.length
-  ? `      <div class="wk-holes">\n${holes.map(h => hole(h.what)).join('\n')}\n      </div>`
-  : '';
+/* ═══ AD-28 · THE THREE HOLE COMPONENTS ARE DELETED ══════════════════════
+   `holeBlock`, `holeFold` and `holeBlockGrouped` all rendered the same thing in
+   three arrangements: a list of the things this section cannot yet say, with a
+   gap count in the summary. AD-27.24 and W-29 spent a lot of measurement
+   deciding how to FOLD them; AD-28 removes the question by removing the
+   content. The owner, on the whole family of it: "No need to write explanation
+   of why this page is empty etc ... we dont have the numbers....numbers
+   missing". A visitor came to read what Swechha does.
 
-/* W-29. THE SAME HOLES, GROUPED BY THE THING THEY ARE ABOUT.
-   `/work/campaigns`'s holes band was composed for three campaigns and measured
-   2,639.5px at 375 once there were eight — 4.2 iOS Safari screens of nothing but
-   gaps. W-1's height licence rests on a tall band being a HARDER READ, not an
-   endless one, so that band is refused a licence and fixed here instead.
-   Not by cutting a hole and not by hiding one: each item's gaps fold into the
-   frozen disclosure, and THE SUMMARY CARRIES THE ITEM'S NAME AND ITS GAP COUNT,
-   so a reader sees that a gap exists — and how many — before deciding to open it.
-   The count of gaps stays public; only the prose folds. `<details>` is native, so
-   every hole is in the DOM, reachable with no JavaScript, and printable.
-   FIRST GROUP OPEN BY DEFAULT: a band of entirely closed rows would read as a
-   list of links rather than as content, which is how this page's whole argument
-   would get mistaken for navigation. */
-const holeBlockGrouped = (items) => {
-  const groups = items
-    .map(i => ({ name: i.name, holes: (i.holes || []) }))
-    .filter(g => g.holes.length);
-  if (!groups.length) return '';
-  const n = (c) => `${c} gap${c === 1 ? '' : 's'}`;
-  return groups.map((g, idx) => {
-    const body = `<div class="wk-holes">\n${g.holes.map(h => hole(h.what)).join('\n')}\n</div>`;
-    const summary = `${esc(g.name)} <span class="lbl">${n(g.holes.length)}</span> ${ARROW}`;
-    /* The first group is open, so `disclose`'s markup is reproduced here with the
-       `open` attribute rather than adding a parameter to a component five other
-       pages share. Same classes, same behaviour. */
-    return idx === 0
-      ? `      <details class="dx" open>\n        <summary class="dx-s">${summary}</summary>\n        <div class="dx-b">${body}</div>\n      </details>`
-      : disclose(summary, body);
-  }).join('\n');
+   `holes` STAYS IN data/work/** and stays in the build report. It is a genuine
+   editorial worklist — it is how the content author knows what to go and find —
+   and MISSING/NOTES print it at every build. What changed is that it is no
+   longer published to a reader. Nothing was lost; it moved to the place that
+   was always the right one for it.
+
+   The `#done` band's condition still counts holes as a reason to render, which
+   is deliberate: an item with figures OR done-rows still gets its Impact band,
+   and one with only holes now renders the band's other content or, if there is
+   none, the band is omitted by the same rule as every other empty band. ══ */
+
+/* AD-27.27. RANK IS ORDER PLUS ONE WEIGHT STEP, AND NOTHING ELSE.
+   The client, 22 August: "Add Bupa Foundation. Acuity Knowledge Partners, make
+   these two the top partners." There is no partner logo anywhere in this
+   repository and BRANDING §7.4 forbids importing foreign trademarks, so rank is
+   carried by the two devices the site already has:
+     1. POSITION — the two are first in the array and are rendered IN THE DATA'S
+        ORDER. A sort here would silently undo the ruling, so there is none, and
+        the gate below asserts the lead names came out where the data put them.
+     2. ONE WEIGHT STEP — wght 620 -> 780 on the first `funders_lead` rows. No
+        size change, no colour change, no rule change.
+   Rejected: a logo wall (no assets exist and it imports seven trademarks into a
+   design that has spent the whole site refusing exactly that); numbered
+   ordinals 1-7 (an ordinal on every funder claims a total ranking of all seven,
+   which the owner did not give); a separate "Lead funders" heading (it would
+   put the other five under an implied "lesser funders" heading nobody agreed
+   to). The caption says the order means something without asserting a category
+   — "current", "principal", "major" — that nothing in the record supports. */
+const namesBlock = (w, key) => {
+  const cols = [['Schools', w.schools], ['Partners', w.partners], ['Funders', w.funders]]
+    .filter(([, l]) => (l || []).length);
+  if (!cols.length) return '';
+  const lead = Number.isInteger(w.funders_lead) ? w.funders_lead : 0;
+  if (lead > (w.funders || []).length) {
+    rej(key, `"funders_lead" is ${lead} but there are only ${(w.funders || []).length} funders. It names how many of the array's own leading entries are lead, and it cannot exceed the array.`);
+  }
+  if (lead > 0 && !w.funders_source) {
+    rej(key, '"funders_lead" is set with no "funders_source". A rank on a published list is a claim and it carries a source like any other.');
+  }
+  const li = (t, n, i) => `<li${t === 'Funders' && i < lead ? ' class="wk-lead"' : ''}>${esc(n)}</li>`;
+  const grid = `      <div class="wk-names${cols.length === 1 ? ' wk-names-1' : ''}" style="--n:${cols.length}">\n`
+    + cols.map(([t, l]) => `        <div><span class="lbl">${t}</span><ul>${l.map((n, i) => li(t, n, i)).join('')}</ul></div>`).join('\n')
+    + `\n      </div>`;
+  /* AD-28, SECOND PASS. THE FOOT NOTE IS DELETED. It read "Listed in the order
+     Swechha names them." — the organisation, on its own website, attributing
+     the ordering of its own funder list to itself (§3 category 2), and doing it
+     as a note about how the page was compiled (category 5). It explained
+     nothing a reader wanted: it did not even describe the one visible
+     distinction on the grid, which is the lead emphasis, and the `#done` band
+     already says in prose who funds the work now and who funded it before.
+     `funders_lead` and its `funders_source` gate are untouched — the data still
+     carries the rank and still has to source it; only the sentence goes. */
+  return grid;
 };
 
-const namesBlock = (w) => {
-  const cols = [['Schools', w.schools], ['Partners', w.partners], ['Funders', w.funders]].filter(([, l]) => (l || []).length);
-  if (!cols.length) return '';
-  return `      <div class="wk-names">\n${cols.map(([t, l]) => `        <div><span class="lbl">${t}</span><ul>${l.map(n => `<li>${esc(n)}</li>`).join('')}</ul></div>`).join('\n')}\n      </div>`;
+/* The band's own heading named three groups over a list that held one, on every
+   page that has the band. It now names only what is actually there. */
+const namesHead = (w) => {
+  const have = [['schools', w.schools], ['partners', w.partners], ['funders', w.funders]]
+    .filter(([, l]) => (l || []).length).map(([t]) => t);
+  const list = have.length === 1 ? have[0]
+    : `${have.slice(0, -1).join(', ')} and ${have[have.length - 1]}`;
+  /* AD-28. "Nobody here is described as a category" was the page explaining its
+     own editorial choice. The list is the content. */
+  return `${list.charAt(0).toUpperCase()}${list.slice(1)} by name.`;
 };
 
 const hasNames = (w) => [(w || {}).schools, (w || {}).partners, (w || {}).funders].some(l => (l || []).length);
@@ -1218,39 +1566,33 @@ function scaleBlock(it) {
       value: esc(f.value),
       loPct: (sc.low / top) * 100,
       hiPct: (sc.high / top) * 100,
-      aria: `${f.label}: ${f.value}, ${period(f.period).replace(/&middot;/g, '·')}`,
+      aria: [`${f.label}: ${f.value}`, period(f.period)].filter(Boolean).join(', '),
     };
   });
+  /* AD-28. THE NOTE IS GONE. It was a source list followed by a sentence about
+     how the bar was constructed — a citation and a piece of page-narration, and
+     nothing a visitor came for. The bars and the axis are the content. */
   return rangeRow({
     rows,
     axis: ['0', esc(String(top.toLocaleString('en-IN')))],
-    note: list.map(sc => `${esc(it.figures[sc.figure].label)} &mdash; ${esc(it.figures[sc.figure].source)}`).join(' &middot; ')
-      + '. The bar is the span the source publishes; the axis is its own upper figure. Nothing here is a number this page did not already carry.',
   });
 }
+/* The span, for the screen-reader label only. AD-28: an unknown span is silence,
+   not a sentence about the span being unknown — same rule as work-shell's
+   `period()`, which this mirrors for plain text rather than markup. */
 const period = (p) => {
   const s = String(p || '');
-  if (/^cumulative, no start year sourced$/i.test(s)) return 'cumulative · start year not sourced';
-  if (/^period not sourced$/i.test(s)) return 'period not sourced';
-  return s;
+  if (!s || /^cumulative, no start year sourced$/i.test(s) || /^period not sourced$/i.test(s)) return '';
+  return s.replace(/^cumulative,\s*/i, 'cumulative · ');
 };
 
-/* THE READING LEDGER. The same figures the band above already showed, set so a
-   reader can audit them against each other: every span, every basis, every
-   source, in one column. This is "make the numbers do more work" spending no
-   new number at all. */
-/* AND IT GOES BEHIND THE FROZEN DISCLOSURE, WHICH IS BOTH THE HEIGHT REMEDY AND
-   THE RIGHT SEMANTICS. The ledger is an AUDIT of figures the band above has
-   already published — not new content, and not the honesty content. W-1 refused
-   to put the named holes behind a control because naming a hole is content; the
-   same reasoning says a re-statement of figures already on the page belongs
-   behind one. Measured at 375: eleven ledger rows cost 898px open and zero
-   closed, which is what takes /work/projects' `weight` band from 1,920 back to
-   1,022 — its W-1 licensed figure — and bridge-the-gap's `done` from 1,838 back
-   to 1,340. The summary names what is inside and carries no numeral (D-03.2). */
-const ledgerBlock = (figs) => figs.length >= 2
-  ? disclose(`Every figure on this page, and where it comes from ${ARROW}`, readingLedger(figs))
-  : '';
+/* AD-28. `ledgerBlock` IS DELETED — the disclosure and the component under it.
+   Its summary read "Every figure on this page, and where it comes from", which
+   is the sourcing apparatus named in its own words, and it appeared on twelve of
+   the fifteen pages. The figures it restated are still on the page, in the bands
+   that publish them. A visitor does not audit us; if we cannot stand behind a
+   figure we do not print it, which is a stronger guarantee than an audit trail
+   and takes no space on the page. */
 
 /* THE INVITE. AD-17 §4 slot 4 was one act; the client asked for three routes.
    The mailto is the third and it is a SENTENCE, not a button, because /act's
@@ -1260,14 +1602,70 @@ const ledgerBlock = (figs) => figs.length >= 2
    person. The address is read out of the frozen footer rather than typed. */
 const CONTACT = (homeHtml.match(/mailto:([^"]+)/) || [])[1] || '';
 if (!CONTACT) rej('home.html', 'no mailto: address in the frozen footer — the invite band has no third route to offer');
-const invite = ({ act, second, note }) => inviteRow({
-  act, second,
+const invite = ({ act, second, note, asks }) => inviteRow({
+  act, second, asks,
   /* THE NOTE IS ONE CLAUSE, and the length is a budget decision with its
      arithmetic in WORK_CSS: the first version ran to five lines and 112.5px at
      375, on a band that was 78px over its cap. The clause that had to survive is
-     the one that stops the page implying a mechanism it does not have. */
-  note: `${note} Nothing here is a form &mdash; write to <a class="lk" href="mailto:${esc(CONTACT)}">${esc(CONTACT)}</a>.`,
+     the one that stops the page implying a mechanism it does not have.
+
+     AD-27.14. WHERE AN ASK IS PRESENT THE SECOND SENTENCE COMES OFF. "Nothing
+     here is a form — write to <the footer's general address>" was the honest
+     thing to say when the page's only route to a person was a navigation to
+     /act; it is now false in both halves. The Ask IS the route, it goes to a
+     named person at an @swechha.in address, and telling a reader who has just
+     opened it that there is nothing here would be the page contradicting the
+     control directly above the sentence. */
+  note: (asks && asks.length) ? note
+    : `${note} Nothing here is a form &mdash; write to <a class="lk" href="mailto:${esc(CONTACT)}">${esc(CONTACT)}</a>.`,
 });
+
+/* ═══ AD-27.14 → AD-27.22 · THE ASK, INSTANTIATED ════════════════════════
+   `ask()` itself lives in situation-shell.mjs — lane 1 authored it, and this
+   file IMPORTS it rather than carrying a second implementation, which is
+   AD-27.56's whole purpose ("to stop four implementations"). The comment in
+   that file says work-shell "has no access to this module"; it does, and has
+   since AD-18 — work-shell.mjs imports SHARED_PAGE_CSS, disclose and tabs from
+   it and emits them into all fifteen pages. Reported to the art director.
+
+   THE SUBJECT LINE IS DERIVED FROM THE ITEM'S OWN NAME, never typed, so the
+   owner's inbox can never sort a message under a page that does not exist. The
+   path is the item's canonical route, which is also derived. */
+const askBlocks = (it) => (it.ask || []).map((a, i) => ask({
+  audience: a.audience,
+  label: a.label,
+  page: it.name,
+  path: itemPath(it).url,
+  level: i + 1,
+}));
+
+/* AD-27.18-A. THE INDEX PAGE'S ASK, built from the same component, the same
+   AD-27.17 copy and the same subject-line derivation as the ten detail pages —
+   one code path, not a parallel one. The subject's page name is the page's own
+   name so the owner's inbox can tell "School enquiry — Projects" (somebody who
+   wants the programme) from "School enquiry — Bridge the Gap" (somebody who
+   wants that curriculum), and the path is the canonical route. */
+const indexAsk = (url) => {
+  const r = INDEX_ASK[url];
+  if (!r) return [];
+  return [ask({ audience: r.audience, label: r.label(), page: r.page, path: url, level: 1 })];
+};
+
+/* AD-27.18-A. The two pages that keep a navigating primary get the /act band
+   that answers their ask instead of the top of the page. Applied only to a bare
+   `/act` — an href that already carries a fragment is somebody's deliberate
+   choice and is left alone. */
+const deepen = (url, act) => (ACT_ANCHOR[url] && act.href === '/act')
+  ? { ...act, href: `/act${ACT_ANCHOR[url]}` } : act;
+
+/* A secondary link survives the Ask only where it is NOT the /about partner
+   link AD-27.29 removes. Checked on the href, not the label, because the label
+   is what varies ("Partner with us", "Take our volunteers", "Support this
+   work") and the href is what is wrong. */
+const secondSurvives = (it) => {
+  const s = it.invite && it.invite.second;
+  return !!(s && s.href && !s.href.startsWith('/about'));
+};
 
 /* THE STATEMENT BAND BODY. Passed through untouched by applyCanvas because it
    carries its own containers (the frame runs to the seam, so a .wrap would
@@ -1329,29 +1727,37 @@ function pageIndex() {
      build put two identical "60+ journeys organised" side by side). */
   const figPanels = KINDS_ORDER.map(k => {
     const figs = byKind(k).flatMap(i => (i.figures || []).map(f => ({ ...f, owner: i.name })));
-    return [kindDef(k).name, figs.length
-      ? `${KIND_LEGEND}\n${figureBlock(figs, '')}`
-      : hole(`Not one ${kindDef(k).name.toLowerCase().replace(/s$/, '')} in this section carries a figure with the span it counts and a source we can name.`)];
+    /* AD-28. A kind with no figures shows no figures. The panel used to carry a
+       named hole saying so; a tab that opens on a sentence about our
+       record-keeping is the specimen this ruling is named for. */
+    return [kindDef(k).name, figureBlock(figs, '')];
   });
   const body = {
     top: masthead({
-      h1: 'The work', deck: 'Everything Swechha runs, in one place. Four kinds of it, and every one of them named.',
+      h1: 'The work', deck: 'Everything Swechha runs, in one place. Projects, campaigns, journeys and events.',
       frame: (ONWARD.index && ONWARD.index.frame) || null,
     }),
+    /* AD-28 category 5 runs through every lead on this page and the four kind
+       pages. Each one described how the page was assembled — "One list, not
+       four ... because that is the only place they appear together", "every
+       published figure ... whether it was counted or modelled, and where it
+       comes from". None of it is about Swechha's work, and the headings above
+       them already say what the bands are. They are deleted, not rewritten:
+       repairing a deletion with a new sentence in the same voice is the trap
+       AD-28 §3.5 names. */
     everything: [
-      opener('everything', 'Everything, in one view', 'One list, not four. Projects, campaigns, journeys and events in a single sequence, because that is the only place they appear together — the homepage shows a selection and each kind page shows a quarter.'),
+      opener('everything', 'Everything, in one view'),
       oneView,
     ],
     statement: stmt ? statementFor(subject) : '',
     reach: [
-      opener('reach', 'Every figure we can source', 'The other half of one view: every published figure in the section, with the span it counts, whether it was counted or modelled, and where it comes from. Held together so one can be read against another.'),
+      opener('reach', 'The numbers'),
       tabs('Figures by kind', figPanels),
     ],
     sheet: [
-      opener('sheet', 'What it looks like', 'Frames from our own archive, from across the four kinds.'),
+      opener('sheet', 'What it looks like'),
       gallery.length >= GALLERY_MIN ? gallerySheet({
         label: 'The work, from the archive', frames: gallery,
-        note: 'Every frame here is ours. None carries a date, because no date on this register is sourced — the events page says why.',
       }) : '',
     ],
   };
@@ -1367,13 +1773,17 @@ function pageIndex() {
        points 8 links at /work/projects and 6 at /work/journeys. */
     doors: [kdoor('projects', 'The most-linked page in the section'), kdoor('journeys', 'Two hours to twelve days'), EVIDENCE['/#record']],
     act, actNote: 'If you would rather start than read, the shortest way in is a walk that takes an afternoon.',
-    invite: invite({ act, second: { label: 'Partner with us', href: '/about' },
+    /* AD-27.18-A. "Book a journey" resolves here. The secondary goes with it:
+       the Ask's own tertiary link is /act#partner, which is the destination
+       "Partner with us" should always have had (AD-27.29). */
+    invite: invite({ act, second: null, asks: indexAsk(PATHS.index.url),
       note: 'If you would rather start than read, the shortest way in is a walk that takes an afternoon.' }),
   });
   return {
     bands, body: applyCanvas(bands, body), sections: sectionsFor(bands), current: 'Work',
+    crumbs: crumbsIndex(),
     title: 'The work — Swechha',
-    desc: 'Every project, campaign, journey and event Swechha runs, by name, with one fact line each.',
+    desc: DESC[PATHS.index.url],
   };
 }
 
@@ -1401,27 +1811,31 @@ function pageKind(k) {
        distinction between them — which is the only thing this band is for — is
        something a reader compares rather than something we assert. Costs one
        tablist and shows the tallest panel. */
+    /* THE LEAD IS NOT THE frame_line, AND IT USED TO BE. The tab group below
+       opens on this kind's own panel, whose first paragraph IS `def.frame_line`
+       — so the sentence printed twice, forty pixels apart, on three of the four
+       kind landings. The copy standard's "avoid saying the same thing twice"
+       decides it, and subtraction decides which copy goes: the tabs are the
+       band's content and the head is only its label. */
     frame: [
-      opener('frame', `What a ${singular} is here`, def.frame_line),
+      opener('frame', `What a ${singular} is here`),
       tabs('The four kinds', [def, ...others].map(o => [o.name,
         `<div class="wk-panel"><div><p class="body">${o.frame_line}</p>
         <p class="cap" style="margin-top:12px">${o.line}</p>${o.slug === k ? '' :
           `\n        <p style="margin:16px 0 0"><a class="act" href="${PATHS[o.slug].url}">Every ${o.name.toLowerCase().replace(/s$/, '')} ${ARROW}</a></p>`}</div></div>`])),
     ],
     list: [
-      opener('list', 'Every one of them', 'Full membership, not a selection. Each row lands on itself, and a row with a page of its own says so by taking you to it.'),
+      opener('list', 'Every one of them'),
       regOf(mine),
     ],
     weight: [
-      opener('weight', 'What it adds up to', 'One figure from every one that has a page, and every figure from the ones that do not. The rule under each label is solid where it was counted and dotted where it was modelled.'),
-      figureBlock(figs, `Not one ${singular} on this register carries a figure with the span it counts and a source we can name. Until one does, this band shows none.`),
-      ledgerBlock(figs),
+      opener('weight', 'What it adds up to'),
+      figureBlock(figs, ''),
     ],
     statement: hasStatement(def) ? statementFor(def) : '',
     sheet: [
-      opener('sheet', 'What it looks like', `Frames from our own archive, of this work. Each one says what it shows and nothing more.`),
-      (def.gallery || []).length >= GALLERY_MIN ? sheetBand(def, `${def.name}, from the archive`,
-        'Every frame here is ours. None of them carries a date, because no date on this register is sourced — the events page says why.') : '',
+      opener('sheet', 'What it looks like'),
+      (def.gallery || []).length >= GALLERY_MIN ? sheetBand(def, `${def.name}, from the archive`) : '',
     ],
   };
   body.onward = onwardBand({
@@ -1430,18 +1844,22 @@ function pageKind(k) {
        KIND — no situation page names Projects or Journeys. The per-item
        situation links live on the items, where the claim is actually true. */
     doors: threeDoors({ siblings: otherKindDoors(k), situation: null, evidence: EVIDENCE['/#record'] }),
-    act: def.act || { label: 'Get involved', href: '/act' },
+    act: deepen(url, def.act || { label: 'Get involved', href: '/act' }),
     actNote: 'Reading this page is not the point of it.',
+    /* AD-27.18-A. /work/projects and /work/journeys resolve their ask in place;
+       any future kind landing that has no Ask keeps a navigating primary and a
+       secondary that points at the partnering content rather than at /about. */
     invite: invite({
-      act: def.act || { label: 'Get involved', href: '/act' },
-      second: { label: 'Partner with us', href: '/about' },
+      act: deepen(url, def.act || { label: 'Get involved', href: '/act' }),
+      second: INDEX_ASK[url] ? null : PARTNER_SECOND,
+      asks: indexAsk(url),
       note: 'Reading this page is not the point of it.',
     }),
   });
   return {
     bands, body: applyCanvas(bands, body), sections: sectionsFor(bands),
     current: k === 'journeys' ? 'Journeys' : 'Work',
-    title: `${def.name} — Swechha`, desc: def.line,
+    crumbs: crumbsKind(k), title: TITLE[PATHS[k].url] || `${def.name} — Swechha`, desc: DESC[PATHS[k].url],
   };
 }
 
@@ -1459,14 +1877,20 @@ function pageCampaigns() {
   const body = {
     top: masthead({ h1: def.name, deck: def.line, frame: def.frame || null, ancestor: anc('Work', WORK_BAND) }),
     frame: [
-      opener('frame', 'A campaign pushes. An event invites.', def.frame_line),
+      /* Same duplication as pageKind(): the lead was `def.frame_line` and the
+         first tab panel below prints it verbatim. */
+      opener('frame', 'A campaign pushes. An event invites.'),
       tabs('The four kinds', [def, ...others].map(o => [o.name,
         `<div class="wk-panel"><div><p class="body">${o.frame_line}</p>
         <p class="cap" style="margin-top:12px">${o.line}</p>${o.slug === 'campaigns' ? '' :
           `\n        <p style="margin:16px 0 0"><a class="act" href="${PATHS[o.slug].url}">Every ${o.name.toLowerCase().replace(/s$/, '')} ${ARROW}</a></p>`}</div></div>`])),
     ],
     against: [
-      opener('against', 'What each one pushes against', 'A campaign is only as clear as the thing it is against. Where a situation page names the same subject, the line above the name goes to it.'),
+      /* The second half of this lead — "Where a situation page names the same
+         subject, the line above the name goes to it" — explained the page's own
+         linking rule to the reader. The first half is an argument about
+         campaigns and stays. */
+      opener('against', 'What each one pushes against', 'A campaign is only as clear as the thing it is against.'),
       march(mine.map(c => {
         const s = c.situation ? SIT.get(c.situation) : null;
         return {
@@ -1474,40 +1898,33 @@ function pageCampaigns() {
           pre: s ? `<a href="${s.href}">${esc(s.hook || `Runs against ${s.name}`)} ${ARROW}</a>` : '',
         };
       })),
-      subLabel(figs.length === 2 ? 'The only two figures the campaigns have' : 'What the campaigns can count'),
-      figureBlock(figs, 'Not one of the three campaigns carries a figure with a span and a source. That is the state of it.'),
-    ],
-    holes: [
-      /* W-29. The old lead read "Three campaigns, two sourced figures between
-         them, and one detail page." Two faults: it went stale the moment the
-         owner named five more, and a stated total of the set is exactly what
-         D-03.2 forbids — this page must read the same at three campaigns or
-         thirteen. It now describes the STATE of the evidence, which is true at
-         any membership, and the gap counts in the summaries below carry the
-         quantity without anyone typing one. */
-      opener('holes', 'What we cannot yet say', 'Most of the campaigns on this page are a name and a subject. Naming that is the honest version of it — and almost every line below is one paragraph away from being a page of its own.'),
-      holeBlockGrouped(mine),
+      /* AD-28. The sub-label counted the band's own contents two ways ("The
+         only two figures the campaigns have" / "What the campaigns can count").
+         Both are the page talking about itself, and the second is a hedge. */
+      figureBlock(figs, ''),
     ],
     statement: hasStatement(def) ? statementFor(def) : '',
     sheet: [
-      opener('sheet', 'What it looks like', 'Frames from our own archive, of this work.'),
-      (def.gallery || []).length >= GALLERY_MIN ? sheetBand(def, 'Campaigns, from the archive',
-        'Every frame here is ours. None of them carries a date, because no date on this register is sourced.') : '',
+      opener('sheet', 'What it looks like'),
+      (def.gallery || []).length >= GALLERY_MIN ? sheetBand(def, 'Campaigns, from the archive') : '',
     ],
   };
   body.onward = onwardBand({
     doors: threeDoors({ siblings: otherKindDoors('campaigns'), situation: null, evidence: EVIDENCE['/#record'] }),
-    act: def.act || { label: 'Plant with us', href: '/act' },
+    act: deepen(PATHS.campaigns.url, def.act || { label: 'Plant with us', href: '/act' }),
     actNote: 'A campaign is people turning up. That is the only figure it really has.',
+    /* AD-27.18-A. "Plant with us" is one person turning up in the rain, not one
+       of the four audiences, so it stays a link — but it lands on /act#hands,
+       the band that answers it, instead of the top of a 10,072px page. */
     invite: invite({
-      act: def.act || { label: 'Plant with us', href: '/act' },
-      second: { label: 'Partner with us', href: '/about' },
+      act: deepen(PATHS.campaigns.url, def.act || { label: 'Plant with us', href: '/act' }),
+      second: PARTNER_SECOND,
       note: 'A campaign is people turning up. That is the only figure it really has.',
     }),
   });
   return {
     bands, body: applyCanvas(bands, body), sections: sectionsFor(bands), current: 'Work',
-    title: `${def.name} — Swechha`, desc: def.line,
+    crumbs: crumbsKind('campaigns'), title: TITLE[PATHS['campaigns'].url] || `${def.name} — Swechha`, desc: DESC[PATHS['campaigns'].url],
   };
 }
 
@@ -1532,7 +1949,10 @@ function pageItem(it) {
   const itForHow = { ...it, route };
 
   const body = {
-    top: masthead({ h1: it.name, deck: it.deck, frame: it.frame || null, ancestor: anc(def.name, PATHS[it.kind].url) }),
+    top: masthead({
+      h1: it.name, deck: it.deck, frame: it.frame || null,
+      ancestor: anc(def.name, PATHS[it.kind].url),
+    }),
     /* 1 — WHAT WE DO. The description, the reading pair, and the published span
        set as a span. The scale row is the one thing here that is new, and it is
        new only in the sense that a range that was already published as
@@ -1555,52 +1975,86 @@ function pageItem(it) {
            pixels above. Measured the cost at 375 on bridge-the-gap — the `what`
            band went 757.6 -> 932.8, and 175 of those pixels were a paragraph the
            reader had just finished. Same defect W-8 fixed on /work's masthead. */
-        left: scaleBlock(it) || `      <p class="cap p-cite" style="margin:0">Every figure beside this carries the span it counts and the source it comes from. Nothing on this page is a figure without both.</p>`,
+        /* AD-28. The fallback used to be a `.p-cite` promising that every
+           figure carries a span and a source — a statement about our method,
+           standing in the space a range chart would have used. Where there is no
+           range to draw, the column is empty. */
+        left: scaleBlock(it),
         frame: (it.statement && it.statement.frame && !hasStatement(it)) ? it.statement.frame : null,
-        right: figureBlock(it.figures || [], 'This page carries no figure, because none of what it describes has been counted in a form we could put a span and a source on.'),
+        right: figureBlock(it.figures || [], ''),
       }),
     ],
     /* 2 — WHAT IT SETS OUT TO DO. */
     aim: [
-      opener('aim', 'What it sets out to do', 'The objectives, as we would state them to a school or a funder — not the outcomes, which are three bands down.'),
+      opener('aim', 'What it sets out to do'),
       doRows(it.aims || []),
     ],
     /* 3 — STRATEGY AND ACTIVITIES, as one tab group. */
     how: [
-      opener('how', 'Strategy and activities', 'The method, then the named things that actually happen. Choose one.'),
-      howTabs(itForHow, url) || hole('How this runs is not written down anywhere a reader could check, so this page does not describe it.'),
+      opener('how', 'Strategy and activities'),
+      /* AD-28. The fallback was a named hole saying the method is not written
+         down anywhere. The band's own condition already requires method content,
+         so the branch was near-unreachable; now it renders nothing. */
+      howTabs(itForHow, url) || '',
     ],
     /* 4 — WHO IT IS FOR. */
     who: [
-      opener('who', 'Who it is for', 'Named, not described as a category. Where a group is on this list because they asked for it rather than because we chose them, it says so.'),
+      opener('who', 'Who it is for'),
       doRows(it.who || []),
     ],
-    /* 5 — IMPACT. The record, the auditable ledger of every figure, and the
-       holes stated as content. THE HOLES STAY VISIBLE and are not put behind a
-       tab or a disclosure: W-1 refused exactly that, because putting the thing
-       we cannot yet say behind a control inverts the rule that naming a hole is
-       content. */
+    /* 5 — IMPACT. AD-27.23 → AD-27.26, AND IT IS THE CLIENT'S LOUDEST NOTE:
+       "Formating is incorrect, make it crisp and simpler. The section needs to
+       be small. May be follow [the impact] page impact band style in all
+       project impacts."
+
+       MEASURED BEFORE THE REWRITE, so the fix has a number on it. /impact's
+       reference band puts FOUR SOURCED FIGURES IN 164px at 1440. This band was
+       2,726px on Bridge the Gap — 16.6x the reference — and it showed ZERO
+       figures: all five were collapsed inside <details class="dx">. A band
+       titled "Impact" that renders no numbers is the defect, and "formatting"
+       was a generous word for it. All nine item pages had the same structure.
+
+       THE BAND IS NOW, IN ORDER:
+         the opener
+         the FIGURE RAIL, at full .wrap measure, above the prose
+         at most TWO prose rows, the rest behind the frozen disclosure
+         the named holes, VISIBLE — W-1 refused to put those behind a control,
+           because naming a hole is content
+         the provenance ledger, behind its own disclosure, now correctly named:
+           "Every figure on this page, and where it comes from" is the right
+           summary for a ledger of methods and sources. It was the wrong place
+           for the figures themselves.
+
+       AND THE SPLIT IS GONE (AD-27.25 rule 1). splitBand({flip:true, ...}) put
+       this content into .w7-pj-reg — 5 of 12 columns, 464.3px — with a 562px
+       empty gutter beside it, and a .p-row inside that column left the prose
+       track 49.7px on Bridge the Gap and 0px on ME to WE. The shell's own
+       comment already held the verdict: "A split with nothing in its second
+       column is not a split — it is a 5-column text block, which is 41% of the
+       measure and unreadable." The band then shipped prose PLUS a second nested
+       grid into that same block, on nine pages. Rule 2 (in WORK_CSS) makes the
+       inner row stack unconditionally so this cannot recur anywhere else. */
     done: [
-      opener('done', 'Impact', 'What it has done, what that figure counts, and what it cannot yet say.'),
-      splitBand({
-        flip: true,
-        left: proseRows(it.done || [], 'The rest of the record'),
-        right: ledgerBlock(it.figures || []) || holeBlock(it.holes || []),
-      }),
-      (ledgerBlock(it.figures || []) ? holeBlock(it.holes || []) : ''),
+      /* AD-28. The lead promised "what it cannot yet say"; the holes fold
+         delivered it and the ledger disclosure audited the figures. All three
+         are gone. What is left is the band the client asked for: the figures,
+         then what they mean, and nothing about our filing. */
+      opener('done', 'Impact'),
+      figureRail(it.figures || []),
+      proseRows(it.done || [], 'The rest of the record'),
     ],
     /* 6 — THE PHOTOGRAPHS. */
     statement: hasStatement(it) ? statementFor(it) : '',
     sheet: [
-      opener('sheet', 'What it looks like', 'Our own frames, of this work.'),
-      (it.gallery || []).length >= GALLERY_MIN
-        ? sheetBand(it, `${it.name}, from the archive`, it.gallery_note
-          || 'Every frame here is ours. None carries a date, because no date on this page is sourced.')
-        : '',
+      opener('sheet', 'What it looks like'),
+      /* AD-28. `gallery_note` is no longer published either. Every value it
+         carried in the data was a sentence about dates we do not have or frames
+         we could not source. A contact sheet is looked at, not explained. */
+      (it.gallery || []).length >= GALLERY_MIN ? sheetBand(it, `${it.name}, from the archive`) : '',
     ],
     with: [
-      opener('with', 'Who it is with', 'Schools, partners and funders by name. Nobody here is described as a category.'),
-      namesBlock(w),
+      opener('with', 'Who it is with', namesHead(w)),
+      namesBlock(w, it.__key),
     ],
   };
 
@@ -1622,14 +2076,28 @@ function pageItem(it) {
     actNote: 'One thing to do about this, and it is the only slot on the page that asks you for anything.',
     invite: invite({
       act,
-      second: (it.invite && it.invite.second) || { label: 'Partner with us', href: '/about' },
+      /* AD-27.29. "Partner with us -> /about" IS REPLACED BY THE ASK, on all
+         nine pages, and the reason is worth stating precisely: `/about`
+         contains ZERO partnering content. Its bands are top, says, since, team,
+         board, legible, act, and the only occurrence of the word "partner" in
+         the whole file is a footer link. The partnering content is at
+         `act.html#partner`, which is now every Ask's tertiary link.
+         A SECONDARY THAT IS NOT THE /about LINK SURVIVES. farm-school's "The
+         farm itself" and influence's "Apply for a fellowship" are real
+         destinations with real content; this ruling removes a link that went
+         somewhere wrong, not every link. */
+      second: askBlocks(it).length
+        ? (secondSurvives(it) ? it.invite.second : null)
+        : ((it.invite && it.invite.second) || { label: 'Partner with us', href: '/about' }),
+      asks: askBlocks(it),
       note: (it.invite && it.invite.note) || 'One thing to do about this, and it is the only slot on the page that asks you for anything.',
     }),
   });
   return {
     bands, body: applyCanvas(bands, body), sections: sectionsFor(bands),
     current: it.kind === 'journeys' ? 'Journeys' : 'Work',
-    title: `${it.name} — Swechha`, desc: it.line || it.deck,
+    crumbs: crumbsFor(it),
+    title: `${it.name} — Swechha`, desc: descFor(it),
   };
 }
 
@@ -1655,7 +2123,14 @@ function pageEvents() {
        span, the venue, and the note. NO FIGURE IS SET HERE — the edition count
        is a reading and goes through the figure gate on the row's own terms. */
     record: [
-      opener('record', 'On the record', 'Every one of these has been run. It is a record of what we do in public, not a calendar of what is next. One of the four has a date somebody wrote down; the other three do not, and the difference is the page.'),
+      /* The third sentence — "One of the four has a date somebody wrote down;
+         the other three do not, and the difference is the page" — counted the
+         band's own contents and made the page's gaps its subject.
+         AD-28, SECOND PASS: the second sentence went the same way. "A record of
+         what we do in public, not a calendar of what is next" restated the
+         heading and then explained an absence, which §2.3 forbids on any page.
+         One sentence of fact is left, and it is the confident one. */
+      opener('record', 'On the record', 'Every one of these has been run.'),
       displayRows(mine.map(e => {
         const st = e.situation ? SIT.get(e.situation) : null;
         const parent = e.belongs_to ? items.find(x => x.slug === e.belongs_to) : null;
@@ -1677,39 +2152,41 @@ function pageEvents() {
           + [e.when.editions && e.when.years ? `<b>${esc(e.when.editions)} editions &middot; ${esc(e.when.years)}</b>` : (e.when.years ? `<b>${esc(e.when.years)}</b>` : ''),
              e.when.day ? `<i>${esc(e.when.day)}</i>` : '', e.when.venue ? `<i>${esc(e.when.venue)}</i>` : '']
             .filter(Boolean).join('')
-          + `</span>${e.when.note ? `<span class="cap wk-when-n">${esc(e.when.note)}</span>` : ''}`
-          + `<span class="cap wk-when-s">${esc(e.when.source)}</span>` : '';
+          + `</span>${e.when.note ? `<span class="cap wk-when-n">${esc(e.when.note)}</span>` : ''}` : '';
+        /* AD-28. `when.source` is no longer printed beside the date. It still
+           has to be present in the data — the date gate refuses an unsourced
+           one — but "owner 2026-08-21" under an edition count tells a visitor
+           nothing about the event. */
         return { name: e.name, line: `${e.gathering}${when}`, anchor: e.anchor, pre };
       }), { ordinals: false, anchors: true }),
     ],
-    nodates: [
-      opener('nodates', 'Why there are no dates here', 'Not an omission, and not a coming-soon. Four names is genuinely all that is written down, and a page that invented an edition to look complete would be worse than this one.'),
-      holeBlock(mine.flatMap(e => e.holes || [])),
-      '      <p class="body p-key" style="margin-top:var(--gap-block)">When there is something to say, three things appear on each row above and nothing else: <b>an edition</b>, <b>a place</b>, and <b>a way to turn up</b>. Until then this page holds no form, because a form that accepts an address it cannot store is the one genuinely dishonest thing it could do.</p>',
-    ],
     statement: hasStatement(def) ? statementFor(def) : '',
     sheet: [
-      opener('sheet', 'What it looks like', 'Frames from our own archive, of gatherings we have run.'),
-      (def.gallery || []).length >= GALLERY_MIN ? sheetBand(def, 'Events, from the archive',
-        'Every frame here is ours, and not one of them is captioned with a year — which is this page’s whole argument, applied to its own pictures.') : '',
+      opener('sheet', 'What it looks like'),
+      (def.gallery || []).length >= GALLERY_MIN ? sheetBand(def, 'Events, from the archive') : '',
     ],
   };
   body.onward = onwardBand({
     doors: threeDoors({ siblings: otherKindDoors('events'), situation: null, evidence: EVIDENCE['/#record'] }),
-    act: def.act || { label: 'Volunteer with us', href: '/act' },
-    /* W-7. The line here used to read "There is a way to be told about the next
-       one." It was not true and it contradicted this page's own paragraph two
-       bands up. */
-    actNote: 'There is no date on this page to hold you to, and no list here to join. Dates go out on the four accounts at the foot of this page.',
+    act: deepen(PATHS.events.url, def.act || { label: 'Volunteer with us', href: '/act' }),
+    /* AD-28. Was "There is no date on this page to hold you to, and no list here
+       to join. Dates go out on the four accounts..." — two clauses of what this
+       page does not have, then the one clause that tells a reader where to
+       actually look. Subtract, do not rewrite: the useful clause stands alone. */
+    actNote: 'Dates go out on the four accounts at the foot of this page.',
+    /* AD-27.18-A. "Volunteer with us" is an individual action and not one of the
+       four audiences (AD-27.56 forbids a fifth), so it keeps navigating — to
+       /act#hands, which is where /act's own WAYS table files this exact label
+       and where the row pointing back to this page is printed. */
     invite: invite({
-      act: def.act || { label: 'Volunteer with us', href: '/act' },
-      second: { label: 'Partner with us', href: '/about' },
-      note: 'There is no date on this page to hold you to, and no list here to join. Dates go out on the four accounts at the foot of this page.',
+      act: deepen(PATHS.events.url, def.act || { label: 'Volunteer with us', href: '/act' }),
+      second: PARTNER_SECOND,
+      note: 'Dates go out on the four accounts at the foot of this page.',
     }),
   });
   return {
     bands, body: applyCanvas(bands, body), sections: sectionsFor(bands), current: 'Work',
-    title: `${def.name} — Swechha`, desc: def.line,
+    crumbs: crumbsKind('events'), title: TITLE[PATHS['events'].url] || `${def.name} — Swechha`, desc: DESC[PATHS['events'].url],
   };
 }
 
@@ -1741,6 +2218,8 @@ for (const p of plan) {
   }
 }
 
+checkDescriptions();
+
 /* ═══ REPORT BEFORE THE GATES ═════════════════════════════════════════════
    "The data is not there yet" is a different answer from "the data is wrong",
    and whoever reads this needs both.                                        */
@@ -1764,7 +2243,7 @@ let problems = REJECT.length;
 
 for (const p of plan) {
   const r = await buildPage({
-    file: p.file, url: p.url, title: p.title, desc: p.desc, bands: p.bands,
+    file: p.file, url: p.url, title: p.title, desc: p.desc, bands: p.bands, crumbs: p.crumbs,
     sectionFor: (id) => {
       const b = p.body[id];
       if (b == null) { rej(p.url, `band "${id}" has no content`); problems++; return ''; }
@@ -1782,6 +2261,94 @@ for (const p of plan) {
 
 console.log('\nGROUND CHAIN (composited, per page)');
 for (const b of built) console.log(`  ${b.url.padEnd(34)} ${b.chain.map(c => c[2]).join(' -> ')}`);
+
+/* ═══ THE ASK GATE — AD-27.18-A ══════════════════════════════════════════
+   A MISS THE CLIENT HAD TO FIND IS WORTH A BUILD GATE. AD-27.22's four
+   assertions all check an Ask that IS on the page; not one of them could see
+   the defect he found, which is an Ask that is ABSENT — a primary button still
+   navigating to /act under a label the Ask exists to answer. Two assertions,
+   both section-wide, both over the rendered HTML rather than the data, because
+   the rendered HTML is the thing a reader clicks.
+
+   1. NO NAVIGATING PRIMARY UNDER AN ASK'S OWN LABEL. The forbidden label set is
+      DERIVED, not typed: it is every label that any Ask anywhere in the section
+      actually carries. So the day somebody adds a page whose primary reads
+      "Bring your school" and forgets the Ask, this stops the build — and the
+      day an Ask's label is reworded, the gate follows it with no edit here.
+   2. NO "PARTNER" LINK AT /about. AD-27.29: /about has no partner content and
+      never did; the partnering content is at /act#partner. The check is on the
+      pair (word, destination) so the footer's legitimate "About Swechha" link
+      is untouched and only the wrong one is caught.
+
+   THE EXEMPTION LIST IS NAMED, AND IT IS NOT A FREE PASS. Exactly one label
+   collides: "Plant with us" is Monsoon Wooding's INSTITUTION Ask — an
+   organisation that wants a planting — and it is also /work/campaigns' primary,
+   where the reader is one person turning up in the rain and the page says so
+   ("A campaign is people turning up"). Handing that reader a Partnership body
+   that opens "Organisation:" mis-sorts them by construction, which is the same
+   argument ASK_PLACEMENT already records for me-to-we and influence. So the two
+   individual-action primaries are exempted BY NAME — and the exemption costs
+   them something: an exempted primary must land on a NAMED /act band, never on
+   the bare page, which is the "still lands at a page" defect one degree weaker.
+   An exemption that stops matching is a failure too, so the list cannot rot. */
+const NAVIGATING_PRIMARY = {
+  '/work/campaigns::Plant with us':
+    'an individual planting, not the institutional one Monsoon Wooding\'s Ask answers (AD-27.56: no fifth audience)',
+  '/work/events::Volunteer with us':
+    'an individual volunteering, which is not one of the four audiences (AD-27.56)',
+};
+const askLabels = new Set(
+  built.flatMap(b => [...b.html.matchAll(/<summary class="b b-\d ask-s">([^<]*)/g)].map(m => m[1].trim()))
+    .filter(Boolean),
+);
+const askGateFailures = [];
+const exemptionsUsed = new Set();
+for (const b of built) {
+  const body = b.html.split('<footer')[0];
+  for (const m of body.matchAll(/<a class="b b-1"[^>]*href="([^"]*)"[^>]*>([^<]*)/g)) {
+    const [, href, raw] = m;
+    const label = raw.trim();
+    const key = `${b.url}::${label}`;
+    if (Object.prototype.hasOwnProperty.call(NAVIGATING_PRIMARY, key)) {
+      exemptionsUsed.add(key);
+      if (!/^\/act#\w/.test(href)) {
+        askGateFailures.push(`${b.url}: "${label}" is exempt from resolving in place (${NAVIGATING_PRIMARY[key]}), `
+          + `but it navigates to ${href} — the top of a 10,072px page. An exempt primary must land on the `
+          + '/act band that answers it (#start, #give, #hands, #standing, #partner).');
+      }
+      continue;
+    }
+    if (askLabels.has(label)) {
+      askGateFailures.push(`${b.url}: the primary CTA "${label}" NAVIGATES to ${href}. `
+        + 'That label is an Ask elsewhere in this section, so it is an ask one of the four '
+        + 'audiences covers and it must resolve in place (AD-27.14 / AD-27.18-A). '
+        + 'Give the page an Ask, or rename the control to something that is not an ask.');
+    }
+  }
+  for (const m of body.matchAll(/<a[^>]*href="(\/about[^"]*)"[^>]*>([^<]*)/g)) {
+    if (/partner/i.test(m[2])) {
+      askGateFailures.push(`${b.url}: "${m[2].trim()}" links to ${m[1]}. AD-27.29: /about carries `
+        + 'zero partnering content — its bands are top, says, since, team, board, legible, act. '
+        + 'The partnering content is at /act#partner.');
+    }
+  }
+}
+for (const key of Object.keys(NAVIGATING_PRIMARY)) {
+  if (!exemptionsUsed.has(key)) {
+    askGateFailures.push(`the navigating-primary exemption "${key}" matched nothing this build. `
+      + 'Either the control was renamed or the page dropped it — delete the exemption rather than '
+      + 'leaving a licence lying about for a label somebody may reuse.');
+  }
+}
+if (askGateFailures.length) {
+  console.error(`\nREFUSING TO WRITE: ${askGateFailures.length} Ask/partner-routing failure(s).`);
+  for (const f of askGateFailures) console.error(`  ✗ ${f}`);
+  problems += askGateFailures.length;
+}
+console.log(`\nASK GATE — ${askLabels.size} distinct Ask label(s) in the section, `
+  + `${built.filter(b => /<details class="ask"/.test(b.html)).length} of ${built.length} pages resolve an ask in place, `
+  + `${Object.keys(NAVIGATING_PRIMARY).length} named exemption(s) all landing on an /act band; `
+  + `${askGateFailures.length} routing failure(s).`);
 
 /* ═══ THE LINK GATE ══════════════════════════════════════════════════════ */
 const links = new Links({

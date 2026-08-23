@@ -60,9 +60,13 @@ import { tmpdir } from 'node:os';
 import {
   ROOT, V3, extractor, shell, groundChain, opener, hole, esc,
   kd, kindTag, KIND_LEGEND, ARROW, n0, disclose, SHARED_PAGE_CSS, tabs,
+  ask, stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC,
 } from './situation-shell.mjs';
 
-export { ROOT, V3, opener, hole, esc, kd, kindTag, KIND_LEGEND, ARROW, n0, disclose, groundChain, tabs };
+export { ROOT, V3, HOME_SRC, opener, hole, esc, kd, kindTag, KIND_LEGEND, ARROW, n0, disclose, groundChain, tabs, ask };
+/* Re-exported because they were exported from here before AD-28 moved them
+   down a layer, and an import that used to resolve should keep resolving. */
+export { stripCssComments, stripHtmlComments, redactScriptLedgerRefs };
 
 /* ═══ THE FOUR GROUNDS, AND THE CLASS THAT PAINTS EACH ════════════════════
    Ground adjacency is gated on the COMPOSITED RENDERED COLOUR, not on class
@@ -214,7 +218,7 @@ const wrapMedia = (q, body) => `@media ${q}{\n${body}\n}`;
 
 export function workShell() {
   const base = shell();                       // tokens, chrome, footer, script, Air's CSS
-  const home = extractor(join(V3, 'home.html'));
+  const home = extractor(HOME_SRC);
   const R = home.R;
 
   /* ── THE COMPONENT LAYER, six ranges, all out of the frozen homepage.
@@ -486,6 +490,28 @@ export const HOME_HREF = '/';
  *           destination is somewhere else
  * Both are valid `aria-current` tokens and the underline CSS keys off the
  * attribute's presence, not its value, so the mark is identical either way.
+ *
+ * ONE MARK PER BAR, INCLUDING ON /work/journeys — AD-27.3 AMENDED, 23 August.
+ * AD-27.3's table has one row saying that /work/journeys marks BOTH `Journeys`
+ * (page) AND `Work` (true), "they are different claims". It is not implemented
+ * and it is not going to be, for four reasons that the ruling itself supplies:
+ *   1. The table already rejects exactly this for /work/journeys/<slug> —
+ *      "two `true`s on one bar is noise". Work and Journeys are ADJACENT words
+ *      in NAV, so on /work/journeys the two 2px mustard rules would abut with
+ *      one 12–30px gap between them and read as one wide rule or as a bug.
+ *   2. The CSS above keys off `[aria-current]`, not its value, so `page` and
+ *      `true` are pixel-identical. The "different claims" distinction is
+ *      invisible to the sighted reader it would be shown to.
+ *   3. AD-27.1 fixed the mark's meaning at "this page belongs to this chapter",
+ *      ONE meaning. Two marks put two answers on one control, which is the same
+ *      objection AD-27.1 used to kill the scroll-spy hybrid.
+ *   4. AD-27.3's own derivation rules — page where href==URL, true where the
+ *      word is the chapter and the href is the parent, nothing otherwise — do
+ *      not yield two marks anywhere. The rules are the ruling; that row is the
+ *      exception, and it is the row that gives way.
+ * STRUCTURALLY ENFORCED, not merely obeyed: `current` is a single label, so
+ * this function can mark at most one word. Anyone implementing the table has to
+ * change that signature first, which is the point at which they will read this.
  */
 export const workHeader = (sections, current, url) => {
   const cur = (label, href) => label !== current ? ''
@@ -690,6 +716,11 @@ export const WORK_CSS = `
 .wk-mast .im-head{margin-bottom:0}
 .wk-mast .d1{max-width:20ch}
 .wk-pic-head{padding-top:clamp(18px,2.2vw,30px)}
+/* AD-28. The masthead's missing-frame note is deleted, so the rule that sized
+   it is deleted with it. Nothing emits the class any more and the AD-28 gate
+   fails the build if anything starts to.
+   NO BACKTICKS IN THIS BLOCK: it is inside the WORK_CSS template literal, and a
+   pair of them here silently truncated WORK_CSS to zero length once already. */
 
 /* ── (d.3) THE ARRIVAL MARK ON A REGISTER ROW (AD-17 §7.2). Six inbound links
       from the frozen homepage land on a row rather than a page, and a reader
@@ -784,12 +815,9 @@ export const WORK_CSS = `
   color:var(--ink-2);background:rgba(238,236,230,.88);
   border:1px dotted rgba(20,19,16,.5);padding:4px 6px 5px;font-size:10.5px}
 
-/* ── WHAT WE CANNOT YET SAY, AS CONTENT. AD-17 §5C band 4 and §5D band 4 both
-      put the named holes on the page in the frozen grammar. The marker is the
-      extracted .p-hole; this only gives the group its heading rhythm. */
-.wk-holes{margin:var(--gap-block) 0 0}
-.wk-holes .p-hole{margin-top:var(--gap-row)!important}
-.wk-holes .p-hole:first-child{margin-top:0!important}
+/* ── AD-28. The named-hole group is deleted, so its three rules are too. The
+      base .p-hole rules still arrive from the shared sheet and are dead weight
+      on these pages; they are not this file's to remove. */
 
 /* ══════════════════════════════════════════════════════════════════════════
    AD-18. EVERYTHING BELOW IS EITHER (a) A RE-SCOPE OR (b) A GROUND STATEMENT
@@ -1142,7 +1170,167 @@ export const WORK_CSS = `
    the frozen band already keeps ("A NUMBER / IS NOT / A SMELL", longest word
    six). break-word here is only the net under it: a violation that somehow got
    past the gate breaks inside the column instead of crossing into the picture. */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   AD-27. THE FINAL PASS. Everything below is section D of the AD-27 rulings.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── AD-27.16 THE ASK. Do not edit one copy. Both shells carry this verbatim. ──
+   AND THIS SHELL CARRIES IT BY INHERITANCE, NOT BY A SECOND PASTE. AD-27.16
+   instructs lane 2 to paste the block into "work-shell.mjs's equivalent" of
+   SHARED_PAGE_CSS, on the premise that "there is no shared stylesheet
+   (BRANDING §7.6)". THAT PREMISE IS TRUE OF THE BROWSER AND FALSE OF THESE TWO
+   MODULES: work-shell.mjs imports SHARED_PAGE_CSS from situation-shell.mjs and
+   emits it into every WORK page's <style> (see buildPage's head template). So
+   lane 1's copy is ALREADY on all fifteen WORK pages, and a second paste here
+   would ship seventeen byte-identical declarations twice in one stylesheet.
+   Two copies that cannot diverge is what the ruling wanted; ONE copy that
+   cannot diverge is strictly better, so this comment is the sentinel and the
+   rules live at situation-shell.mjs's own .ask block. Verify with:
+     grep -n "AD-27.16 THE ASK" scripts/lib/*.mjs
+   and confirm every WORK page carries the rules with:
+     grep -c "ask\[open\]" public/_pages/v3/work/projects/bridge-the-gap.html
+   IF LANE 1 EVER MOVES THE BLOCK OUT OF SHARED_PAGE_CSS, paste AD-27.16's text
+   here verbatim under this comment. Reported to the art director. ────────── */
+
+/* ── AD-27.23. THE FIGURE RAIL, lifted verbatim from impact.html:1522-1531 with
+      ONE change: the column count is DERIVED from the membership rather than
+      fixed at four, so a three-figure page does not render a hole. That is
+      BRANDING §5.5 applied — structure fixed, membership flexes — and it is why
+      repeat(4,...) is not copied literally. The generator writes style="--n:3".
+      Stated for BOTH grounds, because /impact's band is paper-only and AD-27.23
+      puts this rail on "#done", which is #0D0D0B on five of the nine pages.
+      That is the same defect class WORK_CSS block (b) has now caught five
+      times, designed out here rather than waited for. */
+.ip-ovl{display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));
+  gap:var(--gap-row) clamp(14px,2vw,30px);margin-top:var(--gap-row)}
+.ip-ovl-c>*{margin:0;min-width:0}
+.ip-ovl-v{font-size:clamp(26px,3.4vw,42px);line-height:.98}
+.ip-ovl-l{margin-top:10px}
+.ip-ovl-s{color:var(--ink-3);margin-top:10px}
+@media (max-width:760px){.ip-ovl{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.wk-dark .ip-ovl-v,.wk-dark .ip-ovl-l{color:var(--fg)}
+.wk-dark .ip-ovl-s{color:var(--fg-3)}
+/*    THE PLUS SIGN, AND A DEFECT THE PNG SHOWED THAT NO MEASUREMENT WOULD.
+      impact.html states no rule for the superscript inside .ip-ovl-v, so it
+      falls back to the browser default vertical-align:super — which INFLATES
+      THE LINE BOX. Read at 1440: "2 million" and "100-150" sat on one baseline
+      and "50,000+" and "250+" sat 7px lower, in a four-column grid whose items
+      all start at the same top. Four figures in a row on three baselines reads
+      as a broken grid, and every box measurement is green while it does.
+      The frozen homepage already solved this and its solution is taken rather
+      than re-derived: home.html:2403 sets vertical-align:baseline with
+      position:relative;top, which lifts the glyph WITHOUT touching the line
+      box. Stated for both grounds, since AD-27.23 puts this rail on #0D0D0B on
+      five of the nine pages and the frozen rule carries --ink-2.
+      NOTE FOR LANE 1: /impact itself still has the stagger. Not this lane. */
+.ip-ovl-v sup{font-size:.3em;font-variation-settings:'wdth' 88,'wght' 700;
+  letter-spacing:.02em;color:var(--ink-2);vertical-align:baseline;
+  position:relative;top:-.66em}
+.wk-dark .ip-ovl-v sup{color:var(--fg-2)}
+
+/* ── AD-27.25 RULE 2. A .p-row INSIDE A SPLIT COLUMN ALWAYS STACKS, AT EVERY
+      WIDTH, AND IT IS WRITTEN STRUCTURALLY RATHER THAN AS A BREAKPOINT.
+      The diagnosis, exactly: .w7-pj-reg is 5 of 12 columns of 1,148px = 464.3px,
+      and .p-row is minmax(0,auto) beside minmax(0,1fr) where minmax(0,auto)
+      resolves its max to MAX-CONTENT. The label is a .lbl — uppercase,
+      letter-spacing .15em — and "A HUNDRED TO A HUNDRED AND FIFTY SCHOOLS A
+      YEAR" measures 371px. It takes it. Less the 43.2px gap the prose track has
+      49.7px left: SIX CHARACTERS A LINE, measured, at 1440. On me-to-we the
+      prose track resolved to 0px and 4.9 characters a line.
+      The (d.4) block above stacks these below 640, and below 900 the OUTER
+      split also stacks so the row gets the full 1,148px. NOBODY WROTE A RULE FOR
+      >=900, where the outer split un-stacks and the inner row does not — the fix
+      was written against the phone and never re-measured in the composed case.
+      A breakpoint rule is a guess about which widths compose, and this defect is
+      the proof that the guess was wrong. A split column is never wide enough for
+      two tracks at any viewport, so the rule is unconditional (BRANDING §6.1). */
+.w7-pj-reg .p-row,.w7-pj-lead .p-row{grid-template-columns:minmax(0,1fr);row-gap:6px}
+.w7-pj-reg .p-row .body,.w7-pj-lead .p-row .body{max-width:none}
+
+/* ── AD-27.27. RANK ON A NAMED LIST, WITH NO LOGO FILE AND NO NEW COLOUR.
+      There is no partner logo anywhere in this repository and BRANDING §7.4
+      forbids importing foreign trademarks, so lead-ness is carried by the two
+      devices the site already uses: POSITION (the data's own order, never
+      sorted) and ONE WEIGHT STEP. .wk-names li is wdth 84 / wght 620; a lead row
+      goes to 780. No size change, no colour change, no rule change — BRANDING
+      §5.5's own grammar, and it survives a photocopier, which a colour would
+      not. The caption under the list says the order means something without
+      asserting a category the record does not support. */
+.wk-names li.wk-lead{font-variation-settings:'wdth' 84,'wght' 780}
+.wk-names-c{margin:var(--gap-row) 0 0;color:var(--fg-3)}
+.paper .wk-names-c,.paper-2 .wk-names-c{color:var(--ink-3)}
+/*    AND THE BAND'S OWN HEADING WAS A SMALL LIE. "Schools, partners and funders
+      by name" ran over a list containing only funders, because "schools" and
+      "partners" are empty on every item that has this band. With auto-fit that
+      also rendered as one 260px column with two thirds of the wrap blank. The
+      heading now names only the non-empty groups (build-work-pages.mjs) and the
+      grid's --n follows the group count, exactly as AD-27.23's rail does. */
+.wk-names{grid-template-columns:repeat(var(--n,3),minmax(0,1fr))}
+/*    One group is a register, not a column: at --n:1 the names would each take a
+      1,148px ruled row for fifteen characters of ink. The list flows in columns
+      instead, at the same row rhythm, so the block reads as a list rather than
+      as a very sparse table. break-inside keeps a name off a column boundary. */
+.wk-names-1 ul{columns:3;column-gap:clamp(14px,2vw,28px)}
+.wk-names-1 li{break-inside:avoid}
+@media (max-width:1023px){.wk-names-1 ul{columns:2}}
+@media (max-width:639px){
+  .wk-names{grid-template-columns:minmax(0,1fr)}
+  .wk-names-1 ul{columns:1}
+}
+
+/* ── AD-27.18 / AD-27.29. THE INVITE ROW NOW HOLDS ASKS, WHICH ARE BLOCKS.
+      .wk-invite is a flex row of inline controls and an Ask is a <details>:
+      closed it is its summary, open it is a 52ch panel. A flex row cannot hold
+      both, because the open panel would sit beside the second summary and drag
+      the row's baseline. So the row becomes a column when it carries Asks —
+      same component, same gap tokens, no new spacing scale — and each Ask keeps
+      its own summary as the thing you press.
+      THE SUMMARY IS THE BUTTON AND IT MUST BE A REAL TARGET. .b already carries
+      the frozen padding, so the only thing stated here is that a <summary> in
+      the flex/grid context does not collapse its own box. */
+/*    AND THE PRIMARY BUTTON'S FOCUS RING ON #ECEBE8 — a pre-existing defect
+      this lane found by focusing the Ask's own summary and reading the computed
+      outline, not by looking at it.
+      home.html:682 gives .b-1:focus-visible a GROUND-COLOUR ring with a mustard
+      halo outside it, which is the right idea, and :685 restates it for .paper
+      AND STOPS THERE. Every #onward band in this section is paper-2, so on all
+      fifteen WORK pages the ring resolved to --fg (#FBF8F0) on #ECEBE8 — 1.06:1,
+      an invisible white line — with only the halo doing any work, and that halo
+      stayed on --mustard rather than the AA-safe --mustard-ink the paper rule
+      switches to. The Ask's summary IS a .b-1, so this now sits on the one
+      control the client asked for, which is why it is fixed here.
+      This is AD-27.16's own instruction applied to a rule it does not own:
+      "Every paper rule is written .paper X,.paper-2 X ... that defect is
+      designed out here rather than waited for." Sixth appearance in this file.
+      NOTE FOR LANE 1: home.html:685 has the same gap wherever a .b-1 lands on
+      paper-2 outside this section. Not this lane's file. */
+.paper-2 .b-1:focus-visible{outline-color:var(--paper-2);box-shadow:0 0 0 5px var(--mustard-ink)}
+
+.wk-invite.wk-invite-ask{display:grid;justify-items:start;gap:var(--gap-row)}
+.wk-invite.wk-invite-ask>.ask{margin:0}
+.wk-invite.wk-invite-ask .wk-invite-n{margin:0}
+@media (max-width:519px){
+  .wk-invite.wk-invite-ask{justify-items:stretch}
+  .wk-invite.wk-invite-ask .ask>.ask-s{width:100%;justify-content:center;padding:16px 20px}
+}
 `;
+
+/* GATE — WORK_CSS IS WHOLE. A template literal has no syntax for "the author
+   meant this to be one string": a stray pair of backticks inside a CSS comment
+   closes it and reopens it, and everything between the two vanishes from the
+   emitted stylesheet with no error anywhere. THAT HAPPENED, 23 August, while
+   adding the comment above .wk-mast-hole: WORK_CSS went to LENGTH ZERO, the
+   build printed "every other gate green", and all 15 pages were written ~50KB
+   lighter with the entire WORK component layer — .wk-mast, .ip-ovl, .wk-holes,
+   .wk-names, the lot — silently absent. Three sentinels, one from each end and
+   one from the middle, cost nothing and turn that into a stopped build. */
+for (const needle of ['#kinds,#record,#against', '.wk-mast{', '.wk-invite-ask']) {
+  if (!WORK_CSS.includes(needle)) {
+    throw new Error(`WORK_CSS is truncated: "${needle}" is missing. Almost certainly an unescaped ` +
+      `backtick inside the template literal — search it for one and take it out.`);
+  }
+}
 
 /* ═══ COMPONENTS ══════════════════════════════════════════════════════════ */
 
@@ -1163,6 +1351,25 @@ export const WORK_CSS = `
  * solid ground and the frame occupies the right 56%, so they do not overlap at
  * all above 767. Below it they stack.
  */
+/**
+ * A BAND OPENER THAT CAN HAVE NO LEAD.
+ *
+ * AD-28 category 5 deletes the self-describing lead from most bands in this
+ * section, and `opener()` in situation-shell.mjs always emits `<p class="lead">`
+ * — with nothing to put in it that renders the string "undefined". That file
+ * belongs to the situation pages, where every lead is real content, so it is
+ * not changed. This is the same markup with the paragraph omitted rather than
+ * emptied: an empty `<p class="lead">` is still a grid row, still a margin, and
+ * still a thing a screen reader walks into.
+ *
+ * Identical output to `opener(id, head, lead)` when a lead is supplied, so the
+ * two can be used side by side.
+ */
+export const openBand = (id, head, lead) => `    <div class="wrap"><div class="im-head">
+        <h2 class="d1" id="${id}-h">${head}</h2>${lead ? `
+        <p class="lead">${lead}</p>` : ''}
+      </div></div>`;
+
 export const statementBand = ({ line, under, frame, id = 'statement' }) => `    <figure class="w7-say-fig">
       <img class="duo" src="${esc(frame.src)}" alt="${esc(frame.alt)}" loading="lazy"${frame.op || frame.opSmall ? ` style="${frame.op ? `--op:${esc(frame.op)};` : ''}${frame.opSmall ? `--op-s:${esc(frame.opSmall)}` : ''}"` : ''}>
     </figure>
@@ -1211,22 +1418,55 @@ export const anc = (label, href) =>
  * DISPLAY TYPE MAY SIT ON A PHOTOGRAPH. NOTHING ELSE MAY. So the h1 goes inside
  * .pic-over and every other word — the ancestor line, the deck, any chip — sits
  * on solid ground in .pic-body beneath the frame, where it cannot drift.
+ *
+ * `note` — THE MISSING FRAME, STATED WHERE THE FRAME WOULD HAVE BEEN.
+ * The paragraph above used to end "the missing frame is stated in band 4 as
+ * content"; on Gram Anubhav it was stated in band 5 (`#done`), and since
+ * AD-27.24 folded the named holes behind a disclosure it was stated inside a
+ * CLOSED <details> 4,520px down a 5,767px page — a page whose single most
+ * important sentence is that it has no photograph, and it was the one sentence
+ * a reader could not see. The homepage says the same thing IN THE OPEN, in the
+ * card's picture slot (`.w7-jr-hole`, home.html:3690), and CityScapes says the
+ * same kind of thing in the open under its sheet (`gallery_note`). This is the
+ * third instance of that statement and it takes the same grammar and the same
+ * device: `.p-hole`, the site's named-hole marker, which already states its
+ * colour on both grounds, set in the masthead's second column where the deck
+ * ends — i.e. exactly the space a photograph would have occupied.
+ * It is a note about an ABSENT frame, so `build-work-pages.mjs` refuses it on
+ * any item that has one: a page cannot both show a photograph and say it has
+ * none.
  */
-export function masthead({ h1, deck, frame, ancestor, chip }) {
+/* AD-28 category 3 SUPERSEDES THE PARAGRAPH ABOVE. The absent-frame note is a
+   `.p-hole` in the masthead announcing that the page has no photograph — an
+   explanation of an absence, which is the one thing an organisational page may
+   never publish. Where a page has no photograph it simply has none. `note` is
+   still accepted and deliberately ignored, so a caller that still passes one
+   cannot resurrect it; the AD-28 gate in this file fails the build if a
+   `.p-hole` reaches any WORK page by any route at all. */
+export function masthead({ h1, deck, frame, ancestor, chip, note }) {
   const head = `        <h1 class="d1" id="top-h">${h1}</h1>`;
+  void note;
+  const noteP = '';
   const under = [
     ancestor ? `        <p style="margin:0">${ancestor}</p>` : '',
     deck ? `        <p class="lead">${deck}</p>` : '',
+    noteP ? `        ${noteP}` : '',
     chip ? `        <p style="margin:0">${chip}</p>` : '',
   ].filter(Boolean).join('\n');
 
   if (!frame) {
-    // THE TYPE-ONLY VARIANT (§5D). .im-head at masthead scale, nothing faked.
+    /* THE TYPE-ONLY VARIANT (§5D). .im-head at masthead scale, nothing faked.
+       The note rides in the SECOND column, under the deck, because that column
+       is `align-self:end` and already holds the only running prose in the band;
+       putting it under the h1 instead would set a 62ch paragraph beneath 104px
+       display type and read as a second deck. Below 900 .im-head stacks and the
+       note follows the deck, which is the reading order either way. */
+    const col2 = [deck ? `<p class="lead">${deck}</p>` : '', noteP].filter(Boolean).join('');
     return `    <div class="wk-mast"><div class="wrap">
 ${ancestor ? `      <p style="margin:0 0 6px">${ancestor}</p>` : ''}
       <div class="im-head">
         <div>${head}</div>
-        ${deck ? `<div><p class="lead">${deck}</p></div>` : ''}
+        ${col2 ? `<div>${col2}</div>` : ''}
       </div>
 ${chip ? `      <p style="margin:var(--gap-head) 0 0">${chip}</p>` : ''}
     </div></div>`;
@@ -1276,11 +1516,21 @@ ${under}
  * absence goes into the absence grammar and keeps its meaning (schema
  * addendum §4). Any other period is printed as written.
  */
+/**
+ * THE SPAN A FIGURE COUNTS — or nothing at all.
+ *
+ * AD-28 category 2. A span that is real content survives ("since 2010", "over
+ * fifteen years"). The SOURCING half does not, and neither does a confession
+ * that the span is unknown: where the data says "period not sourced" or
+ * "cumulative, no start year sourced", the figure prints with NO span rather
+ * than a note about what we do not know. Callers must read '' as "render no
+ * caption line", never as "render an empty one".
+ */
+const NO_SPAN = [/^cumulative, no start year sourced$/i, /^period not sourced$/i];
 export const period = (p) => {
   const s = String(p || '');
-  if (/^cumulative, no start year sourced$/i.test(s)) return 'cumulative &middot; start year not sourced';
-  if (/^period not sourced$/i.test(s)) return 'period not sourced';
-  return esc(s);
+  if (!s || NO_SPAN.some(re => re.test(s))) return '';
+  return esc(s).replace(/^cumulative,\s*/i, 'cumulative &middot; ');
 };
 
 /**
@@ -1294,12 +1544,22 @@ export const period = (p) => {
  * them cannot spend 136px on line breaks and stay inside the 900px band cap.
  * Nothing is lost — both facts are still on the page, beside each other.
  */
-export const figure = (f) => `        <span>
+/* AD-28. THE SOURCE LINE IS GONE, and so is the counted-versus-modelled rule
+   under the label. These are organisational pages: the figure stands on its
+   own, and a figure Swechha cannot stand behind is not published rather than
+   published with an apparatus round it. The basis rule went with the legend
+   that decoded it — an unexplained dotted rule tells a reader nothing — so
+   every label takes the plain one. The caption line is OMITTED, not emptied,
+   where there is no span to state. */
+export const figure = (f) => {
+  const span = period(f.period);
+  return `        <span>
           ${f.owner ? `<span class="lbl wk-fig-o">${f.owner}</span>` : ''}
           <span class="w7-pj-num rl"><span class="num">${f.value.replace(/\+$/, '<sup>+</sup>')}</span></span>
-          <span class="lbl w7-pj-nl"><span class="p-kd ${f.basis === 'modelled' ? 'p-kd-m' : 'p-kd-c'}">${esc(f.label)}</span></span>
-          <span class="cap wk-fig-m">${period(f.period)} &middot; ${esc(f.source)}</span>
+          <span class="lbl w7-pj-nl"><span class="p-kd p-kd-c">${esc(f.label)}</span></span>${span
+    ? `\n          <span class="cap wk-fig-m">${span}</span>` : ''}
         </span>`;
+};
 
 /**
  * The reading pair. Never renders a numeral without its period — the data gate
@@ -1378,11 +1638,16 @@ export const march = (items) => {
 };
 
 /** One door card. Slot 1-3 of the cross-sell band; the same component as §5.6. */
+/* AD-28. THE FOOT LINE IS OMITTED WHERE THERE IS NOTHING TO PUT IN IT. A door
+   used to end on "No figure published yet" where an item had no figure; now it
+   ends on nothing, and an empty `<span>` with an arrow beside it would be the
+   same absence rendered as a control. The arrow moves up beside the body line
+   so every card still shows it is a link. */
 export const door = (d) => `      <a class="s-record-door" href="${d.href}">
         <p class="lbl s-record-door-lbl">${d.eyebrow}</p>
         <h3 class="s-record-door-h">${d.head}</h3>
         <p class="s-record-door-t">${d.body}</p>
-        <p class="s-record-door-n"><span>${d.foot}</span>${ARROW}</p>
+        <p class="s-record-door-n">${d.foot ? `<span>${d.foot}</span>` : '<span></span>'}${ARROW}</p>
       </a>`;
 
 /**
@@ -1397,10 +1662,18 @@ export const door = (d) => `      <a class="s-record-door" href="${d.href}">
  * NAMES THE SET (D-03.2): one, two or three doors paint, and at zero the slot
  * does not render. There is no "3 more projects" anywhere.
  */
+/* AD-28 §3.5, SECOND PASS. THE LEAD IS DELETED, NOT REPLACED. It read "Three
+   ways in, and then the nearest thing to this, what it pushes against, and the
+   record it is kept in." — a sentence whose entire subject was this band's own
+   slot order, printed on all fifteen pages. Worse, it was routinely FALSE: slot
+   2 renders only where a situation page names the same subject, so "what it
+   pushes against" named a door that does not exist on any of the five landings
+   or on six of the ten item pages. A lead that enumerates conditional markup is
+   the orphaned reference AD-28 §3 category 5 describes, and the replacement for
+   pure self-description is nothing at all. The heading carries the band. */
 export const onwardBand = ({ doors, act, actNote, invite }) => `    <div class="wrap">
       <div class="im-head">
         <div><h2 class="d1" id="onward-h" style="max-width:15ch">Get involved</h2></div>
-        <div><p class="lead">Three ways in, and then the nearest thing to this, what it pushes against, and the record it is kept in.</p></div>
       </div>
 ${invite || `      <div class="wk-onward-act">
         <p>${actNote}</p>
@@ -1425,23 +1698,29 @@ export const panel = (a) => {
     ? `<div class="ht wk-panel-fig"${a.frame.op ? ` style="--op:${esc(a.frame.op)}"` : ''}>` +
       `<img class="duo" src="${esc(a.frame.src)}" alt="${esc(a.frame.alt)}" loading="lazy"></div>`
     : '';
-  return `<div class="wk-panel">${fig}<div><h4 class="wk-panel-h">${a.name}</h4>
+  return `<div class="wk-panel">${fig}<div><h3 class="wk-panel-h">${a.name}</h3>
         <p class="body">${a.p}</p>${a.cap ? `\n        <p class="cap" style="margin-top:10px">${a.cap}</p>` : ''}</div></div>`;
 };
 
 /**
  * THE CONTACT SHEET. n frames of one subject, the frozen archive grid re-scoped
- * to three columns. The note under it is REQUIRED, not decorative: a sheet with
- * no note is a mood board, and this site does not publish mood boards. It says
- * what the frames are and — where it applies — what they are not.
+ * to three columns.
+ *
+ * AD-28 REVERSES THIS COMPONENT'S NOTE RULE. It used to read: "The note under it
+ * is REQUIRED, not decorative: a sheet with no note is a mood board." Every note
+ * the section actually wrote turned out to be a sentence about dates we do not
+ * hold or frames we could not source — "None carries a date, because no date on
+ * this register is sourced", "Not one of these is a butterfly park". That is the
+ * struck voice, and a photograph of our own work does not need a disclaimer
+ * under it. The note is now OPTIONAL and no WORK page passes one; the caption
+ * that matters is each frame's own `alt`.
  */
 export const gallerySheet = ({ label, frames, note }) => `      <div class="wk-gal s-record-sheetblock">
         <div class="s-record-sheethead"><p class="lbl">${label}</p></div>
         <div class="s-record-sheet">
 ${frames.map(f => `          <figure class="ht s-record-cell"${f.op ? ` style="--op:${esc(f.op)}"` : ''}><img class="${f.dim ? 'duo-dim' : 'duo'}" src="${esc(f.src)}" alt="${esc(f.alt)}" loading="lazy"></figure>`).join('\n')}
         </div>
-        <p class="cap s-record-note" style="margin-top:14px">${note}</p>
-      </div>`;
+${note ? `        <p class="cap s-record-note" style="margin-top:14px">${note}</p>\n` : ''}      </div>`;
 
 /**
  * A RULED PROSE ROW SET — Air's `.p-do-r`. Used for the objectives band and the
@@ -1455,22 +1734,63 @@ ${rows.map(r => `        <div class="p-do-r"><p class="lbl">${r.h}</p>
       </div>`;
 
 /**
- * THE READING LEDGER — every figure on the page in one auditable list, with the
- * span it counts, whether it was counted or modelled, and where it comes from.
+ * AD-27.23 · THE FIGURE RAIL. `/impact`'s `.ip-ovl`, which the client named as
+ * the reference, and it is the right one: three lines per tile — FIGURE, then
+ * the LABEL that says which population it counts, then the SPAN and the SOURCE.
+ * That is the smallest honest unit this site has, it satisfies BRANDING §4.7
+ * inside the tile, and it is already built, measured and shipped.
  *
- * This is the device that answers "make the numbers do more work" without a new
- * number: the same figures the band already shows, set so a reader can check
- * them against each other. The frozen `.p-nr` row is name / value / suffix, and
- * the suffix slot carries the basis word — so the counted-versus-modelled
- * distinction appears twice on the page, once as a rule under a label and once
- * as a word in a ledger, which is BRANDING §3.3's shape-as-well-as-hue rule
- * applied to provenance.
+ * WHY THIS EXISTS AT ALL. `#done` on all nine item pages rendered ZERO figures:
+ * every one was inside `<details class="dx">`. A band titled "Impact" that shows
+ * no numbers is the defect, and "formatting" was a generous word for it.
+ *
+ * AT MOST FOUR, AND NEVER FEWER THAN TWO.
+ *   - Four is the reference's own count and the point at which a 1240px wrap
+ *     gives each tile 265px, the measured floor for a 42px .num beside a
+ *     two-line label. Influence has six; the band shows its four strongest and
+ *     the other two stay in the ledger below.
+ *   - A SINGLE FIGURE DOES NOT GET A RAIL. One tile in a four-column grid is a
+ *     mistake, and where a page has fewer than two the rail does not render at
+ *     all and the band opens with its prose — AD-27.26's exception, which is a
+ *     fact about NatureScapes and CityScapes and not a style.
+ * `--n` is written from the membership so a three-figure page does not render a
+ * hole (see the CSS note above).
  */
-export const readingLedger = (figs) => `      <div class="p-nrs">
-${figs.map(f => `        <div class="p-nr"><span class="p-nr-n">${esc(f.label)}<i style="display:block;font-style:normal;font-size:12px;opacity:.75">${period(f.period)} &middot; ${esc(f.source)}</i></span>
-          <span class="p-nr-v">${f.value.replace(/\+$/, '<sup>+</sup>')}</span>
-          <span class="lbl p-nr-s">${f.basis === 'modelled' ? 'Modelled' : 'Counted'}</span></div>`).join('\n')}
-      </div>`;
+export const FIGURE_RAIL_MAX = 4;
+export const FIGURE_RAIL_MIN = 2;
+export const figureRail = (figs) => {
+  const list = (figs || []).slice(0, FIGURE_RAIL_MAX);
+  if (list.length < FIGURE_RAIL_MIN) return '';
+  /* AD-28. The tile is the numeral, its label and its span. No source line and
+     no basis rule — same reasoning as `figure()`. The span line is omitted
+     where the data has no span to state. */
+  const tile = (f) => {
+    const span = period(f.period);
+    return `        <div class="ip-ovl-c">
+          <p class="num ip-ovl-v">${f.value.replace(/\+$/, '<sup>+</sup>')}</p>
+          <p class="lbl ip-ovl-l"><span class="unit p-kd p-kd-c">${esc(f.label)}</span></p>${span
+    ? `\n          <p class="cap ip-ovl-s">${span}</p>` : ''}
+        </div>`;
+  };
+  /* NO LEGEND ON THE RAIL, and that is the reference's own choice rather than a
+     saving taken for height. impact.html's .ip-ovl band carries no .p-legend —
+     the legend appears once on that page, over a different block. Here `#what`
+     already emits KIND_LEGEND above its own readings on every page that has two
+     or more figures, which is exactly the set of pages that get a rail, so a
+     second copy in `#done` states the solid/dotted vocabulary twice on one page
+     and costs 55px of a band the client asked to make small. The rule under
+     each label still carries the distinction; the legend that explains it is
+     one band up. */
+  return `      <div class="ip-ovl" style="--n:${list.length}">\n${list.map(tile).join('\n')}\n      </div>`;
+};
+
+/* AD-28. THE READING LEDGER IS DELETED, component and all.
+   It was every figure on the page restated in one column with its span, its
+   basis and its source — an audit trail, published to a visitor, behind a
+   disclosure that said "Every figure on this page, and where it comes from".
+   That is the sourcing apparatus this ruling removes from the organisational
+   pages in its purest form: not one word of it is about Swechha's work. The
+   figures themselves stay, in the bands that already showed them. */
 
 /**
  * A PUBLISHED SPAN, SET AS A SPAN — Air's `.p-rg` range row.
@@ -1499,11 +1819,52 @@ ${rows.map(r => {
  * as a sentence with an inline link, because that route is an email address and
  * an email address set as a button implies a form this site does not have.
  */
-export const inviteRow = ({ act, second, note }) => `      <div class="wk-invite">
+/**
+ * AD-27.14 → AD-27.22 · THE ASK REPLACES THE NAVIGATING CTA.
+ *
+ * The client, verbatim: "Clicking on 'Bring your School' opens a generic page.
+ * Find a way to close this here itself." Today that control and "Book a walk"
+ * both navigate to `/act`, a 10,072px page whose Partner band is 1,527px of
+ * reading — which is exactly the wrong thing to hand somebody who has stopped
+ * reading. THE READER HAS ALREADY DECIDED; EVERY ADDITIONAL PAGE IS A LEAK.
+ *
+ * So `asks` is a list of `ask()` blocks and it takes the slots the two CTAs
+ * held. The old secondary — "Partner with us" pointing at `/about` — goes with
+ * them, and AD-27.29 is why: `/about`'s bands are top, says, since, team,
+ * board, legible, act, and the only occurrence of the word "partner" in the
+ * whole file is a footer link. The partnering content is at `act.html#partner`,
+ * which is now each Ask's tertiary link.
+ *
+ * `act` IS STILL PASSED AND STILL RENDERED WHERE THERE IS NO ASK. That used to
+ * read "the four kind landings and /work have no single ask to make (AD-27.18),
+ * so they keep the button", AND THAT WAS WRONG — the client found it, which is
+ * the worst way for it to be found: "http://localhost:3000/work Book a journey
+ * still lands at a page." An index page is not exempt because it is an index;
+ * "Bring your school" and "Book a journey" are each exactly one ask, in the
+ * imperative, to a reader who has already decided. Three of the five index
+ * pages therefore carry an Ask (build-work-pages.mjs, AD-27.18-A), and the two
+ * that keep the button do so because their labels — "Volunteer with us",
+ * "Plant with us" — are individual actions rather than one of the four
+ * audiences, not because of where the page sits. THE TEST IS THE LABEL.
+ *
+ * The item's `act.href` in data/work/** is UNTOUCHED either way: `/act`'s whole
+ * architecture is derived from it and its gate 1 is total. Where a still-
+ * navigating primary needs a deeper landing it is deepened at RENDER time.
+ */
+export const inviteRow = ({ act, second, note, asks }) => {
+  if (asks && asks.length) {
+    return `      <div class="wk-invite wk-invite-ask">
+${asks.join('\n')}${second ? `
+        <a class="act" href="${second.href}">${second.label} ${ARROW}</a>` : ''}
+        <p class="wk-invite-n">${note}</p>
+      </div>`;
+  }
+  return `      <div class="wk-invite">
         <a class="b b-1" href="${act.href}">${act.label} ${ARROW}</a>${second ? `
         <a class="act" href="${second.href}">${second.label} ${ARROW}</a>` : ''}
         <p class="wk-invite-n">${note}</p>
       </div>`;
+};
 
 /* ═══ THE LINK MANIFEST AND THE LINK GATE ═════════════════════════════════
    The owner's instruction is "All cross linkings need to be solid". This turns
@@ -1565,6 +1926,16 @@ export class Links {
         row.verdict = this.inheritedDesign.has(href) ? 'inherited-design' : 'FAIL:design-path';
       } else if (href.startsWith('mailto:') || /^https?:\/\//.test(href)) {
         row.verdict = 'external';
+      } else if (/^\/(icons|images|brand|fonts)\//.test(href)) {
+        /* AD-27.13. AN ASSET IS NOT A ROUTE. The favicon links land in `href`
+           rather than `src`, so the route map — which is a list of PAGES — read
+           them as thirty dead links. Resolved against the FILESYSTEM instead,
+           which is the honest check for a file: the route map cannot know
+           whether /icons/icon-32.png exists and `public/` can.
+           The files are lane 1's to generate (AD-27.12/13); until they land this
+           verdict says so by name rather than by a misleading route failure. */
+        row.verdict = existsSync(join(ROOT, 'public', href.replace(/^\//, '')))
+          ? 'asset' : 'asset-missing';
       } else if (href.startsWith('#')) {
         row.verdict = ids.has(href.slice(1)) ? 'in-page' : 'FAIL:no-such-id';
       } else {
@@ -1623,8 +1994,81 @@ export class Links {
  * Checking only the extracted half leaves the other half unchecked, which is
  * the same bug on a different line.
  */
-export async function buildPage({ file, url, title, desc, bands, sectionFor, sections, current, sh, pageCss = '', script = '' }) {
+/* ═══ AD-27.48 / .49 / .50 — THE HEAD ═════════════════════════════════════
+   Three additions, all derived from strings the page already computes, all on
+   ONE line each so no future line-count-sensitive extraction can be disturbed.
+
+   AD-27.48 — `desc` was OPTIONAL here (`${desc ? … : ''}`) and it is now
+   REQUIRED, with the same refuse-to-write treatment the missing-canonical check
+   already gets: a page that cannot say what it is about should not be
+   published. All fifteen WORK pages already pass one; the gate is for the
+   sixteenth.
+
+   AD-27.49 — og:* and twitter:*, derived from the title, the description and
+   the canonical route that are already here. `og:url` is DELIBERATELY OMITTED
+   and og:image is RELATIVE, for the same reason situation-shell.mjs:754-767
+   gives for the relative canonical: a preview deploy must not advertise the
+   production host, and scrapers resolve a relative og:image against the
+   document URL. twitter:site is @swechhaindia, verified from the live site's
+   own markup. No twitter:creator.
+
+   AD-27.13 — the two icon links. The 35 built pages never execute the React
+   layout (the beforeFiles rewrite serves the HTML file), so Next's icon
+   injection never reaches them and today ZERO of 35 carry a rel="icon".
+   The FILES are lane 1's to generate (public/icons/*); the WIRING has to be
+   here because AD-27.55 gives lane 1 no write access to this module.
+   ═══════════════════════════════════════════════════════════════════════ */
+export const HEAD_ICONS =
+  '<link rel="icon" href="/icons/icon-32.png" sizes="32x32"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">';
+export const headSocial = (title, desc) =>
+  `<meta property="og:type" content="website"><meta property="og:site_name" content="Swechha">`
+  + `<meta property="og:locale" content="en_IN"><meta property="og:title" content="${esc(title)}">`
+  + `<meta property="og:description" content="${esc(desc)}">`
+  + `<meta property="og:image" content="/images/og/og-default.png">`
+  + `<meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content="@swechhaindia">`;
+
+/**
+ * AD-27.50 · BreadcrumbList, on the 15 WORK pages.
+ * DERIVED FROM THE CANONICAL ROUTE EACH PAGE ALREADY COMPUTES, so a breadcrumb
+ * cannot disagree with the URL — which is the only reason to emit one.
+ * `item` is relative for the same host-neutrality reason as the canonical and
+ * og:image; Google resolves it against the document.
+ */
+export const breadcrumbJsonLd = (crumbs) => '<script type="application/ld+json">'
+  + JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: crumbs.map(([name, item], i) => ({
+      '@type': 'ListItem', position: i + 1, name, item,
+    })),
+  }) + '</script>';
+
+/* Collected across the whole run and printed once by the caller: the frozen
+   footer's own address, reported rather than failed. See gate 2 below. */
+export const mailtoNote = [];
+
+/* AD-28 §7's THREE STRIPPERS NOW LIVE IN situation-shell.mjs.
+   They were written here, for the WORK pages, and they halved them — /work went
+   209KB to 110KB. Every other page on the site had the same problem and no
+   access to the fix: the non-WORK generators assemble through
+   `situation-shell.mjs`, which this file imports FROM, so a function defined
+   here can never reach them. Copying three functions into nine generators is
+   how a mechanism rots one copy at a time, so they moved DOWN a layer instead
+   and are imported back here by name, unchanged. The reasoning that produced
+   them travelled with them — read it at situation-shell.mjs's own AD-28 §7
+   block. `buildPage` below calls all three exactly as it always did. */
+
+export async function buildPage({ file, url, title, desc, bands, sectionFor, sections, current, sh, crumbs = [], pageCss = '', script = '' }) {
   const problems = [];
+
+  /* AD-27.48. A DESCRIPTION IS NOT OPTIONAL. */
+  if (!desc || !String(desc).trim()) {
+    problems.push('no <meta name="description">. AD-27.48 makes it required: a page that cannot say '
+      + 'what it is about should not be published, which is the same argument the canonical gate makes about the URL.');
+  }
+  if (!crumbs.length) {
+    problems.push('no breadcrumb trail passed. AD-27.50 puts BreadcrumbList on all 15 WORK pages, derived from the canonical route.');
+  }
 
   /* GATE — GROUND ADJACENCY, ON THE COMPOSITED COLOUR. */
   const chain = [...bands.map(b => [b[0], b[1], b[2]]), ['footer', 'dark-2', FOOTER_HEX]];
@@ -1681,8 +2125,15 @@ export async function buildPage({ file, url, title, desc, bands, sectionFor, sec
      but it is concatenated here rather than checked separately, because
      `node --check` on only the extracted half is the same bug on a different
      line and that is precisely how it got through last time. */
-  const SCRIPT = script ? `${sh.SCRIPT_BASE}\n${script}` : sh.SCRIPT_BASE;
-  const OUT = `<!doctype html>
+  /* AD-28 §7. The extracted behaviours keep their comments; the ledger ids
+     inside them do not. `node --check` runs on the redacted text below, so a
+     scanner mistake stops the build rather than shipping broken script. */
+  const SCRIPT = redactScriptLedgerRefs(script ? `${sh.SCRIPT_BASE}\n${script}` : sh.SCRIPT_BASE);
+  /* AD-28 §7. The document is assembled, then stripped of HTML comments — the
+     frozen chrome's annotations are not the reader's business (see
+     `stripHtmlComments`). Every gate below runs on the STRIPPED text, so what
+     is checked is exactly what is written. */
+  const OUT = stripHtmlComments(`<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -1690,14 +2141,12 @@ export async function buildPage({ file, url, title, desc, bands, sectionFor, sec
 <meta name="color-scheme" content="dark">
 <title>${esc(title)}</title>
 <link rel="canonical" href="${url}">
-${desc ? `<meta name="description" content="${esc(desc)}">\n` : ''}${sh.HEAD_FONTS}
+${HEAD_ICONS}
+<meta name="description" content="${esc(desc)}">
+${headSocial(title, desc)}
+${sh.HEAD_FONTS}
 <style>
-${sh.CSS}
-${sh.SITUATION_CSS}
-${SHARED_PAGE_CSS}
-${sh.COMPONENT_CSS}
-${WORK_CSS}
-${pageCss}</style>
+${stripCssComments([sh.CSS, sh.SITUATION_CSS, SHARED_PAGE_CSS, sh.COMPONENT_CSS, WORK_CSS, pageCss].join('\n'))}</style>
 </head>
 <body>
 ${sh.SVG_DEFS}
@@ -1707,11 +2156,12 @@ ${workHeader(sections, current, url)}
 ${bands.map(section).join('\n')}
 </main>
 ${sh.FOOTER}
+${breadcrumbJsonLd(crumbs)}
 <script>
 ${SCRIPT}</script>
 </body>
 </html>
-`;
+`);
 
   /* GATE — EVERY BAND HEADING IS INSIDE A GUTTER. `.im-head` has no padding of
      its own; the gutter is .wrap's padding:0 var(--gut). An .im-head that is a
@@ -1727,6 +2177,109 @@ ${SCRIPT}</script>
     const last = opens[opens.length - 1];
     if (!last || !(last[1] || '').split(/\s+/).includes('wrap')) {
       problems.push(`band heading at line ${OUT.slice(0, m.index).split('\n').length} is not inside a .wrap — it would render with no left gutter. Use opener() or nest it.`);
+    }
+  }
+
+  /* GATE — AD-27.51. HEADING HIERARCHY. Exactly one h1; no level skipped in
+     document order; no duplicate id anywhere on the page. `.d1` and `.d2` are
+     CLASSES, not levels — a .d1 may be an h1, h2 or h3 depending on where it
+     sits — so this reads the tags and never the classes. */
+  const heads = [...OUT.matchAll(/<h([1-6])\b[^>]*>/g)].map(m => +m[1]);
+  const h1s = heads.filter(l => l === 1).length;
+  if (h1s !== 1) problems.push(`${h1s} <h1> elements. AD-27.51 / D-10.2: exactly one per page, and it is the page's subject as a constant.`);
+  for (let i = 1; i < heads.length; i++) {
+    if (heads[i] > heads[i - 1] + 1) {
+      problems.push(`heading level skipped: h${heads[i - 1]} is followed by h${heads[i]} (AD-27.51). Levels descend one at a time.`);
+      break;
+    }
+  }
+  const ids = [...OUT.matchAll(/\sid="([^"]+)"/g)].map(m => m[1]);
+  const dupe = ids.filter((v, i) => ids.indexOf(v) !== i);
+  if (dupe.length) problems.push(`duplicate id(s) on the page: ${[...new Set(dupe)].join(', ')} (AD-27.51).`);
+
+  /* GATE — AD-27.22. THE ASK, four assertions, and every one of them is a thing
+     that fails SILENTLY and FOREVER if it is wrong. */
+  const asks = [...OUT.matchAll(/<details class="ask" data-ask="([^"]*)"[\s\S]*?<\/details>/g)];
+  //  1. a non-empty audience, and a subject line that starts with the matching
+  //     word. A mismatched pair means the inbox sorts wrong, silently, forever.
+  const SUBJECT_WORD = { school: 'School', funder: 'Funding', institution: 'Partnership', media: 'Media' };
+  for (const [block, audience] of asks) {
+    if (!SUBJECT_WORD[audience]) { problems.push(`an .ask carries data-ask="${audience}", which is not one of the four audiences.`); continue; }
+    const subj = decodeURIComponent((block.match(/\?subject=([^&]*)&/) || [, ''])[1]);
+    if (!subj.startsWith(SUBJECT_WORD[audience])) {
+      problems.push(`the ${audience} Ask's subject line is ${JSON.stringify(subj)} — it must start with "${SUBJECT_WORD[audience]}" or the owner's inbox sorts it wrong (AD-27.22.1).`);
+    }
+  }
+  /*  2. EVERY mailto AN ASK EMITS resolves to @swechha.in — the same check
+         /act's gate 10 makes, and what stops a personal address being
+         published by the one component whose whole job is to publish one.
+         AD-27.22.2 SAYS "every mailto ON THE PAGE" AND THAT CANNOT BE THE RULE.
+         The frozen footer publishes swechhaindia@gmail.com and is lifted
+         verbatim into all 35 pages, and the invite note's third route reads
+         that same address OUT of the footer rather than typing it (AD-18). So
+         a page-wide assertion fails every page in the site on content this lane
+         does not own and AD-27.17 explicitly blesses ("swechhaindia@gmail.com
+         is not used for an Ask — it is the footer's general address").
+         Scoped to the Ask, therefore, and every other mailto is REPORTED with
+         its address so the exemption is visible rather than silent. */
+  for (const [block, audience] of asks) {
+    for (const m of block.matchAll(/href="mailto:([^"?]+)/g)) {
+      if (!/@swechha\.in$/.test(m[1])) problems.push(`the ${audience} Ask publishes mailto:${m[1]}, which is not an @swechha.in address (AD-27.22.2, about-people.json email_policy).`);
+    }
+  }
+  const askMail = new Set(asks.flatMap(([b]) => [...b.matchAll(/href="mailto:([^"?]+)/g)].map(m => m[1])));
+  const otherMail = [...new Set([...OUT.matchAll(/href="mailto:([^"?]+)/g)].map(m => m[1]))]
+    .filter(a => !askMail.has(a) && !/@swechha\.in$/.test(a));
+  if (otherMail.length) mailtoNote.push(`${file}: non-@swechha.in address(es) outside an Ask, inherited from the frozen footer: ${otherMail.join(', ')}`);
+  //  3. At most two Asks, and never two of the same audience — more than two
+  //     turns the page into a switchboard and spends the primary button.
+  if (asks.length > 2) problems.push(`${asks.length} .ask elements on one page. AD-27.18 caps it at two.`);
+  const auds = asks.map(a => a[1]);
+  if (new Set(auds).size !== auds.length) problems.push(`two Asks share an audience (${auds.join(', ')}) — AD-27.22.3.`);
+  //  4. No unexpanded token reaches the HTML. A mailto: with the literal string
+  //     SUBJECT in it looks exactly like a working button.
+  for (const bad of ['{{', 'subject=SUBJECT', 'body=BODY']) {
+    if (OUT.includes(bad)) problems.push(`the literal ${JSON.stringify(bad)} reached the HTML (AD-27.22.4).`);
+  }
+
+  /* ═══ GATE — AD-28. THE PROVENANCE VOICE MAY NOT COME BACK ════════════════
+     INVERTED, NOT DELETED, and that is the point of writing it here rather than
+     removing the gates that used to require this material. Before this pass the
+     build ASSERTED that every figure carried a source, that a page with no
+     figures said so in a named hole, and that the reading ledger was present.
+     Those assertions are now the opposite ones. A gate deleted rather than
+     inverted is how this comes back in six weeks (AD-28 §6).
+
+     THE TEST IS OVER THE WHOLE FILE, comments included, which is AD-28 §7's own
+     rule: a reader who views source is still a reader, and a grep that has to
+     special-case the rule's own documentation proves nothing. The CSS comments
+     that used to carry most of these strings are stripped at build time by
+     `stripCssComments` above, so the design record survives in the .mjs without
+     shipping.
+
+     EVERY PATTERN HERE IS A THING A VISITOR SHOULD NEVER HAVE SEEN, and every
+     one of them was on these pages this morning. */
+  const AD28 = [
+    [/SOURCE-FACTS/, 'a SOURCE-FACTS citation. These name a file inside this repository; a reader cannot follow one, cannot check one, and was never meant to see one.'],
+    [/§/, 'a section-mark citation. Same reason, and the line numbers behind them drift the moment the ledger is edited.'],
+    [/\bowner \d{4}-\d{2}-\d{2}\b|\bowner, \d{1,2} \w+ 20\d\d\b/, 'a "who told us and when" attribution. The organisation speaking on its own website does not attribute itself to itself.'],
+    [/\bAD-\d\d|\bD-\d\d?\.\d|\bW-\d\d\b|\bDECISIONS D-/, 'an internal ruling reference (AD-nn / D-nn.n / W-nn).'],
+    /* Case-sensitive and quantified on purpose: "Bridge the Gap" is a
+       programme, `--gap-block` is a spacing token, and "left to happen in the
+       gaps" is ordinary English. What is struck is the CHIP — "4 gaps",
+       " GAPS" — and the two phrases that introduced one. */
+    [/\bGAPS\b|\b\d+ gaps?\b|cannot yet say|What we cannot/, 'a gap counter or an empty-state confession. AD-28 §2.3: "this number is missing" is never publishable copy.'],
+    [/not sourced|no start year sourced|No figure published yet/, 'a note about a fact we do not have. Where a span or a figure is unknown, print less — never a sentence about the absence.'],
+    [/class="[^"]*\bp-hole\b|class="[^"]*\bwk-mast-hole\b/, 'a .p-hole named-hole marker. An organisational page explains no absence; where a page has no photograph it simply has none.'],
+    [/class="p-legend"/, 'the counted/modelled legend. That is sourcing method, and the situation pages are the only place it is the substance.'],
+    [/class="p-nrs"|class="p-nr-n"/, 'the reading ledger. It restated every figure with its span, basis and source — an audit trail published to a visitor.'],
+    [/and where it comes from/, 'the provenance disclosure summary.'],
+  ];
+  for (const [re, why] of AD28) {
+    const m = re.exec(OUT);
+    if (m) {
+      problems.push(`AD-28: ${JSON.stringify(m[0])} reached the page — ${why} `
+        + `Context: ${JSON.stringify(OUT.slice(Math.max(0, m.index - 70), m.index + 70).replace(/\s+/g, ' '))}`);
     }
   }
 

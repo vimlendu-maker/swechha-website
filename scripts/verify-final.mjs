@@ -166,7 +166,7 @@ export const FINAL = [...INDEX, ...SITUATIONS];
 /* Pages that are NOT final, recorded so the register is a complete picture of
    the directory rather than a flattering subset. */
 export const NOT_FINAL = [
-  { file: 'home.html', why: 'THE FROZEN DESIGN SOURCE. Not a deliverable in this set — it is the language every page above extracts from. Hand-maintained, and D-24.5 records that making it a build artefact is a real architectural change nobody has taken.' },
+  { file: 'home.html', why: 'THE HOMEPAGE, and as of AD-28 §7 a BUILD ARTEFACT — `npm run build:hero` emits it from `design/home.html`, which is where the hand-maintained source now lives and where the seven pinned CSS line ranges point. The design is still written by hand; only the shipped copy is generated, with its comments stripped. Edit `design/home.html`, never this file.' },
   { file: 'about.html', why: 'FINISHED, and not a prototype — AD-21 built it and it serves at /about. It is outside THIS test because the twelve checks above are situation-specific (crumb, five siblings, the four-word state vocabulary); none of them describe an About page. Its own gates live in scripts/build-about-page.mjs.' },
   { file: 'impact.html', why: 'FINISHED (AD-22), serving at /impact. Outside this test for the same reason as about.html — and worth naming, because it is the page that refuses the number it is named for, so a "reading" check would assert the opposite of its design.' },
   { file: 'farm.html', why: 'FINISHED (AD-24), serving at /farm. Outside this test for the same reason as about.html.' },

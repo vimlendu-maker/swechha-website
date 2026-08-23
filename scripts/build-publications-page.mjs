@@ -73,7 +73,7 @@ const BANDS = ALL_BANDS.filter(([id]) => LIVE[id] !== false);
 const clashes = S.groundChain(BANDS);
 
 const INDEX_ALL = [
-  ['Two we printed', '#top'], ['The publications', '#items'],
+  ['Three we put out', '#top'], ['The publications', '#items'],
   ['What is not here', '#waiting'], ['Print with us', '#act'],
 ];
 const BAND_IDS = new Set(BANDS.map((b) => b[0]));
@@ -155,7 +155,7 @@ const OUT = await S.assemble({
   pageCss: PAGE_CSS,
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),
   note: `${BANDS.length} bands + footer. ${ITEMS.length} publications `
-      + `(${ITEMS.map((i) => `${i.mb} MB`).join(', ')}), ${D.waiting.claims.length} named holes.`,
+      + `(${ITEMS.map((i) => `${i.mb} MB`).join(', ')}).`,
 });
 
 /* ═══ POST-WRITE GATES ═══════════════════════════════════════════════════ */

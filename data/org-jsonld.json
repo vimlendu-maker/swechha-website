@@ -1,0 +1,37 @@
+{
+ "_": "AD-27.50. THE SITE'S ONLY Organization/NGO STRUCTURED DATA, and the ONE place its values are written. THE STATE THIS FIXES: lib/org.ts's organizationJsonLd() is rendered by app/page.tsx, which sits on a route that is REWRITTEN to home.html before the React page runs — so the site shipped no structured data at all. This file is read by scripts/build-hero.mjs, minified to a single line, and substituted between two sentinel comments immediately before </body> in public/_pages/v3/home.html on every build. It is written that way, rather than typed into the page, for the same reason the hero's four readings are: two copies of a fact drift, and the copy nobody looks at is the one that goes wrong. EDIT HERE, THEN RUN npm run build:hero.",
+
+ "_founder": "USED BECAUSE IT IS SOURCED, not assumed. His own bio on swechha.in, already in data/about-people.json, opens 'Vimlendu founded Swechha in 2000.'",
+ "_address": "LOCALITY AND COUNTRY ONLY. The client's new footer sentence (AD-27.8) deliberately drops the street, and structured data must not reinstate what the page just removed.",
+ "_telephone": "ABSENT, DELIBERATELY. G-4 struck the phone number from the site on the owner's instruction, and a phone number in JSON-LD is a phone number on the site.",
+ "_award": "ABSENT, DELIBERATELY. The record would support entries — India Today and Outlook 2004, CNN International 2007 — but an award list in structured data is Swechha asserting its own distinctions, whereas the same facts quoted inside the man's own bio on /about are attributed to the people who said them. Same facts, honest voice.",
+ "_email": "AD-27.50 SPECIFIES info@swechha.in AND THAT ADDRESS IS STRUCK. On 22 August 2026 the owner instructed: 'replace info@swechha.in with swechhaindia@gmail.com throughout the site' — recorded in data/about-people.json's published_email_exceptions_why, and the reason build-act-page.mjs's gate 10 has an exception list at all. JSON-LD is on the site, so the ruling applies to it: publishing the struck address here would be a struck fact re-imported by a later session acting in good faith, which is the failure mode this repository keeps hitting. The general address ships instead. build-hero.mjs fails the build if info@swechha.in reappears in this file. FLAGGED FOR THE ART DIRECTOR rather than silently swapped.",
+ "_url": "ABSOLUTE HERE AND ONLY HERE. Every other URL this pass emits is relative so a preview deploy cannot advertise the production host; schema.org's url/logo/sameAs are identity claims about the organisation rather than about this document, and a relative one says nothing.",
+
+ "jsonld": {
+  "@context": "https://schema.org",
+  "@type": "NGO",
+  "name": "Swechha",
+  "legalName": "Swechha We for Change Foundation",
+  "url": "https://swechha.in",
+  "logo": "https://swechha.in/brand/swechha-horizontal-black-approved.png",
+  "foundingDate": "2000",
+  "email": "swechhaindia@gmail.com",
+  "address": {
+   "@type": "PostalAddress",
+   "addressLocality": "New Delhi",
+   "addressCountry": "IN"
+  },
+  "founder": {
+   "@type": "Person",
+   "name": "Vimlendu Jha",
+   "url": "https://swechha.in/about#vimlendu-jha"
+  },
+  "sameAs": [
+   "https://www.instagram.com/swechhaindia/",
+   "https://www.facebook.com/SwechhaIndia/",
+   "https://x.com/swechhaindia",
+   "https://www.youtube.com/@swechhaindia"
+  ]
+ }
+}

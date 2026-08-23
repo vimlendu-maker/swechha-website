@@ -76,7 +76,32 @@ export async function GET() {
       + 'Station AQI is the worst sub-index; city AQI is the worst station. CO and Pb excluded.',
     source: { name: 'CPCB via data.gov.in', resource: '3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69' },
     fetchedAt: new Date().toISOString(),
-  }, { headers: { 'Cache-Control': 'no-store' } });
+    /* THE SUCCESS PATH IS CACHED AT THE EDGE (AD-27.6 clause 7, kept and
+       re-justified by AD-27.6-A).
+       Clause 7 was written to shrink the window between the committed reading
+       and the live one, because that window was the flash. There is no such
+       window now: AD-27.6-A made the numeral a build artefact that nothing
+       repaints, and this route's only remaining job on those two pages is to
+       CONFIRM the chip — the homepage and /now/air flip PERIODIC to LIVE only
+       if the reading here is the same number the page is already showing, from
+       an observation inside two hours.
+       The header stays, for the reasons that never depended on the flash: an
+       HOURLY feed does not need a per-request upstream call, a ~20ms edge hit
+       instead of a 300-2000ms round trip is the difference between a chip that
+       resolves before the reader looks at it and one that does not, and it
+       takes most of data.gov.in's measured flakiness out of the reader's path
+       (D-21.5 recorded three consecutive calls returning 200, 200, 502).
+       It also matters more than it used to: a confirmation that misses the
+       6-second deadline leaves an accurate page reading PERIODIC when it could
+       honestly read LIVE.
+       300s fresh / 3300s stale-while-revalidate = one hour total, which is the
+       feed's own cadence, so no reader is served a value from a previous
+       observation hour without a revalidation already in flight.
+       ONLY THE SUCCESS PATH IS CACHED. fail() keeps no-store below: a 503
+       because a key is missing must not be held at the edge for five minutes
+       after the key is set. And /api/ward* keeps no-store unconditionally —
+       those are per-reader. */
+  }, { headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=3300' } });
 }
 
 function fail(reason: string, status: number) {

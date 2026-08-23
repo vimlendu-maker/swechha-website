@@ -62,7 +62,10 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
-const { esc, opener, hole, ARROW } = S;
+/* `hole` is deliberately NOT imported. AD-28 removed every named hole from
+   this page and a build gate refuses to write one; importing the helper back is
+   the first half of putting one on the page. */
+const { esc, opener, ARROW } = S;
 
 const sh = S.shell();
 
@@ -228,6 +231,37 @@ const cta = (way, formLabel, mailSubject) => {
     : `<a class="b b-1" href="mailto:${esc(EMAIL)}?subject=${encodeURIComponent(mailSubject)}">${esc(mailSubject)} ${ARROW}</a>`;
 };
 
+/* ── THE ASK, ON THE PARTNER BAND (AD-27.14 → AD-27.18). ─────────────────
+   AD-27.18's placement table gives /act#partner two: INSTITUTION as the
+   primary and FUNDER as the secondary. It gives /act#give none — G-1 stands,
+   there is no payment destination and an Ask must not imply one — and the
+   Volunteer band keeps its own control for the same reason: G-2's hole is the
+   answer there, not a contact route.
+
+   THIS BAND'S OLD CONTROL IS UPGRADED, NOT SUPPLEMENTED (AD-27.19). It was
+   cta('partner', …), a mailto: to the general address with a one-line subject
+   and an empty body. The Ask is the same hop to the same organisation with the
+   routing in the subject and the questions already written — and, unlike the
+   old control, it says in words what to do when the button does nothing.
+
+   THE TERTIARY LINK IS DROPPED HERE AND ONLY HERE. AD-27.15 ends every Ask in
+   "How partnerships work →" pointing at /act#partner, which is correct on the
+   twenty pages that ask from somewhere else. On this page it would point at
+   the band the reader is standing in. A self-link inside its own destination
+   is not a way out, so it is omitted rather than rendered dead.
+
+   THE PAGE NAME IN THE SUBJECT is the masthead's own kicker, so the owner's
+   inbox reads "Partnership enquiry — Get involved" and sorts with the rest. */
+const ASK_PAGE = A.masthead.kicker;
+const ASK_INSTITUTION = S.ask({
+  audience: 'institution', label: 'Start a partnership enquiry',
+  page: ASK_PAGE, path: '/act', level: 1, tertiary: null,
+});
+const ASK_FUNDER = S.ask({
+  audience: 'funder', label: 'Fund a piece of the work',
+  page: ASK_PAGE, path: '/act', level: 2, tertiary: null,
+});
+
 /* ═══ BANDS ══════════════════════════════════════════════════════════════
    Ground chain checked mechanically below. No two adjacent bands share a hex
    and the last does not share one with the footer (#151512).
@@ -295,10 +329,14 @@ const bigNum = (f) => `        <div class="ac-fig">
           <p class="cap ac-fig-s">${esc(f.period)} &middot; ${esc(f.from)}</p>
         </div>`;
 
-const namedHole = (what, unlocks) => `      <div class="ac-hole">
-${hole(what)}
-        <p class="body ac-unlock">${esc(unlocks)}</p>
-      </div>`;
+/* ★ AD-28 — `namedHole()` IS DELETED, AND SO ARE ALL FOUR OF ITS CALL SITES.
+   It rendered a dotted marker plus an `unlocks` line: "You cannot give money on
+   this site yet…", "There is no calendar on this site…", "There are no annual
+   reports…", and the archive row. RULINGS G-1 AND G-2 ARE NOT REVERSED — this
+   page still invents no payment destination and no calendar. What is gone is
+   the page EXPLAINING those absences to a visitor who never expected them
+   (AD-28 §2.3). Gate 9 below is the old hole-count gate inverted and now fails
+   the build if a hole comes back. */
 
 /* COUNTS IN PROSE ARE SUBSTITUTED, NEVER TYPED. One sentence on this page wants
    to say how many asks land here, and a number written into copy is a number
@@ -321,7 +359,6 @@ B.top = () => `    <div class="wrap ac-mast">
       <h1 class="d1">${M.h1}</h1>
       <p class="lead ac-standfirst">${esc(M.lead)}</p>
       <div class="ac-rail">
-        <div class="ac-rail-c"><p class="num ac-rail-v">${ASKS.length}</p><p class="lbl ac-rail-l">Asks on this site that land here</p></div>
         <div class="ac-rail-c"><p class="num ac-rail-v">${esc(VOLUNTEERS.value)}</p><p class="lbl ac-rail-l">${esc(VOLUNTEERS.label)}, ${esc(VOLUNTEERS.period)}</p></div>
         <div class="ac-rail-c"><p class="num ac-rail-v ac-rail-w">12A + 80G</p><p class="lbl ac-rail-l">Registered</p></div>
       </div>
@@ -343,38 +380,36 @@ B.give = () => `${opener('give', G.head, esc(G.lead))}
         <div class="ac-funds">
 ${G.funds.map(f => `          <div class="ac-fund">
             <p class="lbl ac-fund-h">${f.__href ? `<a href="${f.__href}">${esc(f.h)} ${ARROW}</a>` : esc(f.h)}</p>
-            ${f.hole ? `<div>\n${hole(f.hole)}\n            <p class="body ac-unlock">${esc(f.unlocks)}</p>\n            </div>` : `<p class="body ac-fund-p">${esc(f.p)}</p>`}
+            <p class="body ac-fund-p">${esc(f.p)}</p>
           </div>`).join('\n')}
         </div>
       </div>
-${namedHole(G.hole, G.unlocks)}
       <div class="ac-cta">${cta('give', 'Set up a monthly gift', 'I want to give monthly')}</div>
       <h3 class="ac-sub">${esc(G.ask_head)}</h3>
 ${askList('give')}
     </div>`;
 
 /* ── BAND 3. VOLUNTEER. ──────────────────────────────────────────────────
-   The four formats come out of the events register with their holes attached,
-   and then the band admits it has no calendar. Ruling G-2 in one band: the
-   formats are real, the dates are not knowable from this repository, and the
-   ask is therefore "tell us and we will tell you" rather than a date. */
+   The four formats come out of the events register. Ruling G-2 still governs:
+   the formats are real, the dates are not knowable from this repository, and
+   the ask is "tell us and we will tell you" rather than a date. AD-28 removed
+   the three notes that used to say all that out loud — the four inherited
+   "we cannot tell you when Cyclothon ran" holes, the "read from the events
+   register, holes and all" note, and the band's own no-calendar hole. Not
+   having a calendar is what the reader sees; it does not need narrating. */
 const H = A.hands;
 B.hands = () => `${opener('hands', H.head, esc(H.lead))}
     <div class="wrap">
       <div class="ac-figs">
 ${[VOLUNTEERS, COLLEGES, FELLOWSHIPS].map(bigNum).join('\n')}
       </div>
-      <p class="cap ac-figs-n">Read from the pages that own them, so this page cannot come to disagree with them.</p>
       <h3 class="ac-sub">${esc(H.formats_head)}</h3>
       <div class="ac-formats">
 ${FORMATS.map(f => `        <div class="ac-format">
           <p class="lbl ac-format-h"><a href="${f.href}">${esc(f.name)} ${ARROW}</a></p>
           <p class="body ac-format-p">${esc(f.line)}</p>
-${f.hole ? hole(f.hole) : ''}
         </div>`).join('\n')}
       </div>
-      <p class="cap ac-figs-n">${esc(H.formats_note)}</p>
-${namedHole(H.hole, H.unlocks)}
       <div class="ac-cta">${cta('hands', 'Sign up to volunteer', 'I want to volunteer')}</div>
       <h3 class="ac-sub">${esc(H.ask_head)}</h3>
 ${askList('hands')}
@@ -409,7 +444,8 @@ B.partner = () => `${opener('partner', P.head, esc(P.lead))}
           <p class="cap ac-door-s">${esc(PARTNERS.label)}, ${esc(PARTNERS.period)} &middot; <a href="${PARTNERS.href}">${esc(PARTNERS.from)}</a></p>
         </div>
       </div>
-      <div class="ac-cta">${cta('partner', 'Start a partnership enquiry', 'I want to work with you')}</div>
+      <div class="ac-cta">${ASK_INSTITUTION}
+${ASK_FUNDER}</div>
       <h3 class="ac-sub">${esc(P.ask_head)}</h3>
 ${askList('partner')}
     </div>`;
@@ -427,7 +463,6 @@ ${ST.rows.map(r => `        <div class="p-row">
           <div><p class="body">${esc(r.p)}</p></div>
         </div>`).join('\n')}
       </div>
-${namedHole(ST.hole, ST.unlocks)}
     </div>`;
 
 /* ── BAND 6. WHERE AN ASK ACTUALLY GOES. ─────────────────────────────────
@@ -468,9 +503,11 @@ ${T.onward.map(o => `        <a class="ac-door-a" href="${o.href}">
    fails a bare 1fr, which does not shrink and blows the page out sideways. */
 const PAGE_CSS = `
 /* ── masthead. A text masthead, deliberately: this page has no photograph of
-      its own and a borrowed one would be decoration. The rail is three cells
-      and the third is a WORD, at a smaller size, because a word set at
-      numeral scale reads as a logo. ── */
+      its own and a borrowed one would be decoration. The rail is TWO cells in
+      a three-column grid — AD-28 deleted the first, which counted this site's
+      own asks at the reader, and the empty third column is air, not a slot
+      waiting to be filled. The remaining second cell is a WORD, at a smaller
+      size, because a word set at numeral scale reads as a logo. ── */
 /* The masthead is the one band that pays for its own padding, because it is t1.
    The bottom half is the site's hero figure -- .pic-body on farm/impact/about;
    without it the rail's labels ran into the ground change below them.
@@ -666,7 +703,13 @@ const PAGE_CSS = `
 const OUT = await S.assemble({
   file: 'act.html',
   route: '/act',
-  title: 'Get involved &mdash; Swechha',
+  /* AD-27.47 gives this page the phrase "donate to an ngo", and AD-27.48 the
+     title that carries it: the three verbs a reader is actually searching for,
+     ahead of the brand. The em dash is the LITERAL character, not &mdash; —
+     AD-27.48's convention fix, adopted here because this title is being
+     rewritten anyway. The description names 80G and 12A, which is what an
+     Indian donor searches for; the band still names the hole (G-1). */
+  title: 'Get involved — give, volunteer or partner — Swechha',
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
   /* /act is not a nav word — the Give chip points here and the chip carries no
@@ -693,7 +736,7 @@ const RENDERED = OUT.replace(/<style[\s\S]*?<\/style>/g, ' ')
   .replace(/&mdash;|&middot;|&nbsp;/g, ' ')
   .replace(/\s+/g, ' ');
 
-const HOME = readFileSync(join(S.V3, 'home.html'), 'utf8');
+const HOME = readFileSync(S.HOME_SRC, 'utf8');
 
 /* 4. EVERY DERIVED ASK IS ON THE PAGE, WITH ITS BACK-LINK. The whole promise
       of the derivation: a reader who clicked a label finds that label here. */
@@ -702,13 +745,16 @@ for (const label of new Set(ASKS.map(a => a.label))) {
 }
 gate([...new Set(ASKS.map(a => a.href))].every(h => OUT.includes(`href="${h}"`)),
   `all ${new Set(ASKS.map(a => a.href)).size} distinct back-links render`);
-/* The rail's counted cell says ASKS, not pages — several asks share a landing
-   page, because an item with no page of its own is an anchor on its kind's. A
-   cell that said "pages" would be off by the difference and nobody would
-   notice; this asserts the number on the page is the one that was counted. */
-gate(new RegExp(`>${ASKS.length}</p><p class="lbl ac-rail-l">Asks on this site`).test(OUT),
-  `the rail counts ${ASKS.length} asks, and calls them asks rather than pages `
-  + `(${new Set(ASKS.map(a => a.href.split('#')[0])).size} distinct landing pages carry them)`);
+/* ★ AD-28 — THE RAIL NO LONGER COUNTS THE PAGE'S OWN ASKS, AND THIS GATE IS
+   THE OLD ONE INVERTED. The first cell read "22 / Asks on this site that land
+   here": a number about this website's own internal wiring, offered to a
+   visitor who came to find out how to help. The gate used to assert that cell
+   rendered with the correctly derived count; it now asserts the cell is gone.
+   The derivation itself is untouched — `ASKS` is still built from data/work/**
+   and gate 4 above still proves every one of them is answered here. What
+   changed is that the reader is not shown the tally. */
+gate(!/Asks on this site/i.test(RENDERED),
+  'the masthead rail does not count this site\'s own asks at the reader');
 
 /* 5. THE ASK MATCHES THE FROZEN HOMEPAGE'S (G-3). The figure has no
       SOURCE-FACTS entry, so the homepage IS its source — which only holds if
@@ -775,14 +821,33 @@ const bareFr = [...PAGE_CSS.matchAll(/grid-template-columns:[^;}]*/g)]
   .map(m => m[0]).filter(s => /\b1fr/.test(s.replace(/minmax\(0,\s*1fr\)/g, 'MM')));
 gate(bareFr.length === 0, `every grid track is minmax(0,1fr)${bareFr.length ? `; BARE: ${bareFr.join(' | ')}` : ''}`);
 
-/* 9. THE HOLES RENDER AS HOLES. G-1 and G-2 are only kept if the page actually
-      says it cannot take money and cannot name a date. Four expected: the
-      archive, the payment destination, the calendar, the accounts. */
-const holes = (OUT.match(/class="p-hole"/g) || []).length;
-gate(holes >= 4 + FORMATS.filter(f => f.hole).length,
-  `${holes} named holes render (4 of the page's own + ${FORMATS.filter(f => f.hole).length} inherited from the events register)`);
-gate(/cannot give money on this site yet/i.test(RENDERED), 'G-1: the page says giving is not connected');
-gate(/no calendar on this site/i.test(RENDERED), 'G-2: the page says there is no calendar');
+/* 9. NO HOLE RENDERS AT ALL — AD-28 §2.3. ★ ALL THREE OF THESE ARE INVERTED.
+      They used to be the load-bearing gates of rulings G-1 and G-2: they
+      asserted that eight dotted holes rendered, that the page SAID "you cannot
+      give money on this site yet", and that it SAID "there is no calendar on
+      this site". The rulings themselves are untouched and are enforced
+      elsewhere and more strictly — gate 11 still refuses any payment URL, gate
+      12 still refuses an invented Google Form, and there is still no date
+      anywhere on this page. What the owner struck is the page TELLING the
+      visitor about those absences. So the same three gates now hold the
+      sentences off instead of on.
+      Inverting rather than deleting matters more here than anywhere else on the
+      site: a later session reading G-1 and G-2 in the AD-25 ledger will
+      reasonably conclude the page is supposed to announce what it cannot do.
+      These three gates are the note that says otherwise, in the place that
+      stops it. */
+gate(!OUT.includes('class="p-hole"'),
+  'no named hole renders — an absence is shown by being absent (AD-28 §2.3)');
+gate(!/cannot give money on this site|no payment page behind/i.test(RENDERED),
+  'G-1 is enforced without announcing it: no "you cannot give money here yet" copy');
+gate(!/no calendar on this site|cannot tell you when/i.test(RENDERED),
+  'G-2 is enforced without announcing it: no "there is no calendar" copy');
+/* And the events register's own holes may not be inherited onto this page
+   either. FORMATS still carries them — build-work-pages.mjs owns that data and
+   a separate pass applies this rule there — so this is what keeps them out of
+   /act in the meantime. */
+gate(FORMATS.every(f => !f.hole || !RENDERED.includes(f.hole)),
+  `none of the events register's ${FORMATS.filter(f => f.hole).length} holes is reprinted here`);
 
 /* 10. ONLY @swechha.in EMAIL IS PUBLISHED, plus the exceptions the policy
        names (about-people.json's email_policy + published_email_exceptions).
@@ -795,6 +860,13 @@ const ALLOWED = new Set(EMAIL_POLICY.published_email_exceptions || []);
 const mails = [...new Set([...OUT.matchAll(/mailto:([^"?]+)/g)].map(m => m[1]))];
 const offsite = mails.filter(e => !e.endsWith('@swechha.in') && !ALLOWED.has(e));
 gate(offsite.length === 0, `every published address is @swechha.in or a named exception${offsite.length ? `; FOUND: ${offsite.join(', ')}` : ''} (${mails.join(', ')})`);
+
+/* 10b. THE ASK'S OWN FOUR GATES (AD-27.22), run in every generator that emits
+        one. The audience must match its subject line or the owner's inbox
+        sorts wrong silently and forever; a mailto: carrying the literal string
+        SUBJECT looks exactly like a working button. The exception list is
+        passed through rather than restated, for the reason gate 10 gives. */
+S.askGates(OUT, gate, { allowed: [...ALLOWED] });
 
 /* 11. NO DEAD OR PROTOTYPE HREF. This page exists because of href="#"; it may
        not ship one of its own. The footer's remaining ones are the frozen P-1
@@ -846,8 +918,14 @@ gate(!digitsOnly.includes(STRUCK_NUMBER) && !/href="tel:/.test(OUT),
 /* 15. NO UNEXPANDED TOKEN AND NO UNEXPANDED TEMPLATE REACHED THE HTML. */
 const leftovers = [...OUT.matchAll(/\{\{\w+\}\}|\$\{[A-Za-z_][\w.]*\}/g)].map(m => m[0]);
 gate(leftovers.length === 0, `no unexpanded token${leftovers.length ? `; FOUND: ${[...new Set(leftovers)].join(', ')}` : ''}`);
-gate(RENDERED.includes(`${ASKS.length} of its asks end on this page`),
-  'the onward door\'s count is the derived one, not a typed number');
+/* ★ AD-28 — INVERTED. The /work onward door read "{{ASKS}} of its asks end on
+   this page", and this gate proved the token had been substituted with the
+   derived count rather than typed. The sentence is gone: it is a fact about
+   this site's plumbing, not about the work. The token machinery stays (gate 15
+   above still catches an unexpanded `{{…}}`), so the next sentence that needs a
+   derived count still cannot type one. */
+gate(!/of its asks end on this page/i.test(RENDERED),
+  'the onward door does not count this site\'s own asks at the reader');
 
 /* 13. THE REGISTERED NAME, ITS CASE, AND THE BRAND NAME EVERYWHERE ELSE.
        Owner ruling, 22 August: the registered name is "Swechha We for Change
@@ -873,7 +951,27 @@ gate(!OUT.includes('We For Change'), 'the struck capital-F spelling is absent');
         ratio rather than a ban, because one legal row legitimately needs the
         long form — and if a second one appears, somebody is using the
         registrar's name as the brand. */
-const BODY = RENDERED.slice(0, RENDERED.indexOf('Swechha We for Change Foundation. Khirki'));
+/* ── THE BODY/FOOTER BOUNDARY, AND THE ASSERTION IT WAS MISSING. ────────
+   AD-27.8 replaced the frozen footer's legal sentence with the client's own
+   words, which deleted the string this line used to search for. That is not a
+   hypothetical: `indexOf` returned -1, `slice(0, -1)` silently took the WHOLE
+   PAGE as the body, and the ratio gate below then failed with a message about
+   the brand name — a true report of a false measurement, pointing at the wrong
+   file. A boundary computed by indexOf must assert it FOUND the boundary
+   (AD-27.55, warning label 2). It does now, and the string is a constant so
+   this gate and gate 13b's cannot drift apart. */
+const FOOTER_LEGAL = 'Swechha We for Change Foundation, New Delhi. Working since 2000. '
+  + 'Registered Societies Registration Act, 80G, 12A, FCRA Powered.';
+const footerAt = RENDERED.indexOf(FOOTER_LEGAL);
+if (footerAt < 0) {
+  die('body/footer boundary not found. This page measures its own prose by cutting at the\n'
+    + '  frozen footer\'s legal sentence, and that sentence is not in the rendered output:\n'
+    + `    "${FOOTER_LEGAL}"\n`
+    + '  Either home.html\'s .foot-b changed again (AD-27.8 is the last time it did) or the\n'
+    + '  footer was not lifted. Update this constant in the SAME commit as the sentence —\n'
+    + '  do not weaken it to a substring match; its whole value is that it fails on drift.');
+}
+const BODY = RENDERED.slice(0, footerAt);
 const longName = (BODY.match(/Swechha We for Change Foundation/g) || []).length;
 const brandName = (BODY.match(/\bSwechha\b/g) || []).length;
 gate(longName === 1, `the full legal name appears exactly once in the page's own body (found ${longName})`);
@@ -884,8 +982,8 @@ gate(brandName > longName + 2,
    is excluded above and asserted here instead. AD-25 completed it: it read
    "We for Change Foundation." with no "Swechha" on every page of this site
    until 22 August. */
-gate(/Swechha We for Change Foundation\. Khirki Extension/.test(RENDERED),
-  'the frozen footer carries the completed registered name');
+gate(RENDERED.includes(FOOTER_LEGAL),
+  'the frozen footer carries the client\'s legal sentence, character for character');
 
 /* 14. THE HOMEPAGE'S THREE BUTTONS POINT HERE. The third part of the change:
        a built file and a route with the door still nailed shut is the AD-24

@@ -28,13 +28,18 @@
    ★ NO ILLUSTRATIONS, AND THAT IS NOT A DESIGN CHOICE.
    Every <img> in the export points at http://q7s.734.mytemp.website/, the
    staging domain the legacy audit found across the old site; it 301s to
-   nothing and the swechha.in rewrite 404s. They also carry empty alt text. The
-   Written band on /stories names this rather than leaving a reader to wonder.
+   nothing and the swechha.in rewrite 404s. They also carry empty alt text.
+   AD-28 §2.3: the pages show less rather than explain the absence — the note
+   that used to say this on /stories is deleted, and so are the orphaned
+   "Image source – ..." captions the dropped pictures left behind.
    ═══════════════════════════════════════════════════════════════════════════ */
 import { readFileSync, readdirSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
-const { esc, opener, hole, ARROW } = S;
+/* `hole` is deliberately NOT imported — see AD-28 §2.3. An essay with no
+   illustration simply has no illustration; it does not carry a marker saying
+   so. */
+const { esc, opener, ARROW } = S;
 
 const sh = S.shell();
 
@@ -93,19 +98,66 @@ function extract(src) {
   return out;
 }
 
+/* ── AD-27.48. ONE DESCRIPTION PER ESSAY, KEYED BY SLUG. ─────────────────
+   These five are the only pages this shell builds whose route is not a fixed
+   string, so they cannot sit in situation-shell.mjs's DESCRIPTIONS register
+   and have to be passed. 140-158 characters each; every one states the
+   essay's own subject and names its author, which is the verifiable fact
+   these pages carry (the byline is printed on the page and recorded in
+   content/essay/_index.json).
+   NOTHING HERE IS TENSED OR DATED. The pieces are from 2022 and 2023 and the
+   pages print their dates; a description that said "this year" would be wrong
+   on the day it was cached. */
+const ESSAY_DESC = {
+  'cyclone-biparjoy': "Cyclone Biparjoy, named by Bangladesh, and what a cyclone's approach asks of the coast it is heading for. An essay for Swechha by Antarixa Bhardwaj.",
+  'rise-above-the-waters': "Bengaluru's monsoon is a delight on social media and a disaster by September. An essay for Swechha by Antarixa Bhardwaj on what the flood story leaves out.",
+  'young-people-accelerate-climate-action': 'The climate crisis is a transgenerational problem, not an academic one. An essay for Swechha by Tanya Mittal on what it asks of young people, and how soon.',
+  'climate-crisis-uk-and-europe': 'The scorching European summer, read as a climate event rather than a heatwave story. An essay for Swechha by Richa Mirdha on the UK and Europe.',
+  'increasing-climate-migration-assam-floods': "Assam's floods displace people every year and rehabilitation is the part nobody follows. An essay for Swechha by Tanya Mittal on India's climate migrants.",
+};
+
 const ESSAYS = INDEX.map((e) => {
   const src = readFileSync(join(S.ROOT, 'content/essay', `${e.slug}.html`), 'utf8');
   let blocks = extract(src);
   /* The first two headings are the title and the "– by Name" line. Dropped by
      MATCHING them rather than by taking the first two, so a piece formatted
-     differently does not silently lose its opening paragraph. */
-  blocks = blocks.filter((b) => {
+     differently does not silently lose its opening paragraph.
+
+     ★ AND A TITLE SET OVER TWO LINES IS STILL THE TITLE.
+     "High time young people accelerate climate action" is TWO <h2>s in the
+     export — "HIGH TIME YOUNG PEOPLE" and "ACCELERATE CLIMATE ACTION" — so
+     neither contained `title.slice(0, 24)` and neither was dropped. That page
+     shipped printing its own headline twice, once as the h1 and once as the
+     first two lines of the prose, which is exactly the defect the block above
+     was written to prevent. So the match now runs the other way as well: a
+     heading BEFORE THE FIRST PARAGRAPH whose words are part of the title is
+     part of the title. Bounded to the run of headings above the prose, so a
+     mid-essay section heading that happens to echo the title survives. */
+  const letters = (s) => s.toLowerCase().replace(/[^a-z ]/g, '').replace(/\s+/g, ' ').trim();
+  const TITLE = letters(e.title);
+  const firstP = blocks.findIndex((b) => b.tag === 'p' || b.tag === 'li' || b.tag === 'blockquote');
+  blocks = blocks.filter((b, i) => {
     const t = b.text.toLowerCase();
     if (b.tag !== 'h2') return true;
     if (t.startsWith('– by') || t.startsWith('- by') || /^by\s/.test(t)) return false;
-    const title = e.title.toLowerCase().replace(/[^a-z ]/g, '');
-    return !(t.replace(/[^a-z ]/g, '').includes(title.slice(0, 24)));
+    if (letters(b.text).includes(TITLE.slice(0, 24))) return false;
+    const inMasthead = firstP === -1 || i < firstP;
+    if (inMasthead && letters(b.text).length >= 8 && TITLE.includes(letters(b.text))) return false;
+    return true;
   });
+  /* ★ AD-28 §2.3 — A CREDIT FOR A PICTURE THAT IS NOT HERE.
+     Two essays carried "Image source – The Economic Times" and the like as
+     bare paragraphs: captions left standing after the illustrations were
+     dropped (the export's <img>s all point at a staging host that no longer
+     resolves). A credit with nothing above it is an absence published as a
+     line of prose. Where there is no picture there is no caption. */
+  blocks = blocks.filter((b) =>
+    /* Matched on the PLAIN text, where `plainOf` has already turned the
+       export's `&#8211;` into whitespace — so the separator cannot be relied
+       on and the two opening words carry the match. Capped at ten words so a
+       sentence that merely begins "Image sources have..." survives. */
+    !(b.tag === 'p' && /^(?:image|photo|picture|pic)\s+(?:source|credit|courtesy)s?\b/i.test(b.text)
+      && b.text.split(/\s+/).length <= 10));
   return { ...e, blocks, sourceWords: plainOf(src).split(' ').length };
 });
 
@@ -178,6 +230,7 @@ ${(() => {
     file: join('stories', `${e.slug}.html`),
     route: `/stories/${e.slug}`,
     title: `${e.title} &mdash; Swechha`,
+    desc: ESSAY_DESC[e.slug],
     bands: BANDS, index: INDEX_CHIPS, sh, clashes,
     pageCss: PAGE_CSS,
     sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),

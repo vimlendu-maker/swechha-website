@@ -1220,7 +1220,18 @@ heroes (one viewport each) and — by client ruling — `record`, by name.**
 
 Measured at 375: **one breach, `record` at 1,393.48px**, 493px over. Every
 other band is inside. `record` also breaches at 390 (1,280.03), 414 (1,283.05)
-and 560 (1,249.06). At 320, four bands breach (about 1,023.41 · farm 905.44 ·
+and 560 (1,249.06).
+
+> **RE-MEASURED 23 AUGUST — see BRANDING §6.4-A in AD-27-rulings §J.** The
+> sentence above is about **`home.html`**, which was the only page that existed
+> when it was written, and it stayed true of that page (`record` now measures
+> **1,378.80px**, every other homepage band inside). It was never re-derived for
+> a site of 35 pages, and as a site-wide law it has been false since the second
+> page shipped: measured at 375×812 across every route, **33 of 35 pages carry
+> at least one band over 900px — 105 bands in total**, the worst being
+> `/search`'s `index` at 6,996.27px. The cap's **scope** is corrected there, not
+> its number: on pages whose bands are archives, indexes and essays it is a
+> budget to measure and publish, not a pass/fail gate. At 320, four bands breach (about 1,023.41 · farm 905.44 ·
 record 1,487.92 · give 935.38) and **320 is below the tested floor by prior
 ruling** — recorded as data, not as a defect list.
 
