@@ -179,16 +179,16 @@ html,body{scroll-padding-top:var(--nav-h)}
 .give:hover{background:var(--fg);color:var(--ground)}
 .navscroll{display:none}
 @media (max-width:940px){
-  :root{--bar-h:56px;--nav-h:56px}
+  :root{--bar-h:56px;--nav-h:56px;--sec-h:50px}  :root:has(.navscroll){--nav-h:calc(var(--bar-h) + var(--sec-h))}
   .navlinks{display:none!important}
   .give{min-height:44px;display:inline-flex;align-items:center;padding:0 18px}
   .mark{min-height:44px;display:inline-flex;align-items:center}
   .s-hero-bar .rig-tabs button{min-height:44px;padding:14px 15px 0 12px}
   .s-hero-bar .rig-tabs button:first-child{padding-left:0;min-width:44px}
-  .nav{position:static;border-bottom:0;padding-top:var(--bar-h)}
+  .nav{position:static;border-bottom:0;padding-top:var(--bar-h)}  .nav:has(.navscroll){padding-top:calc(var(--bar-h) + var(--sec-h))}
   .nav-in{position:fixed;top:0;left:0;right:0;z-index:60;background:var(--ground);
     border-bottom:1px solid var(--hair)}
-  .navscroll{display:block;border-bottom:1px solid var(--hair);background:var(--ground);
+  .navscroll{display:block;position:fixed;top:var(--bar-h);left:0;right:0;z-index:58;height:var(--sec-h);box-sizing:border-box;border-bottom:1px solid var(--hair);background:var(--ground);
     overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
     -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 8px),transparent);
     mask-image:linear-gradient(90deg,#000 calc(100% - 8px),transparent)}
@@ -511,7 +511,7 @@ html,body{scroll-padding-top:var(--nav-h)}
     mask-image:linear-gradient(90deg,#000 calc(100% - 8px),transparent)}
   .s-hero-bar .count{order:2;margin-right:auto;margin-left:0}
   .s-hero-bar .rig-arrows{order:3}
-  .s-hero-bar .rig-arrows button{width:44px;height:44px}
+  .s-hero-bar .rig-arrows button{width:44px;height:44px}  .s-hero{--s-hero-barh:111px} .s-hero .rig{display:flex;flex-direction:column} .s-hero .rig>.wrap{order:-1} .s-hero-mast{top:var(--s-hero-barh)} .s-hero-bar{margin-top:0;min-height:var(--s-hero-barh);padding-top:16px;padding-bottom:10px;border-top:0;border-bottom:1px solid var(--hair)}
 }
 .s-ticker{padding:0;background:var(--ground-2);
   border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);
@@ -1236,20 +1236,63 @@ main{display:block;margin:0;padding:0}
   .s-hero-who-l{display:none}
   .s-hero-who-s{display:inline}
 }
-.s-hero-stamp .state{min-width:6.75em}</style>
+.s-hero-stamp .state{min-width:6.75em}
+.w7-do-list>li>a,.w7-pj-rows>li>a,.w7-pj-lead>a{padding-right:26px}
+.w7-pj-lead>a{position:relative}
+.s-ticker-cell .s-ticker-name{padding-right:14px}
+.w7-do-list>li>a::after,
+.w7-pj-rows>li>a::after,
+.w7-pj-lead>a::after,
+.s-ticker-cell .s-ticker-name::after{
+  content:'';position:absolute;width:7px;height:7px;
+  border-right:2px solid currentColor;border-top:2px solid currentColor;
+  transform:rotate(45deg);opacity:.4;pointer-events:none;
+  transition:opacity .16s,translate .16s}
+.w7-do-list>li>a::after,.w7-pj-rows>li>a::after{right:4px;top:50%;margin-top:-5px}
+.w7-pj-lead>a::after{right:4px;bottom:6px}
+.s-ticker-cell .s-ticker-name{position:relative}
+.s-ticker-cell .s-ticker-name::after{right:0;top:50%;margin-top:-4px;width:6px;height:6px}
+.w7-do-list>li>a:hover::after,.w7-pj-rows>li>a:hover::after,
+.w7-pj-lead>a:hover::after,.s-ticker-cell:hover .s-ticker-name::after{
+  opacity:.85;translate:2px 0}
+.w7-do-list>li>a:active::before,.w7-pj-rows>li>a:active::before{
+  background:rgba(20,19,16,.075)}
+.w7-pj-lead>a::before,.s-ticker-cell::before{
+  content:'';position:absolute;inset:0 -10px;background:transparent;
+  pointer-events:none;transition:background .12s}
+.w7-pj-lead>a:active::before{background:rgba(20,19,16,.075)}
+.s-ticker-cell:active::before{background:rgba(251,248,240,.07)}
+.s-ticker-cell:active .s-ticker-name::after,
+.w7-pj-lead>a:active::after{opacity:.9}
+.w7-ce-lk{padding-top:11px;padding-bottom:10px}
+.w7-ce-pre>a{padding-top:14px;padding-bottom:13px}
+@media (prefers-reduced-motion:reduce){
+  .w7-do-list>li>a::after,.w7-pj-rows>li>a::after,.w7-pj-lead>a::after,
+  .s-ticker-cell .s-ticker-name::after,.w7-pj-lead>a::before,
+  .s-ticker-cell::before{transition:none}
+  .w7-do-list>li>a:hover::after,.w7-pj-rows>li>a:hover::after,
+  .w7-pj-lead>a:hover::after,.s-ticker-cell:hover .s-ticker-name::after{translate:none}
+}
+.w7-ce-lk .w7-ce-t{text-decoration:underline;text-decoration-thickness:1px;
+  text-underline-offset:4px;text-decoration-color:var(--mustard)}
+.w7-ce-lk:hover .w7-ce-t{text-decoration-thickness:2px}
+.w7-jr-foot>.act::before,.w7-pj-foot>.act::before,.w7-ce-cfoot>.act::before,
+.w7-ce-evfoot>.act::before,.w7-ab-foot>.act::before,.w7-do-head .act::before{
+  content:'';position:absolute;left:0;right:0;top:50%;height:44px;
+  translate:0 -50%;pointer-events:auto}</style>
 
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><filter id="duo" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/><feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/><feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/></feComponentTransfer></filter><filter id="duo-dim" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0.11 0.18 0.255 0.325 0.385 0.43"/><feFuncG type="table" tableValues="0.10 0.165 0.235 0.30 0.355 0.40"/><feFuncB type="table" tableValues="0.085 0.14 0.20 0.26 0.31 0.35"/></feComponentTransfer></filter></defs></svg>
 
 <a class="skip" href="#main">Skip to the content</a>
-<header class="nav"><div class="nav-in"><a class="mark" href="/" aria-current="page" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a></nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
+<header class="nav"><div class="nav-in"><a class="mark" href="/" aria-current="page" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/about">About</a></nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
 
-<div class="navidx" id="navidx" hidden><nav aria-label="All sections"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a></nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="/act">Give</a></div><nav class="navscroll" aria-label="Sections"><ul><li><a class="nl" href="/now">Now</a></li><li><a class="nl" href="/work">Work</a></li><li><a class="nl" href="/work/journeys">Journeys</a></li><li><a class="nl" href="/impact">Impact</a></li><li><a class="nl" href="/farm">Farm</a></li><li></li></ul></nav></header>
+<div class="navidx" id="navidx" hidden><nav aria-label="All sections"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/about">About</a></nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="/act">Act</a></div></header>
 
 <main id="main" tabindex="-1">
 
 <section class="s-hero t1" id="top">
-  <div class="s-hero-mast"><div class="wrap"><h1 class="d1 s-hero-h1">We keep the record</h1><p class="lbl s-hero-tag">Every reading against its published limit</p><p class="lbl s-hero-who"><span class="s-hero-who-l">An Indian environmental organisation. Delhi, since&nbsp;2000.</span><span class="s-hero-who-s">Environmental. Delhi. Since&nbsp;2000.</span></p></div></div>
+  <div class="s-hero-mast"><div class="wrap"><h1 class="d1 s-hero-h1">We keep the record</h1><p class="lbl s-hero-tag">Every reading against its published limit</p><p class="lbl s-hero-who"><span class="s-hero-who-l">Swechha &mdash; an Indian environmental organisation. Delhi, since&nbsp;2000.</span><span class="s-hero-who-s">Swechha. Environmental. Delhi. Since&nbsp;2000.</span></p></div></div>
 
   <div class="rig">
     <div class="rig-clip">
