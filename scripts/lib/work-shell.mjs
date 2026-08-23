@@ -448,12 +448,28 @@ export function workShell() {
    own guard (`if(!ids.length) return`) makes it a no-op. It is left in place
    rather than deleted, because it comes back the moment a band-linked word
    does. */
+/* ── AD-32. ABOUT RETURNS THE SET TO SIX (owner, 24 August). ─────────────
+   AD-19 settled six words; AD-26 §5 Q4 recorded that THE COUNT IS THE OWNER'S
+   CALL; the owner removed `Record` on 22 August to make it five. This is that
+   same call made again, in the other direction, and the reason is a hole the
+   mobile audit measured: the menu panel held five words and NONE of them was
+   the organisation. A first-time reader who had just met a wall of air-quality
+   data and wanted to know who was behind it had no navigation route at all —
+   only scrolling 7.2 screens to the homepage's About band, or reaching the
+   footer at screen 15. `/about` has existed and been routed since AD-21.
+   ABOUT GOES LAST, before the chip, which is where a reader expects it.
+   MEASURED BEFORE IT WAS ADDED, at the tightest width the desktop bar is still
+   shown (941px, one above the 940 switch to the glass): the sixth word ends
+   36px clear of the search control, and neither the bar nor the document
+   overflows. It is one list for both shells, so this word appears in the
+   desktop bar AND the phone's menu panel rather than the two drifting apart. */
 export const NAV = [
   ['Now', '/now'],
   ['Work', '/work'],
   ['Journeys', '/work/journeys'],
   ['Impact', '/impact'],
   ['Farm', '/farm'],
+  ['About', '/about'],
 ];
 export const GIVE_HREF = '/act';
 export const HOME_HREF = '/';
