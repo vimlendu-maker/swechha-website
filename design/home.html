@@ -402,7 +402,7 @@ html,body{scroll-padding-top:var(--nav-h)}
 @media (max-width:940px){
   /* Below the breakpoint the pattern inverts: the bar goes fixed, so the
      occluding strip and the bar's own box are the same 56px. */
-  :root{--bar-h:56px;--nav-h:56px}
+  :root{--bar-h:56px;--nav-h:56px;--sec-h:50px} /* AD-34. --nav-h IS THE OCCLUDING CHROME, and `html,body{scroll-padding-top:var(--nav-h)}` (A-1, line 379) is what lands an anchor clear of it. Pinning the strip made that chrome 56+50, so on a page WITH a strip every `#section` link had started landing 50px UNDER it -- the anchors were correct before and would have been quietly wrong after. Scoped with :has() for the same reason the padding above is: the homepage has no strip and its chrome is still 56. */ :root:has(.navscroll){--nav-h:calc(var(--bar-h) + var(--sec-h))}
   .navlinks{display:none!important}
   /* 44px FLOOR ON THE ONE PERSISTENT TARGET. GIVE measured 70x37 and the
      wordmark 92x35 — under the floor on the single control the whole
@@ -452,10 +452,10 @@ html,body{scroll-padding-top:var(--nav-h)}
      paints full-bleed. Above 940 the same move would pull the bar's
      background into a centred box — do not lift it out of this media
      query. */
-  .nav{position:static;border-bottom:0;padding-top:var(--bar-h)}
+  .nav{position:static;border-bottom:0;padding-top:var(--bar-h)} /* AD-34: THE SECTION STRIP STAYS REACHABLE. `.navscroll` is not a copy of the site menu -- on every page type that has one it is that page's own table of contents (3 anchors on /now, 6 on /about and /act, 8 on /now/air, 9 on /farm). The homepage was the ONE page where it duplicated the menu, and it was deleted there under AD-29. Everywhere else it was `position: static` inside a header that scrolls away, so on /now/air -- 14,720px, 23 phone screens -- a reader lost the whole contents list after the first 106px, i.e. after 0.7% of the page, and could only get it back by scrolling to the top. THE RESERVATION IS SCOPED WITH `:has()` so the homepage, which no longer carries a strip, keeps its 56px header and does not grow 50px of empty band. Without the scope this rule would put that gap on exactly the page the strip was removed from. */ .nav:has(.navscroll){padding-top:calc(var(--bar-h) + var(--sec-h))}
   .nav-in{position:fixed;top:0;left:0;right:0;z-index:60;background:var(--ground);
     border-bottom:1px solid var(--hair)}
-  .navscroll{display:block;border-bottom:1px solid var(--hair);background:var(--ground);
+  .navscroll{display:block;position:fixed;top:var(--bar-h);left:0;right:0;z-index:58;height:var(--sec-h);box-sizing:border-box;border-bottom:1px solid var(--hair);background:var(--ground);
     overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
     /* the affordance it was criticised for lacking — the same 8px hard
        fade the hero's own tab row uses, not a second invention. */

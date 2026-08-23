@@ -529,6 +529,79 @@ export const HOME_HREF = '/';
  * this function can mark at most one word. Anyone implementing the table has to
  * change that signature first, which is the point at which they will read this.
  */
+/* ── AD-34. A PERSISTENT STRIP HAS TO SAY WHERE YOU ARE. ─────────────────
+   Pinning `.navscroll` under the bar fixed half the defect: the contents list
+   survives the scroll. The other half is that it is 375px wide holding up to
+   nine chips -- on /now/air, 1205px of them, so FIVE of eight sat off-screen
+   including "What you can do". A list you cannot lose but also cannot read
+   past is only half a navigation.
+   So the marked chip is scrolled into the strip, not the page: `strip.scrollLeft`
+   only, never scrollIntoView(), which would drag the document and fight the
+   reader for control of the scroll they are already performing.
+   THE MARK IS `aria-current="location"`, and that is deliberate rather than a
+   class: `.nav a.nl[aria-current]` already carries the mustard underline (line
+   396 of the homepage source), so the active state needs NO new CSS and looks
+   like every other current-thing on this site. "location" is also the correct
+   ARIA value for a position WITHIN a page -- it cannot be confused with the
+   "page"/"true" table AD-19 §5 governs for the primary nav, and
+   build-about-page's gate is scoped to `<nav class="navlinks">` and says so.
+   rAF-throttled, passive, and it sorts by document position rather than trusting
+   the chip order. Bails below two resolvable sections: a strip that marks its
+   only entry says nothing. */
+const SECTION_SPY = `<script>
+(function(){
+  function start(){
+    var strip=document.querySelector('nav.navscroll');
+    if(!strip||!window.IntersectionObserver) return;
+    /* THE STRIP IS A <=940 CONTROL. Above that breakpoint .navscroll is
+       display:none, its box is 0x0, and there is nothing to mark or scroll. */
+    if(getComputedStyle(strip).display==='none') return;
+    var out=[];
+    [].forEach.call(strip.querySelectorAll('a[href^="#"]'),function(a){
+      var id=a.getAttribute('href').slice(1);
+      var el=id&&document.getElementById(id);
+      if(el) out.push({a:a,el:el});
+    });
+    if(out.length<2) return;
+    out.sort(function(x,y){ return (x.el.compareDocumentPosition(y.el)&4)?-1:1; });
+    var cur=null;
+    function pick(){
+      var line=strip.getBoundingClientRect().bottom+1,hit=out[0];
+      for(var i=0;i<out.length;i++){ if(out[i].el.getBoundingClientRect().top<=line) hit=out[i]; }
+      if(hit===cur) return;
+      cur=hit;
+      for(var j=0;j<out.length;j++){
+        if(out[j]===hit) out[j].a.setAttribute('aria-current','location');
+        else out[j].a.removeAttribute('aria-current');
+      }
+      var r=hit.a.getBoundingClientRect(),s=strip.getBoundingClientRect();
+      if(r.left<s.left+12||r.right>s.right-12) strip.scrollLeft+=r.left-s.left-(s.width-r.width)/2;
+    }
+    /* ★ THE OBSERVER IS THE TRIGGER; pick() IS THE LOGIC. An earlier draft of
+       this listened for 'scroll' and marked the first section and nothing else
+       ever again. IntersectionObserver does not depend on scroll events being
+       delivered, it is driven by layout, and it fires exactly when a band
+       CROSSES the chrome line -- which is exactly when the mark should change,
+       so there is no throttling to get wrong and no work between boundaries.
+       It is also the mechanism this site already uses twice on the homepage.
+       pick() stays because an observer alone has gaps: it reports the band that
+       moved, not the band you are in. Asking "which is the last one whose top
+       is above the line" cannot land between two sections. */
+    var io=new IntersectionObserver(pick,{rootMargin:'-'+Math.round(strip.getBoundingClientRect().bottom)+'px 0px 0px 0px',threshold:0});
+    for(var k=0;k<out.length;k++) io.observe(out[k].el);
+    addEventListener('resize',pick,{passive:true});
+    pick();
+  }
+  /* DEFERRED, AND THAT GUARD IS LOAD-BEARING. The strip is the last thing in
+     <header>, so this runs at the very top of <body> with every #section still
+     unparsed: getElementById returned null for all of them, out came back
+     empty, and a one-shot init bailed and never ran again. Measured on /farm:
+     9 links, 9 resolvable after load, 0 marked. */
+  if(document.readyState==='loading') addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
+})();
+</script>`
+
 export const workHeader = (sections, current, url) => {
   const cur = (label, href) => label !== current ? ''
     : (href === url ? ' aria-current="page"' : ' aria-current="true"');
@@ -537,7 +610,7 @@ export const workHeader = (sections, current, url) => {
      to also fill the Menu panel, which duplicated the row already on screen —
      the panel is the six pages and nothing else. */
   return `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(nl).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
-<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(nl).join('')}</nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${sections.map(([t, h]) => `<li><a class="nl" href="${h}">${esc(t)}</a></li>`).join('')}</ul></nav></header>`;
+<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(nl).join('')}</nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}">Act</a></div><nav class="navscroll" aria-label="Sections"><ul>${sections.map(([t, h]) => `<li><a class="nl" href="${h}">${esc(t)}</a></li>`).join('')}</ul></nav></header>${SECTION_SPY}`;
 };
 
 /* ═══ THE WORK LAYER — the only CSS this section AUTHORS ══════════════════
