@@ -1053,8 +1053,9 @@ button.b[disabled]{opacity:.55;cursor:default}
       </div>
       <p class="cap ix-vocab-x"><b>Each word describes how the source delivers</b> &mdash; Yamuna
         reads PERIODIC because CPCB publishes once a year, and Air reads LIVE because it sits in
-        front of an hourly feed. Each reading&rsquo;s own page carries the hour it was
-        observed.</p>
+        front of an hourly feed. Each card names the period its own reading covers &mdash;
+        an hour for Air, a year, a season or a range for the rest &mdash; and each
+        situation&rsquo;s page carries the source and the date in full.</p>
       <p style="margin:0"><a class="act" href="#set">All 6 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
     </div>
   </section>
@@ -1071,7 +1072,7 @@ button.b[disabled]{opacity:.55;cursor:default}
           </span>
           <span class="ix-card-v" data-v>311</span>
           <span class="cap ix-card-u">air quality index</span>
-          <span class="cap ix-card-s" data-sub>Very Poor · governed by PM2.5</span>
+          <span class="cap ix-card-s" data-sub>Very Poor · governed by PM2.5 · 18:00 IST</span>
           <span class="ix-card-rule" aria-hidden="true"></span>
           <span class="ix-card-lim">
             <i class="lbl ix-card-k">a ceiling</i>
@@ -1089,7 +1090,7 @@ button.b[disabled]{opacity:.55;cursor:default}
           </span>
           <span class="ix-card-v">0.3</span>
           <span class="cap ix-card-u">mg/L dissolved oxygen</span>
-          <span class="cap ix-card-s">at or below the detection limit</span>
+          <span class="cap ix-card-s">at or below the detection limit · CPCB 2025</span>
           <span class="ix-card-rule" aria-hidden="true"></span>
           <span class="ix-card-lim">
             <i class="lbl ix-card-k">a floor</i>
@@ -1395,7 +1396,13 @@ button.b[disabled]{opacity:.55;cursor:default}
     card.classList.toggle('is-breach',over);
     if(verd) verd.textContent=over?(Math.round(r.aqi/limit*10)/10)+'× the limit':'within the limit';
     if(verd) verd.classList.toggle('is-red',over);
-    if(sub&&r.band) sub.textContent=r.band+(r.governing?' · governed by '+r.governing:'');
+    /* note: the hour rides with the number, never separately. r.observed is
+       "HH:MM IST, D Month YYYY"; the card shows the clock part, which is the
+       half that changes within a day, and the situation page carries the date. */
+    if(sub&&r.band){
+      var hh=r.observed?String(r.observed).split(',')[0].trim():'';
+      sub.textContent=r.band+(r.governing?' · governed by '+r.governing:'')+(hh?' · '+hh:'');
+    }
     /* THE CHIP IS NOT TOUCHED. It reads LIVE on every render because it
        names Air's DELIVERY CADENCE, not this fetch. See the note on the
        Air situation above, and D-26. */
