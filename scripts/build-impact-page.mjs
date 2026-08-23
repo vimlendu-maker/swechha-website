@@ -44,7 +44,10 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import { imageSize } from './lib/jpeg-size.mjs';
-const { esc, opener, hole, ARROW, kd, KIND_LEGEND } = S;
+/* `hole` is deliberately NOT imported. AD-28 removed every named hole from
+   this page and a build gate refuses to write one; importing the helper back is
+   the first half of putting one on the page. */
+const { esc, opener, ARROW, kd, KIND_LEGEND } = S;
 
 const sh = S.shell();
 
@@ -198,11 +201,36 @@ const OVERLAP_SUM = OVERLAP.reduce((a, f) => a + (magnitude(f.value) || 0), 0);
 
 /* ═══ COMPONENTS ═════════════════════════════════════════════════════════ */
 const num = (v) => esc(v).replace(/\+$/, '<sup>+</sup>');
+
+/* ★ AD-28 — THE SPAN SURVIVES; THE CONFESSION DOES NOT.
+   `period` in data/work/** is doing two jobs at once. Most of the time it is a
+   real span a reader wants — "since 2010", "over fifteen years", "in 2019–20" —
+   and that stays. Nine of them are not spans at all but notes to ourselves
+   about what we failed to find: "cumulative, no start year sourced" and
+   "period not sourced". The owner struck exactly that voice ("we dont have the
+   numbers....numbers missing"), so the sourcing half is cut and whatever real
+   span is left standing is kept. "cumulative, no start year sourced" is still
+   telling the reader something true and useful — that the figure is a running
+   total rather than an annual one — so it renders as "cumulative". "period not
+   sourced" says nothing at all and renders as nothing.
+   ONE FUNCTION, ONE PLACE, deliberately: every figure on this page goes through
+   it, so the rule cannot be applied to the register and forgotten on the pair.
+   The DATA keeps its full strings — they are the internal record. */
+const span = (p) => {
+  const t = String(p || '')
+    .replace(/,?\s*no start year sourced/i, '')
+    .replace(/^\s*period not sourced\s*$/i, '')
+    .replace(/,?\s*not sourced/i, '')
+    .trim().replace(/,$/, '');
+  return t;
+};
 const basisWord = (b) => b === 'modelled' ? 'Modelled' : 'Counted';
 
-/** A register row: label and its provenance, the value, the basis marker. */
+/** A register row: label, the programme it belongs to and its span, the value,
+    the basis marker. NO SOURCE LINE — AD-28 §2.2: /impact is Swechha telling
+    the world what it has done, not a bibliography. */
 const figRow = (f) => `        <div class="p-nr">
-          <p class="p-nr-n">${esc(f.label)}<span class="cap ip-prov">${esc(f.item.name)} &middot; ${esc(f.period)} &middot; ${esc(f.source)}</span></p>
+          <p class="p-nr-n">${esc(f.label)}<span class="cap ip-prov">${esc(f.item.name)}${span(f.period) ? ` &middot; ${esc(span(f.period))}` : ''}</span></p>
           <p class="p-nr-v">${num(f.value)}</p>
           <p class="lbl ip-basis"><span ${kd(f.basis)}>${basisWord(f.basis)}</span></p>
         </div>`;
@@ -211,7 +239,7 @@ const figRow = (f) => `        <div class="p-nr">
 const bigFig = (f) => `          <div class="ip-big">
             <p class="num ip-big-v">${num(f.value)}</p>
             <p class="lbl ip-big-l"><span ${kd(f.basis)}>${esc(f.label)}</span></p>
-            <p class="cap ip-big-s">${esc(f.item.name)} &middot; ${esc(f.period)}<br>${esc(f.source)}</p>
+            <p class="cap ip-big-s">${esc(f.item.name)}${span(f.period) ? ` &middot; ${esc(span(f.period))}` : ''}</p>
           </div>`;
 
 /* ═══ BANDS ══════════════════════════════════════════════════════════════
@@ -222,7 +250,10 @@ const BANDS = [
   ['refuse',   'paper t2',  '#F3F2F0'],
   ['pair',     't2',        '#151512'],
   ['register', 'paper-2 t3', '#ECEBE8'],
-  ['waiting',  'paper t2',  '#F3F2F0'],
+  /* `waiting` sat here — 'Four claims waiting on one number each', deleted by
+     AD-28. Its ground was #F3F2F0 between #ECEBE8 and #151512; removing it
+     leaves #ECEBE8 -> #151512, which still alternates, and groundChain() below
+     is what proves that rather than this comment. */
   ['sheet',    'dark-2 t2', '#151512'],
   ['act',      't3',        '#0D0D0B'],
 ];
@@ -230,7 +261,7 @@ const clashes = S.groundChain(BANDS);
 
 const INDEX = [
   ['No total', '#top'], ['Why not', '#refuse'], ['Two numbers', '#pair'],
-  ['Every figure', '#register'], ['Waiting', '#waiting'],
+  ['The register', '#register'],
   ['The archive', '#sheet'], ['Hold us to it', '#act'],
 ];
 
@@ -239,17 +270,19 @@ const B = {};
 /* ── BAND 1. THE MASTHEAD. ───────────────────────────────────────────────
    A line of walkers, because the page's subject is how many people and over
    what span — and a line is the one thing in a photograph you can actually
-   count. The register under the photograph counts THIS PAGE's contents, not
-   the organisation's: figures held, items carrying one, items carrying none,
-   claims waiting. Every one of the four is computed. */
+   count.
+
+   ★ AD-28 — THE FOUR-CELL RAIL UNDER THE PHOTOGRAPH IS DELETED.
+   It read "33 Figures, each with its source", "12 Of 23 entries carry one",
+   "1 Derived, not counted", "4 Claims waiting on a number". Every cell counted
+   THIS PAGE'S OWN CONTENTS rather than Swechha's work, and two of them counted
+   holes. That is the owner's complaint almost word for word — "ah, 3 blocks are
+   there because....ah this number missing". A visitor reading an impact page
+   wants the figures, which begin one band down; they do not want a census of
+   the page they are standing on. Nothing replaces it: AD-28 §2.3 says show
+   less rather than explain, and every honest aggregate this page could put
+   there is one the page exists to refuse. */
 const M = IMPACT.masthead;
-const WITH_FIGS = ITEMS.filter(i => (i.figures || []).length);
-const HERO = [
-  [String(FIGS.length), 'Figures, each with its source'],
-  [String(WITH_FIGS.length), `Of ${ITEMS.length} entries carry one`],
-  [String(FIGS.filter(f => f.basis === 'modelled').length), 'Derived, not counted'],
-  [String(IMPACT.waiting.claims.length), 'Claims waiting on a number'],
-];
 B.top = () => `    <div class="pic ht">
       <img class="duo" src="${M.frame.src}" alt="${esc(M.frame.alt)}" style="--op:${M.frame.op}">
       <div class="pic-over"><div class="wrap">
@@ -259,9 +292,6 @@ B.top = () => `    <div class="pic ht">
     </div>
     <div class="pic-body"><div class="wrap">
       <p class="lead ip-standfirst">${esc(M.lead)}</p>
-      <div class="ip-rail">
-${HERO.map(([v, l]) => `        <div class="ip-rail-c"><p class="num ip-rail-v">${v}</p><p class="lbl ip-rail-l">${l}</p></div>`).join('\n')}
-      </div>
     </div></div>`;
 
 /* ── BAND 2. WHY THERE IS NO TOTAL. ──────────────────────────────────────
@@ -275,12 +305,9 @@ B.refuse = () => `${opener('refuse', IMPACT.refuse.head, esc(IMPACT.refuse.lead)
 ${OVERLAP.map(f => `        <div class="ip-ovl-c">
           <p class="num ip-ovl-v">${num(f.value)}</p>
           <p class="lbl ip-ovl-l"><span ${kd(f.basis)}>${esc(f.label)}</span></p>
-          <p class="cap ip-ovl-s">${esc(f.item.name)}<br>${esc(f.period)}</p>
+          <p class="cap ip-ovl-s">${esc(f.item.name)}<br>${esc(span(f.period))}</p>
         </div>`).join('\n')}
       </div>
-      <p class="cap ip-ovl-n">Four figures, four spans, and no record anywhere of which person is in
-        which. Their arithmetic sum would be a number this page will not print, and the build refuses
-        to write if it ever appears.</p>
       <div class="p-rows">
 ${IMPACT.refuse.argument.map(r => `        <div class="p-row">
           <p class="lbl">${esc(r.h)}</p>
@@ -316,49 +343,50 @@ ${IMPACT.pair.rows.map(r => `        <div class="p-row">
 B.register = () => {
   const panels = KIND_ORDER.map((k) => {
     const mine = FIGS.filter(f => f.item.kind === k);
-    const emptyItems = ITEMS.filter(i => i.kind === k && !(i.figures || []).length);
     const body = mine.length
       ? `<div class="ip-reg">\n${mine.map(figRow).join('\n')}\n      </div>`
       : '';
-    const note = emptyItems.length
-      ? hole(`${emptyItems.length === 1 ? 'One' : emptyItems.length} ${KIND_LABEL[k].toLowerCase()} `
-        + `${emptyItems.length === 1 ? 'carries' : 'carry'} no figure at all: `
-        + `${emptyItems.map(i => i.name).join(', ')}. Not padded, not estimated, not left out.`)
-      : '';
+    /* ★ AD-28 — NO "N campaigns carry no figure at all" NOTE.
+       Each panel used to end with a dotted hole naming every entry in that kind
+       with no figure ("7 campaigns carry no figure at all: … Not padded, not
+       estimated, not left out."). It is a gap counter, and the tab already
+       carries the honest number: the count beside the kind's name is how many
+       figures the panel holds. A reader who wants the entries themselves has
+       /work. */
     return [`${KIND_LABEL[k]} <span class="ip-tab-n">${mine.length}</span>`,
-      `\n${body}\n${note}\n      `];
+      `\n${body}\n      `];
   });
   return `${opener('register', IMPACT.register.head, esc(IMPACT.register.lead))}
     <div class="wrap">
 ${KIND_LEGEND}
 ${S.tabs('Figures by kind', panels)}
-      <div class="p-method"><p class="cap">${esc(IMPACT.register.note)}</p></div>
     </div>`;
 };
 
-/* ── BAND 5. FOUR CLAIMS WAITING ON ONE NUMBER EACH. ─────────────────────
-   Named holes, dotted. Each says what it would take — `unlocks` is the field
-   that stops a hole being an apology (SITUATION-PAGE-TEMPLATE.md §3). */
-B.waiting = () => `${opener('waiting', IMPACT.waiting.head, esc(IMPACT.waiting.lead))}
-    <div class="wrap">
-${IMPACT.waiting.claims.map(c => `      <div class="ip-claim">
-${hole(c.what)}
-        <p class="cap ip-unlock">${esc(c.unlocks)}</p>
-      </div>`).join('\n')}
-    </div>`;
+/* ── BAND 5 WAS "FOUR CLAIMS WAITING ON ONE NUMBER EACH" AND IT IS DELETED.
+   AD-28. Four dotted holes, each with an `unlocks` line under it, under a lead
+   that began "These were given by the Executive Director on 22 August 2026".
+   Internal attribution, a gap counter, and a page explaining its own emptiness
+   — all three of the things the owner struck, in one band. The four claims are
+   not lost; they live in the design record, which is where an unresolved claim
+   belongs. If one of them ever gets a number it becomes a figure in the
+   register above, like every other figure on the page. */
 
 /* ── BAND 6. WHAT IT LOOKED LIKE. ────────────────────────────────────────
    W-18 is the highest-priority note on this section: six flat blocks with a
    heading and prose in each reads as a slide deck, and the measurable proxy is
    photographs per page. Nine frames here plus the masthead's ten, against the
-   2–3 that drew the complaint. Each alt describes the frame and the band's
-   note refuses to caption any of them to a figure. */
+   2–3 that drew the complaint. Each alt describes the frame.
+   AD-28 deleted the note that used to close the band ("None of these is
+   captioned to a figure above it. Which programme a photograph belongs to is
+   not recorded in our archive…"): it explained our filing to the reader. The
+   frames are still not captioned to figures — that is a rule about what we
+   publish, not a paragraph a visitor has to read. */
 B.sheet = () => `${opener('sheet', IMPACT.sheet.head, esc(IMPACT.sheet.lead))}
     <div class="wrap">
       <div class="ip-sheet">
 ${IMPACT.sheet.frames.map(fr => `        <figure class="ht ip-sh-c"><img class="duo" src="${fr.src}" alt="${esc(fr.alt)}" loading="lazy"></figure>`).join('\n')}
       </div>
-      <p class="cap p-cite-b">${esc(IMPACT.sheet.note)}</p>
     </div>`;
 
 /* ── BAND 7. HOLD US TO IT. ──────────────────────────────────────────────
@@ -384,12 +412,6 @@ ${IMPACT.act.doors.map((d, i) => `        <a class="ip-door${i === 1 ? ' ip-door
 const PAGE_CSS = `
 /* ── the masthead's own register, under the photograph ── */
 .ip-standfirst{max-width:56ch}
-.ip-rail{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--gap-row) clamp(14px,2vw,32px);
-  border-top:1px solid var(--hair);margin-top:var(--gap-block);padding-top:var(--gap-row)}
-.ip-rail-c>*{margin:0;min-width:0}
-.ip-rail-v{font-size:clamp(30px,4.2vw,52px);line-height:.95}
-.ip-rail-l{color:var(--fg-3);margin-top:8px;max-width:22ch}
-@media (max-width:760px){.ip-rail{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* ── the four overlapping populations ── */
 .ip-intro{max-width:62ch}
@@ -399,7 +421,6 @@ const PAGE_CSS = `
 .ip-ovl-v{font-size:clamp(26px,3.4vw,42px);line-height:.98}
 .ip-ovl-l{margin-top:10px}
 .ip-ovl-s{color:var(--ink-3);margin-top:10px}
-.ip-ovl-n{color:var(--ink-3);max-width:64ch;margin-top:var(--gap-row)}
 @media (max-width:760px){.ip-ovl{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* ── the reach/effect pair ── */
@@ -417,9 +438,11 @@ const PAGE_CSS = `
 .ip-basis{white-space:nowrap}
 .ip-tab-n{font-variant-numeric:tabular-nums;opacity:.6;margin-left:6px}
 
-/* ── the four waiting claims ── */
-.ip-claim+.ip-claim{margin-top:var(--gap-block)}
-.ip-unlock{color:var(--ink-3);max-width:62ch;margin:10px 0 0 16px}
+/* AD-28 — .ip-claim / .ip-unlock (the deleted "waiting" band) and .ip-ovl-n
+   (the "Four figures, four spans, and no record anywhere..." note under the
+   overlap grid) are gone. Left behind, a rule set is an invitation to put the
+   band back. NOTE FOR THE NEXT EDITOR: this block is inside a JS template
+   literal, so a backtick here ends the CSS string and the build dies. */
 
 /* ── the photo sheet. W-18: this band is why the page is not a slide deck. ── */
 .ip-sheet{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(8px,1.2vw,16px);
@@ -465,9 +488,9 @@ const OUT = await S.assemble({
      so it is passed. */
   navMark: { current: 'Impact', url: '/impact' },
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),
-  note: `${BANDS.length} bands + footer. ${FIGS.length} figures across ${WITH_FIGS.length} of `
-      + `${ITEMS.length} entries (${FIGS.filter(f => f.basis === 'modelled').length} modelled), `
-      + `${IMPACT.waiting.claims.length} claims waiting, ${FRAMES.length} frames.`,
+  note: `${BANDS.length} bands + footer. ${FIGS.length} figures across `
+      + `${ITEMS.filter(i => (i.figures || []).length).length} of ${ITEMS.length} entries `
+      + `(${FIGS.filter(f => f.basis === 'modelled').length} modelled), ${FRAMES.length} frames.`,
 });
 
 /* ═══ POST-WRITE GATES ═══════════════════════════════════════════════════ */
@@ -508,9 +531,41 @@ const nMod = FIGS.filter(f => f.basis === 'modelled').length;
 gate((OUT.match(/p-kd-m/g) || []).length >= nMod, `every modelled figure carries the dotted rule (${nMod})`);
 gate(nMod === 0 || OUT.includes('Counted or measured'), 'the counted/modelled legend is present');
 
-/* 4. EVERY WAITING CLAIM IS A DOTTED HOLE, NOT A BLANK. */
-gate((OUT.match(/class="p-hole"/g) || []).length >= IMPACT.waiting.claims.length,
-  `all ${IMPACT.waiting.claims.length} waiting claims render as named holes`);
+/* 4. NO DOTTED HOLE ANYWHERE ON THE PAGE — AD-28 §2.3.
+      ★ THIS IS THE OLD GATE INVERTED, AND THE INVERSION IS THE POINT.
+      It used to read `>= IMPACT.waiting.claims.length`: a gate whose entire job
+      was to prove that all four "waiting on a number" holes had rendered, plus
+      the four per-kind "N campaigns carry no figure at all" notes. The owner
+      struck the style, the `waiting` band is deleted and the notes with it, so
+      the same gate now proves none of them came back. Deleting it instead would
+      leave nothing standing between this page and the next session that decides
+      an empty tab panel looks unfinished and writes a kind sentence about why.
+      Where a figure does not exist, the page shows less. It does not explain. */
+gate(!OUT.includes('class="p-hole"'),
+  'no dotted hole marker on the page — a missing figure is absent, not annotated');
+
+/* 4b. AND NO SOURCING APPARATUS IN THE PAGE'S OWN VOICE — AD-28 §2.2.
+       /impact is the page that carried the most of it: twenty-nine SOURCE-FACTS
+       citations and thirty-six § marks, one under every figure in the register.
+       The `source` key is still REQUIRED in data/work/** by the data gate above
+       — a figure we cannot trace is still one we should not publish — it simply
+       does not reach the reader. This is what stops it being wired back in.
+       Rendered text only: `source` is all over this file's own comments. */
+const RENDERED_ALL = OUT
+  .replace(/<style[\s\S]*?<\/style>/g, ' ').replace(/<script[\s\S]*?<\/script>/g, ' ')
+  .replace(/<!--[\s\S]*?-->/g, ' ').replace(/<[^>]+>/g, ' ')
+  .replace(/&(?:amp|lt|gt|quot|rsquo|lsquo|ldquo|rdquo|mdash|ndash|nbsp|middot|hellip);/g, ' ')
+  .replace(/\s+/g, ' ');
+const APPAR = [
+  [/SOURCE-FACTS/i, 'SOURCE-FACTS'],
+  [/§/, 'a § citation'],
+  [/\b(?:AD|D|W|F|R)-\d/, 'an internal ledger reference'],
+  [/\bowner\b|\bgiven by the Executive Director\b|\bstated by\b/i, 'a who-told-us attribution'],
+  [/no start year sourced|period not sourced|\bnot sourced\b/i, 'a "not sourced" confession'],
+  [/carr(?:y|ies) no figure at all|waiting on a number|claims waiting/i, 'a gap counter'],
+].filter(([re]) => re.test(RENDERED_ALL));
+gate(APPAR.length === 0,
+  `no sourcing apparatus in the page's own voice${APPAR.length ? `; FOUND: ${APPAR.map(a => a[1]).join(', ')}` : ''}`);
 
 /* 5. NO STATE CHIP. The four-word cadence vocabulary belongs to a page with a
       feed; borrowing it here would spend it for nothing. */

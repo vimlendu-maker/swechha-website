@@ -70,7 +70,7 @@ const INDEX = [
 /* ═══ BANDS ══════════════════════════════════════════════════════════════ */
 const B = {};
 
-B.top = () => `    <div class="pic ht">
+B.top = () => `    <div class="pic ht p2-pic">
       <img class="duo" src="/images/photos/uttarakhand-fire-scar-2016.jpg" alt="Hillside vegetation destroyed by fire in Uttarakhand" style="--op:50% 55%">
       <div class="pic-over"><div class="wrap">
         <h1 class="d1">India&rsquo;s forest fires</h1>
@@ -102,10 +102,9 @@ ${crumb('fire')}
           <b>${n1(PRONE.top_three_pct)}%</b> of the forest and scrub is already classed as highly,
           very highly or extremely fire prone &mdash; ${n0(PRONE.rows[0].area + PRONE.rows[1].area + PRONE.rows[2].area)}
           square kilometres of it.</p>
-        <p class="cap p-hole"><b>This page will not tell you a fire count.</b> It will tell you an area
-          burnt, and separately how many hot pixels three different satellites saw. Those are three
-          different numbers and none of them is &ldquo;the number of forest fires in India&rdquo;,
-          because nobody publishes that.</p>
+        <p class="cap"><b>Nobody publishes a count of forest fires in India.</b> What is published
+          is an area burnt, and separately how many hot pixels three different satellites saw. Those
+          are three different numbers, and none of them is the number of fires.</p>
         <p style="margin:0"><a class="act" href="#measured">Why not ${ARROW}</a></p>
       </div>
       </div>
@@ -208,8 +207,7 @@ B.measured = () => {
             size of a football pitch is invisible to a 1&nbsp;km MODIS pixel and obvious to a
             375&nbsp;m VIIRS one. So a detection count is a measure of <b>what was visible to that
             instrument on those overpasses</b>, and nothing more.</p>
-          <p class="f-warn"><b>This page therefore never calls a detection a fire.</b>
-            ${esc(FF.not)}</p>
+          <p class="f-warn"><b>A detection is not a fire.</b> ${esc(FF.not)}</p>
         </div>`],
     ['Burnt area is different', `<div class="f-panel">
           <p class="f-def-h">And this is why it leads the page</p>
@@ -336,9 +334,8 @@ B.cover = () => {
         official, both are honest, and they measure different things. That argument has its own
         page.</p>
       <p style="margin:0"><a class="act" href="/now/forest-loss">Forest loss, in full ${ARROW}</a></p>
-      <p class="cap f-cap"><b>Tree cover loss is not deforestation and this page does not call it
-        that.</b> ${esc(GFW.caveats[0])}</p>
-      <p class="cap p-hole"><b>Nothing here attributes tree cover loss to fire.</b> Loss is counted
+      <p class="cap f-cap"><b>Tree cover loss is not deforestation.</b> ${esc(GFW.caveats[0])}</p>
+      <p class="cap"><b>Tree cover loss is not attributed to fire.</b> Loss is counted
         for any cause and the dataset does not say why. Separating fire-driven loss from felling,
         storm and harvest needs an attribution layer this build does not have &mdash; so the two
         measurements sit side by side and no arrow is drawn between them.</p>
@@ -353,7 +350,7 @@ B.said = () => `${opener('said', 'What is being said', 'The register, and one me
       <p class="f-lead">${n0(NEWS.register.count)} items from
         ${n0(Object.keys(NEWS.register.publishers || {}).length)} publishers.
         <b>Reporting is tagged as reporting.</b> A headline is evidence that something was said,
-        never that it is true, and no figure on this page came from one.</p>
+        never that it is true.</p>
       ${disclose(`Read the ${n0(Math.min(40, NEWS.register.count || 0))} most recent items`,
   `<ol class="p-news-ol f-reg">
             ${(NEWS.register.items || []).slice(0, 40).map(i => `<li class="p-news-r"><a class="p-news-o" href="${esc(i.link)}">${esc(i.title)}</a><span class="cap p-news-m">${esc(i.publisher || 'unattributed')}${i.published ? ` &middot; ${esc(shortDate(i.published))}` : ''}</span></li>`).join('\n            ')}
@@ -402,8 +399,7 @@ B.act = () => `${opener('act', 'What you can do', 'Almost every forest fire in I
           <p style="margin:0"><a class="act" href="/#give">Support the work ${ARROW}</a></p>
         </div>
       </div>
-      <p class="cap f-close">Every figure on this page is public, dated and linked, and the three
-        that could not be obtained are named where they would have gone.</p>
+      <p class="cap f-close">Every figure on this page is public, dated and linked.</p>
 ${siblings('fire')}
     </div>`;
 

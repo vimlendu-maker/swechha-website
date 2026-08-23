@@ -31,7 +31,11 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
-const { esc, opener, hole, ARROW } = S;
+/* `hole` is deliberately NOT imported. AD-28 removed every named hole from
+   this page — the two missing films and the illustration note — and two build
+   gates refuse to write one; pulling the helper back in is the first half of
+   putting one on the page again. */
+const { esc, opener, ARROW } = S;
 
 const sh = S.shell();
 
@@ -84,52 +88,37 @@ const FILMS = D.films.entries.map((e) => {
   return { ...e, vids, mode: vids.length > PLAYER_MAX ? 'list' : 'players' };
 });
 
-/* ── THE WRITTEN STORIES, READ OFF DISK ───────────────────────────────────
-   content/story/*.md is the source. Not restated here: a story that is added
-   or renamed over there must not need an edit in this file to appear. */
-const STORY_DIR = join(S.ROOT, 'content/story');
-const fm = (raw) => {
-  const m = raw.match(/^---\n([\s\S]*?)\n---/);
-  if (!m) return {};
-  const out = {};
-  for (const line of m[1].split('\n')) {
-    const kv = line.match(/^([a-zA-Z_]+):\s*(.*)$/);
-    if (!kv) continue;
-    let v = kv[2].trim().replace(/^['"]|['"]$/g, '');
-    if (v) out[kv[1]] = v;
-  }
-  return out;
-};
-const WRITTEN = readdirSync(STORY_DIR)
-  .filter((f) => f.endsWith('.md'))
-  .map((f) => {
-    const meta = fm(readFileSync(join(STORY_DIR, f), 'utf8'));
-    const slug = f.replace(/\.md$/, '');
-    if (!meta.title) dataFail(`content/story/${f} has no title in its frontmatter.`);
-    return { slug, title: meta.title, summary: meta.summary || '', date: meta.date || '' };
-  })
-  .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+/* ── THE ESSAYS, READ OUT OF THEIR OWN INDEX ──────────────────────────────
+   content/essay/_index.json is written by the same crawl that recovered the
+   prose, and scripts/build-essays.mjs builds a page per entry. This band lists
+   them; it does not restate their titles, so the list and the pages cannot
+   disagree. The three placeholder markdown files in content/story/ that this
+   used to read were retired on 22 August. */
+const WRITTEN = JSON.parse(readFileSync(join(S.ROOT, 'content/essay/_index.json'), 'utf8'))
+  .map((e) => ({ ...e, summary: '' }));
+for (const e of WRITTEN) {
+  if (!e.byline) dataFail(`essay "${e.slug}" has no byline.`);
+  if (!e.date) dataFail(`essay "${e.slug}" has no date.`);
+}
 
 /* ── JPEG DIMENSIONS, READ OUT OF THE FILE ────────────────────────────────
-   `width`/`height` on an <img> is what lets the browser reserve the box before
-   the bytes arrive; without it a grid of eleven lazy images reflows the page
-   under the reader's thumb. The design audit named that defect across the rest
-   of this site, so a new page may not add to it. Read from the JPEG's own SOF
-   marker rather than typed into the data or shelled out to `sips`: a typed
-   figure drifts the first time an image is re-exported, and a build that needs
-   a macOS binary is a build that fails on the deploy host. */
+   width/height on an <img> is what lets the browser reserve the box before the
+   bytes arrive; without it a grid of eleven lazy images reflows the page under
+   the reader's thumb. Read from the JPEG's own SOF marker rather than typed
+   into the data or shelled out to sips: a typed figure drifts the first time an
+   image is re-exported, and a build that needs a macOS binary fails on the
+   deploy host.
+   (Restored after a block replacement in this file deleted it — it sat between
+   the two comment banners the replacement spanned.) */
 function jpegSize(abs) {
   const b = readFileSync(abs);
-  if (b[0] !== 0xFF || b[1] !== 0xD8) return null;      // not a JPEG
+  if (b[0] !== 0xFF || b[1] !== 0xD8) return null;
   let i = 2;
   while (i < b.length - 9) {
-    if (b[i] !== 0xFF) { i++; continue; }               // resync on padding
+    if (b[i] !== 0xFF) { i++; continue; }
     const marker = b[i + 1];
     if (marker === 0xD8 || marker === 0x01 || (marker >= 0xD0 && marker <= 0xD7)) { i += 2; continue; }
     const len = b.readUInt16BE(i + 2);
-    /* SOF0/1/2/3 and the rarer 5-7, 9-11, 13-15 all carry height then width at
-       the same offset. DHT (0xC4), JPG (0xC8) and DAC (0xCC) sit in the same
-       0xCn range and do NOT, so they are excluded rather than matched loosely. */
     const isSOF = marker >= 0xC0 && marker <= 0xCF
       && marker !== 0xC4 && marker !== 0xC8 && marker !== 0xCC;
     if (isSOF) return { h: b.readUInt16BE(i + 5), w: b.readUInt16BE(i + 7) };
@@ -166,7 +155,17 @@ const ALL_BANDS = [
   ['written', 'paper-2 t3', '#ECEBE8'],
   ['act',     't3',         '#0D0D0B'],
 ];
-const LIVE = { written: WRITTEN.length > 0 };
+/* THE WRITTEN SECTION IS A CLAIM ABOUT SOURCING, so it is gated on one.
+   `written.publish` is false while the three files in content/story/ carry no
+   source between them — see the reason recorded beside it in data/stories.json.
+   The band still renders, because a section that vanishes tells the reader
+   nothing; it names the hole instead, the device /work/events and /act use. */
+const PUBLISH_WRITTEN = D.written.publish === true;
+/* ALWAYS LIVE, even with zero files. The band's job now is to say that there
+   are no finished written pieces; a band that disappears when the directory
+   empties says nothing at all, and the reader cannot tell absence from
+   omission. It renders the list when there is something sourced to list. */
+const LIVE = {};
 const BANDS = ALL_BANDS.filter(([id]) => LIVE[id] !== false);
 const clashes = S.groundChain(BANDS);
 
@@ -210,6 +209,12 @@ const filmCard = (f) => {
   const count = f.mode === 'list'
     ? `        <p class="lbl st-n">${f.vids.length} in the playlist</p>`
     : (f.vids.length > 1 ? `        <p class="lbl st-n">${f.vids.length} parts</p>` : '');
+  /* ★ AD-28 — THE NOTE IS OPTIONAL. Four of the five entries carried one that
+     described the channel's filing rather than the film ("Two further uploads
+     of this film exist", "A separate playlist, carried here because…"). Where
+     there is nothing to say about the film itself, the card is the player and
+     its title. It does not explain why it is short. */
+  const note = f.note ? `        <p class="st-note">${esc(f.note)}</p>\n` : '';
   const also = f.also_at
     ? `        <p class="st-also"><a class="act" href="${esc(f.also_at.href)}">${esc(f.also_at.label)}${ARROW}</a></p>`
     : '';
@@ -218,8 +223,7 @@ const filmCard = (f) => {
         <p class="lbl st-sub">${esc(f.subtitle)}</p>
 ${count}
 ${body}
-        <p class="st-note">${esc(f.note)}</p>
-${also}
+${note}${also}
       </article>`;
 };
 
@@ -228,8 +232,16 @@ B.films = () => `${opener('films', D.films.head, D.films.lead)}
       <div class="st-fs">
 ${FILMS.map(filmCard).join('\n')}
       </div>
-${D.films.holes.map((h) => hole(h)).join('\n')}
     </div>`;
+/* ★ AD-28 — THE TWO NAMED HOLES USED TO RENDER HERE, and they are deleted.
+   `D.films.holes.map(hole)` printed "Disposable was asked for and is not on
+   the channel — zero matches across all indexed videos" and "Yatra is not a
+   film here… if a Yatra film was made, it is somewhere we have not found."
+   Both are the page reporting its own search to a visitor (§2.3), and the
+   second one's own subject is that there is nothing to show. The finding is
+   kept where a finding belongs — data/stories.json's `_holes` and AD-26 §4 —
+   and gate 3 below is the old gate inverted, so a hole coming back stops the
+   build. The film count is still derived and still never says six. */
 
 /* ── BAND 3. THE POSTERS. ─────────────────────────────────────────────────
    Raw <img> with width/height so the grid does not reflow as they arrive —
@@ -248,9 +260,15 @@ ${POSTERS.map((p) => `        <li class="st-po"><img src="${p.src}" alt="${esc(p
    notices deserves to know it is unfinished work and not a different site. */
 B.written = () => `${opener('written', D.written.head, D.written.lead)}
     <div class="wrap">
-      <ul class="st-ws">
-${WRITTEN.map((w) => `        <li class="st-w"><a href="/stories/${esc(w.slug)}"><span class="st-w-h">${esc(w.title)}</span><span class="st-w-s">${esc(w.summary)}</span><span class="lbl st-w-d">${esc(w.date)}</span></a></li>`).join('\n')}
-      </ul>
+${PUBLISH_WRITTEN
+    ? `      <ul class="st-ws">
+${WRITTEN.map((w) => `        <li class="st-w"><a href="/stories/${esc(w.slug)}"><span class="st-w-h">${esc(w.title)}</span><span class="st-w-s">By ${esc(w.byline)}</span><span class="lbl st-w-d">${esc(w.date)}</span></a></li>`).join('\n')}
+      </ul>`
+    /* ★ AD-28 §2.3 — nothing, not an explanation. This branch used to print
+       `hole(D.written.hole)`: a dotted marker telling a reader the essays'
+       illustrations were served from a staging domain that no longer resolves.
+       Where there is nothing to show, the band shows less. Gate 3b proves it. */
+    : ''}
     </div>`;
 
 /* ── BAND 5. ACT. ────────────────────────────────────────────────────────── */
@@ -290,6 +308,17 @@ const PAGE_CSS = `
 .st-w-h{font-weight:600}
 .st-w-s{color:var(--fg-2);max-width:70ch}
 .st-w-d{color:var(--fg-2)}
+/* ── THE BYLINE AND DATE ON PAPER-2. PRE-EXISTING CONTRAST DEFECT, FIXED.
+      The "written" band is paper-2 (#ECEBE8, a light ground) but both rules
+      above set var(--fg-2), which is the light ink meant for the dark bands.
+      Measured from rendered pixels at 1440: 1.41:1 against AA's 4.5:1, on the
+      byline of every essay in the list. It is the same shared-shell trap
+      build-about-page.mjs documents for its disclosures — SHARED_PAGE_CSS
+      states inks for dark and for .paper and stops, so .paper-2 silently
+      keeps the dark-band ink. Same house fix: name the paper inks explicitly.
+      Found by the AD-28 contrast sweep, not introduced by it. */
+.paper .st-w-s,.paper-2 .st-w-s,
+.paper .st-w-d,.paper-2 .st-w-d{color:var(--ink-2)}
 @media (max-width:640px){
   .st-ps{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
 }
@@ -307,7 +336,7 @@ const OUT = await S.assemble({
       + `(${FILMS.filter((f) => f.mode === 'players').length} embedded, `
       + `${FILMS.filter((f) => f.mode === 'list').length} listed), `
       + `${D.films.holes.length} named holes, ${POSTERS.length} posters, `
-      + `${WRITTEN.length} written stories.`,
+      + `${WRITTEN.length} written ${PUBLISH_WRITTEN ? 'stories published' : 'drafts, none published (unsourced)'}.`,
 });
 
 /* ═══ POST-WRITE GATES ═══════════════════════════════════════════════════ */
@@ -342,8 +371,17 @@ gate(!embedded.includes('ZaANbZ7rhHE') && !embedded.includes('MbqeNl6ipLY'),
       source. Any bare "six films" on this page is the invented count. */
 gate(!/\b(six|6)\s+films?\b/i.test(RENDERED),
   'the page does not claim six films (two of R-3\'s six have no source)');
-gate(D.films.holes.length === 2 && /Disposable/.test(RENDERED) && /Yatra/.test(RENDERED),
-  'both missing films are named as holes rather than dropped');
+/* ★ AD-28 — THIS GATE IS THE OLD ONE INVERTED, AND THE INVERSION IS THE POINT.
+   It read `holes.length === 2 && /Disposable/ && /Yatra/`: its whole job was to
+   prove the page told a visitor which two films we had failed to find. The
+   owner struck that voice, so the same gate now proves neither confession came
+   back — including the phrasings a later session would reach for. Deleting it
+   instead would leave nothing between this page and the next editor who thinks
+   a five-card band looks like it is missing one. */
+gate((D.films.holes || []).length === 0 && !/class="p-hole"/.test(OUT),
+  'no named hole on the page — a film we cannot find is absent, not annotated');
+gate(!/asked for and is not on the channel|is not a film here|zero matches|we have not (?:established|found)|somewhere we have not/i.test(RENDERED),
+  'no "we could not find it" confession in the page\'s own voice');
 
 /* 4. WASTED IS ONE ENTRY WITH TWO PARTS, AND "WASTE IT" IS SEPARATE. */
 const wasted = FILMS.find((f) => f.slug === 'wasted');
@@ -382,10 +420,38 @@ gate(noAlt.length === 0, `every image has alt text${noAlt.length ? `; FOUND: ${n
       come back. */
 gate(!/href="tel:/i.test(OUT), 'no tel: link (the struck number does not return)');
 
-/* 10. THE UNPORTED DETAIL PAGES ARE ADMITTED, NOT HIDDEN. These links leave
-       the frozen design; the register records that, so the note must exist. */
-gate(typeof D.written.note_unported === 'string' && D.written.note_unported.length > 40,
-  'the register records that /stories/<slug> is not yet in this design');
+/* 10a. A PUBLISHED ESSAY MUST CARRY PROVENANCE. The owner ruled on 22 August
+       that unsourced data is allowed off the situation pages, so this no longer
+       demands a source per piece. It demands the three things that make a
+       re-host honest instead: a name, a date, and where it first appeared. An
+       essay published under none of those is anonymous assertion, which is a
+       different thing from a signed argument. */
+if (PUBLISH_WRITTEN) {
+  const thin = WRITTEN.filter((w) => !w.byline || !w.date || !w.original);
+  gate(thin.length === 0,
+    `every published essay carries a byline, a date and its original link${thin.length ? `; THIN: ${thin.map((w) => w.slug).join(', ')}` : ''}`);
+  gate(WRITTEN.every((w) => OUT.includes(`/stories/${w.slug}`)),
+    `all ${WRITTEN.length} essays are linked from the band`);
+  /* ★ AD-28 — INVERTED. This required D.written.hole to exist and to explain
+     the dead staging domain to a reader. That is the page apologising for a
+     picture it does not have, so the requirement is now a prohibition. */
+  gate(D.written.hole === undefined && !/staging domain|no longer resolves/i.test(RENDERED),
+    'the band does not explain why the essays have no illustrations');
+} else {
+  gate(!/href="\/stories\//.test(OUT), 'no link to an unpublished story detail page');
+}
+
+/* 10. EVERY LINKED ESSAY PAGE EXISTS ON DISK. The band's links are built from
+       the essay index and the pages from the same index, so they cannot drift
+       in name — but they can drift in existence if this page is rebuilt and
+       build:essays is not. A link to a page nobody generated is a 404 at a URL
+       that looks routed, which is the defect design-routes' own gate exists to
+       stop. */
+{
+  const missing = WRITTEN.filter((w) => !existsSync(join(S.V3, 'stories', `${w.slug}.html`)));
+  gate(missing.length === 0,
+    `all ${WRITTEN.length} linked essay pages exist${missing.length ? `; MISSING: ${missing.map((w) => w.slug).join(', ')} — run npm run build:essays` : ''}`);
+}
 
 /* 11. THE GROUND CHAIN DOES NOT CLASH. */
 gate(clashes === 0, `${clashes} ground clash(es)`);

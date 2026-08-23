@@ -69,7 +69,7 @@ const INDEX = [
 /* ═══ BANDS ══════════════════════════════════════════════════════════════ */
 const B = {};
 
-B.top = () => `    <div class="pic ht">
+B.top = () => `    <div class="pic ht p2-pic">
       <img class="duo" src="/images/photos/pine-forest-path.jpg" alt="A path through even-aged pine forest" style="--op:50% 45%">
       <div class="pic-over"><div class="wrap">
         <h1 class="d1">India&rsquo;s forest loss</h1>
@@ -253,8 +253,7 @@ B.years = () => {
         ${n0(G[1].mean_ha)}</b> &mdash; ${doubling} times as much. The worst single year is
         ${GFW.peak.year}, at ${n0(GFW.peak.loss_ha)} hectares; the lowest is ${GFW.floor.year}, at
         ${n0(GFW.floor.loss_ha)}.</p>` : ''}
-      <p class="cap l-cap"><b>Tree cover loss is not deforestation and this page does not call it
-        that.</b> ${esc(GFW.caveats[0])} ${esc(GFW.caveats[1])}</p>
+      <p class="cap l-cap"><b>Tree cover loss is not deforestation.</b> ${esc(GFW.caveats[0])} ${esc(GFW.caveats[1])}</p>
       ${disclose(`Every year, ${GFW.total.from} to ${GFW.total.to}`,
     `<div class="l-tbl">
             <div class="l-tr is-head"><span class="lbl">Year</span><span class="lbl">Tree cover lost</span>
@@ -337,7 +336,7 @@ ${hole(LAW.hole)}
   })()}
       <p class="cap l-reg-i">${n0(NEWS.register.count)} items from
         ${n0(Object.keys(NEWS.register.publishers || {}).length)} publishers. Reporting is tagged as
-        reporting; no figure on this page came from a headline.</p>
+        reporting.</p>
       ${disclose(`Read the ${n0(Math.min(40, NEWS.register.count || 0))} most recent items`,
     `<ol class="p-news-ol l-reg">
             ${(NEWS.register.items || []).slice(0, 40).map(i => `<li class="p-news-r"><a class="p-news-o" href="${esc(i.link)}">${esc(i.title)}</a><span class="cap p-news-m">${esc(i.publisher || 'unattributed')}${i.published ? ` &middot; ${esc(shortDate(i.published))}` : ''}</span></li>`).join('\n            ')}
@@ -372,7 +371,7 @@ B.act = () => `${opener('act', 'What you can do', 'A forest is lost with paperwo
         </div>
       </div>
       <p class="cap l-close">Every figure on this page is public, dated and linked &mdash; including
-        the two that disagree, and the ones that could not be obtained at all.</p>
+        the two that disagree.</p>
 ${siblings('loss')}
     </div>`;
 

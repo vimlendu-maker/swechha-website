@@ -109,7 +109,7 @@ const INDEX = [
 /* ═══ BANDS ══════════════════════════════════════════════════════════════ */
 const B = {};
 
-B.top = () => \`    <div class="pic ht">
+B.top = () => \`    <div class="pic ht p2-pic">
       <img class="duo" src="/images/photos/TODO.jpg" alt="TODO: describe the photograph" style="--op:50% 50%">
       <div class="pic-over"><div class="wrap">
         <h1 class="d1">${title}</h1>

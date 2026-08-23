@@ -70,6 +70,28 @@ ruling.**
   ~**5,000 kg of dead leaves** composted, an apiary that has produced **500 kg of
   honey**, a dairy prototype, permaculture/soil-regeneration training, water harvesting
   (swales, bundhs, ponds), solar.
+  > **RETRACTED SITE-WIDE BY THE OWNER, 23 August 2026.** Two rulings, a day apart,
+  > and the second supersedes the first.
+  >
+  > He first struck `/farm`'s rendering of the water-harvesting clause — "Water first,
+  > before anything was planted… Swales cut across the slope, bundhs to hold the
+  > runoff, ponds to keep it" — saying *"The following is not true in teh farm page,
+  > delete it from the root."* That named one page, so the claim was deleted from
+  > `data/farm.json`, gated in `build-farm-page.mjs`, and **flagged to him rather than
+  > removed by inference** from `/work/projects/farm-school`, where it also renders.
+  >
+  > Asked directly, he then ruled on the rest: *"delete the water swales and bundhs
+  > part."* **The claim is now retracted everywhere on the site**, including
+  > `/work/projects/farm-school` and `data/work/projects/farm-school.json`.
+  >
+  > **This §72 line is NOT deleted, and that is deliberate.** It records what the PDF
+  > says, and the PDF still says it. What changed is that the site no longer repeats
+  > it: the owner, who runs the farm, says the water-harvesting infrastructure
+  > described on PDF p8–p9 is not what is there. A source document saying a thing and
+  > the thing being true are different facts, and this entry is the record of the
+  > first. **Do not restore the claim to any page on the strength of this entry** —
+  > that is the exact failure this note exists to prevent. If it is ever published
+  > again it needs a new statement from the owner, not a re-reading of the PDF.
 - **Eco Action** — butterfly gardens (**over 70 Butterfly Parks in Delhi NCR**,
   supported by PVR, American Express, Adobe), herb gardens (**over 20**, supported by
   Amazon and American Express), and **Airshed Park Development**: "one of our most

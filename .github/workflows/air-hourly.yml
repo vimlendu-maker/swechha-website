@@ -1,0 +1,184 @@
+name: Air, hourly — the one reading that moves inside a day
+
+# WHY THIS EXISTS, AND WHY IT IS SEPARATE FROM data-refresh.yml
+#
+# AD-27.6-A. The client's complaint was "AQI 311 appears for a split second,
+# and then the realtime data. What is this? Fix it." The fix has two halves and
+# this is the second one.
+#
+# The first half is in the pages: nothing repaints a reading any more. The
+# numeral on the homepage and on /now/air is written by the build, and no
+# script may write a digit over it. That removes the flash by construction —
+# measured, ten cold loads at 1280x800 on a throttled connection, 0 of 10.
+#
+# But a figure that never repaints is only as good as the last build, and the
+# daily job left it up to 24 hours behind: on 23 August the homepage was
+# serving a 22 August 10:00 observation. So this job re-reads CPCB EVERY HOUR
+# and rebuilds the two pages that carry the figure. The reading a visitor sees
+# is then the current or the previous CPCB hour, and the chip can honestly
+# reach LIVE — it flips only when the live fetch confirms the figure on the
+# page, which is nearly always true when the page is an hour old and never true
+# when it is a day old.
+#
+# ★ HOURLY IS FOR AIR AND FOR NOTHING ELSE.
+# data-refresh.yml's own note explains why IT is daily: of its sources the
+# fastest is FIRMS on a rolling 5-day window and the slowest are annual
+# publications, so hourly would re-download an annual dataset 24 times a day to
+# write the same number back. That reasoning is correct and untouched. Air is
+# the single exception — CPCB advances the entire city one hour at a time — and
+# it gets its own job rather than dragging thirty datasets along with it.
+#
+# ★ IT COMMITS A FIGURE, NOT A CLOCK.
+# fetch-air.mjs stamps `fetched.epochMs` on every run, so a naive job would
+# commit twenty-four times a day whether or not the AQI moved. The check below
+# compares the AQI, the band and the observation hour that are actually
+# RENDERED; if none of them moved, the working tree is reset and the run ends
+# with no commit and no deploy. A still hour costs nothing.
+#
+# ★ SITUATIONS BEFORE THE HERO, AND THAT ORDER IS LOAD-BEARING.
+# build-hero.mjs cross-checks the hero's figure against the figure already in
+# situation-air.html and refuses to write if they differ. Build the hero first
+# and it compares a fresh number against a page that has not been rebuilt yet,
+# fails, and stops the run — which is what data-refresh.yml did daily until
+# 23 August. The situation shell reads home.html's CSS by line range from the
+# frozen region above line 3033 and build-hero.mjs only ever edits below it
+# (and asserts the line count is unchanged), so the shell is identical either
+# way and there is no cost to this order.
+#
+# ★ A FAILED GATE IS NEVER COMMITTED. The generators validate what they read
+# and refuse to write on a failed check, and `verify:final` runs before the
+# commit step. A dataset that would produce a wrong page fails the run and
+# lands nothing.
+#
+# SECRET IT NEEDS: DATA_GOV_IN_KEY (CPCB, via data.gov.in). Without it the
+# fetch fails, nothing is committed, and the pages keep the reading they have —
+# which is still correct, still stamped with its own hour, and still says
+# PERIODIC. An error is not a zero.
+#
+# COST, STATED SO IT CAN BE RECONSIDERED: up to 24 runs a day, each about two
+# minutes, and up to 24 production deploys on the hours the figure moves. If
+# that is too many, the honest lever is the cron below — every second or third
+# hour degrades the freshness of the stamp, not its truthfulness, because the
+# page always prints the hour it is actually showing.
+
+on:
+  schedule:
+    # :35 past the hour. CPCB publishes the top-of-hour observation with a lag
+    # — measured 23 August, 02:58 IST returned the 02:00 observation — so a job
+    # on the hour would fetch the previous hour's figure and commit it a second
+    # time. :35 is off the hour like the other two jobs in this repo, and it
+    # leaves the deploy landing around :40.
+    - cron: '35 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Fetch and rebuild, report what moved, but commit nothing'
+        type: boolean
+        default: true
+
+concurrency:
+  # An hourly job that overruns must not race the next one into a push.
+  group: air-hourly
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  air:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # The fetchers and the generators use node built-ins only.
+      - run: npm ci --omit=dev
+
+      - name: Read CPCB — the city reading and the national table, in one run
+        env:
+          DATA_GOV_IN_KEY: ${{ secrets.DATA_GOV_IN_KEY }}
+        run: |
+          if [ -z "${DATA_GOV_IN_KEY}" ]; then
+            echo "::error::DATA_GOV_IN_KEY is not set. Nothing fetched, nothing committed."
+            exit 1
+          fi
+          # BOTH, ALWAYS, IN ONE STEP. /now/air states that the hero and the
+          # eight-city panel were read together at one hour, and
+          # build-situation-air.mjs now refuses to build a page where that is
+          # untrue. air-delhi.json and air-india.json must therefore move
+          # together or not at all.
+          npm run data:air
+
+      - name: Did the rendered figure actually move?
+        id: moved
+        run: |
+          # The comparison is on what the PAGES render — the AQI, the band and
+          # the observation stamp — not on the file's bytes, which carry a
+          # fetch timestamp that changes every run by design.
+          node -e '
+            const { execSync } = require("node:child_process");
+            const fs = require("node:fs");
+            const now = JSON.parse(fs.readFileSync("data/air-delhi.json", "utf8"));
+            const was = JSON.parse(execSync("git show HEAD:data/air-delhi.json", { encoding: "utf8" }));
+            const key = (d) => [d.city_reading?.aqi, d.city_reading?.band, d.city_reading?.station,
+              d.observed?.y, d.observed?.m, d.observed?.d, d.observed?.hh, d.observed?.mi].join("|");
+            const a = key(was), b = key(now);
+            console.log("was: " + a);
+            console.log("now: " + b);
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, "changed=" + (a === b ? "0" : "1") + "\n");
+          ' | tee /tmp/air.log
+          {
+            echo '### Air, hourly'
+            echo ''
+            echo '```'
+            cat /tmp/air.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Nothing moved — put the fetch timestamps back and stop
+        if: steps.moved.outputs.changed == '0'
+        run: |
+          git checkout -- data/air-delhi.json data/air-india.json
+          echo "CPCB is publishing the same observation. No rebuild, no commit, no deploy."
+
+      - name: Rebuild the two pages that carry the reading
+        if: steps.moved.outputs.changed == '1'
+        run: |
+          # ORDER IS LOAD-BEARING — see the note at the top of this file.
+          echo "::group::npm run build:situations"
+          npm run build:situations
+          echo "::endgroup::"
+          echo "::group::npm run build:hero"
+          npm run build:hero
+          echo "::endgroup::"
+          # The rest of the site extracts its shell from home.html, so it is
+          # rebuilt too: a page whose inputs did not move re-emits
+          # byte-identically and produces no diff, which costs seconds and
+          # removes a judgement call about which pages the shell reaches.
+          for t in work about impact farm act stories publications search essays; do
+            echo "::group::npm run build:$t"
+            npm run "build:$t"
+            echo "::endgroup::"
+          done
+          npm run verify:final
+
+      - name: Commit and push
+        if: steps.moved.outputs.changed == '1' && github.event.inputs.dry_run != 'true'
+        run: |
+          git config user.name  'swechha-air-hourly[bot]'
+          git config user.email 'actions@github.com'
+          git add -A data public/_pages
+          if git diff --cached --quiet; then
+            echo "Nothing staged after the rebuild — no commit."
+            exit 0
+          fi
+          aqi=$(node -p 'JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).city_reading.aqi')
+          obs=$(node -p 'const o=JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).observed; `${String(o.hh).padStart(2,"0")}:${String(o.mi).padStart(2,"0")} IST, ${o.d}-${o.m}-${o.y}`')
+          git commit -m "data(air): Delhi AQI ${aqi}, observed ${obs}" \
+            -m "Automated by .github/workflows/air-hourly.yml. AD-27.6-A: the homepage and /now/air render the committed reading and nothing repaints it, so the reading is only as fresh as the last build. This is that build. Committed only because the rendered figure, band, station or observation hour actually moved; the pages were rebuilt in the same run and every generator gate passed."
+          git push

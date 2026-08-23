@@ -94,7 +94,7 @@ const INDEX = [
 /* ═══ BANDS ══════════════════════════════════════════════════════════════ */
 const B = {};
 
-B.top = () => `    <div class="pic ht">
+B.top = () => `    <div class="pic ht p2-pic">
       <img class="duo" src="/images/photos/yamuna-students-foam-line.jpg" alt="Students standing along the Yamuna at a line of foam" style="--op:50% 62%">
       <div class="pic-over"><div class="wrap">
         <h1 class="d1">Delhi&rsquo;s Yamuna</h1>
@@ -339,8 +339,6 @@ ${KIND_LEGEND}
         It is a count of bacteria that come out of human bodies, in water that people stand in, wash
         in, immerse idols in and hold ceremonies beside &mdash; every week, at ghats along this
         stretch.</p>
-${hole('How many people fall ill from this river each year is not published. There is no national or Delhi figure for waterborne illness attributable to the Yamuna specifically, so this page does not carry one. The number would be the most useful figure on the page and it does not exist.')}
-${hole('How many people draw water, wash, fish or work in this stretch is also not published. Swechha has walked it for two decades and has not counted them either, so no figure is offered.')}
       <p style="margin:0"><a class="act" href="#measured">How the number is made ${ARROW}</a></p>
     </div>`;
 
@@ -691,7 +689,7 @@ ${hole('The total ever spent on the Yamuna is not on this page. Figures of six a
       <p class="cap y-reg-i">${n0(NEWS.register.count)} items from
         ${n0(Object.keys(NEWS.register.publishers || {}).length)} publishers, most recent first.
         <b>Reporting is tagged as reporting.</b> A headline is evidence that something was said,
-        never that it is true, and no figure on this page was taken from one.</p>
+        never that it is true.</p>
       <details class="dx">
         <summary class="dx-s">Read the ${n0(Math.min(40, NEWS.register.count || 0))} most recent items</summary>
         <div class="dx-b">

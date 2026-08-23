@@ -139,13 +139,28 @@ jobs:
       - name: Rebuild the pages the data feeds
         if: steps.changed.outputs.count != '0'
         run: |
-          # HERO FIRST. Every other generator extracts the nav, the footer and
-          # the token block out of home.html, so the hero's readings must be
-          # written before anything reads that file.
+          # SITUATIONS FIRST, THEN THE HERO. This order was the other way round
+          # and it made the job go red on most days it had anything to report.
+          # build-hero.mjs CROSS-CHECKS the hero's air figure against the figure
+          # already written into situation-air.html, and refuses to write if
+          # they differ. Read the dataset first and the situation page second
+          # and they always differ — the hero has the new number and the page on
+          # disk still has yesterday's — so `npm run build:hero` exited 1 and
+          # the commit step never ran, on every day the AQI moved. Which is
+          # most days: that is the one figure here that changes hourly.
+          # The old comment's reasoning ("every other generator extracts the
+          # nav, the footer and the token block out of home.html") is true and
+          # is not violated: those extractions are by line range from the frozen
+          # region above line 3033, build-hero.mjs only edits below it, and it
+          # asserts the line count is unchanged before writing. So the situation
+          # generators read exactly the same shell either way.
+          echo "::group::npm run build:situations"
+          npm run build:situations
+          echo "::endgroup::"
           echo "::group::npm run build:hero"
           npm run build:hero
           echo "::endgroup::"
-          for t in situations work about impact farm act stories publications search; do
+          for t in work about impact farm act stories publications search essays; do
             echo "::group::npm run build:$t"
             npm run "build:$t"
             echo "::endgroup::"

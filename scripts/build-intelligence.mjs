@@ -32,7 +32,7 @@
 // numbers — it reads them. That was a real defect class on the old page, whose
 // h1 claimed four illegal over a set containing three.
 import * as S from './lib/situation-shell.mjs';
-const { esc, n0, n1, compact, opener, hole, ARROW, stateChip, disclose } = S;
+const { esc, n0, n1, compact, opener, ARROW, stateChip, disclose } = S;
 
 const sh = S.shell();
 
@@ -197,15 +197,14 @@ B.top = () => `    <div class="wrap ix-hero">
       <p class="lbl ix-eyebrow">Environmental intelligence</p>
       <h1 class="d1 ix-h1">Every situation<br>we read</h1>
       <p class="ix-lead"><b>A situation is one measurement, against one published limit, with
-        the gap named.</b> Not a score, not a mood, not a colour. If nobody published a limit,
-        the page says so instead of inventing one.</p>
+        the gap named.</b> Not a score, not a mood, not a colour. Where nobody has published a
+        limit, none is invented.</p>
       <div class="ix-def">
         <div class="ix-def-c">
           <p class="ix-def-n">${SITUATIONS.length}</p>
           <p class="lbl ix-def-l">situations</p>
           <p class="cap ix-def-x">Air, the Yamuna, heat, forest fire, forest loss, extreme rain.
-            Each one has its own page, and every figure on this page is read from the same
-            committed data as that page &mdash; so the two cannot disagree.</p>
+            Each one has its own page.</p>
         </div>
         <div class="ix-def-c">
           <p class="ix-def-n">${UNITS.length}</p>
@@ -220,19 +219,19 @@ B.top = () => `    <div class="wrap ix-hero">
             A legal requirement that names no quantity. And, once, <b>none at all</b>.</p>
         </div>
       </div>
-      <p class="ix-refuse"><b>So there is no total on this page, and there never will be.</b>
+      <p class="ix-refuse"><b>There is no total, and there never will be.</b>
         ${kindsAllDistinct
     ? `No two of the ${SITUATIONS.length} share a kind of limit`
     : `The ${SITUATIONS.length} carry ${KINDS.length} kinds of limit between them`}, and
         ${UNITS.length} units cannot be averaged into one. A dashboard that gives you a single
         figure for &ldquo;the environment&rdquo; has decided something on your behalf and not
-        told you what. <b>This page would rather be harder to read than that.</b></p>
+        told you what.</p>
       <p class="lbl ix-vocab-h">The four words, and the two the set needs today</p>
       <div class="ix-vocab">
         ${['LIVE', 'PERIODIC', 'OUT OF SEASON', 'DEMO DATA'].map(w => {
     const inUse = states.includes(w);
     const why = {
-      LIVE: 'the value can change between two views of this page',
+      LIVE: 'the value can change between one reading and the next',
       PERIODIC: 'delivered on a cadence — a yearly table, a monthly sample',
       'OUT OF SEASON': 'the window is shut; the record still stands',
       'DEMO DATA': 'a specimen, and there are none in the set below',
@@ -240,12 +239,10 @@ B.top = () => `    <div class="wrap ix-hero">
     return `<span class="ix-vocab-r${inUse ? ' is-used' : ''}">${stateChip(w)}<i class="cap">${why}</i></span>`;
   }).join('\n        ')}
       </div>
-      <p class="cap ix-vocab-x"><b>Nothing below is unstamped</b>, and the word is shown whether
-        or not it flatters the reading. <b>Each word describes how its source delivers, not how
-        this page was built</b> &mdash; Yamuna reads PERIODIC because CPCB publishes once a year,
-        and Air reads LIVE because it is the one situation with a server route in front of an
-        hourly feed. The chip names the cadence. The reading&rsquo;s own page carries the hour it
-        was observed.</p>
+      <p class="cap ix-vocab-x"><b>Each word describes how the source delivers</b> &mdash; Yamuna
+        reads PERIODIC because CPCB publishes once a year, and Air reads LIVE because it sits in
+        front of an hourly feed. Each reading&rsquo;s own page carries the hour it was
+        observed.</p>
       <p style="margin:0"><a class="act" href="#set">All ${SITUATIONS.length} ${ARROW}</a></p>
     </div>`;
 
@@ -271,7 +268,7 @@ B.set = () => {
           <span class="ix-card-foot">${stateChip(s.state)}<i class="ix-card-go">${ARROW}</i></span>
         </a>`).join('\n        ');
 
-  return `${opener('set', 'The six', 'One card each. The line that matters on every one of them is not the reading &mdash; it is what kind of limit the reading is being held to.')}
+  return `${opener('set', 'The six', 'One card each, and the kind of limit each reading is held to.')}
     <div class="wide ix-cards">
         ${cards}
     </div>
@@ -282,10 +279,6 @@ B.set = () => {
         legal <i>requirement</i> that names no quantity at all. And one has
         <b>no threshold in law to break</b> &mdash; which is the weakest position of the six,
         not the safest.</p>
-      <p class="cap ix-src">Every figure is read at build time from the committed dataset behind
-        its own page. Nothing on this page is typed in by hand, which is why it cannot drift from
-        the six pages it points at.</p>
-${hole('There is no seventh situation hidden behind this page, and no waiting list. When a source exists for one, it gets a page and a card. Until then this is the whole set.')}
     </div>`;
 };
 
@@ -313,10 +306,7 @@ B.campaigns = () => `${opener('campaigns', 'What we do about it', 'Three campaig
         </div>
         <div class="ix-camp">
           <p class="ix-camp-n">Delhi I Can&rsquo;t See You</p>
-          <p class="cap ix-camp-y">&mdash;</p>
-          <p class="ix-camp-x">Named here because it is one of the three current campaigns.
-            <b>No description is given because none is sourced yet</b>, and this page does not
-            write copy for a campaign it cannot cite.</p>
+          <p class="ix-camp-x">One of the three current campaigns.</p>
           <p style="margin:0"><a class="act" href="/#work">What we work on ${ARROW}</a></p>
         </div>
       </div>
@@ -325,8 +315,7 @@ B.campaigns = () => `${opener('campaigns', 'What we do about it', 'Three campaig
         ${GFW.total.loss_mha} million hectares. Both are on this site, in their own units, and
         neither is used to cancel the other.</p>
       <p class="cap ix-close">Every reading here is public, dated and linked to the document it
-        came from. Where a figure could not be obtained, the page it belongs to says so in the
-        place the figure would have gone.</p>
+        came from.</p>
       <p style="margin:0"><a class="act" href="/#give">Support the work ${ARROW}</a></p>
     </div>`;
 
@@ -440,7 +429,6 @@ const PAGE_CSS = `
   margin:clamp(20px,2.2vw,30px) 0;font-size:clamp(15px,1.05vw,17px);line-height:1.58;
   color:var(--fg-2);max-width:62ch}
 .paper .ix-note{border-left-color:var(--rule-2);color:var(--ink-2)}
-.ix-src{color:var(--fg-3);max-width:62ch;margin:.8em 0 0}
 .ix-close{color:var(--ink-3);max-width:62ch;margin:clamp(20px,2.2vw,28px) 0 clamp(18px,2vw,24px)}
 
 /* CAMPAIGNS, on paper. */

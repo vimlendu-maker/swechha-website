@@ -64,10 +64,10 @@ import { join } from 'node:path'
  * the nav STAYS at AD-19's six words and these two are reached from the
  * footer, whose "Stories and films" and "Publications" links had been
  * pointing at `/now` — an air-and-river index — since commit 812235a.
- * `/stories/<slug>` is still the app route and still the pre-design shell:
- * the three written stories are real, their detail pages are the remaining
- * half of the port, and `data/stories.json` records that rather than hiding
- * it.
+ * `/stories/<slug>` IS NOW BUILT TOO — five essay pages, one per bylined
+ * piece recovered from the old blog. The three placeholder markdown stories
+ * that used to sit behind that route were retired; these replace them with
+ * writing that carries a name and a date.
  *
  * `/impact` JOINED THE MAP ON 22 AUGUST (AD-22). It was in the paragraph above
  * until its page existed, and this is the failure mode that paragraph was
@@ -146,6 +146,11 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
     ...workRoutes(),
     '/search': 'search.html',
     '/stories': 'stories.html',
+    '/stories/cyclone-biparjoy': 'stories/cyclone-biparjoy.html',
+    '/stories/rise-above-the-waters': 'stories/rise-above-the-waters.html',
+    '/stories/young-people-accelerate-climate-action': 'stories/young-people-accelerate-climate-action.html',
+    '/stories/climate-crisis-uk-and-europe': 'stories/climate-crisis-uk-and-europe.html',
+    '/stories/increasing-climate-migration-assam-floods': 'stories/increasing-climate-migration-assam-floods.html',
     '/publications': 'publications.html',
     '/about': 'about.html',
     '/impact': 'impact.html',

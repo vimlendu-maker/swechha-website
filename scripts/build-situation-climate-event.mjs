@@ -94,7 +94,7 @@ const INDEX = [
 /* ═══ BANDS ══════════════════════════════════════════════════════════════ */
 const B = {};
 
-B.top = () => `    <div class="pic ht">
+B.top = () => `    <div class="pic ht p2-pic">
       <img class="duo" src="/images/photos/monsoon-flooded-fields.jpg" alt="Flooded fields under monsoon cloud" style="--op:70% 45%">
       <div class="pic-over"><div class="wrap">
         <h1 class="d1">India&rsquo;s extreme rain</h1>
@@ -350,7 +350,7 @@ B.said = () => `${opener('said', 'What is being said', 'The register. Reporting 
     <div class="wrap">
       <p class="c-lead">${n0(NEWS.register.count)} items from
         ${n0(Object.keys(NEWS.register.publishers || {}).length)} publishers. A headline is evidence
-        that something was said, never that it is true, and no figure on this page came from one.</p>
+        that something was said, never that it is true.</p>
       ${disclose(`Read the ${n0(Math.min(40, NEWS.register.count || 0))} most recent items`,
   `<ol class="p-news-ol c-reg">
             ${(NEWS.register.items || []).slice(0, 40).map(i => `<li class="p-news-r"><a class="p-news-o" href="${esc(i.link)}">${esc(i.title)}</a><span class="cap p-news-m">${esc(i.publisher || 'unattributed')}${i.published ? ` &middot; ${esc(shortDate(i.published))}` : ''}</span></li>`).join('\n            ')}

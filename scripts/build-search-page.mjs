@@ -139,7 +139,11 @@ const GROUPS = [
   { name: 'The record', test: (r) => r === '/' },
   { name: 'Now', test: (r) => r === '/now' || r.startsWith('/now/') },
   { name: 'Work', test: (r) => r === '/work' || r.startsWith('/work/') },
-  { name: 'Stories and films', test: (r) => r === '/stories' },
+  /* The five essay pages are AT /stories/<slug> and belong with the section
+     they sit in. Matching only the index route filed them under "Elsewhere",
+     which told a reader that five pieces written by the team were somewhere
+     other than this site. */
+  { name: 'Stories and films', test: (r) => r === '/stories' || r.startsWith('/stories/') },
   { name: 'Publications', test: (r) => r === '/publications' },
   { name: 'Impact', test: (r) => r === '/impact' },
   { name: 'Farm', test: (r) => r === '/farm' },
@@ -169,7 +173,7 @@ const B = {};
 B.top = () => `    <div class="wrap sr-mast">
       <p class="lbl eyebrow">Search</p>
       <h1 class="d1">What are you<br>looking for?</h1>
-      <p class="lead">${entries.length} pages. Typing matches their titles, their section headings and their opening lines &mdash; not every word on them. Or read the list below: it is all of them, in the order the site is arranged.</p>
+      <p class="lead">${entries.length} pages. Typing matches their titles, their section headings and their opening lines. Or read the whole list below.</p>
       <div class="sr-field">
         <label class="lbl sr-lbl" for="sr-q">Filter by word</label>
         <input id="sr-q" class="sr-in" type="search" autocomplete="off" spellcheck="false"
@@ -186,9 +190,9 @@ const row = (e) => `          <li class="sr-row" data-t="${esc([e.title, e.h1, e
             </a>
           </li>`;
 
-B.index = () => `${opener('index', 'Everything on this site', 'Grouped as the site is, not alphabetically — a reader looking for something is usually looking for a section.')}
+B.index = () => `${opener('index', 'Everything on this site', 'Grouped as the site is, not alphabetically.')}
     <div class="wrap">
-      <div id="sr-none" class="sr-none" hidden><p class="p-hole">Nothing here matches that word. The list is every page on the site, so a word that finds nothing is not on any of them.</p></div>
+      <div id="sr-none" class="sr-none" hidden><p class="p-hole">Nothing here matches that word.</p></div>
 ${grouped.map((g) => `      <section class="sr-g" data-g="${esc(g.name.toLowerCase())}">
         <h3 class="lbl sr-gh">${esc(g.name)}</h3>
         <ul class="sr-list">

@@ -166,16 +166,50 @@ export const FINAL = [...INDEX, ...SITUATIONS];
 /* Pages that are NOT final, recorded so the register is a complete picture of
    the directory rather than a flattering subset. */
 export const NOT_FINAL = [
-  { file: 'home.html', why: 'THE FROZEN DESIGN SOURCE. Not a deliverable in this set — it is the language every page above extracts from. Hand-maintained, and D-24.5 records that making it a build artefact is a real architectural change nobody has taken.' },
+  { file: 'home.html', why: 'THE HOMEPAGE, and as of AD-28 §7 a BUILD ARTEFACT — `npm run build:hero` emits it from `design/home.html`, which is where the hand-maintained source now lives and where the seven pinned CSS line ranges point. The design is still written by hand; only the shipped copy is generated, with its comments stripped. Edit `design/home.html`, never this file.' },
   { file: 'about.html', why: 'FINISHED, and not a prototype — AD-21 built it and it serves at /about. It is outside THIS test because the twelve checks above are situation-specific (crumb, five siblings, the four-word state vocabulary); none of them describe an About page. Its own gates live in scripts/build-about-page.mjs.' },
   { file: 'impact.html', why: 'FINISHED (AD-22), serving at /impact. Outside this test for the same reason as about.html — and worth naming, because it is the page that refuses the number it is named for, so a "reading" check would assert the opposite of its design.' },
   { file: 'farm.html', why: 'FINISHED (AD-24), serving at /farm. Outside this test for the same reason as about.html.' },
   { file: 'act.html', why: 'FINISHED (AD-25), serving at /act. Outside this test for the same reason as about.html.' },
+  { file: 'stories/', why: 'FINISHED \u2014 five essay pages from scripts/build-essays.mjs, one per bylined piece recovered from the legacy blog, serving at /stories/<slug>. Outside this test for the same reason as about.html. Their own gates live in that generator; the load-bearing ones are the word-count check that fails if the Brizy extraction silently drops prose, and the provenance check that refuses an essay without a byline, a date and a link to where it first appeared \u2014 which is what replaced the source requirement after the owner ruled on 22 August that unsourced data is allowed off the situation pages.' },
   { file: 'search.html', why: 'FINISHED, serving at /search. Outside this test for the same reason as about.html \u2014 the twelve checks above are situation-specific. Its own gates live in scripts/build-search-page.mjs; the load-bearing ones assert that every built page on disk is in the index, that all 29 rows render server-side so the page reads without JavaScript, and that it does not index itself.' },
   { file: 'stories.html', why: 'FINISHED (AD-26), serving at /stories. Outside this test for the same reason as about.html \u2014 the twelve checks above are situation-specific. Its own gates live in scripts/build-stories-page.mjs, including the two that matter: every YouTube id resolves against data/media/youtube-index.json, and the page may not claim six films when two of R-3\'s six have no source on the channel.' },
   { file: 'publications.html', why: 'FINISHED (AD-26), serving at /publications. Its own gates live in scripts/build-publications-page.mjs; the load-bearing one reads every linked PDF\'s size off disk rather than trusting a typed figure, and refuses anything large enough to be a print master.' },
   { file: 'work/', why: 'FINISHED — 15 pages from scripts/build-work-pages.mjs, merged in PR #5 and serving under /work. It was in progress in a concurrent session when this line first read that way. It carries its own acceptance gate, the LINKS.json manifest, which fails the build on any unlisted or dead href.' },
 ];
+
+/* ═══ NO BACKTICK INSIDE SHARED_PAGE_CSS ════════════════════════════════
+   SHARED_PAGE_CSS is one template literal and a backtick anywhere inside it —
+   including inside a comment — terminates it and every generator in the repo
+   fails to parse. The block's own first line says so in capitals, it records
+   that three builds were broken that way, and it has now happened twice more
+   in one session. A warning that keeps being ignored is a missing check, so
+   this is the check.
+   Scoped to the literal, not the file: the module legitimately uses backticks
+   everywhere else, including in the header template two hundred lines above. */
+{
+  const src = readFileSync(join(ROOT, 'scripts/lib/situation-shell.mjs'), 'utf8');
+  const open = src.indexOf('export const SHARED_PAGE_CSS = `');
+  if (open < 0) {
+    console.error('  FAIL could not find SHARED_PAGE_CSS to check it for backticks');
+    fail++;
+  } else {
+    const body = src.slice(open + 'export const SHARED_PAGE_CSS = `'.length);
+    const end = body.indexOf('`');
+    const after = body.slice(end + 1, end + 40).trim();
+    /* The literal must end at a semicolon. If the first backtick after the
+       opening one is followed by anything else, it closed the literal early —
+       which is exactly what a backtick in a comment does. */
+    const ok = after.startsWith(';');
+    if (!ok) {
+      console.error(`  FAIL SHARED_PAGE_CSS closes early — a backtick inside it, probably in a comment. `
+        + `Text after the closing backtick: ${JSON.stringify(after.slice(0, 30))}`);
+      fail++;
+    } else {
+      console.log('  ok   SHARED_PAGE_CSS contains no stray backtick');
+    }
+  }
+}
 
 /* ═══ THE CENSUS ═════════════════════════════════════════════════════════
    FINAL and NOT_FINAL are a register, and AD-23 already recorded what a

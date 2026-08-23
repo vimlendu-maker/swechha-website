@@ -11,12 +11,18 @@ import { tmpdir } from 'node:os';
    NOT A CYCLE: situation-shell.mjs reads THIS file as text via readFileSync to
    extract PAGE_CSS and the tab controller. It never imports it, and Air never
    calls shell(). */
-import { crumb, siblings, FAMILY_CSS, NAV as SHELL_NAV, HOME_HREF, GIVE_HREF, INDEX_PAGE } from './lib/situation-shell.mjs';
+import { crumb, siblings, FAMILY_CSS, NAV_SEARCH_CSS, NAV as SHELL_NAV, HOME_HREF, GIVE_HREF, INDEX_PAGE,
+  stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC } from './lib/situation-shell.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const V3 = join(ROOT, 'public/_pages/v3');
 const DATA = join(ROOT, 'data');
-const src = readFileSync(`${V3}/home.html`, 'utf8').split('\n');
+/* AD-28 §7: the HAND-MAINTAINED SOURCE, `design/home.html`, not the artefact
+   under public/. The seven line ranges below are pinned to the maintained file;
+   the shipped one has had its comments stripped and every line under the first
+   one has moved. HOME_SRC is the shell's own constant so the two cannot
+   disagree about which file that is. */
+const src = readFileSync(HOME_SRC, 'utf8').split('\n');
 const J = (f) => JSON.parse(readFileSync(`${DATA}/${f}`, 'utf8'));
 
 let bad = 0;
@@ -51,7 +57,14 @@ const SVG_DEFS = between('<filter id="duo"', '</svg>');
 const SKIP = between('D-09.3. BYPASS BLOCKS', 'class="skip"');
 const FOOTER = between('<footer class="foot"', '</footer>');
 const JS_NAVIDX = iife('D-09.1. THE MOBILE INDEX CONTROL');
-const JS_UNDERLINE = iife('D-09.4. WHERE AM I? THE ACTIVE-SECTION UNDERLINE');
+/* AD-27.2 — THE D-09.4 SCROLL-SPY IIFE IS NOT EXTRACTED ANY MORE, because it
+   is being deleted from home.html. It was already inert on this page and on
+   the other five situations: its own "never invent a target" guard
+   (`!document.getElementById(id)`) discards every nav href, since `/#farm` and
+   `/#record` name homepage bands that do not exist here, so `ids.length` was 0
+   and it returned before observing anything. Extracting it would also have
+   made this build fail loudly the moment lane 1's deletion landed — which is
+   the assertion working, not a reason to keep dead code alive on six pages. */
 
 /* ═══ DATA ═══════════════════════════════════════════════════════════════ */
 const AIR = J('air-delhi.json');
@@ -90,6 +103,27 @@ const mult = govLimit ? (gov.conc / govLimit.h24).toFixed(1) : null;
 const catIdx = AIR.bands.findIndex(b => b.name === rd.band);
 const OBS = (() => { const o = AIR.observed; return o ? `${String(o.hh).padStart(2,'0')}:${String(o.mi).padStart(2,'0')} IST, ${o.d} ${MON[o.m-1]} ${o.y}` : 'time not stated'; })();
 
+/* ── THE HERO AND THE NATIONAL PANEL MUST BE ONE HOUR (AD-27.6-A) ────────
+   Delhi's row in "India, right now" used to be repainted from the live fetch
+   so it could not contradict the hero. Nothing repaints anything now, so the
+   two are only consistent if the datasets under them were read at the same
+   observation hour — and two figures for one city on one screen is the exact
+   defect that repaint existed to hide. `npm run data:air` fetches both files
+   in one run, so they agree today; this refuses to build a page that says
+   "all nine figures were read together" on a day when they were not. */
+{
+  const a = AIR.observed, i = String(IND.observed || '');
+  const m = /^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})/.exec(i);
+  if (!a) { console.error('AIR/IND HOUR: air-delhi.json has no observed block'); bad++; }
+  else if (!m) { console.error(`AIR/IND HOUR: air-india.json's observed ("${i}") is not "DD-MM-YYYY HH:MM:SS"`); bad++; }
+  else if (+m[1] !== a.d || +m[2] !== a.m || +m[3] !== a.y || +m[4] !== a.hh || +m[5] !== a.mi) {
+    console.error(`AIR/IND HOUR: the hero reads ${OBS} and the national panel reads ${i}. `
+      + 'The page states that all nine figures were read together. Re-run `npm run data:air`, '
+      + 'which fetches both in one go, rather than shipping two hours as one.');
+    bad++;
+  }
+}
+
 /* ═══ BAND SEQUENCE — id, tier, ground hex (D-19.3) ══════════════════════ */
 const BANDS = [
   ['top',       't1',         '#0D0D0B'],
@@ -124,7 +158,7 @@ const INDEX = [['The reading','#top'],['Who is in it','#people'],['How the numbe
   ['Where it comes from','#sources'],['Where it is going','#trend'],['The geography','#geography'],
   ['What it costs','#money'],['What you can do','#act']];
 const HEADER = `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
-<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav></div><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${INDEX.map(([t,h])=>`<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>`;
+<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${INDEX.map(([t,h])=>`<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>`;
 
 /* ═══ SHARED FRAGMENTS ═══════════════════════════════════════════════════ */
 // MEASURED vs MODELLED, carried by the rule itself (D-17.6). Solid = a
@@ -176,13 +210,23 @@ B.top = () => {
   const dr = IND.delhi;
   const natRows = top.map(c => {
     const isD = c.city.toLowerCase() === 'delhi';
-    // data-aqi so the live upgrade can re-rank Delhi against the snapshot
-    // without re-fetching the other 267 cities.
-    return `<div class="p-nr${isD?' is-me':''}"${isD?' id="air-nr-delhi"':''} data-aqi="${c.aqi}"><span class="p-nr-n">${esc(c.city)}${c.state&&!isD?`, ${esc(c.state)}`:''}</span>
-          <span class="p-nr-v${c.aqi>IND.aqiLimit?' is-red':''}"${isD?' id="air-nr-delhi-v"':''}>${c.aqi}</span>
-          <span class="cap p-nr-s">${c.stations}&thinsp;st</span></div>`;
+    /* AD-27.6-A: NO id, NO data-aqi. Both existed so the live upgrade could
+       re-rank Delhi against the snapshot without re-fetching the other 258
+       cities. Nothing repaints a reading on this page any more, so the hooks
+       come out with the code that used them — a hook left behind is an
+       invitation to write the repaint again.
+       "43 st" IS DELETED AS A UNIT. Right-aligned, in a column of small grey
+       type, immediately beside a ranked list of numbers, "1 st" and "43 st"
+       read as "1st" and "43rd" — an ordinal, which is exactly the wrong
+       reading beside a rank. It misled a reader on this team on first look.
+       The word is spelled, singular and plural, and it is the same noun the
+       caption two rows below already uses ("Sasaram reports from one station
+       and Delhi from 43"), so the panel now says one thing one way. */
+    return `<div class="p-nr${isD?' is-me':''}"><span class="p-nr-n">${esc(c.city)}${c.state&&!isD?`, ${esc(c.state)}`:''}</span>
+          <span class="p-nr-v${c.aqi>IND.aqiLimit?' is-red':''}">${c.aqi}</span>
+          <span class="cap p-nr-s">${c.stations}&nbsp;station${c.stations===1?'':'s'}</span></div>`;
   }).join('\n        ');
-  return `    <div class="pic ht">
+  return `    <div class="pic ht p2-pic">
       <img class="duo" src="/images/photos/india-gate-hero.jpg" alt="India Gate seen through Delhi haze" style="--zh:150%;--zt:-30%">
       <div class="pic-over"><div class="wrap">
         <h1 class="d1">Delhi&rsquo;s air</h1>
@@ -197,7 +241,7 @@ ${crumb('air')}
       <div class="p2-cols">
       <div class="p2-read breach">
         <p class="state p2-state" id="air-state"><i aria-hidden="true"></i><span id="air-state-w">Periodic</span><span class="sr" id="air-state-x"> &mdash; updated on a cadence, not continuously</span></p>
-        <p class="readout rl" id="air-aqi">${rd.aqi}</p>
+        <p class="readout rl" id="air-aqi" data-committed="${rd.aqi}">${rd.aqi}</p>
         <p class="unit">AQI &middot; 24-hour &middot; worst of eight</p>
         <p class="verdict bad" id="air-band">${rd.band}</p>
         <div class="bands bad" id="air-bands" role="img" aria-label="${rd.band}, band ${catIdx+1} of ${AIR.bands.length}">${bands}</div>
@@ -212,14 +256,15 @@ ${crumb('air')}
           and that changes between hours.</span></p>
         ${natRows}
         <p class="cap p2-nat-c"><b>${IND.totals.above_limit} of ${IND.totals.cities} above the limit
-          India set for itself.</b> ${IND.totals.good} read &ldquo;Good&rdquo;. Sasaram reports from one
-          station and Delhi from ${dr?dr.stations:AIR.spread.stations} &mdash; a city with one monitor is
-          measured <b>less</b>, not better.</p>
-        <p class="cap p-hole p2-nat-t"><b>Delhi&rsquo;s row is live. The others are not.</b> The eight
-          cities above were read together at ${esc(IND.observed || 'the snapshot hour')}; Delhi&rsquo;s
-          figure updates when this page loads. So the order can be an hour out of date even when
-          Delhi&rsquo;s number is not &mdash; which is the honest version of a ranking, and the reason the
-          rank is printed as a reading rather than as a claim.</p>
+          India set for itself.</b> ${IND.totals.good} read &ldquo;Good&rdquo;.${ONE_ST
+    ? ` ${esc(ONE_ST.city)} reports from one station and Delhi from ${dr ? dr.stations : AIR.spread.stations} &mdash;
+          a city with one monitor is measured <b>less</b>, not better.` : ''}</p>
+        <p class="cap p-hole p2-nat-t"><b>All nine figures were read together, and none of them
+          moves while you are here.</b> The eight cities above and Delhi&rsquo;s row beside them come
+          from one snapshot, taken at ${esc(IND.observed || 'the snapshot hour')} &mdash; the same
+          hour as the reading at the top of this page. That is what makes them comparable, and it
+          is why the order is printed as a reading of one hour rather than as a standing claim: by
+          the time you read it, CPCB has published another.</p>
         <p style="margin:0"><a class="act" href="#geography">All ${n0(IND.totals.cities)} cities ${ARROW}</a></p>
       </div>
       </div>
@@ -231,7 +276,9 @@ B.strip = () => {
   const cells = [
     ['AQI', rd.aqi, rd.band, true],
     ['Above the limit', `${AIR.spread.above_limit} of ${AIR.spread.stations}`, 'Delhi stations', true],
-    ['In India', '1st', `of ${NAT.cities} cities`, true],
+    /* Read off the feed. It said "1st" for weeks after Delhi stopped being
+       first, on the same page that printed Delhi's real rank two bands down. */
+    ['In India', DELHI_ORD, `of ${NAT.cities} cities`, DELHI_RANK <= 3],
     ['Attention', `${ATTN.swing}×`, 'winter against summer', false],
   ];
   const cellId = { 'AQI': 'air-c-aqi', 'Above the limit': 'air-c-above' };
@@ -275,9 +322,6 @@ ${KIND_LEGEND}
         about children&rsquo;s lungs, because somebody put real adolescents in front of a spirometer. A model
         is not a lesser thing than a count, but it is a different thing, and a dashboard that sets them at
         the same weight is telling you they are the same.</p>
-      <p class="cap p-hole">A counted figure for <b>exposure</b> would need the Directorate of Education
-        school register with coordinates, joined to the station list by distance. It is not published in a
-        machine-readable form, so this page does not carry one.</p>
       <p style="margin:var(--gap-row) 0 0"><a class="act" href="#measured">What is actually being measured ${ARROW}</a></p>
     </div>`;
 
@@ -326,7 +370,7 @@ B.measured = () => {
         <p class="cap"><b>Not CPCB&rsquo;s published AQI.</b> The feed returns concentrations and no index, so the
           number at the top of this page is computed here using CPCB&rsquo;s own breakpoint table.</p></div>`;
   return `    <div class="wrap">
-${opener('measured','How the number is made','One number stands in for eight, and it is not their average &mdash; it is the worst of them. Everything on this page is either measured or modelled, and the two are set differently on purpose.')}
+${opener('measured','How the number is made','One number stands in for eight, and it is not their average &mdash; it is the worst of them. Measured and modelled are set differently, on purpose.')}
 ${tabs('Method', [['What they are', pWhat], ['Today\'s eight', pEight], ['Two scales', pScales], ['Every figure', pMethod]].filter(x => x[1]))}
     </div>`;
 };
@@ -400,8 +444,8 @@ B.sources = () => {
           <p class="cap p-hole"><b>And the categories do not line up.</b> ${esc(K.short)}&rsquo;s
             &ldquo;coal and flyash&rdquo; is a fuel signature; ${esc(T.short)}&rsquo;s &ldquo;industry&rdquo;
             is a sector that bundles power plants, brick kilns and stone crushers. They are not two
-            estimates of one quantity. <b>This page will not average them</b>, and it will not attach either
-            to today&rsquo;s reading &mdash; neither is a measurement of today.</p>
+            estimates of one quantity. <b>They do not average</b>, and neither is a measurement of
+            today&rsquo;s reading.</p>
         </div>`;
   const sub = T.sub_sectors_pm25_winter_delhi;
   const smax = Math.max(...sub.transport.map(x => x.pct));
@@ -493,7 +537,36 @@ ${tabs('Time', [['The record', pRecord], ['Attention', pAttn], ['Forecast', pFc]
     </div>`;
 };
 
-const NAT = { cities: 266, stations: 502, above: 87, good: 51 };
+/* ★ THE NATIONAL PANEL IS DERIVED, NOT FROZEN. AD-28.
+   This was `const NAT = { cities: 266, stations: 502, above: 87, good: 51 }`
+   and the prose under it read "Delhi is first of 266 cities", with nine
+   neighbours named by hand. Every one of those numbers was stale, and the page
+   CONTRADICTED ITSELF because of it: the same build renders data/air-india.json
+   two bands up, where Delhi is ranked 8 of 267 — so one page said "1st" in its
+   summary strip and "ranked 8" in its national table. The dataset refreshes
+   daily, so a typed constant does not go slightly wrong, it goes wider wrong
+   every morning.
+   Everything below now comes off the feed: the totals, the rank, the ordinal,
+   the count of neighbours and their names. `gateNational()` at the foot of this
+   file fails the build if the strip and the panel ever disagree again. */
+const NAT = {
+  cities: IND.totals.cities,
+  stations: IND.totals.stations,
+  above: IND.totals.above_limit,
+  good: IND.totals.good,
+};
+/* Delhi's rank, as an ordinal, from the feed. 1st / 2nd / 3rd / 8th / 11th. */
+const ORD = (n) => {
+  const t = n % 100;
+  return `${n}${t >= 11 && t <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'}`;
+};
+const DELHI_RANK = IND.delhi.rank;
+const DELHI_ORD = ORD(DELHI_RANK);
+/* The "one monitor is measured less, not better" line used to name Sasaram in
+   hard type. It is true today and was arbitrary the day it was written; it is
+   now the highest-ranked city in the feed reporting from a single station, so
+   the sentence keeps its point without going stale. */
+const ONE_ST = IND.cities.slice(0, 12).find(c => c.stations === 1) || null;
 B.geography = () => {
   const st = AIR.stations.filter(s => s.aqi != null);
   const rows = (arr) => arr.map(s=>`<div class="p-rank-r"><span class="p-rank-v${s.aqi>AIR.aqiLimit?' is-red':''}">${s.aqi}</span><span class="p-rank-n">${esc(s.station.replace(/, Delhi.*/,''))}</span><span class="cap p-rank-g">${PRETTY[s.governing]||s.governing}</span></div>`).join('');
@@ -504,10 +577,15 @@ B.geography = () => {
           <p class="cap">${AIR.spread.stations} stations, <b>${AIR.spread.above_limit} above the limit</b>.
             The quietest reads ${AIR.spread.best.aqi}, the loudest ${AIR.spread.worst.aqi} &mdash;
             <b>one city, a fivefold spread</b>. A city average hides it. Red is above the limit.</p></div>`;
+  /* The names, the count and the rank all come off the same fetch as the rank
+     in the strip, so the two cannot say different things. The point of the
+     paragraph survives whatever the ranking does on a given morning: it is not
+     that Delhi is worst, it is that its neighbours move with it. */
+  const AS = IND.airshed;
   const pIndia = `<div class="p-nat">
-          <p class="body"><b>Delhi is first of ${NAT.cities} cities. Nine of the next twelve are its
-            neighbours</b> &mdash; Gurugram, Charkhi Dadri, Faridabad, Manesar, Noida, Khora, Panipat, Baraut,
-            Meerut. This is not a city problem. It is an airshed.</p>
+          <p class="body"><b>Delhi is ${DELHI_ORD} of ${NAT.cities} cities, and ${n0(AS.neighbours)} of the
+            next ${n0(AS.behind_delhi)} are its neighbours</b> &mdash; ${AS.names.map(esc).join(', ')}.
+            This is not a city problem. It is an airshed.</p>
           <p class="cap">${NAT.above} of ${NAT.cities} cities are above the limit India set for itself, and
             ${NAT.good} are &ldquo;Good&rdquo; &mdash; the country is not uniformly polluted, which is what makes
             the cluster around Delhi legible. Computed from ${NAT.stations} stations on CPCB&rsquo;s scale,
@@ -594,8 +672,8 @@ B.geography = () => {
 ${opener('geography','Which part of the city, and where the city sits',
   `There are ${AIR.spread.stations} monitors reporting for Delhi and they do not agree with each other. `
   + `<b>Every figure in this band was read at ${OBS}</b> &mdash; one hour, all ${AIR.spread.stations} `
-  + `stations together, which is what makes them comparable. The reading at the top of the page updates `
-  + `when you load it, so it can be an hour newer than the numbers here.`)}
+  + `stations together, which is what makes them comparable &mdash; and the same hour as the reading `
+  + `at the top of the page, which is read from this band's worst station.`)}
 ${tabs('Geography', [['The map', pMap], ['Every station', pDelhi], ['India', pIndia]])}
       <p style="margin:var(--gap-row) 0 0"><a class="act" href="#money">What has been spent on it ${ARROW}</a></p>
     </div>`;
@@ -812,7 +890,11 @@ const PAGE_CSS = `
 .p-nr-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 800;
   font-size:19px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;text-align:right}
 .p-nr-v.is-red{color:var(--red)}
-.p-nr-s{color:var(--fg-3);min-width:3.4em;text-align:right}
+/* AD-27.6-A(e). THE UNIT IS SPELLED, AND IT DOES NOT WRAP. "43 st" beside a
+   ranked column of numbers reads as "43rd". The column is sized off its own
+   content now rather than off a 3.4em guess, and nowrap keeps "43 stations"
+   on the row it belongs to at 320px, where the guess would have broken it. */
+.p-nr-s{color:var(--fg-3);text-align:right;white-space:nowrap}
 /* MUSTARD IS THE HUMAN ACT, so it cannot mark "this is the city you are
    reading" — that is a position in a table, not an act. The row Delhi is on
    is marked by WEIGHT and a left rule in the ground's own ink instead. */
@@ -823,12 +905,90 @@ const PAGE_CSS = `
 .p2-nat-c{color:var(--fg-3);max-width:40ch;margin:var(--gap-row) 0!important}
 .p2-read{position:relative;border-top:1px solid var(--hair);
   padding-top:var(--gap-row);display:grid;gap:10px;justify-items:start}
-.p2-state{position:absolute;top:var(--gap-row);right:0;margin:0}
+/* AD-27.6-A. THE CHIP IS THE ONLY THING THAT MOVES, SO IT IS PINNED.
+   It is right-anchored and it NARROWS when the fetch confirms the reading —
+   "Periodic" measures 77.56px against "Live"'s 43.81 at every width, so the
+   left edge used to travel 34px and register a layout shift. Reserving the
+   wider word fixes the left edge; the flip then repaints one word inside a
+   box that does not move. A min-width, so a longer word in another face wins
+   rather than being clipped. */
+.p2-state{position:absolute;top:var(--gap-row);right:0;margin:0;min-width:6.75em}
 .p2-read>*{margin:0}
 .p2-read .bands{width:100%}
 .p2-read .bands i{flex:1 1 0;min-width:0}
 .p2-src{color:var(--fg-3);max-width:60ch;border-top:1px solid var(--hair-2);
   padding-top:10px;margin-top:4px}
+/* AD-27.6(4)'s .p2-refresh IS DELETED, and so is the element it styled.
+   It existed to cite the value the live upgrade had replaced. AD-27.6-A
+   removes the replacement, so there is nothing to cite: the reading on this
+   page is the reading the build wrote, it carries its own observation stamp
+   in .p2-src, and no code may write a digit over it. A rule kept for a
+   deleted element is how the next person concludes the swap is still
+   supported and writes it again. */
+
+/* ── AD-27.44 · IT IS THE FOLD, NOT A CLIP ────────────────────────────────
+   Nothing on this page clips the numeral: .p2-read, .p2-cols, .wrap.p2-hero
+   and .pic-body are all overflow:visible and #top's overflow-x:clip leaves
+   the other axis visible. The situation hero simply stacks ~279px of chrome
+   the homepage does not have ABOVE the readout — a full-bleed photo band, the
+   .pic-body padding, the family crumb row and the method/tag row — so
+   home.html's '.pic{height:clamp(240px,40vh,440px)}' put the numeral's bottom
+   edge 17.69px below the fold at 1440x900 and 56.33px below it at 1280x800.
+   Measured, both, before this rule existed.
+
+   THE INVARIANT, AMENDED 23 AUGUST (AD-27.44-A), because as first written it
+   named three viewports and was false on a fourth. It is now stated as the
+   RANGE it governs, and every bound below is measured, not derived:
+
+     · at every viewport 768px tall or taller, the numeral's bottom edge sits
+       at least 32px above the fold. Measured at 1366x768 (33.85px),
+       1280x800 (71.67), 1440x900 (126.31), 1,920x1,080 (247.74);
+     · between about 635px and 768px the numeral is WHOLE but the clearance
+       falls below 32px. Measured at 1280x720: 7.67px;
+     · below about 635px the numeral falls WHOLLY below the fold, and that is
+       accepted — a reading below the fold reads as scrolling. Measured at
+       375x635: 22.50px, still whole; 375x812: 180.62px.
+
+   WHY THE CLAMP MOVED FROM clamp(200px,26vh,360px) TO clamp(176px,24vh,360px).
+   The first version was measured at 800, 900 and 1080 only, and 26vh is right
+   at the edge at 768: the arithmetic that produced it needs 0.74h >= 536 + 32,
+   i.e. h >= 768.0. One of the most common laptop screens in India sits exactly
+   on that boundary and came out at 18.17px, not 32. 24vh clears it by 33.85px
+   and costs 18px of photograph at 1440 and 21px at 1,920. THE FLOOR MOVED FOR A
+   SECOND, INDEPENDENT REASON: at 375x635 the 200px floor put the numeral 1.50px
+   BELOW the fold — a numeral sliced by a pixel and a half, which is the exact
+   defect AD-27.44 exists to remove, on a phone. 176px turns that into 22.50px
+   of clearance. Both bounds were measured before and after, at seven viewports.
+
+   SCOPED TO .p2-pic, NOT TO '#top .pic', and that is not fussiness:
+   situation-shell.mjs:153 lifts this whole block as SITUATION_CSS into every
+   page built on the shell, and about, farm, impact, publications and stories
+   all carry their own '#top .pic' hero owned by other lanes. '.p2-pic' is
+   written by the six situation generators and by nothing else, so the
+   override reaches exactly the six pages it is measured for.
+
+   RE-CROP, DO NOT RESTORE (BRANDING §5.4): a shorter band is a tighter
+   letterbox, so a subject that falls out of frame is answered with
+   object-position, never with height. */
+#top .pic.p2-pic{height:clamp(176px,24vh,360px)}
+
+/* ── AD-27.45(1) · .readout.rl NEVER GOT ITS nowrap ───────────────────────
+   home.html:277 writes '.rl .readout,.rl .num{white-space:nowrap}' — a
+   DESCENDANT selector, correct for the homepage, which wraps the readout in a
+   separate '.rl' box ('<span class="s-hero-numwrap rl"><span class="readout">').
+   The situation pages write '<p class="readout rl">' and '<p class="num rl">'
+   — both classes on ONE element — so the descendant selector never matched
+   and the computed value was 'normal' (measured, not assumed). It does not
+   show today, because the plausible values hold one line at 375; a longer
+   value on a narrow phone would wrap a readout, which is the one thing a
+   readout may not do. Stated as the compound selector home.html's own rule
+   would have been if the markup had been the same shape. */
+.readout.rl,.num.rl{white-space:nowrap}
+/* AD-27.45(2), RECORDED AND DELIBERATELY NOT CHANGED: the nine '.num.rl'
+   figures below have negative bottom headroom (-7.78 to -9.14px) from the 'y'
+   descender and the rupee glyph, so they paint outside their line box. Nothing
+   clips them and they look correct. DO NOT add an 'overflow' to their
+   containers — that, not the headroom, is what would crop them. */
 
 /* THE STRIP. Not a band: a rule between bands, on chrome padding. Caged —
    own hex, hairline top and bottom, micro type, never any mustard. Red only:
@@ -1224,96 +1384,119 @@ const SCRIPT = `/* ── TABS. Canonical ARIA tabs with a roving tabindex. Pane
   });
 })();
 
-/* ── LIVENESS (D-17.4). The page ships a committed reading and UPGRADES.
-   LIVE describes the fetch; the age describes the observation, and the badge
-   is never allowed to replace the age — both are printed.
-   AN ERROR IS NOT A ZERO (D-16.4): every failure path returns early and
-   leaves the committed reading and the PERIODIC badge exactly as rendered.
-   Nothing here can write a dash, an empty string or a 0 into the readout. */
+/* ── AD-27.6-A. THE READING ARRIVES ONCE, HERE TOO. ─────────────────────
+   D-17.4 shipped a committed reading and UPGRADED it from /api/air, and
+   AD-27.6 softened the arrival: no repaint when the value was unchanged, a
+   160ms cross-fade when it was, a line citing the figure it replaced. That
+   ruling rested on one premise — "on an hourly feed most page loads land
+   inside the same hour" — and the premise was false. 'data-committed' came
+   from a DAILY job while CPCB moves HOURLY, so the two were almost never the
+   same number. Measured on the homepage, which ran the identical code: ten
+   cold loads, committed 311, live 306, nine repaints.
+
+   SO NOTHING ON THIS PAGE REPAINTS A READING. The numeral, the band word,
+   the limit line, the six-pip scale, the strip cells, the source line and
+   Delhi's row in the national panel are all build artefacts, written by this
+   generator out of data/air-delhi.json and data/air-india.json — which are
+   fetched in the same run, at the same observation hour, so the hero and the
+   panel cannot disagree. .github/workflows/air-hourly.yml re-reads CPCB every
+   hour and rebuilds this page when the figure has actually moved, which is
+   where the freshness now comes from.
+
+   WHAT IS LEFT FOR THE FETCH: THE CHIP, AND NOTHING ELSE.
+   It flips PERIODIC to LIVE if, and only if, CPCB is publishing THE SAME
+   NUMBER this page is showing, from an observation inside two hours. That is
+   D-17.4's own rule read honestly — "LIVE describes the fetch; the age
+   describes the observation" — with the third condition it always implied and
+   never stated: the figure under the badge has to be the figure the fetch
+   confirmed. If CPCB has moved on, the chip stays PERIODIC over a committed
+   reading that carries its own stamp, and the console says which condition
+   failed. AN ERROR IS NOT A ZERO (D-16.4): every path leaves the page exactly
+   as it was rendered.
+
+   ★ THE HOMEPAGE RUNS THE SAME THREE CONDITIONS IN THE SAME ORDER, on the
+   same route, against the same committed dataset — so / and /now/air show one
+   number in one state. They did not before: measured 23 August, the homepage
+   said PERIODIC / "Observed earlier today." while /now/air said LIVE, in the
+   same second, off the same fetch.
+
+   ★ IF YOU ARE ABOUT TO ADD A textContent WRITE BELOW, read AD-27.6-A first.
+   Every value this block used to write is now a build artefact, and writing
+   one from here reintroduces exactly the defect the client reported. */
 (function(){
-  var BANDS=${JSON.stringify(AIR.bands.map(b=>b.name))}, LIMIT=${AIR.aqiLimit};
-  var CITIES=${JSON.stringify(n0(IND.totals.cities))};
   var el=function(i){return document.getElementById(i);};
   var aqi=el('air-aqi'), state=el('air-state');
   if(!aqi||!state||!window.fetch) return;
-  fetch('/api/air',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
-    if(!d||d.ok!==true) return;
-    var r=d.reading;
-    if(!r||typeof r.aqi!=='number'||!isFinite(r.aqi)||r.aqi<=0||!r.band) return;
-    var i=BANDS.indexOf(r.band); if(i<0) return;
 
-    aqi.textContent=String(r.aqi);
-    var b=el('air-band'); if(b) b.textContent=r.band;
-    var over=r.aqi>LIMIT;
-    var lim=el('air-limit');
-    if(lim) lim.innerHTML='CPCB safe limit '+LIMIT+'. '+(over?'<b>Limit broken.</b>':'Within the limit.');
-    var scale=el('air-bands');
-    if(scale){
-      var cells=scale.children;
-      for(var k=0;k<cells.length;k++){
-        cells[k].className=(k<=i?'on':'')+(k===i?' tip':'');
-      }
-      scale.setAttribute('aria-label',r.band+', band '+(i+1)+' of '+BANDS.length);
-    }
-    /* The age, not the badge, carries how old the observation is. */
-    var src=el('air-src-w');
-    if(src&&r.station) src.textContent=r.station+'. Observed '+(r.observed||'time not stated')+'.';
-    var ca=el('air-c-aqi'); if(ca) ca.textContent=String(r.aqi);
-    var cb=el('air-c-band'); if(cb) cb.textContent=r.band;
-    var cv=el('air-c-above');
-    if(cv&&d.spread&&typeof d.spread.above_limit==='number'&&typeof d.spread.stations==='number'){
-      cv.textContent=d.spread.above_limit+' of '+d.spread.stations;
-    }
-    /* ── THE NATIONAL PANEL MUST NOT CONTRADICT THE HERO.
-       The panel is drawn from a committed national snapshot and the hero from
-       the live fetch, so the same city appeared twice with two numbers — 389
-       in the hero and 388 in the table, on one screen. Delhi's row is updated
-       and MOVED to where its live value puts it among the snapshot rows, and
-       the rank sentence is recomputed from the DOM. The other cities are not
-       re-fetched and the caption says so. Ordinal words only to eighth,
-       because the panel only ever renders eight rows. */
-    var row=el('air-nr-delhi'), rv=el('air-nr-delhi-v');
-    if(row&&rv){
-      rv.textContent=String(r.aqi);
-      rv.className='p-nr-v'+(r.aqi>LIMIT?' is-red':'');
-      row.setAttribute('data-aqi',String(r.aqi));
-      var list=row.parentNode;
-      var rows=[].slice.call(list.querySelectorAll('.p-nr'));
-      /* The anchor is taken BEFORE sorting — it is whatever sits immediately
-         above the first row in document order, and the sorted rows are laid
-         back in after it one at a time. Appending would drop them below the
-         captions that follow. */
-      var anchor=rows[0].previousSibling;
-      rows.sort(function(a,b){ return Number(b.getAttribute('data-aqi'))-Number(a.getAttribute('data-aqi')); });
-      rows.forEach(function(n){ list.insertBefore(n, anchor?anchor.nextSibling:list.firstChild); anchor=n; });
-      var pos=rows.indexOf(row)+1;
-      var ORD=['first','second','third','fourth','fifth','sixth','seventh','eighth'];
-      var rk=el('air-nat-rank');
-      /* LAST PLACE AMONG EIGHT IS NOT A NATIONAL RANK. If Delhi's live value
-         falls below every snapshot row, its true position is somewhere below
-         eighth and this panel cannot say where — so it says that, instead of
-         printing "eighth" and being wrong. */
-      /* A TIE IS NOT A PLACE. Delhi and Sasaram both read 389 on the first
-         run of this code, and calling that "second" is a sort order dressed
-         up as a finding. Equal numbers get equal billing. */
-      var above=rows[pos-2], tie=above&&Number(above.getAttribute('data-aqi'))===r.aqi;
-      if(rk&&tie){
-        rk.innerHTML=CITIES+' cities report to CPCB. Delhi is <b>level with '
-          +above.querySelector('.p-nr-n').textContent.trim().replace(/,.*$/,'')
-          +'</b> at the top of them, and that changes between hours.';
-      } else if(rk){
-        rk.innerHTML = (pos < rows.length)
-          ? CITIES+' cities report to CPCB. Delhi is <b>'+ORD[pos-1]+' of them</b>, and that changes between hours.'
-          : CITIES+' cities report to CPCB. Delhi now reads <b>below all eight cities listed</b>, which were '
-            +'read an hour earlier &mdash; so its place in the full table is lower than this panel can show.';
-      }
-    }
-    /* Badge last, so it only ever claims LIVE over a value that landed. */
+  /* THE COMMITTED VALUE, AS THE MARKUP STATED IT. Read from the attribute and
+     not from textContent: the attribute is what the build wrote, and it is the
+     only value this page is entitled to have confirmed. */
+  var COMMITTED=(aqi.getAttribute('data-committed')||'').trim();
+  if(!COMMITTED) return;
+
+  /* THE OBSERVATION STAMP, AS AN INSTANT.
+     /api/air prints 'observed' as IST wall-clock text ("23:00 IST, 22 August
+     2026"), which is what the page shows. To ask "is this within two hours"
+     it has to become an instant, and it must NOT go through new Date(string):
+     the stamp is already IST and a parse would re-read it in the reader's own
+     zone — and Date.parse("01:00 IST, 23 August 2026") is NaN in V8 besides,
+     which is how the homepage's copy of this test came to be permanently
+     false. Parsed by FIELD and shifted by IST's fixed +05:30, so the answer is
+     the same in Delhi, London and a CI runner set to UTC. */
+  var MONTHS=['January','February','March','April','May','June','July',
+    'August','September','October','November','December'];
+  /* THE BACKSLASHES ARE DOUBLED BECAUSE THIS FILE IS A TEMPLATE LITERAL, and
+     that is not pedantry — it was a live, silent defect. Written once, as
+     \d{2}, JavaScript reads the escape when it builds the string and emits
+     (d{2}) into the page, which matches nothing. Measured 23 August on the
+     built page: the console said "the feed did not stamp its observation" on
+     every load, so the freshness test was permanently false and this page
+     could never reach LIVE — the same class of failure as the homepage's
+     Date.parse, in the same function, arrived at a different way. Asserted
+     below, at the bottom of this file, so it cannot come back silently. */
+  function observedAt(text){
+    var m=/^(\\d{2}):(\\d{2}) IST, (\\d{1,2}) ([A-Za-z]+) (\\d{4})$/.exec(String(text||'').trim());
+    if(!m) return null;
+    var mo=MONTHS.indexOf(m[4]); if(mo<0) return null;
+    return Date.UTC(+m[5],mo,+m[3],+m[1],+m[2])-19800000; /* IST = UTC+5:30 */
+  }
+
+  /* A CONFIRMATION HAS A DEADLINE. Six seconds, then this page view is what it
+     is. Every failure path warns ONCE and changes nothing — warn rather than
+     swallow, because a silently dead IIFE is the one thing nobody notices. */
+  var warned=false;
+  function giveUp(why){ if(warned) return; warned=true;
+    console.warn('air: the chip stays PERIODIC — '+why); }
+  var ctl=window.AbortController?new AbortController():null;
+  var deadline=setTimeout(function(){ if(ctl) ctl.abort(); giveUp('the live fetch did not resolve within 6s'); },6000);
+
+  fetch('/api/air',ctl?{cache:'no-store',signal:ctl.signal}:{cache:'no-store'}).then(function(r){
+    if(!r.ok) throw new Error('/api/air answered '+r.status);
+    return r.json();
+  }).then(function(d){
+    clearTimeout(deadline);
+    if(!d||d.ok!==true) return giveUp('the feed reported '+((d&&d.reason)||'no reading'));
+    var r=d.reading;
+    if(!r||typeof r.aqi!=='number'||!isFinite(r.aqi)||r.aqi<=0||!r.band) return giveUp('the reading was not a usable number');
+    /* CONDITION ONE — CPCB IS PUBLISHING THE NUMBER ON THE SCREEN. The newer
+       figure is deliberately NOT written anywhere on this page: writing it is
+       the defect. */
+    if(String(r.aqi)!==COMMITTED) return giveUp('CPCB now publishes '+r.aqi+' and this page carries the committed '+COMMITTED);
+    /* CONDITION TWO — THE OBSERVATION IS FRESH, NOT MERELY THE FETCH. A stamp
+       in the future is a broken feed, not a fresh reading, so it is refused in
+       the same test. Ten minutes of clock skew allowed, no more. */
+    var at=observedAt(r.observed);
+    if(at===null) return giveUp('the feed did not stamp its observation');
+    var age=Date.now()-at;
+    if(age>=7200000||age<=-600000) return giveUp('the newest observation is over two hours old');
     state.className='state p2-state live';
     var w=el('air-state-w'); if(w) w.textContent='Live';
     var x=el('air-state-x');
-    if(x) x.textContent=' — fetched when this page loaded; the observation time is printed below';
-  }).catch(function(){ /* keep the committed reading. */ });
+    if(x) x.textContent=' — confirmed against CPCB when this page loaded; the observation time is printed below';
+  }).catch(function(e){
+    clearTimeout(deadline);
+    giveUp((e&&e.name==='AbortError')?'the live fetch was aborted at the 6s deadline':(e&&e.message)||'the live fetch failed');
+  });
 })();
 
 /* ── WATCH YOUR MONITOR (D-22.2). Loads the 43 monitors with their live
@@ -1420,23 +1603,84 @@ const SCRIPT = `/* ── TABS. Canonical ARIA tabs with a roving tabindex. Pane
 })();
 
 ${JS_NAVIDX}
-${JS_UNDERLINE}
 `;
 
+/* ═══ THE HEAD ═══════════════════════════════════════════════════════════
+   AD-27.48 · EVERY PAGE GETS A DESCRIPTION, and this page's head is
+   hand-rolled rather than assembled by the shell, so it is added by hand here.
+   140–158 characters, the page's own subject in the reader's words plus one
+   verifiable fact. NOTHING IN A DESCRIPTION IS TENSED, DATED OR A SPECIMEN
+   (BRANDING §3.5 applies to <head> exactly as it applies to <body>, and Google
+   caches this string): it describes the MECHANISM — CPCB's published limit,
+   the hourly cadence, the station and the observation time — and never the
+   reading, which changes every hour and is the one thing a cached description
+   must not carry.
+   The em dash is the literal character, not `&mdash;`, per AD-27.48's
+   convention fix; the apostrophe stays an entity because the title's does. */
+const TITLE = 'Delhi&rsquo;s air &mdash; Swechha';
+const DESC = 'Delhi\u2019s air quality index, read against CPCB\u2019s own published limit and '
+  + 'refreshed hourly, with the station and the observation time on every reading.';
+
+/* AD-27.49 · OPEN GRAPH AND TWITTER. Derived from the title, the description
+   and the canonical route that are already in this head — nothing new is
+   asserted. ON ONE LINE, the same shape the two shells emit, so a diff across
+   the three head templates is one grep.
+   `og:url` IS DELIBERATELY OMITTED and `og:image` is relative, for the same
+   reason situation-shell.mjs gives for the relative canonical: a preview
+   deploy must not advertise the production host. Scrapers resolve a relative
+   og:image against the document URL. Absolute values, if a later pass wants
+   them, come from SITE_ORIGIN at build time and never from a literal.
+   `twitter:site` is the handle all four of Swechha's accounts use. No
+   `twitter:creator` — the pages have no per-page author. */
+const OG = `<meta property="og:type" content="website"><meta property="og:site_name" content="Swechha"><meta property="og:locale" content="en_IN"><meta property="og:title" content="${TITLE}"><meta property="og:description" content="${DESC}"><meta property="og:image" content="/images/og/og-default.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content="@swechhaindia">`;
+
+/* AD-27.50 · BREADCRUMBLIST, ON THE SIX SITUATION PAGES.
+   THIS PAGE WAS THE ONE THAT MISSED IT, and the reason is the seam rather than
+   an oversight of judgement: situation-shell.mjs:1131 emits the trail for the
+   five siblings, and this page does not go through the shell — it hand-rolls
+   its own head and its own document, which is exactly why AD-27.48 and
+   AD-27.49 each needed a hand-written clause here too. Measured 23 August:
+   five of six situation pages carried BreadcrumbList and /now/air, the
+   flagship and the page §H hangs "Air Pollution expert" on, carried none.
+   THE SHAPE IS THE SHELL'S, not a second design: three levels, relative
+   `item` URLs for the same reason the canonical is relative (a preview deploy
+   must not advertise the production host), and the leaf's name is this page's
+   own title with the site suffix removed, so the trail cannot come to
+   disagree with the tab. Placed immediately after the footer, where the
+   shell puts its own. */
+const CRUMB_NAME = TITLE.replace(/\s*&mdash;\s*Swechha\s*$/, '')
+  .replace(/&rsquo;/g, '’').replace(/&mdash;/g, '—').replace(/&amp;/g, '&');
+const CRUMBS = '\n<script type="application/ld+json">' + JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Swechha', item: '/' },
+    { '@type': 'ListItem', position: 2, name: 'Now', item: '/now' },
+    { '@type': 'ListItem', position: 3, name: CRUMB_NAME, item: '/now/air' },
+  ],
+}) + '</script>';
+
 /* ═══ THE DOCUMENT ═══════════════════════════════════════════════════════ */
-const OUT = `<!doctype html>
+/* AD-28 §7. THIS PAGE IS ASSEMBLED BY HAND rather than through `assemble()`,
+   because it is the file the shell extracts FROM — so the three strippers have
+   to be called here explicitly. They are the same three, imported, not copied.
+   The redacted script is what `node --check` runs on below: checking the
+   unredacted one and shipping the other is the same bug on a different line. */
+const SHIP_SCRIPT = redactScriptLedgerRefs(SCRIPT);
+const OUT = stripHtmlComments(`<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>Delhi&rsquo;s air &mdash; Swechha</title>
+<title>${TITLE}</title>
+<meta name="description" content="${DESC}">
 <link rel="canonical" href="/now/air">
+<link rel="icon" href="/icons/icon-32.png" sizes="32x32"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+${OG}
 ${HEAD_FONTS}
 <style>
-${CSS}
-${PAGE_CSS}
-${FAMILY_CSS}</style>
+${stripCssComments([CSS, PAGE_CSS, NAV_SEARCH_CSS, FAMILY_CSS].join('\n'))}</style>
 </head>
 <body>
 ${SVG_DEFS}
@@ -1445,22 +1689,108 @@ ${HEADER}
 <main id="main" tabindex="-1">
 ${BANDS.map(section).join('\n')}
 </main>
-${FOOTER}
+${FOOTER}${CRUMBS}
 <script>
-${SCRIPT}</script>
+${SHIP_SCRIPT}</script>
 </body>
 </html>
-`;
+`);
 
 if (bad > 0) { console.error(`\nREFUSING TO WRITE: ${bad} extraction assertion(s) failed.`); process.exit(1); }
 if (clashes > 0) { console.error('\nREFUSING TO WRITE: ground adjacency fails.'); process.exit(1); }
 
 // The WHOLE script block, extracted and hand-written alike, through one gate.
 const jsPath = join(tmpdir(), 'swechha-situation-script-check.js');
-writeFileSync(jsPath, SCRIPT);
+writeFileSync(jsPath, SHIP_SCRIPT);
 const { execFileSync } = await import('node:child_process');
 try { execFileSync(process.execPath, ['--check', jsPath], { stdio: 'pipe' }); console.log('\npage script (all of it): node --check PASSED'); }
 catch (e) { console.error('\nREFUSING TO WRITE: page script is not valid JS.\n' + e.stderr.toString()); process.exit(1); }
+
+/* ── AND ONE GATE `node --check` CANNOT GIVE YOU (AD-27.6-A) ──────────────
+   SCRIPT is a template literal, so every backslash in it is read by
+   JavaScript before the page ever sees it: `\d{2}` written once emits `d{2}`,
+   which is VALID JAVASCRIPT and a regex that matches nothing. `node --check`
+   passes it happily. Measured 23 August: observedAt() returned null on every
+   load, the console said "the feed did not stamp its observation", and this
+   page's chip could never reach LIVE — a whole feature dead behind a syntax
+   check that was green.
+   So the escape is asserted as a STRING, not as syntax, and the emitted regex
+   is exercised against a real stamp of the shape /api/air actually returns.
+   Two assertions, because the first catches the escape and the second catches
+   anyone "fixing" the escape by rewriting the pattern. */
+{
+  const WANT = '/^(\\d{2}):(\\d{2}) IST, (\\d{1,2}) ([A-Za-z]+) (\\d{4})$/';
+  if (!SCRIPT.includes(WANT)) {
+    console.error('\nREFUSING TO WRITE: the observation-stamp regex did not survive the template '
+      + `literal. Expected to emit ${WANT}. Backslashes in SCRIPT must be DOUBLED.`);
+    process.exit(1);
+  }
+  const emitted = SCRIPT.match(/var m=(\/\^\(.*?\$\/)\.exec/);
+  const probe = emitted && new RegExp(emitted[1].slice(1, -1)).exec('03:00 IST, 23 August 2026');
+  if (!probe || probe[1] !== '03' || probe[3] !== '23' || probe[4] !== 'August' || probe[5] !== '2026') {
+    console.error('\nREFUSING TO WRITE: the emitted observation-stamp regex does not parse '
+      + '"03:00 IST, 23 August 2026", which is the exact shape lib/air.ts\'s observedLabel() returns. '
+      + 'The freshness test would be permanently false and the chip could never read LIVE.');
+    process.exit(1);
+  }
+  console.log('observation-stamp regex: survives the template literal and parses a real stamp');
+}
+
+/* ── THE NATIONAL PANEL MUST NOT CONTRADICT THE HERO (restored, AD-28) ────
+   A gate with this name and this job existed before, was removed with the live
+   repaint it guarded, and the page immediately started saying two things at
+   once: the summary strip read "1st of 266 cities" from a frozen constant while
+   the national table two bands up read "ranked 8 of 267" from the live fetch.
+   Both were on one screen. A reader does not need to know which is right to see
+   that the page does not.
+   So it is back, and stronger than the version that was lost: it checks the
+   RENDERED TEXT rather than the variables, which is the only way to catch a
+   number that gets typed back in as a literal. */
+{
+  const R = OUT.replace(/<[^>]+>/g, ' ').replace(/&[a-z]+;/g, ' ').replace(/\s+/g, ' ');
+  const problems = [];
+  /* 1. Exactly one rank for Delhi anywhere on the page. */
+  const claimsFirst = /Delhi is first of/i.test(R) || /\bfirst of \d+ cities/i.test(R);
+  if (claimsFirst && DELHI_RANK !== 1) {
+    problems.push(`the page says Delhi is FIRST, and the feed ranks it ${DELHI_RANK}`);
+  }
+  /* 2. Every city total on the page is the feed's. A stale constant is how
+        this broke: 266 and 502 outlived the data by weeks. */
+  for (const [n, what] of [[NAT.cities, 'city count'], [NAT.stations, 'station count'],
+    [NAT.above, 'above-limit count'], [NAT.good, 'Good count']]) {
+    if (!Number.isFinite(n)) problems.push(`the ${what} did not resolve from data/air-india.json`);
+  }
+  /* Checked IN CONTEXT, not as bare digits. The first draft of this looked for
+     "87" and "51" anywhere in the rendered text and fired on a station's AQI —
+     a gate that cries wolf is a gate the next person switches off. Each pattern
+     below is a national total in the sentence shape the page actually writes. */
+  const CTX = [
+    [new RegExp(`\\bof ${NAT.cities === 266 ? '\\b\\B' : 266} cities\\b`), 'of 266 cities'],
+    [/\b502 stations\b/, '502 stations'],
+    [new RegExp(`\\b87 of \\d+ cities\\b`), '87 of N cities'],
+    [/\bComputed from 502\b/, 'computed from 502 stations'],
+  ].filter(([re, ]) => re.test(R));
+  if (CTX.length) {
+    problems.push(`the retired frozen national totals still appear: ${CTX.map(c => c[1]).join(', ')}`);
+  }
+  /* 3. The strip's ordinal and the panel's ordinal are the same word. */
+  const ords = [...R.matchAll(/Delhi is (\d+(?:st|nd|rd|th)|first|second|ranked \d+)/gi)].map(m => m[1].toLowerCase());
+  const norm = (o) => o === 'first' ? 1 : o === 'second' ? 2
+    : Number((o.match(/\d+/) || [])[0]);
+  const bad = ords.map(norm).filter(v => v !== DELHI_RANK);
+  if (bad.length) {
+    problems.push(`the page states Delhi's rank as ${[...new Set(bad)].join(' and ')}, `
+      + `but the feed ranks it ${DELHI_RANK}`);
+  }
+  if (problems.length) {
+    console.error('\nREFUSING TO WRITE: the national panel contradicts the hero.\n  - '
+      + problems.join('\n  - ')
+      + '\n  Every national figure on this page must come from data/air-india.json. '
+      + 'Re-run `npm run data:air` rather than typing one in.');
+    process.exit(1);
+  }
+  console.log(`national panel: Delhi ${DELHI_ORD} of ${NAT.cities}, consistent across strip and table`);
+}
 
 writeFileSync(`${V3}/situation-air.html`, OUT);
 console.log(`\nWROTE situation-air.html — ${OUT.length} bytes, ${OUT.split('\n').length} lines`);
