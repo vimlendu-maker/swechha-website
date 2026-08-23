@@ -130,3 +130,105 @@ WordPress-shaped conventions with no analogue on the new site, and a redirect
 for each would be guesswork. If Search Console later reports traffic to any of
 them after cutover, add entries then — that is a decision better made on real
 404 data than on speculation.
+
+---
+
+## The post capture
+
+`posts-raw/` holds all 146 posts as `/wp-json/wp/v2/posts` returned them, six
+files of 25. **Not 100 at a time:** asking for `content` on 100 posts makes the
+old server return a WordPress error page instead of JSON, and it does so with
+HTTP 200 — so a fetch loop that only checks the status code will cheerfully
+write 2 KB of HTML over what it believes is data. The same request without
+`content` succeeds, which is what makes the failure confusing.
+
+`posts-analysis.json` is the derived table — per post, the length of its real
+body text — produced by `analyze-posts.mjs`.
+
+**61 of the 146 posts have zero body text.** The distribution is cleanly
+bimodal: 61 posts at exactly 0 characters, then nothing at all until 200. There
+is no threshold to argue about and no judgement in the split. Measure TEXT, not
+markup: an "empty" WordPress body is not the empty string but a wrapper —
+`<p>&nbsp;</p>`, a page-builder shell, a comment. A count that strips tags but
+leaves entities reports 87 real posts instead of 85, because two of them contain
+nothing but entity padding.
+
+51 of the 61 shells are the lost 2014–17 press clippings the audit describes.
+The other **8 are dated 2025-08-21**, and that is worth correcting: the audit
+characterised the shells as 2014–15 only. These are recent, and each one names a
+broadcast whose video IS in `data/media/youtube-index.json` — ten title probes,
+ten hits. Their bodies were empty; their content was never lost.
+
+The 85 real posts are overwhelmingly **dated activity reports** — Monsoon
+Wooding 2016/17/18/19, Gram Anubhavs, Yamuna Shramdaan, Pagdandi Summer School,
+NatureScapes camps, Me to We job exposure camps. That is why they map so cleanly
+onto WORK items that already exist, and why 963 KiB of their prose is kept here:
+it is the raw material for the pages the re-point list asks for.
+
+## The redirect map
+
+`build-redirect-map.mjs` derives `redirect-map.{tsv,json}` from the capture plus
+the site's own registers. It is a script and not 226 hand-written lines because
+**a redirect map fails quietly**: a mistyped destination is a 308 into a 404,
+which looks alive to a crawler and is worse than never redirecting at all. So
+the map is gated — and the gate earned its place immediately by rejecting the
+first draft for mapping `/` to `/`.
+
+Three gates: every destination must be a route that actually exists (read out of
+`data/work/onward.json`, never restated); every captured URL must be accounted
+for exactly once, as a redirect or as a deliberate `none`; and no destination may
+itself be a redirect source, so there are no chains.
+
+**226 content URLs → 167 redirects, 59 deliberate 404s.**
+
+| Confidence | n | Meaning |
+|---|---|---|
+| `exact` | 67 | the same thing, and a detail page exists for it |
+| `folded` | 7 | a duplicate or variant slug, onto its real twin |
+| `parent` | 93 | no page for this yet — points at the true parent section |
+| `none` | 59 | deliberately no redirect |
+
+The 45 old project URLs include about ten duplicates — the `-2` suffixes, the
+`future-`/`futures-` typo pair, `remakery`/`remakery-india` — which is why they
+resolve to far fewer distinct destinations than their count suggests.
+
+### The `parent` rows are a build backlog, not a rounding error
+
+93 old URLs carry real content and have no specific page on the new site.
+Grouped by where they land, they rank the missing pages by what the old site
+actually published rather than by anyone's opinion:
+
+| Old URLs | Landing on | What is missing |
+|---|---|---|
+| 26 | `/stories` | podcast series, films, masterclasses, webinars |
+| 22 | `/work/projects` | Remakery, Green Finance, Road to Leadership, Women & Non-Traditional Livelihoods, Circular Economy |
+| 13 | `/farm` | the farm training suite — beekeeping, composting, soil regeneration, women farmers |
+| 13 | `/work` | programme activity with no clearer parent |
+| 7 | `/work/events` | Shramdaan, Yamunotsav and Cyclothon have no detail pages |
+| 5 | `/work/campaigns` | the air-pollution campaigns |
+
+This independently confirms audit §1.5 and orders it. Re-point these rows as the
+pages get built: a redirect to a section index serves a reader without
+satisfying them, and that gap is what `parent` records.
+
+### Owner rulings, 2026-08-23
+
+- **The 8 recent press shells → `/stories`.** Their videos are in the index, so
+  the thing the reader clicked does exist. The audit had said let them 404, on
+  the belief that every shell was 2014–15.
+- **`/profile/kamlika-chandla/` → no redirect.** She has left. The other 15
+  profiles point at `/about` because those people are on it; sending a reader
+  looking for her to a page that never names her is a promise the page cannot
+  keep, and a former colleague's bio going quiet is the normal outcome.
+- **`/learning-to-grow-with-swechha/` → `/act`** — a recruitment piece aimed at
+  18–25s, not a programme report.
+- **`/donate-mainpage/` → `/act`.** The redirect is settled; what `/act` should
+  say about giving is a separate question. The old page publishes two full bank
+  account sets, INDIAN and FCRA, which ruling G-1 keeps off the new site.
+  Pointing the URL at `/act` does not republish them.
+
+### Five redirects that were not guessed
+
+`content/essay/_index.json` records each published essay's `original` URL, so
+those five are read out of the repo rather than inferred — and they match the
+five longest posts in the capture exactly.
