@@ -165,20 +165,38 @@ Compare against `/tmp/before-cutover.txt`. The email lines must be identical.
 - [ ] Security headers and CSP.
 - [ ] Rate limiting on `/api/ward*` and `/api/air`.
 
-### One thing that is broken today and will matter at launch
+### App mail: fixed 2026-08-23, and why it passes
 
-`WARD_MAIL_FROM` defaults to `air@swechha.in`, so ward alerts send **as** the
-domain. But as of 2026-08-23:
+`WARD_MAIL_FROM` defaults to `air@swechha.in` and the digest sends as
+`hello@swechha.in`, so both send **as** the domain — while DMARC is published
+`p=quarantine`. That combination used to mean every alert went to spam
+silently. The domain has now been verified in Resend and the records are live:
 
-- SPF authorises Google only — Resend is not included
-- there is no Resend DKIM record (`resend._domainkey.swechha.in` does not exist)
-- DMARC is published as `p=quarantine`
+| Record | Value | What it does |
+| --- | --- | --- |
+| `resend._domainkey.swechha.in` TXT | `p=MIGfMA0…` | signs app mail as `d=swechha.in` |
+| `send.swechha.in` TXT | `v=spf1 include:amazonses.com ~all` | authorises the Return-Path |
+| `send.swechha.in` MX | `feedback-smtp.ap-northeast-1.amazonses.com` | bounces and complaints |
 
-So a ward alert sent through Resend fails both SPF and DKIM alignment and lands
-in quarantine or spam. This is pre-existing and unrelated to the cutover, but
-launch is when the feature meets real subscribers. Fix by verifying the domain
-in Resend and adding the DKIM record it gives you, or by sending from a
-subdomain Resend controls. Do not widen SPF blindly.
+DMARC (`adkim=r; aspf=r`) needs only one aligned mechanism and now gets both:
+DKIM signs as the apex domain itself, and the envelope sender `send.swechha.in`
+relaxed-aligns with `swechha.in`. **The apex SPF record was left Google-only on
+purpose** — widening it was never the fix, and it is the one change here that
+could have put Workspace mail at risk. `scripts/verify-cutover.mjs` now asserts
+the DKIM key, so deleting it fails the check instead of quietly filling spam
+folders.
+
+Two things still open, neither blocking:
+
+- [ ] **Send one real message and read the headers.** DNS says it should align;
+      only a delivered message proves it. Confirm `dkim=pass header.d=swechha.in`
+      and `dmarc=pass` in the received headers before the first alert goes to a
+      real subscriber.
+- [ ] **A second Resend domain entry exists for `send.swechha.in`** — fully
+      configured (its own DKIM at `resend._domainkey.send.swechha.in`, SPF and
+      MX under `send.send.swechha.in`) and unused, since nothing in the app
+      sends as `@send.swechha.in`. Harmless, but delete it in Resend rather than
+      leaving a verified sender nobody is watching.
 
 ---
 
