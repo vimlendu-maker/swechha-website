@@ -32,6 +32,32 @@ const nextConfig: NextConfig = {
    * URL no reader should ever see. This is the guarantee that replaced deleting
    * `public/design/`.
    */
+  /* ── THE OPTIMIZER'S OWN CACHE HEADER. ──────────────────────────────────────
+     Measured on production, 24 August 2026, straight after the srcset pass went
+     live: `/_next/image?...` came back `cache-control: public, max-age=0,
+     must-revalidate`. That is not Next's own choice — it FORWARDS the upstream
+     header, and Vercel serves everything in `public/` as
+     `max-age=0, must-revalidate`. So every optimized photo was being
+     revalidated on every navigation. The CDN answered `x-vercel-cache: HIT`, so
+     each one was only a 304 rather than a re-download, but a 304 per image per
+     page load is still a round-trip per image, and this page carries 42 of them.
+
+     It does NOT affect any PageSpeed number: Lighthouse loads cold, with an
+     empty cache, so it never saw the revalidation. This is purely for the
+     second and subsequent visits of a real reader.
+
+     ★ SEVEN DAYS, NOT THIRTY-ONE, AND THE REASON IS THIS REPO'S OWN HISTORY.
+     minimumCacheTTL also bounds how long a REPLACED source photo keeps serving
+     its old bytes, and photos here have been replaced in place before — the EXIF
+     rotation fix rewrote seven files at their existing filenames. A month of
+     staleness on a corrected photo is an editorial problem; a week is
+     recoverable, and past a few minutes the user-visible benefit is flat
+     anyway. The durable answer is the same rule the fonts follow: if you change
+     what a file looks like, change its name. */
+  images: {
+    minimumCacheTTL: 604800,
+  },
+
   async headers() {
     const always = [
       /* ── SECURITY HEADERS. None of these were set in production before
