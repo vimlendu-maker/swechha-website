@@ -1,0 +1,43 @@
+import { describe, it, expect } from 'vitest'
+import { designRoutes } from '@/design-routes'
+import { SEO } from '@/lib/seo/register'
+
+const decode = (s: string) =>
+  s.replace(/&mdash;/g, '—').replace(/&rsquo;/g, '’')
+   .replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')
+
+describe('the SEO register', () => {
+  const routes = designRoutes().map((r) => r.source)
+
+  it('has exactly one entry per routed page', () => {
+    expect([...Object.keys(SEO)].sort()).toEqual([...routes].sort())
+  })
+
+  it('gives every route a non-empty title and description', () => {
+    for (const [route, e] of Object.entries(SEO)) {
+      expect(e.title, `${route} title`).toBeTruthy()
+      expect(e.description, `${route} description`).toBeTruthy()
+    }
+  })
+
+  it('keeps every title at or under 60 rendered characters', () => {
+    for (const [route, e] of Object.entries(SEO)) {
+      expect(decode(e.title).length, `${route}: "${e.title}"`).toBeLessThanOrEqual(60)
+    }
+  })
+
+  it('keeps every description between 140 and 158 characters', () => {
+    for (const [route, e] of Object.entries(SEO)) {
+      const n = decode(e.description).length
+      expect(n, `${route} description is ${n} chars`).toBeGreaterThanOrEqual(140)
+      expect(n, `${route} description is ${n} chars`).toBeLessThanOrEqual(158)
+    }
+  })
+
+  it('never repeats a title or a description', () => {
+    const titles = Object.values(SEO).map((e) => e.title)
+    const descs = Object.values(SEO).map((e) => e.description)
+    expect(new Set(titles).size).toBe(titles.length)
+    expect(new Set(descs).size).toBe(descs.length)
+  })
+})
