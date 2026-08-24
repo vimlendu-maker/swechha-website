@@ -422,6 +422,104 @@ if (bad.length) {
 }
 console.log(`\n${results.length - bad.length} of ${results.length} pages pass all ${NAMES.length} checks.`);
 
+/* ═══ THE SELF-HOSTED FONTS ARE STILL VARIABLE FONTS ═════════════════════
+   THE FAILURE THIS EXISTS FOR. On 24 August 2026 the two families moved off
+   Google Fonts into public/fonts — that stylesheet was the site's only
+   render-blocking request, 780 ms with an estimated 2,580 ms of mobile savings.
+   The files are the same woff2 subsets Google served, but the whole typographic
+   system is axis-driven: `.d1` is 'wdth' 68 'wght' 850, `.readout` is 'wdth' 62
+   'wght' 800, `.lbl` is 'wdth' 88 'wght' 650. Drop a STATIC instance in at one
+   of these paths and none of that errors — every width silently collapses to
+   one, which reads as a design change rather than a broken asset, on 35 pages.
+   Nothing else in this repo would notice.
+
+   HOW, WITHOUT A DEPENDENCY. A woff2's table directory is NOT inside the
+   Brotli stream — the tags sit in the clear right after the 48-byte header,
+   one flag byte each (low six bits index the spec's known-tag list, 0x3F means
+   a literal 4-byte tag follows), so the tables can be enumerated without
+   decompressing anything. `fvar` present means variable; absent means someone
+   shipped a static cut. fontTools would answer the same question and cost a
+   Python toolchain this repo does not have.
+
+   WHAT IT DOES NOT PROVE, stated because the negative test found the edge: it
+   reads what the font DECLARES, not that the file is whole. A woff2 truncated
+   to 200 bytes still passes, because 19 directory entries fit in the first 124
+   — the walk reads the real tags and reports fvar honestly. Completeness is the
+   browser's complaint to make; a static instance is the one that would ship
+   silently, and that is the one gated here.
+
+   It also holds the line on the third party actually being gone: a page that
+   reintroduces fonts.googleapis.com or fonts.gstatic.com fails here, which is
+   the same argument next.config.ts's CSP comment makes about its allow-list. */
+{
+  const WOFF2_KNOWN_TAGS = [
+    'cmap', 'head', 'hhea', 'hmtx', 'maxp', 'name', 'OS/2', 'post', 'cvt ', 'fpgm', 'glyf',
+    'loca', 'prep', 'CFF ', 'VORG', 'EBDT', 'EBLC', 'gasp', 'hdmx', 'kern', 'LTSH', 'PCLT',
+    'VDMX', 'vhea', 'vmtx', 'BASE', 'GDEF', 'GPOS', 'GSUB', 'EBSC', 'JSTF', 'MATH', 'CBDT',
+    'CBLC', 'COLR', 'CPAL', 'SVG ', 'sbix', 'acnt', 'avar', 'bdat', 'bloc', 'bsln', 'cvar',
+    'fdsc', 'feat', 'fmtx', 'fvar', 'gvar', 'hsty', 'just', 'lcar', 'mort', 'morx', 'opbd',
+    'prop', 'trak', 'Zapf', 'Silf', 'Glat', 'Gloc', 'Feat', 'Sill',
+  ];
+  const woff2Tags = (buf) => {
+    if (buf.toString('latin1', 0, 4) !== 'wOF2') return null;
+    const numTables = buf.readUInt16BE(12);
+    let p = 48;
+    const base128 = () => {
+      let v = 0;
+      for (let i = 0; i < 5; i++) { const b = buf[p++]; v = (v << 7) | (b & 0x7f); if (!(b & 0x80)) return v; }
+      throw new Error('malformed UIntBase128 in the woff2 table directory');
+    };
+    const tags = [];
+    for (let i = 0; i < numTables; i++) {
+      const flags = buf[p++];
+      const idx = flags & 0x3f;
+      const tag = idx === 0x3f ? buf.toString('latin1', (p += 4) - 4, p) : WOFF2_KNOWN_TAGS[idx];
+      const tv = (flags >> 6) & 0x03;
+      base128();                                                        // origLength
+      /* glyf/loca invert the convention: version 0 IS the transform for them,
+         non-zero is the transform for everything else. Getting this wrong
+         desynchronises the walk and every tag after it is garbage. */
+      if ((tag === 'glyf' || tag === 'loca') ? tv === 0 : tv !== 0) base128();
+      tags.push(tag);
+    }
+    return tags;
+  };
+
+  const home = readFileSync(join(ROOT, 'design/home.html'), 'utf8');
+  const line8 = home.split('\n')[7];
+  const srcs = [...line8.matchAll(/url\((\/fonts\/[^)]+\.woff2)\)/g)].map((m) => m[1]);
+  const rows = [];
+  if (srcs.length !== 6) {
+    rows.push([false, `line 8 of design/home.html declares ${srcs.length} @font-face src(s), expected 6`]);
+  }
+  for (const src of srcs) {
+    const p = join(ROOT, 'public', src.replace(/^\//, ''));
+    if (!existsSync(p)) { rows.push([false, `${src} is declared but not in public/`]); continue; }
+    let tags;
+    try { tags = woff2Tags(readFileSync(p)); } catch (e) { rows.push([false, `${src}: ${e.message}`]); continue; }
+    if (!tags) { rows.push([false, `${src} is not a woff2 file`]); continue; }
+    rows.push([tags.includes('fvar'),
+      `${src.split('/').pop()} — ${tags.length} tables, fvar ${tags.includes('fvar') ? 'present' : 'MISSING (static instance?)'}`]);
+  }
+  /* The wdth range the design depends on, declared where the browser reads it. */
+  const archivoFaces = (line8.match(/font-family:'Archivo'/g) || []).length;
+  const stretchDecls = (line8.match(/font-stretch:62% 125%/g) || []).length;
+  rows.push([archivoFaces > 0 && stretchDecls === archivoFaces,
+    `font-stretch:62% 125% on ${stretchDecls} of ${archivoFaces} Archivo faces`]);
+
+  const leaked = readdirSync(V3, { recursive: true })
+    .filter((f) => String(f).endsWith('.html'))
+    .filter((f) => /fonts\.(googleapis|gstatic)\.com/.test(readFileSync(join(V3, String(f)), 'utf8')));
+  rows.push([leaked.length === 0,
+    leaked.length ? `${leaked.length} page(s) still reference Google Fonts: ${leaked.slice(0, 3).join(', ')}` : 'no page references Google Fonts']);
+
+  console.log('\nSELF-HOSTED FONTS');
+  for (const [pass, detail] of rows) {
+    console.log(`  ${pass ? 'ok  ' : 'FAIL'} ${detail}`);
+    if (!pass) fail++;
+  }
+}
+
 /* ═══ ONE READING, ONE CADENCE, ACROSS ALL THREE SURFACES ════════════════
    THE CHECK THAT WOULD HAVE CAUGHT THE 23 AUGUST DEFECT, and the reason the
    per-page `states` check did not.

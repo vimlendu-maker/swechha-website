@@ -54,12 +54,13 @@ const nextConfig: NextConfig = {
          host allow-list in supporting browsers while the inline blocks stay
          unsigned — worse than this, not better.
 
-         THE ALLOW-LIST IS THE AUDIT'S OWN INVENTORY, not a guess: every
-         external subresource on the live site is a `youtube-nocookie.com`
-         embed (8), a `fonts.googleapis.com` stylesheet, or a
-         `fonts.gstatic.com` font file. There is no analytics, no tag manager
-         and no CDN script. If one is added, it is added here too — which is
-         the point of having the header at all. */
+         THE ALLOW-LIST IS THE AUDIT'S OWN INVENTORY, not a guess. When this
+         header was written that inventory was eight `youtube-nocookie.com`
+         embeds, a `fonts.googleapis.com` stylesheet and `fonts.gstatic.com`
+         font files. AS OF 24 AUGUST 2026 THE FONTS ARE SELF-HOSTED, so the
+         inventory is the eight embeds and nothing else: no analytics, no tag
+         manager, no CDN script, no webfont host. If one is added, it is added
+         here too — which is the point of having the header at all. */
       {
         source: '/:path*',
         headers: [
@@ -97,8 +98,18 @@ const nextConfig: NextConfig = {
               process.env.NODE_ENV === 'development'
                 ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
                 : "script-src 'self' 'unsafe-inline'",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
+              /* THE GOOGLE FONTS HOSTS ARE GONE FROM BOTH OF THESE, because the
+                 fonts are served from this origin now. `fonts.googleapis.com`
+                 was the site's only render-blocking request — Lighthouse put it
+                 at 780 ms and estimated 2,580 ms of savings on mobile — and the
+                 stylesheet had to arrive before the browser even learned which
+                 font files to ask `fonts.gstatic.com` for. Six woff2 subsets
+                 under public/fonts and an inline @font-face block on line 8 of
+                 design/home.html remove the round-trip, the third party and the
+                 IP disclosure to Google in one change. Put a host back here only
+                 alongside a subresource that actually needs it. */
+              "style-src 'self' 'unsafe-inline'",
+              "font-src 'self'",
               "img-src 'self' data: blob:",
               "connect-src 'self'",
               /* ★ `'self'` IN FRAME-SRC IN DEVELOPMENT ONLY, on the same reasoning
@@ -124,6 +135,23 @@ const nextConfig: NextConfig = {
       {
         source: '/_pages/:path*',
         headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
+      /* ── THE SELF-HOSTED FONTS MUST NOT REVALIDATE. ─────────────────────────
+         Vercel serves files out of `public/` as `max-age=0, must-revalidate`,
+         which is right for a photo that might be replaced and wrong for these:
+         without this rule every navigation spends a conditional request per
+         font before it may reuse bytes it already has, which is a slice of the
+         round-trip that self-hosting was meant to remove.
+
+         ★ THE PRICE IS THAT A FONT FILE IS NOW IMMUTABLE BY NAME. A year is a
+         year — an edited woff2 at the same path reaches nobody who has already
+         loaded it. Replacing a face means a NEW filename (…-v2.woff2) and the
+         @font-face src on line 8 of design/home.html updated with it, which is
+         also the only way all 35 pages pick it up, since they extract that line
+         rather than carrying their own copy. */
+      {
+        source: '/fonts/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
       /* The editor, ALWAYS noindex — indexable deploy or not. Today the blanket
          `/:path*` rule below happens to cover it, but that rule disappears the

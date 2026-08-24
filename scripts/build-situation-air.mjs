@@ -13,7 +13,7 @@ import { tmpdir } from 'node:os';
    calls shell(). */
 import { crumb, siblings, FAMILY_CSS, NAV_SEARCH_CSS, NAV as SHELL_NAV, HOME_HREF, GIVE_HREF, INDEX_PAGE,
   stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, cadence, STATES,
-  closing, CLOSING_CSS, abs, imgDim } from './lib/situation-shell.mjs';
+  closing, CLOSING_CSS, abs, imgDim, responsiveImages } from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
 import { stampLastmod } from './lib/lastmod.mjs';
 
@@ -98,7 +98,7 @@ const CSS = [
   R(2897, 2927, 'D-09.3. THE HERO OPENS FOR THE KEYBOARD', ''),
   R(2971, 3033, 'D-09.1. ONE COMPACT INDEX CONTROL', '}'),
 ].join('\n\n');
-const HEAD_FONTS = R(8, 8, 'fonts.googleapis.com', 'display=swap');
+const HEAD_FONTS = R(8, 8, '@font-face', 'unicode-range');
 const SVG_DEFS = between('<filter id="duo"', '</svg>');
 const SKIP = between('D-09.3. BYPASS BLOCKS', 'class="skip"');
 const FOOTER = between('<footer class="foot"', '</footer>')
@@ -1970,7 +1970,7 @@ const OUT = stripHtmlComments(`<!doctype html>
 <meta name="color-scheme" content="dark">
 <title>${TITLE}</title>
 <meta name="description" content="${DESC}">
-<link rel="canonical" href="/now/air">
+<link rel="canonical" href="${abs('/now/air')}">
 <link rel="icon" href="/icons/icon-32.png" sizes="32x32"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 ${OG}
 ${HEAD_FONTS}
@@ -2087,7 +2087,11 @@ catch (e) { console.error('\nREFUSING TO WRITE: page script is not valid JS.\n' 
   console.log(`national panel: Delhi ${DELHI_ORD} of ${NAT.cities}, consistent across strip and table`);
 }
 
-stampLastmod('/now/air', OUT);
-writeFileSync(`${V3}/situation-air.html`, OUT);
-console.log(`\nWROTE situation-air.html — ${OUT.length} bytes, ${OUT.split('\n').length} lines`);
+/* This page writes its own head and its own file rather than going through
+   assemble(), so the srcset pass has to be applied here too — and before the
+   stamp, so the lastmod hash is taken over what ships. */
+const SHIPPED = responsiveImages(OUT);
+stampLastmod('/now/air', SHIPPED);
+writeFileSync(`${V3}/situation-air.html`, SHIPPED);
+console.log(`\nWROTE situation-air.html — ${SHIPPED.length} bytes, ${SHIPPED.split('\n').length} lines`);
 console.log(`  8 bands + strip + footer. Reading: AQI ${rd.aqi} ${rd.band} at ${rd.station}`);

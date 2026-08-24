@@ -61,6 +61,164 @@ export const imgDim = (src) => {
   return d ? ` width="${d.width}" height="${d.height}"` : '';
 };
 
+/* ═══ RESPONSIVE IMAGES ═══════════════════════════════════════════════════
+   MEASURED ON THE LIVE SITE, 24 AUGUST 2026. PageSpeed Insights scored
+   swechha.in mobile 67 with LCP 13.8s (desktop 88 / 2.2s), and the whole gap
+   was bytes: 4,320 KiB of payload, 4,023 of it first-party photos, against a
+   1.6 Mbps slow-4G throttle — 4.3 MB at that rate IS 14 seconds. Lighthouse's
+   own estimate for `image-delivery` was 3,494 KiB, 86% of the image bytes.
+
+   THE CAUSE: not one oversized picture but a total absence of `srcset`. All 128
+   files under public/images/photos are full-resolution JPEGs and every page
+   served the original to every device, so a 412px phone downloaded the 2400px
+   hero. Across the 35 built pages that is 262 `<img>` tags, 98 of them eager,
+   16.7 MB of eager bytes.
+
+   THE FIX, AND WHY IT IS THIS ONE. Three options were real:
+     · Pre-encode WebP/AVIF variants with sharp and commit them — matches this
+       repo's committed-artefact architecture, but adds a native build
+       dependency, ~1,000 binary files, and walks straight back into the EXIF
+       trap that shipped seven photos rotated 90° on this site once already.
+       Worse, `generated-current.yml` regenerates and diffs every artefact, so a
+       libvips version bump in CI would fail the build on byte-different JPEGs
+       that are visually identical.
+     · `/_vercel/image` — the optimizer for non-Next frameworks. Wrong endpoint
+       for a Next deployment.
+     · `/_next/image` — THIS. No new dependency, no repo growth, no re-encode
+       and so no EXIF hazard (the optimizer applies orientation itself), and
+       Vercel bills image optimization per SOURCE image, not per transformation:
+       128 photos sits inside even the Hobby allowance, and each variant is
+       CDN-cached for 31 days after its first request.
+
+   MEASURED THROUGH THE ENDPOINT, hero at each width, WebP out:
+     original 489,759 B · w=640 27,012 · w=828 42,984 · w=1080 64,642 ·
+     w=1920 134,654. At the 828 a 412px phone picks, that is 91% off the file
+     that was the LCP element.
+
+   ★ THE WIDTHS ARE NOT FREE-FORM. `/_next/image` validates `w` against
+   `deviceSizes ∪ imageSizes` and answers 400 for anything else — verified: 500
+   is a 400, 384/640/750/828/1080/1200/1920/2048 are 200s. So a width list that
+   drifts from next.config.ts does not degrade, it makes every image on the site
+   fail to load. Hence assertServableWidths() below, which reads next.config.ts
+   rather than trusting a second copy of the list — the same treatment
+   design-routes.ts gives situation-shell's own FAMILY register.
+
+   ★ IT RUNS ON THE SHIPPED HTML, NOT THE SOURCE. design/home.html is pinned by
+   absolute line number (seven CSS ranges, last ending 3033) and adding
+   attributes there would be safe only by luck; adding them at ship time is safe
+   by construction. It is also idempotent — a tag that already has `srcset` is
+   returned untouched — so applying it on more than one write path cannot
+   double-encode. */
+export const IMG_QUALITY = 75;
+/* 128 and 256 EARN THEIR PLACE ON THE RECORD GRID, and this is why the list is
+   not just the device widths. Those 27 thumbnails render at 70 CSS px, so a
+   DPR-2 phone needs 140 — and with 384 as the floor the browser had to take
+   384, nearly three times the pixels it could use. Measured through the
+   endpoint, naturalWidth confirms the pick each time (it is density-corrected,
+   so an 828 chosen for a 412px slot reads back as 412 — not a bug, the spec).
+   Every value here is in Next's default deviceSizes ∪ imageSizes. */
+export const IMG_WIDTHS = [128, 256, 384, 640, 828, 1080, 1920];
+
+/* `sizes` IS MEASURED, NOT GUESSED. Every entry below is the rendered width of
+   that figure in a real browser at 412px and at 1440px, read off
+   getBoundingClientRect and turned into a vw fraction. A guessed `sizes` is the
+   one part of this that fails quietly in both directions: too small ships a
+   blurry photo, too large defeats the whole exercise. The record grid was the
+   find — 27 thumbnails rendering at 70 CSS px that were each pulling up to
+   706 KB of full-resolution JPEG.
+
+   The key is the class on the element WRAPPING the image, because that is what
+   the CSS sizes; `.duo` on the img itself is the colour filter and says nothing
+   about width. A wrapper this does not recognise gets 100vw — never blurry, and
+   still an order of magnitude better than the original file. */
+const IMG_SIZES = new Map([
+  ['s-hero-shot', '100vw'],
+  ['pic', '100vw'],
+  ['w7-say-fig', '(max-width:700px) 100vw, 56vw'],
+  ['w7-pj-fig', '(max-width:700px) 85vw, 38vw'],
+  ['w7-jr-fig', '(max-width:700px) 70vw, 31vw'],
+  ['w7-ab-fig', '(max-width:700px) 100vw, 20vw'],
+  ['s-gtm-fig', '(max-width:700px) 100vw, 15vw'],
+  ['s-record-cell', '(max-width:700px) 20vw, 11vw'],
+  ['mark', '170px'],
+]);
+
+/* The wrapper is the open tag immediately before the image — true of every
+   figure/span/a/div on this site, since these images are all the first child of
+   the box that sizes them. Anchored at the end of the preceding window so a
+   stray class further up the document cannot be picked up by accident. */
+const sizesFor = (html, at) => {
+  const before = html.slice(Math.max(0, at - 400), at);
+  const open = before.match(/<\w+([^>]*)>\s*$/);
+  const cls = open && (open[1].match(/\sclass="([^"]*)"/) || [])[1];
+  for (const name of (cls || '').split(/\s+/)) {
+    if (IMG_SIZES.has(name)) return IMG_SIZES.get(name);
+  }
+  return '100vw';
+};
+
+/* Read out of next.config.ts, not restated here. If that file ever narrows the
+   width lists, this fails the build instead of shipping 262 images that 400. */
+let widthsChecked = false;
+function assertServableWidths() {
+  if (widthsChecked) return;
+  widthsChecked = true;
+  const cfg = readFileSync(join(ROOT, 'next.config.ts'), 'utf8');
+  /* Next's documented defaults, in force while next.config.ts sets neither. */
+  const DEFAULTS = {
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+  };
+  const servable = new Set();
+  for (const key of ['deviceSizes', 'imageSizes']) {
+    const m = cfg.match(new RegExp(`${key}\\s*:\\s*\\[([^\\]]*)\\]`));
+    const list = m
+      ? m[1].split(',').map((s) => Number(s.trim())).filter(Number.isFinite)
+      : DEFAULTS[key];
+    for (const w of list) servable.add(w);
+  }
+  const unservable = IMG_WIDTHS.filter((w) => !servable.has(w));
+  if (unservable.length) {
+    console.error(`REFUSING TO WRITE: IMG_WIDTHS asks /_next/image for ${unservable.join(', ')}, `
+      + 'which next.config.ts\'s images.deviceSizes/imageSizes do not serve. That endpoint answers '
+      + '400 for an unconfigured width, so this would not degrade — it would break every image on '
+      + 'the site. Add the widths to next.config.ts or take them out of IMG_WIDTHS.');
+    process.exit(1);
+  }
+}
+
+export function responsiveImages(html) {
+  assertServableWidths();
+  return html.replace(/<img\b[^>]*>/gi, (tag, at) => {
+    if (/\ssrcset=/i.test(tag)) return tag;                       // already done
+    const src = (tag.match(/\ssrc="([^"]+)"/i) || [])[1];
+    if (!src || !/^\/(?:images|brand)\/.+\.(?:jpe?g|png)$/i.test(src)) return tag;
+
+    /* The intrinsic width caps the variant list: asking the optimizer to
+       upscale spends a transformation to make a file bigger than the original.
+       Taken from the width attribute every generator already emits via
+       imgDim(), and read off the file when a hand-written tag has none. */
+    const attrW = Number((tag.match(/\swidth="(\d+)"/i) || [])[1]);
+    const intrinsic = attrW > 0
+      ? attrW
+      : (imageSize(join(ROOT, 'public', src.slice(1))) || {}).width;
+    if (!intrinsic) return tag;
+    const widths = IMG_WIDTHS.filter((w) => w <= intrinsic);
+    if (!widths.length) return tag;      // smaller than the smallest variant
+
+    /* `&amp;`, not a bare `&`. A bare one happens to work — neither `&w` nor
+       `&q` is a named character reference, so every parser leaves it alone —
+       but it is invalid HTML, and "happens to parse" is not the standard the
+       other 261 attributes on these pages are held to. */
+    const enc = encodeURIComponent(src);
+    const srcset = widths
+      .map((w) => `/_next/image?url=${enc}&amp;w=${w}&amp;q=${IMG_QUALITY} ${w}w`)
+      .join(', ');
+    const extra = /\sdecoding=/i.test(tag) ? '' : ' decoding="async"';
+    return tag.replace(/\s*\/?>$/, `${extra} sizes="${sizesFor(html, at)}" srcset="${srcset}">`);
+  });
+}
+
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 export const V3 = join(ROOT, 'public/_pages/v3');
 export const DATA = join(ROOT, 'data');
@@ -211,7 +369,7 @@ export function shell() {
     home.R(2971, 3033, 'D-09.1. ONE COMPACT INDEX CONTROL', '}'),
   ].join('\n\n');
 
-  const HEAD_FONTS = home.R(8, 8, 'fonts.googleapis.com', 'display=swap');
+  const HEAD_FONTS = home.R(8, 8, '@font-face', 'unicode-range');
   const SVG_DEFS = home.between('<filter id="duo"', '</svg>');
   const SKIP = home.between('D-09.3. BYPASS BLOCKS', 'class="skip"');
   const FOOTER = home.between('<footer class="foot"', '</footer>')
@@ -1834,7 +1992,10 @@ export function shipDocument(html) {
     (_, open, body, close) => open + stripCssComments(body) + close);
   const withScripts = withStyles.replace(/(<script\b[^>]*>)([\s\S]*?)(<\/script>)/gi,
     (_, open, body, close) => open + redactScriptLedgerRefs(body) + close);
-  return stripHtmlComments(withScripts);
+  /* srcset LAST, after the comments are gone: sizesFor() reads the open tag
+     immediately before each image, and an HTML comment sitting between the two
+     in the source would otherwise be what it found. */
+  return responsiveImages(stripHtmlComments(withScripts));
 }
 
 /* ═══ ASSEMBLE AND THE WRITE GATES ═══════════════════════════════════════ */
@@ -1938,10 +2099,29 @@ export async function assemble({ file, title, desc = null, bands, sectionFor, in
      map is the wrong answer to both; the page stating its own route is the
      right one.
 
-     RELATIVE, NOT ABSOLUTE, and that is deliberate: the origin is only known
-     at request time (SITE_ORIGIN, or Vercel's VERCEL_URL), so an absolute
-     canonical baked in at build time would advertise the wrong host on every
-     preview deploy — the exact defect lib/org.ts was just fixed for.
+     ABSOLUTE, VIA abs(). The original note read: "RELATIVE, NOT ABSOLUTE, and
+     that is deliberate: the origin is only known at request time (SITE_ORIGIN,
+     or Vercel's VERCEL_URL), so an absolute canonical baked in at build time
+     would advertise the wrong host on every preview deploy — the exact defect
+     lib/org.ts was just fixed for." That reasoning does not survive reading the
+     rest of this same head. `headTags` four lines below already bakes ORIGIN
+     into `og:url` at build time, `breadcrumbJsonLd` bakes it into every
+     BreadcrumbList `item`, and `verify-seo.mjs` GATES both as absolute. So the
+     origin was never deferred to request time on these pages; the canonical was
+     the one tag pretending it was, and it is the one tag a search engine
+     actually consolidates duplicates with.
+
+     Measured on the live site, 24 August 2026: Lighthouse scores SEO 92 on
+     every page of swechha.in, and the single failing audit is `canonical` —
+     "Document does not have a valid rel=canonical: Is not an absolute URL (/)".
+     35 of 35 built pages failed it.
+
+     The preview-deploy worry is real but points the other way: a preview
+     advertising the PRODUCTION canonical is the correct signal — it tells a
+     crawler the preview URL is not the indexable one — and Vercel already
+     serves preview deployments with `X-Robots-Tag: noindex`, so nothing is
+     indexed there to mis-attribute. Set SITE_ORIGIN if a deploy genuinely needs
+     a different host; that is what the env override is for.
 
      DERIVED WHERE IT CAN BE, REQUIRED WHERE IT CANNOT. The index and the six
      situations are in the family register; /impact and /farm pass their own
@@ -2043,7 +2223,7 @@ export async function assemble({ file, title, desc = null, bands, sectionFor, in
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>${title}</title>
-<link rel="canonical" href="${canonical}">
+<link rel="canonical" href="${attr(abs(canonical))}">
 ${headTags(title, description, canonical, ogType)}
 ${headExtra ? `${headExtra}\n` : ''}${sh.HEAD_FONTS}
 <style>
@@ -2150,9 +2330,15 @@ ${SCRIPT}</script>
     process.exit(1);
   }
 
-  stampLastmod(canonical, OUT);
-  writeFileSync(join(V3, file), OUT);
-  console.log(`WROTE ${file} — ${OUT.length.toLocaleString('en-IN')} bytes, ${OUT.split('\n').length.toLocaleString('en-IN')} lines`);
+  /* srcset goes on HERE, not into the template above, for two reasons: the
+     AD-28 gates and the node --check both read OUT, and 262 long attributes
+     would only make their failure context harder to read; and the lastmod hash
+     below must be taken over WHAT SHIPS, or a page whose only change is its
+     images keeps yesterday's date in the sitemap. */
+  const SHIPPED = responsiveImages(OUT);
+  stampLastmod(canonical, SHIPPED);
+  writeFileSync(join(V3, file), SHIPPED);
+  console.log(`WROTE ${file} — ${SHIPPED.length.toLocaleString('en-IN')} bytes, ${SHIPPED.split('\n').length.toLocaleString('en-IN')} lines`);
   if (note) console.log(`  ${note}`);
-  return OUT;
+  return SHIPPED;
 }

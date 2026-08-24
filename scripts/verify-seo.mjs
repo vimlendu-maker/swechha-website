@@ -14,6 +14,19 @@ const walk = (d) => readdirSync(d).flatMap((f) => {
 });
 const one = (html, re) => (html.match(re) || [])[1] ?? null;
 
+/* THE CANONICAL IS ABSOLUTE ON EVERY PAGE (situation-shell.mjs:1931-1953), so
+   the route this file keys everything on — the register lookup, the orphan
+   sweep — is its PATH. Parsed with `new URL`, not a prefix strip, so a canonical
+   built against a different SITE_ORIGIN still yields the right route instead of
+   silently failing the register lookup for a reason that reads like a missing
+   page. A still-relative canonical (the hand-maintained home.html is the one
+   file a generator does not write) resolves against a dummy base and keeps its
+   path, so it reaches the absolute check below rather than crashing here. */
+const routeOf = (canonical) => {
+  try { return new URL(canonical, 'https://example.invalid').pathname; }
+  catch { return null; }
+};
+
 /* Add a check here in the same commit as the fix that makes it pass. */
 const CHECKS = [
   {
@@ -53,6 +66,18 @@ const CHECKS = [
       if (!/^https?:\/\//.test(tw)) return `twitter:image is relative: ${tw}`;
       return null;
     },
+  },
+  {
+    /* Lighthouse's `canonical` audit fails a relative href outright — "Is not
+       an absolute URL (/)" — and it was the ONLY failing SEO audit on the live
+       site on 24 August 2026, on all 35 pages, holding every one of them at
+       SEO 92. It sits beside the og:url check on purpose: those two tags carry
+       the same URL and there is no reading under which one should be absolute
+       and the other not. */
+    name: 'the canonical is absolute',
+    run: ({ canonical }) => (/^https?:\/\//.test(canonical)
+      ? null
+      : `rel=canonical is relative: ${canonical} — Lighthouse fails this audit`),
   },
   {
     name: 'og:url agrees with the canonical',
@@ -139,9 +164,15 @@ let failures = 0;
 
 for (const file of files) {
   const html = readFileSync(file, 'utf8');
-  const route = one(html, /<link rel="canonical" href="([^"]+)"/);
-  if (!route) {
+  const canonical = one(html, /<link rel="canonical" href="([^"]+)"/);
+  if (!canonical) {
     console.error(`! ${file}\n    no rel=canonical — this page cannot state its route`);
+    failures++;
+    continue;
+  }
+  const route = routeOf(canonical);
+  if (!route) {
+    console.error(`! ${file}\n    rel=canonical is not a parseable URL: ${canonical}`);
     failures++;
     continue;
   }
@@ -155,7 +186,7 @@ for (const file of files) {
     continue;
   }
   const bad = CHECKS.map((c) => {
-    const detail = c.run({ route, file, html, entry });
+    const detail = c.run({ route, canonical, file, html, entry });
     return detail ? `${c.name}: ${detail}` : null;
   }).filter(Boolean);
   if (bad.length) {

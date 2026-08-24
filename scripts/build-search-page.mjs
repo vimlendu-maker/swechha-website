@@ -84,8 +84,17 @@ for (const abs of files) {
   if (name === OUT_FILE) continue;              // never index itself
   const src = readFileSync(abs, 'utf8');
 
-  const route = one(src, /<link rel="canonical" href="([^"]*)"/);
-  if (!route) { dataFail(`${name} has no rel=canonical, so its route is unknown.`); continue; }
+  /* THE CANONICAL IS ABSOLUTE (situation-shell.mjs:1931-1953) and the index
+     needs the PATH — a search result href of "https://swechha.in/work" would
+     send every in-site click out through the public origin and back. Parsed
+     rather than prefix-stripped so a page built under a different SITE_ORIGIN
+     still indexes at the right route; a relative canonical resolves against the
+     dummy base and keeps its path, so this handles both forms. */
+  const canonical = one(src, /<link rel="canonical" href="([^"]*)"/);
+  if (!canonical) { dataFail(`${name} has no rel=canonical, so its route is unknown.`); continue; }
+  let route;
+  try { route = new URL(canonical, 'https://example.invalid').pathname; }
+  catch { dataFail(`${name} has an unparseable rel=canonical: ${canonical}`); continue; }
 
   const rawTitle = one(src, /<title>([\s\S]*?)<\/title>/);
   /* THE ORG NAME COMES OFF EITHER END. In a list of Swechha pages it is on

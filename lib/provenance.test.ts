@@ -46,6 +46,28 @@ const STRUCK: Array<[string, RegExp, string]> = [
   ['W-1', /W-1/, 'an internal WORK-pass ruling id.'],
 ]
 
+/* ── ONE EXEMPTION, AND IT IS A PROVEN FALSE POSITIVE ───────────────────────
+   `unicode-range` values are blanked before scanning. On 24 August 2026 the two
+   webfonts moved off Google Fonts into public/fonts, which put the @font-face
+   blocks — and their unicode-range subset declarations — inline on all 35 pages.
+   The latin-ext range includes the Indian rupee sign's neighbourhood,
+   `U+20AD-20C0`, and the string "U+20AD-20C0" contains "AD-2". All 35 pages
+   failed at once.
+
+   This is not the thing AD-28 §7 struck. The ruling is about CITATIONS INTO
+   THIS REPOSITORY reaching a reader — "AD-27.48", "D-09.3", "§7" — text that
+   promises a document the reader cannot open. A hexadecimal codepoint boundary
+   is not reader-facing at all, it is not a reference to anything, and it cannot
+   be followed. Exempting it removes a false positive; it does not soften the
+   gate, which still reads every other byte of every page. Blanked rather than
+   deleted so the surrounding text stays contiguous and a real citation adjacent
+   to a font declaration could not slip through a seam.
+
+   Narrow on purpose: `unicode-range` and nothing else. If a future collision
+   turns up somewhere else, it gets its own line here and its own argument. */
+const scannable = (html: string): string =>
+  html.replace(/unicode-range:[^;}]*/gi, (m) => ' '.repeat(m.length))
+
 function builtPages(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name)
@@ -66,7 +88,7 @@ describe('AD-28 §7 — no internal ledger reference reaches a built page', () =
   for (const page of pages) {
     const name = relative(V3, page)
     it(`${name} carries no ledger reference`, () => {
-      const html = readFileSync(page, 'utf8')
+      const html = scannable(readFileSync(page, 'utf8'))
       for (const [label, re, why] of STRUCK) {
         const m = re.exec(html)
         const context = m
