@@ -526,6 +526,40 @@ if (rainNormal === null) {
   }
 }
 
+/* ── THE SHARE CARD'S ABSOLUTE URLS, DERIVED NOT LITERAL ──────────────────
+   Task 4 fix round 1, finding 1: og:url, og:image and twitter:image were
+   typed as literal `https://swechha.in/...` strings on this page — the exact
+   hazard the comment above `S.abs()` in situation-shell.mjs warns against,
+   and the one lib/org.ts:22-47 records as a real production incident (a
+   mistyped/hardcoded origin silently corrupted the sitemap and robots.txt).
+   Under a SITE_ORIGIN-driven regeneration this page would keep describing
+   the production host while all 34 other pages correctly moved.
+   THIS PAGE CANNOT CALL `S.abs()` ITSELF — it is static HTML, not a
+   generator — so the value is computed here, at build time, and substituted
+   in, THE SAME ONE-LINE TECHNIQUE AS THE READINGS AND THE ORGANIZATION
+   JSON-LD ABOVE: matched exactly once, so a hand edit that moves the markup
+   fails the build rather than being silently skipped.
+   THE RENDERED VALUE DOES NOT CHANGE: with SITE_ORIGIN unset this still
+   writes https://swechha.in, because that is `S.abs()`'s own default. What
+   changed is how the value is produced, not what it is. */
+{
+  const SHARE_URLS = [
+    [/(<meta property="og:url" content=")[^"]*(")/, S.abs('/'), 'og:url'],
+    [/(<meta property="og:image" content=")[^"]*(")/, S.abs('/images/og/og-default.png'), 'og:image'],
+    [/(<meta name="twitter:image" content=")[^"]*(")/, S.abs('/images/og/og-default.png'), 'twitter:image'],
+  ];
+  for (const [re, value, label] of SHARE_URLS) {
+    const hits = src.match(new RegExp(re.source, 'g'));
+    if (!hits || hits.length !== 1) {
+      fail(`${label} matched ${hits ? hits.length : 0} times in home.html, expected exactly 1 — the markup moved`);
+      continue;
+    }
+    const before = src;
+    src = src.replace(re, `$1${value}$2`);
+    ok(`share url    ${label} -> ${value}${src === before ? '  (already in step)' : '  (updated)'}`);
+  }
+}
+
 /* ── THE CROSS-CHECK ────────────────────────────────────────────────────── */
 console.log('\nCROSS-CHECK AGAINST THE SITUATION PAGES');
 for (const slide of SLIDES) {
