@@ -15,6 +15,7 @@ import { crumb, siblings, FAMILY_CSS, NAV_SEARCH_CSS, NAV as SHELL_NAV, HOME_HRE
   stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, cadence, STATES,
   closing, CLOSING_CSS, abs } from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
+import { stampLastmod } from './lib/lastmod.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const V3 = join(ROOT, 'public/_pages/v3');
@@ -2082,6 +2083,7 @@ catch (e) { console.error('\nREFUSING TO WRITE: page script is not valid JS.\n' 
   console.log(`national panel: Delhi ${DELHI_ORD} of ${NAT.cities}, consistent across strip and table`);
 }
 
+stampLastmod('/now/air', OUT);
 writeFileSync(`${V3}/situation-air.html`, OUT);
 console.log(`\nWROTE situation-air.html — ${OUT.length} bytes, ${OUT.split('\n').length} lines`);
 console.log(`  8 bands + strip + footer. Reading: AQI ${rd.aqi} ${rd.band} at ${rd.station}`);

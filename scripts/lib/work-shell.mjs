@@ -63,6 +63,7 @@ import {
   ask, stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, abs,
   breadcrumbJsonLd,
 } from './situation-shell.mjs';
+import { stampLastmod } from './lastmod.mjs';
 
 export { ROOT, V3, HOME_SRC, opener, hole, esc, kd, kindTag, KIND_LEGEND, ARROW, n0, disclose, groundChain, tabs, ask };
 /* Task 8 moved the definition itself down to situation-shell.mjs (work-shell
@@ -2474,7 +2475,12 @@ ${SCRIPT}</script>
   return { file, html: OUT, problems, chain };
 }
 
-export function writePage(outDir, file, html) {
+export function writePage(outDir, file, html, route) {
+  /* Stamped right here, before the write, same as situation-shell.mjs's
+     `assemble()` — the other shell, the other half of the 35 built pages.
+     `route` is optional only so a caller that has no canonical (there is
+     none today) does not crash; every WORK page passes its own `url`. */
+  if (route) stampLastmod(route, html);
   const p = join(outDir, file);
   mkdirSync(dirname(p), { recursive: true });
   writeFileSync(p, html);

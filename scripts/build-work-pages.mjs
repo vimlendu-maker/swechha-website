@@ -2430,7 +2430,7 @@ if (problems > 0) { console.error(`\n${problems} gate failure(s). Nothing was wr
 if (DRY) { console.log('\n--dry: every gate passed, nothing written.'); process.exit(0); }
 
 for (const b of built) {
-  writePage(OUT_DIR, b.file, b.html);
+  writePage(OUT_DIR, b.file, b.html, b.url);
   console.log(`WROTE ${b.file.padEnd(34)} ${b.html.length.toLocaleString('en-IN').padStart(9)} bytes  ->  ${b.url}`);
 }
 links.write(LINKS_OUT);

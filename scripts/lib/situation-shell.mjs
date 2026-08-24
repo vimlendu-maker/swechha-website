@@ -48,6 +48,7 @@ import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { seo } from './seo-register.mjs';
+import { stampLastmod } from './lastmod.mjs';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 export const V3 = join(ROOT, 'public/_pages/v3');
@@ -2127,6 +2128,7 @@ ${SCRIPT}</script>
     process.exit(1);
   }
 
+  stampLastmod(canonical, OUT);
   writeFileSync(join(V3, file), OUT);
   console.log(`WROTE ${file} — ${OUT.length.toLocaleString('en-IN')} bytes, ${OUT.split('\n').length.toLocaleString('en-IN')} lines`);
   if (note) console.log(`  ${note}`);

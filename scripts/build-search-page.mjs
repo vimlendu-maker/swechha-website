@@ -290,6 +290,14 @@ const PAGE_CSS = `
    exists (spec section 3.1). */
 const TITLE = seo('/search').title;
 
+/* `noindex, follow` (Task 9). A site-search UI is a duplicate-content surface
+   — every result it renders is a page already indexed at its own canonical
+   URL — so this one should not compete with those in search results.
+   `follow` keeps it useful as a crawl path: it links every one of the 35
+   built pages from one place, and a crawler that never indexes this page can
+   still walk its links to reach all of them. */
+const ROBOTS_META = '<meta name="robots" content="noindex, follow">';
+
 const OUT = await S.assemble({
   file: OUT_FILE,
   route: '/search',
@@ -297,6 +305,7 @@ const OUT = await S.assemble({
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
   script: SCRIPT,
+  headExtra: ROBOTS_META,
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),
   note: `${BANDS.length} bands + footer. ${entries.length} pages indexed in ${grouped.length} groups, `
       + `${entries.reduce((n, e) => n + e.heads.length, 0)} band headings as search terms.`,

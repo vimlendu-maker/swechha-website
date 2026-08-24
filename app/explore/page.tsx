@@ -13,6 +13,14 @@ export const metadata: Metadata = {
      an absolute value baked in at build time advertises the preview host on
      every preview deploy. This one is not baked. */
   alternates: { canonical: '/explore' },
+  /* Task 9: this page renders an empty content grid (no stories are published
+     under `content/` yet — see `lib/content.ts`), has zero inbound internal
+     links from any of the 35 built pages, and self-canonicalises above. That
+     is a thin page inviting indexation, not a page ready to compete for
+     search placement. `follow` is left at its default (true) since nothing on
+     the page needs blocking from crawl, only from the index. Reversible: drop
+     this the day real content lands here. */
+  robots: { index: false, follow: true },
 }
 
 export default function ExplorePage() {

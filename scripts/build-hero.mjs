@@ -53,6 +53,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
+import { stampLastmod } from './lib/lastmod.mjs';
 
 const CHECK = process.argv.includes('--check');
 /* ── TWO FILES, AND THE DISTINCTION IS THE WHOLE OF AD-28 §7 HERE. ────────
@@ -717,6 +718,7 @@ if (CHECK) {
   console.log(`  the shipped page would be ${ship.length.toLocaleString('en-IN')} bytes, `
     + `down from the source's ${src.length.toLocaleString('en-IN')}.`);
 } else {
+  stampLastmod('/', ship);
   writeFileSync(HOME, src);
   writeFileSync(SHIP, ship);
   console.log(`\n${changed} slide(s) updated, ${linesAfter} lines, line count unchanged. All checks pass.`);
