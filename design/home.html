@@ -192,7 +192,7 @@ section{padding:0;position:relative;overflow-x:clip}
 
    The result is a photograph you can actually see AND type that is
    never marginal, which is what neither previous attempt managed. */
-.pic{position:relative;overflow:hidden;height:clamp(240px,40vh,440px)}
+.pic{position:relative;overflow:hidden;height:clamp(240px,40svh,440px)} /* AD-39: svh, not vh. vh is the LARGEST viewport -- the height the window has once the browser has retracted its own chrome -- so on a phone whose address bar sits at the bottom and does not retract, every vh box is taller than the space the reader actually has. svh is the smallest viewport and is the honest number. Owner request, 24 August: factor the browser bar in across the site. */
 .pic>img{width:100%;height:100%;object-fit:cover;display:block}
 /* No gradient on the frame itself. A band gradient has to guess how tall
    the headline is, and a two-line headline overruns it: measured, the
@@ -393,7 +393,7 @@ html,body{scroll-padding-top:var(--nav-h)}
 .nav a.nl{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 92,'wght' 620;
   font-size:12px;letter-spacing:.13em;text-transform:uppercase;text-decoration:none;
   color:var(--fg-2);padding:5px 0;border-bottom:2px solid transparent}
-.nav a.nl:hover,.nav a.nl[aria-current]{color:var(--fg);border-bottom-color:var(--mustard)}.nav a.mark[aria-current]{border-bottom:2px solid var(--mustard)}
+.nav a.nl:hover,.nav a.nl[aria-current]{color:var(--fg);border-bottom-color:var(--mustard)} /* AD-39. THE WORDMARK NO LONGER CARRIES A MUSTARD RULE. The removed declaration was .nav a.mark[aria-current]{border-bottom:2px solid var(--mustard)}, which painted a 2px mustard line under the logo on the homepage and read, at 375px, as a stray rule floating under the identity rather than as a location cue -- the nav links beside it already carry that same underline for exactly that job, so the mark was saying a second time what the strip says once. Owner call, 24 August. The aria-current="page" attribute STAYS on the anchor: assistive technology still gets the location, only the paint is gone. */
 .give{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 92,'wght' 700;
   font-size:12px;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;
   background:var(--mustard);color:var(--on-mustard);padding:9px 18px;white-space:nowrap}
@@ -685,12 +685,12 @@ html,body{scroll-padding-top:var(--nav-h)}
 .paper .b-1:focus-visible{outline-color:var(--paper);box-shadow:0 0 0 5px var(--mustard-ink)}
 
 /* ── FOOTER ──────────────────────────────────────────────────────────*/
-.foot{background:var(--ground-2);color:var(--fg);padding:var(--pad-t4) 0 30px;
-  border-top:1px solid var(--hair)}
-.foot-g{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:30px}
+.foot{background:var(--ground-2);color:var(--fg);padding:var(--pad-t4) 0 calc(30px + env(safe-area-inset-bottom,0px));
+  border-top:1px solid var(--hair)} /* AD-39: env(safe-area-inset-bottom). The last thing on every page is this footer, and on an iPhone in Safari the home indicator sits over the bottom of the viewport while an Android Chrome with a bottom address bar puts its own chrome there. The legal line was landing under both. The fallback is 0px, so nothing changes on a desktop or on any browser that does not report an inset. Owner request, 24 August: factor the bottom bar in across the site. */
+.foot-g{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr 1.05fr;gap:30px 26px}
 .foot h3{margin:0 0 12px;color:var(--fg-3)}
-.foot a{color:var(--fg-2);text-decoration:none;font-size:15.5px;line-height:1.8;display:block}
-.foot a:hover{color:var(--mustard)}
+.foot a{color:var(--fg-2);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:5px;text-decoration-color:var(--hair);font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 600;font-size:12.5px;line-height:1.9;display:block;text-transform:uppercase;letter-spacing:.085em} /* AD-39: AND THE CAPS TAKE THE LABEL FACE, not the reading serif. Uppercasing a link list is only half a decision -- set in Fraunces, the site's DISPLAY AND READING face, twenty-four uppercased serif phrases read as twenty-four small headlines, and the first build of this footer looked exactly like that. Archivo at wght 600 with .085em tracking is the declaration .lbl already uses for every other uppercase label on this site, so the footer now speaks in the site's own label voice and the column reads as a directory. */ /* AD-39 GAVE THE FOOTER LINKS A CUE. They were text-decoration:none, and that was defensible while the footer held thirteen links in four labelled columns -- a footer link list is a convention a reader reads as links. It is not defensible now the footer IS the site index, twenty-four routes deep, and the whole reason this pass exists is a first-time reader who could not tell what was clickable. The underline is drawn in the HAIRLINE colour rather than the text colour, at 1px and 5px below the baseline, so the column still reads as a directory rather than as twenty-four emphasised phrases; hover and focus take it to mustard along with the ink, so the state change is on both at once. */
+.foot a:hover,.foot a:focus-visible{color:var(--mustard);text-decoration-color:var(--mustard)} .foot .foot-mail{text-transform:none;letter-spacing:0;font-size:14.5px}
 /* ══ SOCIAL ROW. Added AD-08, 21 August. ═══════════════════════════════
    WORDMARKS, NOT AN ICON SET. This page's whole vocabulary is type, rules
    and photographs; the only non-type marks it allows anywhere are the
@@ -727,8 +727,8 @@ html,body{scroll-padding-top:var(--nav-h)}
 .foot-soc-r a:first-child{padding-left:0;border-left:0}
 .foot-soc-r a:last-child{padding-right:0}
 .foot-b{margin-top:42px;padding-top:18px;border-top:1px solid var(--hair);
-  display:flex;flex-wrap:wrap;gap:12px 28px;color:var(--fg-3);font-size:13.5px}
-@media (max-width:820px){.foot-g{grid-template-columns:1fr 1fr}}
+  display:flex;flex-wrap:wrap;gap:12px 28px;color:var(--fg-3);font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 520;font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;line-height:1.75}
+@media (max-width:1080px){.foot-g{grid-template-columns:1fr 1fr 1fr}}@media (max-width:820px){.foot-g{grid-template-columns:1fr 1fr}}
 /* 856px at 375 — two and a half times its desktop height and taller
    than impact or farm — was four columns stacked. Two-column link grid
    instead, with the address block spanning, and the link leading tuned
@@ -743,8 +743,8 @@ html,body{scroll-padding-top:var(--nav-h)}
      worse than the desktop one. 44px rows instead. Four rows per column
      go from ~92px to 176px, and the ~84px that costs is taken back out
      of this footer's own padding below. */
-  .foot a{font-size:15px;line-height:1.35;display:flex;align-items:center;
-    min-height:44px}
+  .foot a{font-size:11.5px;line-height:1.3;display:flex;align-items:center;
+    min-height:44px} .foot a.foot-d{display:none} /* AD-39: the ten leaf links go, the parent row stays. `.foot a.foot-d` and NOT `.foot-d` -- the rule it has to beat is `.foot a{display:flex}` two lines up, which at (0,1,1) outranks a bare class at (0,1,0), so the first attempt at this changed nothing and measured 0 of 10 hidden. */
   .foot{padding-top:12px;padding-bottom:14px}
   .foot-g{gap:4px 18px}
   /* the wrap-proof form: no borders to strand at a line start, and the
@@ -1139,7 +1139,7 @@ html,body{scroll-padding-top:var(--nav-h)}
   .s-hero-sit{display:flex;flex-direction:column;min-height:0}
   /* the frame stops being one viewport here, so --shot-h is re-declared
      rather than hard-coded twice: the halftone pitch reads it. */
-  .s-hero{--shot-h:clamp(150px,19svh,230px)}
+  .s-hero{--shot-h:clamp(104px,19svh,230px)} /* AD-39 LOWERED THE FLOOR, and the floor was the whole problem. The expression already read the VISIBLE viewport -- svh, not vh, so the browser's own chrome is out of the number by construction -- but a 150px minimum overrode it on every phone: at 635px visible, 19svh is 120.6px, so the clamp was pinned to its floor and the photo took 29px the first screen did not have. That is the mechanism behind the owner's report that the slide's link "gets behind the chrome browser": the deck ended at 629.7px of a 635px window with 5px to spare, and any device whose chrome is one line taller clipped it. 104px is 19svh at a 548px visible height, which is a small Android with a bottom address bar -- so the floor now bites BELOW the range real phones report instead of above it, and the photo scales with the window the way the rest of the frame already did. */
   .s-hero-shot{position:relative;inset:auto;flex:none;height:var(--shot-h)}
   .s-hero-panel{flex:1 1 auto;display:flex;flex-direction:column;
     padding-top:clamp(12px,3.2vw,20px);padding-bottom:10px}
@@ -1186,7 +1186,7 @@ html,body{scroll-padding-top:var(--nav-h)}
      tops must be within ~7px of each other at 375. */
   .s-hero-rail{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;gap:0}
   .s-hero-acct{flex:1 1 auto}
-  .s-hero-why{margin-bottom:auto}
+  .s-hero-why{margin-bottom:auto} /* AD-39. AND THE ONE THAT HAS NOTHING LEFT TO SAY IS TAKEN OUT OF THE COLUMN. Measured at 375x635: the Air slide rendered .s-hero-why at height 0 with margin-bottom 100.1px, so the reader got a 100px hole between VERY POOR and the CPCB scale -- the owner reported it as "huge blank space" and it was the single largest defect on the first screen. The cause is that Air is the ONE slide whose whole sentence is inside .s-hero-cut, so at this width the paragraph is a box with no text in it, and margin-bottom:auto -- which exists to bottom-align the scale so it does not jump between slides -- was being paid by an empty box. :has(> .s-hero-cut:only-child) is exactly and only that case: every other slide keeps a visible lead clause outside the cut span, so the alignment those slides need is untouched. Not :empty, which does not match an element holding a display:none child. */ .s-hero-why:has(> .s-hero-cut:only-child){display:none}
   .s-hero-plate{margin-top:0}
   /* the dissolve's vw override is gone with D2: --shot-h is re-declared
      just above, and --s-hero-fade already reads it, so the phone frame
@@ -1344,7 +1344,7 @@ html,body{scroll-padding-top:var(--nav-h)}
     mask-image:linear-gradient(90deg,#000 calc(100% - 8px),transparent)}
   .s-hero-bar .count{order:2;margin-right:auto;margin-left:0}
   .s-hero-bar .rig-arrows{order:3}
-  .s-hero-bar .rig-arrows button{width:44px;height:44px} /* AD-29: THE CONTROLS COME UP ABOVE THE DECK ON PHONES. Measured at 375x635 -- an iPhone-class VISIBLE height, not the 812 logical one: the deck is 707px of content against 529px of usable space, so the tab strip, the count and both arrows sat 178px BELOW the fold and nothing on screen said a second situation existed. NOTE `min-height:var(--s-hero-frame)` computes to 0 at this width -- that clamp is a >=861 rule -- so the 628px floor was never the cause and lowering it changes nothing (measured: 628 down to 340, identical). What sets the height is the TALLEST SLIDE, and h-fire is the one slide with no `.s-hero-cut`: its 142-char sentence runs to 4 lines and equalises all four. The deck cannot be tuned into 529px without shrinking the readout, so the BAR MOVES and the deck is left alone. `.rig` has exactly two children (.rig-clip, .wrap), so ordering it is unambiguous; scoped to `.s-hero .rig` because `.rig-*` is shared. --s-hero-barh TIES THE BAR TO THE MAST: `.s-hero-mast` is absolute at top:0 of the hero, so with the bar first it landed ON the masthead. One variable drives the bar min-height AND the mast offset, so the two cannot drift apart; the min-height also guarantees the mast never overlaps if the bar rewraps. padding-top clears the -19px pull `.rig-tabs` carries (see the negative-margin note at .rig-tabs) so all four 44px targets start below the 56px fixed bar rather than 4px under it. Border flips to the bottom edge: at the top of the band a border-top doubled the nav rule. */ .s-hero{--s-hero-barh:111px} .s-hero .rig{display:flex;flex-direction:column} .s-hero .rig>.wrap{order:-1} .s-hero-mast{top:var(--s-hero-barh)} .s-hero-bar{margin-top:0;min-height:var(--s-hero-barh);padding-top:16px;padding-bottom:10px;border-top:0;border-bottom:1px solid var(--hair)}
+  .s-hero-bar .rig-arrows button{width:44px;height:44px} /* AD-29: THE CONTROLS COME UP ABOVE THE DECK ON PHONES. Measured at 375x635 -- an iPhone-class VISIBLE height, not the 812 logical one: the deck is 707px of content against 529px of usable space, so the tab strip, the count and both arrows sat 178px BELOW the fold and nothing on screen said a second situation existed. NOTE `min-height:var(--s-hero-frame)` computes to 0 at this width -- that clamp is a >=861 rule -- so the 628px floor was never the cause and lowering it changes nothing (measured: 628 down to 340, identical). What sets the height is the TALLEST SLIDE, and h-fire is the one slide with no `.s-hero-cut`: its 142-char sentence runs to 4 lines and equalises all four. The deck cannot be tuned into 529px without shrinking the readout, so the BAR MOVES and the deck is left alone. `.rig` has exactly two children (.rig-clip, .wrap), so ordering it is unambiguous; scoped to `.s-hero .rig` because `.rig-*` is shared. --s-hero-barh TIES THE BAR TO THE MAST: `.s-hero-mast` is absolute at top:0 of the hero, so with the bar first it landed ON the masthead. One variable drives the bar min-height AND the mast offset, so the two cannot drift apart; the min-height also guarantees the mast never overlaps if the bar rewraps. padding-top clears the -19px pull `.rig-tabs` carries (see the negative-margin note at .rig-tabs) so all four 44px targets start below the 56px fixed bar rather than 4px under it. Border flips to the bottom edge: at the top of the band a border-top doubled the nav rule. */ /* AD-39 RE-MEASURED IT. 111px was the height of a bar carrying a 44px tab row AND a 44px arrow row. With the arrows removed the bar's natural height is 85.4px, and the variable is the mast's top offset as well as the bar's floor, so leaving it at 111 held 25px of empty band under the count and pushed the slide's "The full instrument" link back below the fold -- the exact defect AD-29 existed to fix. 86px is the measured natural height rounded up, so the floor still guarantees the mast cannot ride onto a rewrapped bar. */ .s-hero{--s-hero-barh:94px} .s-hero .rig{display:flex;flex-direction:column} .s-hero .rig>.wrap{order:-1} .s-hero-mast{top:var(--s-hero-barh)} .s-hero-bar{margin-top:0;min-height:var(--s-hero-barh);padding-top:24px;padding-bottom:10px;border-top:0;border-bottom:1px solid var(--hair)} /* AD-39: 16px was not enough clearance. The selected tab is marked with a 3px border-TOP, and `.rig-tabs` carries margin-top:-19px, so at 16px the marker painted at y58 against a header whose own 1px rule ends at y56 -- two horizontal rules 2px apart, reading as one thick doubled line under the bar. 24px puts the marker at y66 and the variable moves with it so the masthead still starts exactly where the bar ends. */
 }
 
 
@@ -1614,7 +1614,7 @@ section.s-farm{background:var(--ground);
 @media (max-width:1023px){section.s-farm{--s-farm-clear:24px}}
 /* 64vh, ceilinged so a tall desktop window cannot turn the band into a
    second full-screen moment. The hero already owns that. */
-.s-farm .pic{height:clamp(440px,64vh,560px)}
+.s-farm .pic{height:clamp(440px,64svh,560px)}
 .s-farm .pic>img{object-position:50% 2%}
 /* The shared .pic-over scrim runs .92 opaque for 74% of its height,
    which turned the top third of this photograph into a black bar —
@@ -1681,7 +1681,7 @@ section.s-farm{background:var(--ground);
   .s-farm-read{grid-column:5 / span 2}
 }
 @media (max-width:759px){
-  .s-farm .pic{height:clamp(300px,52vh,420px)}
+  .s-farm .pic{height:clamp(210px,33svh,320px)} /* AD-39 SHORTENED IT SO THE BUTTON JOINS THE PHOTO. Measured at 375x635: photo 330px, and the top of the photo to the bottom of "Visits, camps and retreats" was 721.6px -- 86px more than the window, so the band always cost two screens and the one control in it was never on the same screen as the picture that motivates it. Owner call, 24 August. 33svh is 203px at this height and the whole band now closes at ~595px, inside one screen with room for the browser bar; the ceiling keeps a tall phone from going back to a full-bleed plate. */
   .s-farm .pic>img{object-position:50% 50%}
   .s-farm-grid{display:block}
   .s-farm-eyebrow{display:block}
@@ -2072,7 +2072,7 @@ section.s-gtm{background:var(--ground-2);color:var(--fg)}
    The definition's incidental clause — "carries a display headline
    inside its frame" — is what moves, not the count. */
 .w7-say{background:var(--ground);position:relative;overflow:hidden;
-  min-height:clamp(360px,50vh,520px);display:flex;align-items:center}
+  min-height:clamp(360px,50svh,520px);display:flex;align-items:center}
 .w7-say-fig{position:absolute;top:0;right:0;bottom:0;width:56%;margin:0;
   overflow:hidden}
 .w7-say-fig img{width:100%;height:100%;object-fit:cover;object-position:54% 52%}
@@ -2101,7 +2101,7 @@ section.s-gtm{background:var(--ground-2);color:var(--fg)}
   font-size:12.5px;letter-spacing:.14em}
 @media (max-width:767px){
   .w7-say{display:block;min-height:0}
-  .w7-say-fig{position:relative;width:auto;height:clamp(178px,25vh,224px)}
+  .w7-say-fig{position:relative;width:auto;height:clamp(178px,25svh,224px)}
   /* A DIFFERENT CROP, NOT THE SAME ONE SMALLER: at 375 the frame closes
      on the group and the foam behind them, and drops the empty sand. */
   .w7-say-fig img{object-position:46% 62%}
@@ -3006,7 +3006,7 @@ main{display:block;margin:0;padding:0}
 .navidx-t{display:none}
 .navidx{position:fixed;left:0;right:0;top:var(--bar-h);z-index:59;
   background:var(--ground);border-bottom:1px solid var(--hair);
-  max-height:calc(100vh - var(--bar-h));overflow-y:auto}
+  max-height:calc(100svh - var(--bar-h));overflow-y:auto} /* AD-39: svh. With vh the open menu panel was allowed to be as tall as the window WITHOUT the browser bar, so on a phone with a bottom address bar its last rows sat behind that bar -- scrollable in theory, under the chrome in practice. */
 /* stated explicitly so no later `display` on .navidx can defeat the
    attribute that makes the whole thing free when closed. */
 .navidx[hidden]{display:none}
@@ -3338,17 +3338,17 @@ main{display:block;margin:0;padding:0}
                      data/air-delhi.json, so they cannot drift, and the hourly
                      job keeps them current. If you find yourself adding a
                      textContent write below, read AD-27.6-A first. -->
-                <span class="s-hero-numwrap rl"><span class="readout" data-committed="371" aria-hidden="true">371</span></span>
-                <span class="sr">Delhi-NCR / Air quality index. 371 AQI, 24-hour rolling. Very Poor.</span>
+                <span class="s-hero-numwrap rl"><span class="readout" data-committed="410" aria-hidden="true">410</span></span>
+                <span class="sr">Delhi-NCR / Air quality index. 410 AQI, 24-hour rolling. Severe.</span>
                 <div class="s-hero-num-side">
                   <p class="lbl s-hero-id">Delhi-NCR / Air quality index</p>
                   <span class="unit">AQI, 24-hour rolling</span>
-                  <p class="mult"><b>3.7&#215;</b> the limit</p>
+                  <p class="mult"><b>4.1&#215;</b> the limit</p>
                 </div>
               </div>
               <div class="s-hero-acct">
                 <p class="lbl s-hero-id">Delhi-NCR / Air quality index</p>
-                <p class="verdict bad">Very Poor</p>
+                <p class="verdict bad">Severe</p>
                 <!-- THE CUT IS THE ARITHMETIC, NOT THE POSITION. Air is the
                      one slide whose sentences run arithmetic first, human
                      fact second, so cutting "the second sentence" inverted
@@ -3359,9 +3359,9 @@ main{display:block;margin:0;padding:0}
                      the bands) and in full on the situation page. Word for
                      word unchanged, and >=561 renders the whole paragraph
                      in its original order. -->
-                <p class="s-hero-why"><span class="s-hero-cut">3.7 times the limit the Central Pollution Control Board sets for a safe day.</span></p>
+                <p class="s-hero-why"><span class="s-hero-cut">4.1 times the limit the Central Pollution Control Board sets for a safe day.</span></p>
                 <div class="s-hero-scale">
-                  <div class="bands bad" role="img" aria-label="Band 5 of 6, Very Poor"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on tip"></i><i></i></div>
+                  <div class="bands bad" role="img" aria-label="Band 6 of 6, Severe"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on tip"></i></div>
                   <span class="limit">CPCB safe limit 100. <b>Limit broken.</b></span>
                 </div>
               </div>
@@ -3402,7 +3402,7 @@ main{display:block;margin:0;padding:0}
                    the same register /now and /now/air read, because this deck
                    said Periodic while /now said LIVE about one reading until
                    23 August. The hour below is where freshness is stated. -->
-              <p class="cap s-hero-src">CPCB continuous monitor<span class="s-hero-loc">, Anand Vihar</span>. <span class="s-hero-cad">Hourly. </span><span class="s-hero-prov">Observed 05:00 IST, 24 August 2026.</span></p>
+              <p class="cap s-hero-src">CPCB continuous monitor<span class="s-hero-loc">, Anand Vihar</span>. <span class="s-hero-cad">Hourly. </span><span class="s-hero-prov">Observed 11:00 IST, 24 August 2026.</span></p>
               <span class="tag tag-season">Year round</span>
               <p class="s-hero-act"><a class="act" href="/now/air">The full instrument <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
 
@@ -3537,7 +3537,7 @@ main{display:block;margin:0;padding:0}
               <div class="s-hero-acct">
                 <p class="lbl s-hero-id">North India / Active fire detections</p>
                 <p class="verdict">Below season</p>
-                <p class="s-hero-why">A detection is a thermal anomaly, not a confirmed fire, and in Punjab and Haryana in October it is very often crop residue rather than forest.</p>
+                <p class="s-hero-why">A detection is a thermal anomaly, not a confirmed fire.<span class="s-hero-cut"> In Punjab and Haryana in October it is very often crop residue rather than forest.</span></p>
                 <div class="s-hero-scale">
                   <div class="bands" role="img" aria-label="Band 2 of 6, Few"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
                   <span class="limit">No legal threshold. Stubble season opens in October.</span>
@@ -3557,10 +3557,18 @@ main{display:block;margin:0;padding:0}
     <div class="wrap"><div class="rig-bar s-hero-bar">
       <div class="rig-tabs" role="tablist" aria-label="Situations"></div>
       <span class="count">1 of 4</span>
-      <div class="rig-arrows">
-        <button type="button" class="rp" aria-label="Previous situation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg></button>
-        <button type="button" class="rn" aria-label="Next situation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
-      </div>
+      <!-- AD-39. THE TWO ARROW BUTTONS ARE GONE. They were 40px squares on desktop
+           and 44px squares on phones, outlined in the hairline colour, and they were
+           the only bordered-box control anywhere in this design language: every other
+           control on the page is a word with a rule under it, a filled chip, or a
+           tab. Owner call, 24 August -- "the big arrow blocks don't go with the
+           design, just have blocks/tabs". THE FUNCTION IS NOT LOST. The deck is a
+           CSS scroll-snap track: it swipes natively on touch, the four tabs above are
+           real tablist buttons that scroll it, and the arrow keys work through the
+           tablist's own key handling. The arrows were a third route to the same four
+           slides. Their CSS at .rig-arrows is left in place unused, because every
+           line above 3033 in this file is pinned by absolute number and deleting
+           seven of them would move all seven extracted ranges. -->
     </div></div>
   </div>
 </section>
@@ -3649,7 +3657,7 @@ main{display:block;margin:0;padding:0}
          otherwise announces as "one point six five M H A"; the Impact
          slot's has to be rewritten whenever its figure is rotated. -->
     <div class="s-ticker-rail">
-      <a class="s-ticker-cell" id="tk-air" href="/now/air" aria-label="Delhi's air, 371 air quality index, over the limit"><span class="lbl s-ticker-name">Air</span><span class="s-ticker-v is-over" id="tk-air-v"><b>371</b></span></a>
+      <a class="s-ticker-cell" id="tk-air" href="/now/air" aria-label="Delhi's air, 410 air quality index, over the limit"><span class="lbl s-ticker-name">Air</span><span class="s-ticker-v is-over" id="tk-air-v"><b>410</b></span></a>
       <a class="s-ticker-cell" href="/now/yamuna" aria-label="Yamuna dissolved oxygen, 0.3 milligrams per litre, below the detection limit, against a legal minimum of 5"><span class="lbl s-ticker-name">Yamuna DO</span><span class="s-ticker-v is-over"><b>0.3</b></span></a>
       <a class="s-ticker-cell" href="/now/forest-fire" aria-label="Forest fire, 34,562 square kilometres of forest burnt in the 2023 to 2024 season"><span class="lbl s-ticker-name">Forest burnt</span><span class="s-ticker-v is-over"><b>34,562</b></span></a>
       <a class="s-ticker-cell" href="/now/forest-loss" aria-label="Forest loss, 2.43 million hectares of tree cover, 2001 to 2025"><span class="lbl s-ticker-name">Forest loss</span><span class="s-ticker-v is-over"><b>2.43M ha</b></span></a>
@@ -4485,6 +4493,29 @@ main{display:block;margin:0;padding:0}
 
 <footer class="foot" id="footer">
   <div class="wrap">
+    <!-- ══ AD-39. THE FOOTER IS THE SITE INDEX NOW, AND IT IS SET IN CAPS. ══
+         TWO CHANGES, ONE REASON. The footer was four columns and thirteen links
+         on 35 pages, and three whole sections of the site had no route in it at
+         all: the six dashboards (only /now itself), the four WORK kinds (only
+         /work itself) and /impact (nowhere). It is the last thing on every page
+         and the only global surface that can hold more than six words, so it is
+         where the reader who has finished reading finds out what else exists —
+         and a global index that omits three sections is not an index.
+         FIVE COLUMNS AND TWENTY-FOUR LINKS. Every route this site publishes is
+         now reachable from the bottom of every page, one click, no menu.
+         SET IN CAPS AT THE OWNER'S REQUEST, 24 August, and the caps are why the
+         count is affordable: 13.5px uppercase with .05em tracking reads as a
+         directory rather than as prose, so a longer list does not read as a
+         longer page. TWO THINGS ARE DELIBERATELY NOT UPPERCASED — the email
+         address, because a capitalised address invites the reader to retype it
+         wrongly, and the one explanatory sentence under "Follow the work",
+         because twenty words of caps is a shout, not a label.
+         AND IT IS BRIEFER ON PHONES, ALSO AS REQUESTED. `.foot-d` marks the ten
+         leaf links — six dashboard children, four journey names — that are the
+         detail rather than the route. Below 640px they are withdrawn and the
+         column keeps its "all six" / "all four" row, so a phone footer is 14
+         rows rather than 24 and NOTHING BECOMES UNREACHABLE: the parent page it
+         collapses to lists exactly the children that were hidden. -->
     <div class="foot-g">
       <div>
         <div class="mark" style="font-size:34px;display:block;margin-bottom:12px"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></div>
@@ -4499,16 +4530,35 @@ main{display:block;margin:0;padding:0}
              moved to .foot-b in the client's own words, so the link stands
              alone here and the statutory sentence is stated once, not twice. -->
         <a href="/about">About Swechha</a>
+        <a href="/impact">What changed</a>
+        <a href="/act">Get involved</a>
       </div>
-      <div><h3 class="lbl">Read</h3>
-        <a href="/now">Environmental Intelligence</a>
-        <a href="/work">Projects and campaigns</a><a href="/stories">Stories and films</a>
-        <a href="/publications">Publications</a></div>
-      <div><h3 class="lbl">Go</h3><a href="/work/journeys/yamuna-yatra">Yamuna Yatra</a>
-        <a href="/work/journeys/naturescapes">NatureScapes</a><a href="/work/journeys/cityscapes">CityScapes</a>
-        <a href="/work/journeys/gram-anubhav">Gram Anubhav</a></div>
-      <div><h3 class="lbl">Reach us</h3><a href="mailto:swechhaindia@gmail.com">swechhaindia@gmail.com</a>
-        <a href="/farm">Swechha Farm visits</a><a href="/act#partner">Work with us</a></div>
+      <div><h3 class="lbl">Dashboards</h3>
+        <a href="/now">All six, nearly live</a>
+        <a class="foot-d" href="/now/air">Delhi air</a>
+        <a class="foot-d" href="/now/yamuna">The Yamuna</a>
+        <a class="foot-d" href="/now/heat">Heat</a>
+        <a class="foot-d" href="/now/forest-fire">Forest fire</a>
+        <a class="foot-d" href="/now/forest-loss">Forest loss</a>
+        <a class="foot-d" href="/now/climate-event">Extreme rain</a></div>
+      <div><h3 class="lbl">Work</h3>
+        <a href="/work">All of it</a>
+        <a class="foot-d" href="/work/projects">Projects</a>
+        <a class="foot-d" href="/work/campaigns">Campaigns</a>
+        <a class="foot-d" href="/work/journeys">Journeys</a>
+        <a class="foot-d" href="/work/events">Events</a></div>
+      <div><h3 class="lbl">Go</h3>
+        <a href="/farm">Swechha Farm</a>
+        <a class="foot-d" href="/work/journeys">All four journeys</a>
+        <a class="foot-d" href="/work/journeys/yamuna-yatra">Yamuna Yatra</a>
+        <a class="foot-d" href="/work/journeys/naturescapes">NatureScapes</a>
+        <a class="foot-d" href="/work/journeys/cityscapes">CityScapes</a>
+        <a class="foot-d" href="/work/journeys/gram-anubhav">Gram Anubhav</a></div>
+      <div><h3 class="lbl">Read and reach</h3>
+        <a href="/stories">Stories and films</a>
+        <a href="/publications">Publications</a>
+        <a class="foot-d" href="/search">Search the site</a>
+        <a class="foot-mail" href="mailto:swechhaindia@gmail.com">swechhaindia@gmail.com</a></div>
     </div>
     <!-- ══ SOCIAL. Added AD-08, 21 August. See §9 of that document. ══
          FOUR REAL ACCOUNTS, SCRAPED FROM THE LIVE SITE. No LinkedIn —
@@ -4738,10 +4788,17 @@ function rig(root){
     // to the arrow that stays live, or to the track itself, which is
     // focusable and carries the same Left/Right keys. Both flags are
     // computed first because the answer depends on the other one.
+    // AD-39: prev/next MAY NOT EXIST. The two arrow buttons were removed
+    // from the hero bar, so every read of them is guarded rather than
+    // deleted -- rig() is generic and a future deck may still carry them.
+    // With no arrows there is no focus to rescue and no disabled flag to
+    // set, so the whole block is skipped and mark() ends at the tab scroll.
     var pd=i<=0, nd=i>=n-1;
-    if(document.activeElement===prev&&pd)      (nd?track:next).focus();
-    else if(document.activeElement===next&&nd) (pd?track:prev).focus();
-    prev.disabled=pd; next.disabled=nd;
+    if(prev&&next){
+      if(document.activeElement===prev&&pd)      (nd?track:next).focus();
+      else if(document.activeElement===next&&nd) (pd?track:prev).focus();
+      prev.disabled=pd; next.disabled=nd;
+    }
     // Keep the active tab in view WITHOUT scrollIntoView, which scrolls the page too.
     // D-09.3: THE 5px RING ALLOWANCE IS PART OF "IN VIEW". `.rig-tabs`
     // now carries 5px of padding so the focus ring is not clipped, but
@@ -4786,8 +4843,8 @@ function rig(root){
   // mark() again straight after moving: the IntersectionObserver is a frame
   // behind, and a stale disabled state on prev/next is the classic way a
   // carousel appears to ignore a click.
-  prev.onclick=function(){ go(idx()-1); mark(idx()); };
-  next.onclick=function(){ go(idx()+1); mark(idx()); };
+  if(prev) prev.onclick=function(){ go(idx()-1); mark(idx()); };
+  if(next) next.onclick=function(){ go(idx()+1); mark(idx()); };
   track.setAttribute('tabindex','0');
   track.addEventListener('keydown',function(e){
     if(e.key==='ArrowRight'){e.preventDefault();go(idx()+1);}

@@ -778,6 +778,7 @@ export const crumb = (id) => {
         <i class="fam-crumb-sep" aria-hidden="true">/</i>
         <span class="fam-crumb-here">${esc(FAMILY[i].name)}</span>
         <span class="cap fam-crumb-n">${i + 1} of ${FAMILY.length} situations</span>
+        <span class="fam-crumb-what">Environmental intelligence dashboard</span>
       </nav>`;
 };
 
@@ -789,13 +790,13 @@ export const crumb = (id) => {
 export const siblings = (id) => {
   const rest = FAMILY.filter(f => f.id !== id);
   return `      <nav class="fam-sibs" aria-label="The other situations">
-        <p class="lbl fam-sibs-h">The other ${rest.length}</p>
+        <p class="lbl fam-sibs-h">Our other ${rest.length} environmental intelligence dashboards</p>
         <div class="fam-sibs-r">
           ${rest.map(f => `<a class="fam-sib" href="${f.route}">
             <span class="fam-sib-n">${esc(f.name)}</span>
             <span class="cap fam-sib-w">${esc(f.where)}</span></a>`).join('\n          ')}
         </div>
-        <p style="margin:0"><a class="act" href="${INDEX_PAGE.route}">All ${FAMILY.length}, side by side ${ARROW}</a></p>
+        <p style="margin:0"><a class="act" href="${INDEX_PAGE.route}">All ${FAMILY.length} dashboards, side by side ${ARROW}</a></p>
       </nav>`;
 };
 
@@ -1080,6 +1081,11 @@ export const FAMILY_CSS = `
 .paper .fam-crumb-here{color:var(--ink-2)}
 .fam-crumb-n{margin-left:auto;color:var(--fg-3)}
 .paper .fam-crumb-n{color:var(--ink-3)}
+.fam-crumb-what{flex:1 1 100%;margin-top:9px;padding-top:8px;
+  border-top:1px solid var(--hair);font-family:Archivo,system-ui,sans-serif;
+  font-variation-settings:'wdth' 88,'wght' 620;font-size:11px;letter-spacing:.115em;
+  text-transform:uppercase;color:var(--fg-3)}
+.paper .fam-crumb-what,.paper-2 .fam-crumb-what{color:var(--ink-3);border-top-color:var(--rule-2)}
 
 .fam-sibs{margin:clamp(28px,3.2vw,44px) 0 0;border-top:1px solid var(--hair);padding-top:clamp(16px,1.8vw,24px)}
 .paper .fam-sibs{border-top-color:var(--rule-2)}
@@ -1201,17 +1207,26 @@ ${NAV_SEARCH_CSS}
       phone's critical path. The summary is held at var(--hit) so it meets the
       44px touch target the frozen page sets for every control. ─────────── */
 .dx{margin:clamp(14px,1.6vw,20px) 0 0;border-top:1px solid var(--hair-2)}
-.paper .dx{border-top-color:var(--rule-2)}
+.paper .dx,.paper-2 .dx{border-top-color:var(--rule-2)}
 .dx-s{cursor:pointer;list-style:none;display:flex;align-items:center;gap:9px;
   min-height:var(--hit,44px);font-size:12px;letter-spacing:.06em;text-transform:uppercase;
   color:var(--fg-2)}
-.paper .dx-s{color:var(--ink-2)}
+/* AD-39 ADDED .paper-2 TO ALL FOUR OF THESE, and it was a live contrast failure the
+   moment anything used the disclosure on the second paper ground. .dx-s took its
+   dark-ground colour, var(--fg-2), which is a light warm grey; measured on
+   /impact-s register band -- #ECEBE8 -- the summary "The other 19 projects
+   figures" came out at 1.41:1 against a 4.5:1 requirement, i.e. very nearly
+   invisible. The rule for .paper existed and .paper-2 was simply never covered
+   because no page had put a .dx on that ground before. Both grounds are light, so
+   they take the same ink. */
+.paper .dx-s,.paper-2 .dx-s{color:var(--ink-2)}
 .dx-s::-webkit-details-marker{display:none}
 .dx-s::before{content:'';flex:none;width:9px;height:9px;border-right:2px solid currentColor;
   border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .16s}
 .dx[open]>.dx-s::before{transform:rotate(-135deg) translateY(-2px)}
 .dx-s:hover,.dx-s:focus-visible{color:var(--mustard)}
-.paper .dx-s:hover,.paper .dx-s:focus-visible{color:var(--ink)}
+.paper .dx-s:hover,.paper .dx-s:focus-visible,
+.paper-2 .dx-s:hover,.paper-2 .dx-s:focus-visible{color:var(--ink)}
 .dx-b{padding:2px 0 clamp(12px,1.4vw,18px)}
 
 /* ── THE MEASURE ROW. A label, a bar, its value, and A TICK WHERE THE

@@ -885,20 +885,41 @@ B.geography = () => {
           <p class="p-legend p-map-lg"><span class="lbl"><i class="p-sw p-sw-hi"></i>Above the limit</span><span class="lbl"><i class="p-sw p-sw-lo"></i>Within it</span></p>
           </div>
           <div class="p-map-t">
+          <!-- AD-39 CUT THIS IN HALF, at the owner's instruction, keeping the meaning
+               and the irony. It ran 46 words: the two station names, then "the same hour
+               of the same city", then the arithmetic of the gap, then the two verdicts,
+               then the closing rule. The gap in points is what the two numbers already
+               say, the station names are on the SVG's own <title> tooltips, in its
+               aria-label and in the "Every station" tab beside this one, and "whichever
+               one is nearest to you is the only one describing your air" is a 15-word way
+               of saying it in five. 22 words now, and the sting is earlier. ${gapAqi} is
+               left computed above because the aria-label still states it. -->
           <p class="body p-map-k"><b>${pA.aqi} and ${pB.aqi}, ${pKm.toFixed(1)} km apart.</b>
-            ${short(pA)} and ${short(pB)} are the same hour of the same city and they differ by
-            ${gapAqi} points &mdash; ${short(pB)} sits inside the limit while ${short(pA)} is
-            ${AIR.bands[AIR.bands.findIndex(b=>b.name===pA.band)]?.name.toLowerCase()}. Whichever one is
-            nearest to you is the only one describing your air.</p>
-          <p class="cap">${geo.length} monitors, true positions, equal scale on both axes; the
-            ${Math.round(wKm)}&nbsp;&times;&nbsp;${Math.round(hKm)} km frame is <b>the box the monitors
-            describe, not Delhi&rsquo;s boundary</b>. Median spacing between neighbouring monitors
-            ${nnMed.toFixed(1)} km &mdash; but inside that same box you can stand <b>${hole.toFixed(1)} km
-            from the nearest one</b>. Red is above the limit.</p>
-          <p class="cap p-hole"><b>Two layers are missing on purpose.</b> There is no ward layer &mdash;
-            the boundary file is not published in a usable form, and a hand-drawn one would be a claim
-            about where you live. There is no plume &mdash; a plume is a model, and this page does not
-            draw a model on top of measurements without saying so.</p></div></div>`;
+            One city, one hour, one
+            ${AIR.bands[AIR.bands.findIndex(b=>b.name===pA.band)]?.name.toLowerCase()} and one inside
+            the limit. Your air is your nearest monitor&rsquo;s.</p>
+          <!-- AD-39, same instruction, same method. 50 words to 25. "equal scale on both
+               axes" describes the projection, not the city, and the 10 km scale bar in the
+               corner is the proof of it. "Red is above the limit" is the legend directly
+               above this paragraph, word for word, with the swatch beside it. What is kept
+               is the only thing here a reader cannot get from the picture: that the frame
+               is the monitors' coverage rather than Delhi, and that the median gap and the
+               worst gap are six times apart. -->
+          <p class="cap">${geo.length} monitors, true positions; the
+            ${Math.round(wKm)}&nbsp;&times;&nbsp;${Math.round(hKm)} km frame is <b>their coverage, not
+            Delhi</b>. Median gap ${nnMed.toFixed(1)} km &mdash; but you can stand
+            <b>${hole.toFixed(1)} km from one</b>.</p>
+          <!-- AD-39 REMOVED THE "TWO LAYERS ARE MISSING ON PURPOSE" NOTE OUTRIGHT, at the
+               owner's instruction. It was a 54-word paragraph explaining two things the
+               map does NOT draw -- ward boundaries and a pollution plume -- and it was the
+               third block of text under one small picture. A reader who has not asked for
+               a plume does not need to be told there isn't one; the map shows monitors,
+               labels them monitors, and states its own frame. The reasoning is not lost,
+               only unpublished: the ward-boundary decision is recorded in the ledger under
+               AD-13 and the no-model rule is the measured/modelled split the whole page is
+               built on and states where it applies. Seven other .p-hole notes remain on
+               this page, so the marker's CSS is still earning its place. -->
+          </div></div>`;
   return `    <div class="wrap">
 ${opener('geography','Which part of the city, and where the city sits',
   `There are ${AIR.spread.stations} monitors reporting for Delhi and they do not agree with each other. `
@@ -1202,7 +1223,7 @@ const PAGE_CSS = `
    RE-CROP, DO NOT RESTORE (BRANDING §5.4): a shorter band is a tighter
    letterbox, so a subject that falls out of frame is answered with
    object-position, never with height. */
-#top .pic.p2-pic{height:clamp(176px,24vh,360px)}
+#top .pic.p2-pic{height:clamp(176px,24svh,360px)} /* AD-39: svh. vh is the viewport with the browser's chrome retracted, so on a phone whose address bar sits at the bottom every vh box is taller than the space the reader has. The clamp maths above is unchanged -- 24 of the smaller unit, and at the desktop widths those measurements were taken at svh and vh are the same number. */
 
 /* ── AD-27.45(1) · .readout.rl NEVER GOT ITS nowrap ───────────────────────
    home.html:277 writes '.rl .readout,.rl .num{white-space:nowrap}' — a

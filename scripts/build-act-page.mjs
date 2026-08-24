@@ -894,9 +894,23 @@ const footerHashes = (sh.FOOTER.match(/href="#"/g) || []).length;
 const hashes = (OUT.match(/href="#"/g) || []).length;
 gate(hashes === footerHashes,
   `no dead href of this page's own — ${hashes} on the page, all ${footerHashes} inherited from the frozen footer`);
-gate(/href="\/act#partner"[^>]*>Work with us|>Work with us<\/a>/.test(sh.FOOTER)
-  && !/href="#"[^>]*>Work with us/.test(sh.FOOTER),
-  'the footer\'s "Work with us" now points at this page rather than nowhere');
+/* AD-39 RE-KEYED THIS GATE OFF THE ROUTE INSTEAD OF THE LABEL, and the rewrite
+   is the reason: the footer was rebuilt as a five-column site index on 24 August
+   and its route to this page is now the word "Get involved" in the first column,
+   not "Work with us" in the last. The old assertion matched a literal label, so
+   it failed on a footer that had made the route BETTER -- one word higher in the
+   hierarchy and pointing at the page rather than one band of it. A gate that
+   fires when the thing it protects improves is testing the wrong property.
+   WHAT IT PROTECTS IS UNCHANGED and is the reason this page exists: the footer's
+   route to /act must be a real destination and not the href="#" it was on every
+   page of this site until this page was built. So: at least one /act href in the
+   extracted footer, and no /act-shaped label sitting on a dead one. The label is
+   deliberately not named -- it is an editorial choice in home.html, and the next
+   footer rewrite should not have to come back here. */
+const footActHrefs = (sh.FOOTER.match(/href="\/act(?:#[a-z-]+)?"/g) || []).length;
+const deadAsk = /href="#"[^>]*>(?:Work with us|Get involved|Give monthly|See the dates)</.test(sh.FOOTER);
+gate(footActHrefs > 0 && !deadAsk,
+  `the footer's route to this page is live, not dead — ${footActHrefs} /act href(s) in the frozen footer, 0 dead ask labels`);
 const designHrefs = [...OUT.matchAll(/href="(\/design\/[^"]*)"/g)].map(m => m[1])
   .filter(h => !HOME.includes(`href="${h}"`));
 gate(designHrefs.length === 0, `no /design/ href of this page's own${designHrefs.length ? `; FOUND: ${[...new Set(designHrefs)].join(', ')}` : ''}`);

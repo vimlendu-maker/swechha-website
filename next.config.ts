@@ -101,7 +101,21 @@ const nextConfig: NextConfig = {
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob:",
               "connect-src 'self'",
-              'frame-src https://www.youtube-nocookie.com',
+              /* ★ `'self'` IN FRAME-SRC IN DEVELOPMENT ONLY, on the same reasoning
+                 and the same guard as `'unsafe-eval'` above. Production frames
+                 exactly one thing, a YouTube embed, and nothing else may be
+                 framed. But a local before/after viewer — two versions of a page
+                 side by side in real viewports, which is the only honest way to
+                 review a responsive change — has to frame this origin, and the
+                 production policy correctly refuses it. Adding 'self' in dev
+                 costs production nothing: `next build` sets NODE_ENV to
+                 'production', so the deployed policy is the one-line version
+                 below. `frame-ancestors 'self'` already permits the same-origin
+                 direction, so this is the matching half, not a loosening of what
+                 may frame US. */
+              process.env.NODE_ENV === 'development'
+                ? "frame-src 'self' https://www.youtube-nocookie.com"
+                : 'frame-src https://www.youtube-nocookie.com',
               'upgrade-insecure-requests',
             ].join('; '),
           },
