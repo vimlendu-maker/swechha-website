@@ -6,12 +6,15 @@ export const metadata: Metadata = {
   title: 'Explore',
   description: 'Stories, knowledge and films from Swechha.',
   /* Audited 23 August 2026: this page carried no canonical and no structured
-     data, while all 40 built pages carry both. Resolved against the layout's
-     `metadataBase` AT REQUEST TIME, which is the whole reason it is safe to
-     state here — `scripts/lib/situation-shell.mjs` explains at length why the
-     BUILT pages keep a relative canonical instead, and that reasoning holds:
-     an absolute value baked in at build time advertises the preview host on
-     every preview deploy. This one is not baked. */
+     data, while all 40 built pages carry both. A relative canonical is fine
+     here: Next resolves it against the layout's `metadataBase` AT REQUEST
+     TIME, in the deployed environment, not baked in ahead of time. The BUILT
+     pages under `scripts/lib/situation-shell.mjs` use absolute URLs instead,
+     and that is fine too, for the opposite reason — they are COMMITTED
+     artefacts (`npm run build` is `next build` alone; generation never runs
+     on a preview deploy), so their absolute URLs are derived once from
+     `SITE_ORIGIN` and shipped as-is. Neither page type risks advertising a
+     preview host; they just resolve their canonical at different times. */
   alternates: { canonical: '/explore' },
   /* Task 9: this page renders an empty content grid (no stories are published
      under `content/` yet — see `lib/content.ts`), has zero inbound internal

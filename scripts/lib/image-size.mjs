@@ -1,9 +1,17 @@
 /* INTRINSIC DIMENSIONS FROM THE FILE HEADER, no dependency.
    Reserving the box is what removes layout shift; a wrong number is worse than
    none, so anything this cannot parse returns null and the emitter omits the
-   attributes rather than guessing. */
+   attributes rather than guessing.
+
+   JPEG measurement is DELEGATED to jpeg-size.mjs, which is EXIF-orientation
+   aware (read its header comment). This file used to walk JPEG SOF headers
+   itself, which reports a photo's raw pixel dimensions even when EXIF
+   Orientation 5-8 means a browser transposes them before painting — exactly
+   the blindness jpeg-size.mjs was written to cure for seven rotated frames in
+   this repo. There is exactly one answer to "how big is this JPEG" now. */
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { imageSize as jpegSize } from './jpeg-size.mjs';
 
 const ROOT = join(import.meta.dirname, '../..');
 
@@ -17,18 +25,16 @@ export function imageSize(publicPath) {
     return { width: b.readUInt32BE(16), height: b.readUInt32BE(20) };
   }
 
-  // JPEG: walk the segments to the first SOF marker.
+  // JPEG: hand off to jpeg-size.mjs for the EXIF-aware (post-orientation)
+  // width/height. It throws on anything it cannot parse — this contract
+  // never throws, so anything unparseable becomes null like every other
+  // unrecognised file here.
   if (b.length > 4 && b[0] === 0xff && b[1] === 0xd8) {
-    let i = 2;
-    while (i < b.length - 9) {
-      if (b[i] !== 0xff) { i++; continue; }
-      const marker = b[i + 1];
-      const len = b.readUInt16BE(i + 2);
-      // SOF0-SOF15, excluding the non-frame markers DHT(c4), JPG(c8), DAC(cc).
-      if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
-        return { height: b.readUInt16BE(i + 5), width: b.readUInt16BE(i + 7) };
-      }
-      i += 2 + len;
+    try {
+      const { width, height } = jpegSize(file);
+      return { width, height };
+    } catch {
+      return null;
     }
   }
   return null;

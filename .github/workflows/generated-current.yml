@@ -14,6 +14,20 @@ name: Generated pages are current
 # It regenerates everything and fails if the working tree moved. The fix when it
 # fails is always the same and is printed in the log: run the builds and commit
 # the result.
+#
+# THIS IS ALSO THE ACCEPTANCE GATE FOR THE SEO REGISTER (`npm test`).
+# `verify-seo.mjs` only proves the shipped HTML matches data/seo/pages.json —
+# it is tautological about the register's own values. Every register
+# invariant (title <= 60 rendered chars, title/description/indexName
+# uniqueness, the thin-title TERMS rule, description length) lives solely in
+# lib/seo/register.test.ts, run by `npm test` below. build-work-pages.mjs's
+# shell has no description-length gate of its own, so for the 15 WORK pages
+# the test suite is the ONLY thing enforcing it. Without `npm test` in this
+# workflow, a new page with a copy-pasted description and a too-long title
+# builds clean, verifies clean, and ships a duplicate meta description.
+# `npm run lint` runs too, since it currently exits 0 (warnings only, no
+# errors) — if it ever starts failing the build, that has to be fixed at the
+# source, not by dropping the step.
 
 on:
   pull_request:
@@ -34,6 +48,16 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+
+      # Enforces the register invariants that verify:seo cannot: title length,
+      # title/description/indexName uniqueness, the thin-title TERMS rule, and
+      # description length (the only gate at all for the 15 WORK pages). Runs
+      # before the build so a broken register fails fast, before spending time
+      # regenerating 29 pages against it.
+      - name: Test and lint
+        run: |
+          npm test
+          npm run lint
 
       # Hero first: every other generator extracts the nav, footer and token
       # block out of home.html and must not read it before the readings land.

@@ -1859,8 +1859,12 @@ export function shipDocument(html) {
    used to override this map with different words, so the site shipped two
    answers for one page. The rules that governed this object still govern the
    register and are enforced by lib/seo/register.test.ts: 140-158 characters,
-   untensed, undated, describing the instrument and never the reading. */
-export { seo } from './seo-register.mjs';
+   untensed, undated, describing the instrument and never the reading.
+
+   `seo` itself is imported above (line 50) for this file's own internal use
+   (canonical lookups, crumb labels) and every generator that needs it
+   imports it directly from ./seo-register.mjs rather than through this
+   shell — so it is not re-exported here. */
 
 /* THE SHARE CARD IS NOW ABSOLUTE. The note this replaces argued a relative
    og:image was safe because "a preview deploy must not advertise the
