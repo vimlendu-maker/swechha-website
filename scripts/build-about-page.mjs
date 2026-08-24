@@ -80,6 +80,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
+import { seo } from './lib/seo-register.mjs';
 /* `ask` and `askGates` are AD-27.14–22's component, authored once in the shell
    by lane 1. AD-27.56: lanes 3 and 4 build through this file and CALL it rather
    than retype AD-27.15's markup, and they inherit AD-27.16's CSS with it —
@@ -356,7 +357,7 @@ const B = {};
    right-hand half now that the register has gone — measured by capture at 1440,
    not assumed. */
 B.top = () => `    <div class="pic ht">
-      <img class="duo" src="/images/photos/yamuna-floodplain-crowd.jpg" alt="A crowd on the Yamuna floodplain looking out over the river" style="--op:50% 42%">
+      <img class="duo" src="/images/photos/yamuna-floodplain-crowd.jpg" alt="A crowd on the Yamuna floodplain looking out over the river"${S.imgDim('/images/photos/yamuna-floodplain-crowd.jpg')} fetchpriority="high" style="--op:50% 42%">
       <div class="pic-over"><div class="wrap">
         <h1 class="d1">Of one&rsquo;s own<br>free will</h1>
       </div></div>
@@ -509,7 +510,7 @@ ${RUNGS.map(r => `        <li class="a-rung rl${r.green ? ' is-now' : ''}">
 const anchorFor = (p) => (p.slug === 'vimlendu' ? ' id="vimlendu-jha"' : '');
 
 const person = (p) => `        <li class="a-p">
-          <span class="ht a-p-fig"><img class="duo" src="${p.photo.src}" alt="${esc(p.photo.alt)}" loading="lazy"></span>
+          <span class="ht a-p-fig"><img class="duo" src="${p.photo.src}" alt="${esc(p.photo.alt)}"${S.imgDim(p.photo.src)} loading="lazy"></span>
           <div class="a-p-b">
             <h3 class="a-p-n"${anchorFor(p)}>${esc(p.name)}</h3>
             <p class="lbl a-p-r">${esc(p.role)}</p>
@@ -660,6 +661,30 @@ const PERSON_JSON = {
 const PERSON_LD = '      <script type="application/ld+json">'
   + JSON.stringify(PERSON_JSON).replace(/</g, '\\u003c') + '</script>';
 
+/* ═══ NGO JSON-LD — TASK 6 ═══════════════════════════════════════════════
+   /about is the canonical page for organisation identity, so it carries the
+   SAME Organization/NGO payload the homepage does, read straight from
+   data/org-jsonld.json rather than retyped here. Two competing Organization
+   definitions have already caused a real problem in this repo — lib/org.ts's
+   organizationJsonLd() is tested and correct but dead, because app/page.tsx
+   is rewritten away to home.html before it ever runs — so this file borrows
+   the one payload that actually ships instead of becoming a third copy of it.
+
+   ★ NO `telephone`, NO STREET, same rulings as the Person block above: G-4
+   struck the phone number from the site and the footer sentence deliberately
+   drops the street address. scripts/build-hero.mjs's own gate refuses to
+   write either back into this dataset, and gate 11b below checks it again on
+   THIS page's shipped output, so the about build has its own defence even if
+   it is ever run without `npm run build:hero` first. */
+const ORG = JSON.parse(readFileSync(join(S.ROOT, 'data/org-jsonld.json'), 'utf8'));
+const NGO_JSON = ORG.jsonld;
+if (!NGO_JSON || NGO_JSON['@type'] !== 'NGO') {
+  console.error('DATA IS WRONG: data/org-jsonld.json has no jsonld object of @type NGO.');
+  process.exit(1);
+}
+const NGO_LD = '      <script type="application/ld+json">'
+  + JSON.stringify(NGO_JSON).replace(/</g, '\\u003c') + '</script>';
+
 const DOORS = [
   ['/now', 'The readings', 'Six situations, each against its published limit.'],
   ['/impact', 'The record', 'What the work adds up to.'],
@@ -710,6 +735,7 @@ ${DOORS.map(([h, n, t]) => `        <a class="a-door" href="${h}">
 ${ask({ audience: 'media', label: 'Ask for an interview', page: 'About Swechha', path: '/about', level: 1 })}
       <p class="a-foot a-foot-2"><a class="b b-2" href="/act">Give monthly</a></p>
 ${PERSON_LD}
+${NGO_LD}
     </div>`;
 
 /* ═══ PAGE CSS ════════════════════════════════════════════════════════════
@@ -972,18 +998,22 @@ const PAGE_CSS = `
    THE DESCRIPTION carries one verifiable fact — founded in 2000 as We for
    Yamuna, which is this page's own first record rung — and nothing tensed,
    dated or specimen, per BRANDING §3.5 applied to <head>.
+   BOTH `title` AND `desc` NOW COME FROM data/seo/pages.json (`seo('/about')`)
+   rather than literals here: this generator used to keep its own description
+   wording, different from situation-shell.mjs's now-deleted DESCRIPTIONS row
+   for the same route, and the two answers for one page were exactly the
+   drift the register exists to kill. The title had no such second copy
+   elsewhere, but the register is the one place every page's head text is
+   meant to live (spec §3.1), so it is looked up the same way.
    `desc` is consumed by situation-shell.mjs's assemble(), which lane 1 is
    adding it to in this same pass (AD-27.48). Gate 12 below refuses the page if
    it did not reach the HTML, because a description that is passed and silently
    dropped looks exactly like a description that is there. */
-const DESC = 'Founded in 2000 as We for Yamuna. Swechha is an environmental and community '
-  + 'organisation in Delhi — who does the work, who governs it, what is on record.';
-
 const OUT = await S.assemble({
   file: 'about.html',
   route: '/about',
-  title: 'About Swechha — an environmental NGO in Delhi',
-  desc: DESC,
+  title: seo('/about').title,
+  desc: seo('/about').description,
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),
@@ -1075,8 +1105,11 @@ gate(headcounts.length === 0,
     ? `; FOUND: ${headcounts.map(h => JSON.stringify(h)).join(' | ')}` : ''}`);
 
 // 2. EVERY YEAR ON THE PAGE IS ONE THIS BUILD DECLARED. Catches a date typed
-//    into a bio or a source line where nobody would look for it.
-const years = [...new Set((OUT.match(/\b(?:19|20)\d\d\b/g) || []))].sort();
+//    into a bio or a source line where nobody would look for it. Runs on
+//    RENDERED (visible text only), not OUT: Task 10 put real width/height on
+//    every <img>, and the site logo is 2048x512 — a markup attribute, not a
+//    year anyone typed, and OUT's raw HTML matched it as one.
+const years = [...new Set((RENDERED.match(/\b(?:19|20)\d\d\b/g) || []))].sort();
 const declared = new Set(['2000', '2004', '2008', '2016', '2026',
   // years inside the people's own descriptions of themselves, which are
   // quoted and therefore historical statements, not claims by this page
@@ -1218,30 +1251,56 @@ gate(!OUT.includes('AD-27.16 THE ASK'),
   "the Ask CSS's sentinel comment is stripped out of the emitted stylesheet (AD-28 §7)");
 gate(!/\.ask\{margin/.test(PAGE_CSS), 'this file carries no second copy of the Ask CSS');
 
-// 11. PERSON JSON-LD — AD-27.50. Parsed rather than pattern-matched, because a
-//     malformed blob is invisible to a reader, invisible in a capture, and
-//     silently ignored by every consumer it was written for.
-const ld = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(OUT);
+// 11. PERSON + NGO JSON-LD — AD-27.50 / TASK 6. Parsed rather than
+//     pattern-matched, because a malformed blob is invisible to a reader,
+//     invisible in a capture, and silently ignored by every consumer it was
+//     written for. `matchAll` because the page now carries two blocks, not
+//     one, and a gate that only ever `.exec()`s the first would go on passing
+//     if the second silently vanished.
+const ldBlocks = [...OUT.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+  .map((m) => {
+    try { return JSON.parse(m[1].replace(/\\u003c/g, '<')); } catch { return null; }
+  });
+
 let ldOk = false;
 let ldWhy = 'no application/ld+json block on the page';
-if (ld) {
-  try {
-    const parsed = JSON.parse(ld[1].replace(/\\u003c/g, '<'));
-    const problems = [];
-    if (parsed['@type'] !== 'Person') problems.push(`@type is ${parsed['@type']}`);
-    if (parsed.name !== VJ.name) problems.push('name does not match the dataset');
-    if (parsed.jobTitle !== VJ.role) problems.push('jobTitle does not match the dataset');
-    if (parsed.email !== VJ.email) problems.push('email does not match the dataset');
-    if (!/#vimlendu-jha$/.test(parsed.url || '')) problems.push('url does not end at the anchor');
-    if ('award' in parsed) problems.push('award is used — AD-27.50 refuses it');
-    if ('telephone' in parsed) problems.push('telephone is used — G-4 struck the number');
-    ldOk = problems.length === 0;
-    ldWhy = problems.join('; ');
-  } catch (e) { ldWhy = `does not parse: ${e.message}`; }
+const personLd = ldBlocks.find((d) => d && d['@type'] === 'Person');
+if (personLd) {
+  const problems = [];
+  if (personLd.name !== VJ.name) problems.push('name does not match the dataset');
+  if (personLd.jobTitle !== VJ.role) problems.push('jobTitle does not match the dataset');
+  if (personLd.email !== VJ.email) problems.push('email does not match the dataset');
+  if (!/#vimlendu-jha$/.test(personLd.url || '')) problems.push('url does not end at the anchor');
+  if ('award' in personLd) problems.push('award is used — AD-27.50 refuses it');
+  if ('telephone' in personLd) problems.push('telephone is used — G-4 struck the number');
+  ldOk = problems.length === 0;
+  ldWhy = problems.join('; ');
+} else if (ldBlocks.some((d) => d)) {
+  ldWhy = 'no block of @type Person among the parsed ld+json blocks';
 }
 gate(ldOk, `Person JSON-LD is valid and agrees with the dataset${ldOk ? '' : `; ${ldWhy}`}`);
 gate((OUT.match(/id="vimlendu-jha"/g) || []).length === 1,
   'the id="vimlendu-jha" anchor the JSON-LD and the SEO phrase table point at exists, exactly once');
+
+// 11b. NGO JSON-LD — TASK 6. Must be byte-identical to data/org-jsonld.json's
+//      `jsonld` object (the single source the homepage also reads from) and
+//      must not carry either struck fact, checked again here rather than
+//      trusted from build-hero.mjs's gate, because this page can be built on
+//      its own.
+let ngoOk = false;
+let ngoWhy = 'no block of @type NGO among the parsed ld+json blocks';
+const ngo = ldBlocks.find((d) => d && d['@type'] === 'NGO');
+if (ngo) {
+  const problems = [];
+  if (JSON.stringify(ngo) !== JSON.stringify(NGO_JSON)) {
+    problems.push("does not match data/org-jsonld.json's jsonld object exactly");
+  }
+  if ('telephone' in ngo) problems.push('telephone is used — G-4 struck the number');
+  if (ngo.address && 'streetAddress' in ngo.address) problems.push('streetAddress is used — locality-only by owner ruling');
+  ngoOk = problems.length === 0;
+  ngoWhy = problems.join('; ');
+}
+gate(ngoOk, `NGO JSON-LD matches data/org-jsonld.json exactly, no telephone or street${ngoOk ? '' : `; ${ngoWhy}`}`);
 
 // 12. THE DESCRIPTION REACHED THE HTML — AD-27.48. `desc` is passed to
 //     assemble(); until lane 1's parameter lands, an unknown key is silently

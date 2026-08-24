@@ -17,6 +17,7 @@
 // the page leads on that and uses the detections for what they are good at:
 // showing how much the answer depends on which satellite you ask.
 import * as S from './lib/situation-shell.mjs';
+import { seo } from './lib/seo-register.mjs';
 const { esc, n0, n1, compact, opener, tabs, hole, kd, KIND_LEGEND, ARROW, MON3,
   stateChip, measureRow, measureHead, disclose, crumb, siblings } = S;
 
@@ -71,7 +72,7 @@ const INDEX = [
 const B = {};
 
 B.top = () => `    <div class="pic ht p2-pic">
-      <img class="duo" src="/images/photos/uttarakhand-fire-scar-2016.jpg" alt="Hillside vegetation destroyed by fire in Uttarakhand" style="--op:50% 55%">
+      <img class="duo" src="/images/photos/uttarakhand-fire-scar-2016.jpg" alt="Hillside vegetation destroyed by fire in Uttarakhand"${S.imgDim('/images/photos/uttarakhand-fire-scar-2016.jpg')} fetchpriority="high" style="--op:50% 55%">
       <div class="pic-over"><div class="wrap">
         <h1 class="d1">India&rsquo;s forest fires</h1>
       </div></div>
@@ -505,9 +506,17 @@ const PAGE_CSS = `
 `;
 
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */
+/* THE TITLE COMES FROM data/seo/pages.json now, not a literal here —
+   see scripts/build-farm-page.mjs and scripts/build-situation-air.mjs for
+   the same pattern. This generator used to keep its own copy; it happened
+   to already agree with the register, but a second copy that merely agrees
+   today is drift waiting to happen, which is exactly why the register
+   exists (spec section 3.1). */
+const TITLE = seo('/now/forest-fire').title;
+
 await S.assemble({
   file: 'situation-forest-fire.html',
-  title: 'India&rsquo;s forest fires &mdash; Swechha',
+  title: TITLE,
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS, script: S.NEWSLETTER_JS,
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),

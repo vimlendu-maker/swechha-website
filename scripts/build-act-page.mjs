@@ -62,6 +62,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
+import { seo } from './lib/seo-register.mjs';
 /* `hole` is deliberately NOT imported. AD-28 removed every named hole from
    this page and a build gate refuses to write one; importing the helper back is
    the first half of putting one on the page. */
@@ -721,9 +722,12 @@ const OUT = await S.assemble({
      title that carries it: the three verbs a reader is actually searching for,
      ahead of the brand. The em dash is the LITERAL character, not &mdash; —
      AD-27.48's convention fix, adopted here because this title is being
-     rewritten anyway. The description names 80G and 12A, which is what an
-     Indian donor searches for; the band still names the hole (G-1). */
-  title: 'Get involved — give, volunteer or partner — Swechha',
+     rewritten anyway. The description (situation-shell.mjs's assemble() falls
+     back to data/seo/pages.json's '/act' row since this call passes no `desc`)
+     names 80G and 12A, which is what an Indian donor searches for; the band
+     still names the hole (G-1). THE TITLE ITSELF NOW COMES FROM THE SAME
+     REGISTER ROW rather than a literal, per spec §3.1. */
+  title: seo('/act').title,
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
   /* /act is not a nav word — the Give chip points here and the chip carries no

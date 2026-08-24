@@ -32,6 +32,7 @@
 // numbers — it reads them. That was a real defect class on the old page, whose
 // h1 claimed four illegal over a set containing three.
 import * as S from './lib/situation-shell.mjs';
+import { seo } from './lib/seo-register.mjs';
 const { esc, n0, n1, compact, opener, ARROW, stateChip, disclose } = S;
 
 const sh = S.shell();
@@ -503,9 +504,17 @@ const PAGE_CSS = `
 `;
 
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */
+/* THE TITLE COMES FROM data/seo/pages.json now, not a literal here —
+   see scripts/build-farm-page.mjs and scripts/build-situation-air.mjs for
+   the same pattern. This generator used to keep its own copy; it happened
+   to already agree with the register, but a second copy that merely agrees
+   today is drift waiting to happen, which is exactly why the register
+   exists (spec section 3.1). */
+const TITLE = seo('/now').title;
+
 await S.assemble({
   file: 'intelligence.html',
-  title: 'Now &mdash; Swechha',
+  title: TITLE,
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
   script: [IX_LIVE, S.NEWSLETTER_JS].join('\n'),

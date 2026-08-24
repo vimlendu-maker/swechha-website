@@ -17,6 +17,7 @@
 //                   it. A zero from the wrong instrument is not a zero.
 //   flash floods  — no public national register exists
 import * as S from './lib/situation-shell.mjs';
+import { seo } from './lib/seo-register.mjs';
 const { esc, n0, n1, compact, opener, tabs, hole, kd, KIND_LEGEND, ARROW, MON, MON3,
   stateChip, measureRow, measureHead, disclose, crumb, siblings } = S;
 
@@ -115,7 +116,7 @@ const INDEX = [
 const B = {};
 
 B.top = () => `    <div class="pic ht p2-pic">
-      <img class="duo" src="/images/photos/monsoon-flooded-fields.jpg" alt="Flooded fields under monsoon cloud" style="--op:70% 45%">
+      <img class="duo" src="/images/photos/monsoon-flooded-fields.jpg" alt="Flooded fields under monsoon cloud"${S.imgDim('/images/photos/monsoon-flooded-fields.jpg')} fetchpriority="high" style="--op:70% 45%">
       <div class="pic-over"><div class="wrap">
         <h1 class="d1">India&rsquo;s extreme rain</h1>
       </div></div>
@@ -514,9 +515,17 @@ const PAGE_CSS = `
 `;
 
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */
+/* THE TITLE COMES FROM data/seo/pages.json now, not a literal here —
+   see scripts/build-farm-page.mjs and scripts/build-situation-air.mjs for
+   the same pattern. This generator used to keep its own copy; it happened
+   to already agree with the register, but a second copy that merely agrees
+   today is drift waiting to happen, which is exactly why the register
+   exists (spec section 3.1). */
+const TITLE = seo('/now/climate-event').title;
+
 await S.assemble({
   file: 'situation-climate-event.html',
-  title: 'India&rsquo;s extreme rain &mdash; Swechha',
+  title: TITLE,
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS, script: S.NEWSLETTER_JS,
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),

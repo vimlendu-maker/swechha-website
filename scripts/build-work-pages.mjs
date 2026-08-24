@@ -68,6 +68,7 @@ import {
   bandChain, tabs, panel, gallerySheet, doRows, rangeRow, inviteRow,
   statementBand, splitBand, figureRail, ask, HOME_SRC,
 } from './lib/work-shell.mjs';
+import { seo } from './lib/seo-register.mjs';
 /* AD-28. `hole`, `KIND_LEGEND` and `readingLedger` ARE DELIBERATELY NOT
    IMPORTED. `hole()` renders `.p-hole`, the named-hole marker — an explanation
    of an absence, which no organisational page may publish. `KIND_LEGEND`
@@ -847,66 +848,21 @@ const WORK_BAND = PATHS.index.url;
 const itemPath = (it) => ({ url: `/work/${it.kind}/${it.slug}`, file: `${it.kind}/${it.slug}.html` });
 
 /* ═══ AD-27.48 · A DESCRIPTION FOR EVERY PAGE, 140-158 CHARACTERS ═════════
-   All fifteen WORK pages carried one already — `it.line` or `def.line` — and
-   all fifteen were between 51 and 117 characters, which is a sentence Google
-   pads or truncates rather than the page's own answer. AD-27.48 sets the band
-   at 140-158 and requires each one to carry (a) the page's own subject in the
-   reader's words and (b) ONE VERIFIABLE FACT, which is the same standard the
-   page's copy is held to.
-
-   EVERY FACT BELOW IS ALREADY PUBLISHED ON THE PAGE IT DESCRIBES, with a source
-   in its own `figures` block or `line`. Nothing here introduces a number.
-
-   AND NOTHING IS TENSED, DATED OR A SPECIMEN. BRANDING §3.5 applies to <head>
-   exactly as it applies to <body> — a description is static markup that Google
-   caches — so no description carries a reading, "today", "currently" or a year
-   count. The two totals a page could state about its own SET are also absent:
-   D-03.2 forbids "eight campaigns" and "four events" for the same reason the
-   pages themselves refuse them — the sentence has to read the same at three or
-   at thirteen.
-
-   /work/journeys IS TAKEN VERBATIM FROM AD-27.47's PHRASE TABLE, which assigns
-   it the "School Adventure Camp" query and rules exactly how it is discharged:
-   the programmes are outdoor residential school journeys and camps, the pages
-   say so in those words, and the literal string "adventure camp" appears in no
-   source and is therefore not written. */
-const DESC = {
-  '/work':
-    'Everything Swechha runs, in one view: every project, campaign, journey and event, by name, with the kind of work it is set on the row beside it.',
-  '/work/projects':
-    'The work that runs for years rather than days: a school curriculum on land, water and air, a five-acre learning farm, butterfly parks, and a volunteer corps.',
-  '/work/campaigns':
-    'Public pressure with a name on it, from We for Yamuna in 2000 to Monsoon Wooding. The campaigns, by name, and what each one of them pushes against.',
-  '/work/journeys':
-    'School journeys and camps, two hours to twelve days: a city walk, a forest, a village, and a thousand kilometres down the Yamuna. The oldest runs since 2004.',
-  '/work/events':
-    'Workshops, concerts, plays and river clean-ups — the gatherings Swechha runs in public, from Yamunotsav to the Greenathon and the Yamuna Shramdaan.',
-  '/work/projects/bridge-the-gap':
-    'A module-based school curriculum on land, water and air: five to sixteen sessions, plus exposure trips and action projects. 100-150 Delhi schools every year.',
-  '/work/projects/farm-school':
-    'A learning lab on five acres, ninety minutes from Delhi. Day visits, short courses, internships and stays, with the composting and the nursery as the class.',
-  '/work/projects/eco-action':
-    'Butterfly parks and herb gardens built with schools and residents across Delhi NCR: over seventy parks and over twenty gardens planted so far.',
-  '/work/projects/me-to-we':
-    'A leadership programme run with children from one settlement in south Delhi. Over 3,000 through it in thirteen years, and over 200 back as peer leaders.',
-  '/work/projects/influence':
-    'Volunteering and a fellowship, nationwide: ten fellows a year, ten thousand volunteers a year, fifty colleges, and a network of over 300 youth groups.',
-  '/work/campaigns/monsoon-wooding':
-    'Planting through the monsoon across Delhi NCR. About 5,000 trees a year and over 50,000 planted and survived, counted as survivors against a planting count.',
-  '/work/journeys/yamuna-yatra':
-    'Twelve days and about a thousand kilometres down the Yamuna, from Yamunotri to Agra. Thirty Yatras since 2004, and ten thousand young people through them.',
-  '/work/journeys/gram-anubhav':
-    'Four to five days living in a village in Uttarakhand, Rajasthan, Gujarat or Himachal. Over sixty journeys run, with over a hundred partners in the villages.',
-  '/work/journeys/naturescapes':
-    'Two to five days in a forest, a mountain, a desert or a mangrove: Sariska, Ranthambore, Corbett, Jaisalmer, the Sunderbans. Over sixty journeys organised.',
-  '/work/journeys/cityscapes':
-    'Two to four hours inside Delhi, at six places it would rather you did not look at: the river, a landfill, a city forest. Over a thousand walks in two decades.',
-};
-/* AD-27.47. The one title the phrase table rewrites in this lane. Every other
-   WORK title is already correct and only the description is added. */
-const TITLE = {
-  '/work/journeys': 'Journeys — school camps and walks — Swechha',
-};
+   THE TITLES AND DESCRIPTIONS THEMSELVES MOVED TO data/seo/pages.json
+   (scripts/lib/seo-register.mjs's `seo(route)`) — they were a register here,
+   keyed by URL, and they are a register there, keyed the same way; the WORK
+   sections below just look them up instead of holding a second copy. The
+   facts they carry are still worth restating for whoever edits a page's
+   copy: EVERY FACT IS ALREADY PUBLISHED ON THE PAGE IT DESCRIBES, with a
+   source in its own `figures` block or `line`, and NOTHING IS TENSED, DATED
+   OR A SPECIMEN — BRANDING §3.5 applies to <head> exactly as it applies to
+   <body>, so no description carries a reading, "today", "currently" or a
+   year count, and the two totals a page could state about its own SET are
+   also absent (D-03.2 forbids "eight campaigns" and "four events" for the
+   same reason the pages themselves refuse them — the sentence has to read
+   the same at three or at thirteen). /work/journeys' title is taken verbatim
+   from AD-27.47's phrase table, which assigns it the "School Adventure Camp"
+   query. */
 
 /* AD-27.50 · BreadcrumbList, DERIVED FROM THE ROUTE. Two or three levels:
    Swechha -> The work -> Projects -> Bridge the Gap. Built from `PATHS` and the
@@ -915,27 +871,28 @@ const crumbsIndex = () => [['Swechha', '/'], ['The work', PATHS.index.url]];
 const crumbsKind = (k) => [...crumbsIndex(), [kindDef(k).name, PATHS[k].url]];
 const crumbsFor = (it) => [...crumbsKind(it.kind), [it.name, itemPath(it).url]];
 
-/* The description and the title are looked up by ROUTE, and a page whose route
-   is not in the table refuses to build rather than falling back to `line` —
-   which is what left fifteen pages at 51-117 characters with nobody noticing.
-   Both bounds are checked: 140 because a shorter one is padded by Google, 158
-   because a longer one is truncated mid-clause. */
-const descFor = (it) => DESC[itemPath(it).url];
+/* The description and the title are looked up by ROUTE via `seo()` — called
+   directly inside pageIndex()/pageKind()/pageCampaigns()/pageEvents()/
+   pageItem() as each page object is built, e.g. `seo(PATHS.index.url).title`
+   above — and NOTHING CATCHES ITS THROW. A route with no register entry
+   crashes the build with seo()'s own uncaught exception (which names the
+   route and says what to add, in scripts/lib/seo-register.mjs), not a
+   collected, graceful "REFUSING TO WRITE" report the way the other rej()
+   gates in this file work. That is deliberate, not an oversight: a missing
+   description is a build failure either way, and pretending to batch-report
+   it here would be reporting a failure that already happened by the time
+   this function runs. The length and tensed-language checks that used to
+   run in this function now live once, on the register itself, in
+   lib/seo/register.test.ts.
+   This function still exists as a second, independent pass over the SAME
+   route list `plan` was built from — for the routes the page-building
+   functions above skip (a kind present in KINDS_ORDER but absent from the
+   current KINDS, which the plan loop `continue`s past), this is the only
+   place `seo()` is ever called on that route. */
 function checkDescriptions() {
   const want = [PATHS.index.url, ...KINDS_ORDER.map(k => PATHS[k].url),
     ...items.filter(i => i.page).map(i => itemPath(i).url)];
-  for (const u of want) {
-    const d = DESC[u];
-    if (!d) { rej('DESC', `no description for ${u}. AD-27.48 makes one required on every page.`); continue; }
-    if (d.length < 140 || d.length > 158) rej('DESC', `${u}'s description is ${d.length} characters; AD-27.48's band is 140-158.`);
-    if (/\b(today|currently|this year|as of|DEMO DATA)\b/i.test(d)) rej('DESC', `${u}'s description carries a tensed claim or a specimen marker (BRANDING §3.5 applies to <head>).`);
-  }
-  const seen = new Map();
-  for (const u of want) {
-    const d = DESC[u];
-    if (d && seen.has(d)) rej('DESC', `${u} and ${seen.get(d)} share a description. AD-27.53 condition 3 checks uniqueness mechanically.`);
-    else if (d) seen.set(d, u);
-  }
+  for (const u of want) seo(u);
 }
 
 const canonical = new Set([PATHS.index.url, ...KINDS_ORDER.map(k => PATHS[k].url)]);
@@ -1876,8 +1833,8 @@ ${tabs('Ways in', waysIn(PATHS.index.url))}`,
   return {
     bands, body: applyCanvas(bands, body), sections: sectionsFor(bands), current: 'Work',
     crumbs: crumbsIndex(),
-    title: 'The work — Swechha',
-    desc: DESC[PATHS.index.url],
+    title: seo(PATHS.index.url).title,
+    desc: seo(PATHS.index.url).description,
   };
 }
 
@@ -1953,7 +1910,7 @@ function pageKind(k) {
   return {
     bands, body: applyCanvas(bands, body), sections: sectionsFor(bands),
     current: k === 'journeys' ? 'Journeys' : 'Work',
-    crumbs: crumbsKind(k), title: TITLE[PATHS[k].url] || `${def.name} — Swechha`, desc: DESC[PATHS[k].url],
+    crumbs: crumbsKind(k), title: seo(PATHS[k].url).title, desc: seo(PATHS[k].url).description,
   };
 }
 
@@ -2018,7 +1975,7 @@ function pageCampaigns() {
   });
   return {
     bands, body: applyCanvas(bands, body), sections: sectionsFor(bands), current: 'Work',
-    crumbs: crumbsKind('campaigns'), title: TITLE[PATHS['campaigns'].url] || `${def.name} — Swechha`, desc: DESC[PATHS['campaigns'].url],
+    crumbs: crumbsKind('campaigns'), title: seo(PATHS['campaigns'].url).title, desc: seo(PATHS['campaigns'].url).description,
   };
 }
 
@@ -2191,7 +2148,7 @@ function pageItem(it) {
     bands, body: applyCanvas(bands, body), sections: sectionsFor(bands),
     current: it.kind === 'journeys' ? 'Journeys' : 'Work',
     crumbs: crumbsFor(it),
-    title: `${it.name} — Swechha`, desc: descFor(it),
+    title: seo(itemPath(it).url).title, desc: seo(itemPath(it).url).description,
   };
 }
 
@@ -2280,7 +2237,7 @@ function pageEvents() {
   });
   return {
     bands, body: applyCanvas(bands, body), sections: sectionsFor(bands), current: 'Work',
-    crumbs: crumbsKind('events'), title: TITLE[PATHS['events'].url] || `${def.name} — Swechha`, desc: DESC[PATHS['events'].url],
+    crumbs: crumbsKind('events'), title: seo(PATHS['events'].url).title, desc: seo(PATHS['events'].url).description,
   };
 }
 
@@ -2473,7 +2430,7 @@ if (problems > 0) { console.error(`\n${problems} gate failure(s). Nothing was wr
 if (DRY) { console.log('\n--dry: every gate passed, nothing written.'); process.exit(0); }
 
 for (const b of built) {
-  writePage(OUT_DIR, b.file, b.html);
+  writePage(OUT_DIR, b.file, b.html, b.url);
   console.log(`WROTE ${b.file.padEnd(34)} ${b.html.length.toLocaleString('en-IN').padStart(9)} bytes  ->  ${b.url}`);
 }
 links.write(LINKS_OUT);

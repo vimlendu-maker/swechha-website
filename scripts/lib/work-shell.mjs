@@ -60,10 +60,17 @@ import { tmpdir } from 'node:os';
 import {
   ROOT, V3, extractor, shell, groundChain, opener, hole, esc,
   kd, kindTag, KIND_LEGEND, ARROW, n0, disclose, SHARED_PAGE_CSS, tabs,
-  ask, stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC,
+  ask, stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, abs,
+  breadcrumbJsonLd, imgDim,
 } from './situation-shell.mjs';
+import { stampLastmod } from './lastmod.mjs';
 
-export { ROOT, V3, HOME_SRC, opener, hole, esc, kd, kindTag, KIND_LEGEND, ARROW, n0, disclose, groundChain, tabs, ask };
+export { ROOT, V3, HOME_SRC, opener, hole, esc, kd, kindTag, KIND_LEGEND, ARROW, n0, disclose, groundChain, tabs, ask, imgDim };
+/* Task 8 moved the definition itself down to situation-shell.mjs (work-shell
+   imports FROM that file, so the reverse would be a cycle) and re-exports it
+   here so this file's own existing callers, below, keep resolving it under
+   the same name without a second import path to remember. */
+export { breadcrumbJsonLd };
 /* Re-exported because they were exported from here before AD-28 moved them
    down a layer, and an import that used to resolve should keep resolving. */
 export { stripCssComments, stripHtmlComments, redactScriptLedgerRefs };
@@ -683,7 +690,7 @@ export const workHeader = (sections, current, url) => {
   /* `sections` now reaches only the .navscroll chip row below the bar. It used
      to also fill the Menu panel, which duplicated the row already on screen —
      the panel is the six pages and nothing else. */
-  return `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(nl).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
+  return `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"${imgDim('/brand/swechha-horizontal-white-approved.png')}></a><nav class="navlinks" aria-label="Primary">${NAV.map(nl).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
 <div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(nl).join('')}</nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}">Act</a></div><nav class="navscroll" aria-label="Sections"><ul>${sections.map(([t, h]) => `<li><a class="nl" href="${h}">${esc(t)}</a></li>`).join('')}</ul></nav></header>${AFFORD_CSS}${SECTION_SPY}`;
 };
 
@@ -1547,7 +1554,7 @@ export const openBand = (id, head, lead) => `    <div class="wrap"><div class="i
       </div></div>`;
 
 export const statementBand = ({ line, under, frame, id = 'statement' }) => `    <figure class="w7-say-fig">
-      <img class="duo" src="${esc(frame.src)}" alt="${esc(frame.alt)}" loading="lazy"${frame.op || frame.opSmall ? ` style="${frame.op ? `--op:${esc(frame.op)};` : ''}${frame.opSmall ? `--op-s:${esc(frame.opSmall)}` : ''}"` : ''}>
+      <img class="duo" src="${esc(frame.src)}" alt="${esc(frame.alt)}"${imgDim(frame.src)} loading="lazy"${frame.op || frame.opSmall ? ` style="${frame.op ? `--op:${esc(frame.op)};` : ''}${frame.opSmall ? `--op-s:${esc(frame.opSmall)}` : ''}"` : ''}>
     </figure>
     <div class="w7-say-in">
       <h2 class="d1 w7-say-h wk-say-h" id="${id}-h">${line}</h2>
@@ -1569,7 +1576,7 @@ export const splitBand = ({ left, frame, right, kick, title, say, nums, flip = f
   }
   if (!frame && !right) return `      <div class="w7-pj-split wk-solo"><div class="w7-pj-reg">${left}</div></div>`;
   const pic = frame ? `<div class="w7-pj-lead">${href ? `<a href="${href}">` : ''}
-        <div class="ht w7-pj-fig"><img class="duo" src="${esc(frame.src)}" alt="${esc(frame.alt)}" loading="lazy"${frame.op ? ` style="--op:${esc(frame.op)}"` : ''}></div>
+        <div class="ht w7-pj-fig"><img class="duo" src="${esc(frame.src)}" alt="${esc(frame.alt)}"${imgDim(frame.src)} loading="lazy"${frame.op ? ` style="--op:${esc(frame.op)}"` : ''}></div>
 ${kick || title ? `        <p class="w7-pj-kick">${kick || ''}${title ? `<span class="w7-pj-t">${title}</span>` : ''}</p>` : ''}
 ${say ? `        <p class="w7-pj-say">${say}</p>` : ''}
 ${nums || ''}${href ? '</a>' : ''}
@@ -1673,7 +1680,7 @@ ${chip ? `      <p style="margin:var(--gap-head) 0 0">${chip}</p>` : ''}
      and reports the library note as stale, exactly as W-9 did with consent. */
   const filt = ` class="${ph ? 'duo-dim' : 'duo'}"`;
   return `    <div class="${cls}">
-      <img${filt} src="${esc(frame.src)}" alt="${esc(frame.alt)}"${frame.op ? ` style="--op:${esc(frame.op)}"` : ''}>
+      <img${filt} src="${esc(frame.src)}" alt="${esc(frame.alt)}"${imgDim(frame.src)} fetchpriority="high"${frame.op ? ` style="--op:${esc(frame.op)}"` : ''}>
       <div class="pic-over"><div class="wrap">
 ${head}
       </div></div>${ph ? `\n      <p class="lbl wk-ph-chip">Placeholder</p>` : ''}
@@ -1872,7 +1879,7 @@ ${doors.map(door).join('\n')}
 export const panel = (a) => {
   const fig = a.frame
     ? `<div class="ht wk-panel-fig"${a.frame.op ? ` style="--op:${esc(a.frame.op)}"` : ''}>` +
-      `<img class="duo" src="${esc(a.frame.src)}" alt="${esc(a.frame.alt)}" loading="lazy"></div>`
+      `<img class="duo" src="${esc(a.frame.src)}" alt="${esc(a.frame.alt)}"${imgDim(a.frame.src)} loading="lazy"></div>`
     : '';
   return `<div class="wk-panel">${fig}<div><h3 class="wk-panel-h">${a.name}</h3>
         <p class="body">${a.p}</p>${a.cap ? `\n        <p class="cap" style="margin-top:10px">${a.cap}</p>` : ''}</div></div>`;
@@ -1894,7 +1901,7 @@ export const panel = (a) => {
 export const gallerySheet = ({ label, frames, note }) => `      <div class="wk-gal s-record-sheetblock">
         <div class="s-record-sheethead"><p class="lbl">${label}</p></div>
         <div class="s-record-sheet">
-${frames.map(f => `          <figure class="ht s-record-cell"${f.op ? ` style="--op:${esc(f.op)}"` : ''}><img class="${f.dim ? 'duo-dim' : 'duo'}" src="${esc(f.src)}" alt="${esc(f.alt)}" loading="lazy"></figure>`).join('\n')}
+${frames.map(f => `          <figure class="ht s-record-cell"${f.op ? ` style="--op:${esc(f.op)}"` : ''}><img class="${f.dim ? 'duo-dim' : 'duo'}" src="${esc(f.src)}" alt="${esc(f.alt)}"${imgDim(f.src)} loading="lazy"></figure>`).join('\n')}
         </div>
 ${note ? `        <p class="cap s-record-note" style="margin-top:14px">${note}</p>\n` : ''}      </div>`;
 
@@ -2181,12 +2188,16 @@ export class Links {
    sixteenth.
 
    AD-27.49 — og:* and twitter:*, derived from the title, the description and
-   the canonical route that are already here. `og:url` is DELIBERATELY OMITTED
-   and og:image is RELATIVE, for the same reason situation-shell.mjs:754-767
-   gives for the relative canonical: a preview deploy must not advertise the
-   production host, and scrapers resolve a relative og:image against the
-   document URL. twitter:site is @swechhaindia, verified from the live site's
-   own markup. No twitter:creator.
+   the canonical route that are already here. `og:url` and og:image ARE NOW
+   ABSOLUTE. The note this replaces argued a relative og:image was safe because
+   "a preview deploy must not advertise the production host" and "scrapers
+   resolve a relative og:image against the document URL". Neither holds: these
+   35 pages are COMMITTED artefacts and `npm run build` is `next build` alone,
+   so generation never happens on a preview deploy — the stated hazard cannot
+   occur. And the Open Graph protocol specifies a URL for og:image; support for
+   a relative value varies between consumers, so it is conformance, not a
+   guess, to make it absolute. twitter:site is @swechhaindia, verified from the
+   live site's own markup. No twitter:creator.
 
    AD-27.13 — the two icon links. The 35 built pages never execute the React
    layout (the beforeFiles rewrite serves the HTML file), so Next's icon
@@ -2196,28 +2207,20 @@ export class Links {
    ═══════════════════════════════════════════════════════════════════════ */
 export const HEAD_ICONS =
   '<link rel="icon" href="/icons/icon-32.png" sizes="32x32"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">';
-export const headSocial = (title, desc) =>
-  `<meta property="og:type" content="website"><meta property="og:site_name" content="Swechha">`
+/* `ogType` DEFAULTS TO 'website' for the same reason situation-shell.mjs's
+   headTags does: it existed as a hardcoded literal before Task 7 and no WORK
+   page needs anything else today, so a default keeps every existing caller's
+   output byte-identical. Added here for symmetry with headTags — the brief's
+   own words — not because a WORK page is an article; none is. */
+export const headSocial = (title, desc, canonical, ogType = 'website') =>
+  `<meta property="og:type" content="${ogType}"><meta property="og:site_name" content="Swechha">`
   + `<meta property="og:locale" content="en_IN"><meta property="og:title" content="${esc(title)}">`
   + `<meta property="og:description" content="${esc(desc)}">`
-  + `<meta property="og:image" content="/images/og/og-default.png">`
-  + `<meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content="@swechhaindia">`;
-
-/**
- * AD-27.50 · BreadcrumbList, on the 15 WORK pages.
- * DERIVED FROM THE CANONICAL ROUTE EACH PAGE ALREADY COMPUTES, so a breadcrumb
- * cannot disagree with the URL — which is the only reason to emit one.
- * `item` is relative for the same host-neutrality reason as the canonical and
- * og:image; Google resolves it against the document.
- */
-export const breadcrumbJsonLd = (crumbs) => '<script type="application/ld+json">'
-  + JSON.stringify({
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: crumbs.map(([name, item], i) => ({
-      '@type': 'ListItem', position: i + 1, name, item,
-    })),
-  }) + '</script>';
+  + `<meta property="og:url" content="${esc(abs(canonical))}">`
+  + `<meta property="og:image" content="${esc(abs('/images/og/og-default.png'))}">`
+  + `<meta name="twitter:card" content="summary_large_image">`
+  + `<meta name="twitter:image" content="${esc(abs('/images/og/og-default.png'))}">`
+  + `<meta name="twitter:site" content="@swechhaindia">`;
 
 /* Collected across the whole run and printed once by the caller: the frozen
    footer's own address, reported rather than failed. See gate 2 below. */
@@ -2234,7 +2237,7 @@ export const mailtoNote = [];
    them travelled with them — read it at situation-shell.mjs's own AD-28 §7
    block. `buildPage` below calls all three exactly as it always did. */
 
-export async function buildPage({ file, url, title, desc, bands, sectionFor, sections, current, sh, crumbs = [], pageCss = '', script = '' }) {
+export async function buildPage({ file, url, title, desc, bands, sectionFor, sections, current, sh, crumbs = [], pageCss = '', script = '', ogType = 'website' }) {
   const problems = [];
 
   /* AD-27.48. A DESCRIPTION IS NOT OPTIONAL. */
@@ -2310,7 +2313,7 @@ export async function buildPage({ file, url, title, desc, bands, sectionFor, sec
      `stripHtmlComments`). Every gate below runs on the STRIPPED text, so what
      is checked is exactly what is written. */
   const OUT = stripHtmlComments(`<!doctype html>
-<html lang="en">
+<html lang="en-IN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -2319,7 +2322,7 @@ export async function buildPage({ file, url, title, desc, bands, sectionFor, sec
 <link rel="canonical" href="${url}">
 ${HEAD_ICONS}
 <meta name="description" content="${esc(desc)}">
-${headSocial(title, desc)}
+${headSocial(title, desc, url, ogType)}
 ${sh.HEAD_FONTS}
 <style>
 ${stripCssComments([sh.CSS, sh.SITUATION_CSS, SHARED_PAGE_CSS, sh.COMPONENT_CSS, WORK_CSS, pageCss].join('\n'))}</style>
@@ -2472,7 +2475,12 @@ ${SCRIPT}</script>
   return { file, html: OUT, problems, chain };
 }
 
-export function writePage(outDir, file, html) {
+export function writePage(outDir, file, html, route) {
+  /* Stamped right here, before the write, same as situation-shell.mjs's
+     `assemble()` — the other shell, the other half of the 35 built pages.
+     `route` is optional only so a caller that has no canonical (there is
+     none today) does not crash; every WORK page passes its own `url`. */
+  if (route) stampLastmod(route, html);
   const p = join(outDir, file);
   mkdirSync(dirname(p), { recursive: true });
   writeFileSync(p, html);

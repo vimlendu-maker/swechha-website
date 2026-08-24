@@ -53,6 +53,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
+import { stampLastmod } from './lib/lastmod.mjs';
 
 const CHECK = process.argv.includes('--check');
 /* ── TWO FILES, AND THE DISTINCTION IS THE WHOLE OF AD-28 §7 HERE. ────────
@@ -524,6 +525,78 @@ if (rainNormal === null) {
     src = src.replace(re, `$1${line}`);
     ok(`org JSON-LD    ${JSON.stringify(jsonld).length} chars${src === before ? '  (already in step)' : '  (updated)'}`);
   }
+
+  /* THE SITELINKS SEARCHBOX (TASK 6). /search is a real, server-rendered
+     index that reads its own `q` parameter with JavaScript off
+     (scripts/build-search-page.mjs:238), so this urlTemplate is a claim the
+     site can actually honour rather than a feature that does not exist.
+     SAME TECHNIQUE AS THE ORGANIZATION BLOCK ABOVE — one minified line
+     between sentinels — and only `name` is read off the dataset; `url` and
+     the SearchAction's urlTemplate are built through S.abs() here, never
+     pasted as a literal, for the reason recorded at org-jsonld.json's
+     `_website` key (a literal origin has corrupted this site's sitemap and
+     robots.txt before). */
+  const WEBSITE = ORG.website;
+  if (!WEBSITE || WEBSITE['@type'] !== 'WebSite') {
+    fail('data/org-jsonld.json has no website object of @type WebSite');
+  } else {
+    const websiteJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: WEBSITE.name,
+      url: S.abs('/'),
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: { '@type': 'EntryPoint', urlTemplate: `${S.abs('/search')}?q={search_term_string}` },
+        'query-input': 'required name=search_term_string',
+      },
+    };
+    const wLine = `<script type="application/ld+json">${JSON.stringify(websiteJsonLd)}</script>`;
+    const wRe = /(WEBSITE JSON-LD — START[\s\S]*?-->\n)<script type="application\/ld\+json">[\s\S]*?<\/script>/;
+    const wHits = src.match(new RegExp(wRe.source, 'g'));
+    if (!wHits || wHits.length !== 1) {
+      fail(`the WebSite JSON-LD sentinel block matched ${wHits ? wHits.length : 0} times in home.html, `
+        + 'expected exactly 1 — the sentinels moved or the script tag is no longer one line');
+    } else {
+      const before = src;
+      src = src.replace(wRe, `$1${wLine}`);
+      ok(`website JSON-LD ${JSON.stringify(websiteJsonLd).length} chars${src === before ? '  (already in step)' : '  (updated)'}`);
+    }
+  }
+}
+
+/* ── THE SHARE CARD'S ABSOLUTE URLS, DERIVED NOT LITERAL ──────────────────
+   Task 4 fix round 1, finding 1: og:url, og:image and twitter:image were
+   typed as literal `https://swechha.in/...` strings on this page — the exact
+   hazard the comment above `S.abs()` in situation-shell.mjs warns against,
+   and the one lib/org.ts:22-47 records as a real production incident (a
+   mistyped/hardcoded origin silently corrupted the sitemap and robots.txt).
+   Under a SITE_ORIGIN-driven regeneration this page would keep describing
+   the production host while all 34 other pages correctly moved.
+   THIS PAGE CANNOT CALL `S.abs()` ITSELF — it is static HTML, not a
+   generator — so the value is computed here, at build time, and substituted
+   in, THE SAME ONE-LINE TECHNIQUE AS THE READINGS AND THE ORGANIZATION
+   JSON-LD ABOVE: matched exactly once, so a hand edit that moves the markup
+   fails the build rather than being silently skipped.
+   THE RENDERED VALUE DOES NOT CHANGE: with SITE_ORIGIN unset this still
+   writes https://swechha.in, because that is `S.abs()`'s own default. What
+   changed is how the value is produced, not what it is. */
+{
+  const SHARE_URLS = [
+    [/(<meta property="og:url" content=")[^"]*(")/, S.abs('/'), 'og:url'],
+    [/(<meta property="og:image" content=")[^"]*(")/, S.abs('/images/og/og-default.png'), 'og:image'],
+    [/(<meta name="twitter:image" content=")[^"]*(")/, S.abs('/images/og/og-default.png'), 'twitter:image'],
+  ];
+  for (const [re, value, label] of SHARE_URLS) {
+    const hits = src.match(new RegExp(re.source, 'g'));
+    if (!hits || hits.length !== 1) {
+      fail(`${label} matched ${hits ? hits.length : 0} times in home.html, expected exactly 1 — the markup moved`);
+      continue;
+    }
+    const before = src;
+    src = src.replace(re, `$1${value}$2`);
+    ok(`share url    ${label} -> ${value}${src === before ? '  (already in step)' : '  (updated)'}`);
+  }
 }
 
 /* ── THE CROSS-CHECK ────────────────────────────────────────────────────── */
@@ -595,6 +668,37 @@ if (bad) {
   process.exit(1);
 }
 
+/* ── TASK 10 — RESERVE THE BOX ON EVERY <img>, INCLUDING THE FROZEN PAGE.
+   home.html is hand-authored, not templated, so there is no shared emitter to
+   change here the way there is for every other page — this is the same
+   surgery, done directly on the one file every shell extracts from. Never a
+   typed number: `S.imgDim` reads each file's own header (image-size.mjs) and
+   omits the attributes rather than guess where it cannot. No newline is
+   introduced by any of this — shell() pins this file by line range, and the
+   line-count guard just below would catch a violation. */
+let heroLcpSet = false;
+src = src.replace(/<img\b[^>]*>/g, (tag) => {
+  if (/\bwidth=/.test(tag)) return tag; // idempotent on a rerun
+  const m = tag.match(/\bsrc="([^"]+)"/);
+  if (!m) return tag;
+  const dim = S.imgDim(m[1]);
+  if (!dim) return tag;
+  /* Inserted right after the tag name, on the SAME line `<img` opens on —
+     several of this page's tags wrap their `alt=` onto a second line, and an
+     attribute added just before the closing `>` would land there instead,
+     making an attribute-only change read as a copy edit in the diff. */
+  let prefix = dim;
+  /* The first hero slide (h-air, india-gate-hero.jpg) is the only <img> on
+     this page rendered above the fold before any script runs — the LCP
+     candidate. Every other image on the page already carries loading="lazy"
+     or is off-screen until the carousel advances. */
+  if (!heroLcpSet && /src="\/images\/photos\/india-gate-hero\.jpg"/.test(tag)) {
+    heroLcpSet = true;
+    prefix = ` fetchpriority="high"${dim}`;
+  }
+  return tag.replace(/^<img/, `<img${prefix}`);
+});
+
 const linesAfter = src.split('\n').length;
 if (linesAfter !== linesBefore) {
   console.error(`\nREFUSING TO WRITE: the line count moved ${linesBefore} -> ${linesAfter}. `
@@ -645,6 +749,7 @@ if (CHECK) {
   console.log(`  the shipped page would be ${ship.length.toLocaleString('en-IN')} bytes, `
     + `down from the source's ${src.length.toLocaleString('en-IN')}.`);
 } else {
+  stampLastmod('/', ship);
   writeFileSync(HOME, src);
   writeFileSync(SHIP, ship);
   console.log(`\n${changed} slide(s) updated, ${linesAfter} lines, line count unchanged. All checks pass.`);

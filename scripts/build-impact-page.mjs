@@ -43,6 +43,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
+import { seo } from './lib/seo-register.mjs';
 import { imageSize } from './lib/jpeg-size.mjs';
 /* `hole` is deliberately NOT imported. AD-28 removed every named hole from
    this page and a build gate refuses to write one; importing the helper back is
@@ -288,7 +289,7 @@ const B = {};
    there is one the page exists to refuse. */
 const M = IMPACT.masthead;
 B.top = () => `    <div class="pic ht">
-      <img class="duo" src="${M.frame.src}" alt="${esc(M.frame.alt)}" style="--op:${M.frame.op}">
+      <img class="duo" src="${M.frame.src}" alt="${esc(M.frame.alt)}"${S.imgDim(M.frame.src)} fetchpriority="high" style="--op:${M.frame.op}">
       <div class="pic-over"><div class="wrap">
         <p class="lbl eyebrow">${esc(M.kicker)}</p>
         <h1 class="d1">${M.h1}</h1>
@@ -411,7 +412,7 @@ ${S.tabs('Figures by kind', panels)}
 B.sheet = () => `${opener('sheet', IMPACT.sheet.head, esc(IMPACT.sheet.lead))}
     <div class="wrap">
       <div class="ip-sheet">
-${IMPACT.sheet.frames.map(fr => `        <figure class="ht ip-sh-c"><img class="duo" src="${fr.src}" alt="${esc(fr.alt)}" loading="lazy"></figure>`).join('\n')}
+${IMPACT.sheet.frames.map(fr => `        <figure class="ht ip-sh-c"><img class="duo" src="${fr.src}" alt="${esc(fr.alt)}"${S.imgDim(fr.src)} loading="lazy"></figure>`).join('\n')}
       </div>
     </div>`;
 
@@ -511,9 +512,17 @@ const PAGE_CSS = `
 `;
 
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */
+/* THE TITLE COMES FROM data/seo/pages.json now, not a literal here —
+   see scripts/build-farm-page.mjs and scripts/build-situation-air.mjs for
+   the same pattern. This generator used to keep its own copy; it happened
+   to already agree with the register, but a second copy that merely agrees
+   today is drift waiting to happen, which is exactly why the register
+   exists (spec section 3.1). */
+const TITLE = seo('/impact').title;
+
 const OUT = await S.assemble({
   file: 'impact.html',
-  title: 'Impact &mdash; Swechha',
+  title: TITLE,
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
   /* AD-19 §5: `aria-current="page"` ONLY where the href equals the URL being

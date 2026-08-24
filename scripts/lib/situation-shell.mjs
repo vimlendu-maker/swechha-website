@@ -47,6 +47,19 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
+import { seo } from './seo-register.mjs';
+import { stampLastmod } from './lastmod.mjs';
+import { imageSize } from './image-size.mjs';
+
+/* THE BOX EVERY <img> RESERVES, READ FROM THE FILE ITSELF. A wrong number is
+   worse than none (see image-size.mjs), so a path this cannot parse gets
+   neither attribute rather than a guess. Shared here so every generator that
+   already does `import * as S from './lib/situation-shell.mjs'` gets one
+   emitter instead of reinventing this string. */
+export const imgDim = (src) => {
+  const d = imageSize(src);
+  return d ? ` width="${d.width}" height="${d.height}"` : '';
+};
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 export const V3 = join(ROOT, 'public/_pages/v3');
@@ -67,6 +80,49 @@ export const DATA = join(ROOT, 'data');
  *  file — the maintained one — not the artefact. `design/README.md` has the
  *  whole argument. */
 export const HOME_SRC = join(ROOT, 'design/home.html');
+
+/* ABSOLUTE URLS, DERIVED — NEVER A LITERAL, and never relative.
+   The old note here said an absolute value "advertises the preview host on
+   every preview deploy". That hazard cannot occur: these 35 pages are
+   COMMITTED artefacts and `npm run build` is `next build` alone, so generation
+   never happens on a preview deploy — the same bytes ship everywhere. What the
+   relative value did cost is conformance: the Open Graph protocol specifies a
+   URL for og:image, and support for relative values differs between consumers.
+   SITE_ORIGIN is honoured so a deliberate regeneration under another origin
+   still describes itself correctly (lib/org.ts:48-50 does the same). */
+export const ORIGIN = (process.env.SITE_ORIGIN?.trim() || 'https://swechha.in').replace(/\/+$/, '');
+export const abs = (path) => {
+  const p = String(path);
+  /* Idempotent: a value that is already absolute is returned untouched, so a
+     caller that passes one cannot produce "https://hosthttps://host/". */
+  if (/^https?:\/\//.test(p)) return p;
+  return `${ORIGIN}${p.startsWith('/') ? p : `/${p}`}`;
+};
+
+/**
+ * AD-27.50 · BreadcrumbList, on every nested page.
+ * DERIVED FROM THE CANONICAL ROUTE EACH PAGE ALREADY COMPUTES, so a breadcrumb
+ * cannot disagree with the URL — which is the only reason to emit one.
+ * `item` IS ABSOLUTE. Google's breadcrumb reference specifies a full URL; the
+ * previous note asserted Google resolves a relative item against the document,
+ * which this repo never verified. Derived from ORIGIN, so it is still not a
+ * literal. THIS FUNCTION OWNS THE ORIGIN: every caller passes a relative path
+ * in `crumbs` and `abs()` is applied here, once, so a caller can never
+ * double-prefix it.
+ * MOVED HERE FROM work-shell.mjs (Task 8): work-shell imports FROM this file
+ * (for `abs` among others), so defining the function up there and importing
+ * it down here would be a cycle. Moved down a layer instead, unchanged, and
+ * re-exported from work-shell.mjs by name so its existing callers still
+ * resolve it under the same import path.
+ */
+export const breadcrumbJsonLd = (crumbs) => '<script type="application/ld+json">'
+  + JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: crumbs.map(([name, item], i) => ({
+      '@type': 'ListItem', position: i + 1, name, item: abs(item),
+    })),
+  }) + '</script>';
 
 /** Read a committed dataset. */
 export const J = (f) => JSON.parse(readFileSync(join(DATA, f), 'utf8'));
@@ -158,7 +214,14 @@ export function shell() {
   const HEAD_FONTS = home.R(8, 8, 'fonts.googleapis.com', 'display=swap');
   const SVG_DEFS = home.between('<filter id="duo"', '</svg>');
   const SKIP = home.between('D-09.3. BYPASS BLOCKS', 'class="skip"');
-  const FOOTER = home.between('<footer class="foot"', '</footer>');
+  const FOOTER = home.between('<footer class="foot"', '</footer>')
+    /* The footer's own logo mark is frozen, extracted text (D-10.3) — not
+       retyped here, just given the box its file already reserves for it,
+       the same way header()'s copy of the same file does. */
+    .replace(
+      '<img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha">',
+      `<img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"${imgDim('/brand/swechha-horizontal-white-approved.png')}>`,
+    );
   const JS_NAVIDX = home.iife('D-09.1. THE MOBILE INDEX CONTROL');
   /* D-09.4's ACTIVE-SECTION UNDERLINE IS NO LONGER LIFTED. AD-27.2 deleted it
      from home.html and from here in the same change. It selected
@@ -529,7 +592,7 @@ pointer-events:none;transition:background .12s}
 .cl-door:hover::after{translate:none}}
 </style>`
 
-export const header = (index, { current = null, url = null, page = null } = {}) => `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
+export const header = (index, { current = null, url = null, page = null } = {}) => `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"${imgDim('/brand/swechha-horizontal-white-approved.png')}></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
 <div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav></div><a class="nl navsearch" href="/search"${page === '/search' ? ' aria-current="page"' : ''}><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}"${page === GIVE_HREF ? ' aria-current="page"' : ''}>Act</a></div><nav class="navscroll" aria-label="Sections"><ul>${index.map(([t, h]) => `<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>${AFFORD_CSS}${SECTION_SPY}`;
 
 /* ═══ GROUND ADJACENCY ═══════════════════════════════════════════════════ */
@@ -1791,50 +1854,26 @@ export function shipDocument(html) {
    first was this file: `assemble()` had no `desc` parameter, so no caller
    could have passed one.
 
-   ★ THE DESCRIPTIONS LIVE HERE, KEYED BY THE PAGE'S OWN CANONICAL ROUTE.
-   AD-27.48 asks for "one parameter", and `desc` is that parameter — a caller
-   may always pass its own and it wins. The register below is the default for
-   the pages that already existed when the parameter was added, so that the
-   twenty missing descriptions land in ONE change rather than in six
-   generators owned by four people working in parallel. A generator that
-   wants its description beside its own copy should pass `desc:` and delete
-   its row here; the two paths cannot both apply.
+   ★ THE DESCRIPTIONS MOVED TO data/seo/pages.json. They were a register here
+   and they are a register there — the difference is that /about's generator
+   used to override this map with different words, so the site shipped two
+   answers for one page. The rules that governed this object still govern the
+   register and are enforced by lib/seo/register.test.ts: 140-158 characters,
+   untensed, undated, describing the instrument and never the reading.
 
-   ★ REQUIRED, AND THE BUILD STOPS WITHOUT ONE. Same argument the canonical
-   check above makes about the URL: a page that cannot say what it is about
-   should not be published. A NEW page therefore has to write one — which is
-   the whole point, and is why the register is a default and not a fallback
-   string.
+   `seo` itself is imported above (line 50) for this file's own internal use
+   (canonical lookups, crumb labels) and every generator that needs it
+   imports it directly from ./seo-register.mjs rather than through this
+   shell — so it is not re-exported here. */
 
-   ★ EVERY DESCRIPTION IS 140-158 CHARACTERS, states the page's subject in the
-   reader's words, and carries one verifiable fact. NOTHING HERE IS TENSED,
-   DATED OR A SPECIMEN (BRANDING §3.5 applies to <head> exactly as it applies
-   to <body> — Google caches this text): no reading, no elapsed-years count,
-   no "today", no "currently", no DEMO DATA. Note how the situation rows are
-   written — they describe the INSTRUMENT, never the value, because the value
-   moves and the description does not. */
-export const DESCRIPTIONS = {
-  '/now': "Six environmental readings Swechha keeps: Delhi's air, the Yamuna, heat, forest fire, forest loss and extreme rain, each against the standard that governs it.",
-  '/now/yamuna': "The Yamuna through Delhi, read against CPCB's own class C standard, with the monitoring station, the sampling method and the date on every figure.",
-  '/now/heat': "India's heat, read from IMD's own heat-wave criteria and NCRB's death table, with the source, the year and the limits of the count on every figure.",
-  '/now/forest-fire': "India's forest fires, read from the Forest Survey of India's burnt-area record and NASA FIRMS detections, with what each source can and cannot count.",
-  '/now/forest-loss': "India's forest loss, read from three sources that disagree — and two of them are not independent, which matters more than the disagreement does.",
-  '/now/climate-event': "India's extreme rain, read against IMD's own 24-hour rainfall categories, with the official table behind every figure and what it leaves out.",
-  '/impact': 'Every figure Swechha holds, on one page, by programme and by the span it counts. No single total: the figures count overlapping groups of people.',
-  '/publications': "Three things Swechha has published, free and whole, with no address asked for: a book about a neighbourhood, a shopper's guide, and one piece of research.",
-  '/search': 'Search every page on swechha.in by title, section heading and opening line — or read the whole list below, in the order the site is arranged.',
-  '/stories': 'Films made with the people in them, and a poster series that said the same things on paper, in a city that reads walls before it reads reports.',
-  '/about': 'Founded in 2000 as We for Yamuna. Swechha is an environmental organisation in Delhi — who does the work, who governs it, and what it has done since.',
-  '/act': 'Three ways in: give to an NGO with 80G and 12A, turn up and volunteer, or bring us a ward, a river stretch or a cohort. Every ask on this site lands here.',
-  '/farm': 'Five acres in the Aravallis, ninety minutes from Delhi. Day visits, overnight school camps for a hundred students, retreats and stays. One tree became 5,000.',
-};
-
-/* THE SHARE CARD AND THE ICONS ARE RELATIVE, DELIBERATELY, and for the same
-   reason the canonical is: the origin is only known at request time, so an
-   absolute value baked in at build time advertises the preview host on every
-   preview deploy. Scrapers resolve a relative og:image against the document
-   URL. `og:url` is omitted for the same reason. If a later pass wants absolute
-   values they come from SITE_ORIGIN at build time, never from a literal. */
+/* THE SHARE CARD IS NOW ABSOLUTE. The note this replaces argued a relative
+   og:image was safe because "a preview deploy must not advertise the
+   production host" and "scrapers resolve a relative og:image against the
+   document URL". Neither holds: these 35 pages are COMMITTED artefacts and
+   `npm run build` is `next build` alone, so generation never happens on a
+   preview deploy — the stated hazard cannot occur. And the Open Graph
+   protocol specifies a URL for og:image; support for a relative value varies
+   between consumers, so it is conformance, not a guess, to make it absolute. */
 /* ATTRIBUTE-SAFE, BUT NOT esc(). Titles arrive already carrying HTML entities
    (`&mdash;`, `&rsquo;`), so esc()'s `&` -> `&amp;` would render the literal
    text "&mdash;" in a share card. Only the two characters that can break an
@@ -1847,20 +1886,34 @@ const attr = (s) => String(s ?? '').replace(/"/g, '&quot;').replace(/</g, '&lt;'
 const decodeEntities = (s) => String(s ?? '')
   .replace(/&mdash;/g, '—').replace(/&rsquo;/g, '’')
   .replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ');
-export const headTags = (title, desc) =>
+/* `ogType` DEFAULTS TO 'website' RATHER THAN BEING REQUIRED, because every
+   caller before Task 7 relied on the old hardcoded value and a required
+   fourth argument would have meant touching every one of them just to keep
+   their behaviour unchanged. The five essay routes are the only callers that
+   pass 'article' today (build-essays.mjs, via the register's own ogType). */
+export const headTags = (title, desc, canonical, ogType = 'website') =>
   '<link rel="icon" href="/icons/icon-32.png" sizes="32x32">'
   + '<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">\n'
   + `<meta name="description" content="${attr(desc)}">\n`
-  + '<meta property="og:type" content="website">'
+  + `<meta property="og:type" content="${ogType}">`
   + '<meta property="og:site_name" content="Swechha">'
   + '<meta property="og:locale" content="en_IN">'
   + `<meta property="og:title" content="${attr(title)}">`
   + `<meta property="og:description" content="${attr(desc)}">`
-  + '<meta property="og:image" content="/images/og/og-default.png">'
+  + `<meta property="og:url" content="${attr(abs(canonical))}">`
+  + `<meta property="og:image" content="${attr(abs('/images/og/og-default.png'))}">`
   + '<meta name="twitter:card" content="summary_large_image">'
+  + `<meta name="twitter:image" content="${attr(abs('/images/og/og-default.png'))}">`
   + '<meta name="twitter:site" content="@swechhaindia">';
 
-export async function assemble({ file, title, desc = null, bands, sectionFor, index, sh, pageCss = '', script = '', clashes, note = '', navMark = null, route = null }) {
+/* `headExtra` (Task 7) IS THE ONE ESCAPE HATCH INTO <head> THIS FUNCTION
+   OFFERS, and it is deliberately a raw string rather than a typed list of
+   tags: the only caller today (build-essays.mjs) needs one <meta> and one
+   JSON-LD <script>, and a second essay-shaped need is not yet known, so this
+   does not invent a schema for it. Defaults to '' and is then folded away —
+   see the ternary below — so every existing caller's <head> is byte-identical
+   to before this parameter existed. */
+export async function assemble({ file, title, desc = null, bands, sectionFor, index, sh, pageCss = '', script = '', clashes, note = '', navMark = null, route = null, headExtra = '' }) {
   /* WHICH NAV WORD THIS PAGE IS STANDING UNDER, derived from the file being
      written rather than passed in, so a generator cannot mark the wrong one.
      The index and all six situations live under `Now`; anything else built
@@ -1902,11 +1955,23 @@ export async function assemble({ file, title, desc = null, bands, sectionFor, in
     process.exit(1);
   }
 
-  /* AD-27.48. REQUIRED, for the same reason the canonical is. */
-  const description = desc ?? DESCRIPTIONS[canonical] ?? null;
+  /* AD-27.48. REQUIRED, for the same reason the canonical is. seo() throws on
+     an unregistered route rather than returning undefined, so the lookup is
+     wrapped here to keep this a graceful refusal-to-write instead of an
+     uncaught exception — the message below is what a missing entry has always
+     produced. */
+  let fromRegister = null;
+  try { fromRegister = seo(canonical); } catch { /* not registered */ }
+  const description = desc ?? fromRegister?.description ?? null;
+  /* AD-27.48 kept ogType alongside title/description in the same register
+     entry rather than a third parallel map, so it is read off the same
+     lookup rather than a second seo() call. Falls back to 'website' when the
+     route is not registered — assemble() is about to refuse to write anyway
+     (no description below), so this default never reaches a reader. */
+  const ogType = fromRegister?.ogType ?? 'website';
   if (!description) {
     console.error(`REFUSING TO WRITE: ${file} (${canonical}) has no meta description. `
-      + `Pass desc: '…' to assemble(), or add a row to DESCRIPTIONS in this file.\n`
+      + `Pass desc: '…' to assemble(), or add an entry to data/seo/pages.json.\n`
       + '  140-158 characters, the page\'s subject in the reader\'s words plus one\n'
       + '  verifiable fact. Not tensed, not dated, no reading, no specimen — a\n'
       + '  description is static markup that Google caches (BRANDING §3.5).');
@@ -1925,31 +1990,41 @@ export async function assemble({ file, title, desc = null, bands, sectionFor, in
     return `  <section${cls ? ` class="${cls}"` : ''} id="${id}"${aria}>\n${body}\n  </section>`;
   };
 
-  /* ── BREADCRUMBLIST, ON THE SIX SITUATION PAGES ONLY (AD-27.50). ───────
-     DERIVED FROM THE CANONICAL ROUTE THIS PAGE ALREADY COMPUTES, so a
-     breadcrumb cannot come to disagree with the URL it describes — which is
-     the only failure mode this markup has. Three levels: Swechha -> Now ->
-     the page. The leaf's name is the page's own <title> with the site suffix
-     removed, so it is the same words the reader sees in the tab.
-     ONLY /now/* GETS ONE. A breadcrumb on a top-level page would be a
-     one-item trail, and the WORK section's is lane 2's, emitted by
-     work-shell.mjs from its own route. Nothing else on this site has a
-     hierarchy to state.
-     THE URLS ARE RELATIVE for the same reason the canonical is: a preview
-     deploy must not advertise the production host. JSON-LD resolves a
-     relative `item` against the document. */
+  /* ── BREADCRUMBLIST, ON EVERY NESTED PAGE (Task 8, widening AD-27.50). ──
+     DERIVED FROM THE CANONICAL'S OWN SEGMENTS, so a trail cannot disagree
+     with the URL — the only reason to emit one. A page at the root emits
+     nothing: a one-item breadcrumb states nothing a crawler does not already
+     know.
+     EVERY NAME COMES FROM THE REGISTER'S `indexName`, NOT FROM <title> —
+     Task 5 rewrote titles into long, keyword-bearing SERP strings, and
+     Google renders breadcrumbs in search results, where that reads badly and
+     truncates. `indexName` is the register's short editorial name for a
+     route, held there for exactly this. `crumbLabel` tries it for EVERY
+     segment, leaf included, before falling back — so an intermediate
+     segment whose own route is registered (e.g. "/work" inside
+     "/work/projects/eco-action") gets that route's short name too, rather
+     than a hardcoded NAMES entry or the raw slug. NAMES and the de-slugified
+     label are the fallback of last resort, for a path prefix nobody ever
+     gave its own route.
+     `item` IS ABSOLUTE. Google's breadcrumb reference specifies a full URL; the
+     previous note asserted Google resolves a relative item against the document,
+     which this repo never verified. Derived from ORIGIN, so it is still not a
+     literal — `breadcrumbJsonLd` applies `abs()` to every item itself, so the
+     paths built below are relative on purpose: passing an absolute value in
+     would produce "https://swechha.inhttps://swechha.in/". */
   const crumbName = String(title).replace(/\s*&mdash;\s*Swechha\s*$/, '').replace(/\s*—\s*Swechha\s*$/, '');
-  const CRUMBS = /^\/now\/[a-z-]+$/.test(canonical)
-    ? '\n<script type="application/ld+json">' + JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Swechha', item: '/' },
-        { '@type': 'ListItem', position: 2, name: 'Now', item: INDEX_PAGE.route },
-        { '@type': 'ListItem', position: 3, name: decodeEntities(crumbName), item: canonical },
-      ],
-    }) + '</script>'
-    : '';
+  const NAMES = { now: 'Now', work: 'Work', stories: 'Stories' };
+  const crumbLabel = (path) => { try { return seo(path).indexName; } catch { return null; } };
+  const segs = canonical.split('/').filter(Boolean);
+  const CRUMBS = segs.length === 0 ? '' : '\n' + breadcrumbJsonLd([
+    ['Swechha', '/'],
+    ...segs.map((s, i) => {
+      const path = '/' + segs.slice(0, i + 1).join('/');
+      const isLeaf = i === segs.length - 1;
+      const label = decodeEntities(crumbLabel(path) ?? (isLeaf ? crumbName : (NAMES[s] ?? s.replace(/-/g, ' '))));
+      return [label, path];
+    }),
+  ]);
 
   /* AD-28 §7. The extracted behaviours keep their comments; the ledger ids
      inside them do not. `node --check` runs on the redacted text below, so a
@@ -1962,15 +2037,15 @@ export async function assemble({ file, title, desc = null, bands, sectionFor, in
      gate below runs on the STRIPPED text, so what is checked is exactly what is
      written. */
   const OUT = stripHtmlComments(`<!doctype html>
-<html lang="en">
+<html lang="en-IN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>${title}</title>
 <link rel="canonical" href="${canonical}">
-${headTags(title, description)}
-${sh.HEAD_FONTS}
+${headTags(title, description, canonical, ogType)}
+${headExtra ? `${headExtra}\n` : ''}${sh.HEAD_FONTS}
 <style>
 ${stripCssComments([sh.CSS, sh.SITUATION_CSS, SHARED_PAGE_CSS, pageCss].join('\n'))}</style>
 </head>
@@ -2075,6 +2150,7 @@ ${SCRIPT}</script>
     process.exit(1);
   }
 
+  stampLastmod(canonical, OUT);
   writeFileSync(join(V3, file), OUT);
   console.log(`WROTE ${file} — ${OUT.length.toLocaleString('en-IN')} bytes, ${OUT.split('\n').length.toLocaleString('en-IN')} lines`);
   if (note) console.log(`  ${note}`);

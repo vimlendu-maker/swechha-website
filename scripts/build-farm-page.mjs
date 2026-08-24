@@ -65,6 +65,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
+import { seo } from './lib/seo-register.mjs';
 const { esc, opener, ARROW } = S;
 
 const sh = S.shell();
@@ -252,7 +253,7 @@ ${list.map(r => `        <div class="p-row">
         </div>`).join('\n')}
       </div>`;
 
-const sideFrame = (fr) => `      <figure class="fm-side"><img class="duo" src="${fr.src}" alt="${esc(fr.alt)}" loading="lazy"></figure>`;
+const sideFrame = (fr) => `      <figure class="fm-side"><img class="duo" src="${fr.src}" alt="${esc(fr.alt)}"${S.imgDim(fr.src)} loading="lazy"></figure>`;
 
 /* ═══ BANDS ══════════════════════════════════════════════════════════════
    Ground chain checked mechanically below. No two adjacent bands share a hex,
@@ -310,7 +311,7 @@ const B = {};
    region is named as a region, and the district is stated. */
 const M = F.top;
 B.top = () => `    <div class="pic ht">
-      <img class="duo" src="${M.frame.src}" alt="${esc(M.frame.alt)}" style="--op:${M.frame.op}">
+      <img class="duo" src="${M.frame.src}" alt="${esc(M.frame.alt)}"${S.imgDim(M.frame.src)} fetchpriority="high" style="--op:${M.frame.op}">
       <div class="pic-over"><div class="wrap">
         <p class="lbl eyebrow">${esc(M.kicker)}</p>
         <h1 class="d1">${M.h1}</h1>
@@ -346,7 +347,7 @@ B.origin = () => `${opener('origin', O.head, esc(yr(O.lead)))}
 ${O.rail.map(f => bigFig(f)).join('\n')}
       </div>
       <div class="fm-ctx">
-        <figure class="fm-ctx-f"><img class="duo" src="${O.context.frame.src}" alt="${esc(O.context.frame.alt)}" loading="lazy"></figure>
+        <figure class="fm-ctx-f"><img class="duo" src="${O.context.frame.src}" alt="${esc(O.context.frame.alt)}"${S.imgDim(O.context.frame.src)} loading="lazy"></figure>
         <div class="fm-ctx-t">
           <p class="lbl fm-ctx-h">${esc(O.context.h)}</p>
           <p class="body fm-ctx-p">${esc(O.context.p)}</p>
@@ -394,7 +395,7 @@ ${RESOLVED.map(f => bigFig(f)).join('\n')}
 ${G.produce.counts.map(c => `            <div class="fm-orch-c"><p class="num fm-orch-n">${esc(c.n)}</p><p class="lbl fm-orch-w">${esc(c.what)}</p></div>`).join('\n')}
           </div>
         </div>
-        <figure class="fm-prod-f"><img class="duo" src="${G.produce.frame.src}" alt="${esc(G.produce.frame.alt)}" loading="lazy"></figure>
+        <figure class="fm-prod-f"><img class="duo" src="${G.produce.frame.src}" alt="${esc(G.produce.frame.alt)}"${S.imgDim(G.produce.frame.src)} loading="lazy"></figure>
       </div>
     </div>`;
 
@@ -415,7 +416,7 @@ B.systems = () => `${opener('systems', yr(F.systems.head), esc(F.systems.lead))}
 ${F.systems.items.map(s => `        <div class="fm-inv-c">
           <p class="lbl fm-inv-h">${esc(s.h)}</p>
           <p class="body fm-inv-p">${esc(s.p)}</p>${s.frame ? `
-          <figure class="fm-inv-f"><img class="duo" src="${s.frame.src}" alt="${esc(s.frame.alt)}" loading="lazy"></figure>` : ''}
+          <figure class="fm-inv-f"><img class="duo" src="${s.frame.src}" alt="${esc(s.frame.alt)}"${S.imgDim(s.frame.src)} loading="lazy"></figure>` : ''}
         </div>`).join('\n')}
       </div>
     </div>`;
@@ -440,7 +441,7 @@ ${V.triad.map(t => `        <div class="fm-triad-c">
       </div>
       <div class="fm-doors">
 ${V.doors.map(d => `        <div class="fm-door">
-${d.frame ? `          <figure class="fm-door-f"><img class="duo" src="${d.frame.src}" alt="${esc(d.frame.alt)}" loading="lazy"></figure>\n` : ''}          <h3 class="fm-door-h">${esc(d.name)}</h3>
+${d.frame ? `          <figure class="fm-door-f"><img class="duo" src="${d.frame.src}" alt="${esc(d.frame.alt)}"${S.imgDim(d.frame.src)} loading="lazy"></figure>\n` : ''}          <h3 class="fm-door-h">${esc(d.name)}</h3>
           <p class="body fm-door-p">${esc(d.p)}</p>
 ${[d.capacity, d.figure].filter(Boolean).map(g => `          <p class="fm-door-fig"><span class="num">${esc(g.value)}</span> <span class="lbl">${esc(g.label)}</span></p>`).join('\n')}
           <p class="cap fm-door-w">${esc(d.who)}</p>
@@ -777,9 +778,14 @@ const PAGE_CSS = `
 `;
 
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */
-const TITLE = 'Swechha Farm — school camps and stays near Delhi';
-const DESC = 'Five acres in the Aravallis, ninety minutes from Delhi. Day visits, '
-  + 'overnight school camps for a hundred students, retreats and stays. One tree became 5,000.';
+/* THE TITLE AND THE DESCRIPTION BOTH COME FROM data/seo/pages.json now,
+   not literals here. This generator used to keep its own wording for both;
+   it happened to already agree with the register (verified byte-for-byte
+   before this change), but a second copy that merely agrees today is the
+   same drift /about's description override was — it can only fall out of
+   sync silently later, and spec §3.1 puts every page's head text in one
+   place for exactly this reason. */
+const TITLE = seo('/farm').title;
 
 const OUT = await S.assemble({
   file: 'farm.html',
@@ -788,7 +794,7 @@ const OUT = await S.assemble({
      — "school camps" — rather than the query's own words, which appear in no
      source. AD-27.48: the em dash is the literal character, not &mdash;. */
   title: TITLE,
-  desc: DESC,
+  desc: seo('/farm').description,
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
   /* `Farm` is a nav word and this page IS it, so it takes aria-current="page".
@@ -1186,10 +1192,11 @@ gate((F.stay.airbnb || []).length === 0 ? !/airbnb/i.test(RENDERED) && !/href="[
        nothing tensed and no reading. `desc` is passed to assemble(); until
        lane 1's parameter lands it is ignored there, which is why the length
        is asserted here rather than only in the shell. */
-gate(DESC.length >= 140 && DESC.length <= 158, `the description is ${DESC.length} characters (140–158)`);
+gate(seo('/farm').description.length >= 140 && seo('/farm').description.length <= 158,
+  `the description is ${seo('/farm').description.length} characters (140–158)`);
 gate(/school camps/i.test(TITLE) && TITLE.includes('—') && !TITLE.includes('&mdash;'),
   'the title carries "school camps" and a literal em dash (AD-27.47/48)');
-gate(!/\b(today|currently|DEMO DATA)\b/i.test(DESC), 'the description is not tensed and carries no specimen');
+gate(!/\b(today|currently|DEMO DATA)\b/i.test(seo('/farm').description), 'the description is not tensed and carries no specimen');
 
 /* 21. NO SOURCING APPARATUS ON THIS PAGE — AD-28 §2.2, AND THIS IS THE OLD
        PROVENANCE CONTRACT INVERTED. `bigFig` used to REQUIRE a provenance line

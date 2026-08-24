@@ -36,6 +36,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
+import { seo } from './lib/seo-register.mjs';
 const { esc, opener } = S;
 
 const sh = S.shell();
@@ -97,7 +98,7 @@ for (const abs of files) {
     .replace(/\s*[—–-]\s*Swechha\s*$/, '')
     .replace(/^\s*Swechha\s*[—–-]\s*/, '')
     .trim();
-  const title = stripped || text(rawTitle);
+  const pageTitleTag = stripped || text(rawTitle);
   const h1 = text(one(src, /<h1[^>]*>([\s\S]*?)<\/h1>/));
   const lead = text(one(src, /<p class="lead[^"]*">([\s\S]*?)<\/p>/));
   /* HEADINGS ARE THE SEARCH TERMS, h2 AND h3 BOTH. They are how each page
@@ -113,12 +114,28 @@ for (const abs of files) {
     ...all(src, /<h3[^>]*>([\s\S]*?)<\/h3>/g),
   ].map(text).filter(Boolean);
 
-  if (!title) dataFail(`${name} has no usable <title>.`);
+  if (!pageTitleTag) dataFail(`${name} has no usable <title>.`);
+
+  /* THE VISIBLE NAME AND THE SEARCH-ENGINE TITLE ARE TWO DIFFERENT JOBS.
+     Before Task 5's SEO pass, one field (<title>, minus the brand suffix)
+     did both: it was what Google shows AND what this index shows a reader.
+     Once titles became SERP strings ("Delhi air quality against CPCB
+     limits — Swechha"), reusing that field here would have printed SEO
+     copy on the page as though it were the site's own editorial voice —
+     which the no-creative-copy rule this programme runs under forbids.
+     So the register carries a second field, `indexName`: the short
+     editorial name this index has always shown ("Now", "Delhi's air",
+     "Campaigns"), seeded from each route's PRE-Task-5 title. The SEO
+     title still makes the page findable — it goes into the search-token
+     blob below, never onto the row itself. */
+  const indexName = text(seo(route).indexName);
+  const seoTitle = text(seo(route).title);
 
   entries.push({
     route,
-    title: title || h1 || route,
-    h1: h1 && h1 !== title ? h1 : '',
+    title: indexName || h1 || route,
+    seoTitle,
+    h1: h1 && h1 !== indexName ? h1 : '',
     lead: lead ? lead.slice(0, 220) : '',
     heads,
   });
@@ -182,7 +199,7 @@ B.top = () => `    <div class="wrap sr-mast">
       <p class="lbl sr-count" id="sr-count" role="status" aria-live="polite">${entries.length} pages</p>
     </div>`;
 
-const row = (e) => `          <li class="sr-row" data-t="${esc([e.title, e.h1, e.lead, ...e.heads].join(' ').toLowerCase())}">
+const row = (e) => `          <li class="sr-row" data-t="${esc([e.title, e.seoTitle, e.h1, e.lead, ...e.heads].join(' ').toLowerCase())}">
             <a href="${esc(e.route)}">
               <span class="sr-t">${esc(e.title)}</span>
               <span class="cap sr-r">${esc(e.route)}</span>
@@ -265,13 +282,30 @@ const PAGE_CSS = `
 `;
 
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */
+/* THE TITLE COMES FROM data/seo/pages.json now, not a literal here —
+   see scripts/build-farm-page.mjs and scripts/build-situation-air.mjs for
+   the same pattern. This generator used to keep its own copy; it happened
+   to already agree with the register, but a second copy that merely agrees
+   today is drift waiting to happen, which is exactly why the register
+   exists (spec section 3.1). */
+const TITLE = seo('/search').title;
+
+/* `noindex, follow` (Task 9). A site-search UI is a duplicate-content surface
+   — every result it renders is a page already indexed at its own canonical
+   URL — so this one should not compete with those in search results.
+   `follow` keeps it useful as a crawl path: it links every one of the 35
+   built pages from one place, and a crawler that never indexes this page can
+   still walk its links to reach all of them. */
+const ROBOTS_META = '<meta name="robots" content="noindex, follow">';
+
 const OUT = await S.assemble({
   file: OUT_FILE,
   route: '/search',
-  title: 'Search &mdash; Swechha',
+  title: TITLE,
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
   script: SCRIPT,
+  headExtra: ROBOTS_META,
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),
   note: `${BANDS.length} bands + footer. ${entries.length} pages indexed in ${grouped.length} groups, `
       + `${entries.reduce((n, e) => n + e.heads.length, 0)} band headings as search terms.`,
@@ -309,7 +343,7 @@ gate(rowsInHtml === entries.length, `all ${entries.length} rows render server-si
 /* 6. NO RAW ENTITY SURVIVED INTO THE INDEX. The decoder is a fixed list, so
       an entity the pages start using would otherwise reach a reader as
       "&rsquo;" in a search row. */
-const raw = entries.flatMap((e) => [e.title, e.h1, e.lead, ...e.heads])
+const raw = entries.flatMap((e) => [e.title, e.seoTitle, e.h1, e.lead, ...e.heads])
   .filter((t) => /&[a-z]+;|&#\d+;/i.test(t));
 gate(raw.length === 0, `no undecoded entity in the index${raw.length ? `; FOUND: ${raw.slice(0, 3).join(' | ')}` : ''}`);
 

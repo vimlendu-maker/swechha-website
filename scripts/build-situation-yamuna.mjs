@@ -12,6 +12,7 @@
 // page is built to be good at that rather than to look like a dashboard.
 import { readFileSync, writeFileSync } from 'node:fs';
 import * as S from './lib/situation-shell.mjs';
+import { seo } from './lib/seo-register.mjs';
 const { esc, n0, n1, compact, opener, tabs, hole, kd, KIND_LEGEND, ARROW, MON3, stateChip , crumb, siblings } = S;
 
 const sh = S.shell();
@@ -95,7 +96,7 @@ const INDEX = [
 const B = {};
 
 B.top = () => `    <div class="pic ht p2-pic">
-      <img class="duo" src="/images/photos/yamuna-students-foam-line.jpg" alt="Students standing along the Yamuna at a line of foam" style="--op:50% 62%">
+      <img class="duo" src="/images/photos/yamuna-students-foam-line.jpg" alt="Students standing along the Yamuna at a line of foam"${S.imgDim('/images/photos/yamuna-students-foam-line.jpg')} fetchpriority="high" style="--op:50% 62%">
       <div class="pic-over"><div class="wrap">
         <h1 class="d1">Delhi&rsquo;s Yamuna</h1>
       </div></div>
@@ -1009,9 +1010,17 @@ const PAGE_CSS = `
 `;
 
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */
+/* THE TITLE COMES FROM data/seo/pages.json now, not a literal here —
+   see scripts/build-farm-page.mjs and scripts/build-situation-air.mjs for
+   the same pattern. This generator used to keep its own copy; it happened
+   to already agree with the register, but a second copy that merely agrees
+   today is drift waiting to happen, which is exactly why the register
+   exists (spec section 3.1). */
+const TITLE = seo('/now/yamuna').title;
+
 await S.assemble({
   file: 'situation-yamuna.html',
-  title: 'Delhi&rsquo;s Yamuna &mdash; Swechha',
+  title: TITLE,
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS, script: S.NEWSLETTER_JS,
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),

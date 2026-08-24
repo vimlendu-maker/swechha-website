@@ -15,6 +15,7 @@
 // proxy. So the page carries the figure AND the caveat that it came through a
 // web client's proxy rather than a documented contract.
 import * as S from './lib/situation-shell.mjs';
+import { seo } from './lib/seo-register.mjs';
 const { esc, n0, n1, compact, opener, tabs, hole, kd, KIND_LEGEND, ARROW,
   stateChip, measureRow, measureHead, disclose, crumb, siblings } = S;
 
@@ -70,7 +71,7 @@ const INDEX = [
 const B = {};
 
 B.top = () => `    <div class="pic ht p2-pic">
-      <img class="duo" src="/images/photos/pine-forest-path.jpg" alt="A path through even-aged pine forest" style="--op:50% 45%">
+      <img class="duo" src="/images/photos/pine-forest-path.jpg" alt="A path through even-aged pine forest"${S.imgDim('/images/photos/pine-forest-path.jpg')} fetchpriority="high" style="--op:50% 45%">
       <div class="pic-over"><div class="wrap">
         <h1 class="d1">India&rsquo;s forest loss</h1>
       </div></div>
@@ -493,9 +494,17 @@ const PAGE_CSS = `
 `;
 
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */
+/* THE TITLE COMES FROM data/seo/pages.json now, not a literal here —
+   see scripts/build-farm-page.mjs and scripts/build-situation-air.mjs for
+   the same pattern. This generator used to keep its own copy; it happened
+   to already agree with the register, but a second copy that merely agrees
+   today is drift waiting to happen, which is exactly why the register
+   exists (spec section 3.1). */
+const TITLE = seo('/now/forest-loss').title;
+
 await S.assemble({
   file: 'situation-forest-loss.html',
-  title: 'India&rsquo;s forest loss &mdash; Swechha',
+  title: TITLE,
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS, script: S.NEWSLETTER_JS,
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),

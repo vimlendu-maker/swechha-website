@@ -13,7 +13,9 @@ import { tmpdir } from 'node:os';
    calls shell(). */
 import { crumb, siblings, FAMILY_CSS, NAV_SEARCH_CSS, NAV as SHELL_NAV, HOME_HREF, GIVE_HREF, INDEX_PAGE,
   stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, cadence, STATES,
-  closing, CLOSING_CSS } from './lib/situation-shell.mjs';
+  closing, CLOSING_CSS, abs, imgDim } from './lib/situation-shell.mjs';
+import { seo } from './lib/seo-register.mjs';
+import { stampLastmod } from './lib/lastmod.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const V3 = join(ROOT, 'public/_pages/v3');
@@ -99,7 +101,11 @@ const CSS = [
 const HEAD_FONTS = R(8, 8, 'fonts.googleapis.com', 'display=swap');
 const SVG_DEFS = between('<filter id="duo"', '</svg>');
 const SKIP = between('D-09.3. BYPASS BLOCKS', 'class="skip"');
-const FOOTER = between('<footer class="foot"', '</footer>');
+const FOOTER = between('<footer class="foot"', '</footer>')
+  .replace(
+    '<img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha">',
+    `<img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"${imgDim('/brand/swechha-horizontal-white-approved.png')}>`,
+  );
 const JS_NAVIDX = iife('D-09.1. THE MOBILE INDEX CONTROL');
 /* AD-27.2 — THE D-09.4 SCROLL-SPY IIFE IS NOT EXTRACTED ANY MORE, because it
    is being deleted from home.html. It was already inert on this page and on
@@ -364,7 +370,7 @@ const NAV = SHELL_NAV;
 const INDEX = [['The reading','#top'],['Who is in it','#people'],['How the number is made','#measured'],
   ['Where it comes from','#sources'],['Where it is going','#trend'],['The geography','#geography'],
   ['What it costs','#money'],['What you can do','#act']];
-const HEADER = `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
+const HEADER = `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"${imgDim('/brand/swechha-horizontal-white-approved.png')}></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
 <div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}">Act</a></div><nav class="navscroll" aria-label="Sections"><ul>${INDEX.map(([t,h])=>`<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>${AFFORD_CSS}${SECTION_SPY}`;
 
 /* ═══ SHARED FRAGMENTS ═══════════════════════════════════════════════════ */
@@ -434,7 +440,7 @@ B.top = () => {
           <span class="cap p-nr-s">${c.stations}&nbsp;station${c.stations===1?'':'s'}</span></div>`;
   }).join('\n        ');
   return `    <div class="pic ht p2-pic">
-      <img class="duo" src="/images/photos/india-gate-hero.jpg" alt="India Gate seen through Delhi haze" style="--zh:150%;--zt:-30%">
+      <img class="duo" src="/images/photos/india-gate-hero.jpg" alt="India Gate seen through Delhi haze"${imgDim('/images/photos/india-gate-hero.jpg')} fetchpriority="high" style="--zh:150%;--zt:-30%">
       <div class="pic-over"><div class="wrap">
         <h1 class="d1">Delhi&rsquo;s air</h1>
       </div></div>
@@ -1895,22 +1901,28 @@ ${JS_NAVIDX}
    must not carry.
    The em dash is the literal character, not `&mdash;`, per AD-27.48's
    convention fix; the apostrophe stays an entity because the title's does. */
-const TITLE = 'Delhi&rsquo;s air &mdash; Swechha';
-const DESC = 'Delhi\u2019s air quality index, read against CPCB\u2019s own published limit and '
-  + 'refreshed hourly, with the station and the observation time on every reading.';
+/* TITLE and DESC come from data/seo/pages.json rather than literals here —
+   this page hand-rolls its own <head> instead of going through
+   situation-shell.mjs's assemble() (see the comment above), so it is the one
+   generator that still needs its own local names for them, but the words
+   themselves are the register's, not a second copy of them. */
+const { title: TITLE, description: DESC, indexName: INDEX_NAME } = seo('/now/air');
 
 /* AD-27.49 · OPEN GRAPH AND TWITTER. Derived from the title, the description
    and the canonical route that are already in this head — nothing new is
    asserted. ON ONE LINE, the same shape the two shells emit, so a diff across
    the three head templates is one grep.
-   `og:url` IS DELIBERATELY OMITTED and `og:image` is relative, for the same
-   reason situation-shell.mjs gives for the relative canonical: a preview
-   deploy must not advertise the production host. Scrapers resolve a relative
-   og:image against the document URL. Absolute values, if a later pass wants
-   them, come from SITE_ORIGIN at build time and never from a literal.
+   `og:url` and `og:image` ARE NOW ABSOLUTE. The note this replaces argued a
+   relative og:image was safe because "a preview deploy must not advertise the
+   production host" and "scrapers resolve a relative og:image against the
+   document URL". Neither holds: these 35 pages are COMMITTED artefacts and
+   `npm run build` is `next build` alone, so generation never happens on a
+   preview deploy — the stated hazard cannot occur. And the Open Graph
+   protocol specifies a URL for og:image; support for a relative value varies
+   between consumers, so it is conformance, not a guess, to make it absolute.
    `twitter:site` is the handle all four of Swechha's accounts use. No
    `twitter:creator` — the pages have no per-page author. */
-const OG = `<meta property="og:type" content="website"><meta property="og:site_name" content="Swechha"><meta property="og:locale" content="en_IN"><meta property="og:title" content="${TITLE}"><meta property="og:description" content="${DESC}"><meta property="og:image" content="/images/og/og-default.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content="@swechhaindia">`;
+const OG = `<meta property="og:type" content="website"><meta property="og:site_name" content="Swechha"><meta property="og:locale" content="en_IN"><meta property="og:title" content="${TITLE}"><meta property="og:description" content="${DESC}"><meta property="og:url" content="${abs('/now/air')}"><meta property="og:image" content="${abs('/images/og/og-default.png')}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${abs('/images/og/og-default.png')}"><meta name="twitter:site" content="@swechhaindia">`;
 
 /* AD-27.50 · BREADCRUMBLIST, ON THE SIX SITUATION PAGES.
    THIS PAGE WAS THE ONE THAT MISSED IT, and the reason is the seam rather than
@@ -1920,21 +1932,26 @@ const OG = `<meta property="og:type" content="website"><meta property="og:site_n
    AD-27.49 each needed a hand-written clause here too. Measured 23 August:
    five of six situation pages carried BreadcrumbList and /now/air, the
    flagship and the page §H hangs "Air Pollution expert" on, carried none.
-   THE SHAPE IS THE SHELL'S, not a second design: three levels, relative
-   `item` URLs for the same reason the canonical is relative (a preview deploy
-   must not advertise the production host), and the leaf's name is this page's
-   own title with the site suffix removed, so the trail cannot come to
-   disagree with the tab. Placed immediately after the footer, where the
-   shell puts its own. */
-const CRUMB_NAME = TITLE.replace(/\s*&mdash;\s*Swechha\s*$/, '')
+   THE SHAPE IS THE SHELL'S, not a second design: three levels.
+   Task 8: the leaf's name is the register's `indexName` ("Delhi's air"), NOT
+   the page's own <title> — Task 5 rewrote titles into long, keyword-bearing
+   SERP strings, and Google renders breadcrumbs in search results, where a
+   long SEO string reads badly and is truncated. `indexName` is the short
+   editorial name the register holds for exactly this. Decoded the same way
+   TITLE always was here, since the register stores it as entities too.
+   `item` IS ABSOLUTE. Google's breadcrumb reference specifies a full URL; the
+   previous note asserted Google resolves a relative item against the document,
+   which this repo never verified. Derived from ORIGIN, so it is still not a
+   literal. */
+const CRUMB_NAME = INDEX_NAME
   .replace(/&rsquo;/g, '’').replace(/&mdash;/g, '—').replace(/&amp;/g, '&');
 const CRUMBS = '\n<script type="application/ld+json">' + JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
   itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Swechha', item: '/' },
-    { '@type': 'ListItem', position: 2, name: 'Now', item: '/now' },
-    { '@type': 'ListItem', position: 3, name: CRUMB_NAME, item: '/now/air' },
+    { '@type': 'ListItem', position: 1, name: 'Swechha', item: abs('/') },
+    { '@type': 'ListItem', position: 2, name: 'Now', item: abs('/now') },
+    { '@type': 'ListItem', position: 3, name: CRUMB_NAME, item: abs('/now/air') },
   ],
 }) + '</script>';
 
@@ -1946,7 +1963,7 @@ const CRUMBS = '\n<script type="application/ld+json">' + JSON.stringify({
    unredacted one and shipping the other is the same bug on a different line. */
 const SHIP_SCRIPT = redactScriptLedgerRefs(SCRIPT);
 const OUT = stripHtmlComments(`<!doctype html>
-<html lang="en">
+<html lang="en-IN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -2070,6 +2087,7 @@ catch (e) { console.error('\nREFUSING TO WRITE: page script is not valid JS.\n' 
   console.log(`national panel: Delhi ${DELHI_ORD} of ${NAT.cities}, consistent across strip and table`);
 }
 
+stampLastmod('/now/air', OUT);
 writeFileSync(`${V3}/situation-air.html`, OUT);
 console.log(`\nWROTE situation-air.html — ${OUT.length} bytes, ${OUT.split('\n').length} lines`);
 console.log(`  8 bands + strip + footer. Reading: AQI ${rd.aqi} ${rd.band} at ${rd.station}`);
