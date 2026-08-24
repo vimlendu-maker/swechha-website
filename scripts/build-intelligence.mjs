@@ -215,40 +215,55 @@ const B = {};
 /* THE HERO BANNER. Typographic, not photographic — all six situation pages
    open on a photograph, and the index is the cover of the instrument rather
    than a seventh subject. The banner's job is one definition and one refusal. */
+/* AD-39 CUT THIS BANNER BY A THIRD, at the owner's instruction: reduce the copy
+   on this page by 30-40 per cent. It ran ~285 words before the first card. What
+   went was restatement, not argument -- "Each one has its own page" above six
+   cards that are links; six unit names spelled out in full when the abbreviations
+   are what the cards themselves print; a 70-word gloss on the state vocabulary
+   whose last two sentences repeated what AD-37 had just put ON every card; and
+   the vocabulary heading's "and the two the set needs today", which the is-used
+   styling already says without words. ~185 words now, every claim kept.
+   AND IT NAMES ITSELF. The eyebrow read "Environmental intelligence", which is a
+   subject, not a thing you can use. The owner's own phrase -- environmental
+   intelligence dashboards, nearly real time -- is the first line on the page now.
+   "Nearly real time" is claimed for the SET and never for one page: one of the six
+   is hourly and five are on a published cadence, so the phrase is true of the
+   collection and would be false on, say, forest loss. Each page still carries its
+   own LIVE / PERIODIC / OUT OF SEASON chip, which is where the per-page truth is
+   stated, and the crumb on those pages says "environmental intelligence dashboard"
+   with no timing claim at all. */
 B.top = () => `    <div class="wrap ix-hero">
-      <p class="lbl ix-eyebrow">Environmental intelligence</p>
+      <p class="lbl ix-eyebrow">Environmental intelligence dashboards <i>&mdash;</i> nearly real time</p>
       <h1 class="d1 ix-h1">Every situation<br>we read</h1>
       <p class="ix-lead"><b>A situation is one measurement, against one published limit, with
-        the gap named.</b> Not a score, not a mood, not a colour. Where nobody has published a
+        the gap named.</b> Not a score, not a mood, not a colour. Where nobody publishes a
         limit, none is invented.</p>
       <div class="ix-def">
         <div class="ix-def-c">
           <p class="ix-def-n">${SITUATIONS.length}</p>
           <p class="lbl ix-def-l">situations</p>
-          <p class="cap ix-def-x">Air, the Yamuna, heat, forest fire, forest loss, extreme rain.
-            Each one has its own page.</p>
+          <p class="cap ix-def-x">Air, the Yamuna, heat, forest fire, forest loss, extreme rain.</p>
         </div>
         <div class="ix-def-c">
           <p class="ix-def-n">${UNITS.length}</p>
           <p class="lbl ix-def-l">different units</p>
-          <p class="cap ix-def-x">An index. Milligrams per litre. Degrees. Square kilometres.
-            Million hectares. A count of days. <b>There is no exchange rate between them.</b></p>
+          <p class="cap ix-def-x">An index, mg/L, degrees, km&sup2;, hectares, days.
+            <b>There is no exchange rate between them.</b></p>
         </div>
         <div class="ix-def-c">
           <p class="ix-def-n">${KINDS.length}</p>
           <p class="lbl ix-def-l">kinds of limit</p>
-          <p class="cap ix-def-x">A ceiling. A floor. An absolute. A class crossed repeatedly.
-            A legal requirement that names no quantity. And, once, <b>none at all</b>.</p>
+          <p class="cap ix-def-x">A ceiling. A floor. An absolute. A requirement naming no
+            quantity. And, once, <b>none at all</b>.</p>
         </div>
       </div>
       <p class="ix-refuse"><b>There is no total, and there never will be.</b>
         ${kindsAllDistinct
     ? `No two of the ${SITUATIONS.length} share a kind of limit`
     : `The ${SITUATIONS.length} carry ${KINDS.length} kinds of limit between them`}, and
-        ${UNITS.length} units cannot be averaged into one. A dashboard that gives you a single
-        figure for &ldquo;the environment&rdquo; has decided something on your behalf and not
-        told you what.</p>
-      <p class="lbl ix-vocab-h">The four words, and the two the set needs today</p>
+        ${UNITS.length} units do not average. One figure for &ldquo;the environment&rdquo;
+        decides something on your behalf without saying what.</p>
+      <p class="lbl ix-vocab-h">The four state words</p>
       <div class="ix-vocab">
         ${['LIVE', 'PERIODIC', 'OUT OF SEASON', 'DEMO DATA'].map(w => {
     const inUse = states.includes(w);
@@ -261,11 +276,9 @@ B.top = () => `    <div class="wrap ix-hero">
     return `<span class="ix-vocab-r${inUse ? ' is-used' : ''}">${stateChip(w)}<i class="cap">${why}</i></span>`;
   }).join('\n        ')}
       </div>
-      <p class="cap ix-vocab-x"><b>Each word describes how the source delivers</b> &mdash; Yamuna
-        reads PERIODIC because CPCB publishes once a year, and Air reads LIVE because it sits in
-        front of an hourly feed. Each card names the period its own reading covers &mdash;
-        an hour for Air, a year, a season or a range for the rest &mdash; and each
-        situation&rsquo;s page carries the source and the date in full.</p>
+      <p class="cap ix-vocab-x"><b>The word describes how the source delivers.</b> Yamuna reads
+        PERIODIC because CPCB publishes once a year; Air reads LIVE because it sits in front of
+        an hourly feed. Every card names the period its own reading covers.</p>
       <p style="margin:0"><a class="act" href="#set">All ${SITUATIONS.length} ${ARROW}</a></p>
     </div>`;
 
@@ -397,7 +410,17 @@ const PAGE_CSS = `
    is also what .ac-mast on /act uses -- so all six heroes sit on one rhythm
    instead of this one being 8px off the top on a phone.
    NO BACKTICKS IN THIS BLOCK: it is inside a template literal. */
-.ix-hero{padding:clamp(24px,3.2vw,42px) 0 clamp(22px,2.8vw,36px)}
+/* AD-39. THE MISSING GUTTER, AND IT WAS THIS ONE DECLARATION. .ix-hero is
+   class="wrap ix-hero", and .wrap is what carries this design's horizontal
+   gutter -- padding:0 var(--gut). Writing the vertical padding with the
+   SHORTHAND set padding-left and padding-right to 0 as well, so the banner
+   overrode its own wrapper: measured at 375px, the h1, the lead, all three
+   definition cards and the state vocabulary began at x=0, hard against the
+   edge of the glass, while .ix-note and the cards further down the same page
+   sat correctly at x=20. It was not a phone-only fault -- at 1280 the same
+   43.5px gutter was being wiped -- it was simply most visible on a phone,
+   which is where the owner found it. Longhand, so the wrapper is left alone. */
+.ix-hero{padding-top:clamp(24px,3.2vw,42px);padding-bottom:clamp(22px,2.8vw,36px)}
 .ix-eyebrow{display:block;color:var(--fg-3);margin:0 0 clamp(14px,1.6vw,22px)}
 .ix-h1{margin:0 0 clamp(18px,2vw,28px)}
 .ix-lead{font-size:clamp(17px,1.35vw,22px);line-height:1.46;max-width:44ch;color:var(--fg);

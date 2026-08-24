@@ -304,7 +304,14 @@ const ASK_AUDIENCE_SET = new Set(['school', 'funder', 'institution', 'media']);
    kinds.json's `act.label`, so nothing in this table can drift from what /act's
    derived ask list calls the same ask. ════════════════════════════════════ */
 const INDEX_ASK = {
-  '/work': { audience: 'school', page: 'The work', label: () => kindDef('journeys').act.label },
+  /* AD-39. The section index's Ask now reads "Bring your school" and not "Book a
+     journey". Still no new copy -- it is kinds.json's own act.label, moved from
+     journeys to PROJECTS, which is the kind whose reader this Ask's `school`
+     audience actually describes: its mailto body asks for a year group and a
+     head count. With the Ask sitting in a tab called "A school or a group",
+     labelling its own button after one journey was the same category error one
+     level down. */
+  '/work': { audience: 'school', page: 'The work', label: () => kindDef('projects').act.label },
   '/work/projects': { audience: 'school', page: 'Projects', label: () => kindDef('projects').act.label },
   '/work/journeys': { audience: 'school', page: 'Journeys', label: () => kindDef('journeys').act.label },
 };
@@ -1078,6 +1085,22 @@ const hasStatement = (x) => !!(x.statement && x.statement.line && x.statement.fr
 const SEQ = {
   index: [
     ['top', () => true],
+    /* AD-39. THE FOUR KINDS COME FIRST, and this is the owner's instruction of
+       24 August: "if someone clicks WORK from the menu bar, the work index page
+       opens -- please use the design which is used in the home page, which first
+       talks about 4 kinds of work". The page used to open its first real band on
+       "Everything, in one view": a flat register of twenty-three rows, ordinal
+       01 to 23, every kind interleaved. That register is the right thing to HAVE
+       and the wrong thing to MEET. A reader arriving from the nav word "Work"
+       has no idea yet that the work divides into four, so twenty-three names in
+       one column is a list to be endured rather than a shape to be read.
+       IT IS THE HOMEPAGE'S OWN BAND, not a lookalike: `displayRows` is the
+       component the homepage's #work band uses, its CSS is the range the shell
+       already extracts from home.html at lines 2137-2185, and the four names and
+       lines come from data/work/kinds.json -- the same file the homepage reads --
+       so the door and the room cannot drift. The register keeps its band, keeps
+       its place in the section strip, and is now what the button goes to. */
+    ['kinds', () => true],
     ['everything', () => true],
     ['statement', hasStatement],
     ['reach', () => true],
@@ -1178,7 +1201,12 @@ const LABEL = {
   /* The two bands the /work index redesign added (W-16). The strict check above
      caught both the moment it replaced the raw-id fallback, which is the case it
      was written for. */
-  everything: 'Everything, in one view', reach: 'The numbers',
+  everything: 'The full list', reach: 'The numbers',
+  /* AD-39. And the register's own label changes with it. "Everything, in one
+     view" was the name of an opening band; as the second band, reached by a
+     button that says "See the full list", it has to be called the same thing the
+     button calls it or the reader cannot tell they arrived. */
+  kinds: 'Four kinds of work',
 };
 /* W-22. A band id with no LABEL entry used to fall through to the raw id, which
    is how `statement` shipped visibly on 15 pages while every gate read green.
@@ -1652,6 +1680,45 @@ const askBlocks = (it) => (it.ask || []).map((a, i) => ask({
    name so the owner's inbox can tell "School enquiry — Projects" (somebody who
    wants the programme) from "School enquiry — Bridge the Gap" (somebody who
    wants that curriculum), and the path is the canonical route. */
+/* ═══ AD-39 · GET INVOLVED IS FOUR WAYS IN, NOT ONE ══════════════════════
+   THE DEFECT, in the owner's words, 24 August: "GET INVOLVED can't just have
+   BOOK A JOURNEY. That is only linked to journeys program. It should have tabs."
+   He is right, and it was an architectural slip rather than a copy one. The
+   onward band on /work took its primary from `kindDef('journeys').act`, so the
+   whole section's Get involved band -- projects, campaigns, journeys AND events
+   -- offered exactly one control, and it was one kind's ask. A reader who came
+   for the school curriculum was invited to book a journey.
+
+   THE FOUR WAYS ARE THE SITE'S OWN, NOT FOUR NEW ONES. The frozen homepage's
+   band 12 publishes three -- Give, Volunteer, Partner, with /act#give,
+   /act#hands and /act#partner -- and /act is built out of bands with exactly
+   those ids. The fourth is this section's own Ask, which already existed and is
+   what AD-27.18-A put here. So the tabs are: the Ask first, because it is the
+   only one that reaches a person rather than another page, then the homepage's
+   three in the homepage's order. THE COPY IS CARRIED VERBATIM from home.html's
+   .gv-t paragraphs so the door and the room say the same thing; if that copy is
+   revised, revise it in one place and the drift is a visible diff, not a bug.
+
+   STILL EXACTLY ONE .ask ON THIS PAGE. AD-27.18-A's rule is "at most one Ask per
+   index page, and it is always the audience the page's own reader is" -- so the
+   Ask is not multiplied into four. Three of the four tabs navigate to the band
+   of /act that answers them, which is the same deepening ACT_ANCHOR already does
+   for /work/events and /work/campaigns. ══════════════════════════════════ */
+const WAY_PANEL = (line, href, label) => `<div class="wk-way">
+        <p class="body">${line}</p>
+        <p><a class="b b-2" href="${href}">${label} ${ARROW}</a></p>
+      </div>`;
+const waysIn = (url) => {
+  const asks = indexAsk(url);
+  if (!asks.length) return null;
+  return [
+    ['A school or a group', asks.join('\n')],
+    ['Volunteer', WAY_PANEL('Clean-ups, garden builds and scanning days in Delhi. Turn up once or turn up every month.', '/act#hands', 'See the dates')],
+    ['Give', WAY_PANEL('From 500 rupees a month, recurring. It pays for journeys schools cannot fund, gardens still being planted, and an archive that will not scan itself.', '/act#give', 'Give monthly')],
+    ['Partner', WAY_PANEL('Schools, companies and researchers. Bring us a ward, a river stretch or a cohort.', '/act#partner', 'Work with us')],
+  ];
+};
+
 const indexAsk = (url) => {
   const r = INDEX_ASK[url];
   if (!r) return [];
@@ -1752,8 +1819,25 @@ function pageIndex() {
        them already say what the bands are. They are deleted, not rewritten:
        repairing a deletion with a new sentence in the same voice is the trap
        AD-28 §3.5 names. */
+    /* AD-39. The homepage's band, on the page the homepage's band points at. */
+    kinds: [
+      opener('kinds', 'Four kinds of work', 'Not four departments.'),
+      displayRows(KINDS_ORDER.map(k => {
+        const d = kindDef(k);
+        return { name: d.name, line: d.line, href: PATHS[k].url };
+      })),
+      /* THE BUTTON THE OWNER ASKED FOR, and it is a real button rather than the
+         `.act` word-and-arrow the rest of the page uses: it is the one control
+         on this band, it leads to the thing the band is a summary of, and the
+         filled form is what the homepage gives its own primary ask. It goes to
+         the register in place rather than to a new URL -- the register is a
+         band of this page, it is in the section strip, and moving it to /work/all
+         would create a second index for one section and a route with nothing
+         else on it. */
+      `      <p class="wk-kinds-all"><a class="b b-1" href="#everything">See the full list ${ARROW}</a></p>`,
+    ],
     everything: [
-      opener('everything', 'Everything, in one view'),
+      opener('everything', 'The full list', 'All of it, in one column, whichever kind it is.'),
       oneView,
     ],
     statement: stmt ? statementFor(subject) : '',
@@ -1783,8 +1867,11 @@ function pageIndex() {
     /* AD-27.18-A. "Book a journey" resolves here. The secondary goes with it:
        the Ask's own tertiary link is /act#partner, which is the destination
        "Partner with us" should always have had (AD-27.29). */
-    invite: invite({ act, second: null, asks: indexAsk(PATHS.index.url),
-      note: 'If you would rather start than read, the shortest way in is a walk that takes an afternoon.' }),
+    /* AD-39. The tab group replaces the single primary. The note stays and moves
+       above the tabs, because it is true of all four and was always the sentence
+       that framed the band rather than the button. */
+    invite: `      <p class="wk-invite-n" style="margin:0 0 clamp(16px,2vw,24px)">If you would rather start than read, the shortest way in is a walk that takes an afternoon.</p>
+${tabs('Ways in', waysIn(PATHS.index.url))}`,
   });
   return {
     bands, body: applyCanvas(bands, body), sections: sectionsFor(bands), current: 'Work',

@@ -262,7 +262,11 @@ const clashes = S.groundChain(BANDS);
 const INDEX = [
   ['No total', '#top'], ['Why not', '#refuse'], ['Two numbers', '#pair'],
   ['The register', '#register'],
-  ['The archive', '#sheet'], ['Hold us to it', '#act'],
+  ['The archive', '#sheet'],
+  /* AD-39. "Hold us to it" is gone -- band and label together. See the note on
+     `act` in data/impact.json for why, and for where its one piece of unique
+     content went. */
+  ['Where to next', '#act'],
 ];
 
 const B = {};
@@ -343,8 +347,30 @@ ${IMPACT.pair.rows.map(r => `        <div class="p-row">
 B.register = () => {
   const panels = KIND_ORDER.map((k) => {
     const mine = FIGS.filter(f => f.item.kind === k);
+    /* ── AD-39. FOUR ROWS, THEN A DISCLOSURE. ─────────────────────────────
+       The owner's instruction, 24 August: "shorten the Register section and have
+       more.. button to expand". Measured before this change, at 375px, the
+       register band was 2,895px -- 4.6 phone screens, and the tallest band on the
+       page by more than double. A reader who wants one kind's figures scrolls
+       past the other kinds' panels to reach the next band.
+       FOUR IS NOT AN ARBITRARY NUMBER: it is the count work-shell already uses
+       for exactly this case ("A reading measures about 140px at 375, so a band of
+       eight came out at 1,366px. FOUR ARE SHOWN and the rest go into the frozen
+       disclosure"), so the two places in this codebase that disclose figures
+       disclose them at the same depth.
+       THE SUMMARY CARRIES THE COUNT AND NO NUMERAL FROM THE DATA. It says how
+       many more rows are inside, which is what a reader needs in order to decide
+       whether to open it; it does not preview a figure, because a figure outside
+       its span and its programme is the kind of loose number this page exists to
+       refuse. A kind with four or fewer figures gets no disclosure at all --
+       an empty "and 0 more" is worse than no control. */
+    const SHOWN = 4;
+    const head = mine.slice(0, SHOWN), tail = mine.slice(SHOWN);
+    const rows = (list) => `<div class="ip-reg">\n${list.map(figRow).join('\n')}\n      </div>`;
     const body = mine.length
-      ? `<div class="ip-reg">\n${mine.map(figRow).join('\n')}\n      </div>`
+      ? `${rows(head)}${tail.length
+        ? `\n${S.disclose(`The other ${tail.length} ${KIND_LABEL[k].toLowerCase()} figures`, `\n${rows(tail)}\n        `)}`
+        : ''}`
       : '';
     /* ★ AD-28 — NO "N campaigns carry no figure at all" NOTE.
        Each panel used to end with a dotted hole naming every entry in that kind
@@ -389,18 +415,22 @@ ${IMPACT.sheet.frames.map(fr => `        <figure class="ht ip-sh-c"><img class="
       </div>
     </div>`;
 
-/* ── BAND 7. HOLD US TO IT. ──────────────────────────────────────────────
-   Mustard on the middle control only, which is the one that changes the page
-   (§3.1 licenses hue on controls). Canonical routes, never a /design/ path:
-   public/design/ is deleted before any deploy. */
+/* ── BAND 7. WHERE TO NEXT. ──────────────────────────────────────────────
+   AD-39 REPLACED THE THREE DOOR CARDS WITH THREE TABS, at the owner's
+   instruction. The component is S.tabs -- the same one the register above uses,
+   so the page ends in the device it is built from rather than in three bordered
+   boxes that appear once. Each panel is one written line and one control, and
+   the control is the frozen outline button, so nothing new is introduced here
+   either. Canonical routes, never a /_pages/ path.
+   .ip-door* CSS IS LEFT IN PLACE AND UNUSED. It is 19 declarations, it is this
+   file's own CSS rather than an extracted range, and deleting it is a separate
+   tidy-up with its own risk; an unused rule costs the reader nothing. */
 B.act = () => `${opener('act', IMPACT.act.head, esc(IMPACT.act.lead))}
     <div class="wrap">
-      <div class="ip-doors">
-${IMPACT.act.doors.map((d, i) => `        <a class="ip-door${i === 1 ? ' ip-door-hi' : ''}" href="${d.href}">
-          <p class="lbl ip-door-h">${esc(d.h)}${ARROW}</p>
-          <p class="body ip-door-p">${esc(d.p)}</p>
-        </a>`).join('\n')}
-      </div>
+${S.tabs('Where to next', IMPACT.act.tabs.map(t => [esc(t.label), `\n        <div class="ip-next">
+          <p class="body ip-next-p">${esc(t.p)}</p>
+          <p><a class="b b-2" href="${t.href}">${esc(t.cta)} ${ARROW}</a></p>
+        </div>\n      `]))}
     </div>`;
 
 /* ═══ PAGE CSS ═══════════════════════════════════════════════════════════
@@ -473,6 +503,11 @@ const PAGE_CSS = `
 .ip-door-h svg{width:16px;height:16px;flex:0 0 auto}
 .ip-door-p{color:var(--fg-2);margin:12px 0 0}
 @media (max-width:760px){.ip-doors{grid-template-columns:minmax(0,1fr)}}
+/* AD-39. One "where to next" panel: a line and a control, nothing else. */
+.ip-next-p{margin:0 0 18px;max-width:52ch;color:var(--fg-2)}
+.paper .ip-next-p,.paper-2 .ip-next-p{color:var(--ink-2)}
+.ip-next>p:last-child{margin:0}
+@media (max-width:560px){.ip-next .b{width:100%;justify-content:center}}
 `;
 
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */

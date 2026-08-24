@@ -189,6 +189,10 @@ export const TIER = {
   frame: 't2', list: 't3', weight: 't2', against: 't3', holes: 't2',
   record: 't2', nodates: 't3',
   everything: 't2', shape: 't3', reach: 't2',
+  /* AD-39. /work's new opening band: the four kinds, at the same weight as
+     the register that follows it. t2 and not t1 -- t1 is the masthead and the
+     one-line statement, and a band of four rows is neither. */
+  kinds: 't2',
   onward: 't3',
 };
 
@@ -710,6 +714,19 @@ export const WORK_CSS = `
 #kinds,#record,#against,#list,#what,#weight,#done{--w7-do-def:420px}
 @media (max-width:1023px){#kinds,#record,#against,#list,#what,#weight,#done{--w7-do-def:260px}}
 #kinds .w7-do-t.rl::after,#record .w7-do-t.rl::after{--rl-w:2px;--rl-c:var(--ink-2)}
+/* AD-39. The one control on /work's new opening band. Nothing new is invented:
+   .b .b-1 is the frozen filled button and this rule only gives it its own space
+   under the four rows -- the rows carry a bottom hairline, so without a margin
+   the button sits on the rule. Full width on a phone, which is what every other
+   .b-1 in this design does at that size (see .s-farm-cta .b). */
+.wk-kinds-all{margin:clamp(24px,3vw,36px) 0 0}
+/* AD-39. One way-in panel inside the Get involved tab group. Two elements and
+   no new vocabulary: the written line at body scale, capped at a readable
+   measure, and the frozen outline button under it. */
+.wk-way>p:first-child{margin:0 0 18px;max-width:48ch}
+@media (max-width:759px){.wk-way .b{width:100%;justify-content:center}}
+@media (max-width:759px){.wk-kinds-all .b{width:100%;justify-content:center;
+  padding-top:16px;padding-bottom:16px}}
 #what .w7-pj-num.rl::after,#weight .w7-pj-num.rl::after,
 #done .w7-pj-num.rl::after,#list .w7-pj-num.rl::after{--rl-w:2px;--rl-c:var(--ink-2)}
 
