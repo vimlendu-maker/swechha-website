@@ -40,4 +40,25 @@ describe('the SEO register', () => {
     expect(new Set(titles).size).toBe(titles.length)
     expect(new Set(descs).size).toBe(descs.length)
   })
+
+  /* A LENGTH FLOOR ALONE IS NOT ENOUGH — "Publications — Swechha" clears any
+     sane floor and still tells a searcher nothing. The rule is that the part
+     before the brand suffix has to carry a term someone might actually type.
+     Extend TERMS when a page legitimately needs a new one; never delete the
+     check for a page. */
+  const TERMS = [
+    'delhi', 'india', 'ngo', 'environmental', 'environment', 'school', 'student',
+    'volunteer', 'river', 'yamuna', 'climate', 'air', 'forest', 'farm', 'donate',
+    'report', 'camp', 'city', 'nature', 'waste', 'water', 'youth', 'community',
+    'fellowship', 'workshop', 'garden', 'heat', 'rain', 'pollution', 'aravalli',
+  ]
+
+  it('gives every title a term a searcher might type', () => {
+    for (const [route, e] of Object.entries(SEO)) {
+      const head = decode(e.title).replace(/\s*—\s*Swechha\s*$/, '')
+      expect(head.length, `${route}: "${e.title}" is a bare label`).toBeGreaterThanOrEqual(15)
+      const hit = TERMS.some((t) => head.toLowerCase().includes(t))
+      expect(hit, `${route}: "${e.title}" carries no query term`).toBe(true)
+    }
+  })
 })
