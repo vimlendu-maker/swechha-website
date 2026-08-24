@@ -1970,7 +1970,7 @@ const OUT = stripHtmlComments(`<!doctype html>
 <meta name="color-scheme" content="dark">
 <title>${TITLE}</title>
 <meta name="description" content="${DESC}">
-<link rel="canonical" href="/now/air">
+<link rel="canonical" href="${abs('/now/air')}">
 <link rel="icon" href="/icons/icon-32.png" sizes="32x32"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 ${OG}
 ${HEAD_FONTS}

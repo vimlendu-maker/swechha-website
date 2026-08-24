@@ -1938,10 +1938,29 @@ export async function assemble({ file, title, desc = null, bands, sectionFor, in
      map is the wrong answer to both; the page stating its own route is the
      right one.
 
-     RELATIVE, NOT ABSOLUTE, and that is deliberate: the origin is only known
-     at request time (SITE_ORIGIN, or Vercel's VERCEL_URL), so an absolute
-     canonical baked in at build time would advertise the wrong host on every
-     preview deploy — the exact defect lib/org.ts was just fixed for.
+     ABSOLUTE, VIA abs(). The original note read: "RELATIVE, NOT ABSOLUTE, and
+     that is deliberate: the origin is only known at request time (SITE_ORIGIN,
+     or Vercel's VERCEL_URL), so an absolute canonical baked in at build time
+     would advertise the wrong host on every preview deploy — the exact defect
+     lib/org.ts was just fixed for." That reasoning does not survive reading the
+     rest of this same head. `headTags` four lines below already bakes ORIGIN
+     into `og:url` at build time, `breadcrumbJsonLd` bakes it into every
+     BreadcrumbList `item`, and `verify-seo.mjs` GATES both as absolute. So the
+     origin was never deferred to request time on these pages; the canonical was
+     the one tag pretending it was, and it is the one tag a search engine
+     actually consolidates duplicates with.
+
+     Measured on the live site, 24 August 2026: Lighthouse scores SEO 92 on
+     every page of swechha.in, and the single failing audit is `canonical` —
+     "Document does not have a valid rel=canonical: Is not an absolute URL (/)".
+     35 of 35 built pages failed it.
+
+     The preview-deploy worry is real but points the other way: a preview
+     advertising the PRODUCTION canonical is the correct signal — it tells a
+     crawler the preview URL is not the indexable one — and Vercel already
+     serves preview deployments with `X-Robots-Tag: noindex`, so nothing is
+     indexed there to mis-attribute. Set SITE_ORIGIN if a deploy genuinely needs
+     a different host; that is what the env override is for.
 
      DERIVED WHERE IT CAN BE, REQUIRED WHERE IT CANNOT. The index and the six
      situations are in the family register; /impact and /farm pass their own
@@ -2043,7 +2062,7 @@ export async function assemble({ file, title, desc = null, bands, sectionFor, in
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>${title}</title>
-<link rel="canonical" href="${canonical}">
+<link rel="canonical" href="${attr(abs(canonical))}">
 ${headTags(title, description, canonical, ogType)}
 ${headExtra ? `${headExtra}\n` : ''}${sh.HEAD_FONTS}
 <style>

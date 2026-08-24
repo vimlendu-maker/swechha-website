@@ -2319,7 +2319,7 @@ export async function buildPage({ file, url, title, desc, bands, sectionFor, sec
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>${esc(title)}</title>
-<link rel="canonical" href="${url}">
+<link rel="canonical" href="${esc(abs(url))}">
 ${HEAD_ICONS}
 <meta name="description" content="${esc(desc)}">
 ${headSocial(title, desc, url, ogType)}

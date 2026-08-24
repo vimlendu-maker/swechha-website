@@ -43,7 +43,7 @@
    ★ IT NEVER TOUCHES A LINE ABOVE THE STYLESHEET'S EXTRACTED RANGES.
    shell() pins home.html's CSS by line number (situation-shell.mjs:136-139,
    last range ending at 3033) and every generator in the repo refuses to write
-   if those move. This script only ever edits inside <article id="h-*"> blocks,
+   if those move. This script only ever edits inside the id="h-*" panel <div> blocks,
    which begin well below that, and it asserts the file's line count is
    unchanged before writing.
 
@@ -326,13 +326,44 @@ let src = readFileSync(HOME, 'utf8');
 const linesBefore = src.split('\n').length;
 let changed = 0;
 
+/* ── FINDING ONE SLIDE'S BLOCK ──────────────────────────────────────────────
+   The four panels were `<article role="tabpanel">` until 24 August 2026, and
+   that made this trivial: no article nests inside another, so the block ran
+   from `lastIndexOf('<article')` to the next `</article>`. Lighthouse's
+   agentic-browsing audit failed them ("ARIA role should be appropriate for the
+   element" — ARIA in HTML allows application/document/feed/main/none/
+   presentation/region on `article`, and NOT tabpanel), so the panels are now
+   `<div>`, and `<div>` nests dozens deep inside each one. The next `</div>`
+   after the opening tag closes an inner wrapper, not the panel — so a swapped
+   tag name alone would have handed every regex below a truncated block and
+   tripped the matched-exactly-once gate on markup that had not moved at all.
+
+   Hence a depth walk. Returns [start, end] with `end` at the MATCHING close,
+   so `src.slice(start, end)` is the panel without its closing tag — the same
+   shape the `</article>` search produced, which is what the splice below and
+   the floor-clause check both assume. Fails loudly rather than returning a
+   guess: a panel this cannot delimit is a panel this script must not edit. */
+const panelRange = (src, id) => {
+  const at = src.indexOf(`id="${id}"`);
+  if (at < 0) { fail(`${id} is not in home.html`); return null; }
+  const start = src.lastIndexOf('<div', at);
+  if (start < 0) { fail(`${id} has no enclosing panel <div>`); return null; }
+  const TAG = /<div\b|<\/div>/g;
+  TAG.lastIndex = start;
+  let depth = 0;
+  for (let m = TAG.exec(src); m; m = TAG.exec(src)) {
+    depth += m[0] === '</div>' ? -1 : 1;
+    if (depth === 0) return [start, m.index];
+  }
+  fail(`${id}'s panel <div> is never closed — the markup moved`);
+  return null;
+};
+
 console.log('HERO READINGS');
 for (const slide of SLIDES) {
-  const open = src.indexOf(`id="${slide.id}"`);
-  if (open < 0) { fail(`${slide.id} is not in home.html`); continue; }
-  const start = src.lastIndexOf('<article', open);
-  const end = src.indexOf('</article>', open);
-  if (start < 0 || end < 0) { fail(`${slide.id} has no enclosing <article>`); continue; }
+  const range = panelRange(src, slide.id);
+  if (!range) continue;                       // panelRange() has already failed loudly
+  const [start, end] = range;
 
   let block = src.slice(start, end);
   const before = block;
@@ -372,8 +403,8 @@ if (rainNormal === null) {
    reports a DO above its own reporting floor, an "at or below the detection
    limit" sentence becomes a false claim about a real measurement. */
 {
-  const i = src.indexOf('id="h-yamuna"');
-  const block = i < 0 ? '' : src.slice(src.lastIndexOf('<article', i), src.indexOf('</article>', i));
+  const r = panelRange(src, 'h-yamuna');
+  const block = r ? src.slice(r[0], r[1]) : '';
   const saysFloor = /at or below the detection limit/.test(block);
   if (yamAtFloor && !saysFloor) {
     fail('h-yamuna: the reading sits at the reporting floor and the sentence does not say so');
@@ -399,7 +430,7 @@ if (rainNormal === null) {
    THE RED IS THE BREACH, not a decoration, so `is-over` follows the reading
    rather than staying where a previous value left it.
 
-   This is the one edit outside a slide's <article>, so it is applied to the
+   This is the one edit outside a slide's panel, so it is applied to the
    whole file rather than through the SLIDES loop, and it carries the same
    matched-exactly-once rule everything else here does. */
 {
