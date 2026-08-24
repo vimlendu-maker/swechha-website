@@ -40,6 +40,51 @@ const CHECKS = [
       return null;
     },
   },
+  {
+    name: 'og:image, twitter:image and og:url are absolute',
+    run: ({ html }) => {
+      for (const prop of ['og:image', 'og:url']) {
+        const v = one(html, new RegExp(`<meta property="${prop}" content="([^"]*)"`));
+        if (!v) return `${prop} is missing`;
+        if (!/^https?:\/\//.test(v)) return `${prop} is relative: ${v}`;
+      }
+      const tw = one(html, /<meta name="twitter:image" content="([^"]*)"/);
+      if (!tw) return 'twitter:image is missing';
+      if (!/^https?:\/\//.test(tw)) return `twitter:image is relative: ${tw}`;
+      return null;
+    },
+  },
+  {
+    name: 'og:url agrees with the canonical',
+    run: ({ html, route }) => {
+      const v = one(html, /<meta property="og:url" content="([^"]*)"/);
+      return v && v.endsWith(route === '/' ? '/' : route) ? null : `og:url ${v} vs canonical ${route}`;
+    },
+  },
+  {
+    name: 'every BreadcrumbList item is absolute',
+    run: ({ html }) => {
+      for (const m of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) {
+        let data;
+        try { data = JSON.parse(m[1]); } catch { return 'unparseable JSON-LD'; }
+        if (data['@type'] !== 'BreadcrumbList') continue;
+        for (const li of data.itemListElement ?? []) {
+          if (!/^https?:\/\//.test(String(li.item))) return `relative item: ${li.item}`;
+        }
+      }
+      return null;
+    },
+  },
+  {
+    name: 'html lang agrees with og:locale',
+    run: ({ html }) => {
+      const lang = one(html, /<html lang="([^"]+)"/);
+      const loc = one(html, /<meta property="og:locale" content="([^"]*)"/);
+      if (lang !== 'en-IN') return `lang is ${lang}`;
+      if (loc !== 'en_IN') return `og:locale is ${loc}`;
+      return null;
+    },
+  },
 ];
 
 const files = walk(V3);

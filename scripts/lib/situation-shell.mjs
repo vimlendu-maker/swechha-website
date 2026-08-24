@@ -69,6 +69,24 @@ export const DATA = join(ROOT, 'data');
  *  whole argument. */
 export const HOME_SRC = join(ROOT, 'design/home.html');
 
+/* ABSOLUTE URLS, DERIVED — NEVER A LITERAL, and never relative.
+   The old note here said an absolute value "advertises the preview host on
+   every preview deploy". That hazard cannot occur: these 35 pages are
+   COMMITTED artefacts and `npm run build` is `next build` alone, so generation
+   never happens on a preview deploy — the same bytes ship everywhere. What the
+   relative value did cost is conformance: the Open Graph protocol specifies a
+   URL for og:image, and support for relative values differs between consumers.
+   SITE_ORIGIN is honoured so a deliberate regeneration under another origin
+   still describes itself correctly (lib/org.ts:48-50 does the same). */
+export const ORIGIN = (process.env.SITE_ORIGIN?.trim() || 'https://swechha.in').replace(/\/+$/, '');
+export const abs = (path) => {
+  const p = String(path);
+  /* Idempotent: a value that is already absolute is returned untouched, so a
+     caller that passes one cannot produce "https://hosthttps://host/". */
+  if (/^https?:\/\//.test(p)) return p;
+  return `${ORIGIN}${p.startsWith('/') ? p : `/${p}`}`;
+};
+
 /** Read a committed dataset. */
 export const J = (f) => JSON.parse(readFileSync(join(DATA, f), 'utf8'));
 
@@ -1800,12 +1818,14 @@ export function shipDocument(html) {
    untensed, undated, describing the instrument and never the reading. */
 export { seo } from './seo-register.mjs';
 
-/* THE SHARE CARD AND THE ICONS ARE RELATIVE, DELIBERATELY, and for the same
-   reason the canonical is: the origin is only known at request time, so an
-   absolute value baked in at build time advertises the preview host on every
-   preview deploy. Scrapers resolve a relative og:image against the document
-   URL. `og:url` is omitted for the same reason. If a later pass wants absolute
-   values they come from SITE_ORIGIN at build time, never from a literal. */
+/* THE SHARE CARD IS NOW ABSOLUTE. The note this replaces argued a relative
+   og:image was safe because "a preview deploy must not advertise the
+   production host" and "scrapers resolve a relative og:image against the
+   document URL". Neither holds: these 35 pages are COMMITTED artefacts and
+   `npm run build` is `next build` alone, so generation never happens on a
+   preview deploy — the stated hazard cannot occur. And the Open Graph
+   protocol specifies a URL for og:image; support for a relative value varies
+   between consumers, so it is conformance, not a guess, to make it absolute. */
 /* ATTRIBUTE-SAFE, BUT NOT esc(). Titles arrive already carrying HTML entities
    (`&mdash;`, `&rsquo;`), so esc()'s `&` -> `&amp;` would render the literal
    text "&mdash;" in a share card. Only the two characters that can break an
@@ -1818,7 +1838,7 @@ const attr = (s) => String(s ?? '').replace(/"/g, '&quot;').replace(/</g, '&lt;'
 const decodeEntities = (s) => String(s ?? '')
   .replace(/&mdash;/g, '—').replace(/&rsquo;/g, '’')
   .replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ');
-export const headTags = (title, desc) =>
+export const headTags = (title, desc, canonical) =>
   '<link rel="icon" href="/icons/icon-32.png" sizes="32x32">'
   + '<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">\n'
   + `<meta name="description" content="${attr(desc)}">\n`
@@ -1827,8 +1847,10 @@ export const headTags = (title, desc) =>
   + '<meta property="og:locale" content="en_IN">'
   + `<meta property="og:title" content="${attr(title)}">`
   + `<meta property="og:description" content="${attr(desc)}">`
-  + '<meta property="og:image" content="/images/og/og-default.png">'
+  + `<meta property="og:url" content="${attr(abs(canonical))}">`
+  + `<meta property="og:image" content="${attr(abs('/images/og/og-default.png'))}">`
   + '<meta name="twitter:card" content="summary_large_image">'
+  + `<meta name="twitter:image" content="${attr(abs('/images/og/og-default.png'))}">`
   + '<meta name="twitter:site" content="@swechhaindia">';
 
 export async function assemble({ file, title, desc = null, bands, sectionFor, index, sh, pageCss = '', script = '', clashes, note = '', navMark = null, route = null }) {
@@ -1912,18 +1934,19 @@ export async function assemble({ file, title, desc = null, bands, sectionFor, in
      one-item trail, and the WORK section's is lane 2's, emitted by
      work-shell.mjs from its own route. Nothing else on this site has a
      hierarchy to state.
-     THE URLS ARE RELATIVE for the same reason the canonical is: a preview
-     deploy must not advertise the production host. JSON-LD resolves a
-     relative `item` against the document. */
+     `item` IS ABSOLUTE. Google's breadcrumb reference specifies a full URL; the
+     previous note asserted Google resolves a relative item against the document,
+     which this repo never verified. Derived from ORIGIN, so it is still not a
+     literal. */
   const crumbName = String(title).replace(/\s*&mdash;\s*Swechha\s*$/, '').replace(/\s*—\s*Swechha\s*$/, '');
   const CRUMBS = /^\/now\/[a-z-]+$/.test(canonical)
     ? '\n<script type="application/ld+json">' + JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Swechha', item: '/' },
-        { '@type': 'ListItem', position: 2, name: 'Now', item: INDEX_PAGE.route },
-        { '@type': 'ListItem', position: 3, name: decodeEntities(crumbName), item: canonical },
+        { '@type': 'ListItem', position: 1, name: 'Swechha', item: abs('/') },
+        { '@type': 'ListItem', position: 2, name: 'Now', item: abs(INDEX_PAGE.route) },
+        { '@type': 'ListItem', position: 3, name: decodeEntities(crumbName), item: abs(canonical) },
       ],
     }) + '</script>'
     : '';
@@ -1939,14 +1962,14 @@ export async function assemble({ file, title, desc = null, bands, sectionFor, in
      gate below runs on the STRIPPED text, so what is checked is exactly what is
      written. */
   const OUT = stripHtmlComments(`<!doctype html>
-<html lang="en">
+<html lang="en-IN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>${title}</title>
 <link rel="canonical" href="${canonical}">
-${headTags(title, description)}
+${headTags(title, description, canonical)}
 ${sh.HEAD_FONTS}
 <style>
 ${stripCssComments([sh.CSS, sh.SITUATION_CSS, SHARED_PAGE_CSS, pageCss].join('\n'))}</style>

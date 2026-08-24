@@ -81,7 +81,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html
-      lang="en"
+      lang="en-IN"
       className={`${fraunces.variable} ${instrumentSans.variable} ${archivo.variable} h-full`}
     >
       <body className="min-h-full flex flex-col">

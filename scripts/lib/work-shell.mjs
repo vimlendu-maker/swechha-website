@@ -60,7 +60,7 @@ import { tmpdir } from 'node:os';
 import {
   ROOT, V3, extractor, shell, groundChain, opener, hole, esc,
   kd, kindTag, KIND_LEGEND, ARROW, n0, disclose, SHARED_PAGE_CSS, tabs,
-  ask, stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC,
+  ask, stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, abs,
 } from './situation-shell.mjs';
 
 export { ROOT, V3, HOME_SRC, opener, hole, esc, kd, kindTag, KIND_LEGEND, ARROW, n0, disclose, groundChain, tabs, ask };
@@ -2181,12 +2181,16 @@ export class Links {
    sixteenth.
 
    AD-27.49 — og:* and twitter:*, derived from the title, the description and
-   the canonical route that are already here. `og:url` is DELIBERATELY OMITTED
-   and og:image is RELATIVE, for the same reason situation-shell.mjs:754-767
-   gives for the relative canonical: a preview deploy must not advertise the
-   production host, and scrapers resolve a relative og:image against the
-   document URL. twitter:site is @swechhaindia, verified from the live site's
-   own markup. No twitter:creator.
+   the canonical route that are already here. `og:url` and og:image ARE NOW
+   ABSOLUTE. The note this replaces argued a relative og:image was safe because
+   "a preview deploy must not advertise the production host" and "scrapers
+   resolve a relative og:image against the document URL". Neither holds: these
+   35 pages are COMMITTED artefacts and `npm run build` is `next build` alone,
+   so generation never happens on a preview deploy — the stated hazard cannot
+   occur. And the Open Graph protocol specifies a URL for og:image; support for
+   a relative value varies between consumers, so it is conformance, not a
+   guess, to make it absolute. twitter:site is @swechhaindia, verified from the
+   live site's own markup. No twitter:creator.
 
    AD-27.13 — the two icon links. The 35 built pages never execute the React
    layout (the beforeFiles rewrite serves the HTML file), so Next's icon
@@ -2196,26 +2200,33 @@ export class Links {
    ═══════════════════════════════════════════════════════════════════════ */
 export const HEAD_ICONS =
   '<link rel="icon" href="/icons/icon-32.png" sizes="32x32"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">';
-export const headSocial = (title, desc) =>
+export const headSocial = (title, desc, canonical) =>
   `<meta property="og:type" content="website"><meta property="og:site_name" content="Swechha">`
   + `<meta property="og:locale" content="en_IN"><meta property="og:title" content="${esc(title)}">`
   + `<meta property="og:description" content="${esc(desc)}">`
-  + `<meta property="og:image" content="/images/og/og-default.png">`
-  + `<meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content="@swechhaindia">`;
+  + `<meta property="og:url" content="${esc(abs(canonical))}">`
+  + `<meta property="og:image" content="${esc(abs('/images/og/og-default.png'))}">`
+  + `<meta name="twitter:card" content="summary_large_image">`
+  + `<meta name="twitter:image" content="${esc(abs('/images/og/og-default.png'))}">`
+  + `<meta name="twitter:site" content="@swechhaindia">`;
 
 /**
  * AD-27.50 · BreadcrumbList, on the 15 WORK pages.
  * DERIVED FROM THE CANONICAL ROUTE EACH PAGE ALREADY COMPUTES, so a breadcrumb
  * cannot disagree with the URL — which is the only reason to emit one.
- * `item` is relative for the same host-neutrality reason as the canonical and
- * og:image; Google resolves it against the document.
+ * `item` IS ABSOLUTE. Google's breadcrumb reference specifies a full URL; the
+ * previous note asserted Google resolves a relative item against the document,
+ * which this repo never verified. Derived from ORIGIN, so it is still not a
+ * literal. THIS FUNCTION OWNS THE ORIGIN: every caller passes a relative path
+ * in `crumbs` and `abs()` is applied here, once, so a caller can never
+ * double-prefix it.
  */
 export const breadcrumbJsonLd = (crumbs) => '<script type="application/ld+json">'
   + JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: crumbs.map(([name, item], i) => ({
-      '@type': 'ListItem', position: i + 1, name, item,
+      '@type': 'ListItem', position: i + 1, name, item: abs(item),
     })),
   }) + '</script>';
 
@@ -2310,7 +2321,7 @@ export async function buildPage({ file, url, title, desc, bands, sectionFor, sec
      `stripHtmlComments`). Every gate below runs on the STRIPPED text, so what
      is checked is exactly what is written. */
   const OUT = stripHtmlComments(`<!doctype html>
-<html lang="en">
+<html lang="en-IN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -2319,7 +2330,7 @@ export async function buildPage({ file, url, title, desc, bands, sectionFor, sec
 <link rel="canonical" href="${url}">
 ${HEAD_ICONS}
 <meta name="description" content="${esc(desc)}">
-${headSocial(title, desc)}
+${headSocial(title, desc, url)}
 ${sh.HEAD_FONTS}
 <style>
 ${stripCssComments([sh.CSS, sh.SITUATION_CSS, SHARED_PAGE_CSS, sh.COMPONENT_CSS, WORK_CSS, pageCss].join('\n'))}</style>

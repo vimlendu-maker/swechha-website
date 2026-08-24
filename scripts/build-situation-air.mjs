@@ -13,7 +13,7 @@ import { tmpdir } from 'node:os';
    calls shell(). */
 import { crumb, siblings, FAMILY_CSS, NAV_SEARCH_CSS, NAV as SHELL_NAV, HOME_HREF, GIVE_HREF, INDEX_PAGE,
   stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, cadence, STATES,
-  closing, CLOSING_CSS } from './lib/situation-shell.mjs';
+  closing, CLOSING_CSS, abs } from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -1907,14 +1907,17 @@ const { title: TITLE, description: DESC } = seo('/now/air');
    and the canonical route that are already in this head — nothing new is
    asserted. ON ONE LINE, the same shape the two shells emit, so a diff across
    the three head templates is one grep.
-   `og:url` IS DELIBERATELY OMITTED and `og:image` is relative, for the same
-   reason situation-shell.mjs gives for the relative canonical: a preview
-   deploy must not advertise the production host. Scrapers resolve a relative
-   og:image against the document URL. Absolute values, if a later pass wants
-   them, come from SITE_ORIGIN at build time and never from a literal.
+   `og:url` and `og:image` ARE NOW ABSOLUTE. The note this replaces argued a
+   relative og:image was safe because "a preview deploy must not advertise the
+   production host" and "scrapers resolve a relative og:image against the
+   document URL". Neither holds: these 35 pages are COMMITTED artefacts and
+   `npm run build` is `next build` alone, so generation never happens on a
+   preview deploy — the stated hazard cannot occur. And the Open Graph
+   protocol specifies a URL for og:image; support for a relative value varies
+   between consumers, so it is conformance, not a guess, to make it absolute.
    `twitter:site` is the handle all four of Swechha's accounts use. No
    `twitter:creator` — the pages have no per-page author. */
-const OG = `<meta property="og:type" content="website"><meta property="og:site_name" content="Swechha"><meta property="og:locale" content="en_IN"><meta property="og:title" content="${TITLE}"><meta property="og:description" content="${DESC}"><meta property="og:image" content="/images/og/og-default.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content="@swechhaindia">`;
+const OG = `<meta property="og:type" content="website"><meta property="og:site_name" content="Swechha"><meta property="og:locale" content="en_IN"><meta property="og:title" content="${TITLE}"><meta property="og:description" content="${DESC}"><meta property="og:url" content="${abs('/now/air')}"><meta property="og:image" content="${abs('/images/og/og-default.png')}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${abs('/images/og/og-default.png')}"><meta name="twitter:site" content="@swechhaindia">`;
 
 /* AD-27.50 · BREADCRUMBLIST, ON THE SIX SITUATION PAGES.
    THIS PAGE WAS THE ONE THAT MISSED IT, and the reason is the seam rather than
@@ -1924,21 +1927,23 @@ const OG = `<meta property="og:type" content="website"><meta property="og:site_n
    AD-27.49 each needed a hand-written clause here too. Measured 23 August:
    five of six situation pages carried BreadcrumbList and /now/air, the
    flagship and the page §H hangs "Air Pollution expert" on, carried none.
-   THE SHAPE IS THE SHELL'S, not a second design: three levels, relative
-   `item` URLs for the same reason the canonical is relative (a preview deploy
-   must not advertise the production host), and the leaf's name is this page's
-   own title with the site suffix removed, so the trail cannot come to
-   disagree with the tab. Placed immediately after the footer, where the
-   shell puts its own. */
+   THE SHAPE IS THE SHELL'S, not a second design: three levels, and the
+   leaf's name is this page's own title with the site suffix removed, so the
+   trail cannot come to disagree with the tab. Placed immediately after the
+   footer, where the shell puts its own.
+   `item` IS ABSOLUTE. Google's breadcrumb reference specifies a full URL; the
+   previous note asserted Google resolves a relative item against the document,
+   which this repo never verified. Derived from ORIGIN, so it is still not a
+   literal. */
 const CRUMB_NAME = TITLE.replace(/\s*&mdash;\s*Swechha\s*$/, '')
   .replace(/&rsquo;/g, '’').replace(/&mdash;/g, '—').replace(/&amp;/g, '&');
 const CRUMBS = '\n<script type="application/ld+json">' + JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
   itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Swechha', item: '/' },
-    { '@type': 'ListItem', position: 2, name: 'Now', item: '/now' },
-    { '@type': 'ListItem', position: 3, name: CRUMB_NAME, item: '/now/air' },
+    { '@type': 'ListItem', position: 1, name: 'Swechha', item: abs('/') },
+    { '@type': 'ListItem', position: 2, name: 'Now', item: abs('/now') },
+    { '@type': 'ListItem', position: 3, name: CRUMB_NAME, item: abs('/now/air') },
   ],
 }) + '</script>';
 
@@ -1950,7 +1955,7 @@ const CRUMBS = '\n<script type="application/ld+json">' + JSON.stringify({
    unredacted one and shipping the other is the same bug on a different line. */
 const SHIP_SCRIPT = redactScriptLedgerRefs(SCRIPT);
 const OUT = stripHtmlComments(`<!doctype html>
-<html lang="en">
+<html lang="en-IN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
