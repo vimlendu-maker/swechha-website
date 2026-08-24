@@ -118,6 +118,19 @@ const CHECKS = [
       return types.includes('Article') ? null : 'no Article node';
     },
   },
+  /* TASK 8. Every page one or more levels below the root now carries a
+     BreadcrumbList (situation-shell.mjs's widened CRUMBS). The root itself is
+     exempt: a one-item breadcrumb states nothing a crawler does not already
+     know, so `/` must NOT be required to carry one. */
+  {
+    name: 'every non-root page carries a breadcrumb trail',
+    run: ({ route, html }) => {
+      if (route === '/') return null;
+      const has = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+        .some((m) => { try { return JSON.parse(m[1])['@type'] === 'BreadcrumbList'; } catch { return false; } });
+      return has ? null : 'no BreadcrumbList';
+    },
+  },
 ];
 
 const files = walk(V3);

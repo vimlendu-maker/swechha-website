@@ -87,6 +87,31 @@ export const abs = (path) => {
   return `${ORIGIN}${p.startsWith('/') ? p : `/${p}`}`;
 };
 
+/**
+ * AD-27.50 · BreadcrumbList, on every nested page.
+ * DERIVED FROM THE CANONICAL ROUTE EACH PAGE ALREADY COMPUTES, so a breadcrumb
+ * cannot disagree with the URL — which is the only reason to emit one.
+ * `item` IS ABSOLUTE. Google's breadcrumb reference specifies a full URL; the
+ * previous note asserted Google resolves a relative item against the document,
+ * which this repo never verified. Derived from ORIGIN, so it is still not a
+ * literal. THIS FUNCTION OWNS THE ORIGIN: every caller passes a relative path
+ * in `crumbs` and `abs()` is applied here, once, so a caller can never
+ * double-prefix it.
+ * MOVED HERE FROM work-shell.mjs (Task 8): work-shell imports FROM this file
+ * (for `abs` among others), so defining the function up there and importing
+ * it down here would be a cycle. Moved down a layer instead, unchanged, and
+ * re-exported from work-shell.mjs by name so its existing callers still
+ * resolve it under the same import path.
+ */
+export const breadcrumbJsonLd = (crumbs) => '<script type="application/ld+json">'
+  + JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: crumbs.map(([name, item], i) => ({
+      '@type': 'ListItem', position: i + 1, name, item: abs(item),
+    })),
+  }) + '</script>';
+
 /** Read a committed dataset. */
 export const J = (f) => JSON.parse(readFileSync(join(DATA, f), 'utf8'));
 
@@ -1942,32 +1967,41 @@ export async function assemble({ file, title, desc = null, bands, sectionFor, in
     return `  <section${cls ? ` class="${cls}"` : ''} id="${id}"${aria}>\n${body}\n  </section>`;
   };
 
-  /* ── BREADCRUMBLIST, ON THE SIX SITUATION PAGES ONLY (AD-27.50). ───────
-     DERIVED FROM THE CANONICAL ROUTE THIS PAGE ALREADY COMPUTES, so a
-     breadcrumb cannot come to disagree with the URL it describes — which is
-     the only failure mode this markup has. Three levels: Swechha -> Now ->
-     the page. The leaf's name is the page's own <title> with the site suffix
-     removed, so it is the same words the reader sees in the tab.
-     ONLY /now/* GETS ONE. A breadcrumb on a top-level page would be a
-     one-item trail, and the WORK section's is lane 2's, emitted by
-     work-shell.mjs from its own route. Nothing else on this site has a
-     hierarchy to state.
+  /* ── BREADCRUMBLIST, ON EVERY NESTED PAGE (Task 8, widening AD-27.50). ──
+     DERIVED FROM THE CANONICAL'S OWN SEGMENTS, so a trail cannot disagree
+     with the URL — the only reason to emit one. A page at the root emits
+     nothing: a one-item breadcrumb states nothing a crawler does not already
+     know.
+     EVERY NAME COMES FROM THE REGISTER'S `indexName`, NOT FROM <title> —
+     Task 5 rewrote titles into long, keyword-bearing SERP strings, and
+     Google renders breadcrumbs in search results, where that reads badly and
+     truncates. `indexName` is the register's short editorial name for a
+     route, held there for exactly this. `crumbLabel` tries it for EVERY
+     segment, leaf included, before falling back — so an intermediate
+     segment whose own route is registered (e.g. "/work" inside
+     "/work/projects/eco-action") gets that route's short name too, rather
+     than a hardcoded NAMES entry or the raw slug. NAMES and the de-slugified
+     label are the fallback of last resort, for a path prefix nobody ever
+     gave its own route.
      `item` IS ABSOLUTE. Google's breadcrumb reference specifies a full URL; the
      previous note asserted Google resolves a relative item against the document,
      which this repo never verified. Derived from ORIGIN, so it is still not a
-     literal. */
+     literal — `breadcrumbJsonLd` applies `abs()` to every item itself, so the
+     paths built below are relative on purpose: passing an absolute value in
+     would produce "https://swechha.inhttps://swechha.in/". */
   const crumbName = String(title).replace(/\s*&mdash;\s*Swechha\s*$/, '').replace(/\s*—\s*Swechha\s*$/, '');
-  const CRUMBS = /^\/now\/[a-z-]+$/.test(canonical)
-    ? '\n<script type="application/ld+json">' + JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Swechha', item: abs('/') },
-        { '@type': 'ListItem', position: 2, name: 'Now', item: abs(INDEX_PAGE.route) },
-        { '@type': 'ListItem', position: 3, name: decodeEntities(crumbName), item: abs(canonical) },
-      ],
-    }) + '</script>'
-    : '';
+  const NAMES = { now: 'Now', work: 'Work', stories: 'Stories' };
+  const crumbLabel = (path) => { try { return seo(path).indexName; } catch { return null; } };
+  const segs = canonical.split('/').filter(Boolean);
+  const CRUMBS = segs.length === 0 ? '' : '\n' + breadcrumbJsonLd([
+    ['Swechha', '/'],
+    ...segs.map((s, i) => {
+      const path = '/' + segs.slice(0, i + 1).join('/');
+      const isLeaf = i === segs.length - 1;
+      const label = decodeEntities(crumbLabel(path) ?? (isLeaf ? crumbName : (NAMES[s] ?? s.replace(/-/g, ' '))));
+      return [label, path];
+    }),
+  ]);
 
   /* AD-28 §7. The extracted behaviours keep their comments; the ledger ids
      inside them do not. `node --check` runs on the redacted text below, so a

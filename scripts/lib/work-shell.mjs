@@ -61,9 +61,15 @@ import {
   ROOT, V3, extractor, shell, groundChain, opener, hole, esc,
   kd, kindTag, KIND_LEGEND, ARROW, n0, disclose, SHARED_PAGE_CSS, tabs,
   ask, stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, abs,
+  breadcrumbJsonLd,
 } from './situation-shell.mjs';
 
 export { ROOT, V3, HOME_SRC, opener, hole, esc, kd, kindTag, KIND_LEGEND, ARROW, n0, disclose, groundChain, tabs, ask };
+/* Task 8 moved the definition itself down to situation-shell.mjs (work-shell
+   imports FROM that file, so the reverse would be a cycle) and re-exports it
+   here so this file's own existing callers, below, keep resolving it under
+   the same name without a second import path to remember. */
+export { breadcrumbJsonLd };
 /* Re-exported because they were exported from here before AD-28 moved them
    down a layer, and an import that used to resolve should keep resolving. */
 export { stripCssComments, stripHtmlComments, redactScriptLedgerRefs };
@@ -2214,26 +2220,6 @@ export const headSocial = (title, desc, canonical, ogType = 'website') =>
   + `<meta name="twitter:card" content="summary_large_image">`
   + `<meta name="twitter:image" content="${esc(abs('/images/og/og-default.png'))}">`
   + `<meta name="twitter:site" content="@swechhaindia">`;
-
-/**
- * AD-27.50 · BreadcrumbList, on the 15 WORK pages.
- * DERIVED FROM THE CANONICAL ROUTE EACH PAGE ALREADY COMPUTES, so a breadcrumb
- * cannot disagree with the URL — which is the only reason to emit one.
- * `item` IS ABSOLUTE. Google's breadcrumb reference specifies a full URL; the
- * previous note asserted Google resolves a relative item against the document,
- * which this repo never verified. Derived from ORIGIN, so it is still not a
- * literal. THIS FUNCTION OWNS THE ORIGIN: every caller passes a relative path
- * in `crumbs` and `abs()` is applied here, once, so a caller can never
- * double-prefix it.
- */
-export const breadcrumbJsonLd = (crumbs) => '<script type="application/ld+json">'
-  + JSON.stringify({
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: crumbs.map(([name, item], i) => ({
-      '@type': 'ListItem', position: i + 1, name, item: abs(item),
-    })),
-  }) + '</script>';
 
 /* Collected across the whole run and printed once by the caller: the frozen
    footer's own address, reported rather than failed. See gate 2 below. */

@@ -1901,7 +1901,7 @@ ${JS_NAVIDX}
    situation-shell.mjs's assemble() (see the comment above), so it is the one
    generator that still needs its own local names for them, but the words
    themselves are the register's, not a second copy of them. */
-const { title: TITLE, description: DESC } = seo('/now/air');
+const { title: TITLE, description: DESC, indexName: INDEX_NAME } = seo('/now/air');
 
 /* AD-27.49 · OPEN GRAPH AND TWITTER. Derived from the title, the description
    and the canonical route that are already in this head — nothing new is
@@ -1927,15 +1927,18 @@ const OG = `<meta property="og:type" content="website"><meta property="og:site_n
    AD-27.49 each needed a hand-written clause here too. Measured 23 August:
    five of six situation pages carried BreadcrumbList and /now/air, the
    flagship and the page §H hangs "Air Pollution expert" on, carried none.
-   THE SHAPE IS THE SHELL'S, not a second design: three levels, and the
-   leaf's name is this page's own title with the site suffix removed, so the
-   trail cannot come to disagree with the tab. Placed immediately after the
-   footer, where the shell puts its own.
+   THE SHAPE IS THE SHELL'S, not a second design: three levels.
+   Task 8: the leaf's name is the register's `indexName` ("Delhi's air"), NOT
+   the page's own <title> — Task 5 rewrote titles into long, keyword-bearing
+   SERP strings, and Google renders breadcrumbs in search results, where a
+   long SEO string reads badly and is truncated. `indexName` is the short
+   editorial name the register holds for exactly this. Decoded the same way
+   TITLE always was here, since the register stores it as entities too.
    `item` IS ABSOLUTE. Google's breadcrumb reference specifies a full URL; the
    previous note asserted Google resolves a relative item against the document,
    which this repo never verified. Derived from ORIGIN, so it is still not a
    literal. */
-const CRUMB_NAME = TITLE.replace(/\s*&mdash;\s*Swechha\s*$/, '')
+const CRUMB_NAME = INDEX_NAME
   .replace(/&rsquo;/g, '’').replace(/&mdash;/g, '—').replace(/&amp;/g, '&');
 const CRUMBS = '\n<script type="application/ld+json">' + JSON.stringify({
   '@context': 'https://schema.org',
