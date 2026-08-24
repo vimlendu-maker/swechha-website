@@ -162,6 +162,32 @@ const nextConfig: NextConfig = {
         source: '/_pages/:path*',
         headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
       },
+      /* ── THE SOURCE PHOTOS, BECAUSE THE OPTIMIZER INHERITS THIS HEADER. ─────
+         `images.minimumCacheTTL` above was set first and MEASURED INERT: after
+         it deployed, `/_next/image?...` still answered `public, max-age=0,
+         must-revalidate`. The reason is that minimumCacheTTL governs the
+         optimizer's own server-side and CDN cache — which does work, the edge
+         reports `x-vercel-cache: HIT` with an `age` — while the BROWSER-facing
+         Cache-Control is copied from the upstream source, and Vercel serves
+         everything in `public/` as `max-age=0, must-revalidate`. So the header
+         has to be set here, on the source, for the optimized response to carry
+         it. Verified by curl against production: source and optimized response
+         were byte-identical in that header.
+
+         Almost nothing fetches these paths directly — every `<img>` on the site
+         resolves through `srcset` to `/_next/image`, and the raw path survives
+         only as the `src` fallback for a browser too old to understand srcset.
+         The point of the header is what the optimizer copies out of it.
+
+         A WEEK, and the same argument as the TTL above: this also bounds how
+         long a REPLACED photo keeps serving its old bytes, and photos here have
+         been replaced in place before — the EXIF rotation fix rewrote seven
+         files at their existing names. Rename the file when you change what it
+         looks like, exactly as /fonts requires. */
+      {
+        source: '/images/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=604800' }],
+      },
       /* ── THE SELF-HOSTED FONTS MUST NOT REVALIDATE. ─────────────────────────
          Vercel serves files out of `public/` as `max-age=0, must-revalidate`,
          which is right for a photo that might be replaced and wrong for these:
