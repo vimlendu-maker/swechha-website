@@ -80,6 +80,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
+import { seo } from './lib/seo-register.mjs';
 /* `ask` and `askGates` are AD-27.14–22's component, authored once in the shell
    by lane 1. AD-27.56: lanes 3 and 4 build through this file and CALL it rather
    than retype AD-27.15's markup, and they inherit AD-27.16's CSS with it —
@@ -971,19 +972,20 @@ const PAGE_CSS = `
    not.
    THE DESCRIPTION carries one verifiable fact — founded in 2000 as We for
    Yamuna, which is this page's own first record rung — and nothing tensed,
-   dated or specimen, per BRANDING §3.5 applied to <head>.
+   dated or specimen, per BRANDING §3.5 applied to <head>. IT NOW COMES FROM
+   data/seo/pages.json rather than a literal here: this generator used to keep
+   its own wording, different from situation-shell.mjs's DESCRIPTIONS row for
+   the same route, and the two answers for one page were exactly the drift the
+   register exists to kill. The register holds the wording below verbatim.
    `desc` is consumed by situation-shell.mjs's assemble(), which lane 1 is
    adding it to in this same pass (AD-27.48). Gate 12 below refuses the page if
    it did not reach the HTML, because a description that is passed and silently
    dropped looks exactly like a description that is there. */
-const DESC = 'Founded in 2000 as We for Yamuna. Swechha is an environmental and community '
-  + 'organisation in Delhi — who does the work, who governs it, what is on record.';
-
 const OUT = await S.assemble({
   file: 'about.html',
   route: '/about',
   title: 'About Swechha — an environmental NGO in Delhi',
-  desc: DESC,
+  desc: seo('/about').description,
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),

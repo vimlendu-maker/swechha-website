@@ -47,6 +47,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
+import { seo } from './seo-register.mjs';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 export const V3 = join(ROOT, 'public/_pages/v3');
@@ -1791,43 +1792,13 @@ export function shipDocument(html) {
    first was this file: `assemble()` had no `desc` parameter, so no caller
    could have passed one.
 
-   ★ THE DESCRIPTIONS LIVE HERE, KEYED BY THE PAGE'S OWN CANONICAL ROUTE.
-   AD-27.48 asks for "one parameter", and `desc` is that parameter — a caller
-   may always pass its own and it wins. The register below is the default for
-   the pages that already existed when the parameter was added, so that the
-   twenty missing descriptions land in ONE change rather than in six
-   generators owned by four people working in parallel. A generator that
-   wants its description beside its own copy should pass `desc:` and delete
-   its row here; the two paths cannot both apply.
-
-   ★ REQUIRED, AND THE BUILD STOPS WITHOUT ONE. Same argument the canonical
-   check above makes about the URL: a page that cannot say what it is about
-   should not be published. A NEW page therefore has to write one — which is
-   the whole point, and is why the register is a default and not a fallback
-   string.
-
-   ★ EVERY DESCRIPTION IS 140-158 CHARACTERS, states the page's subject in the
-   reader's words, and carries one verifiable fact. NOTHING HERE IS TENSED,
-   DATED OR A SPECIMEN (BRANDING §3.5 applies to <head> exactly as it applies
-   to <body> — Google caches this text): no reading, no elapsed-years count,
-   no "today", no "currently", no DEMO DATA. Note how the situation rows are
-   written — they describe the INSTRUMENT, never the value, because the value
-   moves and the description does not. */
-export const DESCRIPTIONS = {
-  '/now': "Six environmental readings Swechha keeps: Delhi's air, the Yamuna, heat, forest fire, forest loss and extreme rain, each against the standard that governs it.",
-  '/now/yamuna': "The Yamuna through Delhi, read against CPCB's own class C standard, with the monitoring station, the sampling method and the date on every figure.",
-  '/now/heat': "India's heat, read from IMD's own heat-wave criteria and NCRB's death table, with the source, the year and the limits of the count on every figure.",
-  '/now/forest-fire': "India's forest fires, read from the Forest Survey of India's burnt-area record and NASA FIRMS detections, with what each source can and cannot count.",
-  '/now/forest-loss': "India's forest loss, read from three sources that disagree — and two of them are not independent, which matters more than the disagreement does.",
-  '/now/climate-event': "India's extreme rain, read against IMD's own 24-hour rainfall categories, with the official table behind every figure and what it leaves out.",
-  '/impact': 'Every figure Swechha holds, on one page, by programme and by the span it counts. No single total: the figures count overlapping groups of people.',
-  '/publications': "Three things Swechha has published, free and whole, with no address asked for: a book about a neighbourhood, a shopper's guide, and one piece of research.",
-  '/search': 'Search every page on swechha.in by title, section heading and opening line — or read the whole list below, in the order the site is arranged.',
-  '/stories': 'Films made with the people in them, and a poster series that said the same things on paper, in a city that reads walls before it reads reports.',
-  '/about': 'Founded in 2000 as We for Yamuna. Swechha is an environmental organisation in Delhi — who does the work, who governs it, and what it has done since.',
-  '/act': 'Three ways in: give to an NGO with 80G and 12A, turn up and volunteer, or bring us a ward, a river stretch or a cohort. Every ask on this site lands here.',
-  '/farm': 'Five acres in the Aravallis, ninety minutes from Delhi. Day visits, overnight school camps for a hundred students, retreats and stays. One tree became 5,000.',
-};
+   ★ THE DESCRIPTIONS MOVED TO data/seo/pages.json. They were a register here
+   and they are a register there — the difference is that /about's generator
+   used to override this map with different words, so the site shipped two
+   answers for one page. The rules that governed this object still govern the
+   register and are enforced by lib/seo/register.test.ts: 140-158 characters,
+   untensed, undated, describing the instrument and never the reading. */
+export { seo } from './seo-register.mjs';
 
 /* THE SHARE CARD AND THE ICONS ARE RELATIVE, DELIBERATELY, and for the same
    reason the canonical is: the origin is only known at request time, so an
@@ -1902,11 +1873,17 @@ export async function assemble({ file, title, desc = null, bands, sectionFor, in
     process.exit(1);
   }
 
-  /* AD-27.48. REQUIRED, for the same reason the canonical is. */
-  const description = desc ?? DESCRIPTIONS[canonical] ?? null;
+  /* AD-27.48. REQUIRED, for the same reason the canonical is. seo() throws on
+     an unregistered route rather than returning undefined, so the lookup is
+     wrapped here to keep this a graceful refusal-to-write instead of an
+     uncaught exception — the message below is what a missing entry has always
+     produced. */
+  let fromRegister = null;
+  try { fromRegister = seo(canonical).description; } catch { /* not registered */ }
+  const description = desc ?? fromRegister ?? null;
   if (!description) {
     console.error(`REFUSING TO WRITE: ${file} (${canonical}) has no meta description. `
-      + `Pass desc: '…' to assemble(), or add a row to DESCRIPTIONS in this file.\n`
+      + `Pass desc: '…' to assemble(), or add an entry to data/seo/pages.json.\n`
       + '  140-158 characters, the page\'s subject in the reader\'s words plus one\n'
       + '  verifiable fact. Not tensed, not dated, no reading, no specimen — a\n'
       + '  description is static markup that Google caches (BRANDING §3.5).');
