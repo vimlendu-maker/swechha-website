@@ -333,15 +333,16 @@ const SECTION_SPY = `<script>
    `stripCssComments()` only reaches the shells' own CSS consts, not a <style>
    injected through the markup. The gate is right and its advice is followed --
    the record is here, the shipped bytes carry none of it. */
-const AFFORD_CSS = `<style>.w7-pj-rows>li>a,.w7-do-list>li>a,.p-cell,.ac-asks>li>a,.sr-list>li>a,.st-w>a{padding-right:24px}
-.ac-asks>li>a,.sr-list>li>a,.st-w>a{position:relative}
+const AFFORD_CSS = `<style>.w7-pj-rows>li>a,.w7-do-list>li>a,.p-cell,.ac-asks>li>a,.sr-list>li>a,.st-w>a,.cl-door{padding-right:24px}
+.ac-asks>li>a,.sr-list>li>a,.st-w>a,.cl-door{position:relative}
 .w7-pj-rows>li>a::after,.w7-do-list>li>a::after,.p-cell::after,.ac-asks>li>a::after,
-.sr-list>li>a::after,.st-w>a::after{
+.sr-list>li>a::after,.st-w>a::after,.cl-door::after{
 content:'';position:absolute;right:3px;top:50%;margin-top:-5px;width:7px;height:7px;
 border-right:2px solid currentColor;border-top:2px solid currentColor;transform:rotate(45deg);
 opacity:.38;pointer-events:none;transition:opacity .16s,translate .16s}
 .w7-pj-rows>li>a:hover::after,.w7-do-list>li>a:hover::after,.p-cell:hover::after,
-.ac-asks>li>a:hover::after,.sr-list>li>a:hover::after,.st-w>a:hover::after{opacity:.85;translate:2px 0}
+.ac-asks>li>a:hover::after,.sr-list>li>a:hover::after,.st-w>a:hover::after,
+.cl-door:hover::after{opacity:.85;translate:2px 0}
 .w7-pj-rows>li>a:active::before,.w7-do-list>li>a:active::before{background:rgba(20,19,16,.075)}
 .wk-dark .w7-pj-rows>li>a:active::before,.wk-dark .w7-do-list>li>a:active::before{
 background:rgba(251,248,240,.07)}
@@ -351,9 +352,11 @@ pointer-events:none;transition:background .12s}
 .ac-asks>li>a:active::before,.sr-list>li>a:active::before,.st-w>a:active::before{background:rgba(20,19,16,.075)}
 @media (prefers-reduced-motion:reduce){
 .w7-pj-rows>li>a::after,.w7-do-list>li>a::after,.p-cell::after,.p-cell::before,
-.ac-asks>li>a::after,.ac-asks>li>a::before,.sr-list>li>a::after,.st-w>a::after{transition:none}
+.ac-asks>li>a::after,.ac-asks>li>a::before,.sr-list>li>a::after,.st-w>a::after,
+.cl-door::after{transition:none}
 .w7-pj-rows>li>a:hover::after,.w7-do-list>li>a:hover::after,.p-cell:hover::after,
-.ac-asks>li>a:hover::after,.sr-list>li>a:hover::after,.st-w>a:hover::after{translate:none}}
+.ac-asks>li>a:hover::after,.sr-list>li>a:hover::after,.st-w>a:hover::after,
+.cl-door:hover::after{translate:none}}
 </style>`
 
 const NAV = SHELL_NAV;

@@ -503,15 +503,16 @@ const SECTION_SPY = `<script>
    `stripCssComments()` only reaches the shells' own CSS consts, not a <style>
    injected through the markup. The gate is right and its advice is followed --
    the record is here, the shipped bytes carry none of it. */
-const AFFORD_CSS = `<style>.w7-pj-rows>li>a,.w7-do-list>li>a,.p-cell,.ac-asks>li>a,.sr-list>li>a,.st-w>a{padding-right:24px}
-.ac-asks>li>a,.sr-list>li>a,.st-w>a{position:relative}
+const AFFORD_CSS = `<style>.w7-pj-rows>li>a,.w7-do-list>li>a,.p-cell,.ac-asks>li>a,.sr-list>li>a,.st-w>a,.cl-door{padding-right:24px}
+.ac-asks>li>a,.sr-list>li>a,.st-w>a,.cl-door{position:relative}
 .w7-pj-rows>li>a::after,.w7-do-list>li>a::after,.p-cell::after,.ac-asks>li>a::after,
-.sr-list>li>a::after,.st-w>a::after{
+.sr-list>li>a::after,.st-w>a::after,.cl-door::after{
 content:'';position:absolute;right:3px;top:50%;margin-top:-5px;width:7px;height:7px;
 border-right:2px solid currentColor;border-top:2px solid currentColor;transform:rotate(45deg);
 opacity:.38;pointer-events:none;transition:opacity .16s,translate .16s}
 .w7-pj-rows>li>a:hover::after,.w7-do-list>li>a:hover::after,.p-cell:hover::after,
-.ac-asks>li>a:hover::after,.sr-list>li>a:hover::after,.st-w>a:hover::after{opacity:.85;translate:2px 0}
+.ac-asks>li>a:hover::after,.sr-list>li>a:hover::after,.st-w>a:hover::after,
+.cl-door:hover::after{opacity:.85;translate:2px 0}
 .w7-pj-rows>li>a:active::before,.w7-do-list>li>a:active::before{background:rgba(20,19,16,.075)}
 .wk-dark .w7-pj-rows>li>a:active::before,.wk-dark .w7-do-list>li>a:active::before{
 background:rgba(251,248,240,.07)}
@@ -521,9 +522,11 @@ pointer-events:none;transition:background .12s}
 .ac-asks>li>a:active::before,.sr-list>li>a:active::before,.st-w>a:active::before{background:rgba(20,19,16,.075)}
 @media (prefers-reduced-motion:reduce){
 .w7-pj-rows>li>a::after,.w7-do-list>li>a::after,.p-cell::after,.p-cell::before,
-.ac-asks>li>a::after,.ac-asks>li>a::before,.sr-list>li>a::after,.st-w>a::after{transition:none}
+.ac-asks>li>a::after,.ac-asks>li>a::before,.sr-list>li>a::after,.st-w>a::after,
+.cl-door::after{transition:none}
 .w7-pj-rows>li>a:hover::after,.w7-do-list>li>a:hover::after,.p-cell:hover::after,
-.ac-asks>li>a:hover::after,.sr-list>li>a:hover::after,.st-w>a:hover::after{translate:none}}
+.ac-asks>li>a:hover::after,.sr-list>li>a:hover::after,.st-w>a:hover::after,
+.cl-door:hover::after{translate:none}}
 </style>`
 
 export const header = (index, { current = null, url = null, page = null } = {}) => `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
@@ -878,10 +881,27 @@ export const closing = (id) => {
             <p class="cl-b">${c.limit}</p>
           </div>
         </div>
+        <!-- AD-40. THE THREE 314px ARROWS ARE GONE, and they were a rendering bug
+             rather than a design decision. ARROW is a bare <svg viewBox="0 0 24 24">
+             with no width or height of its own; every other place this design puts it
+             has a sizing rule beside it -- .act svg, .b svg, .ac-door-ah svg,
+             .fm-door-h svg, .ip-door-h svg, all 13-16px -- and .cl-door had none. So
+             as the third flex item in a stretch column the arrow took the card's full
+             width and its 1:1 viewBox made it that tall as well: measured 314x314 at
+             390px, and 274x274 at 375. Three of them, on all six situation pages, 18
+             in total, and a sitewide sweep of every route found them NOWHERE else.
+             That is what the owner meant by "remove the big arrow blocks, doesn't go
+             with the design, just have blocks/tabs" -- and he was pointing at the
+             sibling rail directly below, which is what a block should look like.
+             THE CARD STILL SAYS IT IS A CARD. Removing the arrow outright would have
+             left three zero-cue blocks, which is the defect AD-38 spent a pass
+             closing, so .cl-door joins the chevron family below: the same 7px CSS
+             corner every other card on this site carries, at about 1/45th of the
+             area. Sized in CSS rather than in markup, so it cannot do this again. -->
         <div class="cl-doors">
-          <a class="cl-door" href="/work"><span class="cl-door-n">Explore the work</span><span class="cap cl-door-w">Fifteen pages, four kinds</span>${ARROW}</a>
-          <a class="cl-door" href="/about"><span class="cl-door-n">Who is Swechha</span><span class="cap cl-door-w">Working since 2000, and who runs it</span>${ARROW}</a>
-          <a class="cl-door" href="/act"><span class="cl-door-n">Take part</span><span class="cap cl-door-w">Give, volunteer or partner</span>${ARROW}</a>
+          <a class="cl-door" href="/work"><span class="cl-door-n">Explore the work</span><span class="cap cl-door-w">Fifteen pages, four kinds</span></a>
+          <a class="cl-door" href="/about"><span class="cl-door-n">Who is Swechha</span><span class="cap cl-door-w">Working since 2000, and who runs it</span></a>
+          <a class="cl-door" href="/act"><span class="cl-door-n">Take part</span><span class="cap cl-door-w">Give, volunteer or partner</span></a>
         </div>
       </section>`;
 };
