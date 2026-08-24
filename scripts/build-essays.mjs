@@ -226,7 +226,7 @@ ${(() => {
   const OUT = await S.assemble({
     file: join('stories', `${e.slug}.html`),
     route: `/stories/${e.slug}`,
-    title: `${e.title} &mdash; Swechha`,
+    title: seo(`/stories/${e.slug}`).title,
     desc: seo(`/stories/${e.slug}`).description,
     bands: BANDS, index: INDEX_CHIPS, sh, clashes,
     pageCss: PAGE_CSS,
