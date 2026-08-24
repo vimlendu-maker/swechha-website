@@ -59,6 +59,8 @@ import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
   ROOT, V3, extractor, shell, groundChain, opener, hole, esc,
+  responsiveImages,
+  ORIGIN,
   kd, kindTag, KIND_LEGEND, ARROW, n0, disclose, SHARED_PAGE_CSS, tabs,
   ask, stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, abs,
   breadcrumbJsonLd, imgDim,
@@ -2100,7 +2102,24 @@ export class Links {
     const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map(m => m[1]));
     let hashCount = 0;
     for (const m of html.matchAll(/\shref="([^"]*)"/g)) {
-      const href = m[1];
+      let href = m[1];
+      /* ── OUR OWN ORIGIN IS NOT "EXTERNAL". ────────────────────────────────
+         The canonicals went absolute on 24 August 2026 (Lighthouse fails a
+         relative rel=canonical outright), and this census reads EVERY href on
+         the page — so without this, each page's self-canonical fell through to
+         the /^https?:\/\// arm and the register reported 15 more external links
+         and 15 fewer `ok` ones than the site has. `failures` stayed 0, which is
+         exactly why it needed catching by eye: the gate was green while the
+         register it writes had started describing the site wrongly, and its
+         stated purpose is that "a new one trips the gate" — a job it cannot do
+         from a baseline with fifteen self-references filed under external.
+
+         Normalised to the path so it is resolved against the route map like any
+         other internal link, which also means a future absolute in-site href is
+         checked rather than waved through as somebody else's URL. */
+      if (href.startsWith(`${ORIGIN}/`) || href === ORIGIN) {
+        href = href.slice(ORIGIN.length) || '/';
+      }
       const row = { page: pagePath, file, href, verdict: 'ok' };
       if (href === '#') {
         hashCount++;
@@ -2480,10 +2499,13 @@ export function writePage(outDir, file, html, route) {
      `assemble()` — the other shell, the other half of the 35 built pages.
      `route` is optional only so a caller that has no canonical (there is
      none today) does not crash; every WORK page passes its own `url`. */
-  if (route) stampLastmod(route, html);
+  /* srcset before the stamp, for the same reason assemble() does it in that
+     order: the lastmod hash must be taken over what actually ships. */
+  const shipped = responsiveImages(html);
+  if (route) stampLastmod(route, shipped);
   const p = join(outDir, file);
   mkdirSync(dirname(p), { recursive: true });
-  writeFileSync(p, html);
+  writeFileSync(p, shipped);
   return p;
 }
 
