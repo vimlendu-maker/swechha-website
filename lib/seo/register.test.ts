@@ -20,6 +20,20 @@ describe('the SEO register', () => {
     }
   })
 
+  /* indexName IS A SEPARATE JOB FROM title. It is the short editorial name
+     /search has always shown as visible, reader-facing text ("Now", "Delhi's
+     air", "Campaigns") — never a SERP string, which is what `title` became in
+     Task 5. No length or TERMS rule applies here on purpose: an editorial name
+     is not written to be typed into Google, so judging it by that rule would
+     be judging it by the wrong standard. */
+  it('gives every route a non-empty, unique indexName', () => {
+    for (const [route, e] of Object.entries(SEO)) {
+      expect(e.indexName, `${route} indexName`).toBeTruthy()
+    }
+    const names = Object.values(SEO).map((e) => e.indexName)
+    expect(new Set(names).size).toBe(names.length)
+  })
+
   it('keeps every title at or under 60 rendered characters', () => {
     for (const [route, e] of Object.entries(SEO)) {
       expect(decode(e.title).length, `${route}: "${e.title}"`).toBeLessThanOrEqual(60)

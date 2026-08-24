@@ -6,6 +6,6 @@
    Next side and the tests. */
 import pages from '@/data/seo/pages.json'
 
-export type SeoEntry = { title: string; description: string; ogType: string }
+export type SeoEntry = { title: string; indexName: string; description: string; ogType: string }
 
 export const SEO: Record<string, SeoEntry> = pages as Record<string, SeoEntry>

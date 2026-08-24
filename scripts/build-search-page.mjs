@@ -98,7 +98,7 @@ for (const abs of files) {
     .replace(/\s*[—–-]\s*Swechha\s*$/, '')
     .replace(/^\s*Swechha\s*[—–-]\s*/, '')
     .trim();
-  const title = stripped || text(rawTitle);
+  const pageTitleTag = stripped || text(rawTitle);
   const h1 = text(one(src, /<h1[^>]*>([\s\S]*?)<\/h1>/));
   const lead = text(one(src, /<p class="lead[^"]*">([\s\S]*?)<\/p>/));
   /* HEADINGS ARE THE SEARCH TERMS, h2 AND h3 BOTH. They are how each page
@@ -114,12 +114,28 @@ for (const abs of files) {
     ...all(src, /<h3[^>]*>([\s\S]*?)<\/h3>/g),
   ].map(text).filter(Boolean);
 
-  if (!title) dataFail(`${name} has no usable <title>.`);
+  if (!pageTitleTag) dataFail(`${name} has no usable <title>.`);
+
+  /* THE VISIBLE NAME AND THE SEARCH-ENGINE TITLE ARE TWO DIFFERENT JOBS.
+     Before Task 5's SEO pass, one field (<title>, minus the brand suffix)
+     did both: it was what Google shows AND what this index shows a reader.
+     Once titles became SERP strings ("Delhi air quality against CPCB
+     limits — Swechha"), reusing that field here would have printed SEO
+     copy on the page as though it were the site's own editorial voice —
+     which the no-creative-copy rule this programme runs under forbids.
+     So the register carries a second field, `indexName`: the short
+     editorial name this index has always shown ("Now", "Delhi's air",
+     "Campaigns"), seeded from each route's PRE-Task-5 title. The SEO
+     title still makes the page findable — it goes into the search-token
+     blob below, never onto the row itself. */
+  const indexName = text(seo(route).indexName);
+  const seoTitle = text(seo(route).title);
 
   entries.push({
     route,
-    title: title || h1 || route,
-    h1: h1 && h1 !== title ? h1 : '',
+    title: indexName || h1 || route,
+    seoTitle,
+    h1: h1 && h1 !== indexName ? h1 : '',
     lead: lead ? lead.slice(0, 220) : '',
     heads,
   });
@@ -183,7 +199,7 @@ B.top = () => `    <div class="wrap sr-mast">
       <p class="lbl sr-count" id="sr-count" role="status" aria-live="polite">${entries.length} pages</p>
     </div>`;
 
-const row = (e) => `          <li class="sr-row" data-t="${esc([e.title, e.h1, e.lead, ...e.heads].join(' ').toLowerCase())}">
+const row = (e) => `          <li class="sr-row" data-t="${esc([e.title, e.seoTitle, e.h1, e.lead, ...e.heads].join(' ').toLowerCase())}">
             <a href="${esc(e.route)}">
               <span class="sr-t">${esc(e.title)}</span>
               <span class="cap sr-r">${esc(e.route)}</span>
@@ -318,7 +334,7 @@ gate(rowsInHtml === entries.length, `all ${entries.length} rows render server-si
 /* 6. NO RAW ENTITY SURVIVED INTO THE INDEX. The decoder is a fixed list, so
       an entity the pages start using would otherwise reach a reader as
       "&rsquo;" in a search row. */
-const raw = entries.flatMap((e) => [e.title, e.h1, e.lead, ...e.heads])
+const raw = entries.flatMap((e) => [e.title, e.seoTitle, e.h1, e.lead, ...e.heads])
   .filter((t) => /&[a-z]+;|&#\d+;/i.test(t));
 gate(raw.length === 0, `no undecoded entity in the index${raw.length ? `; FOUND: ${raw.slice(0, 3).join(' | ')}` : ''}`);
 
