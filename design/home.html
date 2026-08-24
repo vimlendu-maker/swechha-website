@@ -402,7 +402,7 @@ html,body{scroll-padding-top:var(--nav-h)}
 @media (max-width:940px){
   /* Below the breakpoint the pattern inverts: the bar goes fixed, so the
      occluding strip and the bar's own box are the same 56px. */
-  :root{--bar-h:56px;--nav-h:56px}
+  :root{--bar-h:56px;--nav-h:56px;--sec-h:50px} /* AD-34. --nav-h IS THE OCCLUDING CHROME, and `html,body{scroll-padding-top:var(--nav-h)}` (A-1, line 379) is what lands an anchor clear of it. Pinning the strip made that chrome 56+50, so on a page WITH a strip every `#section` link had started landing 50px UNDER it -- the anchors were correct before and would have been quietly wrong after. Scoped with :has() for the same reason the padding above is: the homepage has no strip and its chrome is still 56. */ :root:has(.navscroll){--nav-h:calc(var(--bar-h) + var(--sec-h))}
   .navlinks{display:none!important}
   /* 44px FLOOR ON THE ONE PERSISTENT TARGET. GIVE measured 70x37 and the
      wordmark 92x35 — under the floor on the single control the whole
@@ -452,10 +452,10 @@ html,body{scroll-padding-top:var(--nav-h)}
      paints full-bleed. Above 940 the same move would pull the bar's
      background into a centred box — do not lift it out of this media
      query. */
-  .nav{position:static;border-bottom:0;padding-top:var(--bar-h)}
+  .nav{position:static;border-bottom:0;padding-top:var(--bar-h)} /* AD-34: THE SECTION STRIP STAYS REACHABLE. `.navscroll` is not a copy of the site menu -- on every page type that has one it is that page's own table of contents (3 anchors on /now, 6 on /about and /act, 8 on /now/air, 9 on /farm). The homepage was the ONE page where it duplicated the menu, and it was deleted there under AD-29. Everywhere else it was `position: static` inside a header that scrolls away, so on /now/air -- 14,720px, 23 phone screens -- a reader lost the whole contents list after the first 106px, i.e. after 0.7% of the page, and could only get it back by scrolling to the top. THE RESERVATION IS SCOPED WITH `:has()` so the homepage, which no longer carries a strip, keeps its 56px header and does not grow 50px of empty band. Without the scope this rule would put that gap on exactly the page the strip was removed from. */ .nav:has(.navscroll){padding-top:calc(var(--bar-h) + var(--sec-h))}
   .nav-in{position:fixed;top:0;left:0;right:0;z-index:60;background:var(--ground);
     border-bottom:1px solid var(--hair)}
-  .navscroll{display:block;border-bottom:1px solid var(--hair);background:var(--ground);
+  .navscroll{display:block;position:fixed;top:var(--bar-h);left:0;right:0;z-index:58;height:var(--sec-h);box-sizing:border-box;border-bottom:1px solid var(--hair);background:var(--ground);
     overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
     /* the affordance it was criticised for lacking — the same 8px hard
        fade the hero's own tab row uses, not a second invention. */
@@ -1344,7 +1344,7 @@ html,body{scroll-padding-top:var(--nav-h)}
     mask-image:linear-gradient(90deg,#000 calc(100% - 8px),transparent)}
   .s-hero-bar .count{order:2;margin-right:auto;margin-left:0}
   .s-hero-bar .rig-arrows{order:3}
-  .s-hero-bar .rig-arrows button{width:44px;height:44px}
+  .s-hero-bar .rig-arrows button{width:44px;height:44px} /* AD-29: THE CONTROLS COME UP ABOVE THE DECK ON PHONES. Measured at 375x635 -- an iPhone-class VISIBLE height, not the 812 logical one: the deck is 707px of content against 529px of usable space, so the tab strip, the count and both arrows sat 178px BELOW the fold and nothing on screen said a second situation existed. NOTE `min-height:var(--s-hero-frame)` computes to 0 at this width -- that clamp is a >=861 rule -- so the 628px floor was never the cause and lowering it changes nothing (measured: 628 down to 340, identical). What sets the height is the TALLEST SLIDE, and h-fire is the one slide with no `.s-hero-cut`: its 142-char sentence runs to 4 lines and equalises all four. The deck cannot be tuned into 529px without shrinking the readout, so the BAR MOVES and the deck is left alone. `.rig` has exactly two children (.rig-clip, .wrap), so ordering it is unambiguous; scoped to `.s-hero .rig` because `.rig-*` is shared. --s-hero-barh TIES THE BAR TO THE MAST: `.s-hero-mast` is absolute at top:0 of the hero, so with the bar first it landed ON the masthead. One variable drives the bar min-height AND the mast offset, so the two cannot drift apart; the min-height also guarantees the mast never overlaps if the bar rewraps. padding-top clears the -19px pull `.rig-tabs` carries (see the negative-margin note at .rig-tabs) so all four 44px targets start below the 56px fixed bar rather than 4px under it. Border flips to the bottom edge: at the top of the band a border-top doubled the nav rule. */ .s-hero{--s-hero-barh:111px} .s-hero .rig{display:flex;flex-direction:column} .s-hero .rig>.wrap{order:-1} .s-hero-mast{top:var(--s-hero-barh)} .s-hero-bar{margin-top:0;min-height:var(--s-hero-barh);padding-top:16px;padding-bottom:10px;border-top:0;border-bottom:1px solid var(--hair)}
 }
 
 
@@ -3130,6 +3130,123 @@ main{display:block;margin:0;padding:0}
    77.6px against Periodic's measured 77.56, i.e. the reservation is the word
    itself; it is a min-width, so a wider word in another face simply wins. */
 .s-hero-stamp .state{min-width:6.75em}
+/* ══ AD-30. WHAT IS TAPPABLE MUST LOOK TAPPABLE ON A TOUCHSCREEN ══════
+   Measured on the built page at 375: 11 of 51 interactive elements on this
+   homepage carried NO visual cue at all -- no border, no background, no
+   underline, no icon, no arrow -- and five of those were full cards. The
+   worst of them is `.w7-do-list>li>a`: four links styled
+   `text-decoration:none;color:inherit`, separated by 1px rules, so they read
+   as a printed table of contents. Their ONLY interaction cue was
+   `:hover::before`, and HOVER CANNOT FIRE ON A TOUCHSCREEN -- so on a phone
+   the homepage's primary route into the whole WORK section announced itself
+   not at all. A first-time reader reported exactly this: he could not tell
+   what was clickable.
+
+   TWO CUES, NOT A REDESIGN. A chevron, and a tap that responds. Both reuse
+   what this file already owns: the chevron is drawn in CSS from
+   `currentColor`, so it needs no icon, no new colour and no markup, and it
+   inverts correctly on the dark bands as well as the paper ones; the press
+   state reuses each card's existing `::before` tint, which until now only
+   ever appeared under a mouse. `:active` was defined ONCE in this entire
+   stylesheet before this block -- on `.b` -- which is why tapping a card
+   produced no response at all until the next page painted, and "nothing
+   happened" reads as "not a link".
+
+   NO NEW SURFACE COLOUR, deliberately. The four light neutrals in :root
+   (#F3F2F0, #ECEBE8, #E2E0DB, #DEDDD9) are already spent distinguishing
+   ADJACENT BANDS from each other, so a grey card would be invisible on the
+   paper bands and wrong on the dark ones. The unspent affordance here is
+   shape, not colour.
+
+   THE CHEVRON IS ABSOLUTE ON PURPOSE. Three of the four card families are
+   `display:grid` (`w7-do-list`, `w7-pj-rows`) or flex (`s-ticker-cell`); an
+   in-flow `::after` would become a THIRD GRID ITEM and break the column
+   template it inherits. Out of flow it cannot. `padding-right` reserves the
+   space so no title ever runs under it -- these four families all carried
+   `padding-right:0`.
+
+   `.w7-pj-lead>a` needs `position:relative` added: it is the one card of the
+   four that was `position:static`, so an absolute child would otherwise have
+   escaped to the nearest positioned ancestor. And its chevron sits at the
+   BOTTOM right, not the vertical centre: the card is 357px tall and opens
+   with a photograph, so a centred chevron would land in the middle of the
+   image rather than reading as "this whole card opens". */
+
+.w7-do-list>li>a,.w7-pj-rows>li>a,.w7-pj-lead>a{padding-right:26px}
+.w7-pj-lead>a{position:relative}
+.s-ticker-cell .s-ticker-name{padding-right:14px}
+
+/* one drawing, four call sites */
+.w7-do-list>li>a::after,
+.w7-pj-rows>li>a::after,
+.w7-pj-lead>a::after,
+.s-ticker-cell .s-ticker-name::after{
+  content:'';position:absolute;width:7px;height:7px;
+  border-right:2px solid currentColor;border-top:2px solid currentColor;
+  transform:rotate(45deg);opacity:.4;pointer-events:none;
+  transition:opacity .16s,translate .16s}
+.w7-do-list>li>a::after,.w7-pj-rows>li>a::after{right:4px;top:50%;margin-top:-5px}
+.w7-pj-lead>a::after{right:4px;bottom:6px}
+.s-ticker-cell .s-ticker-name{position:relative}
+.s-ticker-cell .s-ticker-name::after{right:0;top:50%;margin-top:-4px;width:6px;height:6px}
+
+/* the cue firms up under a mouse; it is already visible without one */
+.w7-do-list>li>a:hover::after,.w7-pj-rows>li>a:hover::after,
+.w7-pj-lead>a:hover::after,.s-ticker-cell:hover .s-ticker-name::after{
+  opacity:.85;translate:2px 0}
+
+/* ── THE PRESS. The tint these cards already had, now on touch too. ── */
+.w7-do-list>li>a:active::before,.w7-pj-rows>li>a:active::before{
+  background:rgba(20,19,16,.075)}
+/* pj-lead and the ticker cells had no ::before at all, so they get one */
+.w7-pj-lead>a::before,.s-ticker-cell::before{
+  content:'';position:absolute;inset:0 -10px;background:transparent;
+  pointer-events:none;transition:background .12s}
+.w7-pj-lead>a:active::before{background:rgba(20,19,16,.075)}
+/* the ticker sits on --ground, so its press is a LIFT, not a shadow */
+.s-ticker-cell:active::before{background:rgba(251,248,240,.07)}
+.s-ticker-cell:active .s-ticker-name::after,
+.w7-pj-lead>a:active::after{opacity:.9}
+
+/* ── TAP TARGETS. Two campaign link families sat under the 44px floor
+   AD-09 set for every other control on this site: `.w7-ce-lk` measured 23px
+   and `.w7-ce-pre>a` 17px. Padding, not height, so the text does not move
+   and the 1px rules they sit between stay where they are. ── */
+.w7-ce-lk{padding-top:11px;padding-bottom:10px}
+.w7-ce-pre>a{padding-top:14px;padding-bottom:13px}
+
+@media (prefers-reduced-motion:reduce){
+  .w7-do-list>li>a::after,.w7-pj-rows>li>a::after,.w7-pj-lead>a::after,
+  .s-ticker-cell .s-ticker-name::after,.w7-pj-lead>a::before,
+  .s-ticker-cell::before{transition:none}
+  .w7-do-list>li>a:hover::after,.w7-pj-rows>li>a:hover::after,
+  .w7-pj-lead>a:hover::after,.s-ticker-cell:hover .s-ticker-name::after{translate:none}
+}
+/* ── AD-30b. THE TWO FAMILIES THE CHEVRON COULD NOT REACH. ───────────
+   `.w7-ce-lk` (the three campaign names) already uses its OWN `::after` as
+   an invisible 155x24 hit-area expander -- a real technique this file
+   already owns, and not something to overwrite for a decoration. So the cue
+   goes on the inner `.w7-ce-t` span instead, as the mustard underline `.act`
+   already uses everywhere else on this page. Same vocabulary, no new colour.
+
+   The six band-footer `.act` links measured 27px against AD-09's 44px floor.
+   `min-height` is the wrong tool here: they are `inline-flex` with
+   `align-items:center` and their visible underline IS `border-bottom`, so
+   growing the box detaches the rule from the text by ~8px. Expanding the HIT
+   AREA with a transparent pseudo-element leaves the type and the rule exactly
+   where the design put them -- the same trick `.w7-ce-lk::after` is already
+   doing three bands further up. `::before` is free on `.act`; `::after` is
+   not. The hero's own `.act` is untouched: AD-09 already gave it a real
+   44px box, so it is excluded rather than double-padded. */
+
+.w7-ce-lk .w7-ce-t{text-decoration:underline;text-decoration-thickness:1px;
+  text-underline-offset:4px;text-decoration-color:var(--mustard)}
+.w7-ce-lk:hover .w7-ce-t{text-decoration-thickness:2px}
+
+.w7-jr-foot>.act::before,.w7-pj-foot>.act::before,.w7-ce-cfoot>.act::before,
+.w7-ce-evfoot>.act::before,.w7-ab-foot>.act::before,.w7-do-head .act::before{
+  content:'';position:absolute;left:0;right:0;top:50%;height:44px;
+  translate:0 -50%;pointer-events:auto}
 </style>
 
 <body>
@@ -3145,7 +3262,7 @@ main{display:block;margin:0;padding:0}
      tabindex="-1" so the focus actually lands rather than only moving
      the sequential-navigation start point. -->
 <a class="skip" href="#main">Skip to the content</a>
-<header class="nav"><div class="nav-in"><a class="mark" href="/" aria-current="page" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a></nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button><!-- D-09.1. THE PHONE'S WAY OUT. The chip row above is non-sticky by
+<header class="nav"><div class="nav-in"><a class="mark" href="/" aria-current="page" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/about">About</a></nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button><!-- D-09.1. THE PHONE'S WAY OUT. The chip row above is non-sticky by
      D-01.1 and stays that way, so between y=105.8 and the footer's link
      grid at y=9,518 a phone reader had navigation to exactly ONE
      destination — the GIVE chip — for 9,412px, or 91.9% of the document.
@@ -3170,7 +3287,7 @@ main{display:block;margin:0;padding:0}
      item, so `.nav-in`'s one-row 56px layout is untouched — verified,
      the bar's three items sit on the same pixels as before. -->
 
-<div class="navidx" id="navidx" hidden><nav aria-label="All sections"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a></nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="/act">Give</a></div><nav class="navscroll" aria-label="Sections"><ul><li><a class="nl" href="/now">Now</a></li><li><a class="nl" href="/work">Work</a></li><li><a class="nl" href="/work/journeys">Journeys</a></li><li><a class="nl" href="/impact">Impact</a></li><li><a class="nl" href="/farm">Farm</a></li><li></li></ul></nav></header>
+<div class="navidx" id="navidx" hidden><nav aria-label="All sections"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/about">About</a></nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="/act">Act</a></div></header>
 
 <!-- D-09.3. THE ONE LANDMARK THE PAGE WAS MISSING. Landmarks were
      header, three navs and footer — no main — so a screen-reader user
@@ -3184,7 +3301,7 @@ main{display:block;margin:0;padding:0}
 
 <!-- ══ BAND 1. HERO. #0D0D0B. RED. Halftone 1 of 3. T1. ══════════════ -->
 <section class="s-hero t1" id="top">
-  <div class="s-hero-mast"><div class="wrap"><h1 class="d1 s-hero-h1">We keep the record</h1><p class="lbl s-hero-tag">Every reading against its published limit</p><p class="lbl s-hero-who"><span class="s-hero-who-l">An Indian environmental organisation. Delhi, since&nbsp;2000.</span><span class="s-hero-who-s">Environmental. Delhi. Since&nbsp;2000.</span></p></div></div>
+  <div class="s-hero-mast"><div class="wrap"><h1 class="d1 s-hero-h1">We keep the record</h1><p class="lbl s-hero-tag">Every reading against its published limit</p><p class="lbl s-hero-who"><span class="s-hero-who-l">Swechha &mdash; an Indian environmental organisation. Delhi, since&nbsp;2000.</span><span class="s-hero-who-s">Swechha. Environmental. Delhi. Since&nbsp;2000.</span></p></div></div>
 
   <div class="rig">
     <div class="rig-clip">
@@ -3221,12 +3338,12 @@ main{display:block;margin:0;padding:0}
                      data/air-delhi.json, so they cannot drift, and the hourly
                      job keeps them current. If you find yourself adding a
                      textContent write below, read AD-27.6-A first. -->
-                <span class="s-hero-numwrap rl"><span class="readout" data-committed="309" aria-hidden="true">309</span></span>
-                <span class="sr">Delhi-NCR / Air quality index. 309 AQI, 24-hour rolling. Very Poor.</span>
+                <span class="s-hero-numwrap rl"><span class="readout" data-committed="371" aria-hidden="true">371</span></span>
+                <span class="sr">Delhi-NCR / Air quality index. 371 AQI, 24-hour rolling. Very Poor.</span>
                 <div class="s-hero-num-side">
                   <p class="lbl s-hero-id">Delhi-NCR / Air quality index</p>
                   <span class="unit">AQI, 24-hour rolling</span>
-                  <p class="mult"><b>3.1&#215;</b> the limit</p>
+                  <p class="mult"><b>3.7&#215;</b> the limit</p>
                 </div>
               </div>
               <div class="s-hero-acct">
@@ -3242,7 +3359,7 @@ main{display:block;margin:0;padding:0}
                      the bands) and in full on the situation page. Word for
                      word unchanged, and >=561 renders the whole paragraph
                      in its original order. -->
-                <p class="s-hero-why"><span class="s-hero-cut">3.1 times the limit the Central Pollution Control Board sets for a safe day.</span></p>
+                <p class="s-hero-why"><span class="s-hero-cut">3.7 times the limit the Central Pollution Control Board sets for a safe day.</span></p>
                 <div class="s-hero-scale">
                   <div class="bands bad" role="img" aria-label="Band 5 of 6, Very Poor"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on tip"></i><i></i></div>
                   <span class="limit">CPCB safe limit 100. <b>Limit broken.</b></span>
@@ -3285,7 +3402,7 @@ main{display:block;margin:0;padding:0}
                    the same register /now and /now/air read, because this deck
                    said Periodic while /now said LIVE about one reading until
                    23 August. The hour below is where freshness is stated. -->
-              <p class="cap s-hero-src">CPCB continuous monitor<span class="s-hero-loc">, Anand Vihar</span>. <span class="s-hero-cad">Hourly. </span><span class="s-hero-prov">Observed 17:00 IST, 23 August 2026.</span></p>
+              <p class="cap s-hero-src">CPCB continuous monitor<span class="s-hero-loc">, Anand Vihar</span>. <span class="s-hero-cad">Hourly. </span><span class="s-hero-prov">Observed 05:00 IST, 24 August 2026.</span></p>
               <span class="tag tag-season">Year round</span>
               <p class="s-hero-act"><a class="act" href="/now/air">The full instrument <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
 
@@ -3532,7 +3649,7 @@ main{display:block;margin:0;padding:0}
          otherwise announces as "one point six five M H A"; the Impact
          slot's has to be rewritten whenever its figure is rotated. -->
     <div class="s-ticker-rail">
-      <a class="s-ticker-cell" id="tk-air" href="/now/air" aria-label="Delhi's air, 309 air quality index, over the limit"><span class="lbl s-ticker-name">Air</span><span class="s-ticker-v is-over" id="tk-air-v"><b>309</b></span></a>
+      <a class="s-ticker-cell" id="tk-air" href="/now/air" aria-label="Delhi's air, 371 air quality index, over the limit"><span class="lbl s-ticker-name">Air</span><span class="s-ticker-v is-over" id="tk-air-v"><b>371</b></span></a>
       <a class="s-ticker-cell" href="/now/yamuna" aria-label="Yamuna dissolved oxygen, 0.3 milligrams per litre, below the detection limit, against a legal minimum of 5"><span class="lbl s-ticker-name">Yamuna DO</span><span class="s-ticker-v is-over"><b>0.3</b></span></a>
       <a class="s-ticker-cell" href="/now/forest-fire" aria-label="Forest fire, 34,562 square kilometres of forest burnt in the 2023 to 2024 season"><span class="lbl s-ticker-name">Forest burnt</span><span class="s-ticker-v is-over"><b>34,562</b></span></a>
       <a class="s-ticker-cell" href="/now/forest-loss" aria-label="Forest loss, 2.43 million hectares of tree cover, 2001 to 2025"><span class="lbl s-ticker-name">Forest loss</span><span class="s-ticker-v is-over"><b>2.43M ha</b></span></a>

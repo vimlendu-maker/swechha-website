@@ -18,11 +18,12 @@
 import { NextResponse } from 'next/server';
 import { fetchDelhi, foldStations, selfCheck } from '@/lib/air';
 import { config, normaliseEmail, subscribe, send, confirmMail } from '@/lib/subscriptions';
+import { checkRateLimit, RATE_LIMITED_REASON } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
-const json = (body: unknown, status = 200) =>
-  NextResponse.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
+const json = (body: unknown, status = 200, extra: Record<string, string> = {}) =>
+  NextResponse.json(body, { status, headers: { 'Cache-Control': 'no-store', ...extra } });
 
 export async function POST(req: Request) {
   if (!config.ready) {
@@ -42,6 +43,22 @@ export async function POST(req: Request) {
 
   const email = normaliseEmail(rawEmail);
   if (!email) return json({ ok: false, field: 'email', reason: 'That does not look like an address an email could reach.' }, 400);
+
+  /* ★ THE LIMIT GOES HERE — after the address is known, before anything is
+     spent on the request. Below this line the route calls CPCB and then Resend,
+     so a flood placed any later would still cost an upstream fetch and an email
+     each. See lib/rate-limit.ts. */
+  const limit = await checkRateLimit('ward', req, email);
+  if (!limit.ok) {
+    return json({
+      ok: false,
+      state: limit.kind === 'unavailable' ? 'unavailable' : 'rate_limited',
+      reason: limit.kind === 'unavailable'
+        ? 'Could not complete that just now. Nothing was stored.'
+        : RATE_LIMITED_REASON,
+    }, limit.kind === 'unavailable' ? 503 : 429,
+       { 'Retry-After': String(limit.retryAfter) });
+  }
 
   const station = String(rawStation ?? '').trim();
   if (!station || station.length > 120) {

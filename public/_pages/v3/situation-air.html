@@ -184,14 +184,14 @@ html,body{scroll-padding-top:var(--nav-h)}
 .give:hover{background:var(--fg);color:var(--ground)}
 .navscroll{display:none}
 @media (max-width:940px){
-  :root{--bar-h:56px;--nav-h:56px}
+  :root{--bar-h:56px;--nav-h:56px;--sec-h:50px}  :root:has(.navscroll){--nav-h:calc(var(--bar-h) + var(--sec-h))}
   .navlinks{display:none!important}
   .give{min-height:44px;display:inline-flex;align-items:center;padding:0 18px}
   .mark{min-height:44px;display:inline-flex;align-items:center}
-  .nav{position:static;border-bottom:0;padding-top:var(--bar-h)}
+  .nav{position:static;border-bottom:0;padding-top:var(--bar-h)}  .nav:has(.navscroll){padding-top:calc(var(--bar-h) + var(--sec-h))}
   .nav-in{position:fixed;top:0;left:0;right:0;z-index:60;background:var(--ground);
     border-bottom:1px solid var(--hair)}
-  .navscroll{display:block;border-bottom:1px solid var(--hair);background:var(--ground);
+  .navscroll{display:block;position:fixed;top:var(--bar-h);left:0;right:0;z-index:58;height:var(--sec-h);box-sizing:border-box;border-bottom:1px solid var(--hair);background:var(--ground);
     overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
     -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 8px),transparent);
     mask-image:linear-gradient(90deg,#000 calc(100% - 8px),transparent)}
@@ -787,8 +787,81 @@ button.b[disabled]{opacity:.55;cursor:default}
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><filter id="duo" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0.10 0.19 0.31 0.45 0.61 0.77"/><feFuncG type="table" tableValues="0.095 0.18 0.295 0.43 0.59 0.75"/><feFuncB type="table" tableValues="0.085 0.16 0.265 0.39 0.55 0.71"/></feComponentTransfer></filter><filter id="duo-dim" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0.11 0.18 0.255 0.325 0.385 0.43"/><feFuncG type="table" tableValues="0.10 0.165 0.235 0.30 0.355 0.40"/><feFuncB type="table" tableValues="0.085 0.14 0.20 0.26 0.31 0.35"/></feComponentTransfer></filter></defs></svg>
 
 <a class="skip" href="#main">Skip to the content</a>
-<header class="nav"><div class="nav-in"><a class="mark" href="/" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/now" aria-current="true">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a></nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
-<div class="navidx" id="navidx" hidden><nav aria-label="Pages"><a class="nl" href="/now" aria-current="true">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a></nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="/act">Give</a></div><nav class="navscroll" aria-label="Sections"><ul><li><a class="nl" href="#top">The reading</a></li><li><a class="nl" href="#people">Who is in it</a></li><li><a class="nl" href="#measured">How the number is made</a></li><li><a class="nl" href="#sources">Where it comes from</a></li><li><a class="nl" href="#trend">Where it is going</a></li><li><a class="nl" href="#geography">The geography</a></li><li><a class="nl" href="#money">What it costs</a></li><li><a class="nl" href="#act">What you can do</a></li></ul></nav></header>
+<header class="nav"><div class="nav-in"><a class="mark" href="/" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/now" aria-current="true">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/about">About</a></nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
+<div class="navidx" id="navidx" hidden><nav aria-label="Pages"><a class="nl" href="/now" aria-current="true">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/about">About</a></nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="/act">Act</a></div><nav class="navscroll" aria-label="Sections"><ul><li><a class="nl" href="#top">The reading</a></li><li><a class="nl" href="#people">Who is in it</a></li><li><a class="nl" href="#measured">How the number is made</a></li><li><a class="nl" href="#sources">Where it comes from</a></li><li><a class="nl" href="#trend">Where it is going</a></li><li><a class="nl" href="#geography">The geography</a></li><li><a class="nl" href="#money">What it costs</a></li><li><a class="nl" href="#act">What you can do</a></li></ul></nav></header><style>.w7-pj-rows>li>a,.w7-do-list>li>a,.p-cell,.ac-asks>li>a,.sr-list>li>a,.st-w>a{padding-right:24px}
+.ac-asks>li>a,.sr-list>li>a,.st-w>a{position:relative}
+.w7-pj-rows>li>a::after,.w7-do-list>li>a::after,.p-cell::after,.ac-asks>li>a::after,
+.sr-list>li>a::after,.st-w>a::after{
+content:'';position:absolute;right:3px;top:50%;margin-top:-5px;width:7px;height:7px;
+border-right:2px solid currentColor;border-top:2px solid currentColor;transform:rotate(45deg);
+opacity:.38;pointer-events:none;transition:opacity .16s,translate .16s}
+.w7-pj-rows>li>a:hover::after,.w7-do-list>li>a:hover::after,.p-cell:hover::after,
+.ac-asks>li>a:hover::after,.sr-list>li>a:hover::after,.st-w>a:hover::after{opacity:.85;translate:2px 0}
+.w7-pj-rows>li>a:active::before,.w7-do-list>li>a:active::before{background:rgba(20,19,16,.075)}
+.wk-dark .w7-pj-rows>li>a:active::before,.wk-dark .w7-do-list>li>a:active::before{
+background:rgba(251,248,240,.07)}
+.p-cell::before,.ac-asks>li>a::before,.sr-list>li>a::before,.st-w>a::before{content:'';position:absolute;inset:0 -8px;background:transparent;
+pointer-events:none;transition:background .12s}
+.p-cell:active::before{background:rgba(251,248,240,.07)}
+.ac-asks>li>a:active::before,.sr-list>li>a:active::before,.st-w>a:active::before{background:rgba(20,19,16,.075)}
+@media (prefers-reduced-motion:reduce){
+.w7-pj-rows>li>a::after,.w7-do-list>li>a::after,.p-cell::after,.p-cell::before,
+.ac-asks>li>a::after,.ac-asks>li>a::before,.sr-list>li>a::after,.st-w>a::after{transition:none}
+.w7-pj-rows>li>a:hover::after,.w7-do-list>li>a:hover::after,.p-cell:hover::after,
+.ac-asks>li>a:hover::after,.sr-list>li>a:hover::after,.st-w>a:hover::after{translate:none}}
+</style><script>
+(function(){
+  function start(){
+    var strip=document.querySelector('nav.navscroll');
+    if(!strip||!window.IntersectionObserver) return;
+    /* THE STRIP IS A <=940 CONTROL. Above that breakpoint .navscroll is
+       display:none, its box is 0x0, and there is nothing to mark or scroll. */
+    if(getComputedStyle(strip).display==='none') return;
+    var out=[];
+    [].forEach.call(strip.querySelectorAll('a[href^="#"]'),function(a){
+      var id=a.getAttribute('href').slice(1);
+      var el=id&&document.getElementById(id);
+      if(el) out.push({a:a,el:el});
+    });
+    if(out.length<2) return;
+    out.sort(function(x,y){ return (x.el.compareDocumentPosition(y.el)&4)?-1:1; });
+    var cur=null;
+    function pick(){
+      var line=strip.getBoundingClientRect().bottom+1,hit=out[0];
+      for(var i=0;i<out.length;i++){ if(out[i].el.getBoundingClientRect().top<=line) hit=out[i]; }
+      if(hit===cur) return;
+      cur=hit;
+      for(var j=0;j<out.length;j++){
+        if(out[j]===hit) out[j].a.setAttribute('aria-current','location');
+        else out[j].a.removeAttribute('aria-current');
+      }
+      var r=hit.a.getBoundingClientRect(),s=strip.getBoundingClientRect();
+      if(r.left<s.left+12||r.right>s.right-12) strip.scrollLeft+=r.left-s.left-(s.width-r.width)/2;
+    }
+    /* ★ THE OBSERVER IS THE TRIGGER; pick() IS THE LOGIC. An earlier draft of
+       this listened for 'scroll' and marked the first section and nothing else
+       ever again. IntersectionObserver does not depend on scroll events being
+       delivered, it is driven by layout, and it fires exactly when a band
+       CROSSES the chrome line -- which is exactly when the mark should change,
+       so there is no throttling to get wrong and no work between boundaries.
+       It is also the mechanism this site already uses twice on the homepage.
+       pick() stays because an observer alone has gaps: it reports the band that
+       moved, not the band you are in. Asking "which is the last one whose top
+       is above the line" cannot land between two sections. */
+    var io=new IntersectionObserver(pick,{rootMargin:'-'+Math.round(strip.getBoundingClientRect().bottom)+'px 0px 0px 0px',threshold:0});
+    for(var k=0;k<out.length;k++) io.observe(out[k].el);
+    addEventListener('resize',pick,{passive:true});
+    pick();
+  }
+  /* DEFERRED, AND THAT GUARD IS LOAD-BEARING. The strip is the last thing in
+     <header>, so this runs at the very top of <body> with every #section still
+     unparsed: getElementById returned null for all of them, out came back
+     empty, and a one-shot init bailed and never ran again. Measured on /farm:
+     9 links, 9 resolvable after load, 0 marked. */
+  if(document.readyState==='loading') addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
+})();
+</script>
 <main id="main" tabindex="-1">
   <section class="t1" id="top">
     <div class="pic ht p2-pic">
@@ -816,7 +889,7 @@ button.b[disabled]{opacity:.55;cursor:default}
         <p class="verdict bad" id="air-band">Very Poor</p>
         <div class="bands bad" id="air-bands" role="img" aria-label="Very Poor, band 5 of 6"><i class="on" title="Good"></i><i class="on" title="Satisfactory"></i><i class="on" title="Moderately Polluted"></i><i class="on" title="Poor"></i><i class="on tip" title="Very Poor"></i><i class="" title="Severe"></i></div>
         <p class="limit" id="air-limit">CPCB safe limit 100. <b>Limit broken.</b></p>
-        <p class="cap p2-src" id="air-src"><span id="air-src-w">Anand Vihar, Delhi - DPCC. Observed 05:00 IST, 24 August 2026.</span>
+        <p class="cap p2-src" id="air-src"><span id="air-src-w">Anand Vihar, Delhi - DPCC. Hourly. Observed 05:00 IST, 24 August 2026.</span>
           <a class="lk" href="#measured">How this number is made</a>.</p>
       </div>
       <div class="p2-nat">
@@ -1091,7 +1164,7 @@ button.b[disabled]{opacity:.55;cursor:default}
         </div></div>
 <div role="tabpanel" id="tb2-p3" aria-labelledby="tb2-t3" hidden><div class="p-two">
           <div class="p-two-c"><p class="num rl">0</p><p class="unit">MODIS &middot; 1 km</p>
-            <p class="cap">last 5 days</p></div>
+            <p class="cap">5 days to 22 August 2026</p></div>
           <div class="p-two-c"><p class="num rl">24</p><p class="unit">VIIRS &middot; 375 m</p>
             <p class="cap"><b>MODIS saw none</b>, same fires</p></div>
         </div>
@@ -1113,15 +1186,15 @@ button.b[disabled]{opacity:.55;cursor:default}
     <div class="wrap">
       <div class="im-head">
         <h2 class="d1" id="trend-h">Where it has been, and where it is going</h2>
-        <p class="lead">The record starts today; the forecast reaches seven days ahead. For now this page sees further forward than back &mdash; that inverts in a week.</p>
+        <p class="lead">The record starts on 24 August 2026; the forecast reaches seven days ahead. For now this page sees further forward than back &mdash; that inverts in a week.</p>
       </div>
       <div class="p-tabs" data-tabs>
         <div class="p-tabs-l" role="tablist" aria-label="Time"><button type="button" role="tab" id="tb3-t0" aria-controls="tb3-p0" aria-selected="true">The record</button><button type="button" role="tab" id="tb3-t1" aria-controls="tb3-p1" aria-selected="false" tabindex="-1">Attention</button><button type="button" role="tab" id="tb3-t2" aria-controls="tb3-p2" aria-selected="false" tabindex="-1">Forecast</button></div>
 <div role="tabpanel" id="tb3-p0" aria-labelledby="tb3-t0"><div class="p-grid-wrap">
-          <div class="p-grid" role="img" aria-label="Daily record, one square per day, beginning today">
+          <div class="p-grid" role="img" aria-label="Daily record, one square per day, beginning 24 August 2026">
             <i class="p-g-on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i>
           </div>
-          <p class="cap"><b>One square.</b> The record begins today and fills as the job runs. It draws no
+          <p class="cap"><b>One square.</b> The record begins on 24 August 2026 and fills as the job runs. It draws no
             square it does not have &mdash; an empty cell is absence, not zero. There is no retrospective
             series: the CPCB feed publishes the latest hour only.</p></div></div>
 <div role="tabpanel" id="tb3-p1" aria-labelledby="tb3-t1" hidden><div class="p-attn">
@@ -1588,7 +1661,16 @@ button.b[disabled]{opacity:.55;cursor:default}
     state.className='state p2-state live';
     var w=el('air-state-w'); if(w) w.textContent='Live';
     var x=el('air-state-x');
-    if(x) x.textContent=' — confirmed against CPCB when this page loaded; the observation time is printed below';
+    /* note. THIS SENTENCE USED TO SAY "the observation time is printed
+       below", and it could not know that. The time printed below is the
+       BUILD's observation; the freshness test above passes anything under two
+       hours old, so CPCB's newest hour may be later than the one on screen.
+       Condition one guarantees the FIGURE still matches -- not the hour. And
+       note-A forbids writing the newer hour in, so the honest move is to
+       stop claiming it. */
+    if(x) x.textContent=' — CPCB was still publishing this same reading when this page loaded. '
+      + 'The time printed below is when the reading on this page was observed; CPCB may since '
+      + 'have published a newer hour.';
   }).catch(function(e){
     clearTimeout(deadline);
     giveUp((e&&e.name==='AbortError')?'the live fetch was aborted at the 6s deadline':(e&&e.message)||'the live fetch failed');

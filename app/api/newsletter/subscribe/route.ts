@@ -22,11 +22,12 @@
  */
 import { NextResponse } from 'next/server';
 import { config, normaliseEmail, subscribe, send, confirmMail } from '@/lib/newsletter';
+import { checkRateLimit, RATE_LIMITED_REASON } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
-const json = (body: unknown, status = 200) =>
-  NextResponse.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
+const json = (body: unknown, status = 200, extra: Record<string, string> = {}) =>
+  NextResponse.json(body, { status, headers: { 'Cache-Control': 'no-store', ...extra } });
 
 export async function POST(req: Request) {
   if (!config.ready) {
@@ -48,6 +49,21 @@ export async function POST(req: Request) {
   if (!email) {
     return json({ ok: false, field: 'email',
       reason: 'That does not look like an address an email could reach.' }, 400);
+  }
+
+  /* ★ THE LIMIT GOES HERE — after the address is known, before an email can be
+     sent. See lib/rate-limit.ts for what was open before it: this endpoint
+     would send unlimited confirmation mail to any address named in the body. */
+  const limit = await checkRateLimit('newsletter', req, email);
+  if (!limit.ok) {
+    return json({
+      ok: false,
+      state: limit.kind === 'unavailable' ? 'unavailable' : 'rate_limited',
+      reason: limit.kind === 'unavailable'
+        ? 'Could not complete that just now. Nothing was stored.'
+        : RATE_LIMITED_REASON,
+    }, limit.kind === 'unavailable' ? 503 : 429,
+       { 'Retry-After': String(limit.retryAfter) });
   }
 
   try {

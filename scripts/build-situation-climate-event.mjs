@@ -71,6 +71,26 @@ const fmtDate = (d) => {
 // Stations whose season so far is above their own normal. Computed, never typed.
 const wetNow = ST.filter(s => (s.season_to_date?.departure_pct ?? 0) > 0);
 
+/* ── AD-36. "SEASON SO FAR" NAMES ITS CUTOFF. This page is built ahead of
+   time, so "so far" is read by somebody whose so-far is later than the
+   build's, with nothing on screen saying how much later. The cutoff is in
+   the data -- every station carries season_to_date.to -- and it was never
+   rendered.
+   ONE DATE OR NONE. The short form goes on each of the twelve rows and the
+   full form, with the year, once in the standfirst, because twelve repeats
+   of a year is noise. If the stations ever disagree about their cutoff there
+   is no single honest date to print, so this falls back to the old wording
+   rather than picking one station's and implying it covers the rest. */
+const SEASON_TO = (() => {
+  const tos = [...new Set(ST.map(s => s.season_to_date?.to).filter(Boolean))];
+  if (tos.length !== 1) return null;
+  const [m, dd] = tos[0].split('-').map(Number);
+  if (!m || !dd) return null;
+  const y = CL.fetched?.epochMs
+    ? new Date(CL.fetched.epochMs + 19800000).getUTCFullYear() : null;
+  return { short: `${dd} ${MON[m - 1].slice(0, 3)}`, full: y ? `${dd} ${MON[m - 1]} ${y}` : null };
+})();
+
 /* ═══ BAND SEQUENCE — id, tier class, ground hex ══════════════════════════ */
 const BANDS = [
   ['top',      't1',        '#0D0D0B'],
@@ -252,7 +272,7 @@ B.cities = () => {
     const L = s.last_complete;
     const dep = s.season_to_date?.departure_pct;
     return measureRow({
-      name: `${esc(s.name)}<i>${esc(s.state)}${dep != null ? ` &middot; season so far ${dep > 0 ? '+' : ''}${n1(dep)}% on normal` : ''}</i>`,
+      name: `${esc(s.name)}<i>${esc(s.state)}${dep != null ? ` &middot; season to ${SEASON_TO ? SEASON_TO.short : 'date'} ${dep > 0 ? '+' : ''}${n1(dep)}% on normal` : ''}</i>`,
       valuePct: L.extreme_days / maxD * 100,
       value: String(L.extreme_days),
       times: `${n0(Math.round(L.annual_mm))}mm`,
@@ -261,7 +281,7 @@ B.cities = () => {
     });
   }).join('\n        ');
   const L0 = ST[0].last_complete;
-  return `${opener('cities', 'Twelve cities', `Days over IMD's heavy-rain threshold in ${L0.year}, and the year's total beside it.`)}
+  return `${opener('cities', 'Twelve cities', `Days over IMD's heavy-rain threshold in ${L0.year}, and the year's total beside it.${SEASON_TO?.full ? ` Season-to-date figures beside each city run to ${SEASON_TO.full}.` : ''}`)}
     <div class="wrap">
       ${measureHead(['City', `Days over ${n1(CAT.heavy)} mm`, 'Days', `${L0.year} total`])}
       <div class="c-rows">

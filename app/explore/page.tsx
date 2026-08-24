@@ -5,6 +5,14 @@ import { getAllStories } from '@/lib/content'
 export const metadata: Metadata = {
   title: 'Explore',
   description: 'Stories, knowledge and films from Swechha.',
+  /* Audited 23 August 2026: this page carried no canonical and no structured
+     data, while all 40 built pages carry both. Resolved against the layout's
+     `metadataBase` AT REQUEST TIME, which is the whole reason it is safe to
+     state here — `scripts/lib/situation-shell.mjs` explains at length why the
+     BUILT pages keep a relative canonical instead, and that reasoning holds:
+     an absolute value baked in at build time advertises the preview host on
+     every preview deploy. This one is not baked. */
+  alternates: { canonical: '/explore' },
 }
 
 export default function ExplorePage() {

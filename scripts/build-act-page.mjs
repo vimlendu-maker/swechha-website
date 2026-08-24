@@ -681,7 +681,21 @@ const PAGE_CSS = `
 .ac-way-l{color:var(--ink-3)}
 .ac-way-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 76,'wght' 750;
   font-size:clamp(21px,2.6vw,34px);letter-spacing:-.01em;margin-top:8px;overflow-wrap:break-word}
-.ac-way-v a{color:var(--ink);text-decoration:none}
+/* ── THE ADDRESS HAD A TARGET BUT NOT A CUE. The expander further up gave it
+      a 44px box, so it was always tappable; what it never had was anything
+      saying it was a link -- it shipped as bare ink at display size, and an
+      affordance census over the built pages found it the last zero-cue
+      interactive element on the site.
+      THE CUE GOES ON THIS RULE, not an earlier one. First attempt added a
+      second rule above and it lost: this one is same-specificity and later,
+      so its text-decoration:none won. One component, one rule.
+      A generic href-matching selector in the shared shells was tried before
+      that and this page's own address gate refused it -- the selector's own
+      literal scanned as a published address. The gate was right; the defect
+      was a missing cue on one component. Mustard at 1px is what every other
+      link on this site underlines with. ── */
+.ac-way-v a{color:var(--ink);text-decoration:underline;text-decoration-thickness:1px;
+  text-underline-offset:4px;text-decoration-color:var(--mustard)}
 .ac-way-v a:hover{color:var(--mustard-ink)}
 .ac-way .cap{margin-top:10px;color:var(--ink-2);max-width:44ch}
 @media (max-width:620px){.ac-ways{grid-template-columns:minmax(0,1fr)}}

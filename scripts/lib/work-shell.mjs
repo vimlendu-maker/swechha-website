@@ -448,12 +448,28 @@ export function workShell() {
    own guard (`if(!ids.length) return`) makes it a no-op. It is left in place
    rather than deleted, because it comes back the moment a band-linked word
    does. */
+/* ── AD-32. ABOUT RETURNS THE SET TO SIX (owner, 24 August). ─────────────
+   AD-19 settled six words; AD-26 §5 Q4 recorded that THE COUNT IS THE OWNER'S
+   CALL; the owner removed `Record` on 22 August to make it five. This is that
+   same call made again, in the other direction, and the reason is a hole the
+   mobile audit measured: the menu panel held five words and NONE of them was
+   the organisation. A first-time reader who had just met a wall of air-quality
+   data and wanted to know who was behind it had no navigation route at all —
+   only scrolling 7.2 screens to the homepage's About band, or reaching the
+   footer at screen 15. `/about` has existed and been routed since AD-21.
+   ABOUT GOES LAST, before the chip, which is where a reader expects it.
+   MEASURED BEFORE IT WAS ADDED, at the tightest width the desktop bar is still
+   shown (941px, one above the 940 switch to the glass): the sixth word ends
+   36px clear of the search control, and neither the bar nor the document
+   overflows. It is one list for both shells, so this word appears in the
+   desktop bar AND the phone's menu panel rather than the two drifting apart. */
 export const NAV = [
   ['Now', '/now'],
   ['Work', '/work'],
   ['Journeys', '/work/journeys'],
   ['Impact', '/impact'],
   ['Farm', '/farm'],
+  ['About', '/about'],
 ];
 export const GIVE_HREF = '/act';
 export const HOME_HREF = '/';
@@ -513,6 +529,149 @@ export const HOME_HREF = '/';
  * this function can mark at most one word. Anyone implementing the table has to
  * change that signature first, which is the point at which they will read this.
  */
+/* ── AD-34. A PERSISTENT STRIP HAS TO SAY WHERE YOU ARE. ─────────────────
+   Pinning `.navscroll` under the bar fixed half the defect: the contents list
+   survives the scroll. The other half is that it is 375px wide holding up to
+   nine chips -- on /now/air, 1205px of them, so FIVE of eight sat off-screen
+   including "What you can do". A list you cannot lose but also cannot read
+   past is only half a navigation.
+   So the marked chip is scrolled into the strip, not the page: `strip.scrollLeft`
+   only, never scrollIntoView(), which would drag the document and fight the
+   reader for control of the scroll they are already performing.
+   THE MARK IS `aria-current="location"`, and that is deliberate rather than a
+   class: `.nav a.nl[aria-current]` already carries the mustard underline (line
+   396 of the homepage source), so the active state needs NO new CSS and looks
+   like every other current-thing on this site. "location" is also the correct
+   ARIA value for a position WITHIN a page -- it cannot be confused with the
+   "page"/"true" table AD-19 §5 governs for the primary nav, and
+   build-about-page's gate is scoped to `<nav class="navlinks">` and says so.
+   rAF-throttled, passive, and it sorts by document position rather than trusting
+   the chip order. Bails below two resolvable sections: a strip that marks its
+   only entry says nothing. */
+const SECTION_SPY = `<script>
+(function(){
+  function start(){
+    var strip=document.querySelector('nav.navscroll');
+    if(!strip||!window.IntersectionObserver) return;
+    /* THE STRIP IS A <=940 CONTROL. Above that breakpoint .navscroll is
+       display:none, its box is 0x0, and there is nothing to mark or scroll. */
+    if(getComputedStyle(strip).display==='none') return;
+    var out=[];
+    [].forEach.call(strip.querySelectorAll('a[href^="#"]'),function(a){
+      var id=a.getAttribute('href').slice(1);
+      var el=id&&document.getElementById(id);
+      if(el) out.push({a:a,el:el});
+    });
+    if(out.length<2) return;
+    out.sort(function(x,y){ return (x.el.compareDocumentPosition(y.el)&4)?-1:1; });
+    var cur=null;
+    function pick(){
+      var line=strip.getBoundingClientRect().bottom+1,hit=out[0];
+      for(var i=0;i<out.length;i++){ if(out[i].el.getBoundingClientRect().top<=line) hit=out[i]; }
+      if(hit===cur) return;
+      cur=hit;
+      for(var j=0;j<out.length;j++){
+        if(out[j]===hit) out[j].a.setAttribute('aria-current','location');
+        else out[j].a.removeAttribute('aria-current');
+      }
+      var r=hit.a.getBoundingClientRect(),s=strip.getBoundingClientRect();
+      if(r.left<s.left+12||r.right>s.right-12) strip.scrollLeft+=r.left-s.left-(s.width-r.width)/2;
+    }
+    /* ★ THE OBSERVER IS THE TRIGGER; pick() IS THE LOGIC. An earlier draft of
+       this listened for 'scroll' and marked the first section and nothing else
+       ever again. IntersectionObserver does not depend on scroll events being
+       delivered, it is driven by layout, and it fires exactly when a band
+       CROSSES the chrome line -- which is exactly when the mark should change,
+       so there is no throttling to get wrong and no work between boundaries.
+       It is also the mechanism this site already uses twice on the homepage.
+       pick() stays because an observer alone has gaps: it reports the band that
+       moved, not the band you are in. Asking "which is the last one whose top
+       is above the line" cannot land between two sections. */
+    var io=new IntersectionObserver(pick,{rootMargin:'-'+Math.round(strip.getBoundingClientRect().bottom)+'px 0px 0px 0px',threshold:0});
+    for(var k=0;k<out.length;k++) io.observe(out[k].el);
+    addEventListener('resize',pick,{passive:true});
+    pick();
+  }
+  /* DEFERRED, AND THAT GUARD IS LOAD-BEARING. The strip is the last thing in
+     <header>, so this runs at the very top of <body> with every #section still
+     unparsed: getElementById returned null for all of them, out came back
+     empty, and a one-shot init bailed and never ran again. Measured on /farm:
+     9 links, 9 resolvable after load, 0 marked. */
+  if(document.readyState==='loading') addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
+})();
+</script>`
+
+/* ── AD-38. THE INTERACTION LANGUAGE REACHES THE OTHER 33 PAGES.
+   AD-30 gave the homepage a chevron and a press state, but its rules live below
+   the pinned ranges in design/home.html, so they shipped to the homepage and
+   nowhere else -- while the COMPONENTS are shared. Measured on the built pages:
+   /work carried 23 zero-cue links, its entire index, at 59px each; every
+   situation page carried four zero-cue `.p-cell` strip cells at 69px. Same
+   classes as the homepage, same defect, none of the fix.
+
+   SCOPE IS DELIBERATELY NARROWER THAN AD-30. `.act` is left alone: at 27px it
+   already clears WCAG 2.5.8's 24px AA target, it carries an arrow glyph and a
+   mustard rule, and this file's own AD-27.16 note set 24px as the floor for
+   links that sit in prose ("24 AND NOT 44"). Forcing a 44px hit box on those
+   sitewide would risk stealing taps from adjacent lines to fix something that
+   is not broken. Inline `.lk` links are excluded for the same reason.
+
+   Chevrons are absolute because both row families are `display:grid`, so an
+   in-flow `::after` would become an extra grid item and break the column
+   template it inherits.
+
+   /act CAME IN A SECOND PASS: its 23 ask rows are .ac-asks>li>a, a bold label
+   plus a lighter context line, which is structure and not an affordance -- and
+   they were the last 23 zero-cue links on the site. They need position:relative
+   added because, alone of the four families, they were static, so an absolute
+   chevron would have escaped to the nearest positioned ancestor. /impact,
+   /farm, /about, /now and every WORK detail page measured 0 zero-cue links and
+   are untouched.
+
+   /search AND /stories JOINED IN THE SAME PASS: 34 result rows (.sr-list>li>a)
+   and 5 story cards (.st-w>a), both display:grid and both position:static, so
+   both need the positioning context too. A page-by-page census settled the
+   final list at six families -- /impact, /farm, /about, /publications,
+   /work/journeys and every WORK detail page measured zero and are untouched.
+
+   THE LAST UNCLASSED ADDRESS WAS FIXED AT THE SOURCE, not here. /act rendered
+   its address as bare ink with no class, so it read as plain text while every
+   other address on the site is a .lk and already carries a cue. A CSS rule
+   matching on the href was the first attempt and build-act-page refused it:
+   that page gates every published address, and the selector's own literal
+   scanned as one. The gate was right -- the defect was a missing class, and
+   the fix is the class.
+
+   ★ THE COMMENT STAYS UP HERE, IN THE MODULE, AND NOT IN THE EMITTED CSS.
+   First draft put it inside the <style> block and every builder refused to
+   write: AD-28 §7 gates internal ledger ids out of reader-visible bytes, and
+   `stripCssComments()` only reaches the shells' own CSS consts, not a <style>
+   injected through the markup. The gate is right and its advice is followed --
+   the record is here, the shipped bytes carry none of it. */
+const AFFORD_CSS = `<style>.w7-pj-rows>li>a,.w7-do-list>li>a,.p-cell,.ac-asks>li>a,.sr-list>li>a,.st-w>a{padding-right:24px}
+.ac-asks>li>a,.sr-list>li>a,.st-w>a{position:relative}
+.w7-pj-rows>li>a::after,.w7-do-list>li>a::after,.p-cell::after,.ac-asks>li>a::after,
+.sr-list>li>a::after,.st-w>a::after{
+content:'';position:absolute;right:3px;top:50%;margin-top:-5px;width:7px;height:7px;
+border-right:2px solid currentColor;border-top:2px solid currentColor;transform:rotate(45deg);
+opacity:.38;pointer-events:none;transition:opacity .16s,translate .16s}
+.w7-pj-rows>li>a:hover::after,.w7-do-list>li>a:hover::after,.p-cell:hover::after,
+.ac-asks>li>a:hover::after,.sr-list>li>a:hover::after,.st-w>a:hover::after{opacity:.85;translate:2px 0}
+.w7-pj-rows>li>a:active::before,.w7-do-list>li>a:active::before{background:rgba(20,19,16,.075)}
+.wk-dark .w7-pj-rows>li>a:active::before,.wk-dark .w7-do-list>li>a:active::before{
+background:rgba(251,248,240,.07)}
+.p-cell::before,.ac-asks>li>a::before,.sr-list>li>a::before,.st-w>a::before{content:'';position:absolute;inset:0 -8px;background:transparent;
+pointer-events:none;transition:background .12s}
+.p-cell:active::before{background:rgba(251,248,240,.07)}
+.ac-asks>li>a:active::before,.sr-list>li>a:active::before,.st-w>a:active::before{background:rgba(20,19,16,.075)}
+@media (prefers-reduced-motion:reduce){
+.w7-pj-rows>li>a::after,.w7-do-list>li>a::after,.p-cell::after,.p-cell::before,
+.ac-asks>li>a::after,.ac-asks>li>a::before,.sr-list>li>a::after,.st-w>a::after{transition:none}
+.w7-pj-rows>li>a:hover::after,.w7-do-list>li>a:hover::after,.p-cell:hover::after,
+.ac-asks>li>a:hover::after,.sr-list>li>a:hover::after,.st-w>a:hover::after{translate:none}}
+</style>`
+
 export const workHeader = (sections, current, url) => {
   const cur = (label, href) => label !== current ? ''
     : (href === url ? ' aria-current="page"' : ' aria-current="true"');
@@ -521,7 +680,7 @@ export const workHeader = (sections, current, url) => {
      to also fill the Menu panel, which duplicated the row already on screen —
      the panel is the six pages and nothing else. */
   return `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(nl).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
-<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(nl).join('')}</nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${sections.map(([t, h]) => `<li><a class="nl" href="${h}">${esc(t)}</a></li>`).join('')}</ul></nav></header>`;
+<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(nl).join('')}</nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}">Act</a></div><nav class="navscroll" aria-label="Sections"><ul>${sections.map(([t, h]) => `<li><a class="nl" href="${h}">${esc(t)}</a></li>`).join('')}</ul></nav></header>${AFFORD_CSS}${SECTION_SPY}`;
 };
 
 /* ═══ THE WORK LAYER — the only CSS this section AUTHORS ══════════════════

@@ -67,7 +67,19 @@ const SITUATIONS = [
     id: 'air', name: 'Air', where: 'Delhi',
     href: S.familyHref('air'),
     value: n0(airRd.aqi), unit: 'air quality index',
-    sub: `${esc(airRd.band)} · governed by ${airRd.governing === 'PM2.5' ? 'PM2.5' : esc(airRd.governing)}`,
+    /* AD-37. THE HOUR IS PART OF THE SUB, NOT A SEPARATE LINE, and it is part
+       of it SO THAT IX_LIVE CANNOT SEPARATE THEM. Four of the six cards already
+       name the period they cover in this field -- Heat "2024", Forest fire
+       "November 2023 to June 2024", Forest loss "2001-2025", Climate "2025" --
+       and the two that did not were the two Delhi readings: Air, which changes
+       hourly, and Yamuna, a figure from a named year that reads as current.
+       Air is the harder of the two because IX_LIVE repaints [data-sub]. Putting
+       the hour anywhere the updater does not touch would have reproduced the
+       exact defect AD-31 just fixed on /now/air: a number that moves above a
+       time that does not. So the hour lives in the string the updater rewrites,
+       and the updater rewrites it from the same payload it takes the number
+       from. They agree by construction or not at all. */
+    sub: `${esc(airRd.band)} · governed by ${airRd.governing === 'PM2.5' ? 'PM2.5' : esc(airRd.governing)}${AIR.observed ? ` · ${String(AIR.observed.hh).padStart(2, '0')}:${String(AIR.observed.mi).padStart(2, '0')} IST` : ''}`,
     kind: 'a ceiling', limit: `AQI ${AIR.aqiLimit}`,
     authority: 'CPCB, National Air Quality Index',
     verdict: airRd.aqi > AIR.aqiLimit
@@ -116,7 +128,7 @@ const SITUATIONS = [
     id: 'yamuna', name: 'Yamuna', where: 'Delhi',
     href: S.familyHref('yamuna'),
     value: n1(YAM.reporting_floor.do), unit: 'mg/L dissolved oxygen',
-    sub: 'at or below the detection limit',
+    sub: `at or below the detection limit · CPCB ${YAM.year}`,
     kind: 'a floor', limit: YAM.limits.do.label,
     authority: 'Primary Water Quality Criteria, E(P) Rules 1986',
     verdict: 'no measurable oxygen',
@@ -251,8 +263,9 @@ B.top = () => `    <div class="wrap ix-hero">
       </div>
       <p class="cap ix-vocab-x"><b>Each word describes how the source delivers</b> &mdash; Yamuna
         reads PERIODIC because CPCB publishes once a year, and Air reads LIVE because it sits in
-        front of an hourly feed. Each reading&rsquo;s own page carries the hour it was
-        observed.</p>
+        front of an hourly feed. Each card names the period its own reading covers &mdash;
+        an hour for Air, a year, a season or a range for the rest &mdash; and each
+        situation&rsquo;s page carries the source and the date in full.</p>
       <p style="margin:0"><a class="act" href="#set">All ${SITUATIONS.length} ${ARROW}</a></p>
     </div>`;
 
@@ -354,7 +367,13 @@ const IX_LIVE = `
     card.classList.toggle('is-breach',over);
     if(verd) verd.textContent=over?(Math.round(r.aqi/limit*10)/10)+'\u00D7 the limit':'within the limit';
     if(verd) verd.classList.toggle('is-red',over);
-    if(sub&&r.band) sub.textContent=r.band+(r.governing?' \u00B7 governed by '+r.governing:'');
+    /* AD-37: the hour rides with the number, never separately. r.observed is
+       "HH:MM IST, D Month YYYY"; the card shows the clock part, which is the
+       half that changes within a day, and the situation page carries the date. */
+    if(sub&&r.band){
+      var hh=r.observed?String(r.observed).split(',')[0].trim():'';
+      sub.textContent=r.band+(r.governing?' \u00B7 governed by '+r.governing:'')+(hh?' \u00B7 '+hh:'');
+    }
     /* THE CHIP IS NOT TOUCHED. It reads LIVE on every render because it
        names Air's DELIVERY CADENCE, not this fetch. See the note on the
        Air situation above, and D-26. */

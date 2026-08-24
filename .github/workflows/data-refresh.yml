@@ -154,18 +154,50 @@ jobs:
           # region above line 3033, build-hero.mjs only edits below it, and it
           # asserts the line count is unchanged before writing. So the situation
           # generators read exactly the same shell either way.
-          echo "::group::npm run build:situations"
-          npm run build:situations
-          echo "::endgroup::"
-          echo "::group::npm run build:hero"
-          npm run build:hero
-          echo "::endgroup::"
+          #
+          # EVERY GENERATOR RUNS, AND THE STEP FAILS AT THE END.
+          # This step is `bash -e`, so the first non-zero exit used to abandon
+          # the rest of it. On 22 and 23 August that is exactly what happened:
+          # `build:hero` exited 1 on the cross-check, and `build:work`,
+          # `build:about`, `build:impact`, `build:farm`, `build:act`,
+          # `build:stories`, `build:publications`, `build:search`, `build:essays`
+          # AND `npm run verify:final` were all skipped. So the run reported one
+          # failure while nine generators and the final gate had not been asked
+          # anything at all — and verify:final, the check that looks at the whole
+          # built set, had then not run for two days.
+          #
+          # Failing the step is still correct and is NOT what changed: the commit
+          # step keys off this step's outcome, and a page out of step with its
+          # dataset must never be committed. What changed is that the failure is
+          # now COLLECTED rather than immediate, so one broken generator cannot
+          # hide the state of the other ten. Same red run, all of the evidence.
+          failed=''
+          run_gate() {
+            echo "::group::npm run $1"
+            if npm run "$1"; then
+              echo "::endgroup::"
+            else
+              echo "::endgroup::"
+              echo "::error::npm run $1 failed"
+              failed="$failed $1"
+            fi
+          }
+
+          # Situations before the hero, for the reason given above.
+          run_gate build:situations
+          run_gate build:hero
           for t in work about impact farm act stories publications search essays; do
-            echo "::group::npm run build:$t"
-            npm run "build:$t"
-            echo "::endgroup::"
+            run_gate "build:$t"
           done
-          npm run verify:final
+          # LAST, AND ALWAYS REACHED. This is the whole-set check; it is the one
+          # that must never again be skipped because something before it failed.
+          run_gate verify:final
+
+          if [ -n "$failed" ]; then
+            echo "FAILED GATES:$failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "Nothing was committed. Every gate above ran, so this lists all of them, not just the first." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
 
       - name: Commit and push
         if: steps.changed.outputs.count != '0' && github.event.inputs.dry_run != 'true'

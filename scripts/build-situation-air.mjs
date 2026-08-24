@@ -37,6 +37,29 @@ const AIR_STATE_GLOSS = {
   'OUT OF SEASON': 'the window is shut; the record still stands',
   'DEMO DATA': 'a specimen, not a reading',
 }[AIR_STATE];
+/* ── AD-31. THE CHIP'S MEANING MUST BE VISIBLE, NOT JUST AUDIBLE. ────────
+   The gloss above is the ONLY text that explains what LIVE means here -- that
+   CPCB publishes hourly, not that this number is refreshing while you read --
+   and it lives in a `class="sr"` span, so a SIGHTED reader never sees it. That
+   left a green LIVE chip sitting beside "Observed 18:00 IST, 23 August 2026"
+   with nothing on screen to say the two are compatible. Read a day later, as
+   any static page eventually is, that is a page claiming to be live over a
+   reading from yesterday evening.
+   THE FIX IS A WORD, NOT A REPAINT. AD-27.6-A stands: nothing on this page is
+   written by the client, and no tensed claim is baked into static markup. A
+   cadence is neither -- "Hourly" is a standing fact about CPCB, true whenever
+   the page is read. The homepage hero has carried exactly this word in its
+   provenance plate all along; the situation page was the one that did not, so
+   this is the site's own pattern applied where it was missing rather than a
+   new device.
+   DERIVED FROM AIR_STATE, not restated, so the visible word and the chip
+   cannot drift into disagreeing about the same dataset. */
+const AIR_CADENCE_VIS = {
+  LIVE: 'Hourly.',
+  PERIODIC: 'Not continuous.',
+  'OUT OF SEASON': 'Window shut.',
+  'DEMO DATA': 'Specimen, not a reading.',
+}[AIR_STATE];
 const DATA = join(ROOT, 'data');
 /* AD-28 §7: the HAND-MAINTAINED SOURCE, `design/home.html`, not the artefact
    under public/. The seven line ranges below are pinned to the maintained file;
@@ -124,6 +147,23 @@ const mult = govLimit ? (gov.conc / govLimit.h24).toFixed(1) : null;
 const catIdx = AIR.bands.findIndex(b => b.name === rd.band);
 const OBS = (() => { const o = AIR.observed; return o ? `${String(o.hh).padStart(2,'0')}:${String(o.mi).padStart(2,'0')} IST, ${o.d} ${MON[o.m-1]} ${o.y}` : 'time not stated'; })();
 
+/* ── AD-36. A RELATIVE WINDOW ON A STATIC PAGE HAS TO NAME ITS END.
+   These pages are BUILT AHEAD OF TIME, so "last 5 days" and "the record
+   begins today" are read by somebody whose today is not the build's. The
+   reader has no way to tell how stale either is, which is the same defect
+   AD-31 fixed for the LIVE chip, arrived at from the other side.
+   BOTH DATES ARE DERIVED FROM DATA ALREADY IN THE FILE, never typed. The
+   fire window ends at the FETCH, because FIRMS near-real-time returns the
+   last five days as of the request and says so in its own note -- the
+   detections themselves land on 18-21 August against a 22 August fetch,
+   which is exactly the one-day gap a zero-detection final day produces.
+   The record grid is anchored to the OBSERVATION date instead, so the one
+   date the page states twice is the same date in both places. */
+const istDay = (ms) => { const d = new Date(ms + 19800000);
+  return `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
+const FIRE_TO = FIRE.fetched?.epochMs ? istDay(FIRE.fetched.epochMs) : null;
+const REC_FROM = AIR.observed ? `${AIR.observed.d} ${MON[AIR.observed.m - 1]} ${AIR.observed.y}` : null;
+
 /* ── THE HERO AND THE NATIONAL PANEL MUST BE ONE HOUR (AD-27.6-A) ────────
    Delhi's row in "India, right now" used to be repainted from the live fetch
    so it could not contradict the hero. Nothing repaints anything now, so the
@@ -173,13 +213,156 @@ console.log(`  => ${clashes} clash(es)`);
    that cannot survive the port. Air predates the shell and still owns its own
    copy of the nav; the values are IMPORTED from the shell so the two cannot
    drift, which is the whole reason FINAL.md §6.2 wants this block migrated. */
+/* ── AD-34. A PERSISTENT STRIP HAS TO SAY WHERE YOU ARE. ─────────────────
+   Pinning `.navscroll` under the bar fixed half the defect: the contents list
+   survives the scroll. The other half is that it is 375px wide holding up to
+   nine chips -- on /now/air, 1205px of them, so FIVE of eight sat off-screen
+   including "What you can do". A list you cannot lose but also cannot read
+   past is only half a navigation.
+   So the marked chip is scrolled into the strip, not the page: `strip.scrollLeft`
+   only, never scrollIntoView(), which would drag the document and fight the
+   reader for control of the scroll they are already performing.
+   THE MARK IS `aria-current="location"`, and that is deliberate rather than a
+   class: `.nav a.nl[aria-current]` already carries the mustard underline (line
+   396 of the homepage source), so the active state needs NO new CSS and looks
+   like every other current-thing on this site. "location" is also the correct
+   ARIA value for a position WITHIN a page -- it cannot be confused with the
+   "page"/"true" table AD-19 §5 governs for the primary nav, and
+   build-about-page's gate is scoped to `<nav class="navlinks">` and says so.
+   rAF-throttled, passive, and it sorts by document position rather than trusting
+   the chip order. Bails below two resolvable sections: a strip that marks its
+   only entry says nothing. */
+const SECTION_SPY = `<script>
+(function(){
+  function start(){
+    var strip=document.querySelector('nav.navscroll');
+    if(!strip||!window.IntersectionObserver) return;
+    /* THE STRIP IS A <=940 CONTROL. Above that breakpoint .navscroll is
+       display:none, its box is 0x0, and there is nothing to mark or scroll. */
+    if(getComputedStyle(strip).display==='none') return;
+    var out=[];
+    [].forEach.call(strip.querySelectorAll('a[href^="#"]'),function(a){
+      var id=a.getAttribute('href').slice(1);
+      var el=id&&document.getElementById(id);
+      if(el) out.push({a:a,el:el});
+    });
+    if(out.length<2) return;
+    out.sort(function(x,y){ return (x.el.compareDocumentPosition(y.el)&4)?-1:1; });
+    var cur=null;
+    function pick(){
+      var line=strip.getBoundingClientRect().bottom+1,hit=out[0];
+      for(var i=0;i<out.length;i++){ if(out[i].el.getBoundingClientRect().top<=line) hit=out[i]; }
+      if(hit===cur) return;
+      cur=hit;
+      for(var j=0;j<out.length;j++){
+        if(out[j]===hit) out[j].a.setAttribute('aria-current','location');
+        else out[j].a.removeAttribute('aria-current');
+      }
+      var r=hit.a.getBoundingClientRect(),s=strip.getBoundingClientRect();
+      if(r.left<s.left+12||r.right>s.right-12) strip.scrollLeft+=r.left-s.left-(s.width-r.width)/2;
+    }
+    /* ★ THE OBSERVER IS THE TRIGGER; pick() IS THE LOGIC. An earlier draft of
+       this listened for 'scroll' and marked the first section and nothing else
+       ever again. IntersectionObserver does not depend on scroll events being
+       delivered, it is driven by layout, and it fires exactly when a band
+       CROSSES the chrome line -- which is exactly when the mark should change,
+       so there is no throttling to get wrong and no work between boundaries.
+       It is also the mechanism this site already uses twice on the homepage.
+       pick() stays because an observer alone has gaps: it reports the band that
+       moved, not the band you are in. Asking "which is the last one whose top
+       is above the line" cannot land between two sections. */
+    var io=new IntersectionObserver(pick,{rootMargin:'-'+Math.round(strip.getBoundingClientRect().bottom)+'px 0px 0px 0px',threshold:0});
+    for(var k=0;k<out.length;k++) io.observe(out[k].el);
+    addEventListener('resize',pick,{passive:true});
+    pick();
+  }
+  /* DEFERRED, AND THAT GUARD IS LOAD-BEARING. The strip is the last thing in
+     <header>, so this runs at the very top of <body> with every #section still
+     unparsed: getElementById returned null for all of them, out came back
+     empty, and a one-shot init bailed and never ran again. Measured on /farm:
+     9 links, 9 resolvable after load, 0 marked. */
+  if(document.readyState==='loading') addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
+})();
+</script>`
+
+/* ── AD-38. THE INTERACTION LANGUAGE REACHES THE OTHER 33 PAGES.
+   AD-30 gave the homepage a chevron and a press state, but its rules live below
+   the pinned ranges in design/home.html, so they shipped to the homepage and
+   nowhere else -- while the COMPONENTS are shared. Measured on the built pages:
+   /work carried 23 zero-cue links, its entire index, at 59px each; every
+   situation page carried four zero-cue `.p-cell` strip cells at 69px. Same
+   classes as the homepage, same defect, none of the fix.
+
+   SCOPE IS DELIBERATELY NARROWER THAN AD-30. `.act` is left alone: at 27px it
+   already clears WCAG 2.5.8's 24px AA target, it carries an arrow glyph and a
+   mustard rule, and this file's own AD-27.16 note set 24px as the floor for
+   links that sit in prose ("24 AND NOT 44"). Forcing a 44px hit box on those
+   sitewide would risk stealing taps from adjacent lines to fix something that
+   is not broken. Inline `.lk` links are excluded for the same reason.
+
+   Chevrons are absolute because both row families are `display:grid`, so an
+   in-flow `::after` would become an extra grid item and break the column
+   template it inherits.
+
+   /act CAME IN A SECOND PASS: its 23 ask rows are .ac-asks>li>a, a bold label
+   plus a lighter context line, which is structure and not an affordance -- and
+   they were the last 23 zero-cue links on the site. They need position:relative
+   added because, alone of the four families, they were static, so an absolute
+   chevron would have escaped to the nearest positioned ancestor. /impact,
+   /farm, /about, /now and every WORK detail page measured 0 zero-cue links and
+   are untouched.
+
+   /search AND /stories JOINED IN THE SAME PASS: 34 result rows (.sr-list>li>a)
+   and 5 story cards (.st-w>a), both display:grid and both position:static, so
+   both need the positioning context too. A page-by-page census settled the
+   final list at six families -- /impact, /farm, /about, /publications,
+   /work/journeys and every WORK detail page measured zero and are untouched.
+
+   THE LAST UNCLASSED ADDRESS WAS FIXED AT THE SOURCE, not here. /act rendered
+   its address as bare ink with no class, so it read as plain text while every
+   other address on the site is a .lk and already carries a cue. A CSS rule
+   matching on the href was the first attempt and build-act-page refused it:
+   that page gates every published address, and the selector's own literal
+   scanned as one. The gate was right -- the defect was a missing class, and
+   the fix is the class.
+
+   ★ THE COMMENT STAYS UP HERE, IN THE MODULE, AND NOT IN THE EMITTED CSS.
+   First draft put it inside the <style> block and every builder refused to
+   write: AD-28 §7 gates internal ledger ids out of reader-visible bytes, and
+   `stripCssComments()` only reaches the shells' own CSS consts, not a <style>
+   injected through the markup. The gate is right and its advice is followed --
+   the record is here, the shipped bytes carry none of it. */
+const AFFORD_CSS = `<style>.w7-pj-rows>li>a,.w7-do-list>li>a,.p-cell,.ac-asks>li>a,.sr-list>li>a,.st-w>a{padding-right:24px}
+.ac-asks>li>a,.sr-list>li>a,.st-w>a{position:relative}
+.w7-pj-rows>li>a::after,.w7-do-list>li>a::after,.p-cell::after,.ac-asks>li>a::after,
+.sr-list>li>a::after,.st-w>a::after{
+content:'';position:absolute;right:3px;top:50%;margin-top:-5px;width:7px;height:7px;
+border-right:2px solid currentColor;border-top:2px solid currentColor;transform:rotate(45deg);
+opacity:.38;pointer-events:none;transition:opacity .16s,translate .16s}
+.w7-pj-rows>li>a:hover::after,.w7-do-list>li>a:hover::after,.p-cell:hover::after,
+.ac-asks>li>a:hover::after,.sr-list>li>a:hover::after,.st-w>a:hover::after{opacity:.85;translate:2px 0}
+.w7-pj-rows>li>a:active::before,.w7-do-list>li>a:active::before{background:rgba(20,19,16,.075)}
+.wk-dark .w7-pj-rows>li>a:active::before,.wk-dark .w7-do-list>li>a:active::before{
+background:rgba(251,248,240,.07)}
+.p-cell::before,.ac-asks>li>a::before,.sr-list>li>a::before,.st-w>a::before{content:'';position:absolute;inset:0 -8px;background:transparent;
+pointer-events:none;transition:background .12s}
+.p-cell:active::before{background:rgba(251,248,240,.07)}
+.ac-asks>li>a:active::before,.sr-list>li>a:active::before,.st-w>a:active::before{background:rgba(20,19,16,.075)}
+@media (prefers-reduced-motion:reduce){
+.w7-pj-rows>li>a::after,.w7-do-list>li>a::after,.p-cell::after,.p-cell::before,
+.ac-asks>li>a::after,.ac-asks>li>a::before,.sr-list>li>a::after,.st-w>a::after{transition:none}
+.w7-pj-rows>li>a:hover::after,.w7-do-list>li>a:hover::after,.p-cell:hover::after,
+.ac-asks>li>a:hover::after,.sr-list>li>a:hover::after,.st-w>a:hover::after{translate:none}}
+</style>`
+
 const NAV = SHELL_NAV;
 // Seven rows for eight bands — the index carries the argument, not the DOM.
 const INDEX = [['The reading','#top'],['Who is in it','#people'],['How the number is made','#measured'],
   ['Where it comes from','#sources'],['Where it is going','#trend'],['The geography','#geography'],
   ['What it costs','#money'],['What you can do','#act']];
 const HEADER = `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
-<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}">Give</a></div><nav class="navscroll" aria-label="Sections"><ul>${INDEX.map(([t,h])=>`<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>`;
+<div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}">Act</a></div><nav class="navscroll" aria-label="Sections"><ul>${INDEX.map(([t,h])=>`<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>${AFFORD_CSS}${SECTION_SPY}`;
 
 /* ═══ SHARED FRAGMENTS ═══════════════════════════════════════════════════ */
 // MEASURED vs MODELLED, carried by the rule itself (D-17.6). Solid = a
@@ -267,7 +450,7 @@ ${crumb('air')}
         <p class="verdict bad" id="air-band">${rd.band}</p>
         <div class="bands bad" id="air-bands" role="img" aria-label="${rd.band}, band ${catIdx+1} of ${AIR.bands.length}">${bands}</div>
         <p class="limit" id="air-limit">CPCB safe limit ${AIR.aqiLimit}. <b>Limit broken.</b></p>
-        <p class="cap p2-src" id="air-src"><span id="air-src-w">${esc(rd.station)}. Observed ${OBS}.</span>
+        <p class="cap p2-src" id="air-src"><span id="air-src-w">${esc(rd.station)}. ${AIR_CADENCE_VIS} Observed ${OBS}.</span>
           <a class="lk" href="#measured">How this number is made</a>.</p>
       </div>
       <div class="p2-nat">
@@ -526,7 +709,7 @@ B.sources = () => {
         </div>`;
   const pNow = `<div class="p-two">
           <div class="p-two-c"><p class="num rl">${n0(g.off_season.modis)}</p><p class="unit">MODIS &middot; 1 km</p>
-            <p class="cap">last ${FIRE.window.days} days</p></div>
+            <p class="cap">${FIRE.window.days} days${FIRE_TO ? ` to ${FIRE_TO}` : ''}</p></div>
           <div class="p-two-c"><p class="num rl">${n0(g.off_season.viirs)}</p><p class="unit">VIIRS &middot; 375 m</p>
             <p class="cap">${offCap}</p></div>
         </div>
@@ -554,10 +737,10 @@ B.trend = () => {
   const amx = Math.max(...recent.map(m => m.views));
   const fmx = days.length ? Math.max(...days.map(d => d.max)) : 1;
   const pRecord = `<div class="p-grid-wrap">
-          <div class="p-grid" role="img" aria-label="Daily record, one square per day, beginning today">
+          <div class="p-grid" role="img" aria-label="Daily record, one square per day, beginning ${REC_FROM ?? 'when the job first ran'}">
             ${Array.from({length:365},(_,i)=>`<i class="${i===0?'p-g-on':''}"></i>`).join('')}
           </div>
-          <p class="cap"><b>One square.</b> The record begins today and fills as the job runs. It draws no
+          <p class="cap"><b>One square.</b> The record begins ${REC_FROM ? `on ${REC_FROM}` : 'when the job first ran'} and fills as the job runs. It draws no
             square it does not have &mdash; an empty cell is absence, not zero. There is no retrospective
             series: the CPCB feed publishes the latest hour only.</p></div>`;
   const pAttn = `<div class="p-attn">
@@ -580,7 +763,7 @@ B.trend = () => {
             which publishes a 72-hour Delhi forecast with <b>no public API</b> &mdash; so it is named and linked,
             never restated.</p></div>`;
   return `    <div class="wrap">
-${opener('trend','Where it has been, and where it is going','The record starts today; the forecast reaches seven days ahead. For now this page sees further forward than back &mdash; that inverts in a week.')}
+${opener('trend','Where it has been, and where it is going',`The record starts ${REC_FROM ? `on ${REC_FROM}` : 'when the job first runs'}; the forecast reaches seven days ahead. For now this page sees further forward than back &mdash; that inverts in a week.`)}
 ${tabs('Time', [['The record', pRecord], ['Attention', pAttn], ['Forecast', pFc]])}
     </div>`;
 };
@@ -1554,7 +1737,16 @@ const SCRIPT = `/* ── TABS. Canonical ARIA tabs with a roving tabindex. Pane
     state.className='state p2-state live';
     var w=el('air-state-w'); if(w) w.textContent='Live';
     var x=el('air-state-x');
-    if(x) x.textContent=' — confirmed against CPCB when this page loaded; the observation time is printed below';
+    /* AD-31. THIS SENTENCE USED TO SAY "the observation time is printed
+       below", and it could not know that. The time printed below is the
+       BUILD's observation; the freshness test above passes anything under two
+       hours old, so CPCB's newest hour may be later than the one on screen.
+       Condition one guarantees the FIGURE still matches -- not the hour. And
+       AD-27.6-A forbids writing the newer hour in, so the honest move is to
+       stop claiming it. */
+    if(x) x.textContent=' — CPCB was still publishing this same reading when this page loaded. '
+      + 'The time printed below is when the reading on this page was observed; CPCB may since '
+      + 'have published a newer hour.';
   }).catch(function(e){
     clearTimeout(deadline);
     giveUp((e&&e.name==='AbortError')?'the live fetch was aborted at the 6s deadline':(e&&e.message)||'the live fetch failed');
