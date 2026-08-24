@@ -1838,11 +1838,16 @@ const attr = (s) => String(s ?? '').replace(/"/g, '&quot;').replace(/</g, '&lt;'
 const decodeEntities = (s) => String(s ?? '')
   .replace(/&mdash;/g, '—').replace(/&rsquo;/g, '’')
   .replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ');
-export const headTags = (title, desc, canonical) =>
+/* `ogType` DEFAULTS TO 'website' RATHER THAN BEING REQUIRED, because every
+   caller before Task 7 relied on the old hardcoded value and a required
+   fourth argument would have meant touching every one of them just to keep
+   their behaviour unchanged. The five essay routes are the only callers that
+   pass 'article' today (build-essays.mjs, via the register's own ogType). */
+export const headTags = (title, desc, canonical, ogType = 'website') =>
   '<link rel="icon" href="/icons/icon-32.png" sizes="32x32">'
   + '<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">\n'
   + `<meta name="description" content="${attr(desc)}">\n`
-  + '<meta property="og:type" content="website">'
+  + `<meta property="og:type" content="${ogType}">`
   + '<meta property="og:site_name" content="Swechha">'
   + '<meta property="og:locale" content="en_IN">'
   + `<meta property="og:title" content="${attr(title)}">`
@@ -1853,7 +1858,14 @@ export const headTags = (title, desc, canonical) =>
   + `<meta name="twitter:image" content="${attr(abs('/images/og/og-default.png'))}">`
   + '<meta name="twitter:site" content="@swechhaindia">';
 
-export async function assemble({ file, title, desc = null, bands, sectionFor, index, sh, pageCss = '', script = '', clashes, note = '', navMark = null, route = null }) {
+/* `headExtra` (Task 7) IS THE ONE ESCAPE HATCH INTO <head> THIS FUNCTION
+   OFFERS, and it is deliberately a raw string rather than a typed list of
+   tags: the only caller today (build-essays.mjs) needs one <meta> and one
+   JSON-LD <script>, and a second essay-shaped need is not yet known, so this
+   does not invent a schema for it. Defaults to '' and is then folded away —
+   see the ternary below — so every existing caller's <head> is byte-identical
+   to before this parameter existed. */
+export async function assemble({ file, title, desc = null, bands, sectionFor, index, sh, pageCss = '', script = '', clashes, note = '', navMark = null, route = null, headExtra = '' }) {
   /* WHICH NAV WORD THIS PAGE IS STANDING UNDER, derived from the file being
      written rather than passed in, so a generator cannot mark the wrong one.
      The index and all six situations live under `Now`; anything else built
@@ -1901,8 +1913,14 @@ export async function assemble({ file, title, desc = null, bands, sectionFor, in
      uncaught exception — the message below is what a missing entry has always
      produced. */
   let fromRegister = null;
-  try { fromRegister = seo(canonical).description; } catch { /* not registered */ }
-  const description = desc ?? fromRegister ?? null;
+  try { fromRegister = seo(canonical); } catch { /* not registered */ }
+  const description = desc ?? fromRegister?.description ?? null;
+  /* AD-27.48 kept ogType alongside title/description in the same register
+     entry rather than a third parallel map, so it is read off the same
+     lookup rather than a second seo() call. Falls back to 'website' when the
+     route is not registered — assemble() is about to refuse to write anyway
+     (no description below), so this default never reaches a reader. */
+  const ogType = fromRegister?.ogType ?? 'website';
   if (!description) {
     console.error(`REFUSING TO WRITE: ${file} (${canonical}) has no meta description. `
       + `Pass desc: '…' to assemble(), or add an entry to data/seo/pages.json.\n`
@@ -1969,8 +1987,8 @@ export async function assemble({ file, title, desc = null, bands, sectionFor, in
 <meta name="color-scheme" content="dark">
 <title>${title}</title>
 <link rel="canonical" href="${canonical}">
-${headTags(title, description, canonical)}
-${sh.HEAD_FONTS}
+${headTags(title, description, canonical, ogType)}
+${headExtra ? `${headExtra}\n` : ''}${sh.HEAD_FONTS}
 <style>
 ${stripCssComments([sh.CSS, sh.SITUATION_CSS, SHARED_PAGE_CSS, pageCss].join('\n'))}</style>
 </head>

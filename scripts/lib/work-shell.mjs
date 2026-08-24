@@ -2200,8 +2200,13 @@ export class Links {
    ═══════════════════════════════════════════════════════════════════════ */
 export const HEAD_ICONS =
   '<link rel="icon" href="/icons/icon-32.png" sizes="32x32"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">';
-export const headSocial = (title, desc, canonical) =>
-  `<meta property="og:type" content="website"><meta property="og:site_name" content="Swechha">`
+/* `ogType` DEFAULTS TO 'website' for the same reason situation-shell.mjs's
+   headTags does: it existed as a hardcoded literal before Task 7 and no WORK
+   page needs anything else today, so a default keeps every existing caller's
+   output byte-identical. Added here for symmetry with headTags — the brief's
+   own words — not because a WORK page is an article; none is. */
+export const headSocial = (title, desc, canonical, ogType = 'website') =>
+  `<meta property="og:type" content="${ogType}"><meta property="og:site_name" content="Swechha">`
   + `<meta property="og:locale" content="en_IN"><meta property="og:title" content="${esc(title)}">`
   + `<meta property="og:description" content="${esc(desc)}">`
   + `<meta property="og:url" content="${esc(abs(canonical))}">`
@@ -2245,7 +2250,7 @@ export const mailtoNote = [];
    them travelled with them — read it at situation-shell.mjs's own AD-28 §7
    block. `buildPage` below calls all three exactly as it always did. */
 
-export async function buildPage({ file, url, title, desc, bands, sectionFor, sections, current, sh, crumbs = [], pageCss = '', script = '' }) {
+export async function buildPage({ file, url, title, desc, bands, sectionFor, sections, current, sh, crumbs = [], pageCss = '', script = '', ogType = 'website' }) {
   const problems = [];
 
   /* AD-27.48. A DESCRIPTION IS NOT OPTIONAL. */
@@ -2330,7 +2335,7 @@ export async function buildPage({ file, url, title, desc, bands, sectionFor, sec
 <link rel="canonical" href="${url}">
 ${HEAD_ICONS}
 <meta name="description" content="${esc(desc)}">
-${headSocial(title, desc, url)}
+${headSocial(title, desc, url, ogType)}
 ${sh.HEAD_FONTS}
 <style>
 ${stripCssComments([sh.CSS, sh.SITUATION_CSS, SHARED_PAGE_CSS, sh.COMPONENT_CSS, WORK_CSS, pageCss].join('\n'))}</style>

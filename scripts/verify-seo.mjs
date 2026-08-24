@@ -102,6 +102,22 @@ const CHECKS = [
       return null;
     },
   },
+  /* TASK 7. The five essays are the only pages on this site that are
+     articles rather than reference pages, so this check is scoped to
+     `/stories/*` rather than every route — a situation page or a WORK page
+     asserting Article data would be the wrong claim, not a missing one. */
+  {
+    name: 'essays carry Article data and an article og:type',
+    run: ({ route, html, entry }) => {
+      if (!/^\/stories\/.+/.test(route)) return null;
+      if (entry.ogType !== 'article') return 'register ogType is not "article"';
+      const t = one(html, /<meta property="og:type" content="([^"]*)"/);
+      if (t !== 'article') return `og:type is ${t}`;
+      const types = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+        .map((m) => { try { return JSON.parse(m[1])['@type']; } catch { return null; } });
+      return types.includes('Article') ? null : 'no Article node';
+    },
+  },
 ];
 
 const files = walk(V3);

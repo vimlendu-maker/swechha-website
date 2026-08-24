@@ -59,6 +59,18 @@ for (const e of INDEX) {
 }
 if (bad) { console.error(`\nREFUSING TO WRITE: ${bad} data check(s) failed.`); process.exit(1); }
 
+/* JSON-LD is DATA, not markup: an entity inside a JSON string ships as the
+   literal characters "&mdash;" to a machine reader rather than the character
+   it stands for. situation-shell.mjs has an identical private helper for the
+   same reason (its own BreadcrumbList names), but does not export it, so this
+   is not a second definition of shared behaviour going out of sync — it is
+   the one place each caller needs its own copy, small enough that importing
+   it would cost more than writing it. The four entities are the only ones any
+   title or byline in content/essay/_index.json actually carries today. */
+const decodeEntities = (s) => String(s ?? '')
+  .replace(/&mdash;/g, '—').replace(/&rsquo;/g, '’')
+  .replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ');
+
 /* ═══ EXTRACTION ═════════════════════════════════════════════════════════ */
 const ENT = { '&nbsp;': ' ', '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"' };
 const plainOf = (h) => String(h ?? '')
@@ -187,7 +199,7 @@ for (const e of ESSAYS) {
       <p class="lbl eyebrow">${esc(D.masthead.kicker)}</p>
       <h1 class="d1">${esc(e.title)}</h1>
       <p class="lead es-by">By ${esc(e.byline)}</p>
-      <p class="cap es-prov">${esc(D.masthead.provenance_prefix)} on ${longDate(e.date)}. `
+      <p class="cap es-prov">${esc(D.masthead.provenance_prefix)} on <time datetime="${e.date}">${longDate(e.date)}</time>. `
       + `<a class="act" href="${esc(e.original)}" rel="noopener">The original${ARROW}</a></p>
       <p class="cap es-note">${esc(D.masthead.figures_note)}</p>
     </div>`;
@@ -223,13 +235,40 @@ ${(() => {
 .es-back{margin-left:clamp(12px,2vw,24px)}
 `;
 
+  const route = `/stories/${e.slug}`;
+
+  /* ── ARTICLE STRUCTURED DATA (Task 7). ────────────────────────────────────
+     `datePublished` IS THE ISO STRING FROM THE INDEX, not `longDate(e.date)`:
+     schema.org wants an ISO 8601 date here, and the register already holds
+     one — reformatting it into "14 August 2023" for a machine reader would
+     be inventing a second date format to keep in sync with the first. The
+     rendered prose date is untouched; this script tag is additional markup,
+     not a replacement for it. `publisher.url` and `mainEntityOfPage` go
+     through `abs()`, never a literal `https://swechha.in` — see the incident
+     record at lib/org.ts:22-47. */
+  const articleJsonLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: decodeEntities(e.title),
+    datePublished: e.date,
+    author: { '@type': 'Person', name: e.byline },
+    publisher: { '@type': 'NGO', name: 'Swechha', url: S.abs('/') },
+    mainEntityOfPage: S.abs(route),
+    wordCount: e.words,
+  });
+  /* `article:published_time` is Open Graph's own article extension — it wants
+     an ISO date/time, same reasoning as datePublished above. */
+  const headExtra = `<meta property="article:published_time" content="${esc(e.date)}">\n`
+    + `<script type="application/ld+json">${articleJsonLd}</script>`;
+
   const OUT = await S.assemble({
     file: join('stories', `${e.slug}.html`),
-    route: `/stories/${e.slug}`,
-    title: seo(`/stories/${e.slug}`).title,
-    desc: seo(`/stories/${e.slug}`).description,
+    route,
+    title: seo(route).title,
+    desc: seo(route).description,
     bands: BANDS, index: INDEX_CHIPS, sh, clashes,
     pageCss: PAGE_CSS,
+    headExtra,
     sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),
     note: `${e.blocks.length} blocks, ${e.words} words, by ${e.byline}, ${e.date}.`,
   });
@@ -253,6 +292,15 @@ ${(() => {
   const dead = [...OUT.matchAll(/href="([^"]+)"/g)].map((m) => m[1])
     .filter((h) => h === '#' || h.startsWith('/design/') || h.startsWith('/_pages/'));
   gate(dead.length === 0, `${e.slug}: no dead or prototype href`);
+  /* 7. ARTICLE STRUCTURED DATA REACHED THE PAGE, AND THE VISIBLE DATE PROSE
+        DID NOT CHANGE (Task 7). verify-seo.mjs's gate re-checks the first two
+        of these against the committed file on every run; this one catches a
+        broken generator before it ever writes a file to disk. */
+  gate(OUT.includes('"@type":"Article"'), `${e.slug}: Article JSON-LD is on the page`);
+  gate(OUT.includes(`<meta property="article:published_time" content="${e.date}">`),
+    `${e.slug}: article:published_time is on the page`);
+  gate(OUT.includes(`${D.masthead.provenance_prefix} on <time datetime="${e.date}">${longDate(e.date)}</time>.`),
+    `${e.slug}: the visible publication date is unchanged, only wrapped in <time>`);
   written++;
 }
 
