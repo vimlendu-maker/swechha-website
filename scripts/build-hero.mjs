@@ -524,6 +524,44 @@ if (rainNormal === null) {
     src = src.replace(re, `$1${line}`);
     ok(`org JSON-LD    ${JSON.stringify(jsonld).length} chars${src === before ? '  (already in step)' : '  (updated)'}`);
   }
+
+  /* THE SITELINKS SEARCHBOX (TASK 6). /search is a real, server-rendered
+     index that reads its own `q` parameter with JavaScript off
+     (scripts/build-search-page.mjs:238), so this urlTemplate is a claim the
+     site can actually honour rather than a feature that does not exist.
+     SAME TECHNIQUE AS THE ORGANIZATION BLOCK ABOVE — one minified line
+     between sentinels — and only `name` is read off the dataset; `url` and
+     the SearchAction's urlTemplate are built through S.abs() here, never
+     pasted as a literal, for the reason recorded at org-jsonld.json's
+     `_website` key (a literal origin has corrupted this site's sitemap and
+     robots.txt before). */
+  const WEBSITE = ORG.website;
+  if (!WEBSITE || WEBSITE['@type'] !== 'WebSite') {
+    fail('data/org-jsonld.json has no website object of @type WebSite');
+  } else {
+    const websiteJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: WEBSITE.name,
+      url: S.abs('/'),
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: { '@type': 'EntryPoint', urlTemplate: `${S.abs('/search')}?q={search_term_string}` },
+        'query-input': 'required name=search_term_string',
+      },
+    };
+    const wLine = `<script type="application/ld+json">${JSON.stringify(websiteJsonLd)}</script>`;
+    const wRe = /(WEBSITE JSON-LD — START[\s\S]*?-->\n)<script type="application\/ld\+json">[\s\S]*?<\/script>/;
+    const wHits = src.match(new RegExp(wRe.source, 'g'));
+    if (!wHits || wHits.length !== 1) {
+      fail(`the WebSite JSON-LD sentinel block matched ${wHits ? wHits.length : 0} times in home.html, `
+        + 'expected exactly 1 — the sentinels moved or the script tag is no longer one line');
+    } else {
+      const before = src;
+      src = src.replace(wRe, `$1${wLine}`);
+      ok(`website JSON-LD ${JSON.stringify(websiteJsonLd).length} chars${src === before ? '  (already in step)' : '  (updated)'}`);
+    }
+  }
 }
 
 /* ── THE SHARE CARD'S ABSOLUTE URLS, DERIVED NOT LITERAL ──────────────────

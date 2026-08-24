@@ -85,6 +85,23 @@ const CHECKS = [
       return null;
     },
   },
+  /* TASK 6. The homepage sitelinks searchbox (WebSite + SearchAction) and the
+     Organization identity node (NGO) both live in home.html's structured
+     data; this is the register-level gate that a future edit cannot drop
+     either without failing the build, same as every other check in this
+     file. */
+  {
+    name: 'the homepage carries WebSite and NGO structured data',
+    run: ({ route, html }) => {
+      if (route !== '/') return null;
+      const types = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+        .map((m) => { try { return JSON.parse(m[1])['@type']; } catch { return null; } });
+      for (const want of ['NGO', 'WebSite']) {
+        if (!types.includes(want)) return `no ${want} node (found: ${types.join(', ') || 'none'})`;
+      }
+      return null;
+    },
+  },
 ];
 
 const files = walk(V3);
