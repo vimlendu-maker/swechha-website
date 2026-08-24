@@ -40,7 +40,15 @@ import { designRoutes } from '@/design-routes'
    the register is emitted WITHOUT a date rather than with today's, same as
    before: an invented freshness claim is worse than none, and
    `designRoutes()` has already failed the build if the underlying file is
-   missing. */
+   missing.
+
+   IF EVERY DATE BELOW LOOKS IDENTICAL RIGHT NOW, that is this register's
+   honest first population, not the mtime bug back from the dead: Tasks 1-8
+   of this same SEO programme rewrote every one of the 35 pages today, so
+   every route's first hash really was recorded today. Dates diverge on
+   their own from here — the first day only a subset of pages change (the
+   situation pages' daily data-refresh is the obvious candidate) is the day
+   this stops being true. Don't "fix" that by touching this file. */
 const EXCLUDED_FROM_SITEMAP = new Set(['/search'])
 
 export default function sitemap(): MetadataRoute.Sitemap {
