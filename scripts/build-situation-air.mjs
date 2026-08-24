@@ -13,7 +13,7 @@ import { tmpdir } from 'node:os';
    calls shell(). */
 import { crumb, siblings, FAMILY_CSS, NAV_SEARCH_CSS, NAV as SHELL_NAV, HOME_HREF, GIVE_HREF, INDEX_PAGE,
   stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, cadence, STATES,
-  closing, CLOSING_CSS, abs } from './lib/situation-shell.mjs';
+  closing, CLOSING_CSS, abs, imgDim } from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
 import { stampLastmod } from './lib/lastmod.mjs';
 
@@ -101,7 +101,11 @@ const CSS = [
 const HEAD_FONTS = R(8, 8, 'fonts.googleapis.com', 'display=swap');
 const SVG_DEFS = between('<filter id="duo"', '</svg>');
 const SKIP = between('D-09.3. BYPASS BLOCKS', 'class="skip"');
-const FOOTER = between('<footer class="foot"', '</footer>');
+const FOOTER = between('<footer class="foot"', '</footer>')
+  .replace(
+    '<img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha">',
+    `<img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"${imgDim('/brand/swechha-horizontal-white-approved.png')}>`,
+  );
 const JS_NAVIDX = iife('D-09.1. THE MOBILE INDEX CONTROL');
 /* AD-27.2 — THE D-09.4 SCROLL-SPY IIFE IS NOT EXTRACTED ANY MORE, because it
    is being deleted from home.html. It was already inert on this page and on
@@ -366,7 +370,7 @@ const NAV = SHELL_NAV;
 const INDEX = [['The reading','#top'],['Who is in it','#people'],['How the number is made','#measured'],
   ['Where it comes from','#sources'],['Where it is going','#trend'],['The geography','#geography'],
   ['What it costs','#money'],['What you can do','#act']];
-const HEADER = `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
+const HEADER = `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"${imgDim('/brand/swechha-horizontal-white-approved.png')}></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
 <div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}">Act</a></div><nav class="navscroll" aria-label="Sections"><ul>${INDEX.map(([t,h])=>`<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>${AFFORD_CSS}${SECTION_SPY}`;
 
 /* ═══ SHARED FRAGMENTS ═══════════════════════════════════════════════════ */
@@ -436,7 +440,7 @@ B.top = () => {
           <span class="cap p-nr-s">${c.stations}&nbsp;station${c.stations===1?'':'s'}</span></div>`;
   }).join('\n        ');
   return `    <div class="pic ht p2-pic">
-      <img class="duo" src="/images/photos/india-gate-hero.jpg" alt="India Gate seen through Delhi haze" style="--zh:150%;--zt:-30%">
+      <img class="duo" src="/images/photos/india-gate-hero.jpg" alt="India Gate seen through Delhi haze"${imgDim('/images/photos/india-gate-hero.jpg')} fetchpriority="high" style="--zh:150%;--zt:-30%">
       <div class="pic-over"><div class="wrap">
         <h1 class="d1">Delhi&rsquo;s air</h1>
       </div></div>

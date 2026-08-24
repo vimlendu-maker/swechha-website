@@ -72,7 +72,7 @@ const INDEX = [
 const B = {};
 
 B.top = () => `    <div class="pic ht p2-pic">
-      <img class="duo" src="/images/photos/uttarakhand-fire-scar-2016.jpg" alt="Hillside vegetation destroyed by fire in Uttarakhand" style="--op:50% 55%">
+      <img class="duo" src="/images/photos/uttarakhand-fire-scar-2016.jpg" alt="Hillside vegetation destroyed by fire in Uttarakhand"${S.imgDim('/images/photos/uttarakhand-fire-scar-2016.jpg')} fetchpriority="high" style="--op:50% 55%">
       <div class="pic-over"><div class="wrap">
         <h1 class="d1">India&rsquo;s forest fires</h1>
       </div></div>

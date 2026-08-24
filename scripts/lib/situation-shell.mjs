@@ -49,6 +49,17 @@ import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { seo } from './seo-register.mjs';
 import { stampLastmod } from './lastmod.mjs';
+import { imageSize } from './image-size.mjs';
+
+/* THE BOX EVERY <img> RESERVES, READ FROM THE FILE ITSELF. A wrong number is
+   worse than none (see image-size.mjs), so a path this cannot parse gets
+   neither attribute rather than a guess. Shared here so every generator that
+   already does `import * as S from './lib/situation-shell.mjs'` gets one
+   emitter instead of reinventing this string. */
+export const imgDim = (src) => {
+  const d = imageSize(src);
+  return d ? ` width="${d.width}" height="${d.height}"` : '';
+};
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 export const V3 = join(ROOT, 'public/_pages/v3');
@@ -203,7 +214,14 @@ export function shell() {
   const HEAD_FONTS = home.R(8, 8, 'fonts.googleapis.com', 'display=swap');
   const SVG_DEFS = home.between('<filter id="duo"', '</svg>');
   const SKIP = home.between('D-09.3. BYPASS BLOCKS', 'class="skip"');
-  const FOOTER = home.between('<footer class="foot"', '</footer>');
+  const FOOTER = home.between('<footer class="foot"', '</footer>')
+    /* The footer's own logo mark is frozen, extracted text (D-10.3) — not
+       retyped here, just given the box its file already reserves for it,
+       the same way header()'s copy of the same file does. */
+    .replace(
+      '<img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha">',
+      `<img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"${imgDim('/brand/swechha-horizontal-white-approved.png')}>`,
+    );
   const JS_NAVIDX = home.iife('D-09.1. THE MOBILE INDEX CONTROL');
   /* D-09.4's ACTIVE-SECTION UNDERLINE IS NO LONGER LIFTED. AD-27.2 deleted it
      from home.html and from here in the same change. It selected
@@ -574,7 +592,7 @@ pointer-events:none;transition:background .12s}
 .cl-door:hover::after{translate:none}}
 </style>`
 
-export const header = (index, { current = null, url = null, page = null } = {}) => `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
+export const header = (index, { current = null, url = null, page = null } = {}) => `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"${imgDim('/brand/swechha-horizontal-white-approved.png')}></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
 <div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(([t, h]) => `<a class="nl" href="${h}"${navCurrent(t, h, current, url)}>${t}</a>`).join('')}</nav></div><a class="nl navsearch" href="/search"${page === '/search' ? ' aria-current="page"' : ''}><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}"${page === GIVE_HREF ? ' aria-current="page"' : ''}>Act</a></div><nav class="navscroll" aria-label="Sections"><ul>${index.map(([t, h]) => `<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>${AFFORD_CSS}${SECTION_SPY}`;
 
 /* ═══ GROUND ADJACENCY ═══════════════════════════════════════════════════ */

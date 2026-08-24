@@ -61,11 +61,11 @@ import {
   ROOT, V3, extractor, shell, groundChain, opener, hole, esc,
   kd, kindTag, KIND_LEGEND, ARROW, n0, disclose, SHARED_PAGE_CSS, tabs,
   ask, stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, abs,
-  breadcrumbJsonLd,
+  breadcrumbJsonLd, imgDim,
 } from './situation-shell.mjs';
 import { stampLastmod } from './lastmod.mjs';
 
-export { ROOT, V3, HOME_SRC, opener, hole, esc, kd, kindTag, KIND_LEGEND, ARROW, n0, disclose, groundChain, tabs, ask };
+export { ROOT, V3, HOME_SRC, opener, hole, esc, kd, kindTag, KIND_LEGEND, ARROW, n0, disclose, groundChain, tabs, ask, imgDim };
 /* Task 8 moved the definition itself down to situation-shell.mjs (work-shell
    imports FROM that file, so the reverse would be a cycle) and re-exports it
    here so this file's own existing callers, below, keep resolving it under
@@ -690,7 +690,7 @@ export const workHeader = (sections, current, url) => {
   /* `sections` now reaches only the .navscroll chip row below the bar. It used
      to also fill the Menu panel, which duplicated the row already on screen —
      the panel is the six pages and nothing else. */
-  return `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary">${NAV.map(nl).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
+  return `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"${imgDim('/brand/swechha-horizontal-white-approved.png')}></a><nav class="navlinks" aria-label="Primary">${NAV.map(nl).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
 <div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(nl).join('')}</nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}">Act</a></div><nav class="navscroll" aria-label="Sections"><ul>${sections.map(([t, h]) => `<li><a class="nl" href="${h}">${esc(t)}</a></li>`).join('')}</ul></nav></header>${AFFORD_CSS}${SECTION_SPY}`;
 };
 
@@ -1554,7 +1554,7 @@ export const openBand = (id, head, lead) => `    <div class="wrap"><div class="i
       </div></div>`;
 
 export const statementBand = ({ line, under, frame, id = 'statement' }) => `    <figure class="w7-say-fig">
-      <img class="duo" src="${esc(frame.src)}" alt="${esc(frame.alt)}" loading="lazy"${frame.op || frame.opSmall ? ` style="${frame.op ? `--op:${esc(frame.op)};` : ''}${frame.opSmall ? `--op-s:${esc(frame.opSmall)}` : ''}"` : ''}>
+      <img class="duo" src="${esc(frame.src)}" alt="${esc(frame.alt)}"${imgDim(frame.src)} loading="lazy"${frame.op || frame.opSmall ? ` style="${frame.op ? `--op:${esc(frame.op)};` : ''}${frame.opSmall ? `--op-s:${esc(frame.opSmall)}` : ''}"` : ''}>
     </figure>
     <div class="w7-say-in">
       <h2 class="d1 w7-say-h wk-say-h" id="${id}-h">${line}</h2>
@@ -1576,7 +1576,7 @@ export const splitBand = ({ left, frame, right, kick, title, say, nums, flip = f
   }
   if (!frame && !right) return `      <div class="w7-pj-split wk-solo"><div class="w7-pj-reg">${left}</div></div>`;
   const pic = frame ? `<div class="w7-pj-lead">${href ? `<a href="${href}">` : ''}
-        <div class="ht w7-pj-fig"><img class="duo" src="${esc(frame.src)}" alt="${esc(frame.alt)}" loading="lazy"${frame.op ? ` style="--op:${esc(frame.op)}"` : ''}></div>
+        <div class="ht w7-pj-fig"><img class="duo" src="${esc(frame.src)}" alt="${esc(frame.alt)}"${imgDim(frame.src)} loading="lazy"${frame.op ? ` style="--op:${esc(frame.op)}"` : ''}></div>
 ${kick || title ? `        <p class="w7-pj-kick">${kick || ''}${title ? `<span class="w7-pj-t">${title}</span>` : ''}</p>` : ''}
 ${say ? `        <p class="w7-pj-say">${say}</p>` : ''}
 ${nums || ''}${href ? '</a>' : ''}
@@ -1680,7 +1680,7 @@ ${chip ? `      <p style="margin:var(--gap-head) 0 0">${chip}</p>` : ''}
      and reports the library note as stale, exactly as W-9 did with consent. */
   const filt = ` class="${ph ? 'duo-dim' : 'duo'}"`;
   return `    <div class="${cls}">
-      <img${filt} src="${esc(frame.src)}" alt="${esc(frame.alt)}"${frame.op ? ` style="--op:${esc(frame.op)}"` : ''}>
+      <img${filt} src="${esc(frame.src)}" alt="${esc(frame.alt)}"${imgDim(frame.src)} fetchpriority="high"${frame.op ? ` style="--op:${esc(frame.op)}"` : ''}>
       <div class="pic-over"><div class="wrap">
 ${head}
       </div></div>${ph ? `\n      <p class="lbl wk-ph-chip">Placeholder</p>` : ''}
@@ -1879,7 +1879,7 @@ ${doors.map(door).join('\n')}
 export const panel = (a) => {
   const fig = a.frame
     ? `<div class="ht wk-panel-fig"${a.frame.op ? ` style="--op:${esc(a.frame.op)}"` : ''}>` +
-      `<img class="duo" src="${esc(a.frame.src)}" alt="${esc(a.frame.alt)}" loading="lazy"></div>`
+      `<img class="duo" src="${esc(a.frame.src)}" alt="${esc(a.frame.alt)}"${imgDim(a.frame.src)} loading="lazy"></div>`
     : '';
   return `<div class="wk-panel">${fig}<div><h3 class="wk-panel-h">${a.name}</h3>
         <p class="body">${a.p}</p>${a.cap ? `\n        <p class="cap" style="margin-top:10px">${a.cap}</p>` : ''}</div></div>`;
@@ -1901,7 +1901,7 @@ export const panel = (a) => {
 export const gallerySheet = ({ label, frames, note }) => `      <div class="wk-gal s-record-sheetblock">
         <div class="s-record-sheethead"><p class="lbl">${label}</p></div>
         <div class="s-record-sheet">
-${frames.map(f => `          <figure class="ht s-record-cell"${f.op ? ` style="--op:${esc(f.op)}"` : ''}><img class="${f.dim ? 'duo-dim' : 'duo'}" src="${esc(f.src)}" alt="${esc(f.alt)}" loading="lazy"></figure>`).join('\n')}
+${frames.map(f => `          <figure class="ht s-record-cell"${f.op ? ` style="--op:${esc(f.op)}"` : ''}><img class="${f.dim ? 'duo-dim' : 'duo'}" src="${esc(f.src)}" alt="${esc(f.alt)}"${imgDim(f.src)} loading="lazy"></figure>`).join('\n')}
         </div>
 ${note ? `        <p class="cap s-record-note" style="margin-top:14px">${note}</p>\n` : ''}      </div>`;
 

@@ -116,7 +116,7 @@ const INDEX = [
 const B = {};
 
 B.top = () => `    <div class="pic ht p2-pic">
-      <img class="duo" src="/images/photos/monsoon-flooded-fields.jpg" alt="Flooded fields under monsoon cloud" style="--op:70% 45%">
+      <img class="duo" src="/images/photos/monsoon-flooded-fields.jpg" alt="Flooded fields under monsoon cloud"${S.imgDim('/images/photos/monsoon-flooded-fields.jpg')} fetchpriority="high" style="--op:70% 45%">
       <div class="pic-over"><div class="wrap">
         <h1 class="d1">India&rsquo;s extreme rain</h1>
       </div></div>

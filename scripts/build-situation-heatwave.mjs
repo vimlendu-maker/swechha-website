@@ -81,7 +81,7 @@ const INDEX = [
 const B = {};
 
 B.top = () => `    <div class="pic ht p2-pic">
-      <img class="duo" src="/images/photos/ridge-road-dusk.jpg" alt="An empty road in heavy late-afternoon light" style="--op:50% 58%">
+      <img class="duo" src="/images/photos/ridge-road-dusk.jpg" alt="An empty road in heavy late-afternoon light"${S.imgDim('/images/photos/ridge-road-dusk.jpg')} fetchpriority="high" style="--op:50% 58%">
       <div class="pic-over"><div class="wrap">
         <h1 class="d1">India&rsquo;s heat</h1>
       </div></div>

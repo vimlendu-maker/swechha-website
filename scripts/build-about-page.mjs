@@ -357,7 +357,7 @@ const B = {};
    right-hand half now that the register has gone — measured by capture at 1440,
    not assumed. */
 B.top = () => `    <div class="pic ht">
-      <img class="duo" src="/images/photos/yamuna-floodplain-crowd.jpg" alt="A crowd on the Yamuna floodplain looking out over the river" style="--op:50% 42%">
+      <img class="duo" src="/images/photos/yamuna-floodplain-crowd.jpg" alt="A crowd on the Yamuna floodplain looking out over the river"${S.imgDim('/images/photos/yamuna-floodplain-crowd.jpg')} fetchpriority="high" style="--op:50% 42%">
       <div class="pic-over"><div class="wrap">
         <h1 class="d1">Of one&rsquo;s own<br>free will</h1>
       </div></div>
@@ -510,7 +510,7 @@ ${RUNGS.map(r => `        <li class="a-rung rl${r.green ? ' is-now' : ''}">
 const anchorFor = (p) => (p.slug === 'vimlendu' ? ' id="vimlendu-jha"' : '');
 
 const person = (p) => `        <li class="a-p">
-          <span class="ht a-p-fig"><img class="duo" src="${p.photo.src}" alt="${esc(p.photo.alt)}" loading="lazy"></span>
+          <span class="ht a-p-fig"><img class="duo" src="${p.photo.src}" alt="${esc(p.photo.alt)}"${S.imgDim(p.photo.src)} loading="lazy"></span>
           <div class="a-p-b">
             <h3 class="a-p-n"${anchorFor(p)}>${esc(p.name)}</h3>
             <p class="lbl a-p-r">${esc(p.role)}</p>
@@ -1105,8 +1105,11 @@ gate(headcounts.length === 0,
     ? `; FOUND: ${headcounts.map(h => JSON.stringify(h)).join(' | ')}` : ''}`);
 
 // 2. EVERY YEAR ON THE PAGE IS ONE THIS BUILD DECLARED. Catches a date typed
-//    into a bio or a source line where nobody would look for it.
-const years = [...new Set((OUT.match(/\b(?:19|20)\d\d\b/g) || []))].sort();
+//    into a bio or a source line where nobody would look for it. Runs on
+//    RENDERED (visible text only), not OUT: Task 10 put real width/height on
+//    every <img>, and the site logo is 2048x512 — a markup attribute, not a
+//    year anyone typed, and OUT's raw HTML matched it as one.
+const years = [...new Set((RENDERED.match(/\b(?:19|20)\d\d\b/g) || []))].sort();
 const declared = new Set(['2000', '2004', '2008', '2016', '2026',
   // years inside the people's own descriptions of themselves, which are
   // quoted and therefore historical statements, not claims by this page

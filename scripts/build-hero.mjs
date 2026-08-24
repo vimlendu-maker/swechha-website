@@ -668,6 +668,37 @@ if (bad) {
   process.exit(1);
 }
 
+/* ── TASK 10 — RESERVE THE BOX ON EVERY <img>, INCLUDING THE FROZEN PAGE.
+   home.html is hand-authored, not templated, so there is no shared emitter to
+   change here the way there is for every other page — this is the same
+   surgery, done directly on the one file every shell extracts from. Never a
+   typed number: `S.imgDim` reads each file's own header (image-size.mjs) and
+   omits the attributes rather than guess where it cannot. No newline is
+   introduced by any of this — shell() pins this file by line range, and the
+   line-count guard just below would catch a violation. */
+let heroLcpSet = false;
+src = src.replace(/<img\b[^>]*>/g, (tag) => {
+  if (/\bwidth=/.test(tag)) return tag; // idempotent on a rerun
+  const m = tag.match(/\bsrc="([^"]+)"/);
+  if (!m) return tag;
+  const dim = S.imgDim(m[1]);
+  if (!dim) return tag;
+  /* Inserted right after the tag name, on the SAME line `<img` opens on —
+     several of this page's tags wrap their `alt=` onto a second line, and an
+     attribute added just before the closing `>` would land there instead,
+     making an attribute-only change read as a copy edit in the diff. */
+  let prefix = dim;
+  /* The first hero slide (h-air, india-gate-hero.jpg) is the only <img> on
+     this page rendered above the fold before any script runs — the LCP
+     candidate. Every other image on the page already carries loading="lazy"
+     or is off-screen until the carousel advances. */
+  if (!heroLcpSet && /src="\/images\/photos\/india-gate-hero\.jpg"/.test(tag)) {
+    heroLcpSet = true;
+    prefix = ` fetchpriority="high"${dim}`;
+  }
+  return tag.replace(/^<img/, `<img${prefix}`);
+});
+
 const linesAfter = src.split('\n').length;
 if (linesAfter !== linesBefore) {
   console.error(`\nREFUSING TO WRITE: the line count moved ${linesBefore} -> ${linesAfter}. `

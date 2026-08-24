@@ -253,7 +253,7 @@ ${list.map(r => `        <div class="p-row">
         </div>`).join('\n')}
       </div>`;
 
-const sideFrame = (fr) => `      <figure class="fm-side"><img class="duo" src="${fr.src}" alt="${esc(fr.alt)}" loading="lazy"></figure>`;
+const sideFrame = (fr) => `      <figure class="fm-side"><img class="duo" src="${fr.src}" alt="${esc(fr.alt)}"${S.imgDim(fr.src)} loading="lazy"></figure>`;
 
 /* ═══ BANDS ══════════════════════════════════════════════════════════════
    Ground chain checked mechanically below. No two adjacent bands share a hex,
@@ -311,7 +311,7 @@ const B = {};
    region is named as a region, and the district is stated. */
 const M = F.top;
 B.top = () => `    <div class="pic ht">
-      <img class="duo" src="${M.frame.src}" alt="${esc(M.frame.alt)}" style="--op:${M.frame.op}">
+      <img class="duo" src="${M.frame.src}" alt="${esc(M.frame.alt)}"${S.imgDim(M.frame.src)} fetchpriority="high" style="--op:${M.frame.op}">
       <div class="pic-over"><div class="wrap">
         <p class="lbl eyebrow">${esc(M.kicker)}</p>
         <h1 class="d1">${M.h1}</h1>
@@ -347,7 +347,7 @@ B.origin = () => `${opener('origin', O.head, esc(yr(O.lead)))}
 ${O.rail.map(f => bigFig(f)).join('\n')}
       </div>
       <div class="fm-ctx">
-        <figure class="fm-ctx-f"><img class="duo" src="${O.context.frame.src}" alt="${esc(O.context.frame.alt)}" loading="lazy"></figure>
+        <figure class="fm-ctx-f"><img class="duo" src="${O.context.frame.src}" alt="${esc(O.context.frame.alt)}"${S.imgDim(O.context.frame.src)} loading="lazy"></figure>
         <div class="fm-ctx-t">
           <p class="lbl fm-ctx-h">${esc(O.context.h)}</p>
           <p class="body fm-ctx-p">${esc(O.context.p)}</p>
@@ -395,7 +395,7 @@ ${RESOLVED.map(f => bigFig(f)).join('\n')}
 ${G.produce.counts.map(c => `            <div class="fm-orch-c"><p class="num fm-orch-n">${esc(c.n)}</p><p class="lbl fm-orch-w">${esc(c.what)}</p></div>`).join('\n')}
           </div>
         </div>
-        <figure class="fm-prod-f"><img class="duo" src="${G.produce.frame.src}" alt="${esc(G.produce.frame.alt)}" loading="lazy"></figure>
+        <figure class="fm-prod-f"><img class="duo" src="${G.produce.frame.src}" alt="${esc(G.produce.frame.alt)}"${S.imgDim(G.produce.frame.src)} loading="lazy"></figure>
       </div>
     </div>`;
 
@@ -416,7 +416,7 @@ B.systems = () => `${opener('systems', yr(F.systems.head), esc(F.systems.lead))}
 ${F.systems.items.map(s => `        <div class="fm-inv-c">
           <p class="lbl fm-inv-h">${esc(s.h)}</p>
           <p class="body fm-inv-p">${esc(s.p)}</p>${s.frame ? `
-          <figure class="fm-inv-f"><img class="duo" src="${s.frame.src}" alt="${esc(s.frame.alt)}" loading="lazy"></figure>` : ''}
+          <figure class="fm-inv-f"><img class="duo" src="${s.frame.src}" alt="${esc(s.frame.alt)}"${S.imgDim(s.frame.src)} loading="lazy"></figure>` : ''}
         </div>`).join('\n')}
       </div>
     </div>`;
@@ -441,7 +441,7 @@ ${V.triad.map(t => `        <div class="fm-triad-c">
       </div>
       <div class="fm-doors">
 ${V.doors.map(d => `        <div class="fm-door">
-${d.frame ? `          <figure class="fm-door-f"><img class="duo" src="${d.frame.src}" alt="${esc(d.frame.alt)}" loading="lazy"></figure>\n` : ''}          <h3 class="fm-door-h">${esc(d.name)}</h3>
+${d.frame ? `          <figure class="fm-door-f"><img class="duo" src="${d.frame.src}" alt="${esc(d.frame.alt)}"${S.imgDim(d.frame.src)} loading="lazy"></figure>\n` : ''}          <h3 class="fm-door-h">${esc(d.name)}</h3>
           <p class="body fm-door-p">${esc(d.p)}</p>
 ${[d.capacity, d.figure].filter(Boolean).map(g => `          <p class="fm-door-fig"><span class="num">${esc(g.value)}</span> <span class="lbl">${esc(g.label)}</span></p>`).join('\n')}
           <p class="cap fm-door-w">${esc(d.who)}</p>

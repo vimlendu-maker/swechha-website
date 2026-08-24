@@ -289,7 +289,7 @@ const B = {};
    there is one the page exists to refuse. */
 const M = IMPACT.masthead;
 B.top = () => `    <div class="pic ht">
-      <img class="duo" src="${M.frame.src}" alt="${esc(M.frame.alt)}" style="--op:${M.frame.op}">
+      <img class="duo" src="${M.frame.src}" alt="${esc(M.frame.alt)}"${S.imgDim(M.frame.src)} fetchpriority="high" style="--op:${M.frame.op}">
       <div class="pic-over"><div class="wrap">
         <p class="lbl eyebrow">${esc(M.kicker)}</p>
         <h1 class="d1">${M.h1}</h1>
@@ -412,7 +412,7 @@ ${S.tabs('Figures by kind', panels)}
 B.sheet = () => `${opener('sheet', IMPACT.sheet.head, esc(IMPACT.sheet.lead))}
     <div class="wrap">
       <div class="ip-sheet">
-${IMPACT.sheet.frames.map(fr => `        <figure class="ht ip-sh-c"><img class="duo" src="${fr.src}" alt="${esc(fr.alt)}" loading="lazy"></figure>`).join('\n')}
+${IMPACT.sheet.frames.map(fr => `        <figure class="ht ip-sh-c"><img class="duo" src="${fr.src}" alt="${esc(fr.alt)}"${S.imgDim(fr.src)} loading="lazy"></figure>`).join('\n')}
       </div>
     </div>`;
 

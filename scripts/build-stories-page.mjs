@@ -183,7 +183,7 @@ const B = {};
 /* ── BAND 1. MASTHEAD. ───────────────────────────────────────────────────── */
 const M = D.masthead;
 B.top = () => `    <div class="pic ht">
-      <img class="duo" src="${M.frame.src}" alt="${esc(M.frame.alt)}" style="--op:${M.frame.op}">
+      <img class="duo" src="${M.frame.src}" alt="${esc(M.frame.alt)}"${S.imgDim(M.frame.src)} fetchpriority="high" style="--op:${M.frame.op}">
       <div class="pic-over"><div class="wrap">
         <p class="lbl eyebrow">${esc(M.kicker)}</p>
         <h1 class="d1">${M.h1}</h1>
