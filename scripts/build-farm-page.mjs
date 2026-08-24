@@ -65,6 +65,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
+import { seo } from './lib/seo-register.mjs';
 const { esc, opener, ARROW } = S;
 
 const sh = S.shell();
@@ -777,9 +778,14 @@ const PAGE_CSS = `
 `;
 
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */
-const TITLE = 'Swechha Farm — school camps and stays near Delhi';
-const DESC = 'Five acres in the Aravallis, ninety minutes from Delhi. Day visits, '
-  + 'overnight school camps for a hundred students, retreats and stays. One tree became 5,000.';
+/* THE TITLE AND THE DESCRIPTION BOTH COME FROM data/seo/pages.json now,
+   not literals here. This generator used to keep its own wording for both;
+   it happened to already agree with the register (verified byte-for-byte
+   before this change), but a second copy that merely agrees today is the
+   same drift /about's description override was — it can only fall out of
+   sync silently later, and spec §3.1 puts every page's head text in one
+   place for exactly this reason. */
+const TITLE = seo('/farm').title;
 
 const OUT = await S.assemble({
   file: 'farm.html',
@@ -788,7 +794,7 @@ const OUT = await S.assemble({
      — "school camps" — rather than the query's own words, which appear in no
      source. AD-27.48: the em dash is the literal character, not &mdash;. */
   title: TITLE,
-  desc: DESC,
+  desc: seo('/farm').description,
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
   /* `Farm` is a nav word and this page IS it, so it takes aria-current="page".
@@ -1186,10 +1192,11 @@ gate((F.stay.airbnb || []).length === 0 ? !/airbnb/i.test(RENDERED) && !/href="[
        nothing tensed and no reading. `desc` is passed to assemble(); until
        lane 1's parameter lands it is ignored there, which is why the length
        is asserted here rather than only in the shell. */
-gate(DESC.length >= 140 && DESC.length <= 158, `the description is ${DESC.length} characters (140–158)`);
+gate(seo('/farm').description.length >= 140 && seo('/farm').description.length <= 158,
+  `the description is ${seo('/farm').description.length} characters (140–158)`);
 gate(/school camps/i.test(TITLE) && TITLE.includes('—') && !TITLE.includes('&mdash;'),
   'the title carries "school camps" and a literal em dash (AD-27.47/48)');
-gate(!/\b(today|currently|DEMO DATA)\b/i.test(DESC), 'the description is not tensed and carries no specimen');
+gate(!/\b(today|currently|DEMO DATA)\b/i.test(seo('/farm').description), 'the description is not tensed and carries no specimen');
 
 /* 21. NO SOURCING APPARATUS ON THIS PAGE — AD-28 §2.2, AND THIS IS THE OLD
        PROVENANCE CONTRACT INVERTED. `bigFig` used to REQUIRE a provenance line

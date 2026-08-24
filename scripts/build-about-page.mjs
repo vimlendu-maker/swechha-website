@@ -972,11 +972,14 @@ const PAGE_CSS = `
    not.
    THE DESCRIPTION carries one verifiable fact — founded in 2000 as We for
    Yamuna, which is this page's own first record rung — and nothing tensed,
-   dated or specimen, per BRANDING §3.5 applied to <head>. IT NOW COMES FROM
-   data/seo/pages.json rather than a literal here: this generator used to keep
-   its own wording, different from situation-shell.mjs's DESCRIPTIONS row for
-   the same route, and the two answers for one page were exactly the drift the
-   register exists to kill. The register holds the wording below verbatim.
+   dated or specimen, per BRANDING §3.5 applied to <head>.
+   BOTH `title` AND `desc` NOW COME FROM data/seo/pages.json (`seo('/about')`)
+   rather than literals here: this generator used to keep its own description
+   wording, different from situation-shell.mjs's now-deleted DESCRIPTIONS row
+   for the same route, and the two answers for one page were exactly the
+   drift the register exists to kill. The title had no such second copy
+   elsewhere, but the register is the one place every page's head text is
+   meant to live (spec §3.1), so it is looked up the same way.
    `desc` is consumed by situation-shell.mjs's assemble(), which lane 1 is
    adding it to in this same pass (AD-27.48). Gate 12 below refuses the page if
    it did not reach the HTML, because a description that is passed and silently
@@ -984,7 +987,7 @@ const PAGE_CSS = `
 const OUT = await S.assemble({
   file: 'about.html',
   route: '/about',
-  title: 'About Swechha — an environmental NGO in Delhi',
+  title: seo('/about').title,
   desc: seo('/about').description,
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,

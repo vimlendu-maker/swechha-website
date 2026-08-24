@@ -871,20 +871,28 @@ const crumbsIndex = () => [['Swechha', '/'], ['The work', PATHS.index.url]];
 const crumbsKind = (k) => [...crumbsIndex(), [kindDef(k).name, PATHS[k].url]];
 const crumbsFor = (it) => [...crumbsKind(it.kind), [it.name, itemPath(it).url]];
 
-/* The description and the title are looked up by ROUTE via `seo()`, and a
-   page whose route is not in the register refuses to build (seo() throws)
-   rather than falling back to `line` — which is what left fifteen pages at
-   51-117 characters with nobody noticing. The length and tensed-language
-   checks that used to run here now live once, on the register itself, in
-   lib/seo/register.test.ts; this function only confirms every route this
-   build actually emits still has an entry, since a build-time gap is a
-   build-time failure and shouldn't wait on the next `npm test`. */
+/* The description and the title are looked up by ROUTE via `seo()` — called
+   directly inside pageIndex()/pageKind()/pageCampaigns()/pageEvents()/
+   pageItem() as each page object is built, e.g. `seo(PATHS.index.url).title`
+   above — and NOTHING CATCHES ITS THROW. A route with no register entry
+   crashes the build with seo()'s own uncaught exception (which names the
+   route and says what to add, in scripts/lib/seo-register.mjs), not a
+   collected, graceful "REFUSING TO WRITE" report the way the other rej()
+   gates in this file work. That is deliberate, not an oversight: a missing
+   description is a build failure either way, and pretending to batch-report
+   it here would be reporting a failure that already happened by the time
+   this function runs. The length and tensed-language checks that used to
+   run in this function now live once, on the register itself, in
+   lib/seo/register.test.ts.
+   This function still exists as a second, independent pass over the SAME
+   route list `plan` was built from — for the routes the page-building
+   functions above skip (a kind present in KINDS_ORDER but absent from the
+   current KINDS, which the plan loop `continue`s past), this is the only
+   place `seo()` is ever called on that route. */
 function checkDescriptions() {
   const want = [PATHS.index.url, ...KINDS_ORDER.map(k => PATHS[k].url),
     ...items.filter(i => i.page).map(i => itemPath(i).url)];
-  for (const u of want) {
-    try { seo(u); } catch { rej('DESC', `no description for ${u}. AD-27.48 makes one required on every page.`); }
-  }
+  for (const u of want) seo(u);
 }
 
 const canonical = new Set([PATHS.index.url, ...KINDS_ORDER.map(k => PATHS[k].url)]);

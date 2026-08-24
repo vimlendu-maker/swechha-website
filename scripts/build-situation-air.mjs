@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os';
 import { crumb, siblings, FAMILY_CSS, NAV_SEARCH_CSS, NAV as SHELL_NAV, HOME_HREF, GIVE_HREF, INDEX_PAGE,
   stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, cadence, STATES,
   closing, CLOSING_CSS } from './lib/situation-shell.mjs';
+import { seo } from './lib/seo-register.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const V3 = join(ROOT, 'public/_pages/v3');
@@ -1895,9 +1896,12 @@ ${JS_NAVIDX}
    must not carry.
    The em dash is the literal character, not `&mdash;`, per AD-27.48's
    convention fix; the apostrophe stays an entity because the title's does. */
-const TITLE = 'Delhi&rsquo;s air &mdash; Swechha';
-const DESC = 'Delhi\u2019s air quality index, read against CPCB\u2019s own published limit and '
-  + 'refreshed hourly, with the station and the observation time on every reading.';
+/* TITLE and DESC come from data/seo/pages.json rather than literals here —
+   this page hand-rolls its own <head> instead of going through
+   situation-shell.mjs's assemble() (see the comment above), so it is the one
+   generator that still needs its own local names for them, but the words
+   themselves are the register's, not a second copy of them. */
+const { title: TITLE, description: DESC } = seo('/now/air');
 
 /* AD-27.49 · OPEN GRAPH AND TWITTER. Derived from the title, the description
    and the canonical route that are already in this head — nothing new is

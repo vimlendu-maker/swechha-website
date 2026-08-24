@@ -36,6 +36,7 @@
 import { readFileSync, readdirSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
+import { seo } from './lib/seo-register.mjs';
 /* `hole` is deliberately NOT imported — see AD-28 §2.3. An essay with no
    illustration simply has no illustration; it does not carry a marker saying
    so. */
@@ -98,23 +99,19 @@ function extract(src) {
   return out;
 }
 
-/* ── AD-27.48. ONE DESCRIPTION PER ESSAY, KEYED BY SLUG. ─────────────────
-   These five are the only pages this shell builds whose route is not a fixed
-   string, so they cannot sit in situation-shell.mjs's DESCRIPTIONS register
-   and have to be passed. 140-158 characters each; every one states the
-   essay's own subject and names its author, which is the verifiable fact
-   these pages carry (the byline is printed on the page and recorded in
-   content/essay/_index.json).
+/* ── AD-27.48. ONE DESCRIPTION PER ESSAY, LOOKED UP BY ROUTE. ─────────────
+   These five pages' routes are not fixed strings at generator-definition
+   time (they come from content/essay/_index.json), which is why this file
+   never sat inside situation-shell.mjs's now-deleted DESCRIPTIONS map — but
+   `/stories/${slug}` IS a fixed key in data/seo/pages.json once the essay
+   index is read, so the description is a `seo()` lookup like every other
+   page's, not a second per-slug map kept in sync with the register by hand.
+   140-158 characters each; every one states the essay's own subject and
+   names its author, which is the verifiable fact these pages carry (the
+   byline is printed on the page and recorded in content/essay/_index.json).
    NOTHING HERE IS TENSED OR DATED. The pieces are from 2022 and 2023 and the
    pages print their dates; a description that said "this year" would be wrong
    on the day it was cached. */
-const ESSAY_DESC = {
-  'cyclone-biparjoy': "Cyclone Biparjoy, named by Bangladesh, and what a cyclone's approach asks of the coast it is heading for. An essay for Swechha by Antarixa Bhardwaj.",
-  'rise-above-the-waters': "Bengaluru's monsoon is a delight on social media and a disaster by September. An essay for Swechha by Antarixa Bhardwaj on what the flood story leaves out.",
-  'young-people-accelerate-climate-action': 'The climate crisis is a transgenerational problem, not an academic one. An essay for Swechha by Tanya Mittal on what it asks of young people, and how soon.',
-  'climate-crisis-uk-and-europe': 'The scorching European summer, read as a climate event rather than a heatwave story. An essay for Swechha by Richa Mirdha on the UK and Europe.',
-  'increasing-climate-migration-assam-floods': "Assam's floods displace people every year and rehabilitation is the part nobody follows. An essay for Swechha by Tanya Mittal on India's climate migrants.",
-};
 
 const ESSAYS = INDEX.map((e) => {
   const src = readFileSync(join(S.ROOT, 'content/essay', `${e.slug}.html`), 'utf8');
@@ -230,7 +227,7 @@ ${(() => {
     file: join('stories', `${e.slug}.html`),
     route: `/stories/${e.slug}`,
     title: `${e.title} &mdash; Swechha`,
-    desc: ESSAY_DESC[e.slug],
+    desc: seo(`/stories/${e.slug}`).description,
     bands: BANDS, index: INDEX_CHIPS, sh, clashes,
     pageCss: PAGE_CSS,
     sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),
