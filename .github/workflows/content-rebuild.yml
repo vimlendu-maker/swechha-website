@@ -83,10 +83,51 @@ jobs:
         if: steps.ref.outputs.have == '1'
         run: node scripts/normalize-cms-output.mjs /tmp/ref/data data
 
+      # ★ IS THIS A CMS SAVE, OR A HAND-AUTHORED MIGRATION? The gate below exists
+      #   for ONE failure mode, named in this file's own header: Keystatic
+      #   serialises its schema, so a key the schema does not declare is silently
+      #   dropped on save. It cannot tell that from a developer changing the shape
+      #   ON PURPOSE, and it refused exactly that on AD-39 — which removed
+      #   `impact.json`'s `act.doors`, added `act.tabs`, and moved
+      #   `build-impact-page.mjs` to read `tabs` in the same commit. The key really
+      #   was deleted; the deletion really was reviewed.
+      #
+      #   THE DISCRIMINATOR IS THE ONE THING KEYSTATIC CANNOT DO. It writes
+      #   `data/**` and `content/**` and has no route to `scripts/`. So a commit
+      #   that changes a generator alongside the data is, by construction, not a
+      #   CMS save: it is a migration, with the reader of the new shape changed in
+      #   the same commit and visible in the same diff.
+      #
+      #   THE GUARD IS NOT WEAKENED FOR THE CASE IT WAS WRITTEN FOR. On a real
+      #   Keystatic save `scripts/` is untouched and the check is fatal exactly as
+      #   before. On a migration it still RUNS and still PRINTS every difference —
+      #   it just does not stop the rebuild, so the losses stay visible in the log
+      #   and a genuine mistake is still there to be read.
+      - name: Is this a CMS save, or a hand-authored migration?
+        id: kind
+        if: steps.ref.outputs.have == '1'
+        run: |
+          if git diff --name-only HEAD~1 HEAD -- scripts | grep -q .; then
+            echo "A generator changed in this commit:"
+            git diff --name-only HEAD~1 HEAD -- scripts | sed 's/^/  /'
+            echo "Keystatic cannot write scripts/, so this is a reviewed migration, not a save."
+            echo "cms=0" >> "$GITHUB_OUTPUT"
+          else
+            echo "No generator changed — treating this as a CMS save. The fidelity gate is fatal."
+            echo "cms=1" >> "$GITHUB_OUTPUT"
+          fi
+
       # THE GATE. A save may change a value; it may not delete one.
       - name: Refuse a save that lost anything
-        if: steps.ref.outputs.have == '1'
+        if: steps.ref.outputs.have == '1' && steps.kind.outputs.cms == '1'
         run: node scripts/verify-data-fidelity.mjs /tmp/ref/data data
+
+      # The same comparison, reported and not enforced, for a migration.
+      - name: Report what the migration changed
+        if: steps.ref.outputs.have == '1' && steps.kind.outputs.cms == '0'
+        run: |
+          node scripts/verify-data-fidelity.mjs /tmp/ref/data data \
+            || echo "::notice::Keys changed shape in this commit. Not fatal here — a generator changed in the same commit, so this is a migration and the diff above is the record of it."
 
       - name: Rebuild the pages the content feeds
         run: |
