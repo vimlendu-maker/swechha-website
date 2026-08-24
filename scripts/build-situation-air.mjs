@@ -98,7 +98,7 @@ const CSS = [
   R(2897, 2927, 'D-09.3. THE HERO OPENS FOR THE KEYBOARD', ''),
   R(2971, 3033, 'D-09.1. ONE COMPACT INDEX CONTROL', '}'),
 ].join('\n\n');
-const HEAD_FONTS = R(8, 8, 'fonts.googleapis.com', 'display=swap');
+const HEAD_FONTS = R(8, 8, '@font-face', 'unicode-range');
 const SVG_DEFS = between('<filter id="duo"', '</svg>');
 const SKIP = between('D-09.3. BYPASS BLOCKS', 'class="skip"');
 const FOOTER = between('<footer class="foot"', '</footer>')

@@ -369,7 +369,7 @@ export function shell() {
     home.R(2971, 3033, 'D-09.1. ONE COMPACT INDEX CONTROL', '}'),
   ].join('\n\n');
 
-  const HEAD_FONTS = home.R(8, 8, 'fonts.googleapis.com', 'display=swap');
+  const HEAD_FONTS = home.R(8, 8, '@font-face', 'unicode-range');
   const SVG_DEFS = home.between('<filter id="duo"', '</svg>');
   const SKIP = home.between('D-09.3. BYPASS BLOCKS', 'class="skip"');
   const FOOTER = home.between('<footer class="foot"', '</footer>')
