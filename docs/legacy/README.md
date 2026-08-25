@@ -37,6 +37,19 @@ names, one document.
 `docs/design/2026-08-22-LEGACY-SITE-CONTENT-AUDIT.md`, which crawled the same
 site a day earlier by a different method — so two independent passes concur.
 
+> **The agreement did not mean completeness, and this is the correction worth
+> reading before trusting the table above.** Both passes started from the old
+> site's sitemaps. A WordPress sitemap lists what WordPress still considers
+> current, so a page that had already dropped out of it was invisible to *both*
+> methods — they agreed because they shared a blind spot, not because they had
+> independently confirmed the total.
+>
+> A backlink audit on 2026-08-26 found six such pages, each still returning 200
+> in the Wayback Machine and two still ranking in Google while they 404'd on the
+> new site. They are declared as `RECOVERED` in `build-redirect-map.mjs` rather
+> than back-filled into the TSV, so the capture stays a record of what was
+> actually captured. If more old URLs surface, add them there the same way.
+
 `attachment-sitemap2.xml`, `attachment-sitemap3.xml` and
 `post-archive-sitemap.xml` are listed in the index but are genuinely empty
 (well-formed `<urlset>`, no entries). That is the old site's state, not a
@@ -179,14 +192,19 @@ Three gates: every destination must be a route that actually exists (read out of
 for exactly once, as a redirect or as a deliberate `none`; and no destination may
 itself be a redirect source, so there are no chains.
 
-**226 content URLs → 168 redirects, 58 deliberate 404s.**
+**232 content URLs → 175 redirects, 57 deliberate 404s.**
+
+Of those 232, **226 come from the 2026-08-23 capture and 6 were recovered on
+2026-08-26** — live pages the old WordPress sitemap had already dropped, so the
+capture never saw them and nobody ever ruled on them. See `RECOVERED` in
+`build-redirect-map.mjs`; the inventory TSV is deliberately left as captured.
 
 | Confidence | n | Meaning |
 |---|---|---|
-| `exact` | 67 | the same thing, and a detail page exists for it |
-| `folded` | 7 | a duplicate or variant slug, onto its real twin |
-| `parent` | 94 | no page for this yet — points at the true parent section |
-| `none` | 58 | deliberately no redirect |
+| `exact` | 70 | the same thing, and a detail page exists for it |
+| `folded` | 8 | a duplicate or variant slug, onto its real twin |
+| `parent` | 97 | no page for this yet — points at the true parent section |
+| `none` | 57 | deliberately no redirect |
 
 The 45 old project URLs include about ten duplicates — the `-2` suffixes, the
 `future-`/`futures-` typo pair, `remakery`/`remakery-india` — which is why they

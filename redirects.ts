@@ -6,11 +6,12 @@ type Redirects = NonNullable<NextConfig['redirects']>
 type Redirect = Awaited<ReturnType<Redirects>>[number]
 
 /**
- * Permanent redirects from the old WordPress site — 168 of them, GENERATED from
+ * Permanent redirects from the old WordPress site — 175 of them, GENERATED from
  * `docs/legacy/redirect-map.json`, which is the reviewed map of every URL
- * captured from swechha.in on 2026-08-23 before the domain moved.
+ * captured from swechha.in on 2026-08-23 before the domain moved, plus six
+ * recovered on 2026-08-26 that the capture never saw.
  *
- * Not a hand-written literal, and not for style: 168 facts maintained in two
+ * Not a hand-written literal, and not for style: 175 facts maintained in two
  * places drift, and a drifted redirect is invisible until a reader hits a dead
  * URL. `lib/legacy-redirects.ts` does the transformation and refuses to emit
  * anything it cannot verify against this site's own routes — a 308 into a 404
@@ -18,10 +19,10 @@ type Redirect = Awaited<ReturnType<Redirects>>[number]
  *
  * To change a redirect, edit the map (via `docs/legacy/build-redirect-map.mjs`)
  * and not this file. `docs/legacy/README.md` records the rulings behind it, and
- * the 94 `parent` rows there are a re-point list for when the missing pages
+ * the 97 `parent` rows there are a re-point list for when the missing pages
  * get built.
  *
- * The 58 URLs deliberately given NO redirect are absent on purpose: 53 lost
+ * The 57 URLs deliberately given NO redirect are absent on purpose: 52 lost
  * 2014-17 press-clipping shells with zero body text, three orphans (a
  * boilerplate draft, a test page, a WordPress sample), the home-to-home loop,
  * and a departed colleague's profile. Absence is the instruction, recorded in
@@ -30,6 +31,20 @@ type Redirect = Awaited<ReturnType<Redirects>>[number]
  * It was 167 and 59 until 2026-08-25, when /contact-us/ moved from the second
  * list to the first: it was still a live Google result, and a 404 would have
  * forfeited that. See the note on its row in build-redirect-map.mjs.
+ *
+ * It was 168 and 58 until 2026-08-26, and that revision was a different kind.
+ * A backlink audit turned up SIX live pages that the capture never contained:
+ * the inventory was built from the old sitemaps, and a WordPress sitemap lists
+ * what WordPress still thinks is current, so pages already dropped from it were
+ * invisible to the capture and therefore to every ruling made from it. They
+ * 404'd because nobody knew they existed, not because anybody decided. Two of
+ * the six — /project/yamuna-yatra-2/ and, from the `none` list, the zero-body
+ * /we-for-yamuna-and-you/ — were still live Google results while they 404'd.
+ *
+ * The lesson worth keeping: a complete-looking inventory is only as complete as
+ * the sitemap it came from. See `RECOVERED` in build-redirect-map.mjs, which
+ * carries each row's Wayback evidence and is counted apart from the capture so
+ * the two can never be confused.
  */
 export const legacyRedirects: Redirect[] = buildLegacyRedirects(
   readMap(),

@@ -8,7 +8,7 @@
  *
  * Generated at build time rather than committed as a literal, for the same
  * reason the WORK pages are generated: two hand-maintained copies of the same
- * 168 facts drift, and the drift is invisible until a reader hits a dead URL.
+ * 175 facts drift, and the drift is invisible until a reader hits a dead URL.
  * The map is reviewable; this file is the transformation.
  *
  * TRAILING SLASHES, and the two hops they cost. Every captured URL ends in `/`

@@ -135,12 +135,67 @@ const PAGES = {
   '/6220-2/':                   [null, 'an orphan test page containing the word "Button"', 'none'],
 }
 
+/* ---- RECOVERED: six URLs THE CAPTURE MISSED. -------------------------------
+
+   The 2026-08-23 inventory was built from the old site's own sitemaps, and a
+   WordPress sitemap lists what WordPress still considers current. These six
+   were live pages that had already fallen out of it — so they were never
+   captured, never mapped, and 404 today with nobody having decided that.
+
+   That is the difference between this list and a `none` row: absence there is
+   an instruction, absence here was an accident. Discovered 2026-08-26 while
+   auditing what still links to swechha.in.
+
+   THE INVENTORY TSV IS NOT EDITED TO ADD THEM, and that is deliberate. It is a
+   dated record of one capture; back-filling it would make a factual artefact
+   say something it never observed, and the next person could not tell the
+   capture from the correction. These rows are declared separately, carry their
+   own evidence, and are counted separately by the gate.
+
+   EVIDENCE, per row: each was fetched from the Wayback Machine on 2026-08-26
+   and returned a real archived page with HTTP 200. Timestamps below are that
+   snapshot. The first two are also live Google results today, which is the
+   /contact-us/ test — a 404 forfeits a ranking only while the old index still
+   stands.
+
+   [type, path, destination, why, confidence]                                 */
+const RECOVERED = [
+  ['project', '/project/yamuna-yatra-2/', '/work/journeys/yamuna-yatra',
+   'duplicate of yamuna-yatra; archived 200 at 2025-06-24 and still a live search result', 'folded'],
+  ['project', '/project/brake-even/', '/work/campaigns',
+   'the unsuffixed twin of brake-even-2, which already points here; archived 200 at 2022-05-18', 'parent'],
+  ['project', '/project/influence/', '/work/projects/influence',
+   'the Influence programme before the CYON rename; archived 200 at 2020-02-05', 'exact'],
+  ['project', '/project/me-to-we/', '/work/projects/me-to-we',
+   'Me to We before the Pagdandi merge; archived 200 at 2022-01-19', 'exact'],
+  ['page', '/about-us/', '/about',
+   'the About page under its pre-2021 slug; archived 200 at 2021-04-15', 'exact'],
+  ['page', '/what-we-do/', '/work',
+   'the programmes index under its 2013 slug; /programs/ -> /work is the same call', 'parent'],
+]
+
 /* ---- POSTS ---- */
 const ESSAYS = new Map(
   readJSON('content/essay/_index.json').map((e) => [new URL(e.original).pathname, e.slug]),
 )
 /* Five posts no title pattern catches. Each was read before being placed. */
 const POST_OVERRIDES = {
+  /* A ZERO-BODY POST THAT IS NOT A LOST PRESS CLIPPING, and the exception that
+     made overrides outrank the length heuristic below.
+
+     It has 0 characters of body text, so the 2014-17 rule caught it and sent it
+     to a 404 with the other 51 shells. But those are press clippings about
+     Swechha; this is We for Yamuna, the campaign the organisation has run since
+     2000 — and on 2026-08-26 the URL was still a live Google result titled "We
+     for Yamuna - Swechha", archived 200 as recently as 2025-06-24.
+
+     Same reasoning as /contact-us/: the ruling weighed the page's body and never
+     asked what the URL was earning. `/work/campaigns/we-for-yamuna` is not a
+     built route yet, so this points at the index and stays on the re-point list
+     until the detail page exists. */
+  '/we-for-yamuna-and-you/':
+    ['/work/campaigns', 'still a live search result for the campaign; detail page not built, so the index', 'parent'],
+
   '/low-carbon-future-participatory-workshop/':
     [P, 'a carbon-footprint workshop with 39 participants; no matching new item', 'parent'],
   '/post-covid-environment-mirage-or-hope/':
@@ -236,6 +291,15 @@ for (const { type, path } of inv) {
       to = `/stories/${ESSAYS.get(path)}`
       why = 'republished verbatim as an essay; exact content match'
       conf = 'exact'
+    } else if (POST_OVERRIDES[path]) {
+      /* ★ BEFORE the length rule, not after — changed 2026-08-26. A reviewed,
+         per-URL ruling must outrank a heuristic, or a zero-body post can never
+         be rescued no matter what evidence is found for it (which is exactly
+         what happened to /we-for-yamuna-and-you/). The three pre-existing
+         overrides all have bodies of 549-1740 characters, so none of them
+         reaches the length rule either way and this reorder does not move
+         them. */
+      ;[to, why, conf] = POST_OVERRIDES[path]
     } else if (rec.textLen < 40) {
       /* 61 posts carry ZERO characters of body text. The distribution is
          cleanly bimodal — 61 at exactly 0, then nothing until 200 — so there
@@ -259,8 +323,6 @@ for (const { type, path } of inv) {
         ? 'zero-body press shell, but the broadcast it names is in the 148-video index (owner, 2026-08-23)'
         : 'empty shell: zero characters of body text, nothing anywhere to send a reader to'
       conf = recent ? 'parent' : 'none'
-    } else if (POST_OVERRIDES[path]) {
-      ;[to, why, conf] = POST_OVERRIDES[path]
     } else {
       const rule = POST_RULES.find(([re]) => re.test(rec.title) || re.test(path))
       if (!rule) throw new Error(`no rule and no override for post: ${path} — "${rec.title}"`)
@@ -268,6 +330,16 @@ for (const { type, path } of inv) {
     }
   }
   rows.push({ type, from: path, to, why, confidence: conf, title })
+}
+
+/* The six the capture never saw. Appended after the inventory loop so the
+   generated map stays in one piece, while the gate below still counts the two
+   sources separately — a recovered row must never be mistaken for a captured
+   one. */
+const captured = new Set(rows.map((r) => r.from))
+for (const [type, from, to, why, confidence] of RECOVERED) {
+  if (captured.has(from)) throw new Error(`recovered URL is already in the capture: ${from}`)
+  rows.push({ type, from, to, why, confidence })
 }
 
 /* ============================== THE GATE ============================== */
@@ -280,7 +352,8 @@ for (const r of rows) {
   if (r.to === null && r.confidence !== 'none' && r.confidence !== 'RULING')
     problems.push(`no destination but confidence "${r.confidence}": ${r.from}`)
 }
-if (rows.length !== inv.length) problems.push(`accounted ${rows.length} of ${inv.length} captured URLs`)
+if (rows.length !== inv.length + RECOVERED.length)
+  problems.push(`accounted ${rows.length} of ${inv.length} captured + ${RECOVERED.length} recovered URLs`)
 if (problems.length) {
   console.error('MAP REFUSED:\n' + problems.map((p) => '  ' + p).join('\n'))
   process.exit(1)
@@ -296,7 +369,9 @@ writeFileSync(
 
 const content = rows.filter((r) => !SKIP[r.type])
 const tally = (rs) => rs.reduce((a, r) => ((a[r.confidence] = (a[r.confidence] ?? 0) + 1), a), {})
-console.log('captured URLs        :', rows.length)
+console.log('captured URLs        :', inv.length)
+console.log('recovered URLs       :', RECOVERED.length, '(missing from the capture; see RECOVERED)')
+console.log('total rows           :', rows.length)
 console.log('content URLs         :', content.length)
 console.log('  redirected         :', content.filter((r) => r.to).length)
 console.log('  deliberate 404     :', content.filter((r) => !r.to).length)
