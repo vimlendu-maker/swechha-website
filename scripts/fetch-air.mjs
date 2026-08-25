@@ -2,29 +2,42 @@
 /**
  * fetch-air.mjs — the scheduled job of D-13.1.
  *
- * Pulls CPCB station concentrations from data.gov.in, computes the AQI
- * sub-indices with CPCB's OWN published breakpoints, and writes committed
- * JSON. The site stays fully static; nothing is fetched at request time.
+ * Pulls CPCB's published per-pollutant SUB-INDEXES from data.gov.in and
+ * writes committed JSON. The site stays fully static; nothing is fetched at
+ * request time.
  *
  *   DATA_GOV_IN_KEY=... node scripts/fetch-air.mjs
  *
  * THE KEY IS NEVER COMMITTED. It comes from the environment only. Do not
  * add it to this file, to the JSON output, or to anything under public/.
  *
- * WHAT THE UPSTREAM ACTUALLY GIVES US, and why it matters:
- *   The resource returns per-station, per-pollutant CONCENTRATIONS
- *   (min/max/avg in µg/m³, CO in mg/m³). **It does not return an AQI.**
- *   So every AQI on this site is DERIVED here, and the page must say so:
- *   it is "computed from CPCB station concentrations using CPCB's own
- *   breakpoints", never "CPCB's AQI". That is a real distinction and the
- *   honesty rules require it to be stated (every derived figure names its
- *   derivation).
+ * ★★ WHAT THE UPSTREAM ACTUALLY GIVES US — CORRECTED 25 AUGUST 2026.
+ *   The resource is titled "Real time AIR QUALITY INDEX from various
+ *   locations", and that is literally what it returns: `min_value`,
+ *   `max_value` and `avg_value` are CPCB's own 24-hour SUB-INDEXES per
+ *   pollutant per station. They are NOT concentrations.
  *
- * THE LABEL IS `PERIODIC`, NOT `LIVE`. The upstream stamps roughly hourly,
- * but this job delivers by committing a file, so the page's freshness is
- * the job's cadence, not the station's. D-10.1 / D-13.1.
+ *   This file used to assert the opposite and ran every value through the
+ *   breakpoint table a second time, roughly doubling the whole site. On
+ *   25 August it had Delhi at 381 "Very Poor" and Anand Vihar at 381, on a
+ *   day CPCB published 97 and 177 for the same city and station and hour.
+ *   Checked field by field against CPCB's Central Control Room panel: the
+ *   feed's PM2.5 MIN of 67 is CPCB's PM2.5 sub-index MIN of 67, exactly.
+ *
+ *   So the AQI here is READ, not derived, and the page must say THAT:
+ *   "CPCB's published sub-indexes", and any µg/m³ figure beside it is
+ *   IMPLIED back out of the index, never measured.
+ *
+ * ★ THE LABEL IS EARNED, NOT ASSERTED. It was hardcoded 'LIVE' on the
+ * argument that the word names CPCB's hourly publishing cadence rather than
+ * this job's (D-26.1). Measured 25 August 2026 at 15:22 IST, data.gov.in was
+ * still serving the 05:00 IST observation — a ten-hour lag, while CPCB's own
+ * portal was current to 14:00. A chip reading LIVE over a ten-hour-old number
+ * is the same species of error as the one this file was just corrected for:
+ * a label that does not describe the figure beside it. The label now
+ * DOWNGRADES to PERIODIC when the observation is more than STALE_HOURS old.
  */
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
 const RESOURCE = '3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69';
@@ -71,54 +84,51 @@ const ALIAS = { 'PM2.5': 'PM2.5', 'PM10': 'PM10', 'NO2': 'NO2', 'SO2': 'SO2',
   'CO': 'CO', 'OZONE': 'OZONE', 'O3': 'OZONE', 'NH3': 'NH3', 'PB': 'PB', 'Pb': 'PB' };
 const AVERAGING = { 'CO': '8-hour', 'OZONE': '8-hour' };
 
-/* ── CO IS EXCLUDED, AND THIS IS THE REASON ──────────────────────────────
-   Measured against the live feed on 21 August 2026: CO `avg_value` across
-   the 43 Delhi stations ran 10 to 108 with a median of 32, and the feed
-   states no unit anywhere in its field metadata.
-     - Read as mg/m³ (the unit CPCB's CO breakpoints use, where 34+ is
-       Severe) a median of 32 would put nearly every station in the top
-       band on CO alone. Not credible in monsoon, and it is exactly what
-       happened on the first run: every one of 43 stations came back
-       "Severe, governed by CO".
-     - Read as µg/m³ it is implausibly low for urban CO.
-   Every other pollutant in this feed is µg/m³ and matches its breakpoints;
-   CO is the single one CPCB defines in mg/m³. So the unit is unresolved,
-   and a guess either way silently moves every AQI on the site.
-   THEREFORE: CO is excluded from the computed AQI and the exclusion is
-   published with its reason. This is the page's own thesis applied to its
-   own pipeline — name the gap rather than fill it with an assumption.
-   To include CO, first confirm its unit against a CPCB bulletin for the
-   same station and hour, then delete it from this list.
+/* ── CO IS INCLUDED, AND THE OLD EXCLUSION WAS A SYMPTOM ─────────────────
+   CO used to be dropped here on the reasoning that its values were "not
+   credible" as mg/m³ OR as µg/m³, and that the feed stated no unit. All
+   true, and all explained by the same misreading: they were never
+   concentrations. The note recorded CO running 10 to 108 with a median of
+   32 across the Delhi stations — as SUB-INDEXES those are unremarkable
+   numbers, and the median station is simply "Good" on CO.
+   CPCB lists CO among the "24 Hr Subindexes" it publishes, and on
+   25 August 2026 CO was the worst sub-index at six of Delhi's 44 stations.
+   Excluding it suppressed six real station readings.
    ──────────────────────────────────────────────────────────────────────── */
-const EXCLUDED = {
-  CO: 'The feed states no unit for CO. CPCB\'s CO breakpoints are in mg/m³ while '
-    + 'every other pollutant here is µg/m³, and the values returned are not credible '
-    + 'as either. Including it on an assumption would put almost every station in the '
-    + 'top band on CO alone.',
-};
 
-/** Linear sub-index inside the CPCB band. Returns null outside the table. */
-function subIndex(pollutant, conc) {
+/**
+ * The concentration implied by a published sub-index — the breakpoint table
+ * run BACKWARDS, which is the only direction this file now uses. The mapping
+ * is piecewise-linear and exactly invertible; the only loss is CPCB's
+ * rounding of the index to a whole number. IMPLIED, never measured.
+ */
+function impliedConcentration(pollutant, sub) {
   const bp = BREAKPOINTS[pollutant];
-  if (!bp || conc === null || Number.isNaN(conc)) return null;
+  if (!bp || sub === null || Number.isNaN(sub) || sub < 0) return null;
   for (let i = 0; i < bp.length; i++) {
     const [bLo, bHi] = bp[i], [iLo, iHi] = BANDS[i].idx;
-    if (conc <= bHi) {
+    if (sub <= iHi) {
       const lo = i === 0 ? 0 : bLo;
-      return Math.round(((iHi - iLo) / (bHi - lo)) * (conc - lo) + iLo);
+      return Math.round((lo + ((sub - iLo) * (bHi - lo)) / (iHi - iLo)) * 10) / 10;
     }
   }
-  return 500; // above the top band; CPCB caps the index at 500
+  return bp[bp.length - 1][1];
 }
 const bandFor = (aqi) => aqi === null ? null
   : BANDS.find(b => aqi >= b.idx[0] && aqi <= b.idx[1]) || BANDS[BANDS.length - 1];
 
-/* ── SELF-CHECK. CPCB's own worked example, before any network call. ──── */
-for (const [conc, want] of [[31, 51], [45, 75], [60, 100]]) {
-  const got = subIndex('PM2.5', conc);
-  if (got !== want) {
-    console.error(`BREAKPOINT TABLE IS WRONG: PM2.5 at ${conc} µg/m³ should be ` +
-      `sub-index ${want} (CPCB's own example), got ${got}. Refusing to run.`);
+/* ── SELF-CHECK, ON THE DIRECTION THIS FILE ACTUALLY USES ────────────────
+   The previous self-check verified the FORWARD conversion against CPCB's
+   worked example. It was correct, it passed on every run, and it sat green
+   for eleven weeks while the forward conversion was itself the bug. A check
+   can only ever prove the table is right, never that the table should be
+   consulted — so this one at least checks the direction we depend on.
+   ──────────────────────────────────────────────────────────────────────── */
+for (const [sub, want] of [[51, 31], [100, 60], [225, 98]]) {
+  const got = impliedConcentration('PM2.5', sub);
+  if (got === null || Math.abs(got - want) > 0.2) {
+    console.error(`BREAKPOINT TABLE IS WRONG: PM2.5 sub-index ${sub} should imply ` +
+      `about ${want} µg/m³, got ${got}. Refusing to run.`);
     process.exit(1);
   }
 }
@@ -129,6 +139,25 @@ for (const [conc, want] of [[31, 51], [45, 75], [60, 100]]) {
    silent truncation would drop stations and quietly lower the city figure.
    ──────────────────────────────────────────────────────────────────────── */
 async function fetchAll(city) {
+  /* ★ REPLAY, FOR REVIEWING A METHOD CHANGE WITHOUT THE NUMBER MOVING.
+     AIR_FIXTURE points at a captured response from this same resource. It
+     exists because a change to HOW the reading is selected has to be judged
+     against a FIXED hour — if the feed advances mid-review, the before and
+     after differ for two reasons at once and neither is legible. It is also
+     the only way to re-run this job from a network that cannot hold a
+     connection to data.gov.in long enough for its 12s timeout.
+     Nothing about the output is faked: the rows are CPCB's, and the
+     observation stamp inside them says which hour they are. The daily job
+     sets no such variable and is unaffected. */
+  if (process.env.AIR_FIXTURE) {
+    const raw = JSON.parse(readFileSync(process.env.AIR_FIXTURE, 'utf8'));
+    // A city-filtered capture carries no `city` field on its rows; only filter
+    // when the capture is the unfiltered all-India shape.
+    const all = raw.records || raw;
+    const rows = all.some(r => r.city) ? all.filter(r => r.city === city) : all;
+    console.log(`REPLAY: ${rows.length} rows from ${process.env.AIR_FIXTURE} (no network)`);
+    return rows;
+  }
   const rows = [];
   const LIMIT = 1000;
   for (let offset = 0; ; offset += LIMIT) {
@@ -141,8 +170,21 @@ async function fetchAll(city) {
     const batch = body.records || [];
     rows.push(...batch);
     if (batch.length < LIMIT) {
-      if (rows.length !== Number(body.total)) {
-        console.warn(`NOTE: upstream reports total=${body.total}, collected ${rows.length}.`);
+      /* ★ INTEGRITY IS ON DISTINCT KEYS, NOT ON THE COUNT. The all-India job
+         collected exactly `total` rows while sixty-five of them were
+         duplicates masking sixty-five losses — this same check, written as a
+         count, passed straight through it. A lost row strips a station of a
+         channel and can flip its governing pollutant, publishing a WRONG
+         reading rather than a missing one. Delhi is one page today, so this
+         should never fire; it exists because the version that could not fire
+         is the version that let it happen elsewhere. */
+      const total = Number(body.total);
+      const distinct = new Set(rows.map(r => `${r.station}|${r.pollutant_id}`)).size;
+      if (Number.isFinite(total) && distinct < total) {
+        console.error(`INTEGRITY: upstream reports total=${total} but only ${distinct} distinct `
+          + `(station, pollutant) rows arrived — ${total - distinct} lost to unstable paging. `
+          + `Refusing to write; the previous file is left alone.`);
+        process.exit(1);
       }
       break;
     }
@@ -179,23 +221,32 @@ for (const r of rows) {
   });
   const st = stations.get(key);
   const pid = ALIAS[r.pollutant_id] || String(r.pollutant_id || '').toUpperCase();
-  if (!BREAKPOINTS[pid]) continue;
-  const avg = num(r.avg_value);
-  const excluded = EXCLUDED[pid] || null;
+  const sub = num(r.avg_value);
+  if (sub === null) { (st.missing ||= []).push(pid); continue; }
+  /* A FLATLINED CHANNEL IS A STUCK INSTRUMENT. min === max === avg over a
+     24-hour window does not happen to air. Same rule as lib/air.ts — see the
+     note there. Recorded, not silently dropped. */
+  const lo = num(r.min_value), hi = num(r.max_value);
+  if (lo !== null && hi !== null && lo === hi && hi === sub) {
+    (st.flatlined ||= []).push(pid);
+    continue;
+  }
+  // `avg_value` IS the sub-index. `min_value`/`max_value` are the sub-index's
+  // own 24-hour extremes, not concentrations either.
   st.pollutants[pid] = {
-    conc: avg, min: num(r.min_value), max: num(r.max_value),
-    unit: excluded ? 'unstated' : 'µg/m³',
+    sub,
+    subMin: num(r.min_value), subMax: num(r.max_value),
     averaging: AVERAGING[pid] || '24-hour',
-    // A pollutant whose unit cannot be verified gets NO sub-index. The
-    // concentration is still published, so the hole is visible.
-    sub: excluded ? null : subIndex(pid, avg),
-    excluded, excludedReason: excluded,
+    impliedConc: impliedConcentration(pid, sub),
+    impliedUnit: pid === 'CO' ? 'mg/m³' : 'µg/m³',
+    concBasis: 'implied-from-subindex',
   };
 }
 
 // Station AQI = the WORST sub-index. CPCB: "The worst sub-index determines
 // the overall AQI." The governing pollutant is recorded by name, because the
 // multiplier is meaningless without it (D-15.3).
+const GASES = new Set(['OZONE', 'CO', 'NO2', 'SO2', 'NH3']);
 for (const st of stations.values()) {
   let best = null;
   for (const [pid, p] of Object.entries(st.pollutants)) {
@@ -203,6 +254,19 @@ for (const st of stations.values()) {
     if (!best || p.sub > best.sub) best = { pid, sub: p.sub };
   }
   st.aqi = best ? best.sub : null;
+  // FLAGGED, NOT DELETED — see lib/air.ts. A gas standing far above clean
+  // particulates is either a local source or an uncalibrated channel.
+  const pmSub = Math.max(st.pollutants['PM2.5']?.sub ?? -1, st.pollutants['PM10']?.sub ?? -1);
+  st.quality = {
+    flatlined: st.flatlined || [], missing: st.missing || [],
+    suspect: !!(best && GASES.has(best.pid) && best.sub > 100 && pmSub >= 0 && pmSub < best.sub / 2),
+  };
+  st.quality.suspectReason = st.quality.suspect
+    ? `Set by ${best.pid} alone: its sub-index is ${best.sub} while the worst particulate here `
+      + `reads ${pmSub}. This feed cannot say whether that is a local source or an `
+      + `uncalibrated channel.` + (st.quality.flatlined.length
+        ? ` The ${st.quality.flatlined.join(', ')} channel here is flatlined.` : '')
+    : null;
   st.governing = best ? best.pid : null;
   st.band = bandFor(st.aqi)?.name || null;
   st.reported = Object.keys(st.pollutants).filter(k => st.pollutants[k].sub !== null);
@@ -211,11 +275,55 @@ for (const st of stations.values()) {
 
 const list = [...stations.values()].sort((a, b) => (b.aqi ?? -1) - (a.aqi ?? -1));
 const withAqi = list.filter(s => s.aqi !== null);
-// The city figure is the WORST STATION, NAMED. Taking a maximum across
-// stations is the same gesture the index already makes across pollutants,
-// and it is the only choice that matches a page about limits being broken.
-// An average would hide exactly the station that matters.
 const worst = withAqi[0] || null;
+
+/* ── THE HEADLINE IS THE WORST MONITOR, LABELLED AS ONE ──────────────────
+   AD-42C, owner's ruling of 25 August 2026, reversing A-42.3.
+
+   Keep two corrections apart, because they arrived together and only one of
+   them is being reversed:
+     1. THE ARITHMETIC. This feed publishes CPCB's sub-indexes, not µg/m³, and
+        this script used to run them through the breakpoint table a second
+        time. That is fixed and STAYS fixed — it is why the worst monitor now
+        reads 225 and not 381.
+     2. THE SELECTION. A-42.3 replaced the worst station with the mean of the
+        44, because the mean is what CPCB calls "Delhi". The owner reversed
+        that: this site's subject is limits being broken at named places, and
+        the mean is the number that averages away the place where the limit is
+        broken worst.
+
+   The mislabelling A-42.3 was right about is fixed a different way — by the
+   LABEL, not by changing the number. `scope: 'worst-monitor'`, the station
+   name, and the count it was chosen from all travel with the figure, and
+   nothing in this file calls it "Delhi's AQI".
+
+   THE MEAN IS STILL COMPUTED, as `city_mean`. It is not the headline and the
+   page does not lead with it, but it is the one cheap check that catches the
+   double conversion coming back: read correctly it tracks CPCB's own city
+   figure at a ratio of 1.00 across 73 cities, so a sudden divergence means the
+   parser has drifted again.
+   ──────────────────────────────────────────────────────────────────────── */
+const cityMean = withAqi.length
+  ? Math.round(withAqi.reduce((sum, s) => sum + s.aqi, 0) / withAqi.length)
+  : null;
+const headlineAqi = worst?.aqi ?? null;
+
+/* ── HOW OLD IS THE OBSERVATION, REALLY ──────────────────────────────────
+   The stamp is IST wall-clock text. Comparing it to Date.now() with local
+   getters would be wrong by 5:30 whenever this job runs in CI on UTC — the
+   exact class of bug the date rules in this repo exist to prevent. So the
+   stamp is converted to a real instant by SUBTRACTING the IST offset from a
+   UTC construction, which is timezone-independent and correct everywhere.
+   ──────────────────────────────────────────────────────────────────────── */
+const STALE_HOURS = 3;   // the feed claims hourly; three hours is generous
+const IST_OFFSET_MS = 5.5 * 3600 * 1000;
+const OBS_AGE_H = (() => {
+  const o = worst?.stamp;
+  if (!o) return null;
+  const instant = Date.UTC(o.y, o.m - 1, o.d, o.hh, o.mi) - IST_OFFSET_MS;
+  return Math.round(((Date.now() - instant) / 3600000) * 10) / 10;
+})();
+const STATE_LABEL = (OBS_AGE_H === null || OBS_AGE_H > STALE_HOURS) ? 'PERIODIC' : 'LIVE';
 
 const out = {
   city: CITY,
@@ -226,11 +334,15 @@ const out = {
     via: 'data.gov.in — Real time Air Quality Index from various locations',
     resource: RESOURCE,
     url: `https://api.data.gov.in/resource/${RESOURCE}`,
-    returns: 'per-station pollutant concentrations, NOT an AQI',
+    returns: 'per-station, per-pollutant CPCB sub-indexes — the index itself, not concentrations',
   },
-  derivation: 'AQI computed from station concentrations using the CPCB breakpoint '
-    + 'table in "About National Air Quality Index"; the station AQI is the worst '
-    + 'sub-index, and the city figure is the worst station.',
+  derivation: 'AQI read from CPCB\'s own published per-pollutant sub-indexes — this feed '
+    + 'carries the index, not concentrations, and nothing here recomputes it. A station\'s '
+    + 'AQI is its worst sub-index, and the headline reading is the WORST MONITOR of those '
+    + 'reporting, named, not a city average. CPCB\'s own city figure is the mean of the '
+    + 'stations and is carried separately as city_mean. Concentrations shown are implied '
+    + 'back from the sub-index using the breakpoint table in "About National Air Quality '
+    + 'Index", never measured.',
   /* LIVE, PER D-26.1 — AND THE WORD DESCRIBES CPCB, NOT THIS SCRIPT.
      The state chip names how the source delivers. CPCB publishes this
      feed hourly, which is what earned Air the badge at D-21.5, so the
@@ -242,7 +354,8 @@ const out = {
      homepage hero deck all render from. It said PERIODIC until 23 August,
      while /now hardcoded LIVE — the contradiction the cadence register
      was extracted to make impossible. */
-  state_label: 'LIVE',
+  state_label: STATE_LABEL,
+  observation_age_hours: OBS_AGE_H,
   observed: worst?.stamp ?? null,     // the station's own stamp
   fetched: { epochMs: Date.now() },   // when this job ran — a different thing
   limits: {
@@ -251,9 +364,33 @@ const out = {
   },
   aqiLimit: 100,
   bands: BANDS,
-  // Published, not hidden: what the index here does NOT include, and why.
-  excluded: Object.entries(EXCLUDED).map(([pollutant, reason]) => ({ pollutant, reason })),
-  city_reading: worst && {
+  // Nothing is excluded any more. CO was, on a misreading of the feed's units;
+  // see the note above the breakpoint table. Kept as an empty list rather than
+  // deleted so the page's "what this leaves out" slot stays wired.
+  excluded: [],
+  city_reading: worst === null ? null : {
+    scope: 'worst-monitor',
+    aqi: worst.aqi,
+    band: worst.band,
+    governing: worst.governing,
+    station: worst.station,
+    lat: worst.lat,
+    lng: worst.lng,
+    method: 'worst monitor of those reporting, named — NOT a city average',
+    selectedFrom: withAqi.length,
+    stations: withAqi.length,
+    pollutants: worst.pollutants,
+  },
+  /* CPCB's own city definition. Carried, not led with — see the note above. */
+  city_mean: cityMean === null ? null : {
+    scope: 'city',
+    aqi: cityMean,
+    band: bandFor(cityMean)?.name || null,
+    method: 'mean of station AQIs (unweighted; CPCB weights by 2km-grid population)',
+    stations: withAqi.length,
+    role: 'cross-check against CPCB\'s published city figure — not the page reading',
+  },
+  worst_station: worst && {
     aqi: worst.aqi, band: worst.band, governing: worst.governing,
     station: worst.station, lat: worst.lat, lng: worst.lng,
     pollutants: worst.pollutants,
@@ -274,10 +411,11 @@ const out = {
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, JSON.stringify(out, null, 2) + '\n');
 
-console.log(`${CITY}: ${rows.length} rows, ${list.length} stations, ${withAqi.length} with a computable AQI`);
+console.log(`${CITY}: ${rows.length} rows, ${list.length} stations, ${withAqi.length} reporting`);
 if (worst) {
-  console.log(`worst station: ${worst.station} — AQI ${worst.aqi} (${worst.band}), governed by ${worst.governing}`);
+  console.log(`${CITY} headline: ${headlineAqi} (${worst.band}) — WORST MONITOR of ${withAqi.length}: ${worst.station}, governed by ${worst.governing}`);
+  console.log(`city mean (cross-check, not published as the reading): ${cityMean} (${bandFor(cityMean)?.name})`);
   console.log(`spread: ${out.spread.best.aqi} to ${out.spread.worst.aqi}; ${out.spread.above_limit} of ${withAqi.length} above 100`);
-  console.log(`observed: ${worst.stamp?.raw}`);
+  console.log(`observed: ${worst.stamp?.raw} (${OBS_AGE_H}h old) -> chip ${STATE_LABEL}`);
 }
 console.log(`wrote ${OUT}`);

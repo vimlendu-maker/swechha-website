@@ -85,7 +85,7 @@ export const SITUATIONS = [
     generator: 'scripts/build-situation-air.mjs', npm: 'build:situation-air',
     bands: 9, money: true,
     states: ['PERIODIC'],
-    subject: 'AQI against CPCB’s own limit of 100, computed from station concentrations.',
+    subject: 'AQI against CPCB’s own limit of 100, read from CPCB’s published sub-indexes.',
     reading: () => [String(J('air-delhi.json').city_reading.aqi)],
     readingNote: 'the worst Delhi station’s computed AQI',
   },

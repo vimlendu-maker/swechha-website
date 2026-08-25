@@ -176,18 +176,20 @@ const SLIDES = [
         `$1${airAqi}$2${readout(airAqi)}$3`, 'readout, and the committed-value attribute beside it'],
       [/(<span class="s-hero-prov">)[^<]*(<\/span>)/,
         `$1Observed ${airStamp}.$2`, 'provenance: the committed observation stamp'],
-      /* THE STATION IS PART OF THE READING, NOT DECORATION. A city's AQI is
-         its WORST station, so the station moves whenever the worst one does —
-         and it did within the hour this was written, Anand Vihar to
-         Jahangirpuri. The runtime script used to write this line and nothing
-         else did, so retiring the repaint left the homepage naming one monitor
-         while /now/air, off the same dataset, named another. Measured, and
-         closed here: the same value, written by the build, from the same
-         file. Only the locality — the text before the first comma — as the
-         script did, because "Jahangirpuri, Delhi - DPCC" in this sentence
-         would repeat "Delhi" three words after "CPCB continuous monitor". */
+      /* THE PROVENANCE MUST DESCRIBE THE NUMBER BESIDE IT — AD-42C.
+         This line has now been wrong in two opposite directions. It read
+         "CPCB continuous monitor, Anand Vihar" while the figure above it was
+         a DOUBLED sub-index; AD-42 fixed the arithmetic and made the figure
+         the mean of the 44, so the line became the count. The owner then
+         ruled the headline back to the worst monitor — which makes naming a
+         single monitor correct again, but ONLY if the line also says it was
+         selected as the worst, and out of how many. "Anand Vihar" alone
+         reads as "this is where we happen to measure Delhi"; the number is
+         not Delhi, it is the worst of 44, and the reader has to be told
+         which. The count travels with the name for that reason. */
       [/(<span class="s-hero-loc">, )[^<]*(<\/span>)/,
-        `$1${String(AIR.city_reading.station).split(',')[0].trim()}$2`, 'provenance: the station'],
+        `$1worst of ${AIR.spread.stations} CPCB monitors — ${AIR.city_reading.station.replace(/,\s*Delhi\s*-\s*/, ', ')}$2`,
+        'provenance: the worst monitor, named, and the count it came from'],
       /* THE PROSE CLAUSE IS THE MULTIPLIER IN WORDS, so it is written from the
          same arithmetic as .mult and not left to a hand edit. It was not, and
          it drifted: the slide shipped "3.9 times the limit" beside a .mult of

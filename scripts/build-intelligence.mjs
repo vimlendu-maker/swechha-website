@@ -47,7 +47,8 @@ const GFW = S.J('gfw-india.json');
 const CL = S.J('climate-india.json');
 const DTH = S.J('deaths-ncrb-2024.json');
 
-const airRd = AIR.city_reading;
+const airRd = AIR.city_reading;   // the HEADLINE: the WORST MONITOR, named (AD-42C)
+const airWorst = AIR.worst_station; // the worst monitor, named, never as the city
 const heatRec = HEAT.national.hottest_on_record;
 const burnt = ISFR.fire.burnt_area;
 const clWorst = [...CL.stations].sort((a, b) =>
@@ -80,7 +81,16 @@ const SITUATIONS = [
        time that does not. So the hour lives in the string the updater rewrites,
        and the updater rewrites it from the same payload it takes the number
        from. They agree by construction or not at all. */
-    sub: `${esc(airRd.band)} · governed by ${airRd.governing === 'PM2.5' ? 'PM2.5' : esc(airRd.governing)}${AIR.observed ? ` · ${String(AIR.observed.hh).padStart(2, '0')}:${String(AIR.observed.mi).padStart(2, '0')} IST` : ''}`,
+    /* THE GOVERNING POLLUTANT IS AVAILABLE AGAIN, BECAUSE THE FIGURE IS A
+       STATION AGAIN — AD-42C. A governing pollutant belongs to a station: it
+       is the one whose sub-index won there. Under AD-42's city mean it had to
+       be suppressed, because a mean across 44 stations governed by four
+       different pollutants has no governing pollutant and naming one would
+       have invented a fact. The headline is the worst MONITOR now, so the
+       detail is real — but it is still only printed where the station's name
+       is printed with it. The client updater guards `r.governing` the same
+       way, so both sides say the same thing. */
+    sub: `${esc(airRd.band)}${AIR.observed ? ` · ${String(AIR.observed.hh).padStart(2, '0')}:${String(AIR.observed.mi).padStart(2, '0')} IST` : ''}`,
     kind: 'a ceiling', limit: `AQI ${AIR.aqiLimit}`,
     authority: 'CPCB, National Air Quality Index',
     verdict: airRd.aqi > AIR.aqiLimit

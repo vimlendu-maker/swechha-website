@@ -6,17 +6,31 @@
  *
  * WHY THIS IS A SEPARATE FILE FROM air-delhi.json. The hero prints one Delhi
  * reading; this prints where that reading SITS. The two must be computed the
- * same way or the comparison is meaningless, so the breakpoint table, the CO
- * exclusion and the worst-sub-index rule are all transcribed from
- * fetch-air.mjs verbatim and self-checked against CPCB's worked example before
- * a single request goes out.
+ * same way or the comparison is meaningless, so the method here is transcribed
+ * from fetch-air.mjs verbatim.
  *
- * THE RULE THAT MAKES THE RANKING HONEST. A city's AQI here is its WORST
- * STATION, not the mean of its stations — because that is what CPCB's own
- * definition does one level down (a station's AQI is its worst sub-index, not
- * the mean of its pollutants). Averaging at the city level and not at the
- * station level would be a different method at each scale, and the resulting
- * table would rank cities by how many clean monitors they happen to own.
+ * ★★ THE FEED PUBLISHES SUB-INDEXES, NOT CONCENTRATIONS — corrected
+ * 25 August 2026, along with fetch-air.mjs and lib/air.ts. `avg_value` is
+ * CPCB's own index and must never be converted. Read as µg/m³ it roughly
+ * doubled every city in this table.
+ *
+ * THE RULE, AND WHAT IT COSTS — AD-42C, owner's ruling of 25 August 2026.
+ * A station's AQI is its WORST sub-index. The figure RANKED here is the city's
+ * WORST MONITOR, not the mean of its monitors, because the site's headline is
+ * the worst monitor and a table that ranked cities by a different statistic
+ * than the hero prints would contradict it on the same screen.
+ *
+ * ★ THIS IS NOT CPCB'S CITY DEFINITION AND THE TABLE SAYS SO. CPCB takes the
+ * worst WITHIN a station and the average ACROSS them. Measured against CPCB's
+ * own published figures for 73 cities on 25 August 2026, worst-station runs
+ * +15.7 biased at a ratio of 1.25, where the mean runs at 1.00 with zero bias.
+ * So these numbers will sit ABOVE the city figures CPCB publishes, by about a
+ * quarter, and a reader checking a row against CPCB's city ticker will find a
+ * gap. That is a deliberate editorial choice — the subject is limits broken at
+ * named places — and it is only defensible while every row names the monitor
+ * it came from and the count it was chosen from. CPCB's mean is carried on
+ * every row as `meanAqi` so the comparable number is never more than a field
+ * away, and so a return of the double-conversion bug stays visible.
  *
  * ★ COMPARABILITY IS NOT ASSUMED, IT IS PUBLISHED. Cities carry wildly
  * different monitor counts — Delhi had 43 and most cities have one. A city
@@ -29,7 +43,7 @@
  * validated, an empty result is fatal, and a failed run leaves the previous
  * file alone.
  */
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
 const KEY = process.env.DATA_GOV_IN_KEY;
@@ -62,29 +76,32 @@ const BREAKPOINTS = {
 };
 const ALIAS = { 'PM2.5':'PM2.5','PM10':'PM10','NO2':'NO2','SO2':'SO2',
   'OZONE':'OZONE','O3':'OZONE','NH3':'NH3' };
-// CO and Pb excluded for the reason published on the page (D-15.9): the feed
-// states no unit for CO, and CPCB defines CO in mg/m³ where all else is µg/m³.
-const EXCLUDED = ['CO', 'PB'];
+// NOTHING IS EXCLUDED. CO and Pb were dropped on the reading that the feed
+// published concentrations in an unstated unit. It publishes sub-indexes, so
+// every pollutant it reports is already on one scale and belongs in the max.
+const EXCLUDED = [];
 const AQI_LIMIT = 100;   // AQI 100 IS the NAAQS 24-hour standard.
 
-function subIndex(pollutant, conc) {
+/** The breakpoint table, run BACKWARDS — the only direction still used here. */
+function impliedConcentration(pollutant, sub) {
   const bp = BREAKPOINTS[pollutant];
-  if (!bp || conc === null || Number.isNaN(conc)) return null;
+  if (!bp || sub === null || Number.isNaN(sub) || sub < 0) return null;
   for (let i = 0; i < bp.length; i++) {
     const [bLo, bHi] = bp[i], [iLo, iHi] = BANDS[i].idx;
-    if (conc <= bHi) {
+    if (sub <= iHi) {
       const lo = i === 0 ? 0 : bLo;
-      return Math.round(((iHi - iLo) / (bHi - lo)) * (conc - lo) + iLo);
+      return Math.round((lo + ((sub - iLo) * (bHi - lo)) / (iHi - iLo)) * 10) / 10;
     }
   }
-  return 500;
+  return bp[bp.length - 1][1];
 }
 const bandFor = (aqi) => BANDS.find(b => aqi >= b.idx[0] && aqi <= b.idx[1]) || BANDS[BANDS.length - 1];
 
-/* ── SELF-CHECK, before any network call. CPCB's own worked example. ───── */
-for (const [conc, want] of [[31, 51], [45, 75], [60, 100]]) {
-  if (subIndex('PM2.5', conc) !== want) {
-    console.error(`BREAKPOINT TABLE IS WRONG: PM2.5 ${conc} should be ${want}. Refusing to run.`);
+/* ── SELF-CHECK, on the direction this file uses. See fetch-air.mjs. ───── */
+for (const [sub, want] of [[51, 31], [100, 60], [225, 98]]) {
+  const got = impliedConcentration('PM2.5', sub);
+  if (got === null || Math.abs(got - want) > 0.2) {
+    console.error(`BREAKPOINT TABLE IS WRONG: PM2.5 sub-index ${sub} should imply ~${want}, got ${got}. Refusing to run.`);
     process.exit(1);
   }
 }
@@ -96,24 +113,81 @@ const num = (v) => {
   return Number.isFinite(n) ? n : null;
 };
 
-/* ── FETCH. Paged, and `offset` is NOT optional. ───────────────────────── */
-const rows = [];
-for (let offset = 0; ; offset += LIMIT) {
+/* ── FETCH ───────────────────────────────────────────────────────────────
+   ★★ THE UPSTREAM'S PAGING IS UNSTABLE, AND IT WAS SILENTLY EATING ROWS.
+   This loop used to page at limit=1000. Measured 25 August 2026: it collected
+   3,451 rows and `total` said 3,451 — the existing check passed — but only
+   3,386 of those rows were DISTINCT (station, pollutant) pairs. Sixty-five
+   rows arrived twice and sixty-five never arrived at all. The result set is
+   not stably ordered, so `offset` does not mean what it looks like it means.
+
+   The damage is invisible in aggregate and severe per station. Leh lost its
+   PM10, OZONE and NO2 channels and published as 13 "Good" on the PM2.5 that
+   survived — while the city-filtered query for the same station, in the same
+   second, returned all seven channels and an AQI of 195.
+
+   COUNTING ROWS CANNOT DETECT THIS. `rows.length === total` was true. The
+   integrity check has to be on DISTINCT KEYS, which is what refusing below
+   actually tests. Bigger pages measured clean (2,000 and 4,000 both lost
+   nothing), so we ask for the whole set in one request and still verify.
+   ──────────────────────────────────────────────────────────────────────── */
+async function fetchPage(offset, limit) {
   const url = `https://api.data.gov.in/resource/${RESOURCE}`
-    + `?api-key=${encodeURIComponent(KEY)}&format=json&limit=${LIMIT}&offset=${offset}`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(30000) });
-  if (!res.ok) { console.error(`upstream HTTP ${res.status}. Leaving the previous file alone.`); process.exit(1); }
+    + `?api-key=${encodeURIComponent(KEY)}&format=json&limit=${limit}&offset=${offset}`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(60000) });
+  if (!res.ok) throw new Error(`upstream HTTP ${res.status}`);
   const body = await res.json();
-  if (!Array.isArray(body?.records)) {
-    console.error('unexpected response shape — no `records` array. Leaving the previous file alone.');
+  if (!Array.isArray(body?.records)) throw new Error('unexpected response shape — no `records` array');
+  return body;
+}
+const KEY_OF = (r) => `${r.station}|${r.pollutant_id}`;
+
+let rows = [];
+let attempt = 0;
+/* ★ REPLAY — see the same note in fetch-air.mjs. AIR_FIXTURE points at a
+   captured response from this resource so that a change to HOW a city's
+   figure is SELECTED can be judged against a fixed hour, and so this job can
+   be re-run from a network that cannot hold a connection to data.gov.in.
+   The integrity check below still runs against the capture's own `total`. */
+if (process.env.AIR_FIXTURE) {
+  const raw = JSON.parse(readFileSync(process.env.AIR_FIXTURE, 'utf8'));
+  rows = raw.records || raw;
+  const distinct = new Set(rows.map(KEY_OF)).size;
+  const total = Number(raw.total);
+  if (Number.isFinite(total) && distinct < total) {
+    console.error(`INTEGRITY: capture holds ${distinct} distinct of ${total} expected. Refusing.`);
     process.exit(1);
   }
-  rows.push(...body.records);
-  process.stdout.write(`\rfetched ${rows.length} rows`);
-  if (body.records.length < LIMIT) break;
-  if (offset > 50000) { console.error('\nrunaway paging guard tripped.'); process.exit(1); }
+  console.log(`REPLAY: ${rows.length} rows (${distinct} distinct) from ${process.env.AIR_FIXTURE} (no network)`);
 }
-process.stdout.write('\n');
+for (; !rows.length;) {
+  attempt++;
+  try {
+    const probe = await fetchPage(0, 1);
+    const total = Number(probe.total);
+    if (!Number.isFinite(total) || total <= 0) throw new Error(`upstream reports total=${probe.total}`);
+    // One request for the whole set, with headroom, so there are no page
+    // boundaries for the upstream to lose rows across.
+    const body = await fetchPage(0, Math.min(total + 500, 20000));
+    rows = body.records;
+    const distinct = new Set(rows.map(KEY_OF)).size;
+    process.stdout.write(`fetched ${rows.length} rows, ${distinct} distinct of ${total} expected\n`);
+    // ROWS LOST IS THE FAILURE. Duplicates are harmless (same values); a
+    // MISSING row silently strips a station of a channel and can flip its
+    // governing pollutant, which is how Leh became "Good".
+    if (distinct >= total) break;
+    console.warn(`  integrity: ${total - distinct} row(s) lost to unstable paging — retrying`);
+  } catch (e) {
+    console.warn(`  attempt ${attempt} failed: ${e.message}`);
+  }
+  if (attempt >= 3) {
+    console.error('upstream would not return a complete, distinct set in 3 attempts. '
+      + 'Leaving the previous file alone — a partial snapshot publishes wrong readings, '
+      + 'not missing ones, which is worse.');
+    process.exit(1);
+  }
+  await new Promise(r => setTimeout(r, 800));
+}
 if (!rows.length) { console.error('upstream returned no records at all. Refusing to publish an absence.'); process.exit(1); }
 
 /* ── FOLD: row -> station -> city ──────────────────────────────────────── */
@@ -127,12 +201,20 @@ for (const r of rows) {
   if (!city || !st) continue;
   if (r.last_update) stampCount[r.last_update] = (stampCount[r.last_update] || 0) + 1;
   if (EXCLUDED.includes(pol)) continue;
-  const sub = subIndex(pol, num(r.avg_value));
-  if (sub == null) continue;
+  // `avg_value` IS CPCB's published sub-index. Never convert it — see the
+  // header of lib/air.ts for what converting it a second time cost.
+  const sub = num(r.avg_value);
+  if (sub == null || sub < 0) continue;
+  /* A FLATLINED CHANNEL IS A STUCK INSTRUMENT, NOT A READING — same rule as
+     lib/air.ts and fetch-air.mjs. Nine stations nationally were taking their
+     entire AQI from a frozen channel. */
+  const lo = num(r.min_value), hi = num(r.max_value);
+  if (lo != null && hi != null && lo === hi && hi === sub) continue;
   const key = `${city}|${st}`;
   if (!stations.has(key)) stations.set(key, { city, station: st, state: r.state ?? null, aqi: -1, governing: null,
-    lat: num(r.latitude), lng: num(r.longitude) });
+    pmSub: -1, lat: num(r.latitude), lng: num(r.longitude) });
   const s = stations.get(key);
+  if (pol === 'PM2.5' || pol === 'PM10') s.pmSub = Math.max(s.pmSub, sub);
   if (sub > s.aqi) { s.aqi = sub; s.governing = pol; }
 }
 
@@ -142,13 +224,36 @@ for (const s of stations.values()) {
   if (!cities.has(s.city)) cities.set(s.city, { city: s.city, state: s.state, aqi: -1, station: null, governing: null, stations: 0 });
   const c = cities.get(s.city);
   c.stations++;
-  if (s.aqi > c.aqi) { c.aqi = s.aqi; c.station = s.station; c.governing = s.governing; }
+  c.sum = (c.sum || 0) + s.aqi;
+  /* ★ THE RANKED FIGURE IS THE CITY'S WORST MONITOR — AD-42C, and it has to
+     match the hero. Delhi's headline on the homepage is its worst monitor;
+     if this table ranked Delhi by its mean, the hero and the panel under it
+     would print two different numbers for the same city on the same screen,
+     which is the exact defect D-21.6 was written to stop.
+     The mean is kept as `meanAqi` — CPCB's own city definition, the
+     comparable number, and the tripwire for the double conversion. */
+  c.meanAqi = Math.round(c.sum / c.stations);
+  if (s.aqi > (c.worstAqi ?? -1)) {
+    c.worstAqi = s.aqi; c.station = s.station; c.governing = s.governing; c.pmSub = s.pmSub;
+  }
+  c.aqi = c.worstAqi;
+}
+/* SUSPECT, NOT SUPPRESSED. A gas standing far above clean particulates is
+   either a genuine local source or an uncalibrated channel, and this feed
+   cannot tell them apart. Leh ranked SECOND in India on one ozone channel
+   beside a PM2.5 of 13. The row stays; the doubt travels with it. */
+const GASES = new Set(['OZONE', 'CO', 'NO2', 'SO2', 'NH3']);
+for (const c of cities.values()) {
+  c.suspect = !!(GASES.has(c.governing) && c.worstAqi > AQI_LIMIT && c.pmSub >= 0 && c.pmSub < c.worstAqi / 2);
+  c.suspectReason = c.suspect
+    ? `Set by ${c.governing} alone: ${c.worstAqi} against a worst particulate of ${c.pmSub} at the same station.`
+    : null;
 }
 
 const ranked = [...cities.values()]
   .filter(c => c.aqi >= 0)
   .sort((a, b) => b.aqi - a.aqi)
-  .map((c, i) => ({ rank: i + 1, ...c, band: bandFor(c.aqi).name,
+  .map((c, i) => ({ rank: i + 1, ...c, sum: undefined, band: bandFor(c.aqi).name,
     // The multiplier belongs to the CONCENTRATION, never the index: the AQI
     // is piecewise-linear, so 4x the index is not 4x the pollution. This is
     // published as "the index against the index limit" and labelled as such.
@@ -164,8 +269,12 @@ const neighbours = behind.filter(c => NCR_STATES.includes(String(c.state)));
 const out = {
   subject: 'Every city reporting to CPCB, ranked, on CPCB\'s own scale',
   state_label: 'LIVE',
-  method: 'A city\'s AQI is its WORST STATION; a station\'s AQI is its WORST SUB-INDEX. '
-        + 'Never a mean, at either level — that is CPCB\'s own definition. CO and Pb excluded.',
+  method: 'Read from CPCB\'s published per-pollutant sub-indexes; nothing here recomputes them. '
+        + 'A station\'s AQI is its WORST sub-index, and a city is ranked here by its WORST MONITOR, '
+        + 'named on every row. That is NOT CPCB\'s city definition — CPCB averages across a city\'s '
+        + 'stations, and against its published figures for 73 cities this runs about 25 per cent '
+        + 'higher. CPCB\'s mean is carried on every row as meanAqi so the comparable number is '
+        + 'always to hand.',
   source: { name: 'CPCB via data.gov.in', resource: RESOURCE,
     url: 'https://data.gov.in/resource/real-time-air-quality-index-various-locations' },
   aqiLimit: AQI_LIMIT,
@@ -185,9 +294,8 @@ const out = {
       + `${neighbours.length} of the next ${behind.length} are in its own airshed.`,
   } : null,
   caveats: [
-    'A city with one monitor is not measured better than a city with forty. It is measured less. `stations` is on every row.',
+    'A city\'s figure here is its WORST MONITOR, so a city with forty monitors has forty chances to produce a high one and a city with a single monitor has one. That cuts the opposite way from the mean: a well-monitored city ranks WORSE, not better, and a city with one monitor is a single reading wearing a city\'s name. Read `stations` before reading the rank, and `meanAqi` for the figure CPCB itself publishes.',
     'The AQI is piecewise-linear, so a ratio of two index values is NOT a ratio of two concentrations. `index_multiple` compares index to index limit and nothing else.',
-    'CO and Pb are excluded from every figure here, for the reason published on the page.',
     'A failed fetch leaves the previous file alone. It never writes a zero.',
   ],
   cities: ranked,

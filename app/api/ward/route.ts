@@ -95,12 +95,14 @@ export async function GET() {
       above_limit: enriched.filter((s) => s.overLimit).length,
       with_coordinates: withCoords.length,
     },
-    derivation: 'AQI computed from CPCB concentrations using CPCB\'s National AQI breakpoints. '
-      + 'A station\'s AQI is its worst sub-index, never the mean. CO and Pb excluded.',
+    derivation: 'Read from CPCB\'s published per-pollutant sub-indexes — the feed carries the '
+      + 'index, not concentrations, and nothing here recomputes it. A station\'s AQI is its '
+      + 'worst sub-index, never the mean. Any concentration shown is implied back from that '
+      + 'sub-index, not measured.',
     why_not_pincode: 'India Post\'s All India Pincode Directory on data.gov.in lists 562 Delhi post '
       + 'offices and carries no latitude or longitude column, so a pincode cannot be turned into a '
       + 'point on the ground from an official source. This page asks which monitor instead — which is '
-      + 'also the better question, since two Delhi monitors 3.9 km apart read 392 and 110.',
+      + 'also the better question, since two Delhi monitors 3.9 km apart read 225 and 72.',
     stations: enriched,
     fetchedAt: new Date().toISOString(),
   }, { headers: { 'Cache-Control': 'no-store' } });

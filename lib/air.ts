@@ -1,23 +1,44 @@
 /**
- * lib/air.ts — CPCB's National AQI, computed here, in one place.
+ * lib/air.ts — CPCB's National AQI, read (not recomputed) in one place.
  *
  * WHY THIS FILE EXISTS. Two routes need the same number: /api/air prints the
  * city reading in the hero, and /api/ward prints a per-station reading so a
- * reader can find the monitor that covers them. Computing it twice would mean
- * two breakpoint tables, and a page that disagrees with itself about the air
- * is worse than a page with one fewer feature.
+ * reader can find the monitor that covers them. Deriving it twice would mean
+ * two tables, and a page that disagrees with itself about the air is worse than
+ * a page with one fewer feature.
  *
- * THE FEED PUBLISHES NO INDEX. It publishes concentrations. Every AQI on this
- * site is derived here from CPCB's own breakpoint table, and the page says so.
+ * ★★ THE FEED ALREADY PUBLISHES THE INDEX. Read the resource's title: "Real
+ * time AIR QUALITY INDEX from various locations". `avg_value` is CPCB's own
+ * 24-hour SUB-INDEX for that pollutant at that station — not a concentration.
+ * From 21 August 2026 this file read it as µg/m³ and pushed it through the CPCB
+ * breakpoint table a SECOND time, which roughly doubled every number the site
+ * printed. On 25 August the site showed Delhi at 381 "Very Poor" while CPCB
+ * itself published 97 "Satisfactory", and Anand Vihar at 381 against CPCB's own
+ * 177. Verified field by field against CPCB's Central Control Room panel: the
+ * feed's PM2.5 MIN of 67 is CPCB's PM2.5 sub-index MIN of 67, to the unit.
  *
- * ★ THE TABLE IS TRANSCRIBED VERBATIM FROM scripts/fetch-air.mjs and the two
- * must not drift. The bounds are INCLUSIVE INTEGERS (…30 / 31…), not shared
- * edges: CPCB's own worked example puts PM2.5 31 µg/m³ at sub-index 51, and a
- * shared-edge table returns 52. `selfCheck()` catches exactly that and every
- * caller runs it before trusting a number.
+ *   NEVER CONVERT `avg_value`. It is the answer, not the input.
+ *
+ * That is also why `subIndex()` is gone rather than merely unused: the only
+ * reliable way to stop a conversion being reintroduced is to delete the
+ * function that performs it. The table survives in the INVERSE direction only.
+ *
+ * ★ A CITY IS THE MEAN OF ITS STATIONS. A station is its worst sub-index —
+ * CPCB's rule, and unchanged. But a city is the average, which is CPCB's rule
+ * too and which this file previously contradicted. Tested against CPCB's own
+ * published figures for 73 cities: mean-of-stations scored MAE 9.1 with zero
+ * bias and a ratio of 1.00; worst-station scored MAE 21.1 with +15.7 bias.
+ * CPCB weights that mean by the population of each station's 2km grid square.
+ * We have no such grid, so this is the unweighted mean, and the page says so.
+ *
+ * ★ CO IS IN. It was excluded because its values were "not credible" as mg/m³
+ * or µg/m³ — correct, because they were never concentrations. CO 128 is a
+ * perfectly ordinary sub-index, and at six Delhi stations CO is the worst one.
+ * Excluding it was a consequence of the same misreading.
  *
  * ★ AN ERROR IS NOT A ZERO. `fetchDelhi()` either returns rows or throws. It
- * never returns an empty array that a caller could read as clean air.
+ * never returns an empty array that a caller could read as clean air, and
+ * `worstStation()` / `cityMean()` return null rather than 0 for an empty list.
  */
 
 export const AQI_LIMIT = 100; // AQI 100 IS the NAAQS 24-hour standard.
@@ -31,6 +52,13 @@ export const BANDS: { name: string; idx: [number, number] }[] = [
   { name: 'Severe', idx: [401, 500] },
 ];
 
+/**
+ * CPCB's breakpoint table — kept ONLY to run backwards, turning a published
+ * sub-index into the concentration that must have produced it. The bounds are
+ * inclusive integers (…30 / 31…), not shared edges, because CPCB's own worked
+ * example puts PM2.5 31 µg/m³ at sub-index 51 and a shared-edge table returns
+ * 52. CO is in mg/m³; everything else is µg/m³.
+ */
 const BP: Record<string, [number, number][]> = {
   'PM10': [[0, 50], [51, 100], [101, 250], [251, 350], [351, 430], [431, 600]],
   'PM2.5': [[0, 30], [31, 60], [61, 90], [91, 120], [121, 250], [251, 380]],
@@ -38,38 +66,56 @@ const BP: Record<string, [number, number][]> = {
   'OZONE': [[0, 50], [51, 100], [101, 168], [169, 208], [209, 748], [749, 1000]],
   'SO2': [[0, 40], [41, 80], [81, 380], [381, 800], [801, 1600], [1601, 2400]],
   'NH3': [[0, 200], [201, 400], [401, 800], [801, 1200], [1201, 1800], [1801, 2400]],
+  'CO': [[0, 1], [1.1, 2], [2.1, 10], [10.1, 17], [17.1, 34], [34.1, 50]],
 };
 
 const ALIAS: Record<string, string> = {
   'PM2.5': 'PM2.5', 'PM10': 'PM10', 'NO2': 'NO2', 'SO2': 'SO2',
-  'OZONE': 'OZONE', 'O3': 'OZONE', 'NH3': 'NH3',
+  'OZONE': 'OZONE', 'O3': 'OZONE', 'NH3': 'NH3', 'CO': 'CO',
 };
 
-/* CO and Pb are EXCLUDED from every computed index, and the exclusion is
-   published on the page: the feed states no unit for CO, CPCB defines CO in
-   mg/m³ where everything else here is µg/m³, and the values are not credible
-   as either. Read as mg/m³, CO alone would put almost every station in the
-   top band. Pb has no sub-daily breakpoint. */
+/** CPCB states CO in mg/m³ and every other pollutant in µg/m³. */
+export const unitFor = (pollutant: string): string =>
+  pollutant === 'CO' ? 'mg/m³' : 'µg/m³';
 
-export function subIndex(pollutant: string, conc: number): number | null {
+/**
+ * The concentration implied by a published sub-index.
+ *
+ * The feed carries no µg/m³ at all, so this is the only way the page can say
+ * "against a limit of 60". The mapping is piecewise-linear and therefore
+ * exactly invertible; the only loss is CPCB's rounding of the index to a whole
+ * number, worth well under a µg/m³. It is IMPLIED, never measured, and every
+ * caller must label it that way — see `Station.concBasis`.
+ */
+export function impliedConcentration(pollutant: string, sub: number): number | null {
   const bp = BP[pollutant];
-  if (!bp || !Number.isFinite(conc) || conc < 0) return null;
+  if (!bp || !Number.isFinite(sub) || sub < 0) return null;
   for (let i = 0; i < bp.length; i++) {
     const [bLo, bHi] = bp[i];
     const [iLo, iHi] = BANDS[i].idx;
-    if (conc <= bHi) {
+    if (sub <= iHi) {
       const lo = i === 0 ? 0 : bLo;
-      return Math.round(((iHi - iLo) / (bHi - lo)) * (conc - lo) + iLo);
+      // One decimal. The inverse is exact, but printing 98.03030303030303 for a
+      // figure whose input was rounded to a whole index claims a precision the
+      // number does not have — and the page prints this straight.
+      return Math.round((lo + ((sub - iLo) * (bHi - lo)) / (iHi - iLo)) * 10) / 10;
     }
   }
-  return 500; // above the top band; CPCB caps the index at 500
+  return bp[bp.length - 1][1]; // above the top band; CPCB caps the index at 500
 }
 
-/** CPCB's own worked example. If this fails the table is wrong — refuse. */
+/**
+ * Refuse to publish on a broken table. Checks the INVERSE, which is the only
+ * direction this file uses — the previous self-check validated the forward
+ * conversion, was correct, and stayed green for eleven weeks while the forward
+ * conversion was the bug. A passing self-check is not a correct reading.
+ */
 export function selfCheck(): boolean {
-  return subIndex('PM2.5', 31) === 51
-    && subIndex('PM2.5', 45) === 75
-    && subIndex('PM2.5', 60) === 100;
+  const near = (got: number | null, want: number) =>
+    got !== null && Math.abs(got - want) < 0.05;
+  return near(impliedConcentration('PM2.5', 51), 31)
+    && near(impliedConcentration('PM2.5', 100), 60)
+    && near(impliedConcentration('CO', 106), 2.5);
 }
 
 export const bandFor = (aqi: number) =>
@@ -95,17 +141,34 @@ export function observedLabel(raw: string | null | undefined): string | null {
   return `${hh}:${mi} IST, ${Number(d)} ${name} ${y}`;
 }
 
+export type StationQuality = {
+  /** Channels dropped as stuck instruments: min === max === avg over 24h. */
+  flatlined: string[];
+  /** Channels CPCB reports as NA, or does not report at all. */
+  missing: string[];
+  /** True when the reading stands on something we cannot corroborate. */
+  suspect: boolean;
+  suspectReason: string | null;
+};
+
 export type Station = {
   station: string;
   aqi: number;
   band: string;
   governing: string;
-  conc: number;
+  /** IMPLIED from the sub-index, not measured — the feed carries no units. */
+  conc: number | null;
+  concBasis: 'implied-from-subindex';
   unit: string;
   lat: number | null;
   lng: number | null;
   observed: string | null;
+  quality: StationQuality;
 };
+
+/** The channels CPCB's CAAQMS stations are expected to report. */
+const EXPECTED = ['PM2.5', 'PM10', 'NO2', 'SO2', 'OZONE', 'NH3', 'CO'];
+const GASES = new Set(['OZONE', 'CO', 'NO2', 'SO2', 'NH3']);
 
 const RESOURCE = '3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69';
 
@@ -114,13 +177,15 @@ const RESOURCE = '3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69';
  *
  * `limit` AND `offset` are both required in practice — without `offset` the
  * endpoint answers HTTP 200 with an empty `records` array, which is the
- * error-as-zero trap this whole module is written against. Measured 21 August
- * 2026: 308 rows, all sharing one `last_update` — the feed advances the entire
- * city one hour at a time.
+ * error-as-zero trap this whole module is written against.
  *
  * ONE RETRY. Three consecutive calls during one build returned 200, 200, 502.
  * A source that fails twice in four seconds is down, and the caller should fall
  * back to its committed reading rather than wait.
+ *
+ * NOTE ON FRESHNESS: this feed lags. Measured 25 August 2026 at 13:59 IST, every
+ * one of its 3,451 rows nationwide was still stamped 05:00 IST. The observation
+ * time must always be printed beside the reading; it is not "now".
  *
  * @throws if the upstream fails, is misshapen, or returns nothing.
  */
@@ -149,13 +214,17 @@ export async function fetchDelhi(key: string): Promise<Record<string, string>[]>
 /**
  * Fold rows into one reading per station.
  *
- * A station's AQI is its WORST SUB-INDEX — never the mean of its pollutants.
- * That is CPCB's own definition: "the worst sub-index determines the overall
- * AQI". Averaging would let a station with many clean pollutants hide one that
- * is far over the limit.
+ * A station's AQI is its WORST SUB-INDEX, taken straight from `avg_value` with
+ * NO conversion. That is CPCB's own definition — "the worst sub-index
+ * determines the overall AQI" — and averaging would let a station with many
+ * clean pollutants hide one far over the limit.
+ *
+ * Every pollutant the feed reports counts toward that maximum, including any
+ * this file has no breakpoints for: the value is CPCB's sub-index whether or
+ * not we can invert it. Only the implied concentration needs the table.
  */
 export function foldStations(rows: Record<string, string>[]): Station[] {
-  type Acc = { subs: Map<string, { sub: number; conc: number; unit: string }>;
+  type Acc = { subs: Map<string, number>; flat: string[]; seen: Set<string>;
     stamp: string | null; lat: number | null; lng: number | null };
   const by = new Map<string, Acc>();
   const num = (v: unknown) => {
@@ -170,32 +239,115 @@ export function foldStations(rows: Record<string, string>[]): Station[] {
     if (!st) continue;
     const raw = String(r.pollutant_id ?? '').trim();
     const pol = ALIAS[raw] ?? ALIAS[raw.toUpperCase()] ?? raw.toUpperCase();
-    const conc = num(r.avg_value ?? r.pollutant_avg);
+    const sub = num(r.avg_value ?? r.pollutant_avg);
     if (!by.has(st)) {
-      by.set(st, { subs: new Map(), stamp: r.last_update ?? null,
+      by.set(st, { subs: new Map(), flat: [], seen: new Set(), stamp: r.last_update ?? null,
         lat: num(r.latitude), lng: num(r.longitude) });
     }
     const acc = by.get(st)!;
     // Coordinates arrive on every row; keep the first non-null we see.
     if (acc.lat === null) acc.lat = num(r.latitude);
     if (acc.lng === null) acc.lng = num(r.longitude);
-    if (conc === null) continue;
-    const sub = subIndex(pol, conc);
-    if (sub === null) continue;            // CO, Pb, and anything unmapped
-    acc.subs.set(pol, { sub, conc, unit: r.unit ?? 'µg/m³' });
+    if (sub === null || sub < 0) continue;
+    acc.seen.add(pol);
+
+    /* ★ A FLATLINED CHANNEL IS A STUCK INSTRUMENT, NOT A READING.
+       min === max === avg over a 24-hour window does not happen to air. It
+       happens to a sensor that has stopped. Nationally 251 of 3,170 rows
+       (7.9%) look like this — overwhelmingly the gas analysers — and NINE
+       stations were taking their whole AQI from one of them, including
+       Mahape, Navi Mumbai, ranked on a CO channel frozen at 101.
+       Dropping these is safe where the stuck value is low, because a low
+       channel never governed anyway. It matters where the value is high. */
+    const lo = num(r.min_value), hi = num(r.max_value);
+    if (lo !== null && hi !== null && lo === hi && hi === sub) {
+      acc.flat.push(pol);
+      continue;
+    }
+    acc.subs.set(pol, sub);
   }
 
   const out: Station[] = [];
   for (const [station, acc] of by) {
+    // No live channel means no reading. Not a zero, not a clean bill of
+    // health — three stations report nothing but frozen numbers, and one of
+    // them is a city's only monitor. Publishing its "37, Good" would have
+    // been a dead sensor quietly improving a city's average.
     if (!acc.subs.size) continue;
     let gov = '', top = -1;
-    for (const [pol, v] of acc.subs) if (v.sub > top) { top = v.sub; gov = pol; }
-    const v = acc.subs.get(gov)!;
+    for (const [pol, sub] of acc.subs) if (sub > top) { top = sub; gov = pol; }
+
+    const missing = EXPECTED.filter((p) => !acc.seen.has(p));
+    const pm = Math.max(acc.subs.get('PM2.5') ?? -1, acc.subs.get('PM10') ?? -1);
+
+    /* ★ FLAGGED, NOT DELETED. Leh ranked second in India at 195 on one ozone
+       channel, beside a PM2.5 of 13 — and CPCB publishes the same number, so
+       it is a bad reading faithfully repeated rather than our arithmetic.
+       But high-altitude ozone is genuinely elevated (stratospheric intrusion,
+       low NOx titration at 3,500m), so we cannot show it false, only that it
+       stands alone. Deleting a government reading we merely mistrust would be
+       this site doing the thing it exists to complain about. It is published
+       with the doubt attached, and the page prints the doubt. */
+    let suspectReason: string | null = null;
+    if (GASES.has(gov) && top > AQI_LIMIT && pm >= 0 && pm < top / 2) {
+      suspectReason = `Set by ${gov} alone: its sub-index is ${top} while the worst `
+        + `particulate here reads ${pm}. A gas standing this far above clean particulates `
+        + `is either a local source or an uncalibrated channel, and this feed cannot say which`
+        + (acc.flat.length ? `. The ${acc.flat.join(', ')} channel at this station is flatlined` : '')
+        + '.';
+    }
+
     out.push({ station, aqi: top, band: bandFor(top), governing: gov,
-      conc: v.conc, unit: v.unit, lat: acc.lat, lng: acc.lng,
-      observed: observedLabel(acc.stamp) });
+      conc: impliedConcentration(gov, top), concBasis: 'implied-from-subindex',
+      unit: unitFor(gov), lat: acc.lat, lng: acc.lng,
+      observed: observedLabel(acc.stamp),
+      quality: { flatlined: acc.flat, missing, suspect: suspectReason !== null, suspectReason } });
   }
   return out.sort((a, b) => b.aqi - a.aqi);
+}
+
+/**
+ * THE HEADLINE READING: the WORST MONITOR, returned whole so its name travels
+ * with its number.
+ *
+ * ★ OWNER'S RULING, 25 August 2026 (AD-42C), reversing AD-42's A-42.3.
+ * AD-42 made the headline the mean of the stations, because the mean is what
+ * CPCB publishes as "Delhi" and therefore what a reader checking us against
+ * CPCB is checking. That is true, and it is not what this site is for: the
+ * subject is limits being broken at real places, and the mean is precisely the
+ * number that averages away the place where the limit is broken worst.
+ *
+ * ★ THE NAME IS NOT OPTIONAL. AD-42 was raised because a single monitor's
+ * number was printed under the word "Delhi". Publishing the worst monitor again
+ * is only honest if it is LABELLED as the worst monitor, with its station and
+ * the count it was selected from. A bare number under a city's name is the same
+ * defect whichever value it holds — which is why this returns the Station and
+ * not an integer. Callers cannot print it without having the name to hand.
+ *
+ * Returns null, never 0, when nothing reported. `foldStations` already sorts
+ * worst-first, but this does not rely on that.
+ */
+export function worstStation(stations: Station[]): Station | null {
+  let worst: Station | null = null;
+  for (const s of stations) if (!worst || s.aqi > worst.aqi) worst = s;
+  return worst;
+}
+
+/**
+ * The mean of the station AQIs — CPCB's own city definition.
+ *
+ * ★ COMPUTED, NOT PUBLISHED AS THE HEADLINE. This is the tripwire for the bug
+ * AD-42 corrected. Read as sub-indexes, this mean tracks CPCB's published city
+ * figure at a ratio of 1.00 across 73 cities; if the parser ever starts
+ * double-converting again it diverges immediately and visibly. Keeping it costs
+ * one reduce and is the only cheap check we have that the feed still means what
+ * we think it means.
+ *
+ * Returns null, never 0, when there is nothing to average.
+ */
+export function cityMean(stations: Station[]): number | null {
+  if (!stations.length) return null;
+  return Math.round(stations.reduce((sum, s) => sum + s.aqi, 0) / stations.length);
 }
 
 /** Great-circle distance in km. Used to say which monitor is nearest. */

@@ -1,0 +1,197 @@
+import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { foldStations, worstStation, cityMean, impliedConcentration, selfCheck } from './air'
+
+/**
+ * THE BUG THIS FILE EXISTS TO PREVENT.
+ *
+ * `data.gov.in` resource 3b01bcb8 — "Real time AIR QUALITY INDEX from various
+ * locations" — publishes CPCB's own sub-indexes. It does NOT publish
+ * concentrations. For eleven weeks this codebase read `avg_value` as µg/m³ and
+ * ran it through the CPCB breakpoint table a SECOND time, roughly doubling
+ * every number the site printed: Delhi read 381 "Very Poor" on a day CPCB
+ * itself published 97 "Satisfactory".
+ *
+ * ★ THE FIXTURE IS THE REAL FEED, NOT A HAND-WRITTEN SAMPLE. Captured
+ * 25 August 2026, observation 05:00 IST, all 308 Delhi rows. The expected
+ * values below are CPCB's own, read off its Central Control Room panel for the
+ * same stations, and they are the only reason these numbers can be trusted.
+ *
+ * ★ THE OLD `selfCheck()` PASSED THROUGHOUT. It verified the breakpoint table
+ * against CPCB's worked example, which was correct — the table was never the
+ * problem. A check that validates a conversion cannot notice that the
+ * conversion should not be happening at all. The replacement below checks the
+ * INVERSE, which is the direction we actually use.
+ */
+
+const ROWS = JSON.parse(
+  readFileSync(join(__dirname, '__fixtures__/cpcb-delhi-2026-08-25T0500.json'), 'utf8'),
+) as Record<string, string>[]
+
+describe('foldStations — the feed publishes sub-indexes, not concentrations', () => {
+  it('reads avg_value as the sub-index it already is, without converting it', () => {
+    // CPCB's own panel, Anand Vihar, same observation window:
+    //   "24 Hr Subindexes PM2.5  AVG 225"  ->  AQI 225, prominent pollutant PM2.5.
+    // Converting 225 as though it were µg/m³ yields 381, which is the bug.
+    const anand = foldStations(ROWS).find((s) => s.station.startsWith('Anand Vihar'))
+    expect(anand).toBeDefined()
+    expect(anand!.aqi).toBe(225)
+    expect(anand!.governing).toBe('PM2.5')
+    expect(anand!.band).toBe('Poor')
+  })
+
+  it('lets CO govern a station, because the feed reports it as a sub-index like the rest', () => {
+    // CO was excluded on the reasoning that its values were "not credible" as
+    // mg/m³ or µg/m³. They were never concentrations. CPCB lists CO among the
+    // "24 Hr Subindexes" it publishes, and at six Delhi stations CO is the worst.
+    const cantonment = foldStations(ROWS).find((s) => s.station.startsWith('Cantonment Area'))
+    expect(cantonment!.governing).toBe('CO')
+    expect(cantonment!.aqi).toBe(106)
+  })
+
+  it('still takes the worst sub-index as the station AQI, never the mean', () => {
+    const anand = foldStations(ROWS).find((s) => s.station.startsWith('Anand Vihar'))!
+    // PM2.5 225 beats PM10 202, CO 128, NO2 55, SO2 32, NH3 10, OZONE 2.
+    expect(anand.aqi).toBe(225)
+  })
+})
+
+describe('the headline reading is the WORST MONITOR, named — AD-42C', () => {
+  /**
+   * ★ OWNER'S RULING, 25 August 2026. AD-42 replaced the worst station with
+   * the mean of the 44, because the mean is what CPCB publishes as "Delhi".
+   * The owner reversed that: the site's subject is limits being broken at real
+   * places, and the mean is the number that hides the place where the limit is
+   * broken worst. So the headline is the worst monitor AND IT IS LABELLED AS
+   * ONE — never as "Delhi's AQI", which is the mislabelling AD-42 was raised
+   * to end. The station's name travels with the number everywhere it is
+   * printed; a bare 225 under the word "Delhi" is the old bug in a new place.
+   *
+   * The mean is kept — computed, not published — as the only cheap check that
+   * catches a repeat of the double conversion: it must track CPCB's own city
+   * figure, and if it stops doing so the parser has drifted again.
+   */
+  it('takes the worst monitor of the 44, with its name and governing pollutant', () => {
+    const worst = worstStation(foldStations(ROWS))!
+    expect(worst.aqi).toBe(225)
+    expect(worst.station).toBe('Anand Vihar, Delhi - DPCC')
+    expect(worst.governing).toBe('PM2.5')
+  })
+
+  it('is NOT the 381 the double conversion produced, and NOT the 107 mean', () => {
+    const worst = worstStation(foldStations(ROWS))!
+    expect(worst.aqi).not.toBe(381)
+    expect(worst.aqi).not.toBe(cityMean(foldStations(ROWS)))
+  })
+
+  it("keeps the mean as a cross-check against CPCB's published city figure", () => {
+    // Validated across 73 cities: mean-of-stations scored MAE 9.1 with ZERO
+    // bias. This is a tripwire for the parser, not a number the page prints.
+    expect(cityMean(foldStations(ROWS))).toBe(107)
+  })
+
+  it('refuses to invent a reading when there are no stations', () => {
+    expect(worstStation([])).toBeNull()
+    expect(cityMean([])).toBeNull()
+  })
+})
+
+describe('impliedConcentration — the inverse, because the feed carries no µg/m³', () => {
+  it("round-trips CPCB's worked example, the one fixed point we have", () => {
+    // CPCB: PM2.5 31 µg/m³ is sub-index 51, and 60 µg/m³ is sub-index 100.
+    expect(impliedConcentration('PM2.5', 51)).toBeCloseTo(31, 1)
+    expect(impliedConcentration('PM2.5', 100)).toBeCloseTo(60, 1)
+  })
+
+  it('recovers the concentration behind a published sub-index', () => {
+    // Anand Vihar's 225 sits in PM2.5 band 91–120 µg/m³ -> 201–300.
+    expect(impliedConcentration('PM2.5', 225)).toBeCloseTo(98.0, 0)
+  })
+
+  it('gives CO in mg/m³, which is the unit that makes its values credible', () => {
+    // CO sub-index 106 -> ~2.5 mg/m³. Read as µg/m³ it looked like nonsense,
+    // which is precisely why CO was excluded.
+    expect(impliedConcentration('CO', 106)).toBeCloseTo(2.5, 1)
+  })
+
+  it('returns null for a pollutant it has no breakpoints for', () => {
+    expect(impliedConcentration('PB', 100)).toBeNull()
+  })
+})
+
+describe('selfCheck', () => {
+  it('passes on the inverse table the code actually uses', () => {
+    // Deliberately thin. The real coverage is the round-trip cases above —
+    // a boolean self-check cannot prove it is checking the right direction,
+    // which is exactly how the previous one stayed green through the bug.
+    expect(selfCheck()).toBe(true)
+  })
+})
+
+/**
+ * PLAUSIBILITY — added after the Leh finding, 25 August 2026.
+ *
+ * Leh ranked SECOND in India at 195 on a single ozone channel, at a station
+ * whose PM2.5 was 13 and PM10 23 — among the cleanest particulates in the
+ * country. CPCB publishes the same figure (its own ticker read Leh 188 the
+ * same afternoon), so this is not a pipeline error: it is a bad reading being
+ * faithfully repeated. Nationally, 251 of 3,170 rows (7.9%) report min, max
+ * and avg identical over a 24-hour window, and NINE stations take their AQI
+ * from one of them.
+ *
+ * ★ A FLATLINED CHANNEL IS DROPPED. A 24-hour window with zero variation is a
+ * stuck instrument, not a measurement. Where the stuck value is low this
+ * changes nothing — it never governed. Where it is high it was setting a
+ * city's rank.
+ *
+ * ★ A SUSPECT READING IS FLAGGED, NOT DELETED. High-altitude ozone is real —
+ * stratospheric intrusion and low NOx titration genuinely lift it at 3,500m —
+ * so we cannot prove Leh's 195 false, only that it rests on one gas channel
+ * beside a dead one. Silently dropping a government reading we merely mistrust
+ * would be this site doing the thing it exists to complain about. It is
+ * published with the doubt attached.
+ */
+
+const ANOM = JSON.parse(
+  readFileSync(join(__dirname, '__fixtures__/cpcb-anomalies-2026-08-25T0500.json'), 'utf8'),
+) as Record<string, string>[]
+
+describe('plausibility — a dead instrument is not a reading', () => {
+  it('drops a channel whose 24-hour min, max and avg are identical', () => {
+    // Mahape: CO reports 101/101/101 and currently sets the station's AQI.
+    // The live channels put it at PM10 67 — Satisfactory, not Moderate.
+    const mahape = foldStations(ANOM).find((s) => s.station.startsWith('Mahape'))!
+    expect(mahape.governing).toBe('PM10')
+    expect(mahape.aqi).toBe(67)
+    expect(mahape.quality.flatlined).toContain('CO')
+  })
+
+  it('gives no reading at all when every channel is flatlined', () => {
+    // Shivaji Nagar, Rishikesh: all seven channels frozen. A station that
+    // cannot be measured must not contribute a number — least of all a clean
+    // one, which would quietly pull its city's mean down.
+    const rishikesh = foldStations(ANOM).find((s) => s.station.startsWith('Shivaji Nagar'))
+    expect(rishikesh).toBeUndefined()
+  })
+
+  it('records the channels it dropped and the ones CPCB never sent', () => {
+    const leh = foldStations(ANOM).find((s) => s.station.startsWith('Skara Yokma'))!
+    expect(leh.quality.flatlined).toContain('CO')
+    expect(leh.quality.missing).toEqual(expect.arrayContaining(['NO2', 'NH3']))
+  })
+
+  it('flags a gas-governed reading standing over clean particulates', () => {
+    const leh = foldStations(ANOM).find((s) => s.station.startsWith('Skara Yokma'))!
+    expect(leh.aqi).toBe(195)          // NOT deleted — still published
+    expect(leh.governing).toBe('OZONE')
+    expect(leh.quality.suspect).toBe(true)
+    expect(leh.quality.suspectReason).toMatch(/particulate/i)
+  })
+
+  it('does not flag an ordinary particulate-governed station', () => {
+    const anand = foldStations(ROWS).find((s) => s.station.startsWith('Anand Vihar'))!
+    expect(anand.quality.suspect).toBe(false)
+    expect(anand.quality.suspectReason).toBeNull()
+  })
+})

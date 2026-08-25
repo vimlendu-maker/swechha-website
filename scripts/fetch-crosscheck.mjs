@@ -85,7 +85,9 @@ const forecast = Object.fromEntries(Object.entries(daily).map(([pol, days]) => [
 let comparison = null;
 if (existsSync(PRIMARY)) {
   const primary = JSON.parse(readFileSync(PRIMARY, 'utf8'));
-  const ours = primary.city_reading;
+  // STATION-LEVEL comparison, so it reads the worst STATION, not the city
+  // mean — WAQI is matched to one monitor by name.
+  const ours = primary.worst_station;
   if (ours) {
     // Match on the station's own name; CPCB writes "Anand Vihar, Delhi - DPCC",
     // WAQI writes "Anand Vihar, Delhi, Delhi, India". Compare the first part.
@@ -93,12 +95,13 @@ if (existsSync(PRIMARY)) {
     const theirs = stations.find(s => String(s.name).toLowerCase().startsWith(key));
     if (theirs) {
       const gov = ours.pollutants?.[ours.governing];
+      // `impliedConc`, because the feed publishes no concentration at all.
       comparison = {
         station: { cpcb: ours.station, waqi: theirs.name },
         cpcb_scale_aqi: ours.aqi,
         waqi_us_epa_aqi: theirs.aqi_us_epa,
         difference: ours.aqi - theirs.aqi_us_epa,
-        cpcb_concentration: gov ? { pollutant: ours.governing, conc: gov.conc, unit: gov.unit } : null,
+        cpcb_concentration: gov ? { pollutant: ours.governing, conc: gov.impliedConc, unit: gov.impliedUnit, basis: gov.concBasis } : null,
         why: 'Two causes, and this data cannot separate them: (1) different scales — '
            + 'WAQI publishes on the US EPA 2016 standard, this site computes on CPCB\'s '
            + 'National AQI; (2) different underlying concentrations and averaging windows. '
