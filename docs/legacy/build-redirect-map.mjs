@@ -122,7 +122,15 @@ const PAGES = {
   '/resilient-and-equitable-communities/':                ['/work', 'theme page, collapses onto WORK', 'parent'],
   '/green-economy-and-enterprise/':                       ['/work', 'theme page, collapses onto WORK', 'parent'],
   '/building-narratives-for-sustainability/':             ['/stories', 'the narrative theme is the stories section', 'parent'],
-  '/contact-us/':               [null, 'a title and a breadcrumb; the real details are in the footer', 'none'],
+  /* NOT a deliberate 404, and the reversal is evidence-led. The old page was
+     indeed "a title and a breadcrumb", and on content grounds alone dropping it
+     was right. But the ruling weighed the PAGE and never asked what the URL was
+     earning: on 2026-08-25 /contact-us/ was still a live Google result, its
+     snippet reading "Partnerships, Volunteering and Internships". That is /act,
+     almost word for word. A 404 forfeits a ranking that is transferable only
+     while the old index still stands. '/get-involved/' -> '/act' above is the
+     same call already made. */
+  '/contact-us/':               ['/act', 'still a live search result; its partnerships/volunteering promise is what /act answers', 'parent'],
   '/privacy-draft/':            [null, 'an unlinked boilerplate draft', 'none'],
   '/6220-2/':                   [null, 'an orphan test page containing the word "Button"', 'none'],
 }

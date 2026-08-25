@@ -13,13 +13,13 @@ describe('the legacy redirect map', () => {
     expect(rows).toHaveLength(1240)
     const content = rows.filter((r) => !['attachment', 'soliloquy', 'post_tag', 'pj-categs', 'pl-categs'].includes(r.type))
     expect(content).toHaveLength(226)
-    expect(content.filter((r) => r.to)).toHaveLength(167)
-    expect(content.filter((r) => !r.to)).toHaveLength(59)
+    expect(content.filter((r) => r.to)).toHaveLength(168)
+    expect(content.filter((r) => !r.to)).toHaveLength(58)
   })
 
   it('emits one redirect per mapped row and nothing else', () => {
     expect(built).toHaveLength(rows.filter((r) => r.to).length)
-    expect(built).toHaveLength(167)
+    expect(built).toHaveLength(168)
   })
 
   it('never emits a source with the trailing slash WordPress gave it', () => {
@@ -41,6 +41,19 @@ describe('the legacy redirect map', () => {
   it('states a reason for every deliberate 404', () => {
     const silent = rows.filter((r) => !r.to && !r.why)
     expect(silent).toEqual([])
+  })
+
+  it('keeps the ranking /contact-us/ URL alive, pointed at /act', () => {
+    /* This URL still RANKS: it was a live Google result on 2026-08-25, with a
+       snippet promising "Partnerships, Volunteering and Internships" — which is
+       precisely what /act's three ways in (give, volunteer, partner) now offer.
+       It was first ruled a deliberate 404 on content grounds ("a title and a
+       breadcrumb"), a judgement about the OLD PAGE'S worth made before anyone
+       had checked what the URL was earning. A 404 throws that ranking away
+       during the one migration window where it is still transferable.
+       `/get-involved/` -> `/act` is the standing precedent. */
+    const contact = built.find((r) => r.source === '/contact-us')
+    expect(contact?.destination).toBe('/act')
   })
 
   it('keeps the five essays pointed at their republished selves', () => {
