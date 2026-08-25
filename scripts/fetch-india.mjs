@@ -225,7 +225,9 @@ for (const r of rows) {
   if (!stations.has(key)) stations.set(key, { city, station: st, state: r.state ?? null, aqi: -1, governing: null,
     pmSub: -1, lat: num(r.latitude), lng: num(r.longitude) });
   const s = stations.get(key);
-  if (pol === 'PM2.5' || pol === 'PM10') s.pmSub = Math.max(s.pmSub, sub);
+  if (pol === 'PM2.5' || pol === 'PM10') {
+    if (sub > s.pmSub) { s.pmSub = sub; s.pmGoverning = pol; }
+  }
   if (sub > s.aqi) { s.aqi = sub; s.governing = pol; }
 }
 
@@ -246,6 +248,7 @@ for (const s of stations.values()) {
   c.meanAqi = Math.round(c.sum / c.stations);
   if (s.aqi > (c.worstAqi ?? -1)) {
     c.worstAqi = s.aqi; c.station = s.station; c.governing = s.governing; c.pmSub = s.pmSub;
+    c.pmGoverning = s.pmGoverning ?? null;
     /* The governing station's POSITION travels with the row, because a
        suspect reading has to be locatable: verify-air-crosscheck.mjs asks an
        independent network what it sees AT THIS POINT, and its whole defence
@@ -262,9 +265,50 @@ for (const s of stations.values()) {
 const GASES = new Set(['OZONE', 'CO', 'NO2', 'SO2', 'NH3']);
 for (const c of cities.values()) {
   c.suspect = !!(GASES.has(c.governing) && c.worstAqi > AQI_LIMIT && c.pmSub >= 0 && c.pmSub < c.worstAqi / 2);
+  /* The reason is written BEFORE the fallback swaps c.governing, and it names
+     both numbers — the one we rank on and the one we have set aside. A flag
+     that hides the figure it is flagging is not a flag. */
   c.suspectReason = c.suspect
-    ? `Set by ${c.governing} alone: ${c.worstAqi} against a worst particulate of ${c.pmSub} at the same station.`
+    ? `The ${c.governing} channel here reads ${c.worstAqi}, but the worst particulate at the `
+      + `same station reads only ${c.pmSub}, and no independent monitor is near enough to say `
+      + `which is right. This city is ranked on its particulates; the ${c.governing} figure `
+      + `of ${c.worstAqi} is published but not ranked.`
     : null;
+
+  /* ── A SUSPECT CITY IS RANKED ON ITS PARTICULATES — AD-42E ──────────────
+     Owner's question: for a suspicious reading, can we just take PM2.5?
+     Yes, with one correction: the worst PARTICULATE, not PM2.5 alone. Of 507
+     stations, 453 report PM2.5 and 7 report PM10 with no PM2.5 — those seven
+     would go dark under a strict PM2.5 rule, and a station going dark is the
+     error-as-absence this repo keeps ruling against. `pmSub` is already the
+     worst of the two.
+
+     WHY FALL BACK AT ALL. These are readings we cannot verify and cannot
+     refute: one gas channel, far above clean particulates at the same station,
+     with no independent monitor near enough to adjudicate (Leh's nearest WAQI
+     station is 300km away, in Tibet). Publishing 158 asserts Leh has bad air.
+     Ranking it 4th in India asserts it is among the country's worst. On the
+     evidence we actually hold — PM2.5 17, PM10 26, among the cleanest in
+     India — that is the less defensible of the two claims.
+
+     ★ NOTHING IS DELETED. The gas figure keeps its own field, its name and its
+     doubt, and the page prints it. B-3 stands: we are not throwing away a
+     government number, we are declining to RANK a city on a channel we cannot
+     stand behind. The two are different acts.
+
+     ★ AND A GAS-ONLY STATION CANNOT FALL BACK. If there is no particulate at
+     all there is nothing to fall back TO, and publishing "clean" for a station
+     that never measured particulates would be inventing a reading. Those keep
+     the gas figure and stay flagged — an error is not a zero, at this level
+     too. */
+  if (c.suspect && c.pmSub >= 0) {
+    c.gas = { pollutant: c.governing, aqi: c.worstAqi, ranked: false };
+    c.aqi = c.pmSub;
+    c.governing = c.pmGoverning ?? c.governing;
+    c.basis = 'particulate-only — the gas channel above it could not be verified';
+  } else if (c.suspect) {
+    c.basis = 'gas channel, unverified — this station reports no particulate to fall back to';
+  }
 }
 
 const ranked = [...cities.values()]

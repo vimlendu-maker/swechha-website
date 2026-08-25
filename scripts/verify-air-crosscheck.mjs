@@ -273,10 +273,22 @@ if (!TOKEN) {
       continue;
     }
     const w = await waqiAt(lat, lng);
-    const v = adjudicate(c, w);
-    verdicts.push({ city: c.city, station: c.station, ours: c.aqi, governing: c.governing,
+    /* ★ ADJUDICATE THE CHANNEL IN DOUBT, NOT THE ONE WE FELL BACK TO. Under
+       AD-42E a suspect city is RANKED on its particulates, so `c.aqi` is now
+       the clean fallback and `c.gas` holds the reading that is actually
+       disputed. Asking WAQI about the fallback would be asking it to confirm
+       the number we already trust — a check that interrogates the wrong
+       claim always passes, which is how AD-42 survived eleven weeks. */
+    const disputed = c.gas
+      ? { aqi: c.gas.aqi, governing: c.gas.pollutant }
+      : { aqi: c.aqi, governing: c.governing };
+    const v = adjudicate(disputed, w);
+    verdicts.push({ city: c.city, station: c.station,
+      disputed: { aqi: disputed.aqi, pollutant: disputed.governing },
+      rankedOn: { aqi: c.aqi, pollutant: c.governing },
       pmSub: c.pmSub, waqiStation: w.name ?? null, waqiKm: w.km ?? null, ...v });
-    console.log(`  ${v.verdict.padEnd(13)} ${c.city} — ours ${c.aqi} on ${c.governing}`);
+    console.log(`  ${v.verdict.padEnd(13)} ${c.city} — disputed ${disputed.aqi} on `
+      + `${disputed.governing}; ranked on ${c.aqi} ${c.governing}`);
     console.log(`                ${v.detail}`);
   }
 }
