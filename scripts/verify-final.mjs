@@ -87,7 +87,7 @@ export const SITUATIONS = [
     states: ['PERIODIC'],
     subject: 'AQI against CPCB’s own limit of 100, read from CPCB’s published sub-indexes.',
     reading: () => [String(J('air-delhi.json').city_reading.aqi)],
-    readingNote: 'the worst Delhi station’s computed AQI',
+    readingNote: 'the worst Delhi monitor’s AQI, read from CPCB’s published sub-indexes — not computed, and not a city average',
   },
   {
     kind: 'situation', famId: 'yamuna', file: 'situation-yamuna.html', route: '/now/yamuna',
