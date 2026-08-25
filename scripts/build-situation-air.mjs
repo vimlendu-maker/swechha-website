@@ -495,7 +495,7 @@ ${crumb('air')}
         <p class="verdict bad" id="air-band">${rd.band}</p>
         <div class="bands bad" id="air-bands" role="img" aria-label="${rd.band}, band ${catIdx+1} of ${AIR.bands.length}">${bands}</div>
         <p class="limit" id="air-limit">CPCB safe limit ${AIR.aqiLimit}. <b>${rd.aqi > AIR.aqiLimit ? 'Limit broken.' : 'Within the limit.'}</b></p>
-        <p class="cap p2-src" id="air-src"><span id="air-src-w">This is the average of ${AIR.spread.stations} CPCB monitors across Delhi. The worst single monitor, ${esc(String(ws.station).split(',')[0].trim())}, reads ${ws.aqi}. ${AIR_CADENCE_VIS} Observed ${OBS}.</span>
+        <p class="cap p2-src" id="air-src"><span id="air-src-w">This is the WORST of ${AIR.spread.stations} CPCB monitors across Delhi &mdash; ${esc(String(ws.station).split(',')[0].trim())}. Averaged across all ${AIR.spread.stations}, Delhi reads ${AIR.city_mean.aqi}, which is the figure CPCB itself publishes for the city. ${AIR_CADENCE_VIS} Observed ${OBS}.</span>
           <a class="lk" href="#measured">How this number is made</a>.</p>
       </div>
       <div class="p2-nat">
