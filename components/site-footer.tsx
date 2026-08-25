@@ -43,6 +43,7 @@ const COLUMNS = [
       { label: 'Projects and campaigns', href: '/work' },
       { label: 'Stories and films', href: '/stories' },
       { label: 'Publications', href: '/publications' },
+      { label: 'Posters', href: '/posters' },
     ],
   },
   {

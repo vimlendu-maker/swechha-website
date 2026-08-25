@@ -64,10 +64,16 @@ import {
   kd, kindTag, KIND_LEGEND, ARROW, n0, disclose, SHARED_PAGE_CSS, tabs,
   ask, stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, abs,
   breadcrumbJsonLd, imgDim,
+  posterSheet, POSTER_CSS,
 } from './situation-shell.mjs';
 import { stampLastmod } from './lastmod.mjs';
 
 export { ROOT, V3, HOME_SRC, opener, hole, esc, kd, kindTag, KIND_LEGEND, ARROW, n0, disclose, groundChain, tabs, ask, imgDim };
+/* AD-42. Re-exported, not redefined. The poster component lives one layer
+   down in situation-shell because TWO generators need it — this section's
+   item pages and the standalone /posters page — and a component copied into
+   both is the drift this whole shell exists to prevent. */
+export { posterSheet, POSTER_CSS };
 /* Task 8 moved the definition itself down to situation-shell.mjs (work-shell
    imports FROM that file, so the reverse would be a cycle) and re-exports it
    here so this file's own existing callers, below, keep resolving it under
@@ -202,6 +208,12 @@ export const TIER = {
      the register that follows it. t2 and not t1 -- t1 is the masthead and the
      one-line statement, and a band of four rows is neither. */
   kinds: 't2',
+  /* AD-42. The poster band is t2, the same weight as `what` above it and `done`
+     below it, because on the page it exists for the sheets ARE the record and
+     not an illustration of one. t3 is the supporting weight the photograph band
+     (`sheet`) correctly takes — a contact sheet of frames that back up an
+     argument made in type. Here the type backs up the sheets. */
+  posters: 't2',
   onward: 't3',
 };
 
@@ -1200,6 +1212,21 @@ export const WORK_CSS = `
    does, so the cell is a figure and carries no hover or focus affordance. Its
    alt is the content. Stated so nobody adds a dead <a> to make it feel live. */
 
+${POSTER_CSS}
+
+/* ── (c.2) AD-42 · THE DESCRIPTION BLOCK. Body prose at the measure the aim,
+      who and done bands already use for theirs, sitting between the 'what'
+      opener and the figures.
+      62ch, NOT the 64ch the splitBand prose takes and not full bleed: this is
+      the first prose a reader meets on the page and it is read top to bottom
+      rather than scanned, which is the case the shorter measure is for.
+      The last paragraph carries no bottom margin, so a band that ends on the
+      description ends on the t2 tier's own padding rather than on a stacked
+      one — the figures band below sets its own top margin when it exists. */
+.p-about{margin-top:clamp(20px,2.4vw,32px)}
+.p-about>.body{max-width:62ch;margin:0 0 clamp(12px,1.2vw,18px)}
+.p-about>.body:last-child{margin-bottom:0}
+
 /* ── (d.7) THE INVITE ROW. The client's sixth part is "Come Partner /
       Volunteer / Contact Us" — three routes, not one, where AD-17 §4 slot 4
       gave the band a single act.
@@ -1906,6 +1933,8 @@ export const gallerySheet = ({ label, frames, note }) => `      <div class="wk-g
 ${frames.map(f => `          <figure class="ht s-record-cell"${f.op ? ` style="--op:${esc(f.op)}"` : ''}><img class="${f.dim ? 'duo-dim' : 'duo'}" src="${esc(f.src)}" alt="${esc(f.alt)}"${imgDim(f.src)} loading="lazy"></figure>`).join('\n')}
         </div>
 ${note ? `        <p class="cap s-record-note" style="margin-top:14px">${note}</p>\n` : ''}      </div>`;
+
+
 
 /**
  * A RULED PROSE ROW SET — Air's `.p-do-r`. Used for the objectives band and the

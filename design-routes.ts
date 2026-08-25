@@ -152,6 +152,13 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
     '/stories/climate-crisis-uk-and-europe': 'stories/climate-crisis-uk-and-europe.html',
     '/stories/increasing-climate-migration-assam-floods': 'stories/increasing-climate-migration-assam-floods.html',
     '/publications': 'publications.html',
+    /* AD-42. `/posters` — the ten GIZ marine-plastic sheets as artefacts, the
+       campaign that made them being at /work/campaigns/no-plastic. It joins the
+       map in the same commit that builds it and that adds it to the footer
+       index, which is the whole lesson of the four paragraphs above: a built
+       page, a routed page and a linked page are one change, and any two of them
+       without the third is a defect. */
+    '/posters': 'posters.html',
     '/about': 'about.html',
     '/impact': 'impact.html',
     '/farm': 'farm.html',
