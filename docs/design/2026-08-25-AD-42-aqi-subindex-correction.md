@@ -471,3 +471,81 @@ confirmed. That is the honest outcome, and the page says so.
 > "it would have passed", it is not the check you needed. Tier 1 would have read
 > 2.00 against a 1.15 threshold. Tier 2 would have shrugged — which is why it is
 > not the gate.
+
+---
+
+# AD-42E — A suspect city is ranked on its particulates
+
+**25 August 2026.** Owner: *"In suspicious readings, is it possible to take just
+PM2.5?"* Yes — with one correction, and one thing that must not follow from it.
+
+## E-1 · The worst PARTICULATE, not PM2.5 alone
+
+Of 507 stations in the 25 August feed:
+
+| | stations |
+|---|---|
+| report PM2.5 | 453 (89%) |
+| **report PM10 but NO PM2.5** | **7** |
+| report neither particulate | 47 |
+
+A strict PM2.5 rule takes those seven dark. A station going dark is the
+error-as-absence this repo keeps ruling against, so the fallback is `pmSub` —
+the worst of PM2.5 and PM10, which was already being computed to detect
+suspicion in the first place. Leh reads PM2.5 **17**, PM10 **26**; pristine on
+either, and the rule takes 26.
+
+## E-2 · Why fall back at all
+
+These are readings we can neither verify nor refute: one gas channel, far above
+clean particulates at the same station, with no independent monitor near enough
+to adjudicate — Leh's nearest WAQI station is 300km away, in Tibet (D-5).
+
+Both available claims are assertions we cannot support:
+
+- publishing **158** says Leh has bad air, and ranks it 4th in India
+- publishing **26** says Leh has clean air
+
+On the evidence actually in hand — PM2.5 17, PM10 26, among the cleanest in the
+country — the second is far the more defensible. So the ranked figure is the
+particulate one.
+
+## E-3 · Nothing is deleted, and the distinction is the whole ruling
+
+The gas figure keeps its own field (`gas: { pollutant, aqi, ranked: false }`),
+its name, and its doubt, and the page prints all of it. The flag now names both
+numbers, because **a flag that hides the figure it is flagging is not a flag**:
+
+> The OZONE channel here reads 158, but the worst particulate at the same
+> station reads only 26, and no independent monitor is near enough to say which
+> is right. This city is ranked on its particulates; the OZONE figure of 158 is
+> published but not ranked.
+
+B-3 stands undisturbed. We are not throwing away a government number. We are
+declining to **rank** a city on a channel we cannot stand behind. Those are
+different acts, and only the first would be the thing this site exists to
+complain about.
+
+## E-4 · A gas-only station cannot fall back
+
+If a suspect station reports no particulate at all, there is nothing to fall
+back TO, and printing "clean" for a station that never measured particulates
+would be inventing a reading. Those keep the gas figure and stay flagged.
+
+> **An error is not a zero — at this level too.**
+
+## E-5 · The cross-check had to be pointed at the right claim
+
+Introducing the fallback silently broke tier 2. `c.aqi` became the clean
+particulate figure, so WAQI was being asked to adjudicate **the number we
+already trust** — and duly passed. It now adjudicates `c.gas`, the channel
+actually in dispute.
+
+> **A check aimed at the wrong claim always passes.** That is how the double
+> conversion survived eleven weeks of green builds, and it nearly happened again
+> inside the very tool built to stop it.
+
+## E-6 · The table today
+
+Leh **158 → 26, "Good", 259th of 268**. Siliguri 118 → 28. Panchgaon 113 → 31.
+Delhi is first, on 44 monitors, on particulates, with nothing set aside.
