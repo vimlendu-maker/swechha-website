@@ -116,6 +116,27 @@ jobs:
           done
           echo "FETCH_FAILED=${failed# }" >> "$GITHUB_ENV"
 
+      # ── THE TIER THAT WOULD HAVE CAUGHT THE DOUBLE CONVERSION (AD-42D) ──
+      # Runs AFTER the fetches and BEFORE the commit, because its whole job is
+      # to stop a wrong number reaching the repository. It compares our
+      # city_mean against CPCB's OWN published bulletin — same publisher, same
+      # scale, same definition — so any gap is our bug, not a methodology
+      # difference. During the eleven weeks of doubled figures it would have
+      # read a ratio of 2.00 against a threshold of 1.15, every single day.
+      #
+      # It needs poppler for pdftotext: the bulletin is a PDF, and this repo
+      # already depends on poppler for the brand assets.
+      #
+      # A FAILURE HERE BLOCKS THE COMMIT. That is the point — the daily job is
+      # exactly how the wrong numbers got published in the first place, one
+      # automated commit at a time.
+      - name: Cross-check against CPCB's own bulletin
+        env:
+          WAQI_TOKEN: ${{ secrets.WAQI_TOKEN }}
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+          npm run verify:crosscheck
+
       - name: Discard timestamp-only churn, keep real changes
         id: changed
         run: |
