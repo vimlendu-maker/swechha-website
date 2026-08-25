@@ -34,6 +34,73 @@ import { dirname, resolve } from 'node:path';
 
 const OUT = resolve(process.argv[2] || 'data/attention-delhi-air.json');
 const ARTICLE = process.env.WIKI_ARTICLE || 'Air_pollution_in_Delhi';
+
+/* ---- WHAT THIS FILE IS ABOUT, PER ARTICLE. --------------------------------
+
+   THE DEFECT THIS FIXES (2026-08-26). `subject`, `role`, `device` and the first
+   caveat used to be four hardcoded strings about Delhi air, written when this
+   script only ever ran for one article. It has run for five since. Every
+   attention file on disk therefore described itself as "Attention paid to Delhi
+   air pollution" and claimed to be drawn against AQI — including the Yamuna,
+   heat, forest-loss and climate ones.
+
+   None of it renders and none of the NUMBERS were ever wrong: `source.article`
+   was always derived from ARTICLE, so each file fetched the right series. But
+   this site's whole claim is that a reading carries its own provenance, and a
+   provenance label that is wrong four times out of five is the wrong thing to
+   be carrying, rendered or not.
+
+   Keyed by article rather than by output filename because ARTICLE is what
+   decides the series. An article with no entry THROWS: a new situation must say
+   what its attention is attention TO, and inheriting Delhi's wording silently
+   is the bug that got us here.                                                */
+const SUBJECTS = {
+  Air_pollution_in_Delhi: {
+    subject: 'Attention paid to Delhi air pollution',
+    never:   'air quality',
+    against: 'AQI',
+    finding: 'the air is bad all year and the attention is not',
+    caveat:  'Pageviews measure attention, not air quality. A quiet month is not a clean month.',
+  },
+  Yamuna: {
+    subject: 'Attention paid to the Yamuna',
+    never:   'river health',
+    against: 'the river readings',
+    finding: 'the river breaches its legal limits all year and the attention does not',
+    caveat:  'Pageviews measure attention, not river health. A quiet month is not a clean river.',
+  },
+  Heat_wave: {
+    subject: 'Attention paid to heat',
+    never:   'temperature',
+    against: 'the heat readings',
+    finding: 'attention arrives with the season and leaves before the heat does',
+    caveat:  'Pageviews measure attention, not temperature. A quiet month is not a cool one.',
+  },
+  Deforestation_in_India: {
+    subject: 'Attention paid to forest loss',
+    never:   'forest cover',
+    against: 'the annual loss figures',
+    finding: 'loss accumulates every year and attention does not track it',
+    caveat:  'Pageviews measure attention, not forest cover. A quiet month is not a month without loss.',
+  },
+  Climate_change_in_India: {
+    subject: 'Attention paid to climate change in India',
+    never:   'the climate itself',
+    against: 'the recorded events',
+    finding: 'attention spikes around events and settles far below them',
+    caveat:  'Pageviews measure attention, not climate. A quiet month is not an uneventful one.',
+  },
+};
+
+const LABELS = SUBJECTS[ARTICLE];
+if (!LABELS) {
+  console.error(
+    `fetch-attention: no labels for WIKI_ARTICLE="${ARTICLE}".\n` +
+    `Add an entry to SUBJECTS in this file saying what this attention is attention TO.\n` +
+    `Known: ${Object.keys(SUBJECTS).join(', ')}`,
+  );
+  process.exit(1);
+}
 const PROJECT = 'en.wikipedia';
 const UA = 'SwechhaBot/1.0 (https://swechha.in; vimlendu@swechha.in)';
 
@@ -88,8 +155,8 @@ const seasons = Object.values(byYear).map(y => {
 }).filter(y => y.november || y.summerMean);
 
 const out = {
-  subject: 'Attention paid to Delhi air pollution',
-  role: 'a measurement of ATTENTION, never of air quality',
+  subject: LABELS.subject,
+  role: `a measurement of ATTENTION, never of ${LABELS.never}`,
   source: {
     name: 'Wikimedia pageviews API',
     article: ARTICLE.replace(/_/g, ' '),
@@ -98,8 +165,8 @@ const out = {
     note: 'keyless, unthrottled, daily granularity; counts what people SEEK, not what outlets publish',
   },
   state_label: 'PERIODIC',
-  device: 'Drawn against AQI on one time axis. The finding is the divergence: '
-        + 'the air is bad all year and the attention is not.',
+  device: `Drawn against ${LABELS.against} on one time axis. The finding is the divergence: `
+        + `${LABELS.finding}.`,
   window: { from: START, to: END, granularity: 'monthly' },
   months,                                  // includes the partial, flagged
   complete_months: complete.length,
@@ -108,7 +175,7 @@ const out = {
   swing: floor.views > 0 ? +(peak.views / floor.views).toFixed(1) : null,
   seasons,
   caveats: [
-    'Pageviews measure attention, not air quality. A quiet month is not a clean month.',
+    LABELS.caveat,
     'One English Wikipedia article is a proxy for public attention, not a census of it.',
     'The current month is incomplete and is excluded from every derived figure. It is flagged, never plotted.',
     'Attention is compared with readings on the same axis. Neither causes the other.',
