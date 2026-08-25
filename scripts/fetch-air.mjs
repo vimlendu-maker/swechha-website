@@ -133,6 +133,33 @@ for (const [sub, want] of [[51, 31], [100, 60], [225, 98]]) {
   }
 }
 
+
+/**
+ * A stuck instrument, by the same test as lib/air.ts's `isStuck`. The two are
+ * transcribed and must not drift; `selfCheckStuck()` below pins the cases that
+ * matter with real numbers off the feed.
+ */
+function isStuck(min, max, avg) {
+  if (min === null || max === null || avg === null) return false;
+  if (max < min) return false;
+  if (max === 0) return min === 0;
+  return (max - min) / max < 0.02;
+}
+
+/* The two readings that made this rule, and the one that must survive it. */
+for (const [mn, mx, av, want, why] of [
+  [187, 188, 188, true,  'Leh CO — one point across 24h, ranked Leh 1st in India'],
+  [101, 103, 102, true,  'Navi Mumbai CO — the analyser that was frozen at 101 hours earlier'],
+  [5, 6, 5, false,       'Madurai ozone — LOW, not stuck; an absolute test would wrongly drop it'],
+  [94, 248, 158, false,  'Leh ozone — a live channel at the same station'],
+]) {
+  if (isStuck(mn, mx, av) !== want) {
+    console.error(`STUCK-CHANNEL TEST IS WRONG: ${mn}/${mx}/${av} should be ` +
+      `${want ? 'stuck' : 'live'} (${why}). Refusing to run.`);
+    process.exit(1);
+  }
+}
+
 /* ── FETCH ───────────────────────────────────────────────────────────────
    Paged. `total` came back as 301 rows for Delhi (station x pollutant), so
    one page of 1000 is enough today — but it is paged anyway, because a
@@ -223,11 +250,14 @@ for (const r of rows) {
   const pid = ALIAS[r.pollutant_id] || String(r.pollutant_id || '').toUpperCase();
   const sub = num(r.avg_value);
   if (sub === null) { (st.missing ||= []).push(pid); continue; }
-  /* A FLATLINED CHANNEL IS A STUCK INSTRUMENT. min === max === avg over a
-     24-hour window does not happen to air. Same rule as lib/air.ts — see the
-     note there. Recorded, not silently dropped. */
+  /* A STUCK CHANNEL IS NOT A READING. Transcribed from lib/air.ts's
+     `isStuck` — see the note there for why the test is RELATIVE (2% of the
+     channel's own value over 24 hours) rather than an absolute range, and
+     for the measured gap in the data that puts the line at 2%. The exact
+     `min === max === avg` test this replaces missed Leh's CO at 187–188 and
+     ranked it first in India. Recorded, not silently dropped. */
   const lo = num(r.min_value), hi = num(r.max_value);
-  if (lo !== null && hi !== null && lo === hi && hi === sub) {
+  if (isStuck(lo, hi, sub)) {
     (st.flatlined ||= []).push(pid);
     continue;
   }

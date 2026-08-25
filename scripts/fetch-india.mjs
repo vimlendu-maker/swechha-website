@@ -191,6 +191,16 @@ for (; !rows.length;) {
 if (!rows.length) { console.error('upstream returned no records at all. Refusing to publish an absence.'); process.exit(1); }
 
 /* ── FOLD: row -> station -> city ──────────────────────────────────────── */
+
+/** A stuck instrument. Transcribed from lib/air.ts's `isStuck`. */
+function isStuck(min, max, avg) {
+  if (min == null || max == null || avg == null) return false;
+  if (max < min) return false;
+  if (max === 0) return min === 0;
+  return (max - min) / max < 0.02;
+}
+let stuckDropped = 0;
+
 const stations = new Map();
 const stampCount = {};
 for (const r of rows) {
@@ -205,11 +215,12 @@ for (const r of rows) {
   // header of lib/air.ts for what converting it a second time cost.
   const sub = num(r.avg_value);
   if (sub == null || sub < 0) continue;
-  /* A FLATLINED CHANNEL IS A STUCK INSTRUMENT, NOT A READING — same rule as
-     lib/air.ts and fetch-air.mjs. Nine stations nationally were taking their
-     entire AQI from a frozen channel. */
+  /* A STUCK CHANNEL IS NOT A READING — same rule as lib/air.ts's `isStuck`.
+     The exact `min === max === avg` test this replaces was too literal: Leh's
+     CO read 187/188/188 and took the top of this very table. See lib/air.ts
+     for why the test is relative and where the 2% line comes from. */
   const lo = num(r.min_value), hi = num(r.max_value);
-  if (lo != null && hi != null && lo === hi && hi === sub) continue;
+  if (isStuck(lo, hi, sub)) { stuckDropped++; continue; }
   const key = `${city}|${st}`;
   if (!stations.has(key)) stations.set(key, { city, station: st, state: r.state ?? null, aqi: -1, governing: null,
     pmSub: -1, lat: num(r.latitude), lng: num(r.longitude) });
@@ -235,6 +246,12 @@ for (const s of stations.values()) {
   c.meanAqi = Math.round(c.sum / c.stations);
   if (s.aqi > (c.worstAqi ?? -1)) {
     c.worstAqi = s.aqi; c.station = s.station; c.governing = s.governing; c.pmSub = s.pmSub;
+    /* The governing station's POSITION travels with the row, because a
+       suspect reading has to be locatable: verify-air-crosscheck.mjs asks an
+       independent network what it sees AT THIS POINT, and its whole defence
+       against a false corroboration is the distance between the two. A row
+       without coordinates cannot be adjudicated, only believed. */
+    c.lat = s.lat; c.lng = s.lng;
   }
   c.aqi = c.worstAqi;
 }

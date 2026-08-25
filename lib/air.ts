@@ -252,15 +252,13 @@ export function foldStations(rows: Record<string, string>[]): Station[] {
     acc.seen.add(pol);
 
     /* ★ A FLATLINED CHANNEL IS A STUCK INSTRUMENT, NOT A READING.
-       min === max === avg over a 24-hour window does not happen to air. It
-       happens to a sensor that has stopped. Nationally 251 of 3,170 rows
-       (7.9%) look like this — overwhelmingly the gas analysers — and NINE
-       stations were taking their whole AQI from one of them, including
-       Mahape, Navi Mumbai, ranked on a CO channel frozen at 101.
-       Dropping these is safe where the stuck value is low, because a low
-       channel never governed anyway. It matters where the value is high. */
+       A channel that does not move across a 24-hour window is a sensor that
+       has stopped, not air. See `isStuck` for the test and for why it is
+       relative rather than absolute. Dropping these is safe where the stuck
+       value is low, because a low channel never governed anyway. It matters
+       where the value is high — which is exactly where it was missing. */
     const lo = num(r.min_value), hi = num(r.max_value);
-    if (lo !== null && hi !== null && lo === hi && hi === sub) {
+    if (isStuck(lo, hi, sub)) {
       acc.flat.push(pol);
       continue;
     }
@@ -304,6 +302,43 @@ export function foldStations(rows: Record<string, string>[]): Station[] {
       quality: { flatlined: acc.flat, missing, suspect: suspectReason !== null, suspectReason } });
   }
   return out.sort((a, b) => b.aqi - a.aqi);
+}
+
+/**
+ * IS THIS CHANNEL A STUCK INSTRUMENT? — AD-42D.
+ *
+ * The original test was `min === max === avg`: a perfectly frozen sensor. It
+ * caught 228 of 3,219 rows (7.1%) and MISSED the one that mattered — Leh's CO
+ * read min 187 / max 188 / avg 188, a ONE-POINT range across 24 hours, and put
+ * Leh first in India above Delhi on the cleanest particulates in the country.
+ * The same Navi Mumbai analyser that was caught frozen at exactly 101 on
+ * 25 August escaped hours later reading 101–103. An instrument does not have
+ * to be perfectly frozen to be broken; it only has to be stuck.
+ *
+ * ★ THE TEST IS RELATIVE, NOT ABSOLUTE. `max - min <= 2` would drop channels
+ * that are simply LOW — Madurai's ozone at 5–6 is a real, varying measurement
+ * of almost nothing, and dropping it would be inventing a fault. What marks a
+ * stuck sensor is that it does not move RELATIVE to what it is reading.
+ *
+ * The threshold is 2% and it is read off the data, not chosen for looking
+ * round. Across the 25 August feed the relative 24-hour range distributes:
+ *
+ *     0–1%   216 rows   6.7%   <- stuck
+ *     1–2%     6 rows   0.2%   <- the trough
+ *     2–5%    50 rows   1.6%
+ *     5–10%  128 rows   4.0%
+ *     ...    median real channel: 50%
+ *
+ * There is a genuine gap at 1–2%: real air and stopped sensors are two
+ * populations, not one continuum, and the line goes in the empty space
+ * between them. A channel that varies by less than 2% of its own value over
+ * a day is not measuring the atmosphere.
+ */
+export function isStuck(min: number | null, max: number | null, avg: number | null): boolean {
+  if (min === null || max === null || avg === null) return false;
+  if (max < min) return false;              // malformed, not stuck
+  if (max === 0) return min === 0;          // an all-zero channel is stuck
+  return (max - min) / max < 0.02;
 }
 
 /**

@@ -354,3 +354,120 @@ on its own — which is the behaviour B-4 specified, observed working.
 > fact; "Delhi's AQI" is a different fact. Publishing either is fine.
 > Publishing one under the other's name is the bug, and it does not stop being
 > the bug when the arithmetic is right.
+
+---
+
+# AD-42D — Leh was 188 on a sensor that had stopped, and the cross-check now exists
+
+**25 August 2026, evening.** Raised by the owner, looking at the corrected
+national table: *"Leh is supposed to be pristine and can't be 188."* Closes the
+hole A-42.9 left open.
+
+## D-1 · The flatline test was too literal, and missed the one that mattered
+
+B-2 dropped channels where `min === max === avg`. Leh's CO read:
+
+```
+Skara Yokma, Leh - LPCC      min    max    avg
+  CO                         187    188    188   <- ranked Leh 1st in India
+  OZONE                       94    248    158
+  PM2.5                        2     33     17
+  PM10                        12     61     26
+```
+
+A **one-point range across 24 hours**, beside an ozone channel at the same
+station swinging 94→248. Not frozen, so B-2 never saw it. The same Navi Mumbai
+analyser B-2 caught frozen at exactly 101 that morning escaped by evening
+reading 101–103.
+
+> **An instrument does not have to be perfectly frozen to be broken. It only
+> has to be stuck.**
+
+## D-2 · The test is relative, and the threshold is read off the data
+
+`max - min <= 2` would have been wrong: Madurai's ozone reads 5–6, which is a
+real, varying measurement of almost nothing, and dropping it would be inventing
+a fault. What marks a stuck sensor is that it does not move *relative to what
+it is reading*.
+
+Relative 24-hour range across the 25 August feed:
+
+| band | rows | share |
+|---|---|---|
+| 0–1% | 216 | 6.7% ← stuck |
+| **1–2%** | **6** | **0.2% ← the trough** |
+| 2–5% | 50 | 1.6% |
+| 5–10% | 128 | 4.0% |
+| … median real channel | | **50%** |
+
+Real air and stopped sensors are two populations, not one continuum. The line
+goes at **2%**, in the empty space between them. `isStuck()` lives in
+`lib/air.ts` with both `.mjs` generators transcribing it, and eight tests pin
+the cases that made it — including the two it must NOT catch.
+
+The old test caught 228 of 3,219 rows (7.1%). The new one also takes the 468
+rows (14.5%) that were slipping through, eleven of which were governing their
+city's rank.
+
+## D-3 · What it did to the table
+
+Leh drops from **188, 1st in India** to **158, 4th**, on its live ozone channel,
+and Delhi is first. Leh keeps its `?`.
+
+**We still did not delete it.** B-3 stands: the ozone channel is live, high-
+altitude ozone is real, and CPCB publishes Leh at 188. We drop the CO channel
+because we can *demonstrate* it is stuck; we do not touch the ozone because we
+cannot. That divergence from CPCB is deliberate, one-directional, and visible in
+the cross-check's own "widest gaps" list rather than hidden.
+
+## D-4 · The cross-check tier, two tiers doing different jobs
+
+`scripts/verify-air-crosscheck.mjs`, wired into the daily job **before the
+commit** — because the daily job is precisely how eleven weeks of doubled
+figures reached the repository, one automated commit at a time.
+
+**Tier 1 — CPCB's own daily bulletin. The hard gate.** `cpcb.nic.in/aqi_report.php`
+redirects to a dated PDF; `pdftotext -layout` and one regex anchored on the band
+vocabulary yield 248 cities. Compared against `city_mean` — same publisher, same
+scale, same definition, so **there is no legitimate reason for a gap**. Measured
+today, 245 cities matched:
+
+```
+MAE 2.0   bias -0.6   ratio 0.99        Delhi: CPCB 101, ours 101
+```
+
+The gate trips at ratio 1.15. **During the double conversion it would have read
+2.00 — every day, for eleven weeks.**
+
+**Tier 2 — WAQI, adjudicating suspect readings only. Never a gate.** WAQI is the
+US EPA scale on a different pipeline; `fetch-crosscheck.mjs` measured 180 points
+of legitimate gap on one station and is right to refuse to reconcile. A 2× error
+hides inside noise that large — which is exactly why WAQI could not have caught
+AD-42 and must not be the gate. What it can do is narrower: when a reading rests
+on a single gas channel above clean particulates, does an independent network
+see the same pollutant worst there? Scales differ, so magnitudes are not
+compared; **ordering** is.
+
+## D-5 · The distance guard is the whole trick
+
+WAQI's feed endpoint **always returns a station**. Asked for Leh it returns
+Ngari, Tibet — **300km away, across an international border**. Asked for "leh"
+by name it returns **Rue Lafaurie, Le Havre, France**. Either would have settled
+the question with a monitor that has never seen Ladakh.
+
+So every answer is checked against the coordinates it actually came from, and
+anything past 25km is **NO COVERAGE**. All three of today's suspects returned
+exactly that — Leh at 300km, Panchgaon at 29km, Siliguri unreachable.
+
+> **A cross-check that cannot say "I don't know" is not a cross-check.** It is a
+> rubber stamp with a distance problem.
+
+Leh's doubt is therefore recorded as *unresolved*, not as refuted and not as
+confirmed. That is the honest outcome, and the page says so.
+
+## D-6 · Standing rule
+
+> **Ask what the check would have said on the day of the bug.** If the answer is
+> "it would have passed", it is not the check you needed. Tier 1 would have read
+> 2.00 against a 1.15 threshold. Tier 2 would have shrugged — which is why it is
+> not the gate.

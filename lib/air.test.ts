@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { foldStations, worstStation, cityMean, impliedConcentration, selfCheck } from './air'
+import { foldStations, worstStation, cityMean, isStuck, impliedConcentration, selfCheck } from './air'
 
 /**
  * THE BUG THIS FILE EXISTS TO PREVENT.
@@ -94,6 +94,55 @@ describe('the headline reading is the WORST MONITOR, named — AD-42C', () => {
   it('refuses to invent a reading when there are no stations', () => {
     expect(worstStation([])).toBeNull()
     expect(cityMean([])).toBeNull()
+  })
+})
+
+describe('isStuck — a sensor that has stopped is not a low reading (AD-42D)', () => {
+  /**
+   * ★ THE CASE THAT MADE THIS. Leh's CO read min 187 / max 188 / avg 188 — a
+   * ONE-POINT range across 24 hours — and put Leh FIRST in India, above Delhi,
+   * on the cleanest particulates in the country (PM2.5 17, PM10 26). The old
+   * test was `min === max === avg`, so a single point of jitter walked through
+   * it. The same Navi Mumbai analyser caught frozen at exactly 101 escaped
+   * hours later reading 101–103.
+   */
+  it('catches the near-flat channel that ranked Leh first in India', () => {
+    expect(isStuck(187, 188, 188)).toBe(true)
+  })
+
+  it('catches the analyser that escaped by jittering one point', () => {
+    expect(isStuck(101, 103, 102)).toBe(true)   // Navi Mumbai CO
+  })
+
+  it('still catches a perfectly frozen channel', () => {
+    expect(isStuck(101, 101, 101)).toBe(true)
+  })
+
+  /**
+   * ★ AND THE ONE IT MUST NOT CATCH. An absolute test (`max - min <= 2`) would
+   * drop Madurai's ozone at 5–6, which is a real, varying measurement of almost
+   * nothing. Dropping it would be inventing a fault. What marks a stuck sensor
+   * is that it does not move RELATIVE to what it reads.
+   */
+  it('leaves a LOW but genuinely varying channel alone', () => {
+    expect(isStuck(5, 6, 5)).toBe(false)        // Madurai ozone: 17% range
+  })
+
+  it('leaves a live channel at the same station as a stuck one alone', () => {
+    expect(isStuck(94, 248, 158)).toBe(false)   // Leh ozone, 62% range
+  })
+
+  it('refuses to judge a channel that did not report', () => {
+    expect(isStuck(null, null, null)).toBe(false)
+    expect(isStuck(10, null, 10)).toBe(false)
+  })
+
+  it('treats an all-zero channel as stuck, not as clean air', () => {
+    expect(isStuck(0, 0, 0)).toBe(true)
+  })
+
+  it('does not crash on a malformed row where max < min', () => {
+    expect(isStuck(50, 10, 30)).toBe(false)
   })
 })
 
