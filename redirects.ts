@@ -6,11 +6,11 @@ type Redirects = NonNullable<NextConfig['redirects']>
 type Redirect = Awaited<ReturnType<Redirects>>[number]
 
 /**
- * Permanent redirects from the old WordPress site — 167 of them, GENERATED from
+ * Permanent redirects from the old WordPress site — 168 of them, GENERATED from
  * `docs/legacy/redirect-map.json`, which is the reviewed map of every URL
  * captured from swechha.in on 2026-08-23 before the domain moved.
  *
- * Not a hand-written literal, and not for style: 167 facts maintained in two
+ * Not a hand-written literal, and not for style: 168 facts maintained in two
  * places drift, and a drifted redirect is invisible until a reader hits a dead
  * URL. `lib/legacy-redirects.ts` does the transformation and refuses to emit
  * anything it cannot verify against this site's own routes — a 308 into a 404
@@ -18,13 +18,18 @@ type Redirect = Awaited<ReturnType<Redirects>>[number]
  *
  * To change a redirect, edit the map (via `docs/legacy/build-redirect-map.mjs`)
  * and not this file. `docs/legacy/README.md` records the rulings behind it, and
- * the 93 `parent` rows there are a re-point list for when the missing pages
+ * the 94 `parent` rows there are a re-point list for when the missing pages
  * get built.
  *
- * The 59 URLs deliberately given NO redirect are absent on purpose: 51 lost
- * 2014-17 press-clipping shells with zero body text, three orphan pages, and a
- * departed colleague's profile. Absence is the instruction, recorded in the map
- * with a reason rather than left to inference.
+ * The 58 URLs deliberately given NO redirect are absent on purpose: 53 lost
+ * 2014-17 press-clipping shells with zero body text, three orphans (a
+ * boilerplate draft, a test page, a WordPress sample), the home-to-home loop,
+ * and a departed colleague's profile. Absence is the instruction, recorded in
+ * the map with a reason rather than left to inference.
+ *
+ * It was 167 and 59 until 2026-08-25, when /contact-us/ moved from the second
+ * list to the first: it was still a live Google result, and a 404 would have
+ * forfeited that. See the note on its row in build-redirect-map.mjs.
  */
 export const legacyRedirects: Redirect[] = buildLegacyRedirects(
   readMap(),

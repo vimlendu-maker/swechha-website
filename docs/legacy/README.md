@@ -179,14 +179,14 @@ Three gates: every destination must be a route that actually exists (read out of
 for exactly once, as a redirect or as a deliberate `none`; and no destination may
 itself be a redirect source, so there are no chains.
 
-**226 content URLs → 167 redirects, 59 deliberate 404s.**
+**226 content URLs → 168 redirects, 58 deliberate 404s.**
 
 | Confidence | n | Meaning |
 |---|---|---|
 | `exact` | 67 | the same thing, and a detail page exists for it |
 | `folded` | 7 | a duplicate or variant slug, onto its real twin |
-| `parent` | 93 | no page for this yet — points at the true parent section |
-| `none` | 59 | deliberately no redirect |
+| `parent` | 94 | no page for this yet — points at the true parent section |
+| `none` | 58 | deliberately no redirect |
 
 The 45 old project URLs include about ten duplicates — the `-2` suffixes, the
 `future-`/`futures-` typo pair, `remakery`/`remakery-india` — which is why they
