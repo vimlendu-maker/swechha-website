@@ -9,10 +9,11 @@
  *
  *   LIVE describes the fetch. The age describes the observation.
  *
- * Both are printed. CPCB updates hourly — verified: 10:00, 12:00 and 13:00 IST
- * on 21 August 2026 returned 392, 388 and 389 — so the value genuinely moves,
- * but the badge must never stand in for "observed 13:00, an hour ago". The page
- * prints the age beside the badge, always.
+ * Both are printed. The value genuinely moves between observations, but the
+ * badge must never stand in for "observed 13:00, an hour ago". The page prints
+ * the age beside the badge, always — and that matters more than it reads:
+ * measured 25 August 2026 at 13:59 IST, the feed was still serving 05:00 IST
+ * nationwide. LIVE has never meant "now", and here it means it less than usual.
  *
  * ★ THE KEY NEVER REACHES THE CLIENT. That is the whole reason this is a
  * server route rather than a browser fetch. `DATA_GOV_IN_KEY` is read from the
@@ -23,13 +24,14 @@
  * committed reading it already rendered and leaves the badge on PERIODIC. It
  * must never render a hole, a dash, or a 0 as though it were air.
  *
- * The AQI is COMPUTED, not read — the feed publishes concentrations and no
- * index. The breakpoint table, the CO exclusion and the worst-sub-index rule
- * all live in lib/air.ts so this route and /api/ward cannot disagree about the
- * same station.
+ * ★ THE AQI IS READ, NOT COMPUTED — the correction of 25 August 2026. The feed
+ * publishes CPCB's own sub-indexes; this route used to convert them a second
+ * time and published Delhi at 381 against CPCB's own 97. It also published the
+ * WORST STATION as the city. Both are fixed in lib/air.ts, so this route and
+ * /api/ward cannot disagree about the same station. See the header there.
  */
 import { NextResponse } from 'next/server';
-import { fetchDelhi, foldStations, selfCheck, AQI_LIMIT } from '@/lib/air';
+import { fetchDelhi, foldStations, worstStation, cityMean, bandFor, selfCheck, AQI_LIMIT } from '@/lib/air';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -51,29 +53,55 @@ export async function GET() {
   } catch (e) {
     return fail(e instanceof Error ? e.message : 'fetch failed', 502);
   }
-  if (!stations.length) return fail('no station produced a computable sub-index', 502);
+  if (!stations.length) return fail('no station reported a sub-index', 502);
 
-  // foldStations sorts worst-first, and a CITY's AQI is its worst STATION —
-  // the same rule one level up. Never an average, at either level.
-  const worst = stations[0];
+  /* THE READING IS THE WORST MONITOR, AND IT SAYS SO — AD-42C.
+     Two different mislabellings have to be kept apart here. Until 25 August
+     2026 this route ran the feed's sub-indexes through the breakpoint table a
+     second time and published a DOUBLED number (381 on a day CPCB published
+     97); AD-42 fixed that arithmetic and, separately, replaced the worst
+     station with the mean of the 44. The owner reversed the second half: this
+     site is about limits being broken at named places, and the mean averages
+     away the place where the limit is broken worst.
+     So the worst monitor is the reading again — but `scope` says 'worst-monitor',
+     the station and the count travel with it, and no field here is called
+     "Delhi's AQI". `cityMean` is still computed and still returned, as the
+     CPCB-comparable number and as the tripwire that would show the double
+     conversion coming back. */
+  const worst = worstStation(stations);
+  const mean = cityMean(stations);
+  if (!worst || mean === null) return fail('no station reported a sub-index', 502);
   const above = stations.filter((s) => s.aqi > AQI_LIMIT).length;
 
   return NextResponse.json({
     ok: true,
     state: 'LIVE',
     reading: {
+      scope: 'worst-monitor',
+      city: 'Delhi',
       station: worst.station,
       aqi: worst.aqi,
       band: worst.band,
       governing: worst.governing,
       conc: worst.conc,
+      concBasis: worst.concBasis,
       unit: worst.unit,
+      selectedFrom: stations.length,
       observed: worst.observed,
     },
+    /* NOT the headline, and not printed as one. Kept so the page can say what
+       CPCB says beside what we say, and so a drift between the two is visible
+       rather than silent. */
+    cityMean: { scope: 'city', aqi: mean, band: bandFor(mean), stations: stations.length,
+      method: 'mean of station sub-index maxima (unweighted; CPCB weights by 2km-grid population)' },
     spread: { stations: stations.length, above_limit: above },
     aqiLimit: AQI_LIMIT,
-    derivation: 'Computed from CPCB concentrations using CPCB\'s National AQI breakpoints. '
-      + 'Station AQI is the worst sub-index; city AQI is the worst station. CO and Pb excluded.',
+    derivation: 'Read from CPCB\'s published per-pollutant sub-indexes — the feed carries '
+      + 'the index, not concentrations, and nothing here recomputes it. A station\'s AQI is '
+      + 'its worst sub-index, and the reading above is the WORST MONITOR of those reporting, '
+      + 'named — not a city average. CPCB\'s own city figure is the mean of the stations and '
+      + 'is given separately as cityMean. Any concentration shown is implied back from the '
+      + 'sub-index, not measured.',
     source: { name: 'CPCB via data.gov.in', resource: '3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69' },
     fetchedAt: new Date().toISOString(),
     /* THE SUCCESS PATH IS CACHED AT THE EDGE (AD-27.6 clause 7, kept and

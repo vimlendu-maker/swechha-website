@@ -146,11 +146,38 @@ const PRETTY = { 'PM2.5':'PM2.5','PM10':'PM10','NO2':'NO₂','SO2':'SO₂','CO':
 const n0 = (v) => v == null ? '—' : Number(v).toLocaleString('en-IN');
 const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-const rd = AIR.city_reading;
-const gov = rd.pollutants[rd.governing];
-const govLimit = AIR.limits[rd.governing];
-const mult = govLimit ? (gov.conc / govLimit.h24).toFixed(1) : null;
+const rd = AIR.city_reading;      // the HEADLINE: the WORST MONITOR, named (AD-42C)
+const ws = AIR.worst_station;     // the worst monitor, named, never as the city
+const gov = ws.pollutants[ws.governing];
+const govLimit = AIR.limits[ws.governing];
+/* The multiplier belongs to the CONCENTRATION, and that concentration is now
+   IMPLIED back out of CPCB's sub-index rather than measured — the feed carries
+   no µg/m³ at all. Marked with a tilde wherever it is printed. */
+const mult = govLimit && gov.impliedConc != null ? (gov.impliedConc / govLimit.h24).toFixed(1) : null;
 const catIdx = AIR.bands.findIndex(b => b.name === rd.band);
+
+/* THE CLOSE PAIR THAT CARRIES THE FINDING — hoisted to module scope because it
+   is stated in TWO places on this page, and until 25 August 2026 one of them
+   was a hardcoded "392 and 110" left over from an earlier build while the other
+   was computed. They were the same two monitors with different numbers on one
+   page. Computed once, read twice, cannot drift. */
+const KM = (a1,o1,a2,o2) => { const R=6371, rad=(d)=>d*Math.PI/180;
+  const dl=rad(a2-a1), dm=rad(o2-o1);
+  const x = Math.sin(dl/2)**2 + Math.cos(rad(a1))*Math.cos(rad(a2))*Math.sin(dm/2)**2;
+  return 2*R*Math.asin(Math.sqrt(x)); };
+const GEO = AIR.stations.filter(s => s.aqi != null && s.lat && s.lng);
+const NEAR = (() => {
+  let best = [0, null];
+  for (const a of GEO) for (const b of GEO) {
+    if (a === b) continue;
+    const d = KM(a.lat,a.lng,b.lat,b.lng);
+    if (d > 6) continue;
+    const g = Math.abs(a.aqi - b.aqi);
+    if (g > best[0]) best = [g, [a, b, d]];
+  }
+  return best;
+})();
+const [NEAR_GAP, [NEAR_A, NEAR_B, NEAR_KM]] = NEAR;
 const OBS = (() => { const o = AIR.observed; return o ? `${String(o.hh).padStart(2,'0')}:${String(o.mi).padStart(2,'0')} IST, ${o.d} ${MON[o.m-1]} ${o.y}` : 'time not stated'; })();
 
 /* ── AD-36. A RELATIVE WINDOW ON A STATIC PAGE HAS TO NAME ITS END.
@@ -435,9 +462,18 @@ B.top = () => {
        The word is spelled, singular and plural, and it is the same noun the
        caption two rows below already uses ("Sasaram reports from one station
        and Delhi from 43"), so the panel now says one thing one way. */
+    /* THE GOVERNING POLLUTANT IS NAMED WHENEVER IT IS NOT PARTICULATE.
+       Leh sat SECOND in this table at 195, and nothing on the row said that
+       the number was one ozone channel above a PM2.5 of 13 — it read exactly
+       like Panipat's 198, which is particulate and real. A rank is not
+       comparable unless the reader can see what is being ranked. Particulate
+       rows stay unmarked, because that is the case the reader assumes. */
+    const gasGov = c.governing && c.governing !== 'PM2.5' && c.governing !== 'PM10';
+    const mark = gasGov ? ` &middot; ${esc(PRETTY[c.governing] || c.governing)}` : '';
+    const doubt = c.suspect ? ` <abbr class="p-nr-q" title="${esc(c.suspectReason || '')}">?</abbr>` : '';
     return `<div class="p-nr${isD?' is-me':''}"><span class="p-nr-n">${esc(c.city)}${c.state&&!isD?`, ${esc(c.state)}`:''}</span>
-          <span class="p-nr-v${c.aqi>IND.aqiLimit?' is-red':''}">${c.aqi}</span>
-          <span class="cap p-nr-s">${c.stations}&nbsp;station${c.stations===1?'':'s'}</span></div>`;
+          <span class="p-nr-v${c.aqi>IND.aqiLimit?' is-red':''}">${c.aqi}${doubt}</span>
+          <span class="cap p-nr-s">${c.stations}&nbsp;station${c.stations===1?'':'s'}${mark}</span></div>`;
   }).join('\n        ');
   return `    <div class="pic ht p2-pic">
       <img class="duo" src="/images/photos/india-gate-hero.jpg" alt="India Gate seen through Delhi haze"${imgDim('/images/photos/india-gate-hero.jpg')} fetchpriority="high" style="--zh:150%;--zt:-30%">
@@ -455,11 +491,11 @@ ${crumb('air')}
       <div class="p2-read breach">
         <p class="state p2-state ${STATES[AIR_STATE]}" id="air-state" data-state="${STATES[AIR_STATE]}"><i aria-hidden="true"></i><span id="air-state-w">${AIR_STATE_WORD}</span><span class="sr" id="air-state-x"> &mdash; ${AIR_STATE_GLOSS}</span></p>
         <p class="readout rl" id="air-aqi" data-committed="${rd.aqi}">${rd.aqi}</p>
-        <p class="unit">AQI &middot; 24-hour &middot; worst of eight</p>
+        <p class="unit">AQI &middot; 24-hour &middot; worst of ${AIR.spread.stations} monitors</p>
         <p class="verdict bad" id="air-band">${rd.band}</p>
         <div class="bands bad" id="air-bands" role="img" aria-label="${rd.band}, band ${catIdx+1} of ${AIR.bands.length}">${bands}</div>
-        <p class="limit" id="air-limit">CPCB safe limit ${AIR.aqiLimit}. <b>Limit broken.</b></p>
-        <p class="cap p2-src" id="air-src"><span id="air-src-w">${esc(rd.station)}. ${AIR_CADENCE_VIS} Observed ${OBS}.</span>
+        <p class="limit" id="air-limit">CPCB safe limit ${AIR.aqiLimit}. <b>${rd.aqi > AIR.aqiLimit ? 'Limit broken.' : 'Within the limit.'}</b></p>
+        <p class="cap p2-src" id="air-src"><span id="air-src-w">This is the average of ${AIR.spread.stations} CPCB monitors across Delhi. The worst single monitor, ${esc(String(ws.station).split(',')[0].trim())}, reads ${ws.aqi}. ${AIR_CADENCE_VIS} Observed ${OBS}.</span>
           <a class="lk" href="#measured">How this number is made</a>.</p>
       </div>
       <div class="p2-nat">
@@ -539,25 +575,28 @@ ${KIND_LEGEND}
     </div>`;
 
 B.measured = () => {
-  const shown = ['PM2.5','PM10','NO2','OZONE','SO2','NH3'].filter(k => rd.pollutants[k]?.sub != null)
-    .map(k => ({ k, ...rd.pollutants[k] })).sort((a,b) => b.sub - a.sub);
+  // CO IS IN THE LIST NOW. It was excluded until 25 August 2026 on the reading
+  // that its values were concentrations in an unstated unit. They are
+  // sub-indexes, like every other number in this feed.
+  const shown = ['PM2.5','PM10','NO2','OZONE','SO2','NH3','CO'].filter(k => ws.pollutants[k]?.sub != null)
+    .map(k => ({ k, ...ws.pollutants[k] })).sort((a,b) => b.sub - a.sub);
   const cmp = XC.comparison;
   const expl = [
-    ['AQI','One number for eight poisons',`Eight pollutants folded into one 0&ndash;500 figure that reports <b>whichever is worst</b>. It is not a concentration. ${rd.aqi} today; the limit is ${AIR.aqiLimit}.`],
-    ['PM2.5','Small enough to enter blood',`Particles under two and a half microns pass the lung wall into the bloodstream. <b>${gov.conc} µg/m³</b> today. The Indian daily standard is ${AIR.limits['PM2.5'].h24}.`],
-    ['PM10','Dust you can feel',`Coarser particles from roads, construction and soil, stopping in the upper airway. <b>${rd.pollutants['PM10'].conc} µg/m³</b> today. The standard is ${AIR.limits['PM10'].h24}.`],
+    ['AQI','One number for eight poisons',`Eight pollutants folded into one 0&ndash;500 figure that reports <b>whichever is worst</b> at a monitor, then averaged across Delhi&rsquo;s monitors. It is an index, not a concentration. ${rd.aqi} today; the limit is ${AIR.aqiLimit}.`],
+    ['PM2.5','Small enough to enter blood',`Particles under two and a half microns pass the lung wall into the bloodstream. About <b>${gov.impliedConc} µg/m³</b> at ${esc(String(ws.station).split(',')[0].trim())} today, implied by its sub-index. The Indian daily standard is ${AIR.limits['PM2.5'].h24}.`],
+    ['PM10','Dust you can feel',`Coarser particles from roads, construction and soil, stopping in the upper airway. About <b>${ws.pollutants['PM10']?.impliedConc ?? '—'} µg/m³</b> there today. The standard is ${AIR.limits['PM10'].h24}.`],
   ];
   const pWhat = `<div class="p-expl">${expl.map(([h,sb,b]) => `<div><h3 class="p-expl-h">${h}</h3><p class="p-expl-s">${sb}</p><p class="p-expl-b">${b}</p></div>`).join('')}</div>`;
   const pEight = `<p class="body p-quote">&ldquo;The worst sub-index determines the overall AQI.&rdquo;
           <span class="p-cite">CPCB, <i>About National Air Quality Index</i>.</span></p>
-        <div class="p-subs">${shown.map(x => `<div class="p-sub${x.k===rd.governing?' is-gov':''}">
+        <div class="p-subs">${shown.map(x => `<div class="p-sub${x.k===ws.governing?' is-gov':''}">
             <p class="lbl p-sub-n">${PRETTY[x.k]}</p><p class="p-sub-v">${x.sub}</p>
-            <p class="cap p-sub-c">${x.conc} ${x.unit}</p>${x.k===rd.governing?'<p class="lbl p-sub-g">governing</p>':''}</div>`).join('')}</div>
-        <p class="cap p-miss">Eight pollutants, ${shown.length} in this number. <b>Pb</b> is not reported at this
-          station. <b>CO</b> is reported &mdash; ${rd.pollutants['CO']?.conc ?? '—'} &mdash; but left out: the feed
-          states no unit for it, CPCB&rsquo;s CO breakpoints are in mg/m³ where everything else here is µg/m³, and
-          on either reading the value is not credible. Read as mg/m³ it alone would put almost every station in
-          the top band.</p>
+            <p class="cap p-sub-c">~${x.impliedConc} ${x.impliedUnit}</p>${x.k===ws.governing?'<p class="lbl p-sub-g">governing</p>':''}</div>`).join('')}</div>
+        <p class="cap p-miss">Eight pollutants, ${shown.length} at this monitor. <b>Pb</b> is not reported here.
+          The big numbers are CPCB&rsquo;s own sub-indexes, published as such; the small ones under them are the
+          concentrations those sub-indexes imply, carrying a tilde because <b>this feed publishes no
+          concentration at all</b>. Until 25 August 2026 this page read the sub-indexes as µg/m³ and converted
+          them again, which roughly doubled every figure on it.</p>
         <p class="body p-key"><b>AQI 100 is not a rule of thumb.</b> The boundary sits at PM2.5
           ${AIR.limits['PM2.5'].h24} µg/m³ and PM10 ${AIR.limits['PM10'].h24} µg/m³ &mdash; exactly the 24-hour
           standards India set for itself. <b>Above 100 is above the law.</b></p>`;
@@ -572,7 +611,7 @@ B.measured = () => {
           apart from outside</b> &mdash; and neither number tells you which you are looking at.</p></div>` : '';
   const pMethod = `<div class="p-method">
         <table class="p-tbl"><thead><tr><th>Figure</th><th>Kind</th><th>Source</th><th>Cadence</th></tr></thead><tbody>
-          <tr><td>AQI, ${rd.aqi}</td><td>Derived</td><td>computed from CPCB concentrations</td><td>Hourly</td></tr>
+          <tr><td>AQI, ${rd.aqi}</td><td>Read, then selected</td><td>CPCB’s published sub-indexes; worst of ${AIR.spread.stations} monitors (${esc(rd.station)}). CPCB’s own city mean is ${AIR.city_mean.aqi}.</td><td>Hourly</td></tr>
           <tr><td>Station concentrations</td><td>Measured</td><td>CPCB, ${AIR.spread.stations} Delhi stations</td><td>Hourly</td></tr>
           <tr><td>Published limit, ${AIR.aqiLimit}</td><td>Standard</td><td>${esc(govLimit.authority)}</td><td>Fixed</td></tr>
           <tr><td>Source split</td><td>Modelled</td><td>published apportionment study</td><td>Per study</td></tr>
@@ -851,10 +890,7 @@ B.geography = () => {
   const Y = (lat) => H - PAD - km(LA0,LN0,lat,LN0) * sc;
   // The pair that carries the finding: the biggest disagreement between two
   // monitors close enough that no reader would call them different places.
-  let pair = [0, null];
-  for (const a of geo) for (const b of geo) if (a !== b && km(a.lat,a.lng,b.lat,b.lng) <= 6) {
-    const g = Math.abs(a.aqi - b.aqi); if (g > pair[0]) pair = [g, [a, b, km(a.lat,a.lng,b.lat,b.lng)]]; }
-  const [gapAqi, [pA, pB, pKm]] = pair;
+  const [gapAqi, pA, pB, pKm] = [NEAR_GAP, NEAR_A, NEAR_B, NEAR_KM];
   // Median nearest-neighbour spacing, and the worst coverage hole INSIDE the
   // monitors' own box — both computed, so neither can go stale in the file.
   const nn = geo.map(s => Math.min(...geo.filter(t => t !== s).map(t => km(s.lat,s.lng,t.lat,t.lng)))).sort((a,b)=>a-b);
@@ -1012,7 +1048,7 @@ B.act = () => {
               column at all</b>, so there is no official way to turn a Delhi pin code into a point on the
               ground. The alternative was a third-party centroid file of unknown provenance &mdash; on this
               page, of all pages. A monitor is the better question anyway: two of them
-              <a class="lk" href="#geography">3.9 km apart</a> read 392 and 110.</p>
+              <a class="lk" href="#geography">${NEAR_KM.toFixed(1)} km apart</a> read ${Math.max(NEAR_A.aqi, NEAR_B.aqi)} and ${Math.min(NEAR_A.aqi, NEAR_B.aqi)}.</p>
           </div>
           <div class="p-act-c">
             <p class="lbl">The campaign</p>
@@ -1145,6 +1181,7 @@ const PAGE_CSS = `
 .p2-nat{border-top:1px solid var(--hair);padding-top:var(--gap-row)}
 .p2-nat>*{margin:0}
 .p2-nat-h{color:var(--fg-2)}
+.p-nr-q{color:var(--fg-3);text-decoration:none;border-bottom:1px dotted currentColor;cursor:help;font-size:.7em;vertical-align:super;margin-left:.15em}
 .p2-nat-l{color:var(--fg-3);max-width:38ch;margin:10px 0 var(--gap-row)!important}
 .p-nr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:0 14px;align-items:baseline;
   border-bottom:1px solid var(--hair);padding:9px 0}
@@ -2094,4 +2131,4 @@ const SHIPPED = responsiveImages(OUT);
 stampLastmod('/now/air', SHIPPED);
 writeFileSync(`${V3}/situation-air.html`, SHIPPED);
 console.log(`\nWROTE situation-air.html — ${SHIPPED.length} bytes, ${SHIPPED.split('\n').length} lines`);
-console.log(`  8 bands + strip + footer. Reading: AQI ${rd.aqi} ${rd.band} at ${rd.station}`);
+console.log(`  8 bands + strip + footer. Delhi AQI ${rd.aqi} ${rd.band}; worst ${ws.station} ${ws.aqi}`);
