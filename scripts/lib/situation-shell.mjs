@@ -140,6 +140,25 @@ const IMG_SIZES = new Map([
   ['w7-ab-fig', '(max-width:700px) 100vw, 20vw'],
   ['s-gtm-fig', '(max-width:700px) 100vw, 15vw'],
   ['s-record-cell', '(max-width:700px) 20vw, 11vw'],
+  /* AD-42. The poster sheet, and it is the reason this map has a comment about
+     the wrapper class being the key: `.pst-f` renders 14x wider than
+     `.s-record-cell` does, and both are cells in a grid inside `.wrap`. A
+     poster inheriting the archive thumbnail's 11vw would ship a 128px-wide
+     variant into a 561px box — the record-grid bug of the header comment,
+     running in the opposite direction and far more visible, because the whole
+     point of the page is that the sheet can be read.
+     MEASURED off getBoundingClientRect at four widths on /posters:
+       375  -> 335px (89.3vw), one column
+       1024 -> 468px (45.7vw), two columns
+       1280 -> 565px (44.1vw), two columns
+       1440 -> 561px (39.0vw), two columns
+     THE LAST TWO ROWS ARE WHY THIS IS NOT A SINGLE vw FIGURE. `.wrap` is capped
+     at 1240px, so past roughly 1300 the cell STOPS GROWING and its vw fraction
+     starts shrinking — 44.1vw at 1280 and 39.0vw at 1440 are the same 563px.
+     A single "40vw" (the first value written here, before it was measured)
+     therefore asks for 512px at 1280 and under-serves a 565px box. Above the
+     cap the honest unit is px, not vw. */
+  ['pst-f', '(max-width:639px) 90vw, (max-width:1319px) 46vw, 565px'],
   ['mark', '170px'],
 ]);
 
@@ -2342,3 +2361,90 @@ ${SCRIPT}</script>
   if (note) console.log(`  ${note}`);
   return SHIPPED;
 }
+
+
+/* ═══ AD-42 · THE POSTER SHEET ═══════════════════════════════════════════
+   Shared by scripts/build-work-pages.mjs (an item page's poster band) and
+   scripts/build-posters-page.mjs (the /posters archive). Defined here, at the
+   layer both import, so there is exactly one copy of the markup and one of
+   the CSS. work-shell.mjs re-exports both rather than restating them.       */
+export const POSTER_CSS = `/* ── (c) THE POSTER SHEET. AD-42. A SEPARATE COMPONENT FROM THE CONTACT SHEET
+      ABOVE, AND THE THREE REASONS ARE ALL DISQUALIFYING RATHER THAN
+      PREFERENTIAL — this was tried as a re-scope of '.wk-gal' first.
+      1. '.ht>img' IS 'object-fit:cover'. A photograph may be cropped to a
+         cell because the subject survives it. An A3 infographic cropped to
+         3/2 loses its headline and its whole footer, INCLUDING the printed
+         credit — which on these ten sheets is the only evidence of who
+         commissioned the work. So the fit is 'contain' and the cell carries
+         the sheet's own 1750/2476 ratio, which makes contain and cover
+         identical today and keeps a differently-proportioned sheet honest
+         rather than cropped.
+      2. '.duo' MUST NOT BE ON THESE IMAGES. The selective-colour filter is
+         the site's signature treatment for PHOTOGRAPHY; run over flat
+         infographic artwork it destroys the one thing a poster is for, which
+         is reading it. 'posterSheet' emits no 'duo' class, and that is not an
+         omission to be tidied up later.
+      3. THE SIZE IS THE POINT. '.s-record-cell' is measured at 11vw — a
+         70px archive thumbnail. A poster nobody can read is a texture, so
+         the grid is TWO up, about 590px a sheet inside the 1240px wrap, and
+         one up below 640 where two would be 160px each.
+      The caption is REQUIRED here, unlike the gallery's optional note: a
+      poster has a title, and a sheet of untitled sheets is the mood board the
+      gallery's own comment warns about. */
+.pst-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:clamp(16px,1.8vw,28px);margin-top:clamp(18px,2vw,26px)}
+.pst-c{margin:0;min-width:0}
+.pst-f{display:block;position:relative;overflow:hidden;
+  aspect-ratio:1750/2476;background:var(--paper-2);
+  outline:1px solid var(--rule-2);outline-offset:-1px}
+.pst-f>img{width:100%;height:100%;object-fit:contain;display:block}
+.pst-c .lbl{margin:10px 0 0}
+.pst-c .cap{margin:4px 0 0}
+/* 640, not 519. Two columns at 640 give each sheet 296px, at which the body
+   type inside the artwork is under 5px and the sheet is decorative. The
+   single-column step therefore comes EARLIER than the gallery's. */
+@media (max-width:639px){
+  .pst-grid{grid-template-columns:minmax(0,1fr);gap:22px}
+}
+/* BOTH dark classes, because this component is now used on both shells and
+   they name their dark ground differently: the WORK shell paints '.wk-dark',
+   the standalone pages paint '.dark-2'. A rule that knew only one would leave
+   a paper-coloured letterbox behind every sheet on the other. */
+.wk-dark .pst-f,.dark-2 .pst-f{background:#1B1B17;outline-color:var(--hair)}`;
+
+/**
+ * AD-42 · THE POSTER SHEET. Printed sheets shown whole, at a size somebody can
+ * read, each with its own title and its own printed credit. See the `.pst`
+ * CSS block above for why this is not `gallerySheet` with a different grid —
+ * `cover`, `.duo` and 11vw each independently rule that out.
+ *
+ * `title` IS REQUIRED AND `alt` IS REQUIRED, and they are not the same string.
+ * The title is what the sheet calls itself, set in its own display type; the
+ * alt is what a reader who cannot see it needs, which is the sheet's ARGUMENT
+ * and not its headline. `credit` is optional per poster because a set that
+ * shares one credit states it once, on the band.
+ *
+ * It refuses to write rather than emitting a half-labelled grid, on the same
+ * principle as every other gate in this section.
+ */
+export const posterSheet = ({ label, posters, note, credit }) => {
+  if (!Array.isArray(posters) || !posters.length) {
+    throw new Error('posterSheet: no posters. A band with nothing in it is omitted, never rendered empty.');
+  }
+  const bad = posters.filter((p) => !p.src || !p.title || !p.alt);
+  if (bad.length) {
+    throw new Error(
+      'posterSheet: every poster needs src, title and alt. Missing on: ' +
+      bad.map((p) => p.src || p.title || '(unnamed)').join(', '),
+    );
+  }
+  return `      <div class="pst s-record-sheetblock">
+        <div class="s-record-sheethead"><p class="lbl">${esc(label)}</p></div>
+${credit ? `        <p class="cap s-record-note" style="margin-top:10px">${credit}</p>\n` : ''}        <div class="pst-grid">
+${posters.map((p) => `          <figure class="pst-c">
+            <span class="pst-f"><img src="${esc(p.src)}" alt="${esc(p.alt)}"${imgDim(p.src)} loading="lazy"></span>
+            <figcaption><p class="lbl">${esc(p.title)}</p>${p.says ? `\n              <p class="cap">${esc(p.says)}</p>` : ''}${p.credit ? `\n              <p class="cap">${esc(p.credit)}</p>` : ''}</figcaption>
+          </figure>`).join('\n')}
+        </div>
+${note ? `        <p class="cap s-record-note" style="margin-top:16px">${note}</p>\n` : ''}      </div>`;
+};

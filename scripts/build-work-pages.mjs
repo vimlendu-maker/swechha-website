@@ -2,12 +2,15 @@
 /**
  * build-work-pages.mjs — the WORK section, generated.
  *
- * FOURTEEN PAGES AS THE DATA STANDS: FOUR landings and ten item pages. THE
+ * SIXTEEN PAGES AS THE DATA STANDS: FIVE landings and eleven item pages. THE
  * COUNT IS NEVER HARDCODED — it is read off `page: true`, which the data
  * contract calls "the single switch" that decides page-versus-row. It was
  * thirteen until the owner answered the fellowship question and Influence
- * earned its page mid-build; nothing in this file had to change for that except
- * one line in the ruling table below.
+ * earned its page mid-build; fourteen until AD-39 restored /work as the
+ * section's own index; and fifteen until AD-42 promoted No Plastic on the
+ * strength of ten recovered posters. Nothing in this file had to change for any
+ * of those except one line in the ruling table below — which is the whole
+ * argument for the switch being data and the ruling being code.
  *
  * AD-18 · `/work` IS DELETED, AND THE LANDING COUNT IS FOUR, NOT FIVE.
  * An independent IA review answered "is that page needed?" with no, and the
@@ -65,7 +68,7 @@ import { join, basename } from 'node:path';
 import {
   ROOT, V3, workShell, buildPage, writePage, Links, openBand as opener, esc, ARROW,
   masthead, figures, regRows, displayRows, march, onwardBand, anc, disclose,
-  bandChain, tabs, panel, gallerySheet, doRows, rangeRow, inviteRow,
+  bandChain, tabs, panel, gallerySheet, posterSheet, doRows, rangeRow, inviteRow,
   statementBand, splitBand, figureRail, ask, HOME_SRC,
 } from './lib/work-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
@@ -116,6 +119,29 @@ const RULED_PAGES = new Set([
   // against precisely BECAUSE none of them could carry a page, and the first one
   // that can, does. The other two rows are unchanged.
   'campaigns/monsoon-wooding',
+  /* AD-42. NO PLASTIC PROMOTED TO A PAGE, 25 August, and it is the same trade
+     W-10 made for Monsoon Wooding: a row becomes a page the moment the thing
+     the campaign actually did turns up. Here it turned up as TEN A3 SHEETS,
+     rendered out of the project's own print PDF — and the sheets carry, in
+     print, every fact W-19 ruled this a row for wanting. W-19's reasoning was
+     "all five are names — no date, demand, figure, partner or photograph for
+     any of them". No Plastic now has four of the five: a DEMAND ("refuse
+     single-use plastic, choose a sustainable alternative", set in the artwork),
+     a YEAR (the PDF is Illustrator, 2022, and the sheets cite India's 2022
+     single-use-plastic rules), PARTNERS (implemented by GIZ on behalf of the
+     German Federal Ministry for the Environment, Nature Conservation and
+     Nuclear Safety, in partnership with Swechha — printed on all ten), and the
+     artefacts themselves. It has no distribution figure, and that is a named
+     hole rather than a reason to stay a row.
+     AD-26 R-4 assigned these posters to "the marine-plastic campaign" and
+     AD-26 §3's mapping table named `no-plastic` as the row they belonged to.
+     This is that ruling carried out, not a new one.
+     THE COUNT IS TEN, NOT SEVEN OR EIGHT, and the discrepancy is the point:
+     the JPEG folder held seven, the repo held those seven plus a European
+     Commission infographic that is not ours (docs/legacy/reference/), and the
+     content audit said ten. The print PDF has ten pages. The owner confirmed
+     ten on 25 August. */
+  'campaigns/no-plastic',
 ]);
 const RULED_ROWS = new Set([
   'projects/she-leads-change', 'projects/food-systems',
@@ -127,7 +153,11 @@ const RULED_ROWS = new Set([
      Ruled rows rather than held back: a campaign the organisation runs and does
      not list is a worse omission than one listed with its gaps named, and the
      kind page is built to state holes as content. */
-  'campaigns/this-girl-can', 'campaigns/no-plastic', 'campaigns/sustainable-shopping',
+  /* `campaigns/no-plastic` LEFT THIS LIST on 25 August — see AD-42 in
+     RULED_PAGES above. Four of W-19's five missing things arrived at once, in
+     print. The other four campaigns W-19 ruled rows are unchanged and still
+     have nothing. */
+  'campaigns/this-girl-can', 'campaigns/sustainable-shopping',
   'campaigns/park-restoration', 'campaigns/no-more-waste-hills',
   'events/yamunotsav', 'events/cyclothon', 'events/greenathon', 'events/yamuna-shramdaan',
 ]);
@@ -259,6 +289,12 @@ const ASK_PLACEMENT = {
   'projects/influence': ['institution', 'funder'],
   'projects/me-to-we': ['funder'],
   'campaigns/monsoon-wooding': ['institution', 'funder'],
+  /* AD-42. Same pair as the section's other campaign page, and for a reason
+     specific to this one: the artefact IS a print run, so the institutional ask
+     is the only one that fits what a reader can actually do with it — an
+     organisation puts the set up on its own walls. "Volunteer with us" would be
+     the individual action AD-27.56 forbids dressing as an `institution`. */
+  'campaigns/no-plastic': ['institution', 'funder'],
   'journeys/cityscapes': ['school'],
   'journeys/yamuna-yatra': ['school'],
   'journeys/gram-anubhav': ['school'],
@@ -498,6 +534,58 @@ function checkFrame(key, fr) {
   if (lib && lib.baked === true) BAKED_SEEN.add(fr.src);
 }
 
+/* ── AD-42. THE POSTER GATE, AND WHY IT IS NOT `checkFrame` ─────────────────
+   A poster is not a photograph and the three frame gates ask the wrong
+   questions of one. `content/photo-library.json` exists to answer, per file,
+   whether a photograph is bought stock, synthetic, or of an identifiable person
+   — none of which a sheet of our own printed artwork can be. Putting posters
+   through it would mean cataloguing ten illustrations as photographs to satisfy
+   a consent test that has no subject, and the next reader of the library would
+   find ten entries that lie about what they are.
+
+   SO THE GATE ASKS WHAT A POSTER CAN ACTUALLY FAIL:
+     1. The file is on disk. Same as a frame — a poster band with a 404 in it is
+        the one defect a reader definitely notices.
+     2. It lives under /images/posters/. This is the load-bearing one. The
+        European Commission marine-pollution infographic sat in
+        public/images/giz-marine/ for a day and a half and the content audit
+        counted it as ours; it is now out of public/ entirely
+        (docs/legacy/reference/). A path rule is what stops the next stray
+        download being published as Swechha's work.
+     3. A title AND an alt, and they are different strings — see posterSheet's
+        own note. The title is the sheet's name; the alt is its argument.
+     4. `credit` is prose and is scanned like prose, because a printed credit
+        naming a foreign ministry is the most consequential sentence on the
+        band. */
+const POSTER_DIR = '/images/posters/';
+function checkPosters(key, list) {
+  if (list == null) return;
+  if (!Array.isArray(list) || !list.length) {
+    return rej(key, '"posters" must be a non-empty array — omit the key entirely rather than shipping an empty band');
+  }
+  const seen = new Set();
+  list.forEach((p, i) => {
+    const at = `${key} posters[${i}]`;
+    if (!p || typeof p !== 'object') return rej(at, 'not an object');
+    if (!p.src) return rej(at, 'no "src"');
+    if (!p.src.startsWith(POSTER_DIR)) {
+      rej(at, `src is ${JSON.stringify(p.src)}, outside ${POSTER_DIR}. Printed material we publish as ours ` +
+        'lives there and nowhere else — the rule exists because a third-party infographic once sat in the ' +
+        'photo directory and was counted as Swechha\'s (see docs/legacy/reference/README.md).');
+    }
+    if (!existsSync(join(ROOT, 'public', p.src.replace(/^\//, '')))) rej(at, `file does not exist on disk: ${p.src}`);
+    if (seen.has(p.src)) rej(at, `duplicate poster ${p.src} in the same band`);
+    seen.add(p.src);
+    if (!p.title) rej(at, 'no "title" — a sheet of untitled sheets is a mood board');
+    if (!p.alt) rej(at, 'no "alt" — it must carry the sheet\'s argument, not repeat its headline');
+    if (p.title && p.alt && p.title.trim() === p.alt.trim()) {
+      rej(at, 'the "title" and the "alt" are the same string. The title is what the sheet calls itself; the ' +
+        'alt is what a reader who cannot see it needs, which is what it argues.');
+    }
+    for (const f of ['title', 'says', 'credit']) checkProse(key, `posters[${i}].${f}`, p[f]);
+  });
+}
+
 /* Frames that arrive from anywhere other than the masthead — an activity panel,
    a gallery cell. Same three gates, plus the two that only matter in a set. */
 function checkFrameSet(key, where, list, { min = 0 } = {}) {
@@ -673,8 +761,25 @@ for (const it of items) {
     rej(key, `AD-27.18 places [${ASK_PLACEMENT[key].join(', ')}] Ask(s) on this page and the data carries none. ` +
       `Without it the page keeps the CTA that navigates to /act, which is the exact defect the client reported.`);
   }
-  for (const [fld, val] of [['deck', it.deck], ['line', it.line], ['gathering', it.gathering]]) checkProse(key, fld, val);
+  for (const [fld, val] of [['deck', it.deck], ['line', it.line], ['gathering', it.gathering],
+    /* AD-42. The four band-level poster strings are prose and are scanned like
+       prose. The credit is the one that matters most: a month name in it would
+       go stale, and a tensed word would turn a printed 2022 credit into a
+       present-tense claim about a partnership nobody has confirmed is live. */
+    ['posters_line', it.posters_line], ['posters_label', it.posters_label],
+    ['posters_credit', it.posters_credit], ['posters_note', it.posters_note]]) checkProse(key, fld, val);
   for (const grp of ['how', 'done']) for (const r of (it[grp] || [])) { checkProse(key, `${grp}.h`, r.h); checkProse(key, `${grp}.p`, r.p); }
+  /* AD-42. `about` is an array of paragraphs, each scanned like every other
+     written string on the page. An object with h/p was rejected: this is one
+     continuous description, not a row set, and giving it headings would make it
+     a fourth band of the same shape as aim, how and who. */
+  if (it.about != null) {
+    if (!Array.isArray(it.about)) rej(key, '"about" must be an array of paragraph strings');
+    else it.about.forEach((t, i) => {
+      if (typeof t !== 'string' || !t.trim()) rej(key, `about[${i}] is not a written paragraph`);
+      checkProse(key, `about[${i}]`, t);
+    });
+  }
   for (const h of (it.holes || [])) checkProse(key, 'holes.what', h.what);
 
   /* ── AD-18. THE FIVE NEW FIELDS, AND THE FOUR NEW REJECTIONS ─────────────
@@ -716,6 +821,17 @@ for (const it of items) {
   }
   /* ── REJECTION 10. A GALLERY BELOW THE FLOOR. */
   checkFrameSet(key, 'gallery', it.gallery, { min: GALLERY_MIN_LATE });
+  /* AD-42. No minimum: unlike a gallery, ONE poster is a legitimate band —
+     a single sheet shown whole is still the artefact, where a one-frame
+     "gallery" is a photograph pretending to be a set. */
+  checkPosters(key, it.posters);
+  /* AD-42. A poster band belongs on a page, not in a row: a row is one line in
+     a register and has nowhere to put a sheet. Caught here rather than left to
+     render nothing, because silently dropping ten posters is exactly the kind
+     of quiet loss this file refuses everywhere else. */
+  if (it.posters && it.page !== true) {
+    rej(key, 'carries "posters" but page:false. A row has nowhere to show a sheet — either the item is ruled a page or the posters do not belong on it.');
+  }
   /* ── REJECTION 11. A SCALE THAT INTRODUCES A NUMBER.
      This is the gate that makes the range row safe. `scale` may not carry a
      figure; it may only name one the item already publishes, by index, and
@@ -1066,7 +1182,20 @@ const SEQ = {
   ],
   item: [
     ['top', () => true],
-    ['what', (it) => !!(it.line || (it.figures || []).length)],
+    ['what', (it) => !!(it.line || (it.about || []).length || (it.figures || []).length)],
+    /* AD-42 · THE POSTER BAND SITS SECOND, AND THAT IS A DEPARTURE FROM THE
+       SIX-PART SPINE THAT NEEDS ARGUING RATHER THAN ASSUMING.
+       The obvious slot was beside `sheet`, seventh, where the other visual band
+       lives. It is wrong here for one reason: on the page this band exists for,
+       the posters are not illustration OF the argument, they ARE the argument —
+       the campaign's whole surviving record is ten printed sheets. Seventh would
+       mean six bands of prose about posters before the reader sees one, which is
+       the burying pattern the mobile audit already caught once on the hero.
+       So it goes directly under `what`: the page says what the campaign is, then
+       shows the thing, then explains its objectives, method and limits. All six
+       of the client's parts survive in his order; one artefact band is inserted
+       ahead of them, and only on a page that has artefacts. */
+    ['posters', (it) => (it.posters || []).length > 0],
     ['aim', (it) => (it.aims || []).length > 0],
     ['statement', hasStatement],
     ['how', (it) => (it.how || []).length > 0 || (it.activities || []).length > 0 || (it.route || []).length > 0],
@@ -1124,12 +1253,13 @@ function bandsFor(kindOfPage, subject, key) {
    author can act on. This is the "name the gap" half of the omit-and-name rule,
    and it is the report the owner needs in order to close them. */
 const GAP = {
-  what: 'no "line" and no figures — the page cannot say what it is',
+  what: 'no "line", no "about" and no figures — the page cannot say what it is',
   aim: 'no "aims" — nothing is written down about what this sets out to achieve. The client asked for this band by name ("What we tend to achieve (Objectives)").',
   how: 'no "how", no "activities" and no "route" — nothing is written down about how it runs. The client asked for this band by name ("Strategy/Activities").',
   who: 'no "who" — nobody has written down who this is for. The client asked for this band by name ("For Who").',
   done: 'no "done", no figures and no holes — the page can claim nothing and names nothing it cannot claim',
   sheet: `fewer than ${GALLERY_MIN} catalogued frames in "gallery" — the photograph band does not render. This is the client's first complaint ("There is no use of photos, hardly") and it is closed by naming frames, not by design.`,
+  posters: 'no "posters" — this item has no printed material catalogued. Not a defect: most items never had any.',
   with: 'no schools, partners or funders named (schema addendum §5)',
   statement: 'no "statement" with both a written line and a frame. THIS IS THE BAND THAT ANSWERS THE OWNER\'S SHARPEST NOTE — "this use of black and white blocks is getting to make pages boring". It is the frozen homepage\'s own cure (band 3, #say): one display line beside a photograph running to the seam, no opener, no rule, no list. Without it the page is a stack of rectangles. One line and one frame each closes it.',
   everything: 'no items at all',
@@ -1144,6 +1274,10 @@ const LABEL = {
   weight: 'The figures', against: 'What each pushes against',
   what: 'What we do', aim: 'What it sets out to do', how: 'Strategy and activities',
   who: 'Who it is for', done: 'Impact', sheet: 'The photographs', with: 'Who it is with',
+  /* AD-42. "The posters", not "The material" or "Printed work": the band shows
+     posters, the reader can see they are posters, and a category name where a
+     plain one exists is the register AD-28 struck everywhere else. */
+  posters: 'The posters',
   record: 'The record',
   /* AD-28. `holes` ("What we cannot say yet") and `nodates` ("Why there are no
      dates") are gone from SEQ, so their labels go too — a label left behind for
@@ -1417,6 +1551,38 @@ const proseRows = (rows, tailSummary) => {
   return tail.length
     ? `${block(head)}\n${disclose(`${esc(tailSummary)} ${ARROW}`, block(tail))}`
     : block(head);
+};
+
+/* AD-42 · THE DESCRIPTION. Body prose at full measure, directly under the
+   `what` opener and ahead of the split.
+
+   WHY THE BAND NEEDED ONE. `what` was an opener plus a split of scale-left and
+   figures-right, and NOTHING ELSE — no slot for a paragraph. That works while an
+   item has figures: Monsoon Wooding fills the lead column with two readings and
+   the band is a composition. It fails the moment an item has none. No Plastic
+   has no sourced figure and cannot be given one (SOURCE_FORMS is the whole
+   argument), so its `what` band rendered a heading, a one-line lead and an empty
+   `wk-solo` div — about 250px of nothing on the band that is supposed to say
+   what the work IS. The owner asked for the description; the empty column is why
+   it had nowhere to go.
+
+   FULL MEASURE, NOT THE LEAD COLUMN, and this is the one real decision here.
+   Putting it in `right` would have made the band a proper asymmetric split — but
+   only on a page that ALSO fills `left`, and on the page this exists for `left`
+   is empty, so the prose would sit in columns 7-12 with the void merely moved to
+   the other side. The shell's own comment settles the mirror case: "a split with
+   nothing in its second column is not a split — it is a 5-column text block ...
+   and unreadable." A description is the widest-read thing on the page and it
+   takes the measure the aim, who and done bands already give their prose.
+
+   READING ORDER: heading, the one-line lead, the description, then the figures.
+   Uniform for every item, so an item that gains a figure later does not move its
+   own description. */
+const aboutBlock = (list) => {
+  if (!(list || []).length) return '';
+  return `      <div class="p-about">
+${list.map(t => `        <p class="body">${t}</p>`).join('\n')}
+      </div>`;
 };
 
 /* ═══ AD-28 · THE THREE HOLE COMPONENTS ARE DELETED ══════════════════════
@@ -2020,7 +2186,15 @@ function pageItem(it) {
        one column and the picture, where there is one, goes first. */
     what: [
       opener('what', 'What we do', it.line || ''),
-      splitBand({
+      aboutBlock(it.about),
+      /* AD-42. GUARDED. With no figures and no scale both halves are empty, and
+         splitBand's own `!frame && !right` branch then emits `wk-solo` wrapping
+         an empty div — a band-height box with nothing in it. Every other band on
+         this page is omitted when its data is absent; this one composed
+         unconditionally because it used to be the band that could not be empty.
+         Now that `about` carries the prose, the split is figures-and-scale only,
+         and it renders when there is one of those to draw. */
+      (it.figures || []).length || (it.scale || []).length ? splitBand({
         /* THE DECK IS NOT REPEATED HERE, and the first version of this band did
            repeat it: masthead() already sets `deck` under the h1 two hundred
            pixels above. Measured the cost at 375 on bridge-the-gap — the `what`
@@ -2033,8 +2207,30 @@ function pageItem(it) {
         left: scaleBlock(it),
         frame: (it.statement && it.statement.frame && !hasStatement(it)) ? it.statement.frame : null,
         right: figureBlock(it.figures || [], ''),
-      }),
+      }) : '',
     ],
+    /* AD-42 — THE POSTERS. See SEQ for why this is second and not seventh.
+       THE BAND'S CREDIT IS THE SHEETS' OWN, QUOTED, NOT WRITTEN. Every poster
+       in this set carries a printed credit line, and quoting it is the only
+       honest way to name a foreign ministry on a page in this section: the
+       claim is "this is what the artwork says", which is checkable by looking
+       at the artwork, rather than "this is who we worked with", which would
+       need a record we do not hold. The data supplies the string; this file
+       does not compose one. */
+    /* Guarded the way `statement` is, and for the same mechanical reason: this
+       object is built for EVERY item and the band chain selects from it
+       afterwards, so an unguarded call runs posterSheet's own refusal on all
+       fourteen pages. The guard here and the SEQ predicate above must agree —
+       both read `posters.length`. */
+    posters: (it.posters || []).length ? [
+      opener('posters', 'The posters', it.posters_line || ''),
+      posterSheet({
+        label: it.posters_label || `${it.name}, as printed`,
+        credit: it.posters_credit || '',
+        posters: it.posters,
+        note: it.posters_note || '',
+      }),
+    ] : '',
     /* 2 — WHAT IT SETS OUT TO DO. */
     aim: [
       opener('aim', 'What it sets out to do'),
