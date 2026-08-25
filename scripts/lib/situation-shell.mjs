@@ -301,6 +301,89 @@ export const breadcrumbJsonLd = (crumbs) => '<script type="application/ld+json">
     })),
   }) + '</script>';
 
+/* ═══ THE REUSE GRANT ═════════════════════════════════════════════════════
+   ONE definition of the licence, for the three places that must agree: the
+   `rel="license"` link in <head>, the `license` field of the Dataset below, and
+   the words the reader is shown in `citeBlock()`. Three copies of a licence is
+   how a page ends up granting one thing in prose and another in markup.
+
+   WHY THIS EXISTS AT ALL (2026-08-26). The "Cite this page" panel was written
+   for /now/air and lived in that one generator, so five situation pages
+   published the same quality of sourced, cross-checked data while saying
+   nothing whatever about whether anyone could reuse it. A page that invites
+   citation five times out of six is not inviting citation. There was also no
+   machine-readable grant anywhere on any of them — no `rel="license"`, and the
+   only JSON-LD was BreadcrumbList — so an aggregator or a library catalogue had
+   no way to learn the terms without a human reading the prose.
+
+   CC BY 4.0 is what the air page already granted in words; this makes the other
+   five say it too, and makes all six say it in markup as well as prose. It
+   covers THIS SITE'S OWN presentation and derived figures. It does not and
+   cannot relicense the upstream sources — CPCB, FSI, GFW, IMD each carry their
+   own terms, which is why every figure names its source on the page.          */
+export const LICENCE_URL = 'https://creativecommons.org/licenses/by/4.0/';
+export const LICENCE_NAME = 'CC BY 4.0';
+
+/**
+ * schema.org `Dataset` for a situation page.
+ *
+ * DERIVED FROM THE FAMILY ENTRY AND THE PAGE'S OWN REGISTERED DESCRIPTION, so
+ * it cannot describe something the page does not. Emitted only for the six —
+ * `assemble` looks the file up in FAMILY and passes null for anything else, so
+ * /now and /about never claim to be datasets.
+ *
+ * Deliberately SMALL. Every field here is something this repo can stand behind:
+ * the route, the licence, the publisher, the fact that it costs nothing to
+ * read, and the region it covers. No `distribution` is claimed, because there
+ * is no download to point at yet — asserting a CSV that does not exist is the
+ * kind of markup that gets a site distrusted rather than indexed.
+ */
+export const datasetJsonLd = (fam, description) => '<script type="application/ld+json">'
+  + JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Dataset',
+    name: `${fam.name} — ${fam.where}`,
+    description,
+    url: abs(fam.route),
+    license: LICENCE_URL,
+    isAccessibleForFree: true,
+    spatialCoverage: { '@type': 'Place', name: fam.where },
+    creator: { '@type': 'NGO', name: 'Swechha', url: abs('/') },
+    publisher: { '@type': 'NGO', name: 'Swechha', url: abs('/') },
+  }) + '</script>';
+
+/**
+ * The reader-facing half of the same grant, shown at the foot of every
+ * situation page. Was inline in build-situation-air.mjs; lifted here verbatim
+ * so the other five carry the identical words rather than five paraphrases.
+ *
+ * `#measured` is safe to link on all six — every one of them builds a section
+ * with that id, verified 2026-08-26.
+ */
+export const citeBlock = (id) => {
+  if (!FAMILY.some(f => f.id === id)) {
+    throw new Error(`citeBlock: "${id}" is not a situation. `
+      + `Known: ${FAMILY.map(f => f.id).join(', ')}`);
+  }
+  return `      <div class="p-close">
+        <div class="p-close-r">
+          <p class="lbl">Every reading, kept</p>
+          <p class="cap">Each reading keeps its own address, with the source that produced it, when it was
+            observed, and the limit it was judged against. Nothing is overwritten when it improves and
+            nothing is quietly restated when it gets worse. <b>An empty day stays empty</b>
+            &mdash; a gap in the record is a gap in the record, never a zero.</p>
+        </div>
+        <div class="p-close-r">
+          <p class="lbl">Cite this page</p>
+          <p class="cap"><b>Reuse freely &mdash; ${LICENCE_NAME}.</b> Every figure carries its source and its
+            cadence in <a class="lk" href="#measured">how the number is made</a>, and every figure carries
+            whether it was counted or modelled on the rule beneath it. If you quote a number from here,
+            quote the kind with it. The grant covers this page; each upstream source keeps its own terms,
+            which is why every figure names one.</p>
+        </div>
+      </div>`;
+};
+
 /** Read a committed dataset. */
 export const J = (f) => JSON.parse(readFileSync(join(DATA, f), 'utf8'));
 
@@ -2100,6 +2183,15 @@ export async function assemble({ file, title, desc = null, bands, sectionFor, in
      through this shell (about.html) is not a nav word and marks nothing. */
   const own = file === INDEX_PAGE.file ? INDEX_PAGE.route
     : (FAMILY.find(f => f.file === file)?.route ?? null);
+
+  /* ── IS THIS ONE OF THE SIX? ────────────────────────────────────────────
+     Looked up rather than passed in, for the same reason `own` is: a generator
+     that has to REMEMBER to declare its licence is a generator that will one
+     day forget, which is precisely how five of the six ended up without one.
+     Non-null here means the page gets `rel="license"` and a Dataset; null means
+     it gets neither, which is right for /now and about.html — an index is not a
+     dataset and should not claim to be. */
+  const fam = FAMILY.find(f => f.file === file) ?? null;
   /* A page that IS a nav word cannot be derived from the family list, because
      the family is the six situations. `impact.html` is `/impact`, which is a
      nav word in its own right, and AD-19 §5 requires `aria-current="page"`
@@ -2242,7 +2334,7 @@ export async function assemble({ file, title, desc = null, bands, sectionFor, in
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>${title}</title>
-<link rel="canonical" href="${attr(abs(canonical))}">
+<link rel="canonical" href="${attr(abs(canonical))}">${fam ? `\n<link rel="license" href="${attr(LICENCE_URL)}">` : ''}
 ${headTags(title, description, canonical, ogType)}
 ${headExtra ? `${headExtra}\n` : ''}${sh.HEAD_FONTS}
 <style>
@@ -2255,7 +2347,7 @@ ${header(index, { ...mark, page: canonical })}
 <main id="main" tabindex="-1">
 ${bands.map(section).join('\n')}
 </main>
-${sh.FOOTER}${CRUMBS}
+${sh.FOOTER}${CRUMBS}${fam ? '\n' + datasetJsonLd(fam, description) : ''}
 <script>
 ${SCRIPT}</script>
 </body>

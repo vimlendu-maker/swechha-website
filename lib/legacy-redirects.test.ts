@@ -8,18 +8,20 @@ const built = buildLegacyRedirects(rows, routes)
 
 describe('the legacy redirect map', () => {
   it('accounts for every captured URL, as a redirect or a deliberate 404', () => {
-    /* 1240 URLs were captured on 2026-08-23. If this number changes, the map
-       was regenerated against a different capture and wants re-reviewing. */
-    expect(rows).toHaveLength(1240)
+    /* 1240 URLs were captured on 2026-08-23, plus 6 RECOVERED on 2026-08-26 —
+       live pages the old sitemap had already dropped, so the capture never saw
+       them. If either number changes, the map was regenerated against a
+       different capture and wants re-reviewing. */
+    expect(rows).toHaveLength(1246)
     const content = rows.filter((r) => !['attachment', 'soliloquy', 'post_tag', 'pj-categs', 'pl-categs'].includes(r.type))
-    expect(content).toHaveLength(226)
-    expect(content.filter((r) => r.to)).toHaveLength(168)
-    expect(content.filter((r) => !r.to)).toHaveLength(58)
+    expect(content).toHaveLength(232)
+    expect(content.filter((r) => r.to)).toHaveLength(175)
+    expect(content.filter((r) => !r.to)).toHaveLength(57)
   })
 
   it('emits one redirect per mapped row and nothing else', () => {
     expect(built).toHaveLength(rows.filter((r) => r.to).length)
-    expect(built).toHaveLength(168)
+    expect(built).toHaveLength(175)
   })
 
   it('never emits a source with the trailing slash WordPress gave it', () => {
@@ -54,6 +56,41 @@ describe('the legacy redirect map', () => {
        `/get-involved/` -> `/act` is the standing precedent. */
     const contact = built.find((r) => r.source === '/contact-us')
     expect(contact?.destination).toBe('/act')
+  })
+
+  it('redirects the six URLs the capture missed', () => {
+    /* The 2026-08-23 capture came from the old site's sitemaps, which list what
+       WordPress still considered current — so six live pages that had already
+       fallen out of it were never captured and never ruled on. They 404'd by
+       accident rather than by decision. Each was confirmed on 2026-08-26 as a
+       real archived page returning 200.
+
+       Pinned by destination so the rescue cannot be silently undone, and so a
+       regenerated map that drops them fails loudly. */
+    const recovered: Record<string, string> = {
+      '/project/yamuna-yatra-2': '/work/journeys/yamuna-yatra',
+      '/project/brake-even': '/work/campaigns',
+      '/project/influence': '/work/projects/influence',
+      '/project/me-to-we': '/work/projects/me-to-we',
+      '/about-us': '/about',
+      '/what-we-do': '/work',
+    }
+    for (const [source, destination] of Object.entries(recovered)) {
+      expect(built.find((r) => r.source === source)?.destination).toBe(destination)
+    }
+  })
+
+  it('keeps the ranking /we-for-yamuna-and-you/ URL alive despite its empty body', () => {
+    /* A zero-body post, so the 2014-17 press-shell rule sent it to a 404 with
+       the other 51. But those are clippings ABOUT Swechha; this is We for
+       Yamuna, the campaign it has run since 2000, and the URL was still a live
+       Google result on 2026-08-26. Same correction as /contact-us/: the ruling
+       weighed the body and never asked what the URL was earning.
+
+       It points at the campaigns index because /work/campaigns/we-for-yamuna is
+       not a built route yet — when it is, this expectation should move with it
+       rather than be deleted. */
+    expect(built.find((r) => r.source === '/we-for-yamuna-and-you')?.destination).toBe('/work/campaigns')
   })
 
   it('keeps the five essays pointed at their republished selves', () => {

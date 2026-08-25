@@ -13,7 +13,8 @@ import { tmpdir } from 'node:os';
    calls shell(). */
 import { crumb, siblings, FAMILY_CSS, NAV_SEARCH_CSS, NAV as SHELL_NAV, HOME_HREF, GIVE_HREF, INDEX_PAGE,
   stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, cadence, STATES,
-  closing, CLOSING_CSS, abs, imgDim, responsiveImages } from './lib/situation-shell.mjs';
+  closing, citeBlock, CLOSING_CSS, abs, imgDim, responsiveImages,
+  LICENCE_URL, datasetJsonLd, FAMILY } from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
 import { stampLastmod } from './lib/lastmod.mjs';
 
@@ -1110,22 +1111,7 @@ B.act = () => {
   return `    <div class="wrap">
 ${opener('act','What you can do','Nobody visits a record every morning. This is the part that asks something of you.')}
 ${tabs('Act', [['Watch your ward', pAsk], ['Do it yourself', pDo], ['What is being said', pNews]])}
-      <div class="p-close">
-        <div class="p-close-r">
-          <p class="lbl">Every reading, kept</p>
-          <p class="cap">Each day&rsquo;s reading keeps its own address, with the station that produced it,
-            the hour it was observed, and the limit it was judged against. Nothing is overwritten when it
-            improves and nothing is quietly restated when it gets worse. <b>An empty day stays empty</b>
-            &mdash; a gap in the record is a gap in the record, never a zero.</p>
-        </div>
-        <div class="p-close-r">
-          <p class="lbl">Cite this page</p>
-          <p class="cap"><b>Reuse freely &mdash; CC BY 4.0.</b> Every figure carries its source and its
-            cadence in <a class="lk" href="#measured">how the number is made</a>, and every figure carries
-            whether it was counted or modelled on the rule beneath it. If you quote a number from here,
-            quote the kind with it.</p>
-        </div>
-      </div>
+${citeBlock('air')}
 ${closing('air')}
 ${siblings('air')}
     </div>`;
@@ -2008,6 +1994,7 @@ const OUT = stripHtmlComments(`<!doctype html>
 <title>${TITLE}</title>
 <meta name="description" content="${DESC}">
 <link rel="canonical" href="${abs('/now/air')}">
+<link rel="license" href="${LICENCE_URL}">
 <link rel="icon" href="/icons/icon-32.png" sizes="32x32"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 ${OG}
 ${HEAD_FONTS}
@@ -2022,6 +2009,7 @@ ${HEADER}
 ${BANDS.map(section).join('\n')}
 </main>
 ${FOOTER}${CRUMBS}
+${datasetJsonLd(FAMILY.find(f => f.id === 'air'), DESC)}
 <script>
 ${SHIP_SCRIPT}</script>
 </body>

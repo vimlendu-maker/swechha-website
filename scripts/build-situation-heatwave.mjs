@@ -412,6 +412,7 @@ B.act = () => `${opener('act', 'What you can do', 'Heat kills the people who can
       </div>
       <p class="cap h-close">Every figure here is public, dated and reproducible from the source
         named beside it &mdash; including the ones that do not support the argument.</p>
+${S.citeBlock('heatwave')}
 ${S.closing('heatwave')}
 ${siblings('heatwave')}
 ${S.newsletter('heatwave')}

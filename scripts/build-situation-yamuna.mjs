@@ -732,6 +732,7 @@ B.act = () => `${opener('act', 'What you can do', 'The river is downstream of a 
       <p class="cap y-close">Every figure on this page is public, dated and linked. If one is wrong,
         the source is named so you can prove it &mdash; which is the only kind of number worth
         publishing.</p>
+${S.citeBlock('yamuna')}
 ${S.closing('yamuna')}
 ${siblings('yamuna')}
 ${S.newsletter('yamuna')}

@@ -411,6 +411,7 @@ B.act = () => `${opener('act', 'What you can do', 'Rainfall is weather. A flood 
       <p class="cap c-close">Every figure here is public, dated and reproducible from the source
         named beside it &mdash; and the three things that could not be counted are named where they
         would have gone.</p>
+${S.citeBlock('climate')}
 ${S.closing('climate')}
 ${siblings('climate')}
 ${S.newsletter('climate')}

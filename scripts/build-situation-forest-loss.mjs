@@ -373,6 +373,7 @@ B.act = () => `${opener('act', 'What you can do', 'A forest is lost with paperwo
       </div>
       <p class="cap l-close">Every figure on this page is public, dated and linked &mdash; including
         the two that disagree.</p>
+${S.citeBlock('loss')}
 ${S.closing('loss')}
 ${siblings('loss')}
 ${S.newsletter('loss')}
