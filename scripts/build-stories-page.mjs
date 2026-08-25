@@ -75,6 +75,24 @@ const byTitle = (match) => Object.entries(VIDEOS)
   .map(([id, v]) => ({ id, title: v.title, playlists: v.playlists || [] }))
   .sort((a, b) => a.title.localeCompare(b.title));
 
+/* AD-43. The press list, checked against the video index the same way FILMS is
+   — an id that is not in the 148-video index is a link to nothing. */
+const NEWS = (D.news?.entries || []).map((e) => {
+  if (!VIDEOS[e.id]) dataFail(`news entry "${e.title}" names video ${e.id}, which is not in data/media/youtube-index.json.`);
+  if (!e.title) dataFail(`a news entry has no title (${e.id}).`);
+  /* The outlet must be the artefact's own word, not ours. Checked here so a
+     hand-edit to data/ cannot slip an attribution past the build. */
+  if (e.outlet) {
+    const t = (VIDEOS[e.id]?.title || '').toLowerCase();
+    const stem = e.outlet.toLowerCase().replace(/^hindustan times$/, 'ht').replace(/ /g, '');
+    if (!t.replace(/[^a-z0-9]/g, '').includes(stem.replace(/[^a-z0-9]/g, ''))) {
+      dataFail(`news entry ${e.id} claims outlet "${e.outlet}", which does not appear in the video's own title `
+        + `(${JSON.stringify(VIDEOS[e.id]?.title)}). An outlet is quoted off the recording, never supplied.`);
+    }
+  }
+  return e;
+});
+
 const FILMS = D.films.entries.map((e) => {
   const ways = ['videos', 'playlist_match', 'title_match'].filter((k) => e[k]);
   if (ways.length !== 1) {
@@ -152,6 +170,12 @@ if (dataBad) {
 const ALL_BANDS = [
   ['top',     't1',         '#0D0D0B'],
   ['films',   'paper t2',   '#F3F2F0'],
+  /* AD-43. THE PRESS BAND, after the films and before the posters. Films are
+     work Swechha made; press is other people's coverage of it, and the reader
+     meets the thing before they meet the reaction to it. It also puts the two
+     bands that are LISTS of things (news, posters) next to each other rather
+     than splitting them around the players. */
+  ['news',    'paper-2 t2', '#ECEBE8'],
   ['posters', 't2',         '#151512'],
   ['written', 'paper-2 t3', '#ECEBE8'],
   ['act',     't3',         '#0D0D0B'],
@@ -172,6 +196,7 @@ const clashes = S.groundChain(BANDS);
 
 const INDEX_ALL = [
   ['Some of it we filmed', '#top'], ['The films', '#films'],
+  ['In the news', '#news'],
   ['The poster series', '#posters'], ['Written', '#written'],
   ['Bring us a story', '#act'],
 ];
@@ -228,6 +253,39 @@ ${note}${also}
       </article>`;
 };
 
+/* ── AD-43. THE PRESS BAND. ───────────────────────────────────────────────
+   SIXTEEN ROWS, NOT SIXTEEN PLAYERS, and that is a measured decision rather
+   than a stylistic one. This page already carries eight `<iframe>` players in
+   the films band; sixteen more would put twenty-four third-party frames on one
+   route, each with its own connection and its own poster image, for content a
+   reader scans far more than they watch. The row links out; the player stays
+   where somebody has chosen to watch.
+
+   ★ THE OUTLET IS OMITTED WHERE IT IS NOT RECORDED, AND THAT IS THE WHOLE
+   POINT OF THE BAND'S SHAPE. Eight of the sixteen name their programme in
+   their own title (NDTV, Mirror Now, CNN News18, CNBC Awaaz, ANI, Hindustan
+   Times) and eight do not. A press list is exactly the place where an invented
+   attribution would be most tempting and most damaging — "as seen on" is a
+   claim about somebody else's editorial decision. So the row renders the
+   outlet only where the title carries it, gate 5 refuses any outlet string
+   that does not appear verbatim in that video's own title, and the band states
+   the gap once in the open rather than letting a reader assume the blanks are
+   a rendering fault. */
+const newsRow = (e) => `          <li class="st-nw-r">
+            <a href="https://www.youtube.com/watch?v=${esc(e.id)}" rel="noopener" target="_blank">
+              <span class="lbl st-nw-o">${e.outlet ? esc(e.outlet) : '<i class="st-nw-u">Not recorded</i>'}</span>
+              <span class="st-nw-t">${esc(e.title)}${ARROW}</span>
+${e.subject ? `              <span class="cap st-nw-s">${esc(e.subject)}</span>\n` : ''}            </a>
+          </li>`;
+
+B.news = () => `${opener('news', D.news.head, D.news.lead)}
+    <div class="wrap">
+      <ul class="st-nw">
+${NEWS.map(newsRow).join('\n')}
+      </ul>
+${D.news.hole ? `      <p class="cap st-nw-hole">${esc(D.news.hole)}</p>` : ''}
+    </div>`;
+
 B.films = () => `${opener('films', D.films.head, D.films.lead)}
     <div class="wrap">
       <div class="st-fs">
@@ -281,6 +339,53 @@ ${S.newsletter('stories')}
 
 /* ═══ PAGE CSS ═══════════════════════════════════════════════════════════ */
 const PAGE_CSS = `
+/* ── AD-43 · THE PRESS ROWS. A three-part row: the programme, the segment
+      title, and one line on what it was about. Grid rather than flow, so the
+      outlet column is a real column and the titles line up down the page —
+      a press list read as a list is scanned by outlet first.
+      170px, MEASURED: the longest outlet is "Hindustan Times" and it sets on
+      one line at 170px in Archivo caps at this size. Below 640 the row stacks
+      and the outlet becomes an eyebrow, because a 170px column beside a
+      three-line title at 375 leaves the title 145px. */
+.st-nw{list-style:none;margin:clamp(20px,2.4vw,32px) 0 0;padding:0;
+  border-top:1px solid var(--hair)}
+.st-nw-r{border-bottom:1px solid var(--hair)}
+.st-nw-r>a{display:grid;grid-template-columns:170px minmax(0,1fr);
+  gap:4px clamp(16px,2vw,28px);align-items:baseline;
+  padding:clamp(14px,1.6vw,20px) 0;text-decoration:none;color:inherit}
+.st-nw-o{grid-column:1;grid-row:1;color:var(--ink-3);margin:0}
+.st-nw-t{grid-column:2;grid-row:1;min-width:0}
+/* ★ THE ARROW MUST BE SIZED HERE. 'ARROW' is a bare inline <svg> with a
+      viewBox and NO width/height, so it has no intrinsic size and expands to
+      fill whatever box it lands in — measured at 957x957px inside this row
+      before this rule existed, which made every press row 1,062px tall and the
+      band 17,456px. Every component that uses ARROW carries its own sizing
+      rule for exactly this reason (.act svg, .b svg, .st-list svg above); a new
+      component that uses the arrow and forgets one is not slightly wrong, it is
+      catastrophically wrong, and it looks like a content problem rather than a
+      CSS one. 'vertical-align:-2px' sits it on the baseline of 18px text. */
+.st-nw-t svg{width:16px;height:16px;flex:none;vertical-align:-2px;margin-left:.35em}
+.st-nw-s{grid-column:2;grid-row:2;margin:0;color:var(--ink-2)}
+/* The unrecorded case is set in italic and in the muted ink, so a reader can
+   see at a glance that it is an absence rather than the name of a programme
+   called something odd. It is NOT a dash: a dash in a column of names reads as
+   a rendering fault, and this is a fact about the record.
+   TWO WORDS, NOT FIVE. It first read 'Programme not recorded', which is what
+   the band's own hole sentence says at the bottom — and rendered eight times in
+   letterspaced caps it out-weighed the outlet names it sits beside, so the
+   column read as a list of absences with a few broadcasters in it. The short
+   form carries the same fact at the weight of a label, and the sentence
+   underneath is where the explanation belongs. */
+.st-nw-u{font-style:italic;letter-spacing:0}
+.st-nw-r>a:hover .st-nw-t,.st-nw-r>a:focus-visible .st-nw-t{text-decoration:underline}
+.st-nw-hole{margin:clamp(16px,2vw,24px) 0 0;max-width:62ch;color:var(--ink-2)}
+@media (max-width:639px){
+  .st-nw-r>a{grid-template-columns:minmax(0,1fr)}
+  .st-nw-o{grid-column:1;grid-row:1}
+  .st-nw-t{grid-column:1;grid-row:2}
+  .st-nw-s{grid-column:1;grid-row:3}
+}
+
 .st-fs{display:grid;gap:clamp(28px,4vw,52px);margin-top:clamp(20px,3vw,32px)}
 .st-f{display:grid;gap:10px;min-width:0}
 .st-f-h{margin:0}
@@ -465,6 +570,38 @@ if (PUBLISH_WRITTEN) {
 }
 
 /* 11. THE GROUND CHAIN DOES NOT CLASH. */
+/* ── AD-43 · THE PRESS GATES. All four are about attribution, because that is
+      the only thing this band can get badly wrong. */
+
+/* P1. EVERY SEGMENT REACHED THE PAGE. A press list that silently drops an item
+       is worse than one that is short, because nobody can tell. */
+const newsOnPage = NEWS.filter((e) => OUT.includes(`watch?v=${e.id}`));
+gate(newsOnPage.length === NEWS.length,
+  `all ${NEWS.length} press segments reached the page${newsOnPage.length === NEWS.length ? '' : `; DROPPED: ${NEWS.filter((e) => !newsOnPage.includes(e)).map((e) => e.id).join(', ')}`}`);
+
+/* P2. NO OUTLET ON THE PAGE THAT IS NOT ON THE RECORDING. The data check
+       upstream already refuses a supplied attribution; this is the same rule
+       re-derived from the rendered HTML, so a template change cannot print an
+       outlet the data never claimed. */
+const OUTLET_NAMES = ['NDTV', 'Mirror Now', 'CNN News18', 'CNBC Awaaz', 'ANI', 'Hindustan Times', 'CNN-IBN', 'Times of India', 'BBC', 'Reuters'];
+const claimed = new Set(NEWS.filter((e) => e.outlet).map((e) => e.outlet));
+const bandHtml = B.news();
+const bogus = OUTLET_NAMES.filter((o) => bandHtml.includes(`>${o}<`) && !claimed.has(o));
+gate(bogus.length === 0, `no outlet on the band that the data did not claim${bogus.length ? `; FOUND: ${bogus.join(', ')}` : ''}`);
+
+/* P3. THE UNRECORDED EIGHT ARE VISIBLY UNRECORDED. If this ever renders as an
+       empty cell the blanks read as a bug; if it renders as a dash they read as
+       a programme called "-". Both are worse than saying it. */
+const blanks = NEWS.filter((e) => !e.outlet).length;
+gate(blanks === 0 || (bandHtml.match(/Not recorded/g) || []).length === blanks,
+  `all ${blanks} unattributed segments say so in the open`);
+
+/* P4. THE BAND STATES THE GAP ONCE. The count in the data's own hole sentence
+       has to match the count the page actually renders, or the page is telling
+       the reader a number it is contradicting two inches above. */
+gate(!D.news.hole || !/\b(eight|8)\b/i.test(D.news.hole) || blanks === 8,
+  `the hole sentence's count matches the ${blanks} unattributed segments`);
+
 gate(clashes === 0, `${clashes} ground clash(es)`);
 
 console.log(`\n${OUT.length.toLocaleString('en-IN')} bytes. ${fail ? `${fail} gate(s) failed. The file is written — fix the generator and rebuild.` : 'All gates pass.'}`);
