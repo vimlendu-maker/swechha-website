@@ -1,4 +1,7 @@
-name: Air, hourly — the one reading that moves inside a day
+# The FILE is still air-hourly.yml on purpose: dispatch scripts and session
+# history reference it by filename, and renaming a workflow file orphans both.
+# Only the display name below says what the cadence now is.
+name: Air, every 15 minutes — the one reading that moves inside a day
 
 # WHY THIS EXISTS, AND WHY IT IS SEPARATE FROM data-refresh.yml
 #
@@ -63,19 +66,21 @@ name: Air, hourly — the one reading that moves inside a day
 
 on:
   schedule:
-    # Every twenty minutes, at UTC :02/:22/:42 — which is IST :32/:52/:12.
-    # CPCB publishes the top-of-hour observation with a 15-35 minute lag
-    # (measured 26 August: the 12:00 observation appeared ~12:30 IST, 14:00 by
-    # ~14:35, 16:00 by ~16:30), so a single :35 run left the page up to 1.9
-    # hours behind an observation that already existed: an observation landing
-    # on the feed at :36 waited a full hour for the next pickup. Three runs
-    # spread across the hour cap that wait at ~20 minutes; the IST :32 slot
-    # catches the common ~:30 publish almost immediately.
+    # Every FIFTEEN minutes, at UTC :04/:19/:34/:49 — which is IST
+    # :34/:49/:04/:19. CPCB publishes each top-of-hour observation 15–35
+    # minutes late (measured 26 August: the 12:00 observation appeared ~12:30
+    # IST, 14:00 by ~14:35, 16:00 by ~16:30), so the IST :34 slot catches the
+    # common ~:30 publish almost immediately and the worst case for a ~:35
+    # publish is the :49 pickup — the reading is never more than ~15 minutes
+    # behind its own publication. This is also the owner's stated cadence
+    # (AD-46): poll every 15 minutes, and treat most polls as re-checks of an
+    # observation already held, never as new data.
     # THE COST IS NOTHING REAL: the repo is public (Actions minutes are free),
     # a run takes 1-3 minutes, and a run that finds the same observation
     # already committed stops itself at the "did the figure move?" gate and
     # the monotonicity guard — off-hours runs are deliberate no-ops, not churn.
-    - cron: '2,22,42 * * * *'
+    # The one exception is the HEARTBEAT below, bounded at ~1 commit/hour.
+    - cron: '4,19,34,49 * * * *'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -177,6 +182,21 @@ jobs:
           # The comparison is on what the PAGES render — the AQI, the band and
           # the observation stamp — not on the file's bytes, which carry a
           # fetch timestamp that changes every run by design.
+          #
+          # ── THE HEARTBEAT — AD-46 ─────────────────────────────────────────
+          # The pages now print "last checked" beside "observed", and both are
+          # committed build artefacts: a poll that finds no new observation
+          # normally commits nothing, so the committed "last checked" would
+          # lag reality by however long CPCB sits still. That is a label that
+          # stops describing the thing beside it — the same species of error
+          # as the LIVE chip over a ten-hour-old number. So when the figure
+          # did NOT move but the last air commit is older than 60 minutes,
+          # this run commits anyway, purely to refresh the two timestamps and
+          # the history store's checks. THE CHURN IS BOUNDED: at most ~1
+          # commit/hour when the air is static (four polls/hour, three stop at
+          # this gate), and zero extra when the figure moves hourly as usual —
+          # a moving figure resets the age. A silent upstream (exit 75) never
+          # heartbeats: nothing was checked, so there is nothing to refresh.
           node -e '
             const { execSync } = require("node:child_process");
             const fs = require("node:fs");
@@ -187,7 +207,15 @@ jobs:
             const a = key(was), b = key(now);
             console.log("was: " + a);
             console.log("now: " + b);
-            fs.appendFileSync(process.env.GITHUB_OUTPUT, "changed=" + (a === b ? "0" : "1") + "\n");
+            const changed = a === b ? "0" : "1";
+            let heartbeat = "0";
+            if (changed === "0" && process.env.UPSTREAM_SILENT !== "1") {
+              const last = Number(execSync("git log -1 --format=%ct -- data/air-delhi.json", { encoding: "utf8" }).trim());
+              const ageMin = Math.round((Date.now() / 1000 - last) / 60);
+              console.log("last air commit is " + ageMin + " minutes old");
+              if (ageMin > 60) { heartbeat = "1"; console.log("HEARTBEAT: committing refreshed timestamps so \"last checked\" stays honest"); }
+            }
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, "changed=" + changed + "\nheartbeat=" + heartbeat + "\n");
           ' | tee /tmp/air.log
           {
             echo '### Air, hourly'
@@ -198,13 +226,21 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Nothing moved — put the fetch timestamps back and stop
-        if: steps.moved.outputs.changed == '0'
+        if: steps.moved.outputs.changed == '0' && steps.moved.outputs.heartbeat != '1'
         run: |
-          git checkout -- data/air-delhi.json data/air-india.json
+          # The history store keeps whatever this run recorded (a `checks`
+          # increment on a known observation) UNCOMMITTED — the runner is
+          # ephemeral, so it evaporates with the run. That is deliberate:
+          # `checks`/`last_checked` in the committed store count only the
+          # checks that survived to a commit, and the heartbeat bounds how
+          # stale that can get at ~60 minutes.
+          git checkout -- data/air-delhi.json data/air-india.json data/air-history 2>/dev/null || \
+            git checkout -- data/air-delhi.json data/air-india.json
+          git clean -fd data/air-history >/dev/null 2>&1 || true
           echo "CPCB is publishing the same observation. No rebuild, no commit, no deploy."
 
       - name: Rebuild the two pages that carry the reading
-        if: steps.moved.outputs.changed == '1'
+        if: steps.moved.outputs.changed == '1' || steps.moved.outputs.heartbeat == '1'
         run: |
           # ORDER IS LOAD-BEARING — see the note at the top of this file.
           echo "::group::npm run build:situations"
@@ -225,7 +261,9 @@ jobs:
           npm run verify:final
 
       - name: Commit and push
-        if: steps.moved.outputs.changed == '1' && github.event.inputs.dry_run != 'true'
+        if: (steps.moved.outputs.changed == '1' || steps.moved.outputs.heartbeat == '1') && github.event.inputs.dry_run != 'true'
+        env:
+          HEARTBEAT: ${{ steps.moved.outputs.heartbeat }}
         run: |
           git config user.name  'swechha-air-hourly[bot]'
           git config user.email 'actions@github.com'
@@ -244,6 +282,11 @@ jobs:
           fi
           aqi=$(node -p 'JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).city_reading.aqi')
           obs=$(node -p 'const o=JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).observed; `${String(o.hh).padStart(2,"0")}:${String(o.mi).padStart(2,"0")} IST, ${o.d}-${o.m}-${o.y}`')
-          git commit -m "data(air): Delhi AQI ${aqi}, observed ${obs}" \
-            -m "Automated by .github/workflows/air-hourly.yml. AD-27.6-A: the homepage and /now/air render the committed reading and nothing repaints it, so the reading is only as fresh as the last build. This is that build. Committed only because the rendered figure, band, station or observation hour actually moved; the pages were rebuilt in the same run and every generator gate passed."
+          if [ "$HEARTBEAT" = "1" ]; then
+            git commit -m "data(air): heartbeat — AQI ${aqi} unchanged (observed ${obs}), timestamps refreshed" \
+              -m "Automated by .github/workflows/air-hourly.yml. AD-46: the pages print when Swechha last checked CPCB beside when CPCB observed, and both are committed build artefacts — so when the observation sits still for over an hour, this commit refreshes the check time (and the history store's checks count) rather than letting the page claim a check that is hours old. Bounded at ~1 commit/hour while the air is static."
+          else
+            git commit -m "data(air): Delhi AQI ${aqi}, observed ${obs}" \
+              -m "Automated by .github/workflows/air-hourly.yml. AD-27.6-A: the homepage and /now/air render the committed reading and nothing repaints it, so the reading is only as fresh as the last build. This is that build. Committed only because the rendered figure, band, station or observation hour actually moved; the pages were rebuilt in the same run and every generator gate passed."
+          fi
           git push

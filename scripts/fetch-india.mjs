@@ -48,8 +48,9 @@ import { dirname, resolve } from 'node:path';
 import { fetchUpstream } from './lib/fetch-cpcb.mjs';
 import {
   fetchCaaqms, assessCaaqms, newestStamp, newerStamp,
-  SERVED_BY_CAAQMS, SERVED_BY_MIRROR,
+  SERVED_BY_CAAQMS, SERVED_BY_MIRROR, parseStamp,
 } from './lib/fetch-caaqms.mjs';
+import { recordObservation } from './lib/air-history.mjs';
 
 const KEY = process.env.DATA_GOV_IN_KEY;
 const OUT = resolve(process.argv[2] || 'data/air-india.json');
@@ -444,6 +445,31 @@ const ranked = [...cities.values()]
     // published as "the index against the index limit" and labelled as such.
     index_multiple: +(c.aqi / AQI_LIMIT).toFixed(1) }));
 
+/* ── THE TWO CLOCKS, NAMED — AD-46, same block as fetch-air.mjs ───────────
+   CPCB's stamp stays IST wall-clock text as published; ours stays UTC ISO.
+   `swechha_first_saw_utc` carries forward while the observation is unchanged:
+   a 15-minute poll that finds the same hour is a CHECK, not an observation. */
+const OBSERVED = Object.entries(stampCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+const CHECKED_UTC = new Date().toISOString();
+let prevFile = null;
+if (existsSync(OUT)) {
+  try { prevFile = JSON.parse(readFileSync(OUT, 'utf8')); }
+  catch { /* an unreadable previous file must never block a fresh write */ }
+}
+const FIRST_SAW_UTC =
+  (prevFile?.observed && OBSERVED && prevFile.observed === OBSERVED
+    && prevFile.time?.swechha_first_saw_utc)
+    ? prevFile.time.swechha_first_saw_utc
+    : CHECKED_UTC;
+const OBS_AGE_MIN = (() => {
+  const o = parseStamp(OBSERVED);
+  if (!o) return null;
+  // IST wall clock -> instant, timezone-independently: UTC construction minus
+  // the IST offset. Same arithmetic as fetch-air.mjs's OBS_AGE_H.
+  const instant = Date.UTC(o.y, o.m - 1, o.d, o.hh, o.mi) - 5.5 * 3600 * 1000;
+  return Math.round((Date.now() - instant) / 60000);
+})();
+
 const delhi = ranked.find(c => c.city.toLowerCase() === 'delhi') ?? null;
 // The airshed argument: how many of the cities immediately behind Delhi are
 // its own neighbours. Computed from the state field, not from a typed list.
@@ -481,8 +507,21 @@ const out = {
                    : 'the mirror answered with a fresher stamp than the live feed this run'),
   },
   aqiLimit: AQI_LIMIT,
-  observed: Object.entries(stampCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null,
+  observed: OBSERVED,
   observed_spread: Object.keys(stampCount).length,
+  /* The two clocks, labelled — AD-46. `observed`/`fetched` stay for every
+     existing consumer; this is the same pair with unmistakable names. */
+  time: {
+    cpcb_observed_ist: OBSERVED,
+    cpcb_observed_parts: (() => { const o = parseStamp(OBSERVED);
+      return o ? { y: o.y, m: o.m, d: o.d, hh: o.hh, mi: o.mi } : null; })(),
+    swechha_checked_utc: CHECKED_UTC,
+    swechha_first_saw_utc: FIRST_SAW_UTC,
+    observation_age_minutes_at_check: OBS_AGE_MIN,
+    note: 'cpcb_observed_ist is when the AIR was measured (CPCB’s own stamp, IST wall-clock '
+      + 'text, never converted); swechha_checked_utc is when WE ASKED CPCB (UTC ISO). They are '
+      + 'different clocks and different facts, and must never be swapped or mixed.',
+  },
   totals: {
     rows: rows.length, stations: stations.size, cities: ranked.length,
     above_limit: ranked.filter(c => c.aqi > AQI_LIMIT).length,
@@ -523,9 +562,39 @@ const out = {
    AIR_ALLOW_REGRESSION=1 bypasses it: for tests replaying old fixtures, and
    for the one legitimate manual case — CPCB retracting an hour — which is a
    human decision, not something an unattended job may decide. */
+/* ── HISTORY BEFORE THE GUARD — AD-46, same reasoning as fetch-air.mjs:
+   a refused current-state write is still a genuine check of a genuine
+   observation, and the store must not lose it. City-level only — city, aqi,
+   band, governing, station count, CPCB's mean, rank — per AD-46's sizing:
+   enough for the pan-India page to grow a history, cheap enough to keep. */
+try {
+  if (OBSERVED) {
+    const rec = recordObservation({
+      dir: process.env.AIR_HISTORY_DIR || resolve(dirname(OUT), 'air-history'),
+      scope: 'india',
+      now: CHECKED_UTC,
+      record: {
+        obs: OBSERVED,
+        source: SERVED,
+        /* Columnar, not keyed — measured 26 August 2026: keyed objects cost
+           ~20KB per observation (~170MB/year at hourly observations), rows
+           under named `cols` cost less than half. Nothing is lost: `rank` is
+           the row's position (the list is stored ranked) and `band` is a pure
+           function of aqi via CPCB's published band table. */
+        cols: ['city', 'aqi', 'governing', 'stations', 'meanAqi'],
+        cities: ranked.map((c) => [c.city, c.aqi, c.governing, c.stations, c.meanAqi]),
+      },
+    });
+    console.log(`history: ${rec.action} ${OBSERVED} in ${rec.file}`);
+  }
+} catch (e) {
+  console.warn(`history: could not record this check (${e.message}) — the fetch continues; `
+    + 'the current-state file outranks the store.');
+}
+
 if (!process.env.AIR_ALLOW_REGRESSION && existsSync(OUT)) {
   try {
-    const prev = JSON.parse(readFileSync(OUT, 'utf8'));
+    const prev = prevFile ?? JSON.parse(readFileSync(OUT, 'utf8'));
     const prevStamp = prev?.observed;
     const nextStamp = out?.observed;
     if (prevStamp && nextStamp && prevStamp !== nextStamp
