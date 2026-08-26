@@ -63,12 +63,19 @@ name: Air, hourly — the one reading that moves inside a day
 
 on:
   schedule:
-    # :35 past the hour. CPCB publishes the top-of-hour observation with a lag
-    # — measured 23 August, 02:58 IST returned the 02:00 observation — so a job
-    # on the hour would fetch the previous hour's figure and commit it a second
-    # time. :35 is off the hour like the other two jobs in this repo, and it
-    # leaves the deploy landing around :40.
-    - cron: '35 * * * *'
+    # Every twenty minutes, at UTC :02/:22/:42 — which is IST :32/:52/:12.
+    # CPCB publishes the top-of-hour observation with a 15-35 minute lag
+    # (measured 26 August: the 12:00 observation appeared ~12:30 IST, 14:00 by
+    # ~14:35, 16:00 by ~16:30), so a single :35 run left the page up to 1.9
+    # hours behind an observation that already existed: an observation landing
+    # on the feed at :36 waited a full hour for the next pickup. Three runs
+    # spread across the hour cap that wait at ~20 minutes; the IST :32 slot
+    # catches the common ~:30 publish almost immediately.
+    # THE COST IS NOTHING REAL: the repo is public (Actions minutes are free),
+    # a run takes 1-3 minutes, and a run that finds the same observation
+    # already committed stops itself at the "did the figure move?" gate and
+    # the monotonicity guard — off-hours runs are deliberate no-ops, not churn.
+    - cron: '2,22,42 * * * *'
   workflow_dispatch:
     inputs:
       dry_run:
