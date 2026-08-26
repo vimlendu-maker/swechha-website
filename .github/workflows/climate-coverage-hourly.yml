@@ -1,0 +1,117 @@
+name: Climate coverage, hourly — the news register only
+
+# WHY THIS EXISTS, AND WHY IT IS SEPARATE FROM data-refresh.yml
+#
+# data-refresh.yml re-reads every situation's coverage feed once a day at
+# 01:40 UTC, batched alongside annual publications (NCRB, ISFR) and a 5-day
+# satellite window — proportionate for those, but it means a flood or
+# landslide reported by Indian outlets at noon IST doesn't reach
+# /now/climate's news register until the following morning's run at the
+# earliest.
+#
+# This job re-reads ONLY the climate-event coverage feed — Google News RSS,
+# keyless, no secrets needed — every hour, and rebuilds only the page that
+# consumes it. build-situation-climate-event.mjs is the sole reader of
+# data/coverage-climate-event.json (checked: no hero, index or other
+# situation touches this file), so there is no reason to drag the other
+# four situations' coverage, or the whole-site rebuild chain, along with it.
+# They stay on data-refresh.yml's daily cadence; see that workflow's own
+# note for why hourly would be wasteful there (annual publications and a
+# 5-day satellite window do not move hour to hour).
+#
+# ★ IT COMMITS FIGURES, NOT CLOCKS.
+# fetch-coverage.mjs stamps `fetched.epochMs` on every run, so a naive job
+# would commit 24 times a day whether or not a single headline changed. This
+# reuses data-refresh-changed.mjs — the same noise filter data-refresh.yml
+# uses — which reverts the file if the only thing that moved is that stamp.
+# A quiet hour (nothing new in Google News' index for the query) produces no
+# commit and no deploy.
+#
+# ★ NO SECRETS NEEDED.
+# Google News RSS is keyless, and the GDELT "signal" half of coverage is
+# skipped for every subject (COVERAGE_SKIP_GDELT=1 — see
+# scripts/refresh-coverage.mjs; D-20.2 replaced it with Wikipedia pageviews
+# for the reason given there). So unlike air-hourly.yml, this job has no
+# missing-key case to report.
+#
+# ★ A FAILED GATE IS NEVER COMMITTED.
+# build-situation-climate-event.mjs validates what it reads and refuses to
+# write on a failed check, and verify:final — the whole-set acceptance test
+# — runs before the commit step.
+
+on:
+  schedule:
+    # :15 past the hour — off the hour, and clear of air-hourly's :35 and
+    # data-refresh's :40, so the three scheduled jobs don't land on the same
+    # runner minute.
+    - cron: '15 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Fetch and rebuild, report what changed, but commit nothing'
+        type: boolean
+        default: true
+
+concurrency:
+  # An hourly job that overruns must not race the next one into a push.
+  group: coverage-climate-hourly
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # The fetcher and the generator use node built-ins only.
+      - run: npm ci --omit=dev
+
+      - name: Re-read the climate-event news register
+        run: node scripts/refresh-coverage.mjs climate-event
+
+      - name: Discard timestamp-only churn, keep real changes
+        id: changed
+        run: |
+          node scripts/data-refresh-changed.mjs | tee /tmp/changed.log
+          n=$(grep -oE '^CHANGED=[0-9]+' /tmp/changed.log | tail -1 | cut -d= -f2)
+          echo "count=${n:-0}" >> "$GITHUB_OUTPUT"
+          {
+            echo '### Climate coverage, hourly'
+            echo ''
+            echo '```'
+            cat /tmp/changed.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Rebuild the page this feeds
+        if: steps.changed.outputs.count != '0'
+        run: |
+          npm run build:situation-climate-event
+          npm run verify:final
+
+      - name: Commit and push
+        if: steps.changed.outputs.count != '0' && github.event.inputs.dry_run != 'true'
+        run: |
+          git config user.name  'swechha-coverage-hourly[bot]'
+          git config user.email 'actions@github.com'
+          # design/ and docs/design/FINAL.md are build output too — see
+          # data-refresh.yml's commit step for why leaving either out breaks
+          # the "generated pages are current" gate on the next PR.
+          git add -A data public/_pages design docs/design/FINAL.md
+          if git diff --cached --quiet; then
+            echo "Nothing staged after the rebuild — no commit."
+            exit 0
+          fi
+          count=$(node -p 'JSON.parse(require("fs").readFileSync("data/coverage-climate-event.json","utf8")).register.count')
+          git commit -m "data(climate-event): news register refreshed, ${count} items" \
+            -m "Automated by .github/workflows/climate-coverage-hourly.yml. Re-reads only the Google News register for the climate-event situation, hourly; every other situation's coverage stays on data-refresh.yml's daily cadence. Committed only because the register's items, count or publishers actually changed — timestamp-only churn is reverted first. The page was rebuilt in the same run and verify:final passed."
+          git push
