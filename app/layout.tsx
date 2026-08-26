@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { Archivo, Fraunces, Instrument_Sans } from 'next/font/google'
+import { ANALYTICS } from '@/lib/analytics'
 import './globals.css'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
@@ -85,6 +87,22 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       className={`${fraunces.variable} ${instrumentSans.variable} ${archivo.variable} h-full`}
     >
       <body className="min-h-full flex flex-col">
+        {/* ANALYTICS FOR THE ROUTES THAT ACTUALLY RUN THIS LAYOUT — /explore,
+            /keystatic, /stories and anything added later. The 35 built pages
+            served through the rewrite carry this tag from the generators
+            instead, because this layout never executes for them; the check in
+            verify-seo.mjs covers those and cannot see these, which is why the
+            tag is installed in both places rather than one.
+
+            Both read data/analytics.json, so the id cannot differ between
+            them. `afterInteractive` keeps it off the critical path — a
+            pageview recorded 200ms late is still a pageview, and this must
+            never compete with content for bandwidth. */}
+        <Script
+          src={ANALYTICS.scriptPath}
+          data-website-id={ANALYTICS.websiteId}
+          strategy="afterInteractive"
+        />
         <PhotoFilters />
         <SiteHeader />
         <div className="flex-1">{children}</div>
