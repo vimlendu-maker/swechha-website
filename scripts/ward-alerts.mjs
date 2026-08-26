@@ -117,9 +117,16 @@ async function readings() {
       return out;
     } catch (e) { last = e.message; }
   }
-  // EXIT, do not proceed with a partial or empty map.
+  /* EXIT, do not proceed with a partial or empty map — but exit 75
+     (EX_TEMPFAIL), not 1. This message already says the right thing: nothing
+     was sent and nothing changed, which is correct behaviour for a source
+     that did not answer, not a defect. Exiting 1 turned the hourly job red
+     and emailed a human for it, alongside the air job doing the same, and
+     data.gov.in refused about half of those runs between 23 and 26 August
+     2026. Same rule as fetch-air.mjs and fetch-india.mjs: 75 means the source
+     was silent, 1 means the source answered and the answer was wrong. */
   console.error(`Feed unavailable (${last}). Sending nothing and changing nothing.`);
-  process.exit(1);
+  process.exit(75);
 }
 
 /* ── SEND ─────────────────────────────────────────────────────────────── */

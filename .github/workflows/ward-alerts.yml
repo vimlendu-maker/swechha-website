@@ -56,8 +56,23 @@ jobs:
           WARD_MAIL_FROM: ${{ vars.WARD_MAIL_FROM }}
           SITE_ORIGIN: ${{ vars.SITE_ORIGIN }}
         run: |
+          # EXIT 75 IS NOT A FAILURE — the same rule as air-hourly.yml. The
+          # script exits 75 when CPCB does not answer, having sent nothing and
+          # changed nothing, which is the correct behaviour for a silent
+          # source rather than a defect here. data.gov.in refused about half
+          # of these hourly runs between 23 and 26 August 2026; turning the
+          # job red for it emailed a human every other hour about someone
+          # else's server. A real error still exits non-zero and still fails.
+          set +e
           if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             node scripts/ward-alerts.mjs --dry-run
           else
             node scripts/ward-alerts.mjs
           fi
+          code=$?
+          set -e
+          if [ "$code" = "75" ]; then
+            echo "::notice::CPCB did not answer. No alerts evaluated, none sent, nothing changed."
+            exit 0
+          fi
+          exit "$code"

@@ -235,7 +235,21 @@ function parseStamp(s) {
   return { y: +yyyy, m: +mm, d: +dd, hh: +hh, mi: +mi, raw: s };
 }
 
-const rows = await fetchAll(CITY);
+/* ── AN UPSTREAM THAT WILL NOT ANSWER EXITS 75, NOT 1 ────────────────────
+   Same rule as fetch-india.mjs: EX_TEMPFAIL for "the source did not reply",
+   exit 1 for "the source replied and the answer was wrong". Only the second
+   is a defect in this repository, and only the second should turn a job red
+   and email someone. See air-hourly.yml for what the caller does with 75. */
+let rows;
+try {
+  rows = await fetchAll(CITY);
+} catch (e) {
+  const why = e.cause?.message ? `${e.message} (${e.cause.message})` : e.message;
+  console.error(`upstream would not answer for ${CITY}: ${why}`);
+  console.error('Leaving the previous file alone. The page keeps its committed reading '
+    + 'and prints the age of the observation, which is the designed failure mode.');
+  process.exit(75);
+}
 if (!rows.length) { console.error(`No rows for ${CITY}. Leaving previous file alone.`); process.exit(1); }
 
 /* ── GROUP BY STATION, COMPUTE SUB-INDICES ───────────────────────────── */
