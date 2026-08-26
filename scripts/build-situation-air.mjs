@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os';
 import { crumb, siblings, FAMILY_CSS, NAV_SEARCH_CSS, NAV as SHELL_NAV, HOME_HREF, GIVE_HREF, INDEX_PAGE,
   stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, cadence, STATES,
   closing, citeBlock, CLOSING_CSS, abs, imgDim, responsiveImages,
-  LICENCE_URL, datasetJsonLd, FAMILY } from './lib/situation-shell.mjs';
+  LICENCE_URL, datasetJsonLd, FAMILY, stateRollup } from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
 import { stampLastmod } from './lib/lastmod.mjs';
 
@@ -142,6 +142,12 @@ for (const [frac, seasons] of Object.entries(AP.studies.find(s => s.id === 'teri
 }
 
 const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+/* AD-43. THE NATIONAL PAGE, written once. Two links on this page point at it —
+   the arrow under the "India, right now" panel and the one closing the
+   geography band's India tab — and both used to be `#geography`, which is this
+   page, whose first tab is a map of Delhi. A route typed twice is a route that
+   gets repointed once. */
+const INDIA_PAGE = '/now/air/india';
 const MON = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const PRETTY = { 'PM2.5':'PM2.5','PM10':'PM10','NO2':'NO₂','SO2':'SO₂','CO':'CO','OZONE':'O₃','NH3':'NH₃','PB':'Pb' };
 const n0 = (v) => v == null ? '—' : Number(v).toLocaleString('en-IN');
@@ -515,7 +521,7 @@ ${crumb('air')}
           hour as the reading at the top of this page. That is what makes them comparable, and it
           is why the order is printed as a reading of one hour rather than as a standing claim: by
           the time you read it, CPCB has published another.</p>
-        <p style="margin:0"><a class="act" href="#geography">All ${n0(IND.totals.cities)} cities ${ARROW}</a></p>
+        <p style="margin:0"><a class="act" href="${INDIA_PAGE}">All ${n0(IND.totals.cities)} cities ${ARROW}</a></p>
       </div>
       </div>
       <p style="margin:0"><a class="act" href="#people">Who is in it ${ARROW}</a></p>
@@ -531,9 +537,15 @@ B.strip = () => {
     ['In India', DELHI_ORD, `of ${NAT.cities} cities`, DELHI_RANK <= 3],
     ['Attention', `${ATTN.swing}×`, 'winter against summer', false],
   ];
+  /* AD-43. "In India" IS THE ONE CELL WHOSE DESTINATION IS ANOTHER PAGE, and it
+     is the same defect as the arrow above, found in a second place. The cell reads
+     "2nd / In India / of 268 cities" and pointed at `#geography` — a band on this
+     page whose first tab is a map of Delhi's forty-four monitors. So a reader who
+     clicked the national figure was returned to the city. The other cells stay
+     in-page because their fact is genuinely explained in a band below. */
   const cellId = { 'AQI': 'air-c-aqi', 'Above the limit': 'air-c-above' };
   return `    <div class="wide p-strip-in">
-      ${cells.map(([l,v,s,red]) => `<a class="p-cell" href="#${l==='Attention'?'trend':l==='In India'?'geography':'top'}">
+      ${cells.map(([l,v,s,red]) => `<a class="p-cell" href="${l==='In India'?INDIA_PAGE:l==='Attention'?'#trend':'#top'}">
         <span class="p-cell-v${red?' is-red':''}"${cellId[l]?` id="${cellId[l]}"`:''}>${v}</span>
         <span class="lbl p-cell-l">${l}</span><span class="cap p-cell-s"${l==='AQI'?' id="air-c-band"':''}>${s}</span></a>`).join('\n      ')}
       <p class="cap p-strip-note">One reading, one label. <a class="lk" href="#measured">What is behind them</a>.</p>
@@ -862,6 +874,29 @@ B.geography = () => {
      paragraph survives whatever the ranking does on a given morning: it is not
      that Delhi is worst, it is that its neighbours move with it. */
   const AS = IND.airshed;
+  /* ── AD-43. THIS TAB WAS TWO PARAGRAPHS AND NOTHING ELSE, and it is where
+     "All ${NAT.cities} cities" used to land. So the one link on this page that
+     promised the national picture opened a band whose FIRST tab is a map of
+     Delhi's own monitors, and its third tab — this one — held no national
+     figures a reader could look anything up in. The link now opens
+     /now/air/india, which is every city; this tab holds the reduction that page
+     cannot be, which is WHERE the cities above the limit are.
+     STATES, NOT MORE CITIES. The panel at the top of this page already lists
+     the worst eight cities and the page below lists Delhi's own stations, so a
+     fourth ranked list of cities here would be the third telling of one fact.
+     The state roll-up is the only view of this feed that says something neither
+     of them does — and it is `stateRollup()` from the shell, the same function
+     /now/air/india's own "By state" tab renders, so the two pages cannot
+     disagree about a count they both read out of one file.
+     ONLY THE STATES WITH A CITY OVER THE LIMIT ARE SHOWN HERE, with the rest
+     stated as a number and reachable in one click: this is a tab inside a band,
+     not the national page, and thirty-one rows in it would bury the finding it
+     exists to make. */
+  const ROLL = stateRollup(IND.cities, IND.aqiLimit);
+  const ROLL_OVER = ROLL.filter(s => s.over > 0);
+  const natRows2 = ROLL_OVER.map(s => `<div class="p-nsr"><span class="p-nsr-n">${esc(s.state)}</span>
+            <span class="p-nsr-v is-red">${s.over}</span>
+            <span class="cap p-nsr-s">of ${s.cities} ${s.cities === 1 ? 'city' : 'cities'} &middot; worst ${esc(s.worst.city)} ${s.worst.aqi}</span></div>`).join('\n          ');
   const pIndia = `<div class="p-nat">
           <p class="body"><b>Delhi is ${DELHI_ORD} of ${NAT.cities} cities, and ${n0(AS.neighbours)} of the
             next ${n0(AS.behind_delhi)} are its neighbours</b> &mdash; ${AS.names.map(esc).join(', ')}.
@@ -869,7 +904,14 @@ B.geography = () => {
           <p class="cap">${NAT.above} of ${NAT.cities} cities are above the limit India set for itself, and
             ${NAT.good} are &ldquo;Good&rdquo; &mdash; the country is not uniformly polluted, which is what makes
             the cluster around Delhi legible. Computed from ${NAT.stations} stations on CPCB&rsquo;s scale,
-            CO excluded.</p></div>`;
+            every pollutant it publishes included.</p>
+          <p class="lbl p-nsr-h">Where the ${NAT.above} sit &mdash; ${ROLL_OVER.length} of ${ROLL.length} states and union territories</p>
+          ${natRows2}
+          <p class="cap">Counts, never averages: CPCB measures cities, not states, so the unmeasured
+            part of a state is unmeasured rather than clean. <b>&ldquo;3 of 3&rdquo; and &ldquo;3 of 40&rdquo;
+            are not the same finding</b>, which is why the number of cities in the feed is on every row.
+            The other ${ROLL.length - ROLL_OVER.length} states have no city above the limit this hour.</p>
+          <p style="margin:var(--gap-row) 0 0"><a class="act" href="${INDIA_PAGE}">All ${NAT.cities} cities, city by city ${ARROW}</a></p></div>`;
   /* ── THE MAP (D-17.6: "monitors / ward labels / plume as separate layers").
      Real coordinates, real distances, computed here — not a traced outline.
      THE MONITOR LAYER IS THE ONLY ONE DRAWN. A ward layer needs a boundary
@@ -1945,6 +1987,42 @@ const { title: TITLE, description: DESC, indexName: INDEX_NAME } = seo('/now/air
    between consumers, so it is conformance, not a guess, to make it absolute.
    `twitter:site` is the handle all four of Swechha's accounts use. No
    `twitter:creator` — the pages have no per-page author. */
+/* ═══ AD-43 · THIS PAGE'S OWN CSS, AND WHY IT IS NOT IN PAGE_CSS ═══════════
+   PAGE_CSS ABOVE IS NOT THIS PAGE'S STYLESHEET. situation-shell.mjs lifts it
+   whole, as raw text, and exports it as SITUATION_CSS — which every other
+   generator in this repo then ships. So a rule added there for one band of one
+   page lands in about.html, farm.html, act.html, impact.html, all six
+   situations, every WORK page and every essay.
+
+   These rules were written into PAGE_CSS and the `current` workflow caught it:
+   twelve lines of dead CSS on roughly thirty pages, and enough of a content
+   change to move every one of their lastmod hashes. The shell's own extraction
+   note says what to do about it in those words — "Move it out of PAGE_CSS and
+   into Air's own document assembly" — so that is where they are. Only the
+   geography band's India tab uses .p-nsr, and now only this page carries it.
+
+   ANYTHING ADDED HERE IS AIR-ONLY. Anything added to PAGE_CSS is site-wide.
+   That is the whole distinction, and it is invisible from inside either block. */
+const AIR_ONLY_CSS = `
+/* The state roll-up rows in the geography band's India tab. Same three-column
+   grid as .p-nr, deliberately: the reader has already met that shape at the top
+   of this page, and a second ranked list that looked different would read as a
+   different KIND of thing. The count is the loud number here, not an AQI,
+   because the question this tab answers is where the cities above the limit are. */
+.p-nsr-h{color:var(--fg-2);margin:clamp(18px,2.2vw,26px) 0 10px}
+.p-nsr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:0 14px;align-items:baseline;
+  padding:7px 0;border-top:1px solid var(--hair-2)}
+.p-nsr-n{font-family:Newsreader,Georgia,serif;font-size:16px;min-width:0}
+.p-nsr-v{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 74,'wght' 800;
+  font-size:18px;font-variant-numeric:tabular-nums;text-align:right}
+.p-nsr-v.is-red{color:var(--red)}
+.p-nsr-s{color:var(--fg-3);text-align:right;white-space:nowrap}
+@media (max-width:520px){
+  .p-nsr{grid-template-columns:minmax(0,1fr) auto}
+  .p-nsr-s{grid-column:1/-1;text-align:left;margin-top:2px}
+}
+`;
+
 const OG = `<meta property="og:type" content="website"><meta property="og:site_name" content="Swechha"><meta property="og:locale" content="en_IN"><meta property="og:title" content="${TITLE}"><meta property="og:description" content="${DESC}"><meta property="og:url" content="${abs('/now/air')}"><meta property="og:image" content="${abs('/images/og/og-default.png')}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${abs('/images/og/og-default.png')}"><meta name="twitter:site" content="@swechhaindia">`;
 
 /* AD-27.50 · BREADCRUMBLIST, ON THE SIX SITUATION PAGES.
@@ -1999,7 +2077,7 @@ const OUT = stripHtmlComments(`<!doctype html>
 ${OG}
 ${HEAD_FONTS}
 <style>
-${stripCssComments([CSS, PAGE_CSS, NAV_SEARCH_CSS, FAMILY_CSS, CLOSING_CSS].join('\n'))}</style>
+${stripCssComments([CSS, PAGE_CSS, AIR_ONLY_CSS, NAV_SEARCH_CSS, FAMILY_CSS, CLOSING_CSS].join('\n'))}</style>
 </head>
 <body>
 ${SVG_DEFS}
