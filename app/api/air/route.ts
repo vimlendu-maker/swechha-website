@@ -55,11 +55,12 @@ export async function GET() {
      back to the mirror on ANY failure (including this host's TLS quirk on
      undici — a cert failure here is an ordinary fallback, never an error
      response). `servedBy` names which source actually answered. */
-  let stations, servedBy;
+  let stations, servedBy, ladder;
   try {
     const live = await fetchDelhiLive(key);
     stations = foldStations(live.rows);
     servedBy = live.servedBy;
+    ladder = live.ladder;
   } catch (e) {
     return fail(e instanceof Error ? e.message : 'fetch failed', 502);
   }
@@ -115,7 +116,11 @@ export async function GET() {
     /* `served_by` states which source ACTUALLY answered this request — the
        CAAQMS live feed on the normal path, the data.gov.in mirror when the
        feed failed its gates or its TLS. Never both; never mixed. */
-    source: { name: 'Central Pollution Control Board', served_by: servedBy },
+    /* `ladder` names why each fresher rung did not answer, when one didn't —
+       empty on a clean CAAQMS hit. This is what made the Vercel failure of
+       deploy day diagnosable at all; keep it. */
+    source: { name: 'Central Pollution Control Board', served_by: servedBy,
+      ...(ladder && ladder.length ? { ladder } : {}) },
     fetchedAt: new Date().toISOString(),
     /* THE SUCCESS PATH IS CACHED AT THE EDGE (AD-27.6 clause 7, kept and
        re-justified by AD-27.6-A).
