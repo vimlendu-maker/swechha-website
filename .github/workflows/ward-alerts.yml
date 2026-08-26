@@ -51,6 +51,11 @@ jobs:
       - name: Check for crossings and send
         env:
           DATA_GOV_IN_KEY: ${{ secrets.DATA_GOV_IN_KEY }}
+          # The transport ladder's relay rung (AD-45) — this job alerts
+          # PEOPLE, so it least of all can afford a runner whose egress to the
+          # CPCB hosts has died, as it did on 26 August 2026. Exit 75 now
+          # means direct fetch AND curl AND the relay were all silent.
+          AIR_RELAY_TOKEN: ${{ secrets.AIR_RELAY_TOKEN }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           WARD_MAIL_FROM: ${{ vars.WARD_MAIL_FROM }}

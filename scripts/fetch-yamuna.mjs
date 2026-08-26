@@ -51,6 +51,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
+import { fetchUpstream } from './lib/fetch-cpcb.mjs';
 
 /** A PDF, tolerantly detected.
     The magic number is not always at offset 0: CGWB's national groundwater
@@ -74,7 +75,12 @@ const committed = JSON.parse(readFileSync(TABLE, 'utf8'));
 async function watchDocument() {
   const { url, sha256, bytes } = committed.source;
   let res;
-  try { res = await fetch(url, { headers: { 'User-Agent': UA } }); }
+  /* fetch-first, curl-fallback (scripts/lib/fetch-cpcb.mjs) — this URL is a
+     cpcb.gov.in PDF, the same class of unreliable Indian-government transport
+     as the air sources, and it was the one such fetch in scripts/ still on
+     raw fetch() (found by the AD-45 audit). A failure here stays what it
+     always was: recorded as `ok: false` in the output, never a job failure. */
+  try { res = await fetchUpstream(url, { timeoutMs: 60000, headers: { 'User-Agent': UA } }); }
   catch (e) { return { ok: false, error: `network: ${e.message}`, changed: null }; }
   if (!res.ok) return { ok: false, error: `HTTP ${res.status}`, changed: null };
 

@@ -2162,11 +2162,19 @@ catch (e) { console.error('\nREFUSING TO WRITE: page script is not valid JS.\n' 
      "87" and "51" anywhere in the rendered text and fired on a station's AQI —
      a gate that cries wolf is a gate the next person switches off. Each pattern
      below is a national total in the sentence shape the page actually writes. */
+  /* ★ EVERY pattern gets the never-match escape when the LIVE total equals
+     the retired constant — not just the first one. The `of 266 cities` line
+     always had it; the 502 and 87 lines did not, and on 26 August 2026 the
+     feed genuinely carried 502 stations again — a true figure, freshly read
+     from data/air-india.json, and this gate refused the page for printing
+     it. A tripwire for stale constants must not fire on a live number that
+     merely lands on the same value, or it becomes the crying-wolf gate the
+     comment above swears it is not (AD-45 audit). */
   const CTX = [
     [new RegExp(`\\bof ${NAT.cities === 266 ? '\\b\\B' : 266} cities\\b`), 'of 266 cities'],
-    [/\b502 stations\b/, '502 stations'],
-    [new RegExp(`\\b87 of \\d+ cities\\b`), '87 of N cities'],
-    [/\bComputed from 502\b/, 'computed from 502 stations'],
+    [new RegExp(`\\b${NAT.stations === 502 ? '\\b\\B' : 502} stations\\b`), '502 stations'],
+    [new RegExp(`\\b${NAT.above === 87 ? '\\b\\B' : 87} of \\d+ cities\\b`), '87 of N cities'],
+    [new RegExp(`\\bComputed from ${NAT.stations === 502 ? '\\b\\B' : 502}\\b`), 'computed from 502 stations'],
   ].filter(([re, ]) => re.test(R));
   if (CTX.length) {
     problems.push(`the retired frozen national totals still appear: ${CTX.map(c => c[1]).join(', ')}`);
