@@ -29,6 +29,7 @@
 import { neon } from '@neondatabase/serverless';
 import { randomBytes, createHash } from 'node:crypto';
 import { fetchUpstream } from './lib/fetch-cpcb.mjs';
+import { fetchCaaqms, assessCaaqms, SERVED_BY_CAAQMS, SERVED_BY_MIRROR } from './lib/fetch-caaqms.mjs';
 
 const DRY = process.argv.includes('--dry-run');
 const KEY = process.env.DATA_GOV_IN_KEY;
@@ -43,38 +44,37 @@ const miss = [['DATA_GOV_IN_KEY', KEY], ['DATABASE_URL', DB]]
   .filter(([, v]) => !v).map(([k]) => k);
 if (miss.length) { console.error(`missing: ${miss.join(', ')}. Refusing to run.`); process.exit(1); }
 
-/* ── CPCB's AQI, transcribed from lib/air.ts and scripts/fetch-air.mjs.
-   Inclusive integer bounds — a shared-edge table returns 52 where CPCB's own
-   worked example says 51. Self-checked before any network call. ─────────── */
+/* ── CPCB's AQI bands, transcribed from lib/air.ts and scripts/fetch-air.mjs.
+   ★★ NO BREAKPOINT TABLE ANY MORE — AD-44 found the AD-42 bug ALIVE IN THIS
+   FILE. AD-42 (25 August 2026) established that the feed's `avg_value` IS
+   CPCB's published sub-index, corrected lib/air.ts, fetch-air.mjs and
+   fetch-india.mjs — and missed this script, which kept running `avg_value`
+   through `subIndex()` a second time. Every band this job compared, and every
+   figure in every alert it would have mailed, was computed on roughly DOUBLED
+   values — a station CPCB had at ~150 would have alerted as "301, Very Poor".
+   The value is now read directly, same as everywhere else, and `subIndex()`
+   is DELETED rather than left unused — the only reliable way to stop the
+   conversion coming back (AD-42.6). ─────────────────────────────────────── */
 const BANDS = [
   { name: 'Good', idx: [0, 50] }, { name: 'Satisfactory', idx: [51, 100] },
   { name: 'Moderately Polluted', idx: [101, 200] }, { name: 'Poor', idx: [201, 300] },
   { name: 'Very Poor', idx: [301, 400] }, { name: 'Severe', idx: [401, 500] },
 ];
-const BP = {
-  'PM10': [[0,50],[51,100],[101,250],[251,350],[351,430],[431,600]],
-  'PM2.5': [[0,30],[31,60],[61,90],[91,120],[121,250],[251,380]],
-  'NO2': [[0,40],[41,80],[81,180],[181,280],[281,400],[401,600]],
-  'OZONE': [[0,50],[51,100],[101,168],[169,208],[209,748],[749,1000]],
-  'SO2': [[0,40],[41,80],[81,380],[381,800],[801,1600],[1601,2400]],
-  'NH3': [[0,200],[201,400],[401,800],[801,1200],[1201,1800],[1801,2400]],
-};
-const ALIAS = { 'PM2.5':'PM2.5','PM10':'PM10','NO2':'NO2','SO2':'SO2','OZONE':'OZONE','O3':'OZONE','NH3':'NH3' };
 const RANK = new Map(BANDS.map((b, i) => [b.name, i]));
 
-function subIndex(pol, conc) {
-  const bp = BP[pol];
-  if (!bp || !Number.isFinite(conc) || conc < 0) return null;
-  for (let i = 0; i < bp.length; i++) {
-    const [bLo, bHi] = bp[i], [iLo, iHi] = BANDS[i].idx;
-    if (conc <= bHi) { const lo = i === 0 ? 0 : bLo;
-      return Math.round(((iHi - iLo) / (bHi - lo)) * (conc - lo) + iLo); }
-  }
-  return 500;
+/** A stuck instrument, transcribed from lib/air.ts's `isStuck` (AD-42D) —
+    the same drop the pages apply, so an alert can never fire on a channel
+    the site itself refuses to publish. Self-checked with the readings that
+    made the rule, same as fetch-air.mjs. */
+function isStuck(min, max, avg) {
+  if (min === null || max === null || avg === null) return false;
+  if (max < min) return false;
+  if (max === 0) return min === 0;
+  return (max - min) / max < 0.02;
 }
-for (const [c, want] of [[31, 51], [45, 75], [60, 100]]) {
-  if (subIndex('PM2.5', c) !== want) {
-    console.error(`BREAKPOINT TABLE IS WRONG: PM2.5 ${c} should be ${want}. Refusing to run.`);
+for (const [mn, mx, av, want] of [[187, 188, 188, true], [101, 103, 102, true], [5, 6, 5, false], [94, 248, 158, false]]) {
+  if (isStuck(mn, mx, av) !== want) {
+    console.error(`STUCK-CHANNEL TEST IS WRONG: ${mn}/${mx}/${av} should be ${want ? 'stuck' : 'live'}. Refusing to run.`);
     process.exit(1);
   }
 }
@@ -87,8 +87,70 @@ const observedLabel = (raw) => {
   return n ? `${m[4]}:${m[5]} IST, ${Number(m[1])} ${n} ${m[3]}` : null;
 };
 
-/* ── THE READING ──────────────────────────────────────────────────────── */
+/* ── THE READING ──────────────────────────────────────────────────────────
+   Rows (mirror shape, whichever source served) -> one AQI per station:
+   the WORST sub-index, read straight from `avg_value` with NO conversion,
+   stuck channels dropped — the same fold as lib/air.ts, because an alert
+   must never name a figure the site itself would refuse to publish. */
+function stationMap(rows) {
+  const num = (v) => {
+    const s = String(v ?? '').trim();
+    if (!s || s === 'NA' || s === '-') return null;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  };
+  const by = new Map();
+  for (const r of rows) {
+    const st = String(r.station ?? '').trim(); if (!st) continue;
+    // Every pollutant the feed reports counts toward the max — the value is
+    // CPCB's sub-index whatever the channel is called, so no alias table is
+    // needed here: this fold never keys anything by pollutant name.
+    const sub = num(r.avg_value);
+    if (!by.has(st)) by.set(st, { aqi: -1, stamp: r.last_update ?? null });
+    if (sub === null || sub < 0) continue;
+    if (isStuck(num(r.min_value), num(r.max_value), sub)) continue;
+    if (sub > by.get(st).aqi) by.get(st).aqi = sub;
+  }
+  const out = new Map();
+  for (const [st, v] of by) if (v.aqi >= 0) {
+    out.set(st, { aqi: v.aqi, band: bandFor(v.aqi), observed: observedLabel(v.stamp) });
+  }
+  return out;
+}
+
+/* ── SOURCE SELECTION — CAAQMS FIRST, MIRROR FALLBACK (AD-44) ─────────────
+   This job ALERTS PEOPLE, so freshness matters here most of all: the mirror
+   lags CPCB by up to ten measured hours, which is the difference between a
+   crossing alert and a history lesson. CPCB's own CAAQMS feed serves when it
+   passes its gates (scripts/lib/fetch-caaqms.mjs); the mirror path below is
+   the intact fallback. Exit stays 75 for an unusable feed — nothing sent,
+   nothing changed, not our defect. */
 async function readings() {
+  let caaqmsWhy = null;
+  try {
+    const feed = await fetchCaaqms({ timeoutMs: 60000 });
+    const verdict = assessCaaqms(feed, { minStations: 300 });
+    if (!verdict.ok) {
+      caaqmsWhy = verdict.why;
+    } else {
+      const delhi = feed.rows.filter((r) => r.city === 'Delhi');
+      const stations = new Set(delhi.map((r) => r.station)).size;
+      if (stations < 35) {
+        caaqmsWhy = `only ${stations} Delhi station(s) in the feed (needs ≥35)`;
+      } else {
+        const out = stationMap(delhi);
+        if (out.size) {
+          console.log(`readings from ${SERVED_BY_CAAQMS}: ${out.size} monitors`);
+          return out;
+        }
+        caaqmsWhy = 'no computable station';
+      }
+    }
+  } catch (e) {
+    caaqmsWhy = `did not answer: ${e.message}`;
+  }
+  console.warn(`CAAQMS unavailable — ${caaqmsWhy}. Falling back to the data.gov.in mirror.`);
+
   const url = `https://api.data.gov.in/resource/${RESOURCE}`
     + `?api-key=${encodeURIComponent(KEY)}&format=json&limit=1000&offset=0`
     + '&filters%5Bcity%5D=Delhi';
@@ -103,21 +165,9 @@ async function readings() {
       if (!res.ok) { last = `HTTP ${res.status}`; continue; }
       const b = await res.json();
       if (!Array.isArray(b?.records) || !b.records.length) { last = 'no records'; continue; }
-      const by = new Map();
-      for (const r of b.records) {
-        const st = String(r.station ?? '').trim(); if (!st) continue;
-        const raw = String(r.pollutant_id ?? '').trim();
-        const pol = ALIAS[raw] ?? ALIAS[raw.toUpperCase()] ?? raw.toUpperCase();
-        const v = Number(String(r.avg_value ?? '').trim());
-        const sub = Number.isFinite(v) ? subIndex(pol, v) : null;
-        if (!by.has(st)) by.set(st, { aqi: -1, stamp: r.last_update ?? null });
-        if (sub !== null && sub > by.get(st).aqi) by.get(st).aqi = sub;
-      }
-      const out = new Map();
-      for (const [st, v] of by) if (v.aqi >= 0) {
-        out.set(st, { aqi: v.aqi, band: bandFor(v.aqi), observed: observedLabel(v.stamp) });
-      }
+      const out = stationMap(b.records);
       if (!out.size) { last = 'no computable station'; continue; }
+      console.log(`readings from ${SERVED_BY_MIRROR}: ${out.size} monitors`);
       return out;
     } catch (e) { last = e.message; }
   }
@@ -128,8 +178,10 @@ async function readings() {
      and emailed a human for it, alongside the air job doing the same, and
      data.gov.in refused about half of those runs between 23 and 26 August
      2026. Same rule as fetch-air.mjs and fetch-india.mjs: 75 means the source
-     was silent, 1 means the source answered and the answer was wrong. */
-  console.error(`Feed unavailable (${last}). Sending nothing and changing nothing.`);
+     was silent, 1 means the source answered and the answer was wrong.
+     Since AD-44 this line is reached only when BOTH sources failed. */
+  console.error(`No source would answer: CAAQMS (${caaqmsWhy}); mirror (${last}). `
+    + 'Sending nothing and changing nothing.');
   process.exit(75);
 }
 

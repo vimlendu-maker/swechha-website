@@ -385,6 +385,196 @@ export function cityMean(stations: Station[]): number | null {
   return Math.round(stations.reduce((sum, s) => sum + s.aqi, 0) / stations.length);
 }
 
+/* ════════════════════════════════════════════════════════════════════════
+   CPCB's CAAQMS LIVE FEED — the primary source since AD-44 (26 August 2026).
+
+   The data.gov.in mirror this file fetched exclusively until AD-44 LAGS
+   CPCB's own publication by up to ten measured hours (02:00 IST still being
+   served at 12:04 IST). CPCB's own feed at CAAQMS_URL is keyless XML, ~375KB,
+   ~500 stations, one observation hour behind the clock, and carries the SAME
+   sub-indexes under the same station names — plus CPCB's own computed
+   per-station AQI, which is the integrity tripwire the mirror never had.
+
+   ★ TRANSCRIBED, NOT IMPORTED — the standing convention across the .mjs/.ts
+   boundary (see km() below, and the breakpoint table's copies in the fetch
+   scripts). The parser here and the one in scripts/lib/fetch-caaqms.mjs MUST
+   NOT DRIFT: lib/caaqms.test.ts pins both to the same committed fixture and
+   fails if they disagree on a single row.
+
+   ★ NO curl HERE. scripts/ get a curl fallback for this host's TLS quirk (a
+   cross-signed eMudhra intermediate that undici's path-building rejects);
+   this file runs on Vercel where there is no curl and the quirk has not been
+   observed. If native fetch DOES fail there, `fetchDelhiLive` treats it as an
+   ordinary fallback to the mirror — never an error response.
+   ════════════════════════════════════════════════════════════════════════ */
+
+export const CAAQMS_URL = 'https://airquality.cpcb.gov.in/caaqms/rss_feed';
+
+export type CaaqmsParse = {
+  /** Mirror-shape rows: same keys, same strings, "NA" preserved. */
+  rows: Record<string, string>[];
+  /** CPCB's OWN computed AQI per station, where it published one. */
+  stationAqi: Record<string, { aqi: number; pollutant: string | null }>;
+  /** Distinct `lastupdate` stamps, as published ("DD-MM-YYYY HH:MM:SS"). */
+  stamps: string[];
+  /** <Station> blocks parsed — a station whose channels are all NA emits no rows. */
+  stationCount: number;
+};
+
+const CAAQMS_NAMED_ENTITIES: Record<string, string> = {
+  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'",
+};
+function decodeXmlEntities(s: string): string {
+  return s.replace(/&(amp|lt|gt|quot|apos|#[0-9]+|#x[0-9a-fA-F]+);/g, (whole, e: string) => {
+    if (CAAQMS_NAMED_ENTITIES[e]) return CAAQMS_NAMED_ENTITIES[e];
+    const n = e[1] === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+    return Number.isFinite(n) ? String.fromCodePoint(n) : whole;
+  });
+}
+function xmlAttrs(s: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const m of s.matchAll(/([\w.]+)="([^"]*)"/g)) out[m[1]] = decodeXmlEntities(m[2]);
+  return out;
+}
+/** Missing attribute, empty string and "NA" all normalise to the mirror's "NA". */
+const caaqmsVal = (v: unknown): string => {
+  const s = String(v ?? '').trim();
+  return s === '' ? 'NA' : s;
+};
+
+/**
+ * Parse the CAAQMS XML into EXACTLY the mirror's row shape, so `foldStations`
+ * consumes either source without knowing which answered. Transcribed from
+ * scripts/lib/fetch-caaqms.mjs's parseCaaqms — see the header note there for
+ * the format's hazards (entities, "NA", empty Value="", self-closing tags)
+ * and why no XML dependency is used.
+ */
+export function parseCaaqmsXml(xml: string): CaaqmsParse {
+  const rows: Record<string, string>[] = [];
+  const stationAqi: CaaqmsParse['stationAqi'] = {};
+  const stamps = new Set<string>();
+  let stationCount = 0;
+  const country = decodeXmlEntities(/<Country id="([^"]*)"/.exec(xml)?.[1] ?? 'India');
+
+  const stateRe = /<State id="([^"]*)"\s*(?:\/>|>([\s\S]*?)<\/State>)/g;
+  const cityRe = /<City id="([^"]*)"\s*(?:\/>|>([\s\S]*?)<\/City>)/g;
+  const stationRe = /<Station\s([^>]*?)(?:\/>|>([\s\S]*?)<\/Station>)/g;
+
+  for (const st of xml.matchAll(stateRe)) {
+    const state = decodeXmlEntities(st[1]);
+    for (const ct of (st[2] ?? '').matchAll(cityRe)) {
+      const city = decodeXmlEntities(ct[1]);
+      for (const sn of (ct[2] ?? '').matchAll(stationRe)) {
+        stationCount++;
+        const a = xmlAttrs(sn[1]);
+        const station = a.id ?? '';
+        const body = sn[2] ?? '';
+        if (!station) continue;
+        if (a.lastupdate) stamps.add(a.lastupdate);
+        for (const p of body.matchAll(/<Pollutant_Index\s([^>]*?)\/>/g)) {
+          const pa = xmlAttrs(p[1]);
+          rows.push({
+            country, state, city, station,
+            last_update: caaqmsVal(a.lastupdate),
+            latitude: caaqmsVal(a.latitude),
+            longitude: caaqmsVal(a.longitude),
+            pollutant_id: caaqmsVal(pa.id),
+            min_value: caaqmsVal(pa.Min),
+            max_value: caaqmsVal(pa.Max),
+            avg_value: caaqmsVal(pa.Avg),
+          });
+        }
+        const q = /<Air_Quality_Index\s([^>]*?)\/>/.exec(body);
+        if (q) {
+          const qa = xmlAttrs(q[1]);
+          const raw = String(qa.Value ?? '').trim();
+          const v = Number(raw);
+          if (raw !== '' && Number.isFinite(v)) {
+            stationAqi[station] = {
+              aqi: v,
+              pollutant: String(qa.Predominant_Parameter ?? '').trim() || null,
+            };
+          }
+        }
+      }
+    }
+  }
+  return { rows, stationAqi, stamps: [...stamps], stationCount };
+}
+
+/**
+ * THE PER-STATION INTEGRITY GATE, transcribed from scripts/lib/
+ * fetch-caaqms.mjs's integrityCheck — must not drift; the shared-fixture test
+ * pins them. CPCB's own <Air_Quality_Index> Value is the max of its Avg
+ * sub-indexes; if OUR parse disagrees at more than 2% of comparable stations
+ * beyond ±1 rounding, the parser has drifted and the data must be refused.
+ * Compared on RAW maxima, before the isStuck drop, because the stuck-drop is
+ * OUR policy and CPCB does not apply it — the gate measures parser fidelity,
+ * not policy. It would have caught the AD-42 double conversion instantly.
+ */
+export function caaqmsIntegrity(
+  rows: Record<string, string>[],
+  stationAqi: CaaqmsParse['stationAqi'],
+): { comparable: number; mismatched: number; ok: boolean } {
+  const worst = new Map<string, number>();
+  for (const r of rows) {
+    const s = String(r.avg_value ?? '').trim();
+    if (s === '' || s === 'NA' || s === '-') continue;
+    const n = Number(s);
+    if (!Number.isFinite(n)) continue;
+    const prev = worst.get(r.station);
+    if (prev === undefined || n > prev) worst.set(r.station, n);
+  }
+  let comparable = 0, mismatched = 0;
+  for (const [station, own] of Object.entries(stationAqi)) {
+    const ours = worst.get(station);
+    if (ours === undefined) continue;
+    comparable++;
+    if (Math.abs(ours - own.aqi) > 1) mismatched++;
+  }
+  return { comparable, mismatched, ok: comparable > 0 && mismatched / comparable <= 0.02 };
+}
+
+/**
+ * The LIVE route's fetch: CAAQMS first, mirror fallback — AD-44.
+ *
+ * WHY THE ROUTE NEEDED THIS. It used to fetch only the mirror, which lags up
+ * to ten hours — so it could confidently serve a 02:00 observation while the
+ * committed page showed 12:00, and the chip-confirm logic (which flips
+ * PERIODIC to LIVE only when route and page agree within two hours) could
+ * never confirm a fresh page against a stale route.
+ *
+ * ★ A CERT FAILURE IS AN ORDINARY FALLBACK. This host's TLS chain breaks
+ * undici path-building on some machines (see the CAAQMS block header). Native
+ * fetch is wrapped so ANY failure — TLS, timeout, HTTP, a parse that fails
+ * its gates — falls back to `fetchDelhi(key)` exactly as the route behaved
+ * before. Only both sources failing throws, into the route's existing
+ * fail() path.
+ *
+ * Gates before trusting CAAQMS: ≥300 stations parsed nationally, ≥35 in
+ * Delhi, and the per-station integrity check — the same bar the fetch
+ * scripts apply.
+ */
+export async function fetchDelhiLive(
+  key: string,
+): Promise<{ rows: Record<string, string>[]; servedBy: string }> {
+  try {
+    const res = await fetch(CAAQMS_URL, { cache: 'no-store', signal: AbortSignal.timeout(12000) });
+    if (res.ok) {
+      const parsed = parseCaaqmsXml(await res.text());
+      if (parsed.stationCount >= 300 && caaqmsIntegrity(parsed.rows, parsed.stationAqi).ok) {
+        const delhi = parsed.rows.filter((r) => r.city === 'Delhi');
+        if (new Set(delhi.map((r) => r.station)).size >= 35) {
+          return { rows: delhi, servedBy: 'CPCB CAAQMS live feed (airquality.cpcb.gov.in/caaqms/rss_feed)' };
+        }
+      }
+    }
+  } catch {
+    // TLS path-building, timeout, DNS — all the same answer: the mirror.
+  }
+  return { rows: await fetchDelhi(key), servedBy: 'data.gov.in mirror (resource 3b01bcb8)' };
+}
+
 /** Great-circle distance in km. Used to say which monitor is nearest. */
 export function km(aLat: number, aLng: number, bLat: number, bLng: number): number {
   const R = 6371, rad = (d: number) => (d * Math.PI) / 180;

@@ -46,6 +46,10 @@
 import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fetchUpstream } from './lib/fetch-cpcb.mjs';
+import {
+  fetchCaaqms, assessCaaqms, newestStamp, newerStamp,
+  SERVED_BY_CAAQMS, SERVED_BY_MIRROR,
+} from './lib/fetch-caaqms.mjs';
 
 const KEY = process.env.DATA_GOV_IN_KEY;
 const OUT = resolve(process.argv[2] || 'data/air-india.json');
@@ -181,6 +185,59 @@ if (process.env.AIR_FIXTURE) {
   }
   console.log(`REPLAY: ${rows.length} rows (${distinct} distinct) from ${process.env.AIR_FIXTURE} (no network)`);
 }
+
+/* ── SOURCE SELECTION — CAAQMS LIVE FEED FIRST, MIRROR AS FALLBACK (AD-44) ──
+   The mirror above lags CPCB's own publication by up to ten measured hours
+   (02:00 IST served at 12:04 IST, 26 August 2026). CPCB's CAAQMS feed is
+   keyless, national, and one observation hour behind the clock, with
+   IDENTICAL semantics — see scripts/lib/fetch-caaqms.mjs. It serves this job
+   when it passes its gates (≥300 stations, a parseable stamp, and the
+   per-station integrity check against CPCB's own <Air_Quality_Index>).
+   The mirror path below is fully intact and runs when CAAQMS fails — or when
+   a one-row probe of the mirror shows a FRESHER stamp, the safety net that
+   stops an odd day from making this table less current than before AD-44.
+   One run is served by ONE source, named in `source.served_by`; never both. */
+let SERVED = null;
+let caaqms = null, caaqmsWhy = null, caaqmsIntegrityRefusal = false;
+if (!process.env.AIR_FIXTURE) {
+  try {
+    const feed = await fetchCaaqms({ timeoutMs: 60000 });
+    const verdict = assessCaaqms(feed, { minStations: 300 });
+    if (!verdict.ok) {
+      caaqmsWhy = verdict.why;
+      caaqmsIntegrityRefusal = verdict.kind === 'integrity';
+    } else {
+      caaqms = { rows: feed.rows, stamp: newestStamp(feed.stamps),
+        integrity: verdict.integrity, stationCount: feed.stationCount };
+      console.log(`CAAQMS: ${feed.stationCount} stations, ${feed.rows.length} rows, `
+        + `observed ${caaqms.stamp}; integrity ${verdict.integrity.mismatched} of `
+        + `${verdict.integrity.comparable} stations disagree with CPCB's own AQI`);
+    }
+  } catch (e) {
+    caaqmsWhy = `did not answer: ${e.cause?.message ? `${e.message} (${e.cause.message})` : e.message}`;
+  }
+  if (caaqmsWhy) {
+    (caaqmsIntegrityRefusal ? console.error : console.warn)(
+      `CAAQMS ${caaqmsIntegrityRefusal ? 'REFUSED — ' : 'unavailable — '}${caaqmsWhy}. `
+      + 'Falling back to the data.gov.in mirror.');
+  }
+  if (caaqms) {
+    /* The freshness safety net, priced honestly: ONE one-row probe of the
+       mirror, not the full national set with its retry ladder. The full
+       mirror fetch runs only if the probe's stamp is strictly newer — which
+       the measured lag says should never happen. A silent probe is ignored:
+       CAAQMS is already in hand. */
+    let probeStamp = null;
+    try { probeStamp = (await fetchPage(0, 1)).records?.[0]?.last_update ?? null; } catch { /* probe only */ }
+    if (probeStamp && newerStamp(probeStamp, caaqms.stamp) === 'a') {
+      console.warn(`mirror probe stamp ${probeStamp} is FRESHER than CAAQMS's ${caaqms.stamp} — `
+        + 'fetching the full mirror set instead');
+    } else {
+      rows = caaqms.rows; SERVED = 'caaqms';
+      if (probeStamp) console.log(`freshness: CAAQMS ${caaqms.stamp} vs mirror ${probeStamp} — CAAQMS serves`);
+    }
+  }
+}
 for (; !rows.length;) {
   attempt++;
   try {
@@ -204,6 +261,15 @@ for (; !rows.length;) {
     console.warn(`  attempt ${attempt} failed: ${lastError}`);
   }
   if (attempt >= ATTEMPTS) {
+    /* A CAAQMS parse already in hand outranks a mirror that will not deliver.
+       This branch is reachable with `caaqms` set only when the freshness
+       probe said the mirror was newer and the full fetch then failed — serve
+       the data we hold rather than exiting over a source we did not need. */
+    if (caaqms) {
+      console.warn('the mirror probed fresher but would not deliver a full set — CAAQMS serves this run');
+      rows = caaqms.rows; SERVED = 'caaqms';
+      break;
+    }
     /* ── AN UPSTREAM THAT WILL NOT ANSWER IS NOT A DEFECT IN THIS REPO ────
        Exit 75 (EX_TEMPFAIL), not 1. The distinction matters because of who
        reads it: exit 1 turns an hourly job red and emails a human, and this
@@ -214,19 +280,25 @@ for (; !rows.length;) {
        printed beside it, and that IS the designed failure mode (D-21.5).
        The caller decides what to do with 75; see air-hourly.yml. A genuinely
        WRONG answer — a short or malformed set — still exits 1 below, because
-       that is a defect and it is ours. */
-    console.error(`upstream would not answer in ${ATTEMPTS} attempts over `
+       that is a defect and it is ours.
+       Since AD-44 this branch means BOTH sources failed. 75 still requires
+       both to have been SILENT: if the CAAQMS refusal was the INTEGRITY gate,
+       a source answered and OUR parse of it disagreed with CPCB's own
+       numbers, which is potentially our defect and exits 1. */
+    console.error(`no source would deliver: CAAQMS (${caaqmsWhy ?? 'not attempted'}); `
+      + `mirror gave up after ${ATTEMPTS} attempts over `
       + `${Math.round(BACKOFF_MS.reduce((a, b) => a + b, 0) / 1000)}s. `
       + 'Leaving the previous file alone — a partial snapshot publishes wrong readings, '
       + 'not missing ones, which is worse.');
-    console.error(`last error: ${lastError ?? 'unknown'}`);
-    process.exit(everAnswered ? 1 : 75);
+    console.error(`last mirror error: ${lastError ?? 'unknown'}`);
+    process.exit(everAnswered || caaqmsIntegrityRefusal ? 1 : 75);
   }
   const wait = BACKOFF_MS[Math.min(attempt - 1, BACKOFF_MS.length - 1)];
   console.warn(`  retrying in ${wait / 1000}s`);
   await new Promise(r => setTimeout(r, wait));
 }
 if (!rows.length) { console.error('upstream returned no records at all. Refusing to publish an absence.'); process.exit(1); }
+if (!SERVED) SERVED = 'mirror'; // the loop above delivered, or AIR_FIXTURE replayed mirror-shape rows
 
 /* ── FOLD: row -> station -> city ──────────────────────────────────────── */
 
@@ -374,8 +446,26 @@ const out = {
         + 'stations, and against its published figures for 73 cities this runs about 25 per cent '
         + 'higher. CPCB\'s mean is carried on every row as meanAqi so the comparable number is '
         + 'always to hand.',
-  source: { name: 'CPCB via data.gov.in', resource: RESOURCE,
-    url: 'https://data.gov.in/resource/real-time-air-quality-index-various-locations' },
+  // `served_by` names the source that ACTUALLY served this run — AD-44. The
+  // CAAQMS live feed is primary; the mirror is the fallback, never mixed in.
+  source: SERVED === 'caaqms' ? {
+    name: 'Central Pollution Control Board',
+    served_by: SERVED_BY_CAAQMS,
+    url: 'https://airquality.cpcb.gov.in/caaqms/rss_feed',
+    integrity: {
+      stations_compared: caaqms.integrity.comparable,
+      disagreeing: caaqms.integrity.mismatched,
+      rule: "our worst raw Avg sub-index vs CPCB's own <Air_Quality_Index> Value, ±1",
+    },
+    fallback: `${SERVED_BY_MIRROR} — used only when the live feed fails its gates`,
+  } : {
+    name: 'CPCB via data.gov.in', served_by: SERVED_BY_MIRROR, resource: RESOURCE,
+    url: 'https://data.gov.in/resource/real-time-air-quality-index-various-locations',
+    note: process.env.AIR_FIXTURE
+      ? 'replay run — AIR_FIXTURE skips the CAAQMS attempt by design'
+      : (caaqmsWhy ? `fallback run — the CAAQMS live feed did not serve: ${caaqmsWhy}`
+                   : 'the mirror answered with a fresher stamp than the live feed this run'),
+  },
   aqiLimit: AQI_LIMIT,
   observed: Object.entries(stampCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null,
   observed_spread: Object.keys(stampCount).length,
@@ -404,7 +494,7 @@ const out = {
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, JSON.stringify(out, null, 2) + '\n');
 
-console.log(`${out.totals.cities} cities, ${out.totals.stations} stations, observed ${out.observed}`);
+console.log(`${out.totals.cities} cities, ${out.totals.stations} stations, observed ${out.observed} — served by ${out.source.served_by}`);
 console.log(`${out.totals.above_limit} above the limit, ${out.totals.good} "Good"`);
 if (delhi) console.log(`Delhi: rank ${delhi.rank}, AQI ${delhi.aqi} (${delhi.band}) at ${delhi.station}`);
 if (out.airshed) console.log(out.airshed.reading, '—', out.airshed.names.join(', '));
