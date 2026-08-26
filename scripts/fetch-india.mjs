@@ -144,6 +144,19 @@ const KEY_OF = (r) => `${r.station}|${r.pollutant_id}`;
 
 let rows = [];
 let attempt = 0;
+/* ── RETRY SPACED OVER MINUTES, NOT MILLISECONDS ─────────────────────────
+   The previous policy was three attempts 800ms apart — about 33 seconds end
+   to end, almost all of it spent inside three identical 10-second connect
+   timeouts. A source that is briefly unreachable is still unreachable 800ms
+   later, so the retry was decorative: it turned one failure into three.
+   This spans roughly four minutes, which is long enough for a transient blip
+   to clear and still well inside the hourly cadence. */
+const BACKOFF_MS = [3000, 10000, 30000, 60000, 120000];
+const ATTEMPTS = BACKOFF_MS.length + 1;
+let lastError = null;
+/* Did the upstream ever actually reply? A short set is OUR problem to report
+   loudly; a socket that never opened is not. */
+let everAnswered = false;
 /* ★ REPLAY — see the same note in fetch-air.mjs. AIR_FIXTURE points at a
    captured response from this resource so that a change to HOW a city's
    figure is SELECTED can be judged against a fixed hour, and so this job can
@@ -170,6 +183,7 @@ for (; !rows.length;) {
     // boundaries for the upstream to lose rows across.
     const body = await fetchPage(0, Math.min(total + 500, 20000));
     rows = body.records;
+    everAnswered = true;
     const distinct = new Set(rows.map(KEY_OF)).size;
     process.stdout.write(`fetched ${rows.length} rows, ${distinct} distinct of ${total} expected\n`);
     // ROWS LOST IS THE FAILURE. Duplicates are harmless (same values); a
@@ -178,15 +192,31 @@ for (; !rows.length;) {
     if (distinct >= total) break;
     console.warn(`  integrity: ${total - distinct} row(s) lost to unstable paging — retrying`);
   } catch (e) {
-    console.warn(`  attempt ${attempt} failed: ${e.message}`);
+    lastError = e.cause?.message ? `${e.message} (${e.cause.message})` : e.message;
+    console.warn(`  attempt ${attempt} failed: ${lastError}`);
   }
-  if (attempt >= 3) {
-    console.error('upstream would not return a complete, distinct set in 3 attempts. '
+  if (attempt >= ATTEMPTS) {
+    /* ── AN UPSTREAM THAT WILL NOT ANSWER IS NOT A DEFECT IN THIS REPO ────
+       Exit 75 (EX_TEMPFAIL), not 1. The distinction matters because of who
+       reads it: exit 1 turns an hourly job red and emails a human, and this
+       upstream refuses roughly half the hourly runs — measured 23–26 August
+       2026. A person emailed every other hour about someone else's flaky
+       server stops reading the emails, and then does not see the one that
+       matters. Nothing was written, the previous reading stands with its age
+       printed beside it, and that IS the designed failure mode (D-21.5).
+       The caller decides what to do with 75; see air-hourly.yml. A genuinely
+       WRONG answer — a short or malformed set — still exits 1 below, because
+       that is a defect and it is ours. */
+    console.error(`upstream would not answer in ${ATTEMPTS} attempts over `
+      + `${Math.round(BACKOFF_MS.reduce((a, b) => a + b, 0) / 1000)}s. `
       + 'Leaving the previous file alone — a partial snapshot publishes wrong readings, '
       + 'not missing ones, which is worse.');
-    process.exit(1);
+    console.error(`last error: ${lastError ?? 'unknown'}`);
+    process.exit(everAnswered ? 1 : 75);
   }
-  await new Promise(r => setTimeout(r, 800));
+  const wait = BACKOFF_MS[Math.min(attempt - 1, BACKOFF_MS.length - 1)];
+  console.warn(`  retrying in ${wait / 1000}s`);
+  await new Promise(r => setTimeout(r, wait));
 }
 if (!rows.length) { console.error('upstream returned no records at all. Refusing to publish an absence.'); process.exit(1); }
 

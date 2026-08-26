@@ -111,8 +111,49 @@ jobs:
           # eight-city panel were read together at one hour, and
           # build-situation-air.mjs now refuses to build a page where that is
           # untrue. air-delhi.json and air-india.json must therefore move
-          # together or not at all.
+          # together or not at all. They are NOT decoupled to make this step
+          # more likely to pass — a half-updated pair is a page that lies.
+          #
+          # ── EXIT 75 IS NOT A FAILURE ──────────────────────────────────────
+          # data.gov.in refused roughly HALF of these hourly runs between
+          # 23 and 26 August 2026, always the same way: undici gives up after
+          # a 10-second connect timeout. Nothing is written when that happens,
+          # the previous reading stands with its age printed beside it, and
+          # that is the designed failure mode (D-21.5) working — not a defect.
+          #
+          # Turning the job red for it emailed a human every other hour about
+          # someone else's flaky server, which is how you train someone to
+          # ignore the alert that matters. So the fetch scripts now separate
+          # the two cases and this step does too:
+          #
+          #   75  the source did not answer      -> skip the rest, stay green
+          #    1  the source answered wrongly    -> fail loudly; that one is ours
+          #
+          # The retry inside fetch-india.mjs now spans ~4 minutes rather than
+          # the old 33 seconds, so 75 should be rare. When it is not rare, the
+          # honest lever is the cron above, not a louder alarm.
+          set +e
           npm run data:air
+          code=$?
+          set -e
+          if [ "$code" = "75" ]; then
+            # ★ REVERT BOTH FILES, ALWAYS. data:air chains the two scripts, so
+            # the city fetch can SUCCEED and write air-delhi.json before the
+            # national fetch gives up — which is exactly what happened in the
+            # failing runs. Left alone, the next step would see Delhi's figure
+            # move, rebuild, and commit a half-updated pair: the precise state
+            # the "together or not at all" rule above exists to prevent, and
+            # one that build-situation-air.mjs would be right to refuse.
+            # Reverting also makes `changed` come out 0, so the job stops on
+            # its own path rather than needing a second condition.
+            git checkout -- data/air-delhi.json data/air-india.json
+            echo "::notice::CPCB did not answer this hour. Nothing written, nothing committed; "\
+                 "the pages keep their committed reading and print its age."
+            echo "UPSTREAM_SILENT=1" >> "$GITHUB_ENV"
+          elif [ "$code" != "0" ]; then
+            echo "::error::data:air exited $code — the source answered and the answer was wrong."
+            exit "$code"
+          fi
 
       - name: Did the rendered figure actually move?
         id: moved
