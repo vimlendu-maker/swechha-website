@@ -39,6 +39,7 @@
  */
 import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { fetchUpstream } from './lib/fetch-cpcb.mjs';
 
 const RESOURCE = '3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69';
 const KEY = process.env.DATA_GOV_IN_KEY;
@@ -191,7 +192,11 @@ async function fetchAll(city) {
     const url = `https://api.data.gov.in/resource/${RESOURCE}` +
       `?api-key=${encodeURIComponent(KEY)}&format=json&limit=${LIMIT}` +
       `&offset=${offset}&filters%5Bcity%5D=${encodeURIComponent(city)}`;
-    const res = await fetch(url);
+    /* fetch-first, curl-fallback — see scripts/lib/fetch-cpcb.mjs for the
+       measured reason native fetch alone lost ~half the hourly runs. A
+       transport that fails BOTH ways throws and lands in the exit-75 path
+       below, same as a thrown fetch always did. */
+    const res = await fetchUpstream(url, { timeoutMs: 60000 });
     if (!res.ok) throw new Error(`upstream HTTP ${res.status}`);
     const body = await res.json();
     const batch = body.records || [];

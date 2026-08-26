@@ -28,6 +28,7 @@
  */
 import { neon } from '@neondatabase/serverless';
 import { randomBytes, createHash } from 'node:crypto';
+import { fetchUpstream } from './lib/fetch-cpcb.mjs';
 
 const DRY = process.argv.includes('--dry-run');
 const KEY = process.env.DATA_GOV_IN_KEY;
@@ -95,7 +96,10 @@ async function readings() {
   for (let a = 1; a <= 3; a++) {
     if (a > 1) await new Promise(r => setTimeout(r, a * 800));
     try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
+      /* fetch-first, curl-fallback — scripts/lib/fetch-cpcb.mjs. Both
+         transports failing throws into the catch below, same as before, and
+         the exit stays 75: a silent source is still not our defect. */
+      const res = await fetchUpstream(url, { timeoutMs: 20000 });
       if (!res.ok) { last = `HTTP ${res.status}`; continue; }
       const b = await res.json();
       if (!Array.isArray(b?.records) || !b.records.length) { last = 'no records'; continue; }

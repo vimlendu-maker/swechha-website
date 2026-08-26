@@ -129,8 +129,9 @@ jobs:
           #   75  the source did not answer      -> skip the rest, stay green
           #    1  the source answered wrongly    -> fail loudly; that one is ours
           #
-          # The retry inside fetch-india.mjs now spans ~4 minutes rather than
-          # the old 33 seconds, so 75 should be rare. When it is not rare, the
+          # Each attempt now tries two transports — native fetch, then curl -4
+          # (scripts/lib/fetch-cpcb.mjs), the one transport measured to get
+          # through the connect stall — so 75 should be rare. When it is not, the
           # honest lever is the cron above, not a louder alarm.
           set +e
           npm run data:air

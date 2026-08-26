@@ -45,6 +45,7 @@
  */
 import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { fetchUpstream } from './lib/fetch-cpcb.mjs';
 
 const KEY = process.env.DATA_GOV_IN_KEY;
 const OUT = resolve(process.argv[2] || 'data/air-india.json');
@@ -134,7 +135,11 @@ const num = (v) => {
 async function fetchPage(offset, limit) {
   const url = `https://api.data.gov.in/resource/${RESOURCE}`
     + `?api-key=${encodeURIComponent(KEY)}&format=json&limit=${limit}&offset=${offset}`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(60000) });
+  /* fetch-first, curl-fallback — scripts/lib/fetch-cpcb.mjs. The 60s bound
+     never covered the CONNECT phase anyway: undici's own 10s connect default
+     is what actually killed these runs, which is the whole reason the
+     fallback exists. */
+  const res = await fetchUpstream(url, { timeoutMs: 60000 });
   if (!res.ok) throw new Error(`upstream HTTP ${res.status}`);
   const body = await res.json();
   if (!Array.isArray(body?.records)) throw new Error('unexpected response shape — no `records` array');
@@ -149,9 +154,12 @@ let attempt = 0;
    to end, almost all of it spent inside three identical 10-second connect
    timeouts. A source that is briefly unreachable is still unreachable 800ms
    later, so the retry was decorative: it turned one failure into three.
-   This spans roughly four minutes, which is long enough for a transient blip
-   to clear and still well inside the hourly cadence. */
-const BACKOFF_MS = [3000, 10000, 30000, 60000, 120000];
+   The ladder then grew to ~four minutes when those connect timeouts were the
+   only defence. Now that each attempt already tries TWO transports (fetch,
+   then curl -4 — scripts/lib/fetch-cpcb.mjs), a failed attempt means the
+   source itself was silent, not that one socket path stalled, so three
+   spaced retries (~78s) are enough and stay well inside the hourly cadence. */
+const BACKOFF_MS = [3000, 15000, 60000];
 const ATTEMPTS = BACKOFF_MS.length + 1;
 let lastError = null;
 /* Did the upstream ever actually reply? A short set is OUR problem to report
