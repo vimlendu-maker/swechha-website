@@ -948,6 +948,36 @@ export const opener = (id, head, lead) => `    <div class="wrap"><div class="im-
  */
 export const hole = (what) => `      <p class="p-hole">${esc(what)}</p>`;
 
+/**
+ * THE STATE ROLL-UP OVER A NATIONAL CITY FEED, and it exists here rather than
+ * in either generator because TWO pages now render it: /now/air/india's second
+ * tab and /now/air's own "India" tab. Two copies of this reduction is how the
+ * two pages come to disagree about how many states are above the limit while
+ * reading the same file — the drift `NAT` was rewritten to end.
+ *
+ * NOTHING IS AVERAGED. CPCB measures cities, not states, so a state's row
+ * carries counts and its single worst city, never a mean: averaging a state's
+ * cities would invent a reading for the land between them. `cities` is on every
+ * row beside `over` for the same reason — "3 of 3" and "3 of 40" are different
+ * findings and must not read alike.
+ * Ordered by how many cities are above the limit, then by the worst city's
+ * reading, then by name, so the order is stable between hours that tie.
+ */
+export const stateRollup = (cities, limit) => {
+  const m = new Map();
+  for (const c of cities) {
+    const k = c.state || 'Unstated';
+    if (!m.has(k)) m.set(k, { state: k, cities: 0, over: 0, stations: 0, worst: null });
+    const s = m.get(k);
+    s.cities++;
+    s.stations += c.stations || 0;
+    if (c.aqi > limit) s.over++;
+    if (!s.worst || c.aqi > s.worst.aqi) s.worst = c;
+  }
+  return [...m.values()].sort((a, b) =>
+    (b.over - a.over) || (b.worst.aqi - a.worst.aqi) || a.state.localeCompare(b.state));
+};
+
 /** ARIA tabs. Panels use `hidden`, deliberately, unlike the frozen deck (D-21.1). */
 let tabSeq = 0;
 export const tabs = (group, panels) => {

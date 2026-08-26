@@ -143,6 +143,21 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
   const map: Record<string, string> = {
     '/': 'home.html',
     ...SITUATIONS,
+    /* AD-43. A CHILD OF A SITUATION, NOT A SEVENTH SITUATION — which is why it
+       is here and not in SITUATIONS above. That constant is cross-checked
+       against FAMILY in `scripts/lib/situation-shell.mjs`, and FAMILY is the
+       six; a route listed there with no FAMILY entry fails the build, correctly.
+
+       `/now/air` carried a link reading "All 268 cities" whose href was
+       `#geography` — an anchor to a band on the same page whose first tab is a
+       map of Delhi's own forty-four monitors. So the one link on this site that
+       promised the national picture returned the reader to Delhi, and nothing
+       published the other 267 cities `data/air-india.json` has held since the
+       feed was first read. This is the page that link should always have
+       opened, and it is routed in the same commit that builds it and that
+       repoints the link — a built page, a routed page and a linked page are one
+       change, and any two of them without the third is a defect. */
+    '/now/air/india': 'air-india.html',
     ...workRoutes(),
     '/search': 'search.html',
     '/stories': 'stories.html',
