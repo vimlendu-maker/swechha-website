@@ -31,7 +31,7 @@
  * /api/ward cannot disagree about the same station. See the header there.
  */
 import { NextResponse } from 'next/server';
-import { fetchDelhi, foldStations, worstStation, cityMean, bandFor, selfCheck, AQI_LIMIT } from '@/lib/air';
+import { fetchDelhiLive, foldStations, worstStation, cityMean, bandFor, selfCheck, AQI_LIMIT } from '@/lib/air';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -47,9 +47,19 @@ export async function GET() {
     return fail('no server-side key configured', 503);
   }
 
-  let stations;
+  /* CAAQMS FIRST, MIRROR FALLBACK — AD-44. The mirror lags CPCB's own
+     publication by up to ten measured hours, which broke this route's whole
+     purpose: it could serve a 02:00 observation while the committed page
+     showed 12:00, so the chip-confirm never confirmed a FRESH page. CPCB's
+     own live feed is one hour old; `fetchDelhiLive` tries it first and falls
+     back to the mirror on ANY failure (including this host's TLS quirk on
+     undici — a cert failure here is an ordinary fallback, never an error
+     response). `servedBy` names which source actually answered. */
+  let stations, servedBy;
   try {
-    stations = foldStations(await fetchDelhi(key));
+    const live = await fetchDelhiLive(key);
+    stations = foldStations(live.rows);
+    servedBy = live.servedBy;
   } catch (e) {
     return fail(e instanceof Error ? e.message : 'fetch failed', 502);
   }
@@ -102,7 +112,10 @@ export async function GET() {
       + 'named — not a city average. CPCB\'s own city figure is the mean of the stations and '
       + 'is given separately as cityMean. Any concentration shown is implied back from the '
       + 'sub-index, not measured.',
-    source: { name: 'CPCB via data.gov.in', resource: '3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69' },
+    /* `served_by` states which source ACTUALLY answered this request — the
+       CAAQMS live feed on the normal path, the data.gov.in mirror when the
+       feed failed its gates or its TLS. Never both; never mixed. */
+    source: { name: 'Central Pollution Control Board', served_by: servedBy },
     fetchedAt: new Date().toISOString(),
     /* THE SUCCESS PATH IS CACHED AT THE EDGE (AD-27.6 clause 7, kept and
        re-justified by AD-27.6-A).
