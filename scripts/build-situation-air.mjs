@@ -186,6 +186,22 @@ const NEAR = (() => {
 })();
 const [NEAR_GAP, [NEAR_A, NEAR_B, NEAR_KM]] = NEAR;
 const OBS = (() => { const o = AIR.observed; return o ? `${String(o.hh).padStart(2,'0')}:${String(o.mi).padStart(2,'0')} IST, ${o.d} ${MON[o.m-1]} ${o.y}` : 'time not stated'; })();
+/* AD-46 — THE SECOND CLOCK. "Observed" above is CPCB's clock; this is OURS —
+   when the fetch that produced this build asked CPCB. The page is a build
+   artefact, so the honest meaning is "the last check that produced this
+   page"; air-hourly.yml's heartbeat bounds how stale that can be at ~60
+   minutes, which is what makes the clause printable. IST via the fixed
+   offset + UTC getters, never the builder's local timezone. */
+const CHK = (() => {
+  const iso = AIR.time?.swechha_checked_utc;
+  const ms = iso ? Date.parse(iso) : AIR.fetched?.epochMs;
+  if (!Number.isFinite(ms)) return null;
+  const d = new Date(ms + 19800000);
+  const hhmm = `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`;
+  const o = AIR.observed;
+  const sameDay = o && d.getUTCDate() === o.d && d.getUTCMonth() + 1 === o.m && d.getUTCFullYear() === o.y;
+  return sameDay ? `${hhmm} IST` : `${hhmm} IST, ${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+})();
 
 /* ── AD-36. A RELATIVE WINDOW ON A STATIC PAGE HAS TO NAME ITS END.
    These pages are BUILT AHEAD OF TIME, so "last 5 days" and "the record
@@ -502,7 +518,7 @@ ${crumb('air')}
         <p class="verdict bad" id="air-band">${rd.band}</p>
         <div class="bands bad" id="air-bands" role="img" aria-label="${rd.band}, band ${catIdx+1} of ${AIR.bands.length}">${bands}</div>
         <p class="limit" id="air-limit">CPCB safe limit ${AIR.aqiLimit}. <b>${rd.aqi > AIR.aqiLimit ? 'Limit broken.' : 'Within the limit.'}</b></p>
-        <p class="cap p2-src" id="air-src"><span id="air-src-w">This is the WORST of ${AIR.spread.stations} CPCB monitors across Delhi &mdash; ${esc(String(ws.station).split(',')[0].trim())}. Averaged across all ${AIR.spread.stations}, Delhi reads ${AIR.city_mean.aqi}, which is the figure CPCB itself publishes for the city. ${AIR_CADENCE_VIS} Observed ${OBS}.</span>
+        <p class="cap p2-src" id="air-src"><span id="air-src-w">This is the WORST of ${AIR.spread.stations} CPCB monitors across Delhi &mdash; ${esc(String(ws.station).split(',')[0].trim())}. Averaged across all ${AIR.spread.stations}, Delhi reads ${AIR.city_mean.aqi}, which is the figure CPCB itself publishes for the city. ${AIR_CADENCE_VIS} Observed ${OBS}${CHK ? ` &middot; last checked by Swechha ${CHK}` : ''}. The two times differ because CPCB stamps when the air was measured, and Swechha separately records when it last asked.</span>
           <a class="lk" href="#measured">How this number is made</a>.</p>
       </div>
       <div class="p2-nat">

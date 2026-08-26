@@ -52,6 +52,7 @@ import {
   fetchCaaqms, assessCaaqms, newestStamp, newerStamp,
   SERVED_BY_CAAQMS, SERVED_BY_MIRROR,
 } from './lib/fetch-caaqms.mjs';
+import { recordObservation } from './lib/air-history.mjs';
 
 const RESOURCE = '3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69';
 const KEY = process.env.DATA_GOV_IN_KEY;
@@ -471,6 +472,32 @@ const OBS_AGE_H = (() => {
 })();
 const STATE_LABEL = (OBS_AGE_H === null || OBS_AGE_H > STALE_HOURS) ? 'PERIODIC' : 'LIVE';
 
+/* ── THE TWO CLOCKS, NAMED SO THEY CANNOT BE CONFUSED — AD-46 ─────────────
+   The owner's brief of 26 August 2026, verbatim intent: for every reading,
+   keep CPCB's OBSERVATION time and Swechha's FETCH time apart — "AQI: 183 /
+   Source observation: 5:00 PM / Last checked by Swechha: 5:15 PM". Both
+   already existed here (`observed`, `fetched`) but nothing labelled them as
+   two different facts, and nothing carried when an observation was FIRST
+   seen. The `time` block below is the self-documenting form; `observed` and
+   `fetched` are kept unchanged so no consumer breaks.
+   THE FORMATS ARE THE FENCE: CPCB's clock stays IST wall-clock TEXT exactly
+   as published (never converted), ours stays UTC ISO. A UTC string in the
+   IST field or vice-versa is a bug the test suite checks for.
+   `swechha_first_saw_utc` is carried forward from the previous file when the
+   observation has not changed — a 15-minute poll that finds the same hour is
+   a CHECK, not a new observation. */
+const CHECKED_UTC = new Date().toISOString();
+let prevFile = null;
+if (existsSync(OUT)) {
+  try { prevFile = JSON.parse(readFileSync(OUT, 'utf8')); }
+  catch { /* an unreadable previous file must never block a fresh write */ }
+}
+const FIRST_SAW_UTC =
+  (prevFile?.observed?.raw && worst?.stamp?.raw && prevFile.observed.raw === worst.stamp.raw
+    && prevFile.time?.swechha_first_saw_utc)
+    ? prevFile.time.swechha_first_saw_utc
+    : CHECKED_UTC;
+
 const out = {
   city: CITY,
   state: rows[0]?.state ?? null,
@@ -524,6 +551,21 @@ const out = {
   observation_age_hours: OBS_AGE_H,
   observed: worst?.stamp ?? null,     // the station's own stamp
   fetched: { epochMs: Date.now() },   // when this job ran — a different thing
+  /* The two clocks, labelled — AD-46. `observed`/`fetched` above stay for
+     every existing consumer; this block is the same facts with names that
+     make confusion impossible, plus the first-sighting time. */
+  time: {
+    cpcb_observed_ist: worst?.stamp?.raw ?? null,
+    cpcb_observed_parts: worst?.stamp
+      ? { y: worst.stamp.y, m: worst.stamp.m, d: worst.stamp.d, hh: worst.stamp.hh, mi: worst.stamp.mi }
+      : null,
+    swechha_checked_utc: CHECKED_UTC,
+    swechha_first_saw_utc: FIRST_SAW_UTC,
+    observation_age_minutes_at_check: OBS_AGE_H === null ? null : Math.round(OBS_AGE_H * 60),
+    note: 'cpcb_observed_ist is when the AIR was measured (CPCB’s own stamp, IST wall-clock '
+      + 'text, never converted); swechha_checked_utc is when WE ASKED CPCB (UTC ISO). They are '
+      + 'different clocks and different facts, and must never be swapped or mixed.',
+  },
   limits: {
     'PM2.5': { h24: 60, annual: 40, unit: 'µg/m³', authority: 'CPCB, NAAQS 2009' },
     'PM10':  { h24: 100, annual: 60, unit: 'µg/m³', authority: 'CPCB, NAAQS 2009' },
@@ -592,9 +634,40 @@ const out = {
    AIR_ALLOW_REGRESSION=1 bypasses it: for tests replaying old fixtures, and
    for the one legitimate manual case — CPCB retracting an hour — which is a
    human decision, not something an unattended job may decide. */
+/* ── THE HISTORY IS RECORDED BEFORE THE GUARD BELOW CAN EXIT — AD-46 ──────
+   Every successful fetch is a genuine sighting of a genuine CPCB observation,
+   INCLUDING the ones the monotonicity guard refuses to write into the
+   current-state file (an older observation off the laggy mirror is still
+   real data about that older hour, and a poll that re-sees a known hour
+   still legitimately updates its last_checked/checks). So the store is
+   written first, and never crashes the fetch — the current-state file
+   outranks it. The store lives beside OUT so tests writing to a temp OUT
+   get a temp store, and the real run gets data/air-history/. */
+try {
+  if (worst?.stamp?.raw) {
+    const rec = recordObservation({
+      dir: process.env.AIR_HISTORY_DIR || resolve(dirname(OUT), 'air-history'),
+      scope: 'delhi',
+      now: CHECKED_UTC,
+      record: {
+        obs: worst.stamp.raw,
+        source: SERVED,
+        city: { aqi: worst.aqi, band: worst.band, governing: worst.governing, station: worst.station },
+        mean: cityMean,
+        above_limit: out.spread?.above_limit ?? null,
+        stations: withAqi.map((s) => ({ s: s.station, a: s.aqi, g: s.governing })),
+      },
+    });
+    console.log(`history: ${rec.action} ${worst.stamp.raw} in ${rec.file}`);
+  }
+} catch (e) {
+  console.warn(`history: could not record this check (${e.message}) — the fetch continues; `
+    + 'the current-state file outranks the store.');
+}
+
 if (!process.env.AIR_ALLOW_REGRESSION && existsSync(OUT)) {
   try {
-    const prev = JSON.parse(readFileSync(OUT, 'utf8'));
+    const prev = prevFile ?? JSON.parse(readFileSync(OUT, 'utf8'));
     const prevStamp = prev?.observed?.raw;
     const nextStamp = out?.observed?.raw;
     if (prevStamp && nextStamp && prevStamp !== nextStamp

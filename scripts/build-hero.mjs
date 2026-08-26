@@ -126,6 +126,30 @@ if (ob && (typeof ob.d !== 'number' || typeof ob.m !== 'number' || typeof ob.y !
   fail('air-delhi.json observed has no y / m / d — the hero stamps the observation date');
 }
 const airStamp = ob ? `${airHour} IST, ${ob.d} ${AIR_MON[ob.m - 1]} ${ob.y}` : '';
+/* AD-46 — THE SECOND CLOCK, PRINTED BESIDE THE FIRST. "Observed" is CPCB's
+   clock (when the air was measured); "last checked" is OURS (when this
+   build's fetch asked CPCB). Different clocks, different facts, and the
+   owner's brief requires both on the page. HONESTY CONSTRAINT: this page is
+   a build artefact, so "last checked" can only mean the check that produced
+   THIS page — a poll that finds nothing new normally commits nothing. The
+   heartbeat in air-hourly.yml bounds that gap at ~60 minutes, which is what
+   entitles the page to print the clause at all. Rendered in IST because it
+   sits inside an IST sentence; converted from the UTC instant by ADDING the
+   fixed IST offset to a UTC construction and reading UTC getters — never
+   through the builder's local timezone. */
+const airChecked = (() => {
+  const iso = AIR.time?.swechha_checked_utc;
+  const ms = iso ? Date.parse(iso) : AIR.fetched?.epochMs;
+  if (!Number.isFinite(ms)) {
+    fail('air-delhi.json has neither time.swechha_checked_utc nor fetched.epochMs — the hero states when Swechha last checked');
+    return '';
+  }
+  const d = new Date(ms + 19800000); // + IST offset, then UTC getters = IST wall clock
+  const hhmm = `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`;
+  const sameDay = ob && d.getUTCDate() === ob.d && d.getUTCMonth() + 1 === ob.m && d.getUTCFullYear() === ob.y;
+  return sameDay ? `${hhmm} IST`
+    : `${hhmm} IST, ${d.getUTCDate()} ${AIR_MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+})();
 
 /* ── YAMUNA. The station, by name, out of the source table. ──────────────── */
 const nizam = (YAM.stations || []).find((s) => /nizamuddin/i.test(s.station || ''));
@@ -175,7 +199,8 @@ const SLIDES = [
       [/(<span class="readout" data-committed=")[^"]*(" aria-hidden="true">)[^<]*(?:<span class="dp">\.<\/span>[^<]*)?(<\/span>)/,
         `$1${airAqi}$2${readout(airAqi)}$3`, 'readout, and the committed-value attribute beside it'],
       [/(<span class="s-hero-prov">)[^<]*(<\/span>)/,
-        `$1Observed ${airStamp}.$2`, 'provenance: the committed observation stamp'],
+        `$1Observed ${airStamp} &middot; last checked ${airChecked}.$2`,
+        'provenance: the observation stamp and when Swechha last checked — two clocks, both printed (AD-46)'],
       /* THE PROVENANCE MUST DESCRIBE THE NUMBER BESIDE IT — AD-42C.
          This line has now been wrong in two opposite directions. It read
          "CPCB continuous monitor, Anand Vihar" while the figure above it was

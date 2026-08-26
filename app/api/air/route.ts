@@ -136,6 +136,18 @@ export async function GET() {
     source: { name: 'Central Pollution Control Board', served_by: servedBy,
       ...(ladder && ladder.length ? { ladder } : {}) },
     fetchedAt: new Date().toISOString(),
+    /* AD-46 — THE TWO CLOCKS, NAMED. Unlike the committed pages this route
+       genuinely checks CPCB per request, so swechha_checked_utc here is the
+       real moment of THIS check, not the last build's. cpcb_observed_ist is
+       CPCB's own stamp — IST wall-clock text, never converted (here in the
+       "HH:MM IST, D Month YYYY" shape observedLabel() prints everywhere). */
+    time: {
+      cpcb_observed_ist: worst.observed,
+      swechha_checked_utc: new Date().toISOString(),
+      note: 'cpcb_observed_ist is when the air was measured (CPCB\u2019s clock, IST); '
+        + 'swechha_checked_utc is when this request asked CPCB (UTC). Different clocks, '
+        + 'different facts.',
+    },
     /* THE SUCCESS PATH IS CACHED AT THE EDGE (AD-27.6 clause 7, kept and
        re-justified by AD-27.6-A).
        Clause 7 was written to shrink the window between the committed reading
