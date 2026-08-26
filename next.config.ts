@@ -2,6 +2,7 @@ import type { NextConfig } from 'next'
 import { legacyRedirects, movedRedirects } from './redirects'
 import { designRoutes } from './design-routes'
 import { isIndexable } from './lib/org'
+import { analyticsRewrites } from './lib/analytics'
 
 const nextConfig: NextConfig = {
   async redirects() {
@@ -19,7 +20,18 @@ const nextConfig: NextConfig = {
    * alone, and why it is a bridge with a known expiry rather than the port.
    */
   async rewrites() {
-    return { beforeFiles: designRoutes(), afterFiles: [], fallback: [] }
+    /* THE TWO ANALYTICS RULES COME FIRST and are exact paths, so no
+       designRoutes() pattern can shadow them. They are what make the tracker
+       first-party: the browser asks THIS origin for `/record` and posts to
+       THIS origin at `/api/record`, and Vercel forwards both to the Umami
+       deployment. That is why the CSP below needs no allow-list entry — see
+       the inventory note in headers(). Remove this proxy and the policy has
+       to change. */
+    return {
+      beforeFiles: [...analyticsRewrites(), ...designRoutes()],
+      afterFiles: [],
+      fallback: [],
+    }
   },
   /**
    * A `robots.txt` is a request; `X-Robots-Tag` is the one a crawler that
@@ -84,9 +96,24 @@ const nextConfig: NextConfig = {
          header was written that inventory was eight `youtube-nocookie.com`
          embeds, a `fonts.googleapis.com` stylesheet and `fonts.gstatic.com`
          font files. AS OF 24 AUGUST 2026 THE FONTS ARE SELF-HOSTED, so the
-         inventory is the eight embeds and nothing else: no analytics, no tag
-         manager, no CDN script, no webfont host. If one is added, it is added
-         here too — which is the point of having the header at all. */
+         inventory is the eight embeds and nothing else: no tag manager, no
+         CDN script, no webfont host. If one is added, it is added here too —
+         which is the point of having the header at all.
+
+         ANALYTICS WAS ADDED ON 26 AUGUST 2026 AND DELIBERATELY DOES NOT
+         APPEAR IN THIS LIST. That is not an oversight and not an exemption.
+         The site runs its own Umami instance, and its tracker and collector
+         are proxied through this origin by the first two rules in `rewrites()`
+         above — the browser only ever sees `/record` and `/api/record` on
+         swechha.in, so both are first-party fetches. `script-src 'self'` and
+         `connect-src 'self'` therefore still describe the truth exactly, and
+         no third-party host was granted anything.
+
+         The consequence to remember: THE PROXY IS LOAD-BEARING FOR THIS
+         POLICY. If those rewrites are ever removed and the tag repointed at
+         `analytics.swechha.in` directly, this header must gain that host in
+         `script-src` and `connect-src` on the same commit, or every pageview
+         will be silently blocked by the browser. */
       {
         source: '/:path*',
         headers: [
