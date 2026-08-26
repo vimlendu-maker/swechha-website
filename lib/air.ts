@@ -630,25 +630,38 @@ function delhiFromCaaqmsXml(xml: string): Record<string, string>[] | null {
 export async function fetchDelhiLive(
   key: string,
   opts: { ca?: string } = {},
-): Promise<{ rows: Record<string, string>[]; servedBy: string }> {
+): Promise<{ rows: Record<string, string>[]; servedBy: string; ladder: string[] }> {
   const CAAQMS_SERVED = 'CPCB CAAQMS live feed (airquality.cpcb.gov.in/caaqms/rss_feed)';
+  /* WHY THE RUNG FAILURES ARE RECORDED, NOT SWALLOWED. On deploy day the
+     pinned rung failed on Vercel while passing everywhere it could be tested,
+     and the only observable fact was `served_by: mirror` — the ladder's
+     deliberate silence made the one environment that mattered undiagnosable.
+     Each entry is one rung's failure, redacted (no URLs, no keys), and rides
+     out on the routes' `source` block. A page about provenance can say why
+     its freshest source did not answer. */
+  const ladder: string[] = [];
+  const why = (e: unknown) =>
+    (e instanceof Error ? e.message : String(e)).replace(/api-key=[^&\s"']+/gi, 'api-key=REDACTED').slice(0, 200);
   try {
     const delhi = delhiFromCaaqmsXml(await caFetchText(CAAQMS_URL, { ca: opts.ca }));
-    if (delhi) return { rows: delhi, servedBy: CAAQMS_SERVED };
-  } catch {
-    // A rotted CA bundle, a timeout, a re-keyed host — all the same answer:
-    // try the next rung. Never an error response.
+    if (delhi) return { rows: delhi, servedBy: CAAQMS_SERVED, ladder };
+    ladder.push('caaqms+ca: answered but failed the gates (station count or per-station integrity)');
+  } catch (e) {
+    ladder.push(`caaqms+ca: ${why(e)}`);
   }
   try {
     const res = await fetch(CAAQMS_URL, { cache: 'no-store', signal: AbortSignal.timeout(12000) });
     if (res.ok) {
       const delhi = delhiFromCaaqmsXml(await res.text());
-      if (delhi) return { rows: delhi, servedBy: CAAQMS_SERVED };
+      if (delhi) return { rows: delhi, servedBy: CAAQMS_SERVED, ladder };
+      ladder.push('caaqms+fetch: answered but failed the gates');
+    } else {
+      ladder.push(`caaqms+fetch: HTTP ${res.status}`);
     }
-  } catch {
-    // TLS path-building, timeout, DNS — all the same answer: the mirror.
+  } catch (e) {
+    ladder.push(`caaqms+fetch: ${why(e)}`);
   }
-  return { rows: await fetchDelhi(key), servedBy: 'data.gov.in mirror (resource 3b01bcb8)' };
+  return { rows: await fetchDelhi(key), servedBy: 'data.gov.in mirror (resource 3b01bcb8)', ladder };
 }
 
 /** Great-circle distance in km. Used to say which monitor is nearest. */
