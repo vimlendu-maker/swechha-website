@@ -206,3 +206,33 @@ site, gate, and exit path on the air pipeline was re-read; findings:
 
 > **app.cpcbccr.com is model output in CPCB clothing.** Open-Meteo, US-AQI
 > scale. Never a source, never a cross-check.
+
+---
+
+## AD-45B — The clock only moves forward
+
+**26 August 2026, evening.** The first live fallback hour after AD-45 merged
+committed a **regression**: `was: 178 … 14:00 → now: 149 … 02:00`. CAAQMS was
+unreachable from the runner, the mirror answered with its twelve-hour-old
+observation, and the hourly job's only guard — *"did the rendered figure
+move?"* — is a difference test, not a direction test. With one source that
+distinction never mattered. With a fresh primary and a laggy fallback it fires
+on exactly the hours the fallback carries the fetch, and the site walks
+backward in time while every gate stays green.
+
+**The guard lives in the fetch scripts, not the workflow**, so every caller —
+hourly, daily, manual — passes through it: if the file on disk already holds a
+strictly newer observation than the one just fetched, the script keeps the
+file and exits 0. The previous reading standing is a success. An equal stamp
+still writes (CPCB revises within the hour). Field-wise stamp comparison,
+never Date parsing. `AIR_ALLOW_REGRESSION=1` is the human override, for test
+fixtures and for the one legitimate case — CPCB retracting an hour — which is
+a person's decision, not an unattended job's.
+
+**Known narrow gap, accepted:** the two air files guard independently, so a
+source dying between the two fetches inside one run could split the pair
+(delhi fresh, india held back). The situation-air build's same-hour gate
+refuses such a pair, so the failure is loud, not silent.
+
+> **"Did it change?" is not "did it improve?"** A difference test authorises
+> movement in both directions; data with a clock needs a direction test.

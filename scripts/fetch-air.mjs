@@ -45,7 +45,7 @@
  * mirror only when the live feed fails its gates. One run is served entirely
  * by ONE source, named in `source.served_by`; the two are never mixed.
  */
-import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fetchUpstream } from './lib/fetch-cpcb.mjs';
 import {
@@ -573,6 +573,38 @@ const out = {
     pollutants: s.pollutants, stamp: s.stamp,
   })),
 };
+
+
+/* ── THE CLOCK ONLY MOVES FORWARD — AD-45B ────────────────────────────────
+   On 26 August 2026 at 20:05 IST the hourly job replaced a committed 14:00
+   observation (CAAQMS, fresh) with a 02:00 one (mirror, twelve hours behind),
+   because the only guard was "did the figure MOVE" — a difference test, not
+   a direction test. With one source that distinction never mattered; with a
+   fresh primary and a laggy fallback it fires on exactly the hours the
+   fallback carries the fetch, and the site walks backward in time.
+
+   So the guard lives HERE, where every caller passes: if the file on disk
+   already holds a STRICTLY NEWER observation than the one just fetched, keep
+   the file and exit 0 — the previous reading standing is a success, not a
+   failure. An EQUAL stamp still writes (CPCB revises within an hour). The
+   comparison is field-wise on the IST wall-clock text, never Date parsing.
+
+   AIR_ALLOW_REGRESSION=1 bypasses it: for tests replaying old fixtures, and
+   for the one legitimate manual case — CPCB retracting an hour — which is a
+   human decision, not something an unattended job may decide. */
+if (!process.env.AIR_ALLOW_REGRESSION && existsSync(OUT)) {
+  try {
+    const prev = JSON.parse(readFileSync(OUT, 'utf8'));
+    const prevStamp = prev?.observed?.raw;
+    const nextStamp = out?.observed?.raw;
+    if (prevStamp && nextStamp && prevStamp !== nextStamp
+        && newerStamp(prevStamp, nextStamp) === 'a') {
+      console.log(`REFUSING TO WALK BACKWARD: the committed observation (${prevStamp}) is newer `
+        + `than the fetched one (${nextStamp}, ${out.source.served_by}). Keeping the file as it is.`);
+      process.exit(0);
+    }
+  } catch { /* an unreadable previous file must never block a fresh write */ }
+}
 
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, JSON.stringify(out, null, 2) + '\n');
