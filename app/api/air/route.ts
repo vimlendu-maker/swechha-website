@@ -33,6 +33,20 @@
 import { NextResponse } from 'next/server';
 import { fetchDelhiLive, foldStations, worstStation, cityMean, bandFor, selfCheck, AQI_LIMIT } from '@/lib/air';
 
+/* ── RUN THIS FUNCTION IN MUMBAI — A-44.12 ─────────────────────────────────
+   Vercel's default region is iad1 (US-East). From there, the production
+   ladder recorded `caaqms+ca: timed out after 12000ms` — twelve seconds of
+   pure silence from airquality.cpcb.gov.in, an Indian government host that
+   throttles or drops far-away cloud egress. The same request completes in
+   ~100ms from a machine near the source. bom1 puts the function next to BOTH
+   the data source and this site's actual readers. If the plan does not honor
+   preferredRegion, Vercel ignores it and the ladder's mirror fallback keeps
+   the route correct — this line can only help.
+   /api/ward/subscribe deliberately does NOT move: it writes to Neon, whose
+   region we have not pinned down, and its CPCB use (validating a station
+   name) is served fine by the mirror. */
+export const preferredRegion = 'bom1';
+export const maxDuration = 30;
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
