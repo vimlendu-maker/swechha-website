@@ -33,6 +33,7 @@
    `node scripts/…` sees no keys even when .env.local is full.
    ═══════════════════════════════════════════════════════════════════════════ */
 import { execFileSync } from 'node:child_process';
+import { fetchUpstream } from './lib/fetch-cpcb.mjs';
 
 const LIVE = process.argv.includes('--live');
 const GH = process.argv.includes('--github');
@@ -45,7 +46,10 @@ const KEYS = [
     probe: async (key) => {
       const u = 'https://api.data.gov.in/resource/3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69'
         + `?api-key=${encodeURIComponent(key)}&format=json&limit=1`;
-      const r = await fetch(u, { signal: AbortSignal.timeout(15000) });
+      /* Same transport the fetch scripts use (fetch-first, curl-fallback —
+         scripts/lib/fetch-cpcb.mjs). Probing on the transport that always
+         fails from this network would report a working key as broken. */
+      const r = await fetchUpstream(u, { timeoutMs: 15000 });
       if (!r.ok) return { ok: false, why: `HTTP ${r.status}` };
       const j = await r.json();
       /* data.gov.in answers 200 with an error body on a bad key, so the shape

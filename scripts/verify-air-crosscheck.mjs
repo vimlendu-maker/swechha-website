@@ -46,6 +46,7 @@
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
+import { fetchUpstream } from './lib/fetch-cpcb.mjs';
 
 /** Great-circle distance in km. Transcribed from lib/air.ts — the other
     generators transcribe rather than import across the .mjs/.ts boundary. */
@@ -93,7 +94,11 @@ const J = (p) => JSON.parse(readFileSync(p, 'utf8'));
 const BULLETIN = 'https://cpcb.nic.in/aqi_report.php';
 
 async function fetchBulletin() {
-  const res = await fetch(BULLETIN, { redirect: 'follow', signal: AbortSignal.timeout(60000) });
+  /* fetch-first, curl-fallback — scripts/lib/fetch-cpcb.mjs. cpcb.nic.in sits
+     behind the same class of unreliable transport as data.gov.in, and this is
+     the gate the whole verification rests on. Redirects are followed either
+     way (curl runs -L), so the 302 to the day's dated PDF still lands. */
+  const res = await fetchUpstream(BULLETIN, { timeoutMs: 60000 });
   if (!res.ok) throw new Error(`bulletin HTTP ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
   if (buf.subarray(0, 4).toString() !== '%PDF') throw new Error('bulletin is not a PDF');
