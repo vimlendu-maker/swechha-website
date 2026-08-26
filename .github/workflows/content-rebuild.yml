@@ -156,7 +156,15 @@ jobs:
         run: |
           git config user.name  'swechha-content-rebuild[bot]'
           git config user.email 'actions@github.com'
-          git add -A data public/_pages
+          # ★ design/ IS A BUILD OUTPUT TOO, AND LEAVING IT OUT BROKE EVERY PR.
+          # build-hero.mjs writes BOTH design/home.html (the source, comments
+          # intact) and public/_pages/v3/home.html (the shipped, stripped
+          # copy). Staging only the second left design/home.html stale after
+          # every automated run, so the "Generated pages are current" gate —
+          # which regenerates everything and fails if the tree moves — failed
+          # on the next pull request opened by anyone, for a change that
+          # touched none of it.
+          git add -A data public/_pages design
           if git diff --cached --quiet; then
             echo "Nothing staged after the rebuild — the edit needed no page change."
             exit 0
