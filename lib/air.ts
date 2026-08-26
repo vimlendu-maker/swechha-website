@@ -560,7 +560,7 @@ export function caaqmsIntegrity(
  */
 export function caFetchText(
   url: string,
-  { ca = CPCB_CAAQMS_CA, timeoutMs = 12000 }: { ca?: string; timeoutMs?: number } = {},
+  { ca = CPCB_CAAQMS_CA, timeoutMs = 9000 }: { ca?: string; timeoutMs?: number } = {},
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const u = new URL(url);
