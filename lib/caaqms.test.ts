@@ -172,6 +172,51 @@ describe('the per-station integrity gate — ±1 tolerance, 2% budget', () => {
     expect(integrityCheck([], {}).ok).toBe(false)
   })
 
+  /**
+   * Added by the AD-45 audit. A station can publish an <Air_Quality_Index>
+   * while every one of its channels reads NA (CPCB computed its Value over
+   * channels it then stopped serving). Our side then has NO numeric maximum
+   * to compare — that station must be NON-COMPARABLE, not a mismatch: a
+   * feed hiccup at one station must not eat the 2% budget as false drift.
+   */
+  it('skips a CPCB-scored station whose channels all arrived as NA — non-comparable, not a mismatch', () => {
+    const p = parseCaaqms('<AqIndex><Country id="India"><State id="S"><City id="C">'
+      + '<Station id="Ghost, C - PCB" lastupdate="26-08-2026 12:00:00" latitude="1" longitude="2">'
+      + '<Pollutant_Index id="PM2.5" Min="NA" Max="NA" Avg="NA"/>'
+      + '<Air_Quality_Index Value="120" Predominant_Parameter="PM2.5"/>'
+      + '</Station>'
+      + '<Station id="Real, C - PCB" lastupdate="26-08-2026 12:00:00" latitude="1" longitude="2">'
+      + '<Pollutant_Index id="PM10" Min="80" Max="160" Avg="140"/>'
+      + '<Air_Quality_Index Value="140" Predominant_Parameter="PM10"/>'
+      + '</Station></City></State></Country></AqIndex>')
+    const g = integrityCheck(p.rows, p.stationAqi)
+    expect(g.comparable).toBe(1)   // Ghost is skipped, Real is compared
+    expect(g.mismatched).toBe(0)
+    expect(g.ok).toBe(true)
+  })
+
+  it('both NA-only station shapes count toward stationCount, and neither invents a number', () => {
+    // The station-count gate reads stationCount rather than counting rows
+    // precisely because of these two shapes: a feed of present-but-empty
+    // stations is a thin-FEED question, not a parse question, and the gate
+    // must see the stations either way.
+    const p = parseCaaqms('<AqIndex><Country id="India"><State id="S"><City id="C">'
+      // Shape 1: channels present, every value NA — the row is preserved
+      // with the string "NA", never 0, and foldStations later drops it.
+      + '<Station id="Ghost, C - PCB" lastupdate="26-08-2026 12:00:00" latitude="1" longitude="2">'
+      + '<Pollutant_Index id="PM2.5" Min="NA" Max="NA" Avg="NA"/>'
+      + '</Station>'
+      // Shape 2: no <Pollutant_Index> children at all — counted, zero rows.
+      + '<Station id="Silent, C - PCB" lastupdate="26-08-2026 12:00:00" latitude="1" longitude="2">'
+      + '</Station></City></State></Country></AqIndex>')
+    expect(p.stationCount).toBe(2)
+    expect(p.rows).toHaveLength(1)
+    expect(p.rows[0].station).toBe('Ghost, C - PCB')
+    expect(p.rows[0].avg_value).toBe('NA')
+    // And the fold refuses to turn either into a reading.
+    expect(foldStations(p.rows)).toEqual([])
+  })
+
   it('assessCaaqms wires the gates together and names the failure kind', () => {
     expect(assessCaaqms(parseCaaqms(XML), { minStations: 60 }).ok).toBe(true)
     expect(assessCaaqms(parseCaaqms(XML), { minStations: 300 })).toMatchObject({ ok: false, kind: 'thin' })

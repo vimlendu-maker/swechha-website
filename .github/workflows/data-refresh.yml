@@ -102,6 +102,11 @@ jobs:
           DATA_GOV_IN_KEY: ${{ secrets.DATA_GOV_IN_KEY }}
           WAQI_TOKEN: ${{ secrets.WAQI_TOKEN }}
           FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
+          # The transport ladder's relay rung (AD-45): when this runner's
+          # egress to the CPCB-side hosts dies — measured 26 August 2026 —
+          # the CPCB fetches go through swechha.in/api/relay instead of
+          # failing the day's refresh.
+          AIR_RELAY_TOKEN: ${{ secrets.AIR_RELAY_TOKEN }}
         run: |
           # The eight groups as package.json defines them — the file lists live
           # there and are not restated here. Run individually rather than via
@@ -130,12 +135,44 @@ jobs:
       # A FAILURE HERE BLOCKS THE COMMIT. That is the point — the daily job is
       # exactly how the wrong numbers got published in the first place, one
       # automated commit at a time.
+      # ★ THE SCRIPT'S TWO FAILURE CODES MEAN TWO DIFFERENT THINGS, AND THIS
+      # STEP NOW TREATS THEM DIFFERENTLY (AD-45 audit). verify-air-crosscheck
+      # exits 1 when the gate RAN and our figures disagree with CPCB's own —
+      # that is our bug, and it hard-fails the run so nothing lands. It exits
+      # 2 when the gate COULD NOT RUN at all: the bulletin host unreachable
+      # from this runner (the same egress volatility AD-45 documents — the
+      # mirror died from these runners mid-afternoon on 26 August 2026 after
+      # days of clean fetches), or the PDF layout changed under the parser.
+      #
+      # A gate that cannot run must not silently pass — so on exit 2 the two
+      # air datasets it exists to verify are REVERTED (together, per the
+      # "together or not at all" rule) and today's air refresh is skipped:
+      # unverified air figures never land from this job. Everything else this
+      # run fetched still commits — one unreachable host does not block the
+      # other thirty datasets — and the miss is surfaced by name in the final
+      # report step, which marks the run failed the same way a failed fetch
+      # already does. The hourly air job is unaffected either way; it has its
+      # own gates and its own cadence.
       - name: Cross-check against CPCB's own bulletin
         env:
           WAQI_TOKEN: ${{ secrets.WAQI_TOKEN }}
+          AIR_RELAY_TOKEN: ${{ secrets.AIR_RELAY_TOKEN }}
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+          set +e
           npm run verify:crosscheck
+          code=$?
+          set -e
+          if [ "$code" = "2" ]; then
+            git checkout -- data/air-delhi.json data/air-india.json
+            echo "::warning::The bulletin cross-check could not RUN (exit 2). The two air datasets"\
+                 "were reverted so unverified figures cannot land; the rest of the refresh continues."
+            echo "CROSSCHECK_UNRUN=1" >> "$GITHUB_ENV"
+          elif [ "$code" != "0" ]; then
+            echo "::error::verify:crosscheck exited $code — the gate RAN and the published figures"\
+                 "disagree with CPCB's own. This is our bug; nothing is committed."
+            exit "$code"
+          fi
 
       - name: Discard timestamp-only churn, keep real changes
         id: changed
@@ -247,9 +284,15 @@ jobs:
       - name: Report what did not refresh
         if: always()
         run: |
+          bad=0
           if [ -n "${FETCH_FAILED:-}" ]; then
             echo "::error::These sources did not refresh:${FETCH_FAILED}"
             echo "Whatever else changed has been committed. Re-run, or check the source." >> "$GITHUB_STEP_SUMMARY"
-            exit 1
+            bad=1
           fi
-          echo "Every source answered."
+          if [ -n "${CROSSCHECK_UNRUN:-}" ]; then
+            echo "::error::The bulletin cross-check could not run, so today's air refresh was reverted, unverified."
+            echo "Air was reverted: the bulletin gate could not run (host unreachable or PDF layout changed)." >> "$GITHUB_STEP_SUMMARY"
+            bad=1
+          fi
+          [ "$bad" = "0" ] && echo "Every source answered." || exit 1

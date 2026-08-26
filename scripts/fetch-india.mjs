@@ -43,7 +43,7 @@
  * validated, an empty result is fatal, and a failed run leaves the previous
  * file alone.
  */
-import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fetchUpstream } from './lib/fetch-cpcb.mjs';
 import {
@@ -374,16 +374,30 @@ for (const s of stations.values()) {
    beside a PM2.5 of 13. The row stays; the doubt travels with it. */
 const GASES = new Set(['OZONE', 'CO', 'NO2', 'SO2', 'NH3']);
 for (const c of cities.values()) {
-  c.suspect = !!(GASES.has(c.governing) && c.worstAqi > AQI_LIMIT && c.pmSub >= 0 && c.pmSub < c.worstAqi / 2);
+  /* ★ pmSub < 0 IS ALSO SUSPECT — the AD-45 audit found AD-42E's E-4 branch
+     DEAD. E-4 rules that a gas-only station over the limit "keeps the gas
+     figure and stays flagged" — but suspicion used to REQUIRE a particulate
+     to compare against (`pmSub >= 0 && pmSub < worst/2`), so a station
+     reporting no particulate at all could never be flagged, and the
+     gas-only `else if (c.suspect)` below was unreachable. That published
+     unverifiable gas readings with no doubt attached, which is the opposite
+     of the ruling. A gas over the limit with NOTHING at the station to
+     corroborate it is not less suspect than one beside clean particulates —
+     it is the same claim with even less standing behind it. */
+  c.suspect = !!(GASES.has(c.governing) && c.worstAqi > AQI_LIMIT
+    && (c.pmSub < 0 || c.pmSub < c.worstAqi / 2));
   /* The reason is written BEFORE the fallback swaps c.governing, and it names
      both numbers — the one we rank on and the one we have set aside. A flag
      that hides the figure it is flagging is not a flag. */
-  c.suspectReason = c.suspect
-    ? `The ${c.governing} channel here reads ${c.worstAqi}, but the worst particulate at the `
-      + `same station reads only ${c.pmSub}, and no independent monitor is near enough to say `
-      + `which is right. This city is ranked on its particulates; the ${c.governing} figure `
-      + `of ${c.worstAqi} is published but not ranked.`
-    : null;
+  c.suspectReason = !c.suspect ? null
+    : (c.pmSub >= 0
+      ? `The ${c.governing} channel here reads ${c.worstAqi}, but the worst particulate at the `
+        + `same station reads only ${c.pmSub}, and no independent monitor is near enough to say `
+        + `which is right. This city is ranked on its particulates; the ${c.governing} figure `
+        + `of ${c.worstAqi} is published but not ranked.`
+      : `The ${c.governing} channel here reads ${c.worstAqi} and the station reports no `
+        + `particulate at all, so nothing at the station can corroborate it. The figure is `
+        + `published with that doubt attached — there is no particulate to rank on instead.`);
 
   /* ── A SUSPECT CITY IS RANKED ON ITS PARTICULATES — AD-42E ──────────────
      Owner's question: for a suspicious reading, can we just take PM2.5?
@@ -490,6 +504,38 @@ const out = {
   cities: ranked,
   fetched: { epochMs: Date.now() },
 };
+
+
+/* ── THE CLOCK ONLY MOVES FORWARD — AD-45B ────────────────────────────────
+   On 26 August 2026 at 20:05 IST the hourly job replaced a committed 14:00
+   observation (CAAQMS, fresh) with a 02:00 one (mirror, twelve hours behind),
+   because the only guard was "did the figure MOVE" — a difference test, not
+   a direction test. With one source that distinction never mattered; with a
+   fresh primary and a laggy fallback it fires on exactly the hours the
+   fallback carries the fetch, and the site walks backward in time.
+
+   So the guard lives HERE, where every caller passes: if the file on disk
+   already holds a STRICTLY NEWER observation than the one just fetched, keep
+   the file and exit 0 — the previous reading standing is a success, not a
+   failure. An EQUAL stamp still writes (CPCB revises within an hour). The
+   comparison is field-wise on the IST wall-clock text, never Date parsing.
+
+   AIR_ALLOW_REGRESSION=1 bypasses it: for tests replaying old fixtures, and
+   for the one legitimate manual case — CPCB retracting an hour — which is a
+   human decision, not something an unattended job may decide. */
+if (!process.env.AIR_ALLOW_REGRESSION && existsSync(OUT)) {
+  try {
+    const prev = JSON.parse(readFileSync(OUT, 'utf8'));
+    const prevStamp = prev?.observed;
+    const nextStamp = out?.observed;
+    if (prevStamp && nextStamp && prevStamp !== nextStamp
+        && newerStamp(prevStamp, nextStamp) === 'a') {
+      console.log(`REFUSING TO WALK BACKWARD: the committed observation (${prevStamp}) is newer `
+        + `than the fetched one (${nextStamp}, ${out.source.served_by}). Keeping the file as it is.`);
+      process.exit(0);
+    }
+  } catch { /* an unreadable previous file must never block a fresh write */ }
+}
 
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, JSON.stringify(out, null, 2) + '\n');
