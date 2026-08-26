@@ -102,6 +102,14 @@ jobs:
       - name: Read CPCB — the city reading and the national table, in one run
         env:
           DATA_GOV_IN_KEY: ${{ secrets.DATA_GOV_IN_KEY }}
+          # The transport ladder's third rung (AD-45): when this runner's own
+          # egress to the CPCB-side hosts dies — as it did mid-afternoon on
+          # 26 August 2026, after days of clean hourly fetches — the fetch is
+          # relayed through swechha.in/api/relay, which runs in Vercel Mumbai
+          # next to the sources. Without the token the rung skips itself and
+          # the ladder behaves exactly as before. Exit 75 now means direct
+          # fetch AND curl AND the relay were all silent.
+          AIR_RELAY_TOKEN: ${{ secrets.AIR_RELAY_TOKEN }}
         run: |
           if [ -z "${DATA_GOV_IN_KEY}" ]; then
             echo "::error::DATA_GOV_IN_KEY is not set. Nothing fetched, nothing committed."

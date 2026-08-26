@@ -243,4 +243,36 @@ describe('plausibility — a dead instrument is not a reading', () => {
     expect(anand.quality.suspect).toBe(false)
     expect(anand.quality.suspectReason).toBeNull()
   })
+
+  /**
+   * The Shivaji Nagar case above is every channel PERFECTLY frozen
+   * (min === max === avg). AD-42D widened "stuck" to the 2% relative test —
+   * so a station whose every channel jitters by a point, Leh-CO style, must
+   * ALSO produce no reading, not fall through to the least-stuck channel.
+   * Added by the AD-45 audit: nothing pinned the all-channels-NEAR-stuck
+   * station before, only the all-frozen one. (Synthetic rows, built from the
+   * measured Leh/Navi-Mumbai jitter shapes.)
+   */
+  it('gives no reading when every channel is stuck by the 2% rule, not merely frozen', () => {
+    const row = (pollutant_id: string, min: string, max: string, avg: string) => ({
+      station: 'All Stuck, Synthetic - TEST', pollutant_id,
+      min_value: min, max_value: max, avg_value: avg,
+      last_update: '26-08-2026 12:00:00', latitude: '28.6', longitude: '77.2',
+    })
+    const stations = foldStations([
+      row('CO', '187', '188', '188'),      // the Leh jitter, verbatim
+      row('PM2.5', '101', '103', '102'),   // the Navi Mumbai jitter
+      row('OZONE', '50', '50', '50'),      // perfectly frozen
+    ])
+    expect(stations.find((s) => s.station.startsWith('All Stuck'))).toBeUndefined()
+  })
+
+  it('a station whose channels are all NA produces no reading, never a zero', () => {
+    const na = (pollutant_id: string) => ({
+      station: 'All NA, Synthetic - TEST', pollutant_id,
+      min_value: 'NA', max_value: 'NA', avg_value: 'NA',
+      last_update: '26-08-2026 12:00:00', latitude: '28.6', longitude: '77.2',
+    })
+    expect(foldStations([na('PM2.5'), na('PM10'), na('CO')])).toEqual([])
+  })
 })
