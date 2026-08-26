@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { CPCB_CAAQMS_CA } from './cpcb-ca'
-import { caFetchText, fetchDelhiLive, CAAQMS_URL } from './air'
+import { caFetchText, fetchDelhiLive } from './air'
 
 /**
  * THE TRUST ANCHORS FOR CPCB's CAAQMS FEED — the AD-44 addendum.
@@ -10,23 +10,14 @@ import { caFetchText, fetchDelhiLive, CAAQMS_URL } from './air'
  * Vercel's undici rejects the host's cross-signed eMudhra intermediate, so
  * /api/air fell back to the ten-hour-stale mirror on its first deployed day —
  * exactly as A-44.7 predicted. The fix pins the chain the server itself
- * serves as explicit `ca` anchors for node:https (200 OK in 80ms measured
- * from a machine where plain fetch fails the same way Vercel does).
+ * serves as explicit `ca` anchors for node:https.
  *
- * Two facts these tests defend:
- *  1. The PEM a human regenerates (certs/) and the constant the route
- *     bundles (lib/cpcb-ca.ts) are THE SAME BYTES — the no-drift warranty
- *     for scripts/lib/regen-cpcb-ca.mjs.
- *  2. A CA-pinned failure of ANY kind is an ordinary fallback down the
- *     ladder (plain fetch, then the mirror), never an error — the rule that
- *     lets the committed bundle rot safely when CPCB re-keys.
+ * These tests defend two facts: the committed PEM and bundled constant do not
+ * drift, and a failure of the CA-pinned rung is an ordinary fallback rather
+ * than an error response.
  */
 
-/** Syntactically valid, definitely NOT the CA that signed CPCB's chain — a
-    throwaway self-signed cert (public; its key was written to /dev/null).
-    An UNPARSEABLE ca string will not do here: Node quietly ignores garbage
-    and falls back to default-store behaviour, which can differ by machine.
-    A valid-but-wrong anchor fails verification deterministically everywhere. */
+/** Syntactically valid, definitely NOT the CA that signed CPCB's chain. */
 const WRONG_CA = `-----BEGIN CERTIFICATE-----
 MIICwjCCAaoCCQD0BqmNgZn8lzANBgkqhkiG9w0BAQsFADAjMSEwHwYDVQQDDBhu
 b3QtdGhlLXJpZ2h0LWNhLmV4YW1wbGUwHhcNMjYwODI2MDcxNzQxWhcNMjYwODI4
@@ -59,18 +50,20 @@ describe('lib/cpcb-ca.ts vs certs/cpcb-caaqms-chain.pem — no drift', () => {
   })
 })
 
-describe('caFetchText — a bad trust anchor REJECTS, it never half-succeeds', () => {
-  it('rejects against a wrong CA (or against no network at all — either way, rejects)', async () => {
-    // On a networked machine this fails TLS verification against WRONG_CA;
-    // on an offline runner it fails at DNS. The contract under test is the
-    // same in both worlds: caFetchText throws and the caller falls back.
-    await expect(caFetchText(CAAQMS_URL, { ca: WRONG_CA, timeoutMs: 8000 })).rejects.toThrow()
-  }, 15000)
+describe('caFetchText failure contract', () => {
+  it('rejects promptly when HTTPS cannot connect', async () => {
+    // Keep CI deterministic. The old test depended on the public CPCB host
+    // rejecting a deliberately wrong CA; on one runner the TLS/DNS path hung
+    // long enough to exceed Vitest's timeout. A closed loopback port exercises
+    // the same contract — caFetchText rejects and callers can fall back — with
+    // no dependency on external network timing.
+    await expect(caFetchText('https://127.0.0.1:1/', { ca: WRONG_CA, timeoutMs: 1000 })).rejects.toThrow()
+  }, 5000)
 })
 
 describe('fetchDelhiLive — every rung of the ladder is an ordinary fallback', () => {
   it('serves the mirror, and SAYS so, when both CAAQMS rungs fail', async () => {
-    // Rung 1: CA-pinned, forced to fail with the wrong anchor (or no network).
+    // Rung 1: CA-pinned, forced to fail with the wrong anchor.
     // Rung 2: plain fetch to CAAQMS, stubbed to fail the way undici does.
     // Rung 3: the mirror, stubbed with one real-shaped row.
     vi.stubGlobal('fetch', vi.fn(async (url: string | URL) => {
