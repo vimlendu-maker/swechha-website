@@ -25,7 +25,7 @@
  * identifier, sets no cookie, and logs nothing about who asked.
  */
 import { NextResponse } from 'next/server';
-import { fetchDelhi, foldStations, selfCheck, km, AQI_LIMIT } from '@/lib/air';
+import { fetchDelhiLive, foldStations, selfCheck, km, AQI_LIMIT } from '@/lib/air';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -45,9 +45,17 @@ export async function GET() {
     );
   }
 
-  let stations;
+  /* CAAQMS FIRST, MIRROR FALLBACK — AD-44 addendum. This route is the one a
+     reader consults to find THEIR monitor, so freshness matters here most of
+     all: the mirror lags CPCB by up to ten measured hours. fetchDelhiLive
+     climbs the same ladder as /api/air (CA-pinned CAAQMS, plain-fetch CAAQMS,
+     then the mirror) and the rows come back in the identical shape, so
+     nothing below this line changed. */
+  let stations, servedBy;
   try {
-    stations = foldStations(await fetchDelhi(key));
+    const live = await fetchDelhiLive(key);
+    stations = foldStations(live.rows);
+    servedBy = live.servedBy;
   } catch (e) {
     // NULL, NEVER AN EMPTY LIST. An empty list would render as "no monitors".
     return NextResponse.json(
@@ -104,6 +112,9 @@ export async function GET() {
       + 'point on the ground from an official source. This page asks which monitor instead — which is '
       + 'also the better question, since two Delhi monitors 3.9 km apart read 225 and 72.',
     stations: enriched,
+    /* Which source ACTUALLY answered — the CAAQMS live feed normally, the
+       data.gov.in mirror when the feed failed its gates or its TLS. */
+    source: { name: 'Central Pollution Control Board', served_by: servedBy },
     fetchedAt: new Date().toISOString(),
   }, { headers: { 'Cache-Control': 'no-store' } });
 }

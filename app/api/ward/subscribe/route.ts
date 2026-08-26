@@ -16,7 +16,7 @@
  * this page could do, and it is exactly what a "coming soon" form does.
  */
 import { NextResponse } from 'next/server';
-import { fetchDelhi, foldStations, selfCheck } from '@/lib/air';
+import { fetchDelhiLive, foldStations, selfCheck } from '@/lib/air';
 import { config, normaliseEmail, subscribe, send, confirmMail } from '@/lib/subscriptions';
 import { checkRateLimit, RATE_LIMITED_REASON } from '@/lib/rate-limit';
 
@@ -76,7 +76,11 @@ export async function POST(req: Request) {
 
   let known: Set<string>;
   try {
-    known = new Set(foldStations(await fetchDelhi(key)).map((s) => s.station));
+    /* CAAQMS first, mirror fallback (AD-44 addendum) — the station-name
+       universe should come from the freshest copy of the same feed the
+       alert job reads, so a monitor CPCB added this morning is
+       subscribable this morning. Same rows shape; nothing else changed. */
+    known = new Set(foldStations((await fetchDelhiLive(key)).rows).map((s) => s.station));
   } catch (e) {
     // Upstream down. Do NOT store an unverified station; ask them to retry.
     return json({ ok: false, state: 'upstream_down',

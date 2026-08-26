@@ -41,6 +41,9 @@
  * `worstStation()` / `cityMean()` return null rather than 0 for an empty list.
  */
 
+import { request as httpsRequest } from 'node:https';
+import { CPCB_CAAQMS_CA } from './cpcb-ca';
+
 export const AQI_LIMIT = 100; // AQI 100 IS the NAAQS 24-hour standard.
 
 export const BANDS: { name: string; idx: [number, number] }[] = [
@@ -536,38 +539,111 @@ export function caaqmsIntegrity(
 }
 
 /**
- * The LIVE route's fetch: CAAQMS first, mirror fallback — AD-44.
+ * GET a URL over node:https with EXPLICIT trust anchors — the AD-44 addendum.
  *
- * WHY THE ROUTE NEEDED THIS. It used to fetch only the mirror, which lags up
- * to ten hours — so it could confidently serve a 02:00 observation while the
- * committed page showed 12:00, and the chip-confirm logic (which flips
- * PERIODIC to LIVE only when route and page agree within two hours) could
- * never confirm a fresh page against a stale route.
+ * WHY THIS EXISTS. AD-44's A-44.7 predicted that Vercel's undici might reject
+ * this host's cross-signed eMudhra intermediate, and on 26 August 2026 it did
+ * exactly that: /api/air's plain-fetch CAAQMS attempt failed on Vercel and
+ * the route honestly served the ten-hour-stale mirror. Vercel has no curl to
+ * fall back to — but node:https accepts a `ca` option, and handing it the
+ * chain the server itself serves (committed at certs/cpcb-caaqms-chain.pem,
+ * embedded as lib/cpcb-ca.ts so the function bundle carries it without
+ * depending on output file tracing) validates cleanly: measured 200 OK in
+ * 80ms from a machine where plain fetch fails the same way Vercel does.
  *
- * ★ A CERT FAILURE IS AN ORDINARY FALLBACK. This host's TLS chain breaks
- * undici path-building on some machines (see the CAAQMS block header). Native
- * fetch is wrapped so ANY failure — TLS, timeout, HTTP, a parse that fails
- * its gates — falls back to `fetchDelhi(key)` exactly as the route behaved
- * before. Only both sources failing throws, into the route's existing
- * fail() path.
+ * ★ ANY FAILURE HERE MUST STAY AN ORDINARY FALLBACK. The pinned bundle can
+ * rot — CPCB re-keys under a different CA, the chain changes shape, the
+ * request times out. Whatever the reason, this throws and the caller moves
+ * down its ladder (plain fetch, then the mirror); it must never surface as
+ * an error response. certs/README.md carries the expiry table and the
+ * regeneration command.
+ */
+export function caFetchText(
+  url: string,
+  { ca = CPCB_CAAQMS_CA, timeoutMs = 12000 }: { ca?: string; timeoutMs?: number } = {},
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const u = new URL(url);
+    const req = httpsRequest({
+      host: u.hostname,
+      path: u.pathname + u.search,
+      method: 'GET',
+      ca,
+      servername: u.hostname,
+      timeout: timeoutMs,
+    }, (res) => {
+      if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
+        res.resume();
+        reject(new Error(`HTTP ${res.statusCode}`));
+        return;
+      }
+      const chunks: Buffer[] = [];
+      res.on('data', (c: Buffer) => chunks.push(c));
+      res.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+      res.on('error', reject);
+    });
+    req.on('timeout', () => req.destroy(new Error(`timed out after ${timeoutMs}ms`)));
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+/** The CAAQMS gates the routes apply — same bar as the fetch scripts:
+    ≥300 stations nationally, the per-station integrity check, ≥35 in Delhi.
+    Returns the Delhi rows, or null when any gate fails. */
+function delhiFromCaaqmsXml(xml: string): Record<string, string>[] | null {
+  const parsed = parseCaaqmsXml(xml);
+  if (parsed.stationCount < 300) return null;
+  if (!caaqmsIntegrity(parsed.rows, parsed.stationAqi).ok) return null;
+  const delhi = parsed.rows.filter((r) => r.city === 'Delhi');
+  if (new Set(delhi.map((r) => r.station)).size < 35) return null;
+  return delhi;
+}
+
+/**
+ * The LIVE routes' fetch: CAAQMS first, mirror fallback — AD-44, plus the
+ * CA-pin addendum.
  *
- * Gates before trusting CAAQMS: ≥300 stations parsed nationally, ≥35 in
- * Delhi, and the per-station integrity check — the same bar the fetch
- * scripts apply.
+ * WHY THE ROUTES NEEDED THIS. They used to fetch only the mirror, which lags
+ * up to ten hours — so /api/air could confidently serve a 02:00 observation
+ * while the committed page showed 12:00, and the chip-confirm logic (which
+ * flips PERIODIC to LIVE only when route and page agree within two hours)
+ * could never confirm a fresh page against a stale route.
+ *
+ * THE LADDER, in order, each rung an ordinary fallback to the next:
+ *   1. CAAQMS over node:https with the committed trust anchors (caFetchText)
+ *      — the rung that works on Vercel, where undici rejects the host's
+ *      cross-signed chain and there is no curl. Measured 80ms.
+ *   2. CAAQMS over plain fetch — free to try, and the day CPCB serves a
+ *      chain undici accepts, this rung starts winning even if the pinned
+ *      bundle has rotted.
+ *   3. The data.gov.in mirror (`fetchDelhi`) — exactly the pre-AD-44 route
+ *      behaviour, up to ten hours stale but never wrong.
+ * Both CAAQMS rungs pass the same gates (≥300 stations nationally, ≥35 in
+ * Delhi, per-station integrity); a gate failure walks down the ladder like
+ * any other failure. Only rung 3 throwing propagates, into the routes'
+ * existing fail() paths.
+ *
+ * `servedBy` names the SOURCE that answered, not the transport — both CAAQMS
+ * rungs read the same publication.
  */
 export async function fetchDelhiLive(
   key: string,
+  opts: { ca?: string } = {},
 ): Promise<{ rows: Record<string, string>[]; servedBy: string }> {
+  const CAAQMS_SERVED = 'CPCB CAAQMS live feed (airquality.cpcb.gov.in/caaqms/rss_feed)';
+  try {
+    const delhi = delhiFromCaaqmsXml(await caFetchText(CAAQMS_URL, { ca: opts.ca }));
+    if (delhi) return { rows: delhi, servedBy: CAAQMS_SERVED };
+  } catch {
+    // A rotted CA bundle, a timeout, a re-keyed host — all the same answer:
+    // try the next rung. Never an error response.
+  }
   try {
     const res = await fetch(CAAQMS_URL, { cache: 'no-store', signal: AbortSignal.timeout(12000) });
     if (res.ok) {
-      const parsed = parseCaaqmsXml(await res.text());
-      if (parsed.stationCount >= 300 && caaqmsIntegrity(parsed.rows, parsed.stationAqi).ok) {
-        const delhi = parsed.rows.filter((r) => r.city === 'Delhi');
-        if (new Set(delhi.map((r) => r.station)).size >= 35) {
-          return { rows: delhi, servedBy: 'CPCB CAAQMS live feed (airquality.cpcb.gov.in/caaqms/rss_feed)' };
-        }
-      }
+      const delhi = delhiFromCaaqmsXml(await res.text());
+      if (delhi) return { rows: delhi, servedBy: CAAQMS_SERVED };
     }
   } catch {
     // TLS path-building, timeout, DNS — all the same answer: the mirror.
