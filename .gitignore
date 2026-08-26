@@ -23,6 +23,12 @@
 # misc
 .DS_Store
 *.pem
+# EXCEPTION: certs/cpcb-caaqms-chain.pem is PUBLIC certificates (CPCB's TLS
+# chain — trust anchors, not keys; see certs/README.md). The *.pem rule above
+# exists for private keys and silently swallowed this file out of the commit
+# that introduced it, which shipped a test reading a file that was not there.
+# A negation is the only way a regeneration cannot silently drop it again.
+!certs/cpcb-caaqms-chain.pem
 
 # debug
 npm-debug.log*
