@@ -387,6 +387,23 @@ export const citeBlock = (id) => {
 /** Read a committed dataset. */
 export const J = (f) => JSON.parse(readFileSync(join(DATA, f), 'utf8'));
 
+/* THE ANALYTICS TAG, built from the same data/analytics.json that
+   lib/analytics.ts reads. Node ESM cannot import a .ts module, so the string is
+   constructed in both places rather than shared — and verify-seo.mjs asserts
+   every built page carries exactly this tag, so the two cannot drift silently.
+
+   SAME-ORIGIN BY DESIGN, AND THAT IS LOAD-BEARING. `/record` is rewritten to
+   the Umami deployment by next.config.ts, which is the only reason the CSP
+   still says `script-src 'self'` and needs no allow-list entry. Never make this
+   an absolute URL: the tag would be blocked in production and the policy would
+   have to be widened to admit a third-party host.
+
+   `/record` has no `.js` because Umami v3 uses TRACKER_SCRIPT_NAME verbatim. */
+export const TRACKER = (() => {
+  const a = J('analytics.json');
+  return `<script defer src="${a.scriptPath}" data-website-id="${a.websiteId}"></script>`;
+})();
+
 /* ═══ THE EXTRACTOR ══════════════════════════════════════════════════════ */
 
 export function extractor(sourcePath) {
@@ -2367,6 +2384,7 @@ export async function assemble({ file, title, desc = null, bands, sectionFor, in
 <link rel="canonical" href="${attr(abs(canonical))}">${fam ? `\n<link rel="license" href="${attr(LICENCE_URL)}">` : ''}
 ${headTags(title, description, canonical, ogType)}
 ${headExtra ? `${headExtra}\n` : ''}${sh.HEAD_FONTS}
+${TRACKER}
 <style>
 ${stripCssComments([sh.CSS, sh.SITUATION_CSS, SHARED_PAGE_CSS, pageCss].join('\n'))}</style>
 </head>

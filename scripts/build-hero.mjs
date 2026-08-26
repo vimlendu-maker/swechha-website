@@ -777,14 +777,40 @@ for (const [re, what] of [
   }
 }
 
+/* THE ANALYTICS TAG GOES INTO THE SHIPPED ARTEFACT ONLY, AND ONLY HERE.
+   It has to be added AFTER the tag-count guard above: that guard compares
+   `<script>` counts between the source and the ship and refuses to write when
+   they differ, so injecting any earlier would abort the build with a message
+   about a truncating `</script>` that has nothing to do with the real cause.
+
+   The source `design/home.html` deliberately does NOT carry the tag. It is the
+   hand-edited file, and a tag added there would be re-injected on every run and
+   accumulate. This page is the one file whose head no shared shell writes —
+   `situation-shell.mjs`'s TRACKER reaches the other 37 pages through
+   `assemble()`, and this is the fifth insertion point that fact implies. */
+/* ANCHORED ON `<body>`, NOT `</head>`, because this document HAS no `</head>`
+   — the closing tag is optional in HTML5 and the page never writes one, so the
+   obvious anchor silently matches nothing. Matched at the start of a line so
+   the several `<body>` mentions inside the page's own JS comments cannot be
+   hit; `String.replace` with a string pattern takes the first match, and the
+   real tag is the first line-initial one. */
+const shipped = ship.replace('\n<body>', `\n${S.TRACKER}\n<body>`);
+if (shipped === ship) {
+  console.error('\nREFUSING TO WRITE: no line-initial <body> found in the shipped homepage, '
+    + 'so the analytics tag could not be inserted. The page would ship uncounted '
+    + 'while every other page reported, and verify:seo would fail on / alone. '
+    + 'Check what shipDocument() did to the document head.');
+  process.exit(1);
+}
+
 if (CHECK) {
   console.log(`\n--check: ${changed} slide(s) would change. Nothing written.`);
   console.log(`  the shipped page would be ${ship.length.toLocaleString('en-IN')} bytes, `
     + `down from the source's ${src.length.toLocaleString('en-IN')}.`);
 } else {
-  stampLastmod('/', ship);
+  stampLastmod('/', shipped);
   writeFileSync(HOME, src);
-  writeFileSync(SHIP, ship);
+  writeFileSync(SHIP, shipped);
   console.log(`\n${changed} slide(s) updated, ${linesAfter} lines, line count unchanged. All checks pass.`);
   console.log(`  source  design/home.html            ${src.length.toLocaleString('en-IN')} bytes, comments intact`);
   console.log(`  shipped public/_pages/v3/home.html  ${ship.length.toLocaleString('en-IN')} bytes, AD-28 clean`);

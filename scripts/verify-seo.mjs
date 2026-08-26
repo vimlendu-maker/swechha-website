@@ -8,6 +8,10 @@ import { join } from 'node:path';
 import { seo, ROUTES } from './lib/seo-register.mjs';
 
 const V3 = 'public/_pages/v3';
+/* Same file the generators read (situation-shell.mjs's TRACKER) and the same
+   one lib/analytics.ts reads, so the id cannot drift between what is emitted
+   and what is checked. */
+const A = JSON.parse(readFileSync('data/analytics.json', 'utf8'));
 const walk = (d) => readdirSync(d).flatMap((f) => {
   const p = join(d, f);
   return statSync(p).isDirectory() ? walk(p) : (p.endsWith('.html') ? [p] : []);
@@ -154,6 +158,24 @@ const CHECKS = [
       const has = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
         .some((m) => { try { return JSON.parse(m[1])['@type'] === 'BreadcrumbList'; } catch { return false; } });
       return has ? null : 'no BreadcrumbList';
+    },
+  },
+  {
+    /* PHASE 1 ANALYTICS. The tag is the only thing that makes a page
+       countable, and a page that loses it is INVISIBLE rather than broken —
+       the dashboard just shows a number that is quietly too low, with nothing
+       anywhere saying why. That is why this is a build failure and not a
+       warning, and why it asserts the exact string rather than merely the
+       presence of a script: a stale website id would sail through a looser
+       check and send every pageview into a website record that does not
+       exist. */
+    name: 'carries the analytics tracker',
+    run: ({ html }) => {
+      const want = `<script defer src="${A.scriptPath}" data-website-id="${A.websiteId}"></script>`;
+      if (html.includes(want)) return null;
+      return html.includes(A.scriptPath)
+        ? 'tracker present but does not match data/analytics.json exactly (stale website id?)'
+        : 'no tracker tag — this page would be uncounted';
     },
   },
 ];
