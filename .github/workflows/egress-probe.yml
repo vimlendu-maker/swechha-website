@@ -1,0 +1,43 @@
+# EGRESS PROBE — measure, from the runner itself, which CPCB hosts answer.
+#
+# WHY THIS EXISTS. On 26 August 2026 one hourly run recorded the live feed
+# (airquality.cpcb.gov.in) as unreachable from GitHub's runners — but the SAME
+# step also failed to reach api.data.gov.in, a host every previous hourly run
+# had fetched without trouble. One sample with a shared failure is evidence of
+# a runner-local brownout, not of a firewall. This workflow separates the two:
+# several attempts, both hosts, a control host, timings printed.
+#
+# No secrets are used: both endpoints are probed with HEAD/ranged GETs that
+# need no key. Manual dispatch only; it commits nothing.
+name: Egress probe — can this runner reach CPCB?
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Probe each host several times
+        run: |
+          probe () {
+            url="$1"; label="$2"
+            for i in 1 2 3; do
+              out=$(curl -s -4 -o /dev/null --max-time 30 --connect-timeout 20 \
+                -w "connect=%{time_connect}s ttfb=%{time_starttransfer}s total=%{time_total}s http=%{http_code} size=%{size_download}" \
+                "$url" 2>&1) && ok=ok || ok=FAIL
+              echo "$label #$i  $ok  $out"
+            done
+          }
+          echo "== control: a host that must always work =="
+          probe "https://api.github.com/zen" "github "
+          echo "== the live feed =="
+          probe "https://airquality.cpcb.gov.in/caaqms/rss_feed" "caaqms "
+          echo "== the mirror (keyless probe; 4xx is fine, CONNECT is the question) =="
+          probe "https://api.data.gov.in/resource/3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69?format=json&limit=1" "mirror "
+          echo "== the bulletin host =="
+          probe "https://cpcb.nic.in/aqi_report.php" "bulletin"
