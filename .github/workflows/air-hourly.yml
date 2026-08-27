@@ -1,9 +1,13 @@
 name: Air, every 15 minutes — live poll and timestamp
 
 # Sole publisher of committed Air data. A run has three explicit outcomes:
-# SUCCESS: fetch/build/commit/push completed and the website can receive fresh data.
-# UPSTREAM_UNAVAILABLE: all Air sources were silent/unusable; no stale data is published.
+# SUCCESS: Delhi fetch/build/commit/push completed.
+# UPSTREAM_UNAVAILABLE: Delhi sources were silent/unusable; previous data is preserved.
 # PIPELINE_FAILURE: a real workflow/build/push error turns the run red.
+#
+# IMPORTANT: this 15-minute heartbeat intentionally fetches DELHI ONLY.
+# The national table is much larger and has its own workflow/cadence. A failure
+# in the national fetch must never block Delhi's visible AQI or last-checked time.
 on:
   schedule:
     - cron: '4 * * * *'
@@ -46,7 +50,7 @@ jobs:
       - name: Install dependencies
         run: npm ci --omit=dev
 
-      - name: Fetch Delhi and India air data
+      - name: Fetch Delhi air data
         id: fetch
         env:
           DATA_GOV_IN_KEY: ${{ secrets.DATA_GOV_IN_KEY }}
@@ -59,53 +63,50 @@ jobs:
           fi
 
           set +e
-          npm run data:air
+          npm run data:air:delhi
           code=$?
           set -e
 
           if [ "$code" = "0" ]; then
             echo "state=success" >> "$GITHUB_OUTPUT"
-            echo "::notice::Air sources returned usable data."
+            echo "::notice::Delhi Air sources returned usable data."
             exit 0
           fi
 
           if [ "$code" = "75" ]; then
             echo "state=upstream_unavailable" >> "$GITHUB_OUTPUT"
-            echo "::warning::All Air sources were silent, rate-limited, or returned no usable data. Previous committed data is intentionally preserved."
+            echo "::warning::Delhi Air sources were silent, rate-limited, or returned no usable data. Previous committed data is intentionally preserved."
             exit 0
           fi
 
           echo "state=pipeline_failure" >> "$GITHUB_OUTPUT"
-          echo "::error::npm run data:air failed with exit code $code."
+          echo "::error::Delhi fetch failed with exit code $code."
           exit "$code"
 
       - name: Report upstream unavailable
         if: steps.fetch.outputs.state == 'upstream_unavailable'
         run: |
           echo "## Air poll: upstream unavailable" >> "$GITHUB_STEP_SUMMARY"
-          echo "No new usable Air reading was obtained, so nothing was rebuilt or published." >> "$GITHUB_STEP_SUMMARY"
+          echo "No new usable Delhi Air reading was obtained, so nothing was rebuilt or published." >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Rebuild pages after successful poll
+      - name: Rebuild Air pages after successful Delhi poll
         if: steps.fetch.outputs.state == 'success'
         run: |
           set -euo pipefail
-          npm run build:situations
+          npm run build:situation-air
           npm run build:hero
-          for t in work about impact farm act stories publications search essays; do
-            npm run "build:$t"
-          done
           npm run verify:final
 
-      - name: Commit and push successful poll
+      - name: Commit and push successful Delhi poll
         if: steps.fetch.outputs.state == 'success' && (github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true')
         run: |
           set -euo pipefail
           git config user.name 'swechha-air-hourly[bot]'
           git config user.email 'actions@github.com'
-          git add -A data public/_pages design
+          git add data/air-delhi.json data/air-history.ndjson public/_pages/v3/situation-air.html public/_pages/v3/home.html design/home.html
 
           if git diff --cached --quiet; then
-            echo "::error::Successful Air poll produced no staged changes. The fetch pipeline must update the checked timestamp or data on every successful poll."
+            echo "::error::Successful Delhi Air poll produced no staged changes. The fetch pipeline must update the checked timestamp or data on every successful poll."
             exit 1
           fi
 
@@ -113,9 +114,6 @@ jobs:
           checked=$(node -p 'JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).time?.swechha_checked_utc ?? JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).fetched?.epochMs ?? "unknown"')
           git commit -m "data(air): checked — AQI ${aqi}, checked ${checked}"
 
-          # A concurrent content commit can land while this poll is running.
-          # Rebase normally and retry push; never force an arbitrary --ours
-          # resolution that could overwrite another workflow's changes.
           for attempt in 1 2 3; do
             git fetch origin main
             if git rebase origin/main; then
@@ -135,7 +133,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' && steps.fetch.outputs.state == 'success'
         run: |
           echo "## Air poll dry run succeeded" >> "$GITHUB_STEP_SUMMARY"
-          echo "Usable data was fetched and pages rebuilt, but nothing was committed or pushed." >> "$GITHUB_STEP_SUMMARY"
+          echo "Usable Delhi data was fetched and Air pages rebuilt, but nothing was committed or pushed." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Final outcome summary
         if: always()
