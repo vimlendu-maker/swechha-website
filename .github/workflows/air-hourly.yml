@@ -86,7 +86,7 @@ jobs:
           set -euo pipefail
           git config user.name 'swechha-bot[bot]'
           git config user.email 'actions@github.com'
-          git add -A data/ public/_pages/ design/
+          git add -A data public/_pages design
           if git diff --cached --quiet; then
             echo "No data changes generated."
             exit 0
@@ -96,7 +96,6 @@ jobs:
             console.log(`data(air): checked — AQI ${d.city_reading?.aqi ?? "N/A"}, observed ${d.time?.cpcb_observed_ist ?? "unknown"}`);
           ')"
           
-          # Pull latest remote changes and automatically accept fresh build files on conflict
           git fetch origin main
           git rebase origin/main -X ours || (git checkout --ours . && git add -A && git rebase --continue)
           git push origin main
