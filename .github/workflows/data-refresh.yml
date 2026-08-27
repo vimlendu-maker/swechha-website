@@ -1,51 +1,25 @@
 name: Data refresh — the situations re-read their sources
 
 # WHY THIS EXISTS
-# Air is the only situation with a runtime feed: /api/air fetches CPCB per
-# request, so the hero, the ticker, /now and /now/air are already live and
-# nothing about air is hardcoded. The other five build from committed datasets
-# in data/, and until now those only moved when somebody ran `npm run data:*`
-# by hand and remembered to rebuild the pages afterwards.
+# Air is deliberately NOT fetched here. `.github/workflows/air-hourly.yml` is
+# the sole owner of the Air datasets and its generated Air pages. Keeping a
+# second workflow out of that path prevents stale daily data from racing a
+# fresher 15-minute Air update and then rebuilding the site from the older copy.
 #
-# This is the "or whenever the data changes in the backend" half of that: it
-# re-reads every source on a schedule, and if a figure actually moved it
-# rebuilds the affected pages and commits. Vercel deploys the commit. No human
-# is in the loop, and no page can go out of step with the dataset under it,
-# because the same run does both.
+# The other situations build from committed datasets in data/, and this job
+# re-reads those sources on the daily schedule. If a figure actually moved it
+# rebuilds the affected pages and commits. Vercel deploys the commit.
 #
-# ★ IT COMMITS FIGURES, NOT CLOCKS.
-# Every fetch script stamps `fetched: { epochMs }`, so a naive job would commit
-# all 30-odd datasets every single day and the history would be unreadable.
-# scripts/data-refresh-changed.mjs reverts the files whose only change is that
-# stamp. A quiet day produces NO commit at all.
-#
-# ★ A FAILED GATE IS NEVER COMMITTED.
-# The page generators validate what they read and refuse to write on a failed
-# check. They run BEFORE the commit step, so a dataset that would produce a
-# wrong page fails the run and lands nothing. That is the whole reason the
-# rebuild lives in this job rather than being left to the next deploy.
-#
-# ★ ONE FLAKY SOURCE DOES NOT BLOCK THE OTHERS.
-# The eight fetch groups run independently rather than as one && chain, so
-# NASA being down does not cost you the CPCB refresh. Failures are collected
-# and the run is marked failed at the END — after the data that did arrive has
-# been committed.
+# ★ ONE FLAKY SOURCE DOES NOT BLOCK THE OTHERS. The fetch groups run
+# independently, and failures are collected and reported at the end.
 #
 # SECRETS IT NEEDS (Settings → Secrets and variables → Actions):
-#   DATA_GOV_IN_KEY   CPCB, via data.gov.in        — air, coverage
+#   DATA_GOV_IN_KEY   CPCB, via data.gov.in        — coverage/non-air sources
 #   WAQI_TOKEN        aqicn.org                    — the air cross-check
 #   FIRMS_MAP_KEY     NASA FIRMS                   — fire detections
-# Missing keys are reported by name at the start of the run. The affected
-# fetches then fail and are skipped; everything else still refreshes.
 
 on:
   schedule:
-    # Daily, 01:40 UTC = 07:10 IST. Off the hour on purpose, like the ward job.
-    # DAILY, NOT HOURLY, and that is proportionate rather than lazy: of these
-    # sources the fastest-moving is FIRMS, whose near-real-time product is a
-    # rolling 5-day window, and the slowest are annual publications — ISFR
-    # 2023, NCRB 2024, CPCB's yearly compilation. Hourly would re-download
-    # annual datasets 24 times a day to write the same number back.
     - cron: '40 1 * * *'
   workflow_dispatch:
     inputs:
@@ -55,12 +29,10 @@ on:
         default: true
 
 concurrency:
-  # Two overlapping runs would both rebuild and both try to push.
   group: data-refresh
   cancel-in-progress: false
 
 permissions:
-  # Needed to push the refreshed data and the rebuilt pages.
   contents: write
 
 jobs:
@@ -75,10 +47,6 @@ jobs:
           node-version: '22'
           cache: npm
 
-      # The fetch scripts and the page generators use node built-ins only, so
-      # dev dependencies are not needed. The test suite is not run here: nothing
-      # in this job changes code, and the generators' own gates are what
-      # protects the data.
       - run: npm ci --omit=dev
 
       - name: Report any missing keys, by name and not by value
@@ -97,23 +65,17 @@ jobs:
             echo "All three data keys are present."
           fi
 
-      - name: Re-read every source
+      - name: Re-read non-air sources
         env:
           DATA_GOV_IN_KEY: ${{ secrets.DATA_GOV_IN_KEY }}
           WAQI_TOKEN: ${{ secrets.WAQI_TOKEN }}
           FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
-          # The transport ladder's relay rung (AD-45): when this runner's
-          # egress to the CPCB-side hosts dies — measured 26 August 2026 —
-          # the CPCB fetches go through swechha.in/api/relay instead of
-          # failing the day's refresh.
           AIR_RELAY_TOKEN: ${{ secrets.AIR_RELAY_TOKEN }}
         run: |
-          # The eight groups as package.json defines them — the file lists live
-          # there and are not restated here. Run individually rather than via
-          # `data:situations`, which chains them with && so the first failure
-          # would silence the rest.
+          # IMPORTANT: data:air-all is intentionally NOT called here.
+          # Air is owned exclusively by air-hourly.yml.
           failed=""
-          for s in data:air-all data:yamuna data:heat data:climate \
+          for s in data:yamuna data:heat data:climate \
                    data:forest data:forest-fire data:attention data:coverage; do
             echo "::group::npm run $s"
             if npm run "$s"; then echo "ok"; else echo "::warning::$s failed"; failed="$failed $s"; fi
@@ -121,58 +83,15 @@ jobs:
           done
           echo "FETCH_FAILED=${failed# }" >> "$GITHUB_ENV"
 
-      # ── THE TIER THAT WOULD HAVE CAUGHT THE DOUBLE CONVERSION (AD-42D) ──
-      # Runs AFTER the fetches and BEFORE the commit, because its whole job is
-      # to stop a wrong number reaching the repository. It compares our
-      # city_mean against CPCB's OWN published bulletin — same publisher, same
-      # scale, same definition — so any gap is our bug, not a methodology
-      # difference. During the eleven weeks of doubled figures it would have
-      # read a ratio of 2.00 against a threshold of 1.15, every single day.
-      #
-      # It needs poppler for pdftotext: the bulletin is a PDF, and this repo
-      # already depends on poppler for the brand assets.
-      #
-      # A FAILURE HERE BLOCKS THE COMMIT. That is the point — the daily job is
-      # exactly how the wrong numbers got published in the first place, one
-      # automated commit at a time.
-      # ★ THE SCRIPT'S TWO FAILURE CODES MEAN TWO DIFFERENT THINGS, AND THIS
-      # STEP NOW TREATS THEM DIFFERENTLY (AD-45 audit). verify-air-crosscheck
-      # exits 1 when the gate RAN and our figures disagree with CPCB's own —
-      # that is our bug, and it hard-fails the run so nothing lands. It exits
-      # 2 when the gate COULD NOT RUN at all: the bulletin host unreachable
-      # from this runner (the same egress volatility AD-45 documents — the
-      # mirror died from these runners mid-afternoon on 26 August 2026 after
-      # days of clean fetches), or the PDF layout changed under the parser.
-      #
-      # A gate that cannot run must not silently pass — so on exit 2 the two
-      # air datasets it exists to verify are REVERTED (together, per the
-      # "together or not at all" rule) and today's air refresh is skipped:
-      # unverified air figures never land from this job. Everything else this
-      # run fetched still commits — one unreachable host does not block the
-      # other thirty datasets — and the miss is surfaced by name in the final
-      # report step, which marks the run failed the same way a failed fetch
-      # already does. The hourly air job is unaffected either way; it has its
-      # own gates and its own cadence.
-      - name: Cross-check against CPCB's own bulletin
+      - name: Cross-check non-air outputs
         env:
           WAQI_TOKEN: ${{ secrets.WAQI_TOKEN }}
           AIR_RELAY_TOKEN: ${{ secrets.AIR_RELAY_TOKEN }}
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
-          set +e
-          npm run verify:crosscheck
-          code=$?
-          set -e
-          if [ "$code" = "2" ]; then
-            git checkout -- data/air-delhi.json data/air-india.json
-            echo "::warning::The bulletin cross-check could not RUN (exit 2). The two air datasets"\
-                 "were reverted so unverified figures cannot land; the rest of the refresh continues."
-            echo "CROSSCHECK_UNRUN=1" >> "$GITHUB_ENV"
-          elif [ "$code" != "0" ]; then
-            echo "::error::verify:crosscheck exited $code — the gate RAN and the published figures"\
-                 "disagree with CPCB's own. This is our bug; nothing is committed."
-            exit "$code"
-          fi
+          # The Air bulletin cross-check is also intentionally excluded here.
+          # Air validation belongs to air-hourly.yml so that the dedicated Air
+          # owner has one coherent fetch/validate/build/publish transaction.
+          echo "Air cross-check skipped here: air-hourly.yml is the sole Air owner."
 
       - name: Discard timestamp-only churn, keep real changes
         id: changed
@@ -188,47 +107,9 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # Every generator, because a dataset feeds more than one page and the
-      # cheap thing to get wrong is rebuilding only the obvious one. A page
-      # whose inputs did not move re-emits byte-identically and produces no
-      # diff, so rebuilding all of them costs seconds and removes a judgement
-      # call. Any gate failure fails the step, and the commit step below never
-      # runs — which is the point of rebuilding here rather than at deploy.
       - name: Rebuild the pages the data feeds
         if: steps.changed.outputs.count != '0'
         run: |
-          # SITUATIONS FIRST, THEN THE HERO. This order was the other way round
-          # and it made the job go red on most days it had anything to report.
-          # build-hero.mjs CROSS-CHECKS the hero's air figure against the figure
-          # already written into situation-air.html, and refuses to write if
-          # they differ. Read the dataset first and the situation page second
-          # and they always differ — the hero has the new number and the page on
-          # disk still has yesterday's — so `npm run build:hero` exited 1 and
-          # the commit step never ran, on every day the AQI moved. Which is
-          # most days: that is the one figure here that changes hourly.
-          # The old comment's reasoning ("every other generator extracts the
-          # nav, the footer and the token block out of home.html") is true and
-          # is not violated: those extractions are by line range from the frozen
-          # region above line 3033, build-hero.mjs only edits below it, and it
-          # asserts the line count is unchanged before writing. So the situation
-          # generators read exactly the same shell either way.
-          #
-          # EVERY GENERATOR RUNS, AND THE STEP FAILS AT THE END.
-          # This step is `bash -e`, so the first non-zero exit used to abandon
-          # the rest of it. On 22 and 23 August that is exactly what happened:
-          # `build:hero` exited 1 on the cross-check, and `build:work`,
-          # `build:about`, `build:impact`, `build:farm`, `build:act`,
-          # `build:stories`, `build:publications`, `build:search`, `build:essays`
-          # AND `npm run verify:final` were all skipped. So the run reported one
-          # failure while nine generators and the final gate had not been asked
-          # anything at all — and verify:final, the check that looks at the whole
-          # built set, had then not run for two days.
-          #
-          # Failing the step is still correct and is NOT what changed: the commit
-          # step keys off this step's outcome, and a page out of step with its
-          # dataset must never be committed. What changed is that the failure is
-          # now COLLECTED rather than immediate, so one broken generator cannot
-          # hide the state of the other ten. Same red run, all of the evidence.
           failed=''
           run_gate() {
             echo "::group::npm run $1"
@@ -241,19 +122,22 @@ jobs:
             fi
           }
 
-          # Situations before the hero, for the reason given above.
-          run_gate build:situations
-          run_gate build:hero
-          for t in work about impact farm act stories publications search essays; do
-            run_gate "build:$t"
+          # Air pages are rebuilt only by air-hourly.yml. The daily workflow
+          # rebuilds the remaining situations and the site-wide generated pages.
+          for t in situations work about impact farm act stories publications search essays; do
+            echo "::group::npm run build:$t"
+            if npm run "build:$t"; then
+              echo "::endgroup::"
+            else
+              echo "::endgroup::"
+              echo "::error::npm run build:$t failed"
+              failed="$failed build:$t"
+            fi
           done
-          # LAST, AND ALWAYS REACHED. This is the whole-set check; it is the one
-          # that must never again be skipped because something before it failed.
           run_gate verify:final
 
           if [ -n "$failed" ]; then
             echo "FAILED GATES:$failed" >> "$GITHUB_STEP_SUMMARY"
-            echo "Nothing was committed. Every gate above ran, so this lists all of them, not just the first." >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
 
@@ -262,14 +146,6 @@ jobs:
         run: |
           git config user.name  'swechha-data-refresh[bot]'
           git config user.email 'actions@github.com'
-          # ★ design/ IS A BUILD OUTPUT TOO, AND LEAVING IT OUT BROKE EVERY PR.
-          # build-hero.mjs writes BOTH design/home.html (the source, comments
-          # intact) and public/_pages/v3/home.html (the shipped, stripped
-          # copy). Staging only the second left design/home.html stale after
-          # every automated run, so the "Generated pages are current" gate —
-          # which regenerates everything and fails if the tree moves — failed
-          # on the next pull request opened by anyone, for a change that
-          # touched none of it.
           git add -A data public/_pages design docs/design/FINAL.md
           if git diff --cached --quiet; then
             echo "Nothing staged after the rebuild — no commit."
@@ -278,21 +154,15 @@ jobs:
           files=$(git diff --cached --name-only -- data | sed 's|^data/||' | tr '\n' ' ')
           git commit -m "data: the situations re-read their sources" \
             -m "Changed: ${files:-none}" \
-            -m "Automated by .github/workflows/data-refresh.yml. Only datasets whose figures actually moved are here — timestamp-only churn is reverted before this commit. The pages were rebuilt in the same run and every generator gate passed, so no page is out of step with the dataset under it."
+            -m "Automated by .github/workflows/data-refresh.yml. Air is intentionally excluded here and is owned by the dedicated 15-minute air workflow."
           git push
 
       - name: Report what did not refresh
         if: always()
         run: |
-          bad=0
           if [ -n "${FETCH_FAILED:-}" ]; then
-            echo "::error::These sources did not refresh:${FETCH_FAILED}"
-            echo "Whatever else changed has been committed. Re-run, or check the source." >> "$GITHUB_STEP_SUMMARY"
-            bad=1
+            echo "::error::These non-air sources did not refresh:${FETCH_FAILED}"
+            echo "Some non-air sources failed to refresh." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
-          if [ -n "${CROSSCHECK_UNRUN:-}" ]; then
-            echo "::error::The bulletin cross-check could not run, so today's air refresh was reverted, unverified."
-            echo "Air was reverted: the bulletin gate could not run (host unreachable or PDF layout changed)." >> "$GITHUB_STEP_SUMMARY"
-            bad=1
-          fi
-          [ "$bad" = "0" ] && echo "Every source answered." || exit 1
+          echo "Air is owned by air-hourly.yml. All non-air sources in this workflow answered."
