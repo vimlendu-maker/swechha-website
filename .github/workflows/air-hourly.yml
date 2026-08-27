@@ -1,7 +1,9 @@
 name: Air, every 15 minutes — live poll and timestamp
 
-# One successful poll must update the committed data and the visible
-# "last checked" timestamp even when CPCB is still publishing the same AQI.
+# Sole publisher of committed Air data. A run has three explicit outcomes:
+# SUCCESS: fetch/build/commit/push completed and the website can receive fresh data.
+# UPSTREAM_UNAVAILABLE: all Air sources were silent/unusable; no stale data is published.
+# PIPELINE_FAILURE: a real workflow/build/push error turns the run red.
 on:
   schedule:
     - cron: '4 * * * *'
@@ -25,7 +27,7 @@ permissions:
 jobs:
   air:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v4
@@ -55,50 +57,89 @@ jobs:
             echo "::error::DATA_GOV_IN_KEY is not set."
             exit 1
           fi
+
           set +e
           npm run data:air
           code=$?
           set -e
-          if [ "$code" = "75" ]; then
-            echo "::warning::API silent or rate-limited; proceeding with execution."
-          elif [ "$code" != "0" ]; then
-            exit "$code"
+
+          if [ "$code" = "0" ]; then
+            echo "state=success" >> "$GITHUB_OUTPUT"
+            echo "::notice::Air sources returned usable data."
+            exit 0
           fi
-          echo "upstream_silent=false" >> "$GITHUB_OUTPUT"
 
-      - name: Stop if upstream did not answer
-        if: steps.fetch.outputs.upstream_silent == 'true'
-        run: echo "No successful source check; no rebuild and no timestamp update."
+          if [ "$code" = "75" ]; then
+            echo "state=upstream_unavailable" >> "$GITHUB_OUTPUT"
+            echo "::warning::All Air sources were silent, rate-limited, or returned no usable data. Previous committed data is intentionally preserved."
+            exit 0
+          fi
 
-      - name: Rebuild pages after every successful poll
-        if: steps.fetch.outputs.upstream_silent != 'true'
+          echo "state=pipeline_failure" >> "$GITHUB_OUTPUT"
+          echo "::error::npm run data:air failed with exit code $code."
+          exit "$code"
+
+      - name: Report upstream unavailable
+        if: steps.fetch.outputs.state == 'upstream_unavailable'
         run: |
+          echo "## Air poll: upstream unavailable" >> "$GITHUB_STEP_SUMMARY"
+          echo "No new usable Air reading was obtained, so nothing was rebuilt or published." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Rebuild pages after successful poll
+        if: steps.fetch.outputs.state == 'success'
+        run: |
+          set -euo pipefail
           npm run build:situations
           npm run build:hero
           for t in work about impact farm act stories publications search essays; do
             npm run "build:$t"
           done
           npm run verify:final
-      - name: Commit and push every successful poll
-        if: steps.fetch.outputs.upstream_silent != 'true' && (github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true')
+
+      - name: Commit and push successful poll
+        if: steps.fetch.outputs.state == 'success' && (github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true')
         run: |
           set -euo pipefail
-          git config user.name 'swechha-bot[bot]'
+          git config user.name 'swechha-air-hourly[bot]'
           git config user.email 'actions@github.com'
           git add -A data public/_pages design
+
           if git diff --cached --quiet; then
-            echo "No data changes generated."
-            exit 0
+            echo "::error::Successful Air poll produced no staged changes. The fetch pipeline must update the checked timestamp or data on every successful poll."
+            exit 1
           fi
-          git commit -m "$(node -e '
-            const d = JSON.parse(require("fs").readFileSync("data/air-delhi.json"));
-            console.log(`data(air): checked — AQI ${d.city_reading?.aqi ?? "N/A"}, observed ${d.time?.cpcb_observed_ist ?? "unknown"}`);
-          ')"
-          
-          git fetch origin main
-          git rebase origin/main -X ours || (git checkout --ours . && git add -A && git rebase --continue)
-          git push origin main
+
+          aqi=$(node -p 'JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).city_reading?.aqi ?? "N/A"')
+          checked=$(node -p 'JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).time?.swechha_checked_utc ?? JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).fetched?.epochMs ?? "unknown"')
+          git commit -m "data(air): checked — AQI ${aqi}, checked ${checked}"
+
+          # A concurrent content commit can land while this poll is running.
+          # Rebase normally and retry push; never force an arbitrary --ours
+          # resolution that could overwrite another workflow's changes.
+          for attempt in 1 2 3; do
+            git fetch origin main
+            if git rebase origin/main; then
+              if git push origin HEAD:main; then
+                echo "Published Air update on attempt $attempt."
+                exit 0
+              fi
+            fi
+            git rebase --abort 2>/dev/null || true
+            sleep $((attempt * 3))
+          done
+
+          echo "::error::Could not safely publish the Air update after 3 attempts."
+          exit 1
 
       - name: Dry-run summary
-        if: github.event.inputs.dry_run == 'true'
-        run: echo "Dry run completed. Nothing was committed or pushed."
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' && steps.fetch.outputs.state == 'success'
+        run: |
+          echo "## Air poll dry run succeeded" >> "$GITHUB_STEP_SUMMARY"
+          echo "Usable data was fetched and pages rebuilt, but nothing was committed or pushed." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Final outcome summary
+        if: always()
+        run: |
+          echo "## Air workflow outcome" >> "$GITHUB_STEP_SUMMARY"
+          echo "Fetch state: ${{ steps.fetch.outputs.state || 'not reached' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Workflow conclusion: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
