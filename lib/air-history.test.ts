@@ -155,9 +155,12 @@ describe('a temp store never leaks into the repo', () => {
   })
 })
 
-// Guard the workflow contract without YAML parsing: the heartbeat and the
-// 15-minute cadence are load-bearing strings in air-hourly.yml.
-describe('air-hourly.yml carries the AD-46 cadence and heartbeat', () => {
+// Guard the workflow contract without YAML parsing. The load-bearing contract
+// is the 15-minute cadence plus a successful-poll publish path: the workflow
+// must stage the Air data/history and commit it. The old heartbeat= marker was
+// intentionally removed when every successful poll began refreshing the visible
+// check timestamp, so tests must not pin an obsolete implementation detail.
+describe('air-hourly.yml carries the 15-minute publish contract', () => {
   const yml = readFileSync(join(__dirname, '..', '.github', 'workflows', 'air-hourly.yml'), 'utf8')
   it('polls every 15 minutes, offset off the hour', () => {
     const compact = yml.includes("cron: '4,19,34,49 * * * *'")
@@ -165,8 +168,9 @@ describe('air-hourly.yml carries the AD-46 cadence and heartbeat', () => {
       .every((slot) => yml.includes(slot))
     expect(compact || explicit).toBe(true)
   })
-  it('has the heartbeat output and commits data/air-history with the rest', () => {
-    expect(yml).toContain('heartbeat=')
+  it('commits Air data and history after successful polls', () => {
+    expect(yml).toContain('Commit and push every successful poll')
     expect(yml).toMatch(/git add -A data public\/_pages design/)
+    expect(yml).toContain('data(air): checked')
   })
 })
