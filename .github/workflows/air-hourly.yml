@@ -2,8 +2,6 @@ name: Air, every 15 minutes — live poll and timestamp
 
 # One successful poll must update the committed data and the visible
 # "last checked" timestamp even when CPCB is still publishing the same AQI.
-# This is intentionally a clock as well as a figure: the site must show that
-# Swechha checked the source recently instead of appearing frozen at 256.
 on:
   schedule:
     - cron: '4 * * * *'
@@ -57,14 +55,11 @@ jobs:
             echo "::error::DATA_GOV_IN_KEY is not set."
             exit 1
           fi
-
           set +e
           npm run data:air
           code=$?
           set -e
-
           if [ "$code" = "75" ]; then
-            # Upstream was silent. Never pretend this was a successful check.
             git checkout -- data/air-delhi.json data/air-india.json
             git checkout -- data/air-history 2>/dev/null || true
             git clean -fd data/air-history >/dev/null 2>&1 || true
@@ -72,11 +67,9 @@ jobs:
             echo "::notice::All air transports were silent; keeping the previous reading and timestamp."
             exit 0
           fi
-
           if [ "$code" != "0" ]; then
             exit "$code"
           fi
-
           echo "upstream_silent=false" >> "$GITHUB_OUTPUT"
 
       - name: Stop if upstream did not answer
@@ -100,19 +93,16 @@ jobs:
           git config user.name 'swechha-air-hourly[bot]'
           git config user.email 'actions@github.com'
           git add -A data public/_pages design
-
           if git diff --cached --quiet; then
             echo "::warning::Successful poll produced no staged change; timestamp refresh may be missing from the data pipeline."
             exit 1
           fi
-
           aqi=$(node -p 'JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).city_reading.aqi')
-          obs=$(node -p 'const o=JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).observed; `${String(o.hh).padStart(2,"0")}:${String(o.mi).padStart(2,"0")} IST, ${o.d}-${o.m}-${o.y}`')
+          obs=$(node -p 'const o=JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).observed; [String(o.hh).padStart(2,"0"), String(o.mi).padStart(2,"0")].join(":") + " IST, " + o.d + "-" + o.m + "-" + o.y')
           git commit -m "data(air): checked — AQI ${aqi}, observed ${obs}"
           git pull --rebase origin main
           git push origin main
 
       - name: Dry-run summary
         if: github.event.inputs.dry_run == 'true'
-        run: |
-          echo "Dry run completed. Nothing was committed or pushed."
+        run: echo "Dry run completed. Nothing was committed or pushed."
