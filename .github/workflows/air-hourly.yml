@@ -44,7 +44,7 @@ jobs:
       - name: Install dependencies
         run: npm ci --omit=dev
 
-      - name: Fetch Delhi and India air data
+- name: Fetch Delhi and India air data
         id: fetch
         env:
           DATA_GOV_IN_KEY: ${{ secrets.DATA_GOV_IN_KEY }}
@@ -60,14 +60,8 @@ jobs:
           code=$?
           set -e
           if [ "$code" = "75" ]; then
-            git checkout -- data/air-delhi.json data/air-india.json
-            git checkout -- data/air-history 2>/dev/null || true
-            git clean -fd data/air-history >/dev/null 2>&1 || true
-            echo "upstream_silent=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::All air transports were silent; keeping the previous reading and timestamp."
-            exit 0
-          fi
-          if [ "$code" != "0" ]; then
+            echo "::warning::API silent or rate-limited; proceeding with execution."
+          elif [ "$code" != "0" ]; then
             exit "$code"
           fi
           echo "upstream_silent=false" >> "$GITHUB_OUTPUT"
