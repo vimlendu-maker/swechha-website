@@ -81,7 +81,7 @@ jobs:
           npm run verify:final
 
       - name: Commit and push every successful poll
-        if: steps.fetch.outputs.upstream_silent != 'true' && github.event.inputs.dry_run != 'true'
+        if: steps.fetch.outputs.upstream_silent != 'true' && (github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true')
         run: |
           set -euo pipefail
           git config user.name 'swechha-air-hourly[bot]'
