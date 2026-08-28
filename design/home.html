@@ -3247,6 +3247,29 @@ main{display:block;margin:0;padding:0}
 .w7-ce-evfoot>.act::before,.w7-ab-foot>.act::before,.w7-do-head .act::before{
   content:'';position:absolute;left:0;right:0;top:50%;height:44px;
   translate:0 -50%;pointer-events:auto}
+
+/* ── THE ACTIVE-SITUATION SLIDE'S SCRIM, AND WHY IT IS A SCRIM ───────────
+   MEASURED, not preferred. The four hand-chosen hero photographs are dark
+   where the masthead sits — the India Gate frame is a night-grey sky behind
+   "WE KEEP THE RECORD" — because they were chosen for that. The satellite
+   frame is not chosen at all: it is whatever the last usable overpass
+   returned, and over the Himalaya in the monsoon that is 30% white cloud,
+   which put the masthead and both tag lines onto near-white and made all
+   three unreadable at 1440.
+
+   A SCRIM, NOT A FILTER ON THE IMAGE. `filter: brightness()` on the <img>
+   would darken the observational data itself, and this page's rule for the
+   selective-colour treatment is that it is for photographs — a recolouring of
+   evidence for effect is the one thing not on offer. An overlay leaves the
+   pixels alone, and the full-fidelity frame is one click away on the situation
+   page, captioned with its date, sensor and measured cloud fraction.
+
+   TOP-WEIGHTED, because that is where the type is. The lower half of the
+   frame stays as it is; the panel below it sits on the band ground and never
+   needed help. */
+#h-situation .s-hero-shot::after{content:"";position:absolute;inset:0;z-index:1;
+  background:linear-gradient(180deg,rgba(13,13,11,.86) 0%,rgba(13,13,11,.72) 26%,
+    rgba(13,13,11,.34) 62%,rgba(13,13,11,.18) 100%)}
 </style>
 
 <body>
@@ -3306,9 +3329,66 @@ main{display:block;margin:0;padding:0}
   <div class="rig">
     <div class="rig-clip">
       <div class="rig-track" role="region" aria-label="Situations, one at a time. Use the arrow keys or swipe.">
+        <!-- ══ THE ACTIVE-SITUATION SLIDE. HIDDEN UNTIL THERE IS ONE. ══════
+             WHY IT IS FIRST IN THE TRACK AND WHY IT IS `hidden` IN THIS FILE.
+             `rig()` at the foot of this page builds the tab strip from
+             `track.children` filtered by `!hidden`, so a hidden slide has no
+             tab, no place in "1 of 4" and no keyboard stop — it is not in the
+             deck at all. That makes ONE attribute the whole of the homepage
+             priority rule: with it, the deck is the four it has always been and
+             Air is first; without it, this slide is first and Air is second,
+             and nothing else on the page needs to know.
+
+             build-hero.mjs owns the attribute and every value inside this
+             block, from data/climate-events/active/<slug>.json via
+             lib/active-situation.mjs's homepageSlot(). ACTIVE and DEVELOPING
+             put it here, at the front. STABILISING moves it after Air —
+             build-hero splices the block, which is why it is a contiguous
+             element with no other slide's markup inside it. DEMOTED, ARCHIVED
+             and "no event" restore the `hidden`.
+
+             THE PICTURE IS THE SATELLITE FRAME, NOT A STOCK MOUNTAIN, and that
+             is the same rule the situation page itself follows: an image on a
+             disaster page is either OF the event or it is labelled as not
+             being. NO `duo` CLASS, deliberately — the selective-colour
+             treatment is for photographs, and a false-colour wash over
+             observational data would be this site editing evidence for effect.
+             When no usable frame exists, build-hero removes the <figure>
+             entirely rather than substituting anything. -->
+        <div class="sit s-hero-sit" id="h-situation" data-id="situation" data-tab="Nepal" data-breach="true" role="tabpanel" aria-label="Nepal: glacial flood — active situation">
+          <figure class="s-hero-shot"><img fetchpriority="high" width="1400" height="1232" class="s-hero-eo" src="/images/eo/nepal-glof/after.jpg" alt="True colour satellite view of the region, 2026-08-28 — Terra, MODIS"></figure>
+          <div class="s-hero-stamp" aria-hidden="true"><div class="wrap"><p class="state live"><i></i>Live</p></div></div>
+          <div class="s-hero-panel"><div class="wrap">
+            <div class="s-hero-rail breach">
+              <div class="s-hero-read">
+                <span class="s-hero-numwrap rl"><span class="readout" aria-hidden="true">547</span></span>
+                <span class="sr">Nepal: glacial flood. Active situation, active. 547 confirmed dead, preliminary.</span>
+                <div class="s-hero-num-side">
+                  <p class="lbl s-hero-id">Nepal / Glacial flood</p>
+                  <span class="unit">reported dead</span>
+                  <p class="mult"><b>750</b> reported missing</p>
+                </div>
+              </div>
+              <div class="s-hero-acct">
+                <p class="lbl s-hero-id">Nepal / Glacial flood</p>
+                <p class="verdict bad">Active situation</p>
+                <p class="s-hero-why">Being tracked now. Figures move while you are on this page.</p>
+                <div class="s-hero-scale">
+                  <span class="limit">Outlets report 160&ndash;547. <b>Not settled.</b></span>
+                </div>
+              </div>
+            </div>
+            <div class="s-hero-plate">
+              <p class="cap s-hero-src">Nepal &middot; glacial lake outburst flood. 125 independent publishers. Feeds re-read every 30 minutes.</p>
+              <span class="tag tag-season">Active</span>
+              <p class="s-hero-act"><a class="act" href="/now/climate-event/nepal-glof">View full situation <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+            </div>
+          </div></div>
+        </div>
+
 
         <div class="sit s-hero-sit" id="h-air" data-id="air" data-tab="Air" data-breach="true" role="tabpanel" aria-label="Delhi-NCR / Air quality index">
-          <figure class="s-hero-shot"><img fetchpriority="high" width="2400" height="1601" class="duo" src="/images/photos/india-gate-hero.jpg" alt="India Gate through Delhi haze" style="--zh:134%;--zt:-33%"></figure>
+          <figure class="s-hero-shot"><img loading="lazy" width="2400" height="1601" class="duo" src="/images/photos/india-gate-hero.jpg" alt="India Gate through Delhi haze" style="--zh:134%;--zt:-33%"></figure>
           <!-- PERIODIC, not Demo (owner, 22 August). The premise of the note
                that stood here has expired: it said the repository "has no HTTP
                client and no OpenAQ integration, so nothing fetches this
@@ -3678,7 +3758,7 @@ main{display:block;margin:0;padding:0}
       <a class="s-ticker-cell" href="/now/yamuna" aria-label="Yamuna dissolved oxygen, 0.3 milligrams per litre, below the detection limit, against a legal minimum of 5"><span class="lbl s-ticker-name">Yamuna DO</span><span class="s-ticker-v is-over"><b>0.3</b></span></a>
       <a class="s-ticker-cell" href="/now/forest-fire" aria-label="Forest fire, 34,562 square kilometres of forest burnt in the 2023 to 2024 season"><span class="lbl s-ticker-name">Forest burnt</span><span class="s-ticker-v is-over"><b>34,562</b></span></a>
       <a class="s-ticker-cell" href="/now/forest-loss" aria-label="Forest loss, 2.43 million hectares of tree cover, 2001 to 2025"><span class="lbl s-ticker-name">Forest loss</span><span class="s-ticker-v is-over"><b>2.43M ha</b></span></a>
-      <a class="s-ticker-cell" id="tk-climate" href="/now/climate-event" aria-label="Climate event, glacial flood at Nepal, in the region upstream of India, being tracked"><span class="lbl s-ticker-name" id="tk-climate-n">Glacial flood</span><span class="s-ticker-v is-over" id="tk-climate-v"><b>Nepal</b></span></a>
+      <a class="s-ticker-cell" id="tk-climate" href="/now/climate-event/nepal-glof" aria-label="Climate event, glacial flood at Nepal, in the region upstream of India, being tracked"><span class="lbl s-ticker-name" id="tk-climate-n">Glacial flood</span><span class="s-ticker-v is-over" id="tk-climate-v"><b>Nepal</b></span></a>
       <a class="s-ticker-cell s-ticker-own" href="#impact" aria-label="Swechha's own record: 6,890 tonnes taken out of the river since 2000. Opens the impact section."><span class="lbl s-ticker-name">Out of river</span><span class="s-ticker-v is-good"><b>6,890t</b></span></a>
       <i class="s-ticker-end" aria-hidden="true"></i>
     </div>

@@ -43,6 +43,7 @@
 import { writeFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { HAZARD_TERMS, TIER1, TIER2, SEVERITY_TERMS, NEGATIVE_TERMS, hay, ownedElsewhere, coordsFor, regionOf } from './lib/event-terms.mjs';
+import { consolidate } from './lib/event-figures.mjs';
 import { HAZARDS, hasContext } from './lib/climate-events.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..');
@@ -652,7 +653,36 @@ async function dossier(c, s, existing) {
        renders the context pack in its place rather than a gap. */
     what_happened: existing?.what_happened || null,
     why_it_matters: existing?.why_it_matters || null,
-    impact: existing?.impact || {},
+    /* ── THE IMPACT FIGURES, READ OUT OF THE HEADLINES ABOVE ─────────────
+       ★ THIS FIELD USED TO BE `existing?.impact || {}` AND IT WAS ALWAYS {}.
+       Nothing wrote it, because nothing could: this script may not state a
+       death toll in its own voice, so the slot waited for an editor who, on a
+       disaster carried by 125 publishers inside twelve hours, does not exist.
+       The consequence shipped: /now/climate-event/nepal-glof led on four cells
+       reading "— not established" while the twenty-four sources listed at the
+       bottom of the same page carried 547 dead, 1,944 injured and 320 Indians
+       uncontactable in their own titles.
+
+       consolidate() resolves that without breaking the rule. It reads digits
+       out of the headline strings ALREADY in `sources` above, attributes each
+       to the source that printed it, keeps that source's own hedge, and where
+       outlets disagree carries every value and marks the row PRELIMINARY. No
+       figure is averaged, rounded or stated in this script's voice — each one
+       is a quotation of a number, printed beside a link to the sentence it was
+       quoted from.
+
+       ★ AN EDITOR'S FIGURES WIN, PER METRIC. A hand-set `deaths` claim is not
+       overwritten by a headline; the extracted rows fill in around it. That is
+       the same asymmetry `headline` and `what_happened` already have — the
+       detector may add under a human's writing and may never replace it. */
+    impact: (() => {
+      const read = consolidate(sources, { place: c.place });
+      const kept = { ...read, ...(existing?.impact || {}) };
+      /* A metric an editor set keeps the editor's whole claim, including its
+         status word, which may legitimately be `confirmed` where a headline
+         can only ever be `media_report`. */
+      return kept;
+    })(),
     figures: existing?.figures || [],
     timeline: (existing?.timeline || []).length ? existing.timeline : [
       { when: lead.published || null, what: 'First reported in the sources below.', source: sources[0]?.id || null },

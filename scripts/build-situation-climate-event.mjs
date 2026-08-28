@@ -18,7 +18,8 @@
 //   flash floods  — no public national register exists
 import * as S from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
-import { loadEvents, currentEvent } from './lib/climate-events.mjs';
+import { loadEvents } from './lib/climate-events.mjs';
+import { homepageSlot } from './lib/active-situation.mjs';
 import { renderBanner, renderQuiet, CE_CSS, CE_BANNER_CSS, CE_TIME_JS } from './lib/climate-event-render.mjs';
 const { esc, n0, n1, compact, opener, tabs, hole, kd, KIND_LEGEND, ARROW, MON, MON3,
   stateChip, measureRow, measureHead, disclose, crumb, siblings } = S;
@@ -114,7 +115,13 @@ const SEASON_TO = (() => {
    having to remember to take it down — a hero still shouting about last
    month's flood is its own kind of stale. */
 const EVENTS = loadEvents();
-const CURRENT = currentEvent(EVENTS);
+/* ★ THE BANNER FOLLOWS THE LIFECYCLE, NOT ONLY THE EVIDENCE WINDOW.
+   currentEvent() answers "is this event inside its fourteen-day evidence
+   window", which knows nothing about `situation_status` — so an event an editor
+   had DEMOTED still raised a live red banner at the top of this page while the
+   homepage had correctly stopped leading on it. homepageSlot() is the one
+   decision, and this page reads the same answer the deck does. */
+const CURRENT = homepageSlot(EVENTS).event;
 /* This page shows only the COMPACT banner; the full board, and the hazard
    context pack behind it, live on /now/climate-event/<slug>. Keeping the two
    apart is the whole point of the split — this page's clock is annual and the
