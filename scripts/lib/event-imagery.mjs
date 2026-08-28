@@ -354,3 +354,50 @@ export function score(cand) {
     - (cand.dateDistance ?? 0) * 2.0      // and the day that was asked for
   );
 }
+
+/* ═══ THE LIVE COMPARISON ═════════════════════════════════════════════════
+   ★ NASA WORLDVIEW'S A/B MODE IS DRIVEN ENTIRELY BY URL, and that makes it the
+   one honest answer to "can we have a live before-and-after map". It is
+   NASA-hosted, keyless, always current, and it hands the reader the controls
+   this page cannot: zoom, any pair of dates, and the layer menu — including the
+   OPERA Sentinel-1 radar products, which see through the cloud that ruins the
+   optical pair on this page.
+
+   Verified in a browser rather than assumed: the URL below puts Worldview into
+   comparison mode with both dates set, swipe selected, and tiles painting over
+   the right valley.
+
+   WHY A LINK AND NOT AN EMBED. This site is static HTML on a CDN with no
+   runtime map component anywhere in it. Embedding a live tile map would put a
+   third-party script and a per-read network dependency into a page that
+   currently paints from one HTML file — for a view most readers will not open.
+   The link costs nothing and degrades to nothing. */
+export function worldviewUrl({ frame, before, after, layer } = {}) {
+  if (!frame) return null;
+  const pad = 0.12;
+  const v = [
+    (frame.west - pad).toFixed(3), (frame.south - pad).toFixed(3),
+    (frame.east + pad).toFixed(3), (frame.north + pad).toFixed(3),
+  ].join(',');
+  const layers = [
+    'Reference_Labels_15m',
+    'Reference_Features_15m',
+    layer || 'MODIS_Terra_CorrectedReflectance_TrueColor',
+  ].join(',');
+  const q = new URLSearchParams({ v, l: layers, lg: 'true' });
+  /* Comparison mode only when there are two dates to compare. */
+  if (before && after) {
+    q.set('ca', 'true');
+    q.set('cm', 'swipe');
+    q.set('t1', `${before}-T00:00:00Z`);
+    q.set('t2', `${after}-T00:00:00Z`);
+  } else if (after) {
+    q.set('t', `${after}-T00:00:00Z`);
+  }
+  /* Worldview wants the commas in `v` and `l` and the colons in the timestamps
+     LITERAL. All three are legal unescaped in a query value, and URLSearchParams
+     percent-encodes them, which Worldview then fails to parse — the bbox is
+     ignored and the map opens on the whole world. Verified in a browser both
+     ways. */
+  return `https://worldview.earthdata.nasa.gov/?${q.toString().replace(/%3A/g, ':').replace(/%2C/g, ',')}`;
+}
