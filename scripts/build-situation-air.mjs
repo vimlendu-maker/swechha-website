@@ -15,6 +15,7 @@ import { crumb, siblings, FAMILY_CSS, NAV_SEARCH_CSS, NAV as SHELL_NAV, HOME_HRE
   stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, cadence, STATES,
   closing, citeBlock, CLOSING_CSS, abs, imgDim, responsiveImages,
   LICENCE_URL, datasetJsonLd, FAMILY, stateRollup, TRACKER } from './lib/situation-shell.mjs';
+import { withSocialImage } from './lib/social-image.mjs';
 import { seo } from './lib/seo-register.mjs';
 import { stampLastmod } from './lib/lastmod.mjs';
 
@@ -2312,7 +2313,9 @@ catch (e) { console.error('\nREFUSING TO WRITE: page script is not valid JS.\n' 
 /* This page writes its own head and its own file rather than going through
    assemble(), so the srcset pass has to be applied here too — and before the
    stamp, so the lastmod hash is taken over what ships. */
-const SHIPPED = responsiveImages(OUT);
+/* ...and the share card too, for the same reason and in the same order the
+   two shells use: after srcset, before the stamp. */
+const { html: SHIPPED } = withSocialImage(responsiveImages(OUT), { label: 'situation-air.html' });
 stampLastmod('/now/air', SHIPPED);
 writeFileSync(`${V3}/situation-air.html`, SHIPPED);
 console.log(`\nWROTE situation-air.html — ${SHIPPED.length} bytes, ${SHIPPED.split('\n').length} lines`);

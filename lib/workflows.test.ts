@@ -89,6 +89,8 @@ const COVERED_BY_SITUATIONS = [
 const NOT_A_PAGE_BUILD = [
   'build',              // next build
   'build:hero:check',   // a --check mode of build:hero, not a second page
+  /* A --check mode too, of build:social-cards — which IS in the gate. */
+  'build:social-cards:check',
 ]
 
 describe('every page generator is inside the gate that checks it', () => {

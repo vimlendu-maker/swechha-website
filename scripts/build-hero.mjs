@@ -53,6 +53,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
+import { withSocialImage } from './lib/social-image.mjs';
 import { stampLastmod } from './lib/lastmod.mjs';
 import { currentEvent } from './lib/climate-events.mjs';
 import { homepageSlot, situationHref, TYPE_LABEL } from './lib/active-situation.mjs';
@@ -1208,15 +1209,35 @@ if (shipped === ship) {
   process.exit(1);
 }
 
+/* ── THE SHARE CARD, ON THE ARTEFACT ONLY ──────────────────────────────────
+   The homepage's hero is the situation deck, and its lead slide is whatever
+   active situation is running — so this page's share image has to be derived
+   from the finished document, not written down anywhere. `withSocialImage()`
+   reads the deck and honours `hidden`, which is load-bearing HERE above all:
+   the block a few hundred lines up promotes and demotes the whole
+   active-situation slide with that one attribute, and hides the satellite
+   `<figure>` on its own when no usable frame exists. A card derived without
+   that would advertise a frame no reader is shown.
+
+   ON `shipped`, NOT ON `src`. The SHARE_URLS block above leaves the neutral
+   brand card in the hand-maintained source, absolute and derived through
+   `S.abs()` like every other URL there; this pass replaces it in the artefact
+   with the page's own photograph. That is not two answers — it is the
+   fallback and then the page, in that order, which is exactly the rule the
+   other 38 pages follow inside their shells. */
+const { html: withCard, image: cardImage, fallback: cardIsFallback } =
+  withSocialImage(shipped, { label: 'home.html' });
+
 if (CHECK) {
   console.log(`\n--check: ${changed} slide(s) would change. Nothing written.`);
   console.log(`  the shipped page would be ${ship.length.toLocaleString('en-IN')} bytes, `
     + `down from the source's ${src.length.toLocaleString('en-IN')}.`);
 } else {
-  stampLastmod('/', shipped);
+  stampLastmod('/', withCard);
   writeFileSync(HOME, src);
-  writeFileSync(SHIP, shipped);
+  writeFileSync(SHIP, withCard);
   console.log(`\n${changed} slide(s) updated, ${linesAfter} lines, line count unchanged. All checks pass.`);
   console.log(`  source  design/home.html            ${src.length.toLocaleString('en-IN')} bytes, comments intact`);
   console.log(`  shipped public/_pages/v3/home.html  ${ship.length.toLocaleString('en-IN')} bytes, AD-28 clean`);
+  console.log(`  share card ${cardImage.src}${cardIsFallback ? '  (no photograph on the page)' : ''}`);
 }

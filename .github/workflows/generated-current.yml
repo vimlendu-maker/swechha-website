@@ -67,6 +67,15 @@ jobs:
           for t in situations work about impact farm act stories publications posters search essays; do
             npm run "build:$t"
           done
+          # THE SHARE CARDS, AFTER EVERY GENERATOR AND BEFORE THE VERIFIERS.
+          # Each generator already derives its own page's og:image through
+          # scripts/lib/social-image.mjs, so on a healthy tree this writes
+          # nothing and the diff gate below stays green. It is here for the one
+          # case the per-generator hook cannot cover: a page built by something
+          # that assembles its own <head> without going through a shell. That
+          # page would otherwise ship the wordmark card to every reader who
+          # shared it, and nothing would say so.
+          npm run build:social-cards
           npm run verify:final
           npm run verify:seo
 
@@ -79,7 +88,7 @@ jobs:
             git diff --name-only | sed 's/^/  /'
             echo ""
             echo "Fix: run the generators locally and commit the result —"
-            echo "  npm run build:hero && for t in situations work about impact farm act stories publications posters search essays; do npm run build:\$t; done"
+            echo "  npm run build:hero && for t in situations work about impact farm act stories publications posters search essays; do npm run build:\$t; done && npm run build:social-cards"
             echo ""
             git --no-pager diff --stat
             echo ""

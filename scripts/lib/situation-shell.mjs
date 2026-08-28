@@ -50,6 +50,10 @@ import { tmpdir } from 'node:os';
 import { seo } from './seo-register.mjs';
 import { stampLastmod } from './lastmod.mjs';
 import { imageSize } from './image-size.mjs';
+/* THE SHARE CARD'S IMAGE, DERIVED FROM THE FINISHED PAGE. See that file's
+   header for why this is read off the rendered markup rather than declared by
+   each of the twenty generators, and for the cycle note. */
+import { withSocialImage } from './social-image.mjs';
 
 /* THE BOX EVERY <img> RESERVES, READ FROM THE FILE ITSELF. A wrong number is
    worse than none (see image-size.mjs), so a path this cannot parse gets
@@ -2494,7 +2498,13 @@ ${SCRIPT}</script>
      would only make their failure context harder to read; and the lastmod hash
      below must be taken over WHAT SHIPS, or a page whose only change is its
      images keeps yesterday's date in the sitemap. */
-  const SHIPPED = responsiveImages(OUT);
+  /* THE SHARE CARD, BEFORE THE STAMP AND AFTER srcset — in that order, and for
+     the same reason srcset comes before the stamp: the lastmod hash must be
+     taken over WHAT SHIPS, and a page whose only change is its share image is
+     still a page that changed. It runs after srcset because it reads each
+     image's `src`, which responsiveImages() leaves untouched, so either order
+     would find the same photograph — but only this one hashes the truth. */
+  const { html: SHIPPED } = withSocialImage(responsiveImages(OUT), { label: file });
   stampLastmod(canonical, SHIPPED);
   writeFileSync(join(V3, file), SHIPPED);
   console.log(`WROTE ${file} — ${SHIPPED.length.toLocaleString('en-IN')} bytes, ${SHIPPED.split('\n').length.toLocaleString('en-IN')} lines`);

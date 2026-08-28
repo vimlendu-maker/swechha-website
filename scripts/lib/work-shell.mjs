@@ -67,6 +67,7 @@ import {
   posterSheet, POSTER_CSS,
   TRACKER,
 } from './situation-shell.mjs';
+import { withSocialImage } from './social-image.mjs';
 import { stampLastmod } from './lastmod.mjs';
 
 export { ROOT, V3, HOME_SRC, opener, hole, esc, kd, kindTag, KIND_LEGEND, ARROW, n0, disclose, groundChain, tabs, ask, imgDim };
@@ -2532,7 +2533,9 @@ export function writePage(outDir, file, html, route) {
      none today) does not crash; every WORK page passes its own `url`. */
   /* srcset before the stamp, for the same reason assemble() does it in that
      order: the lastmod hash must be taken over what actually ships. */
-  const shipped = responsiveImages(html);
+  /* THE SHARE CARD, in the same slot and the same order as assemble()'s:
+     after srcset, before the stamp, so the lastmod hash covers what ships. */
+  const { html: shipped } = withSocialImage(responsiveImages(html), { label: file });
   if (route) stampLastmod(route, shipped);
   const p = join(outDir, file);
   mkdirSync(dirname(p), { recursive: true });

@@ -3,9 +3,10 @@
    would otherwise pass every gate in the repo while readers got the old text.
    Each page states its own route via rel=canonical — never a second copy of
    the router (scripts/build-search-page.mjs:19-24). */
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { seo, ROUTES } from './lib/seo-register.mjs';
+import { primaryImage, FALLBACK } from './lib/social-image.mjs';
 
 const V3 = 'public/_pages/v3';
 /* Same file the generators read (situation-shell.mjs's TRACKER) and the same
@@ -69,6 +70,53 @@ const CHECKS = [
       if (!tw) return 'twitter:image is missing';
       if (!/^https?:\/\//.test(tw)) return `twitter:image is relative: ${tw}`;
       return null;
+    },
+  },
+  {
+    /* THE SHARE CARD IS THE PAGE'S OWN PHOTOGRAPH, RE-DERIVED HERE.
+       Before this, all 39 built pages shipped the same `og:image` — the black
+       wordmark card — so every link to this site previewed identically in
+       WhatsApp, on X and on LinkedIn: the publisher, never the story.
+       `scripts/lib/social-image.mjs` fixed that inside the generators, and this
+       check is what stops it coming back. It does NOT merely assert that
+       og:image is "not the default": it RE-RUNS the derivation over the
+       committed page and demands the head agree, so a page whose hero
+       photograph was swapped and whose head was not rebuilt fails here rather
+       than shipping yesterday's card. The ten pages that genuinely carry no
+       photograph derive null and are held to the fallback — the same rule, not
+       an exemption. `npm run build:social-cards` is the fix when this fails. */
+    name: "og:image is the page's own primary image",
+    run: ({ html }) => {
+      const want = primaryImage(html) ?? FALLBACK;
+      const got = one(html, /<meta property="og:image" content="([^"]*)"/);
+      const tw = one(html, /<meta name="twitter:image" content="([^"]*)"/);
+      if (!got?.endsWith(want.src)) {
+        return `og:image is ${got} — the page's primary image is ${want.src}. `
+          + 'Run `npm run build:social-cards`, or rebuild this page.';
+      }
+      if (got !== tw) return `twitter:image (${tw}) differs from og:image (${got})`;
+      const w = one(html, /<meta property="og:image:width" content="([^"]*)"/);
+      const h = one(html, /<meta property="og:image:height" content="([^"]*)"/);
+      if (Number(w) !== want.width || Number(h) !== want.height) {
+        return `og:image:width/height say ${w}x${h}, the image is ${want.width}x${want.height}`;
+      }
+      /* A card whose image 404s previews as no card at all, and that failure is
+         invisible until somebody shares the link — so the path is checked
+         against the shipped file, not merely against the markup. */
+      if (!existsSync(join('public', want.src.replace(/^\//, '')))) {
+        return `og:image points at ${want.src}, which is not in public/`;
+      }
+      return null;
+    },
+  },
+  {
+    /* Without `summary_large_image` X renders the small square card, which
+       crops a landscape hero to a thumbnail beside the text — the photograph
+       reduced to the size the logo used to occupy. */
+    name: 'twitter:card is summary_large_image',
+    run: ({ html }) => {
+      const v = one(html, /<meta name="twitter:card" content="([^"]*)"/);
+      return v === 'summary_large_image' ? null : `twitter:card is ${JSON.stringify(v)}`;
     },
   },
   {

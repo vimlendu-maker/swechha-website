@@ -7,6 +7,7 @@ import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { PhotoFilters } from '@/components/photo-signal'
 import { SITE_DESCRIPTION, SITE_URL } from '@/lib/org'
+import { shareCard } from '@/lib/social'
 
 const fraunces = Fraunces({
   variable: '--font-fraunces',
@@ -47,37 +48,29 @@ export const metadata: Metadata = {
     icon: [{ url: '/icons/icon-32.png', sizes: '32x32', type: 'image/png' }],
     apple: '/icons/apple-touch-icon.png',
   },
-  /* Site-wide share-card defaults. Routes with their own `openGraph` (the
-     story/campaign detail pages) replace this wholesale rather than merging
-     with it — Next.js metadata merging is shallow per top-level key — so
-     this mainly benefits routes that don't set their own: the homepage,
-     `/about`, `/work`, etc. */
-  openGraph: {
-    type: 'website',
-    siteName: 'Swechha',
-    locale: 'en_IN',
-    /* AD-27.49. ONE BRAND CARD. The default was
-       /images/photos/cityscapes-hero-riverside-walk.jpg — a CityScapes
-       photograph standing for the whole organisation, which it never was, and
-       which never reached a reader anyway because this layout is rewritten
-       away on 35 of 37 URLs. The 35 built pages now emit og:image themselves;
-       this makes the two agree rather than leaving a second answer behind.
-       Rejected: per-page share images. Thirty-five cards is a production job
-       with no owner and no photo budget, and the photo library's provenance is
-       the subject of AD-27.28. One card that is correct everywhere beats
-       thirty-five that are unmaintained. */
-    images: [
-      {
-        url: '/images/og/og-default.png',
-        width: 1200,
-        height: 630,
-        alt: 'Swechha',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-  },
+  /* ── THE SHARE CARD DEFAULT, AND ITS REVERSAL ────────────────────────────
+     What stood here was AD-27.49's ONE BRAND CARD: `/images/og/og-default.png`
+     on every route, chosen over per-page images on the argument that
+     "thirty-five cards is a production job with no owner and no photo budget".
+
+     THE OWNER HAS REVERSED IT, and the argument it rested on turned out to be
+     answering a different question. Per-page cards were read as DESIGNED
+     cards — thirty-five compositions somebody has to make. They are not.
+     Every one of these pages already opens on a full-bleed photograph chosen
+     for it, so the card is derived, not produced: `lib/social.ts` for the
+     routes that run this layout, `scripts/lib/social-image.mjs` for the 39
+     built pages, both reading the page's own hero. Nothing was commissioned.
+
+     The principle, in the owner's words: the image represents the story, the
+     logo represents the publisher — so a shared link should show the story.
+
+     THIS OBJECT IS NOW THE FLOOR, NOT THE ANSWER. It is what a route with no
+     photograph of its own gets (`/explore` today), and it is built by the same
+     helper every other route uses so the fallback cannot drift away from them.
+     Routes with their own `openGraph` still replace this wholesale rather than
+     merging — Next.js metadata merging is shallow per top-level key — which is
+     precisely why they go through `shareCard()` instead of hand-writing one. */
+  ...shareCard(null),
 }
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {

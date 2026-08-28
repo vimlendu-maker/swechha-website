@@ -6,6 +6,7 @@ import { signalClass } from '@/components/photo-signal'
 import { RelatedContent } from '@/components/related-content'
 import { getAllStories, getStoryBySlug, getRelated } from '@/lib/content'
 import { renderMarkdown } from '@/lib/markdown'
+import { shareCard } from '@/lib/social'
 
 export function generateStaticParams() {
   return getAllStories().map((story) => ({ slug: story.slug }))
@@ -18,15 +19,28 @@ export async function generateMetadata(
   const story = getStoryBySlug(slug)
   if (!story) return {}
 
+  /* THE STORY'S OWN HERO PHOTOGRAPH IS THE SHARE CARD, through `shareCard()`
+     rather than an inline `openGraph` object. This route used to build that
+     object by hand, and because Next merges `metadata` shallowly per top-level
+     key it was REPLACING the layout's openGraph — so a story shipped without
+     `og:site_name` or `og:locale`, and its `images: [src]` carried no width or
+     height for a crawler to lay the card out with. See lib/social.ts. */
+  const card = shareCard(story.data.heroImage, { type: 'article' })
   return {
     title: story.data.title,
     description: story.data.summary,
+    ...card,
     openGraph: {
+      ...card.openGraph,
+      /* RESTATED, and not redundant: `publishedTime` only exists on Next's
+         `OpenGraphArticle` member, and a spread widens the union back out —
+         TypeScript needs the literal at this object's own site to narrow to
+         it. `shareCard` was still passed `'article'` above, so the value
+         cannot disagree; drop that argument and this line stops compiling. */
+      type: 'article',
       title: story.data.title,
       description: story.data.summary,
-      type: 'article',
       publishedTime: story.data.date,
-      images: [story.data.heroImage.src],
     },
   }
 }
