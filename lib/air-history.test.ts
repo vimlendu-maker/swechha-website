@@ -239,3 +239,36 @@ describe('air-hourly.yml is the sole Air publisher, and its contract holds', () 
     }
   })
 })
+
+/* ── THE ONE LINE THAT STOPPED THE WHOLE SITE DEPLOYING ────────────────────
+   On 27 August 2026 at 18:08 IST a fifteen-minute cron expression was added
+   to vercel.json. Vercel's documentation: "Hobby accounts are limited to cron
+   jobs that run once per day. Cron expressions that would run more frequently
+   will fail during deployment." They did — EVERY deployment from that commit
+   onward failed at build time, so swechha.in stopped receiving any update at
+   all and went on serving a 27-hour-old AQI even on the runs where the data
+   pipeline worked. The failing deployment's own error link redirects to
+   vercel.com/docs/cron-jobs/usage-and-pricing.
+   Nothing in this repository could have caught that, which is why this exists.
+   If the project moves to Vercel Pro, relax this test in the same commit that
+   changes the schedule — deliberately, not by discovering it in production. */
+describe('vercel.json crons stay inside the plan that deploys them', () => {
+  const vercel = JSON.parse(readFileSync(join(__dirname, '..', 'vercel.json'), 'utf8')) as {
+    crons?: Array<{ path: string; schedule: string }>
+  }
+
+  it('runs at most once per day — more often fails the DEPLOYMENT, not the cron', () => {
+    for (const c of vercel.crons ?? []) {
+      const [minute, hour] = c.schedule.trim().split(/\s+/)
+      expect(minute, `${c.path}: minute field "${minute}" repeats within the hour`).toMatch(/^\d+$/)
+      expect(hour, `${c.path}: hour field "${hour}" repeats within the day`).toMatch(/^\d+$/)
+    }
+  })
+
+  it('every cron path is a route that exists', () => {
+    for (const c of vercel.crons ?? []) {
+      const route = join(__dirname, '..', 'app', c.path.replace(/^\//, ''), 'route.ts')
+      expect(existsSync(route), `vercel.json schedules ${c.path}, which has no route file`).toBe(true)
+    }
+  })
+})

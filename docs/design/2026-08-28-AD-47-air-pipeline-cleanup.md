@@ -114,7 +114,40 @@ genuinely severe day still publishes untouched. It runs *before* the AQI loop,
 so AQI, governing pollutant, band and the `suspect` flag are all computed once
 from clean channels.
 
-### A-47.5 — Three schedulers, two of them on the service that was failing
+### A-47.5 — One line in `vercel.json` stopped the whole site deploying
+
+**Found during Phase 2, not Phase 1.** Every Vercel deployment from
+`17faecc` (27 August, 18:08 IST) onward **failed at build time**. The commit
+changed one file and added seven lines:
+
+```json
+"crons": [{ "path": "/api/cron/air", "schedule": "*/15 * * * *" }]
+```
+
+Vercel's documentation: *"Hobby accounts are limited to cron jobs that run once
+per day. Cron expressions that would run more frequently will fail during
+deployment."* The failing deployment's own error link redirects to
+`vercel.com/docs/cron-jobs/usage-and-pricing`.
+
+So **swechha.in stopped receiving any update at all on 27 August evening** —
+independently of the pipeline. Even on the runs where the data published, the
+site could not deploy. This is the second, and heavier, half of why the live
+figure sat at 27 hours old, and it was invisible from GitHub Actions logs
+because nothing about it is a GitHub Actions failure.
+
+**Ruling.** The schedule becomes `17 1 * * *` — once daily, legal on Hobby, and
+it genuinely exercises the dispatcher. A test now pins the constraint, because
+nothing in this repository could otherwise catch a one-line edit that breaks
+every deployment. Restoring a true 15-minute external heartbeat needs one of:
+
+- **Vercel Pro**, on which a fifteen-minute expression is legal; or
+- **an external pinger** (cron-job.org, UptimeRobot — free tiers exist) calling
+  `/api/cron/air` with the `CRON_SECRET` bearer token on its own schedule.
+
+Until one of those, the 15-minute cadence rests on GitHub's schedule alone,
+with the reliability measured below.
+
+### A-47.6 — Three schedulers, two of them on the service that was failing
 
 Measured on this repository 26–28 August: GitHub's schedule service delivered
 **five** scheduled events in forty-eight hours across seven scheduled
@@ -128,7 +161,7 @@ the GitHub cron as a cheap best-effort rung, and the Vercel cron
 that does not depend on GitHub's scheduler. Both dispatch the one workflow;
 `/api/cron/air` skips when a run started in the last 12 minutes.
 
-### A-47.6 — Two latent failures the outage was hiding
+### A-47.7 — Two latent failures the outage was hiding
 
 - The commit step staged `data/air-history.ndjson`, **a path that has never
   existed** — AD-46 stores history in the *directory* `data/air-history/`.
@@ -144,7 +177,7 @@ that does not depend on GitHub's scheduler. Both dispatch the one workflow;
   re-runs all 11 and fails if the tree moves, leaving that gate primed to fail
   on the next pull request anyone opened. It now rebuilds all of them.
 
-### A-47.7 — A test that asserted prose
+### A-47.8 — A test that asserted prose
 
 `lib/air-history.test.ts` asserted the workflow *contained a step title*. A
 rename in the GitHub web UI turned `main` red for a rename, while saying
