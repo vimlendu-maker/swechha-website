@@ -79,7 +79,35 @@ on:
         default: true
 
 concurrency:
-  group: climate-events
+  # ★ ONE PUBLISHER AT A TIME, ACROSS ALL THREE WORKFLOWS.
+  # air-hourly.yml, data-refresh.yml and climate-events.yml are independent in
+  # what they READ — that separation is deliberate and documented in each file —
+  # but they are not independent in what they WRITE. All three commit to `data`
+  # and `public/_pages`, and all three rebuild the SAME page list (situations,
+  # work, about, impact, farm, act, stories, publications, posters, search,
+  # essays). Three writers, one branch.
+  #
+  # They each used to hold a group of their own, which protects a workflow from
+  # ITSELF and from nothing else. The result was measurable: data-refresh.yml
+  # failed all six times it has ever run, every one at `git push` —
+  #
+  #   error: failed to push some refs
+  #   hint: Updates were rejected because the remote contains work that you do
+  #         not have locally. This is usually caused by another repository
+  #         pushing to the same ref.
+  #
+  # It checks out, spends eight minutes fetching, and the air publisher lands
+  # underneath it. Rebasing out of that is not the fix it looks like: the
+  # conflicting files are generated HTML that both jobs rewrite in full, so a
+  # merge resolution is a coin flip on whose figures survive, on a site whose
+  # entire premise is that the figures are current.
+  #
+  # A shared group removes the race instead of resolving it. The cost is that a
+  # daily eight-minute refresh can make one air run wait, and GitHub keeps only
+  # the newest pending run per group — so an air poll may be cancelled while
+  # queued. That is harmless here: the next dispatch is fifteen minutes out and
+  # /api/cron/air re-dispatches on its own once no recent run covers the slot.
+  group: publish
   cancel-in-progress: false
 
 permissions:

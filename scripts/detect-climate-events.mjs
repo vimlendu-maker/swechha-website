@@ -724,10 +724,50 @@ async function dossier(c, s, existing) {
        detector may add under a human's writing and may never replace it. */
     impact: (() => {
       const read = consolidate(sources, { place: c.place });
-      const kept = { ...read, ...(existing?.impact || {}) };
-      /* A metric an editor set keeps the editor's whole claim, including its
-         status word, which may legitimately be `confirmed` where a headline
-         can only ever be `media_report`. */
+      const kept = { ...read };
+      /* ── ONLY AN EDITOR'S ROW SURVIVES A RE-DETECTION ──────────────────
+         ★ THIS MERGE USED TO BE `{ ...read, ...existing.impact }` AND IT
+         DEADLOCKED THE WHOLE PIPELINE. Spreading the previous impact over the
+         fresh one preserved EVERY row, including the machine-extracted ones —
+         and an extracted row cites source ids out of `sources`, which is
+         rebuilt from the last two days of news on every run and capped at 24
+         entries. So the moment a quoted headline aged out of that window, the
+         row it produced stayed behind citing a source the register no longer
+         held, and lib/climate-events.mjs correctly refused the file:
+
+           active/nepal-glof.json: impact.deaths cites source
+           "india-today-nepal-tibet-floods-toll-hits-5", which is not in this
+           file's source register.
+
+         That throw is inside the page rebuild, which runs BEFORE the commit —
+         so a failing run committed nothing, the dossier on disk never moved,
+         and the next run inherited the same doomed impact. The failure was
+         guaranteed to repeat and guaranteed to get worse, because more
+         citations expire with every passing day. Measured 28 August 2026: the
+         first live run of this workflow died exactly here.
+
+         It was also silently freezing the figures. nepal-glof's preserved
+         `deaths` read 547 while the sources in its own register had moved to
+         600 — the page was quoting a toll no listed source still printed.
+
+         So an extracted row is now RECOMPUTED from the register every run,
+         which makes a dangling citation structurally impossible: the row and
+         the register are built from the same array in the same call. Only a
+         row a human set — no `extracted` flag — is carried across, which is
+         all the original comment ever claimed to protect, and it keeps the
+         editor's own status word (`confirmed`, where a headline could only
+         ever be `media_report`).
+
+         ★ A FIGURE WHOSE LAST SOURCE HAS AGED OUT NOW DISAPPEARS, and that is
+         the honest behaviour, not a regression: this page's rule is that every
+         number is a quotation attributable to a source listed beneath it. If
+         nothing in the register still prints it, the page has no business
+         printing it either. (nepal-glof's `injured: 1944` goes this way.) The
+         lever if that proves too aggressive is the 24-item cap on `sources`
+         above — widen the register, not the merge. */
+      for (const [metric, claim] of Object.entries(existing?.impact || {})) {
+        if (claim && !claim.extracted) kept[metric] = claim;
+      }
       return kept;
     })(),
     figures: existing?.figures || [],

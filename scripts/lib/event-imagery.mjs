@@ -121,10 +121,14 @@ export const LAYERS = [
 
 export const layerById = (id) => LAYERS.find((l) => l.id === id) || null;
 
+/* ONE NAME, ONCE. The old pair printed the same credit twice — the link said
+   "NASA Worldview Snapshots / NASA EOSDIS GIBS" and the note then spelled GIBS
+   out in full again. The line below still carries what GIBS asks for (courtesy
+   credit + the Worldview link) and says it once. */
 export const ATTRIBUTION = {
-  name: 'NASA Worldview Snapshots / NASA EOSDIS GIBS',
+  name: 'NASA Worldview Snapshots',
   url: 'https://worldview.earthdata.nasa.gov/',
-  note: 'Imagery courtesy of NASA EOSDIS Global Imagery Browse Services.',
+  note: 'Public domain, courtesy of NASA EOSDIS GIBS.',
 };
 
 /* ── THE FRAME ────────────────────────────────────────────────────────────
