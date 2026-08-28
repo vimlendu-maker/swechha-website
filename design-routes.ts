@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
 /**
@@ -139,6 +139,30 @@ function workRoutes(): Record<string, string> {
   return out
 }
 
+/* DISASTER PAGES are derived the same way the WORK routes are: from the data
+   that produced them. `scripts/build-climate-disaster-pages.mjs` emits one page
+   per PUBLISHED event under data/climate-events/active/, and this routes
+   exactly those — so a page cannot be built and left unrouted, and a route
+   cannot point at a page that was never built.
+
+   A DRAFT event gets neither. That is the whole point: an event the detector
+   scored below its publication threshold has no URL to be found at, which is
+   what stops one mis-scraped headline from minting a page. */
+function disasterRoutes(): Record<string, string> {
+  const dir = join(ROOT, 'data/climate-events/active')
+  if (!existsSync(dir)) return {}
+  const out: Record<string, string> = {}
+  for (const f of readdirSync(dir)) {
+    if (!f.endsWith('.json')) continue
+    const e = JSON.parse(readFileSync(join(dir, f), 'utf8')) as {
+      slug?: string; publish_state?: string
+    }
+    if (e.publish_state !== 'published' || !e.slug) continue
+    out[`/now/climate-event/${e.slug}`] = `climate-event/${e.slug}.html`
+  }
+  return out
+}
+
 export function designRoutes(): Array<{ source: string; destination: string }> {
   const map: Record<string, string> = {
     '/': 'home.html',
@@ -159,6 +183,7 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
        change, and any two of them without the third is a defect. */
     '/now/air/india': 'air-india.html',
     ...workRoutes(),
+    ...disasterRoutes(),
     '/search': 'search.html',
     '/stories': 'stories.html',
     '/stories/cyclone-biparjoy': 'stories/cyclone-biparjoy.html',

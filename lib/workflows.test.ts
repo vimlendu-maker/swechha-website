@@ -77,6 +77,14 @@ const COVERED_BY_SITUATIONS = [
   'build:situation-air', 'build:situation-yamuna', 'build:situation-heatwave',
   'build:situation-forest-fire', 'build:situation-forest-loss',
   'build:situation-climate-event', 'build:air-india', 'build:index',
+  /* One page per PUBLISHED climate event, emitted by build:situations after
+     the standing climate page. It is exempt from the by-name gate for a
+     reason the other entries do not share: its output set is not fixed. On a
+     quiet week it writes nothing at all, and after a regional disaster it
+     writes one page — so "regenerate it and fail if the tree moved" is a check
+     the gate still performs (build:situations runs it), while a register of
+     expected filenames would be wrong by construction. */
+  'build:climate-disasters',
 ]
 const NOT_A_PAGE_BUILD = [
   'build',              // next build

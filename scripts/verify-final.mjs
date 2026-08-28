@@ -145,7 +145,11 @@ export const SITUATIONS = [
     kind: 'situation', famId: 'climate', file: 'situation-climate-event.html', route: '/now/climate-event',
     title: 'India’s extreme rain', h1: 'India’s extreme rain',
     generator: 'scripts/build-situation-climate-event.mjs', npm: 'build:situation-climate-event',
-    bands: 8, money: false,
+    /* NINE since the current-situation band. That band renders one of exactly
+       two states — an event dossier, or the freshest archive signal — and both
+       emit the same single <section id="situation">, so this count does not
+       move with the news. */
+    bands: 9, money: false,
     states: ['PERIODIC'],
     subject: 'Days over IMD’s heavy-rain threshold, and the deaths from five named causes.',
     reading: () => {
@@ -198,6 +202,7 @@ export const NOT_FINAL = [
   { file: 'stories.html', why: 'FINISHED (AD-26), serving at /stories. Outside this test for the same reason as about.html \u2014 the twelve checks above are situation-specific. Its own gates live in scripts/build-stories-page.mjs, including the two that matter: every YouTube id resolves against data/media/youtube-index.json, and the page may not claim six films when two of R-3\'s six have no source on the channel.' },
   { file: 'posters.html', why: 'FINISHED (AD-42), serving at /posters. Ten GIZ marine-plastic sheets as artefacts; the campaign that made them is at /work/campaigns/no-plastic, which shows the same set as its argument. Its own gates live in scripts/build-posters-page.mjs; the load-bearing ones are that no poster may sit in an .ht box or carry .duo (either would crop or duotone an A3 infographic), and that GIZ and the German federal environment ministry are named ONLY inside the credit quoted off the artwork.' },
   { file: 'publications.html', why: 'FINISHED (AD-26), serving at /publications. Its own gates live in scripts/build-publications-page.mjs; the load-bearing one reads every linked PDF\'s size off disk rather than trusting a typed figure, and refuses anything large enough to be a print master.' },
+  { file: 'climate-event/', why: 'ONE PAGE PER PUBLISHED CLIMATE EVENT, from scripts/build-climate-disaster-pages.mjs, serving at /now/climate-event/<slug>. Outside this test because the SET IS NOT FIXED \u2014 it is whatever the detector currently has above its publication bar, which on a quiet week is nothing at all and after a regional disaster is one page. A register of fixed filenames is the wrong shape for it. Its gates live in lib/climate-events.mjs and run at build: a figure without a resolvable source, an automated event published on too little corroboration, or a published event with an empty `uncertain` list all fail the build rather than reaching a reader. Routes are derived from the same files by design-routes.ts, so a page cannot be built and left unrouted.' },
   { file: 'work/', why: 'FINISHED — 16 pages from scripts/build-work-pages.mjs, merged in PR #5 and serving under /work. It was in progress in a concurrent session when this line first read that way. It carries its own acceptance gate, the LINKS.json manifest, which fails the build on any unlisted or dead href.' },
 ];
 
