@@ -13,7 +13,21 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { imageSize as jpegSize } from './jpeg-size.mjs';
 
-const ROOT = join(import.meta.dirname, '../..');
+/* ★ `import.meta.dirname` IS UNDEFINED WHEN THIS MODULE IS BUNDLED, and this
+   file is now imported from BOTH sides of the site: by the generators, which
+   run it under plain node from `scripts/lib/`, and by `lib/social.ts`, which
+   Next pulls into the server graph so an App Router route can measure its own
+   hero. Turbopack does not fill `import.meta.dirname` in, so the bare form
+   threw `The "path" argument must be of type string. Received undefined` on
+   every request to `/explore` — at module scope, so the route 500'd before any
+   of its code ran.
+
+   `process.cwd()` is the right answer for exactly the case where dirname is
+   missing: a bundled module has no meaningful location of its own, and Next
+   runs from the project root. Under node the dirname branch still wins, so a
+   generator invoked from any working directory keeps resolving correctly —
+   which is why this is a fallback and not a replacement. */
+const ROOT = import.meta.dirname ? join(import.meta.dirname, '../..') : process.cwd();
 
 export function imageSize(publicPath) {
   const file = join(ROOT, 'public', publicPath.replace(/^\//, ''));

@@ -8,6 +8,7 @@ import { ActionList } from '@/components/action-list'
 import { EvidenceList } from '@/components/evidence-list'
 import { RelatedContent } from '@/components/related-content'
 import { getAllCampaigns, getCampaignBySlug, getRelated } from '@/lib/content'
+import { shareCard } from '@/lib/social'
 
 export function generateStaticParams() {
   return getAllCampaigns().map((c) => ({ slug: c.slug }))
@@ -19,13 +20,17 @@ export async function generateMetadata(
   const { slug } = await props.params
   const campaign = getCampaignBySlug(slug)
   if (!campaign) return {}
+  /* The campaign's own hero, and the whole openGraph object — the identical
+     shallow-merge trap this route was in. See lib/social.ts. */
+  const card = shareCard(campaign.data.heroImage)
   return {
     title: campaign.data.title,
     description: campaign.data.summary,
+    ...card,
     openGraph: {
+      ...card.openGraph,
       title: campaign.data.title,
       description: campaign.data.summary,
-      images: [campaign.data.heroImage.src],
     },
   }
 }
