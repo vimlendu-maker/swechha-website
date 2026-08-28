@@ -72,8 +72,11 @@ jobs:
           FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
           AIR_RELAY_TOKEN: ${{ secrets.AIR_RELAY_TOKEN }}
         run: |
-          # IMPORTANT: data:air-all is intentionally NOT called here.
-          # Air is owned exclusively by air-hourly.yml.
+          # IMPORTANT: no Air fetch runs here. Air is owned exclusively by
+          # air-hourly.yml, which fetches, cross-checks, builds and publishes
+          # it in one transaction. (The old `data:air-all` script this note
+          # used to name was deleted in AD-47 — it was the last reference to
+          # fetch-crosscheck.mjs while nothing called it.)
           failed=""
           for s in data:yamuna data:heat data:climate \
                    data:forest data:forest-fire data:attention data:coverage; do
@@ -91,6 +94,11 @@ jobs:
           # The Air bulletin cross-check is also intentionally excluded here.
           # Air validation belongs to air-hourly.yml so that the dedicated Air
           # owner has one coherent fetch/validate/build/publish transaction.
+          # ★ AD-47: that hand-off was written here on 27 August and the
+          # receiving workflow never implemented its half, so the gate ran
+          # NOWHERE for a day and a half. air-hourly.yml now runs it on a
+          # 6-hour window. If Air validation is ever moved back, move the
+          # call, not just the comment.
           echo "Air cross-check skipped here: air-hourly.yml is the sole Air owner."
 
       - name: Discard timestamp-only churn, keep real changes
