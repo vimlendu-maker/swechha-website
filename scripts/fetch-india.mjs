@@ -51,6 +51,9 @@ import {
   SERVED_BY_CAAQMS, SERVED_BY_MIRROR, parseStamp,
 } from './lib/fetch-caaqms.mjs';
 import { recordObservation } from './lib/air-history.mjs';
+/* isStuck, with the self-check that runs on import. This file used to carry
+   its own copy and NOT the test — see scripts/lib/air-rules.mjs (AD-47). */
+import { isStuck } from './lib/air-rules.mjs';
 
 const KEY = process.env.DATA_GOV_IN_KEY;
 const OUT = resolve(process.argv[2] || 'data/air-india.json');
@@ -303,13 +306,6 @@ if (!SERVED) SERVED = 'mirror'; // the loop above delivered, or AIR_FIXTURE repl
 
 /* ── FOLD: row -> station -> city ──────────────────────────────────────── */
 
-/** A stuck instrument. Transcribed from lib/air.ts's `isStuck`. */
-function isStuck(min, max, avg) {
-  if (min == null || max == null || avg == null) return false;
-  if (max < min) return false;
-  if (max === 0) return min === 0;
-  return (max - min) / max < 0.02;
-}
 let stuckDropped = 0;
 
 const stations = new Map();

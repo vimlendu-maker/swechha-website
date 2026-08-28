@@ -53,6 +53,9 @@ import {
   SERVED_BY_CAAQMS, SERVED_BY_MIRROR,
 } from './lib/fetch-caaqms.mjs';
 import { recordObservation } from './lib/air-history.mjs';
+/* isStuck and the 0-500 scale bound, with the self-check that runs on import —
+   see scripts/lib/air-rules.mjs for why they are no longer transcribed here. */
+import { isStuck, isOffScale, AQI_SCALE_MAX } from './lib/air-rules.mjs';
 
 const RESOURCE = '3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69';
 const KEY = process.env.DATA_GOV_IN_KEY;
@@ -147,32 +150,6 @@ for (const [sub, want] of [[51, 31], [100, 60], [225, 98]]) {
   }
 }
 
-
-/**
- * A stuck instrument, by the same test as lib/air.ts's `isStuck`. The two are
- * transcribed and must not drift; `selfCheckStuck()` below pins the cases that
- * matter with real numbers off the feed.
- */
-function isStuck(min, max, avg) {
-  if (min === null || max === null || avg === null) return false;
-  if (max < min) return false;
-  if (max === 0) return min === 0;
-  return (max - min) / max < 0.02;
-}
-
-/* The two readings that made this rule, and the one that must survive it. */
-for (const [mn, mx, av, want, why] of [
-  [187, 188, 188, true,  'Leh CO — one point across 24h, ranked Leh 1st in India'],
-  [101, 103, 102, true,  'Navi Mumbai CO — the analyser that was frozen at 101 hours earlier'],
-  [5, 6, 5, false,       'Madurai ozone — LOW, not stuck; an absolute test would wrongly drop it'],
-  [94, 248, 158, false,  'Leh ozone — a live channel at the same station'],
-]) {
-  if (isStuck(mn, mx, av) !== want) {
-    console.error(`STUCK-CHANNEL TEST IS WRONG: ${mn}/${mx}/${av} should be ` +
-      `${want ? 'stuck' : 'live'} (${why}). Refusing to run.`);
-    process.exit(1);
-  }
-}
 
 /* ── FETCH ───────────────────────────────────────────────────────────────
    Paged. `total` came back as 301 rows for Delhi (station x pollutant), so
@@ -409,10 +386,9 @@ for (const r of rows) {
    pollutant, band and `suspect` flag are all computed once from clean
    channels. Dropping a channel afterwards would mean unpicking each of them
    by hand, which is the kind of second pass that drifts. */
-const AQI_SCALE_MAX = 500;
 for (const st of stations.values()) {
   for (const [pid, pol] of Object.entries(st.pollutants)) {
-    if (pol.sub !== null && pol.sub > AQI_SCALE_MAX) {
+    if (isOffScale(pol.sub)) {
       (st.offScale ||= []).push(`${pid}=${pol.sub}`);
       delete st.pollutants[pid];
     }
