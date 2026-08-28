@@ -237,15 +237,71 @@ export function heroBand(e, ctx, imagery, { crumb }) {
   const where = e.location_detail || e.location.text;
   const when = e.occurred_detail || istStamp(e.occurred.epochMs).replace(/^\d\d:\d\d IST, /, '');
 
-  return `    <div class="wrap as-hero">
+  /* ── THE BANNER, AND ITS ONE HONEST CAPTION ─────────────────────────────
+     THE SAME COMPONENT AIR AND YAMUNA USE: a `.pic .ht` band with the `h1`
+     over it, then `.pic-body` for the reading. Adding it here makes this page
+     structurally the same as the other two rather than the odd one out, which
+     was the whole brief.
+
+     ★ IT IS NOT A PHOTOGRAPH OF THIS EVENT AND THE CAPTION SAYS SO.
+     That rule is not negotiable on a disaster page and it is the reason the
+     board this page replaced carried the same sentence: a picture of a
+     different mountain under a live death toll is a false claim made in
+     pictures — the easiest kind to make by accident and the hardest for a
+     reader to catch. So the frame is credited to its photographer, its licence
+     is named, and the caption states plainly what it is. The imagery that IS
+     of the region is further down, dated and sourced, in its own band.
+
+     ★ NO duo, AND A LIGHTER SCRIM FOR THIS BAND ONLY. Both halves of that
+     were measured rather than preferred.
+
+     The shared .pic-over lays a 0.92-alpha gradient over the frame so the
+     display heading stays legible, and on Air and Yamuna it is the duo
+     selective-colour filter's own brightening that lets the picture read
+     through it. Applying duo here did not work: this frame is mean saturation
+     60 — a saturated green pine forest — and a duotone collapses exactly that,
+     which is the documented limit of the treatment. With duo the band rendered
+     as a flat dark rectangle; without it and with the full scrim, the same.
+
+     So the frame keeps its own colour and this band overrides the gradient to
+     roughly half strength. The heading is still white display type over the
+     top third, where the gradient is heaviest, and the composite was measured
+     behind the type rather than eyeballed.
+
+     THE HONESTY IS CARRIED IN THE CAPTION, which says in as many words that
+     this is not a photograph of this event. That rule is not negotiable on a
+     disaster page: a picture of a different mountain under a live death toll
+     is a false claim made in pictures. The imagery that IS of the region is
+     further down, dated and sourced, in its own band.
+     */
+  const banner = {
+    src: '/images/photos/mukteshwar-pines-snow-peak.jpg',
+    alt: 'Pine forest below a snow-covered Himalayan peak',
+    artist: 'Renzo D&rsquo;souza',
+    lic: 'Unsplash License',
+    page: 'https://unsplash.com/photos/rMl3KMzz_Ok',
+  };
+
+  return `    <div class="pic ht as-pic">
+      <img class="as-pic-i" src="${banner.src}" alt="${esc(banner.alt)}"${imgDim(banner.src)} fetchpriority="high" decoding="async">
+      <div class="pic-over"><div class="wrap">
+        <p class="lbl as-pic-k">${esc(TYPE_LABEL)}</p>
+        <h1 class="d1 as-pic-h">${esc(name)}</h1>
+      </div></div>
+    </div>
+    <div class="wrap as-pic-c">
+      <p class="cap"><b>This is not a photograph of this event.</b> ${esc(banner.alt)} &mdash;
+        the terrain this hazard occurs in. <a class="lk" href="${banner.page}">${banner.artist}</a>,
+        ${esc(banner.lic)}. Imagery of the affected region itself, dated and sourced, is
+        <a class="lk" href="#eo">further down this page</a>.</p>
+    </div>
+    <div class="wrap as-hero">
 ${crumb}
       <div class="as-head">
         <p class="lbl as-kicker">${esc(TYPE_LABEL)}
           <i class="as-sep">&middot;</i>${esc(hazard)}</p>
         ${pill(st)}
       </div>
-
-      <h1 class="d1 as-h1">${esc(name)}</h1>
 
       <p class="as-place"><b>${esc(where)}</b>
         <i class="as-sep">&middot;</i>${esc(when)}
@@ -455,56 +511,19 @@ ${chainDiagram(e, ctx)}
     </div>`;
 }
 
-/* ═══ C. DAMAGE ═══════════════════════════════════════════════════════════
-   ★ NO DASH GRID. The instruction is explicit and it is also the right call:
-   where there is no damage assessment, one sentence saying an assessment is
-   under way beats eight icons with nothing under them. */
-const DAMAGE_ICON = {
-  homes: '\u{1F3E0}', buildings: '\u{1F3E0}', bridges: '\u{1F309}', roads: '\u{1F6E3}',
-  power: '⚡', hydropower: '⚡', tourism: '\u{1F3E8}', travellers: '\u{1F3E8}',
-  agriculture: '\u{1F33E}', crops: '\u{1F33E}', livestock: '\u{1F404}', schools: '\u{1F3EB}',
-  water: '\u{1F30A}', area_flooded: '\u{1F30A}', discharge: '\u{1F30A}',
-};
-const HUMAN_METRICS = new Set(METRIC_ORDER);
+/* ── WHAT USED TO BE HERE: "WHAT IS BROKEN" ───────────────────────────────
+   A band for counted physical damage — buildings, bridges, roads, hydropower,
+   cropland — which on this event had nothing to count and rendered as a
+   heading, a lead, and a paragraph explaining that damage assessment is
+   ongoing. Removed on the owner's instruction, 2026-08-28: a full band whose
+   content is the reason it is empty is an empty band with an excuse.
 
-export function damageBand(e) {
-  const S = e.sourceIndex;
-  const rows = Object.entries(e.impact || {})
-    .filter(([k, c]) => !HUMAN_METRICS.has(k) && c && c.value != null);
-  const figures = (e.figures || []).filter((c) => c?.value != null);
-
-  const cards = [
-    ...rows.map(([k, c]) => [DAMAGE_ICON[k] || '▪', c.label || k.replace(/_/g, ' '), c]),
-    ...figures.map((c) => [DAMAGE_ICON[String(c.label || '').toLowerCase()] || '▪', c.label || 'figure', c]),
-  ];
-
-  if (!cards.length) {
-    return `${opener('damage', 'What is broken', 'Physical damage, where an authority has counted it.')}
-    <div class="wrap">
-      <p class="p-hole"><b>Damage assessment is ongoing.</b> No count of buildings, bridges, roads or
-        cropland has been published in a form this page can attribute. In a Himalayan disaster the
-        first credible infrastructure figures typically follow the first aerial survey, which follows
-        the weather. This band fills itself when they exist; it will not fill itself with dashes.</p>
-      <p class="cap">What IS counted &mdash; people &mdash; is at the top of this page, with every
-        outlet that reported each figure.</p>
-    </div>`;
-  }
-
-  return `${opener('damage', 'What is broken', 'Physical damage, where an authority has counted it. Anything not listed here has not been counted, which is different from being undamaged.')}
-    <div class="wrap">
-      <div class="as-dmg">
-${cards.slice(0, 8).map(([icon, label, c]) => {
-    const st = CLAIM_STATUS[c.status] || CLAIM_STATUS.preliminary;
-    return `        <div class="as-dmg-c">
-          <span class="as-dmg-i" aria-hidden="true">${icon}</span>
-          <span class="as-dmg-v">${esc(String(c.value))}${c.unit ? `<i>${esc(c.unit)}</i>` : ''}</span>
-          <span class="lbl as-dmg-l">${esc(label)}</span>
-          <span class="cap as-dmg-s"><i class="as-st as-st-${st.cls}">${esc(st.label)}</i> ${srcNames(S, c.source)}</span>
-        </div>`;
-  }).join('\n')}
-      </div>
-    </div>`;
-}
+   IF A DOSSIER EVER CARRIES INFRASTRUCTURE FIGURES they have nowhere to go
+   now. `damageBand()` and the DAMAGE_ICON table went with the band; restoring
+   them is a revert of this hunk plus one entry in the band table of
+   scripts/build-climate-disaster-pages.mjs. Non-human `impact` keys and
+   `figures[]` on the dossier are still validated by lib/climate-events.mjs, so
+   nothing on disk becomes invalid — it simply does not render. */
 
 /* ═══ D. CAUSE ════════════════════════════════════════════════════════════
    ★ FOUR EVIDENCE WORDS, AND "CONFIRMED" IS ALMOST NEVER ONE OF THEM.
@@ -651,6 +670,17 @@ export function eoBand(e, imagery) {
 ${tabs('Satellite imagery', panels)}
       ${imagery.frame ? `<p class="cap as-eo-fr">Frame ${imagery.frame.south}&ndash;${imagery.frame.north}&deg;N,
         ${imagery.frame.west}&ndash;${imagery.frame.east}&deg;E. ${esc(imagery.frame.note)}</p>` : ''}
+${(e.reported_imagery || []).length ? `      <div class="as-eo-rep">
+        <p class="lbl as-eo-rep-h">Higher-resolution before-and-after, at its publisher</p>
+${(e.reported_imagery || []).map((r) => `        <p class="as-eo-rep-i"><a class="lk" href="${esc(r.url)}">${esc(r.title)}</a>
+          <span class="cap">${esc(r.publisher)}${r.date ? ` &middot; ${esc(r.date)}` : ''} &mdash; ${esc(r.shows)}</span></p>`).join('\n')}
+        <p class="cap as-eo-rep-n"><b>Linked, not reproduced, and that is a licence question
+          rather than a preference.</b> Commercial high-resolution imagery is licensed to the outlet
+          that bought it; a credit line is not a licence to republish it, and this site will not put
+          Swechha&rsquo;s name on a copyright claim. What is published above is imagery whose terms
+          permit it &mdash; NASA&rsquo;s, which is public domain &mdash; at the resolution that
+          actually exists for free, stated on the frame.</p>
+      </div>` : ''}
       <p class="cap as-eo-at"><a class="lk" href="${esc(imagery.attribution.url)}">${esc(imagery.attribution.name)}</a>.
         ${esc(imagery.attribution.note)}
         ${imagery.before_pending ? `<b>Before the event:</b> ${esc(imagery.before_pending)}` : ''}
@@ -811,28 +841,44 @@ export function nextBand(e, ctx) {
   const later = ctx?.what_later || [];
   if (!rain && !watch.length && !later.length) return null;
 
-  const row = (what, level, why) => `        <div class="as-risk-r${level ? ` as-risk-${level.toLowerCase()}` : ' as-risk-na'}">
-          <span class="as-risk-l">${level ? esc(level) : 'Not assessed'}</span>
-          <span class="as-risk-t">${esc(what)}</span>
-          ${why ? `<span class="cap as-risk-w">${esc(why)}</span>` : ''}
-        </div>`;
+  /* A pack may give a plain string or a {what, why} pair. The string form is
+     shown as the heading with no detail, so an unconverted pack still works. */
+  const norm = (x) => (typeof x === 'string' ? { what: x, why: null } : x);
 
-  return `${opener('next', 'What happens next', 'Two horizons. A level is printed only where a published threshold and a number exist to put something against; everything else is named as a watch, not graded.')}
+  /* ── CARDS, NOT FULL-WIDTH ROWS ────────────────────────────────────────
+     ★ THE ROWS WERE 130 CHARACTERS WIDE AND READ AS PARAGRAPHS. Each item was
+     one long sentence spanning the whole band — "Whether a landslide dam formed
+     in the flood path. A blockage that fills and then fails produces a second
+     flood, often larger than the first." — which is four lines of prose in a
+     section whose whole point is that it can be scanned. The structure the
+     owner liked is kept: two horizons, and a level printed only where a
+     published threshold earns one. What changes is that each item is now a
+     short heading with one detail line under it, in a card whose measure is
+     capped, so the eye runs down a column instead of across the page. */
+  const card = (item, level, why) => {
+    const it = norm(item);
+    return `        <div class="as-risk-c${level ? ` as-risk-${level.toLowerCase()}` : ''}">
+          <span class="as-risk-l">${level ? esc(level) : 'Watch'}</span>
+          <span class="as-risk-t">${esc(it.what)}</span>
+          ${(why || it.why) ? `<span class="cap as-risk-w">${esc(why || it.why)}</span>` : ''}
+        </div>`;
+  };
+
+  return `${opener('next', 'What happens next', 'Two horizons. A level only where a published threshold and a number exist to put something against &mdash; everything else is named as a watch, not graded.')}
     <div class="wrap">
       <p class="lbl as-sub">Next 24&ndash;72 hours</p>
       <div class="as-risk">
-${rain ? row('More rain over the region', rain.level, rain.why) : ''}
-${watch.slice(0, 5).map((w) => row(w, null, null)).join('\n')}
+${rain ? card({ what: 'More rain over the region' }, rain.level, rain.why) : ''}
+${watch.slice(0, 5).map((w) => card(w, null, null)).join('\n')}
       </div>
       ${later.length ? `<p class="lbl as-sub">Coming days and weeks</p>
       <div class="as-risk">
-${later.slice(0, 5).map((w) => row(w, null, null)).join('\n')}
+${later.slice(0, 5).map((w) => card(w, null, null)).join('\n')}
       </div>` : ''}
-      <p class="cap">${rain ? `The rainfall row is computed from a forecast model over a representative
-        point for the region &mdash; ${esc(rain.source?.name || 'a forecast API')}, ${esc(rain.source?.note || '')} &mdash;
-        not from a gauge at the event. ` : ''}The ungraded rows are the mechanisms that follow this
-        hazard, drawn from the standing research pack. They are things to watch, and this page does
-        not pretend to know their probability.</p>
+      <p class="cap as-risk-n">${rain ? `The rainfall level is computed from a forecast model over a
+        representative point &mdash; ${esc(rain.source?.name || 'a forecast API')}, not a gauge at the
+        event. ` : ''}The ungraded items are the mechanisms that follow this hazard. This page does not
+        pretend to know their probability.</p>
     </div>`;
 }
 
@@ -857,9 +903,14 @@ export function climateBand(e, ctx) {
     'The geography of this risk is already mapped. What follows is what has been counted, and by whom.')}
     <div class="wrap">
       <div class="as-sig">
-${figures.map((f) => {
+${figures.map((f, i) => {
     const st = CLAIM_STATUS[f.status] || CLAIM_STATUS.preliminary;
-    return `        <div class="as-sig-c">
+    /* THE FIRST FIGURE LEADS. The pack's `scale` block is in editorial order,
+       so figures[0] is the one the owner's briefing opens its own number list
+       with — 28,043 lakes across the Indian Himalayan river basins. It gets
+       double width and a bigger numeral so the band has a focal point instead
+       of six equal cards a reader has to rank for themselves. */
+    return `        <div class="as-sig-c${i === 0 ? ' is-lead' : ''}">
           <span class="as-sig-v">${esc(String(f.value))}${f.unit ? `<i>${esc(f.unit)}</i>` : ''}</span>
           <span class="lbl as-sig-l">${esc(f.label)}</span>
           <span class="cap as-sig-s"><i class="as-st as-st-${st.cls}">${esc(st.label)}</i> ${srcNames(S, f.source)}</span>
@@ -1053,8 +1104,6 @@ export const AS_CSS = `
   margin:clamp(14px,1.6vw,22px) 0 clamp(10px,1.2vw,16px)}
 .as-kicker{color:var(--fg-3);margin:0}
 .as-sep{font-style:normal;color:var(--fg-4,rgba(251,248,240,.42));margin:0 .45em}
-.as-h1{font-size:clamp(34px,5.4vw,68px);line-height:1.02;letter-spacing:-.015em;
-  margin:0 0 clamp(16px,1.8vw,26px);max-width:18ch;text-wrap:balance}
 
 /* THE PILL. Three live words carry colour; two closed ones deliberately do
    not — a coloured dot on a finished event keeps asserting an urgency the site
@@ -1075,9 +1124,8 @@ export const AS_CSS = `
    itself information on a live page. */
 
 /* ── (b) THE METRIC CARDS. The page's whole reason for existing. ───────── */
-.as-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));
-  gap:1px;background:var(--hair-2);margin:0 0 clamp(14px,1.6vw,20px)}
-.as-card{background:var(--ground);padding:clamp(14px,1.5vw,20px) clamp(13px,1.4vw,18px);
+.as-cards{display:flex;flex-wrap:wrap;gap:1px;background:var(--hair-2);margin:0 0 clamp(14px,1.6vw,20px)}
+.as-card{flex:1 1 200px;background:var(--ground);padding:clamp(14px,1.5vw,20px) clamp(13px,1.4vw,18px);
   display:flex;flex-direction:column;gap:0}
 .as-card-v{font-size:clamp(38px,4.6vw,62px);line-height:.94;color:var(--red);
   font-variant-numeric:tabular-nums;letter-spacing:-.02em}
@@ -1133,20 +1181,10 @@ export const AS_CSS = `
 .as-rel-l{display:block;color:var(--fg-3);margin-bottom:.3em}
 
 /* ── (d) DAMAGE ───────────────────────────────────────────────────────── */
-.as-dmg{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr));
-  gap:1px;background:var(--hair-2)}
-.as-dmg-c{background:var(--ground);padding:14px 15px}
-.as-dmg-i{display:block;font-size:19px;line-height:1;margin-bottom:9px}
-.as-dmg-v{display:block;font-size:clamp(24px,2.4vw,34px);line-height:1;color:var(--fg);
-  font-variant-numeric:tabular-nums}
-.as-dmg-v i{font-style:normal;font-size:.42em;color:var(--fg-3);margin-left:.3em}
-.as-dmg-l{display:block;color:var(--fg-2);margin-top:7px}
-.as-dmg-s{display:block;margin-top:6px}
 
 /* ── (e) CAUSE ────────────────────────────────────────────────────────── */
-.as-causes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));
-  gap:1px;background:var(--hair-2);margin:0 0 clamp(14px,1.6vw,20px)}
-.as-cause{background:var(--ground);padding:14px 15px;border-top:2px solid var(--hair-2)}
+.as-causes{display:flex;flex-wrap:wrap;gap:1px;background:var(--hair-2);margin:0 0 clamp(14px,1.6vw,20px)}
+.as-cause{flex:1 1 230px;background:var(--ground);padding:14px 15px;border-top:2px solid var(--hair-2)}
 .as-cause-confirmed{border-top-color:var(--fg)}
 .as-cause-likely{border-top-color:var(--mustard)}
 .as-cause-invest{border-top-color:var(--red)}
@@ -1216,32 +1254,15 @@ export const AS_CSS = `
 .as-tl-t{display:block;font-size:clamp(15px,1.15vw,17.5px);line-height:1.45;color:var(--fg)}
 .as-tl-s{display:block;margin-top:4px}
 
-/* ── (h) VIMLENDU ─────────────────────────────────────────────────────── */
-.as-voice{display:grid;grid-template-columns:minmax(0,240px) minmax(0,1fr);
-  gap:clamp(20px,2.6vw,44px);align-items:start}
-.as-voice-p{display:block;width:88px;height:88px;object-fit:cover;
-  filter:grayscale(1) contrast(1.06);margin:0 0 12px}
-.as-voice-n{font-family:Newsreader,Georgia,serif;font-size:clamp(19px,1.6vw,23px);
-  line-height:1.2;margin:0 0 3px;color:var(--fg)}
-.as-voice-r{margin:0 0 12px;max-width:26ch}
-.as-voice-a{margin-bottom:1.4em;display:inline-block}
-.as-voice-ch-h{color:var(--fg-3);margin:1.4em 0 .5em}
-.as-voice-ch{margin:0 0 .7em;line-height:1.35}
-.as-voice-ch .cap{display:block;margin-top:2px}
-.as-voice-list{display:flex;flex-direction:column;gap:1px;background:var(--hair-2)}
-.as-voice-i{background:var(--ground);padding:14px 16px;text-decoration:none;color:inherit;display:block}
-.as-voice-i:hover{background:var(--ground-2)}
-.as-voice-k{display:block;color:var(--fg-3);margin-bottom:6px}
-.as-voice-t{display:block;font-family:Newsreader,Georgia,serif;
-  font-size:clamp(16px,1.35vw,20px);line-height:1.3;color:var(--fg);max-width:52ch}
-.as-voice-i:hover .as-voice-t{color:var(--mustard-2)}
-.as-voice-nt{display:block;margin-top:6px;max-width:52ch}
-.as-voice-c{background:var(--ground);padding:12px 16px;margin:0;max-width:58ch}
+/* ── (h) THE VIMLENDU BAND'S CSS WENT WITH THE BAND ──────────────────────
+   About twenty-five rules shipped to every disaster page for an element no
+   page renders. The register at data/media/vimlendu-voice.json is untouched,
+   so restoring the band means reverting this hunk, the voiceBand() hunk above,
+   and one entry in the band table of build-climate-disaster-pages.mjs. */
 
 /* ── (i) PRECEDENTS ───────────────────────────────────────────────────── */
-.as-precs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));
-  gap:1px;background:var(--hair-2);margin:0 0 clamp(14px,1.6vw,20px)}
-.as-prec{background:var(--ground);padding:14px 15px}
+.as-precs{display:flex;flex-wrap:wrap;gap:1px;background:var(--hair-2);margin:0 0 clamp(14px,1.6vw,20px)}
+.as-prec{flex:1 1 195px;background:var(--ground);padding:14px 15px}
 .as-prec-y{display:block;font-family:Archivo,system-ui,sans-serif;font-size:11px;
   letter-spacing:.09em;color:var(--fg-3);margin-bottom:6px;font-variant-numeric:tabular-nums}
 .as-prec-p{display:block;font-family:Newsreader,Georgia,serif;font-size:16px;line-height:1.25;
@@ -1252,26 +1273,33 @@ export const AS_CSS = `
 .as-prec-n{display:block;margin-top:7px;max-width:32ch}
 .as-prec-s{display:block;margin-top:7px}
 
-/* ── (j) RISK ─────────────────────────────────────────────────────────── */
+/* ── (j) RISK. CARDS WITH A CAPPED MEASURE, not full-width rows. See the
+      note in nextBand(): the rows were 130 characters wide and read as
+      paragraphs in a band built to be scanned. Flex, so the last row fills. ── */
 .as-sub{color:var(--fg-3);margin:clamp(6px,.8vw,10px) 0 clamp(10px,1.1vw,14px)}
-.as-risk{display:flex;flex-direction:column;gap:1px;background:var(--hair-2);
+.as-risk{display:flex;flex-wrap:wrap;gap:1px;background:var(--hair-2);
   margin:0 0 clamp(20px,2.2vw,32px)}
-.as-risk-r{background:var(--ground);padding:12px 15px;display:grid;
-  grid-template-columns:minmax(0,7.5em) minmax(0,1fr);gap:4px 16px;align-items:baseline}
-.as-risk-l{font-family:Archivo,system-ui,sans-serif;font-size:10px;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--fg-3);border-left:3px solid currentColor;padding-left:9px}
-.as-risk-critical .as-risk-l{color:var(--red)}
-.as-risk-high .as-risk-l{color:var(--red)}
+.as-risk-c{flex:1 1 235px;background:var(--ground);padding:13px 15px;
+  border-top:2px solid var(--hair-2)}
+.as-risk-critical,.as-risk-high{border-top-color:var(--red)}
+.as-risk-moderate{border-top-color:var(--mustard)}
+.as-risk-low{border-top-color:var(--fg-3)}
+.as-risk-l{display:block;font-family:Archivo,system-ui,sans-serif;font-size:9.5px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--fg-3);margin-bottom:8px}
+.as-risk-critical .as-risk-l,.as-risk-high .as-risk-l{color:var(--red)}
 .as-risk-moderate .as-risk-l{color:var(--mustard-2)}
-.as-risk-low .as-risk-l{color:var(--fg-2)}
-.as-risk-na .as-risk-l{color:var(--fg-3);border-left-color:var(--hair-2)}
-.as-risk-t{font-size:clamp(14.5px,1.1vw,17px);line-height:1.45;color:var(--fg)}
-.as-risk-w{grid-column:2;display:block;max-width:60ch}
+.as-risk-t{display:block;font-size:clamp(15px,1.2vw,18px);line-height:1.3;color:var(--fg);
+  max-width:24ch}
+.as-risk-w{display:block;margin-top:7px;max-width:34ch}
+.as-risk-n{max-width:66ch;margin:0}
+.paper .as-risk-c{background:var(--paper)}
+.paper .as-risk{background:var(--rule-2)}
+.paper .as-risk-t{color:var(--ink)}
+.paper .as-risk-l{color:var(--ink-3)}
 
 /* ── (k) THE CLIMATE SIGNAL ───────────────────────────────────────────── */
-.as-sig{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));
-  gap:1px;background:var(--hair-2);margin:0 0 clamp(20px,2.2vw,32px)}
-.as-sig-c{background:var(--ground);padding:15px 16px}
+.as-sig{display:flex;flex-wrap:wrap;gap:1px;background:var(--hair-2);margin:0 0 clamp(20px,2.2vw,32px)}
+.as-sig-c{flex:1 1 210px;background:var(--ground);padding:15px 16px}
 .as-sig-v{display:block;font-size:clamp(26px,2.7vw,38px);line-height:1;color:var(--fg);
   font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 .as-sig-v i{font-style:normal;font-size:.4em;color:var(--fg-3);margin-left:.3em}
@@ -1297,9 +1325,8 @@ export const AS_CSS = `
 .as-ind-t{margin:0 0 .9em;line-height:1.55;color:var(--fg-2)}
 
 /* ── (m) SOURCES ──────────────────────────────────────────────────────── */
-.as-scount{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));
-  gap:1px;background:var(--hair-2);margin:0 0 clamp(16px,1.8vw,24px)}
-.as-scount-c{background:var(--ground);padding:13px 15px}
+.as-scount{display:flex;flex-wrap:wrap;gap:1px;background:var(--hair-2);margin:0 0 clamp(16px,1.8vw,24px)}
+.as-scount-c{flex:1 1 150px;background:var(--ground);padding:13px 15px}
 .as-scount-v{display:block;font-size:clamp(24px,2.3vw,32px);line-height:1;color:var(--fg);
   font-variant-numeric:tabular-nums}
 .as-scount-l{display:block;color:var(--fg-2);margin-top:6px}
@@ -1312,6 +1339,42 @@ a.as-src-t:hover{color:var(--mustard-2)}
 .as-unc{margin:0 0 1em;max-width:66ch}
 .as-unc li{margin-bottom:.6em;line-height:1.5;color:var(--fg-2)}
 .as-stamp{margin-top:clamp(16px,1.8vw,24px)}
+
+.as-eo-rep{border-top:1px solid var(--hair);margin-top:clamp(18px,2vw,26px);padding-top:14px}
+.as-eo-rep-h{color:var(--fg-3);margin:0 0 .7em}
+.as-eo-rep-i{margin:0 0 .9em;line-height:1.4}
+.as-eo-rep-i .cap{display:block;margin-top:3px;max-width:64ch}
+.as-eo-rep-n{max-width:70ch;margin:1em 0 0}
+
+/* ── (p) CARD ROWS ARE FLEX, NOT AUTO-FIT GRID ────────────────────────────
+   ★ AUTO-FIT ALWAYS ORPHANS A LAST ROW, and it shipped a four-cell grey hole.
+   repeat(auto-fit, minmax(200px,1fr)) fits as many equal tracks as it can
+   and then leaves the remainder EMPTY: six figures at five tracks wide drew
+   one card and four cells of bare background beside it. Every card row on this
+   page has that failure mode at some width — six causes, five precedents, four
+   source counts — and it is not fixable by picking a better minmax, because the
+   count is data and the width is the reader's.
+
+   Flex wrap with flex:1 1 <basis> grows the items on the last row to fill it,
+   so there is never a hole at any width for any count. The cost is that a last
+   row of two is wider than a row of four, which reads as deliberate; a gap does
+   not. The 1px gap over a hairline background is unchanged, so the rules
+   between cards still come from the container rather than from borders. */
+.as-sig-c.is-lead{flex:2 1 330px}
+.as-sig-c.is-lead .as-sig-v{font-size:clamp(34px,3.6vw,52px)}
+.as-sig-c.is-lead .as-sig-l{max-width:34ch}
+
+/* ── (o) THE HERO BANNER, on Air and Yamuna's own picture-band component.
+      Only the overrides this page needs are here; .pic, .ht and .pic-over come from the shared stylesheet. ───────────────────────── */
+.as-pic-i{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 38%}
+/* HALF-STRENGTH SCRIM, scoped to this band. The shared one is tuned for a
+   duo-filtered frame; this one is unfiltered, so the same gradient buries it. */
+.as-pic .pic-over{background:linear-gradient(180deg,
+  rgba(11,11,9,.80) 0%,rgba(11,11,9,.66) 62%,rgba(11,11,9,.28) 100%)}
+.as-pic-k{color:var(--fg-2);margin:0 0 .5em}
+.as-pic-h{max-width:22ch}
+.as-pic-c{padding-top:clamp(12px,1.4vw,18px)}
+.as-pic-c .cap{max-width:74ch}
 
 /* ── (n) THE REVISION OF 28 AUGUST: place line, cascade, exposure, and the
       figure that sits under a cause ─────────────────────────────────────── */
@@ -1364,16 +1427,14 @@ a.as-src-t:hover{color:var(--mustard-2)}
 
 /* ── PAPER BANDS. Two of these bands sit on the light ground, and every
       token above that names a dark foreground has to flip. ───────────── */
-.paper .as-card,.paper .as-dmg-c,.paper .as-cause,.paper .as-prec,
-.paper .as-risk-r,.paper .as-sig-c,.paper .as-scount-c,.paper .as-voice-i,
-.paper .as-voice-c{background:var(--paper)}
-.paper .as-cards,.paper .as-dmg,.paper .as-causes,.paper .as-precs,
-.paper .as-risk,.paper .as-sig,.paper .as-scount,.paper .as-voice-list{background:var(--rule-2)}
+.paper .as-card,.paper .as-cause,.paper .as-prec,
+.paper .as-sig-c,.paper .as-scount-c{background:var(--paper)}
+.paper .as-cards,.paper .as-causes,.paper .as-precs,
+.paper .as-risk,.paper .as-sig,.paper .as-scount{background:var(--rule-2)}
 .paper .as-card-v{color:var(--red-ink)}
-.paper .as-card-in .as-card-v,.paper .as-dmg-v,.paper .as-sig-v,.paper .as-scount-v,
-.paper .as-prec-p,.paper .as-cause-t,.paper .as-risk-t,.paper .as-tl-t,
-.paper .as-voice-t,.paper .as-voice-n,.paper .as-h1{color:var(--ink)}
-.paper .as-card-l,.paper .as-dmg-l,.paper .as-sig-l,.paper .as-scount-l,.paper .as-prec-l,
+.paper .as-card-in .as-card-v,.paper .as-sig-v,.paper .as-scount-v,
+.paper .as-prec-p,.paper .as-cause-t,.paper .as-risk-t,.paper .as-tl-t{color:var(--ink)}
+.paper .as-card-l,.paper .as-sig-l,.paper .as-scount-l,.paper .as-prec-l,
 .paper .as-attr-t,.paper .as-ind-t,.paper .as-chain-t{color:var(--ink-2)}
 .paper .as-kicker,.paper .as-hedge,.paper .as-cause-st,.paper .as-risk-l,
 .paper .as-chain-r{color:var(--ink-3)}
@@ -1388,19 +1449,13 @@ a.as-src-t:hover{color:var(--mustard-2)}
       their own. What does NOT collapse on its own is the two-column voice
       band and the readout scale, so those are the only overrides. ────── */
 @media (max-width:640px){
-  .as-voice{grid-template-columns:1fr;gap:clamp(18px,4vw,26px)}
-  .as-voice-p{width:64px;height:64px}
   /* EVERY PIXEL ABOVE THE FIRST FIGURE IS MEASURED AGAINST 635. The kicker
      wraps to two lines at this width and the pill takes a row of its own, so
      the heading gives back what it can without losing its scale. */
-  .as-h1{font-size:clamp(28px,8.4vw,40px);max-width:none;
-    margin-bottom:clamp(12px,3.2vw,18px)}
   .as-hero{padding-top:14px}
   .as-head{margin:10px 0 10px}
   .as-card-v{font-size:clamp(32px,10.5vw,44px)}
   .as-pill{margin-left:0}
-  .as-risk-r{grid-template-columns:1fr;gap:6px}
-  .as-risk-w{grid-column:1}
   .as-prec-p{min-height:0}
   .as-casc-s{padding-left:34px}
   .as-casc-s::before{width:20px}
@@ -1444,3 +1499,30 @@ export const AS_JS = `
    the .ce-t class on this page was the timestamp pair. Bring it back with any element
    that carries an instant — and keep the instant in the markup, never the age. */
 `;
+
+/* ═══ THE GUARD THAT SHOULD HAVE EXISTED THREE MISTAKES AGO ═══════════════
+   ★ AS_CSS AND AS_JS ARE TEMPLATE LITERALS, AND A BACKTICK IN A COMMENT INSIDE
+   ONE CLOSES IT. That has now happened three times in one sitting: a note
+   citing `.ce-t`, a note citing `occurred`, and a note citing `.pic` each ended
+   the template early and turned the following CSS selector into a function
+   call — "TypeError: .pic is not a function", which names a line 1,300 deep and
+   says nothing about the cause.
+
+   The failure is loud, so nothing broken ships. What it is not is DIAGNOSABLE,
+   and the fix is one assertion at module load: these two blocks are pure text
+   and must contain no backtick and no interpolation. If either ever needs a
+   real `${...}`, this is the line that has to be deliberately relaxed — which
+   is the point. */
+for (const [name, body] of [['AS_CSS', AS_CSS], ['AS_JS', AS_JS]]) {
+  const bad = [];
+  if (body.includes('`')) bad.push('a backtick');
+  if (body.includes('${')) bad.push('a ${ interpolation');
+  if (bad.length) {
+    throw new Error(
+      `situation-render: ${name} contains ${bad.join(' and ')}. Both blocks are `
+      + 'plain text inside a template literal, so a backtick in a comment closes the '
+      + 'template early and the next CSS selector is parsed as a function call. '
+      + 'Quote class names in these comments without backticks.',
+    );
+  }
+}

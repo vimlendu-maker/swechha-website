@@ -49,7 +49,7 @@ import { coordsFor } from './lib/event-terms.mjs';
 import { statusOf, adminHelp, TYPE_LABEL, situationHref } from './lib/active-situation.mjs';
 import { eventName } from './lib/event-figures.mjs';
 import {
-  heroBand, whereBand, damageBand, causeBand, eoBand, timelineBand,
+  heroBand, whereBand, causeBand, eoBand, timelineBand,
   precedentBand, nextBand, climateBand, indiaBand, sourcesBand, strip, AS_CSS, AS_JS,
 } from './lib/situation-render.mjs';
 
@@ -132,7 +132,6 @@ for (const e of published) {
     top: () => heroBand(e, ctx, imagery, { crumb: crumb('climate') }),
     strip: () => strip(e, ctx, imagery),
     where: () => whereBand(e, ctx, imagery, coordsFor),
-    damage: () => damageBand(e),
     cause: () => causeBand(e, ctx),
     eo: () => eoBand(e, imagery),
     developing: () => timelineBand(e),
@@ -186,7 +185,6 @@ ${S.newsletter('climate')}
     ['strip', '', '#151512', null],
     ['climate', 't2', '#0D0D0B', 'The numbers'],
     ['where', 'dark-2 t2', '#151512', 'Where'],
-    ['damage', 't2', '#0D0D0B', 'What is broken'],
     ['cause', 'dark-2 t2', '#151512', 'What caused it'],
     ['eo', 't2', '#0D0D0B', 'Satellite'],
     ['developing', 'dark-2 t2', '#151512', 'How it developed'],
