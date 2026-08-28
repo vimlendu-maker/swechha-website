@@ -200,12 +200,34 @@ for (const file of files) {
   }
   seen.add(route);
   let entry;
-  try {
-    entry = seo(route);
-  } catch (e) {
-    console.error(`! ${file}\n    ${e.message}`);
-    failures++;
-    continue;
+  /* ── DERIVED EVENT PAGES ARE NOT IN THE REGISTER, BY DESIGN ────────────
+     `/now/climate-event/<slug>` is emitted per PUBLISHED climate event and
+     expires with it, so data/seo/pages.json cannot hold an entry per page
+     without either predicting disasters or keeping stale ones. Those pages
+     pass `title` and `desc` straight to assemble(), which enforces the same
+     140-158 character description rule this verifier does.
+
+     They are still CHECKED — the entry is reconstructed from the page's own
+     markup, so every rule below still runs against it. What is skipped is
+     the register lookup, not the checks. */
+  const isDerivedEvent = /^\/now\/climate-event\/.+/.test(route);
+  if (isDerivedEvent) {
+    const t = /<title[^>]*>([\s\S]*?)<\/title>/.exec(html);
+    const d = /<meta name="description" content="([^"]*)"/.exec(html);
+    entry = {
+      title: t ? t[1].trim() : '',
+      description: d ? d[1].trim() : '',
+      ogType: 'article',
+      indexName: t ? t[1].replace(/\s*—\s*Swechha\s*$/, '').trim() : '',
+    };
+  } else {
+    try {
+      entry = seo(route);
+    } catch (e) {
+      console.error(`! ${file}\n    ${e.message}`);
+      failures++;
+      continue;
+    }
   }
   const bad = CHECKS.map((c) => {
     const detail = c.run({ route, canonical, file, html, entry });

@@ -18,6 +18,8 @@
 //   flash floods  — no public national register exists
 import * as S from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
+import { loadEvents, currentEvent } from './lib/climate-events.mjs';
+import { renderBanner, renderQuiet, CE_CSS, CE_BANNER_CSS } from './lib/climate-event-render.mjs';
 const { esc, n0, n1, compact, opener, tabs, hole, kd, KIND_LEGEND, ARROW, MON, MON3,
   stateChip, measureRow, measureHead, disclose, crumb, siblings } = S;
 
@@ -28,6 +30,14 @@ const CL = S.J('climate-india.json');
 const DTH = S.J('deaths-ncrb-2024.json');
 const ATTN = S.J('attention-climate-event.json');
 const NEWS = S.J('coverage-climate-event.json');
+
+/* What the event detector saw last time it looked. Written on EVERY run,
+   including runs that found nothing — see the note in B.situation. Absent
+   until the detector has run at least once, so every read of it falls back. */
+const CHECKED = (() => {
+  try { return S.J('climate-events/checked.json'); } catch { return null; }
+})();
+const CHECKED_MS = CHECKED?.checked?.epochMs || NEWS.fetched?.epochMs || Date.now();
 
 const CAT = CL.categories;
 const NAT = CL.national;
@@ -92,8 +102,35 @@ const SEASON_TO = (() => {
   return { short: `${dd} ${MON[m - 1].slice(0, 3)}`, full: y ? `${dd} ${MON[m - 1]} ${y}` : null };
 })();
 
-/* ═══ BAND SEQUENCE — id, tier class, ground hex ══════════════════════════ */
+/* ═══ THE CURRENT EVENT, IF THERE IS ONE ══════════════════════════════════
+   Loaded and VALIDATED before anything renders — lib/climate-events.mjs
+   throws on a dossier carrying a figure without a source, so a malformed
+   event fails this build rather than reaching the page. That is the same
+   contract the rest of this repo's data has: malformed content is a build
+   failure, not a silently-degraded page.
+
+   currentEvent() also applies the shelf life. An event stops holding the top
+   of the page fourteen days after its last verified update, without anybody
+   having to remember to take it down — a hero still shouting about last
+   month's flood is its own kind of stale. */
+const EVENTS = loadEvents();
+const CURRENT = currentEvent(EVENTS);
+/* This page shows only the COMPACT banner; the full board, and the hazard
+   context pack behind it, live on /now/climate-event/<slug>. Keeping the two
+   apart is the whole point of the split — this page's clock is annual and the
+   board's is half-hourly, and they were fighting for the same screen. */
+
+/* ═══ BAND SEQUENCE — id, tier class, ground hex ══════════════════════════
+   ★ ONE BAND INSERTED, NOTHING REORDERED, AND THAT IS DELIBERATE.
+   The obvious move was to haul the news band up next to the hero. It cannot
+   be done: only three grounds exist on this page and groundChain() forbids
+   two adjacent bands sharing one, so promoting `said` forces a clash that can
+   only be resolved by repainting three other bands. The news instead reaches
+   the top THROUGH the situation band, which carries the three most recent
+   register items in its quiet state and is built out of headlines in its
+   active state. Same goal, no repaint, and the register below is untouched. */
 const BANDS = [
+  ['situation', 'dark-2 t2', '#151512'],
   ['top',      't1',        '#0D0D0B'],
   ['strip',    '',          '#151512'],
   ['people',   't2',        '#0D0D0B'],
@@ -106,6 +143,7 @@ const BANDS = [
 const clashes = S.groundChain(BANDS);
 
 const INDEX = [
+  ['Right now', '#situation'],
   ['The record', '#top'], ['Who it kills', '#people'],
   ['What counts as extreme', '#measured'], ['Twelve cities', '#cities'],
   ['What is changing', '#trend'], ['What is being said', '#said'],
@@ -114,6 +152,40 @@ const INDEX = [
 
 /* ═══ BANDS ══════════════════════════════════════════════════════════════ */
 const B = {};
+
+/* RIGHT NOW. The band this page was missing.
+   Two states and no third: an event holds the slot, or the freshest thing the
+   archive genuinely knows does. There is deliberately no "nothing to report"
+   empty state — a blank box reads as a broken page, and this one is never
+   blank because the season is always doing something. */
+B.situation = () => (CURRENT
+  ? renderBanner(CURRENT)
+  : renderQuiet({
+    wetNow: wetNow.length,
+    total: ST.length,
+    seasonTo: SEASON_TO?.full || null,
+    /* WHEN THE FEEDS WERE LAST READ, not when this file was written. The
+       detector stamps data/climate-events/checked.json on every run whether
+       or not it found anything, because "we looked and there was nothing" and
+       "we have not looked since Tuesday" are different statements and the
+       page must not conflate them. Falling back to the news register's own
+       fetch stamp keeps this honest if the detector has never run. */
+    checkedMs: CHECKED_MS,
+    /* ★ SORTED BY DATE, BECAUSE THE LABEL SAYS "LATEST".
+       Google News returns its register by its own relevance model, not by
+       recency, so the first three items are routinely weeks apart — the first
+       build of this band printed items from 20 August, 20 July and 29 June
+       under the word "Latest". Anything with an unparseable date sorts last
+       rather than being dropped: an item is still evidence, it just cannot
+       claim to be the newest one. */
+    headlines: (NEWS.register.items || [])
+      .map((i) => ({ ...i, ms: i.published ? Date.parse(i.published) || 0 : 0 }))
+      .sort((a, b) => b.ms - a.ms)
+      .slice(0, 3)
+      .map((i) => ({
+        title: i.title, link: i.link, publisher: i.publisher, published: shortDate(i.published),
+      })),
+  }));
 
 B.top = () => `    <div class="pic ht p2-pic">
       <img class="duo" src="/images/photos/monsoon-flooded-fields.jpg" alt="Flooded fields under monsoon cloud"${S.imgDim('/images/photos/monsoon-flooded-fields.jpg')} fetchpriority="high" style="--op:70% 45%">
@@ -503,6 +575,8 @@ const PAGE_CSS = `
 .c-reg{margin:.5em 0 .4em}
 .c-pub{max-width:62ch;color:var(--fg-3)}
 
+${CE_CSS}
+${CE_BANNER_CSS}
 @media (min-width:760px){ .c-two{grid-template-columns:1fr 1fr} }
 @media (max-width:639px){
   .c-cats{grid-template-columns:1fr}
@@ -530,7 +604,10 @@ await S.assemble({
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS, script: S.NEWSLETTER_JS,
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),
-  note: `8 bands + footer. PAN-INDIA, ${ST.length} stations. Hero: ${WC.extreme_days} days over `
+  note: `9 bands + footer. ${CURRENT ? `TOP: ${CURRENT.hazard} @ ${CURRENT.location.text} `
+      + `(score ${CURRENT.significance_score}, ${CURRENT.origin}, ${CURRENT.corroboration.independent_publishers} publishers). `
+      : `TOP: quiet state, ${wetNow.length}/${ST.length} cities above normal. `}`
+      + `PAN-INDIA, ${ST.length} stations. Record: ${WC.extreme_days} days over `
       + `${CAT.heavy}mm at ${worstCity.name} in ${LASTYR} (${WC.annual_mm}mm, ${wcDep}% on normal). `
       + `Archive record ${REC.mm}mm at ${REC.name} ${REC.date} moved to context. `
       + `Deaths ${CE.deaths} from 5 causes. `

@@ -7,7 +7,20 @@ const decode = (s: string) =>
    .replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')
 
 describe('the SEO register', () => {
-  const routes = designRoutes().map((r) => r.source)
+  /* DISASTER PAGES ARE EXCLUDED FROM THE REGISTER, DELIBERATELY.
+     `/now/climate-event/<slug>` is derived from whatever the event detector
+     currently has above its publication bar — a set that is empty most weeks
+     and changes without a human editing anything. A static register cannot
+     hold an entry per page when the pages appear and expire on their own, and
+     requiring one would mean either committing an entry for an event that no
+     longer exists or failing this test every time a disaster is detected.
+
+     They are not exempt from the RULES, only from the register: those pages
+     pass `title` and `desc` straight to assemble(), which applies the same
+     140-158 character description gate and refuses to write a page that
+     misses it. See scripts/build-climate-disaster-pages.mjs. */
+  const isDerivedEventPage = (r: string) => /^\/now\/climate-event\/.+/.test(r)
+  const routes = designRoutes().map((r) => r.source).filter((r) => !isDerivedEventPage(r))
 
   it('has exactly one entry per routed page', () => {
     expect([...Object.keys(SEO)].sort()).toEqual([...routes].sort())

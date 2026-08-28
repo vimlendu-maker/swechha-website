@@ -1,0 +1,193 @@
+name: Climate events — the page notices something happened
+
+# WHY THIS EXISTS, AND WHY IT IS SEPARATE FROM EVERY OTHER JOB HERE
+#
+# /now/climate-event opened on an archive figure — the worst station's count of
+# days over IMD's heavy-rain threshold in the last COMPLETE calendar year. That
+# number is true and it CANNOT MOVE for up to twelve months at a stretch: 2025
+# is finished history, and 2026 does not become "complete" until 1 January
+# 2027. The daily refresh re-read the dataset every morning and wrote the same
+# number back. The page was maintained and it read as abandoned, which is the
+# worst combination available.
+#
+# This job is the missing half. It reads the news and the official alert feeds
+# every thirty minutes, and when something is actually happening — in India or
+# in the region upstream of it — it writes an event dossier that the page then
+# opens on. When nothing is happening it says so, with the time it last looked.
+#
+# ★ IT IS SEPARATE FROM THE AIR JOBS, ON PURPOSE AND BY INSTRUCTION.
+# air-hourly.yml and data-refresh.yml are untouched by this file and this file
+# is untouched by them. They share no script, no dataset and no step. The air
+# pipeline's CPCB transport ladder, its bulletin cross-check and its exit-75
+# convention are its own; nothing here can turn that job red and nothing there
+# can stop this one running.
+#
+# ★ NEWS TRIGGERS. OFFICIAL FEEDS CORROBORATE. THAT ORDER IS THE POINT.
+# India's official feeds — IMD's CAP alerts, NDMA's Sachet aggregation — are
+# good and they are ONLY ABOUT INDIA. A glacial lake collapsing in Nepal, a
+# cloudburst in Tibet, a cyclone crossing Bangladesh: none of these reach an
+# Indian government feed until they reach India, by which point they are not
+# early. News is the only signal that crosses a border, so news is the trigger
+# and the official feeds raise the score once the event is inside India.
+#
+# ★ WHAT REACHES THE PUBLIC PAGE WITHOUT A HUMAN, AND WHAT DOES NOT.
+# The detector may publish: a hazard type, a place, timestamps, links, counts
+# of who reported what, and headlines quoted verbatim and attributed. It may
+# NOT publish a death toll, a cause or a consequence in its own voice — those
+# are `claims` in the dossier and lib/climate-events.mjs refuses to build a
+# page carrying a figure without a source and a confidence word. The
+# analytical depth a reader sees — how many glacial lakes the Himalaya holds,
+# what happened at South Lhonak in 2023, why a Nepali flood becomes a Bihari
+# one — comes from the HAZARD CONTEXT PACK for the detected type, researched
+# and cited in advance. Nothing is composed under deadline by a machine.
+#
+# ★ AND IT WILL NOT PUBLISH ON ONE STORY.
+# Automatic publication needs EIGHT independent publishers, or four plus a
+# matching official alert — enforced twice, once in the scorer and once again
+# in the validator the page build runs. The bar started far lower and a real
+# run published twenty pages, most of them ordinary monsoon reporting. Breadth
+# of coverage is the discriminator: a regional disaster is carried by a hundred
+# outlets, a district's waterlogging by three.
+#
+# ★ TWO PAGE TYPES, NOT ONE.
+#   /now/climate-event          the standing picture, with a compact banner
+#                               when something is happening. Annual clock.
+#   /now/climate-event/<slug>   one page per published event, the full board.
+#                               Half-hourly clock.
+# They were one page and it did not work: the board pushed the death table and
+# the twelve cities below three screens of something with a different cadence.
+#
+# NO SECRETS. Google News RSS, The Hindu, Hindustan Times, IMD's CAP feed and
+# NDMA's Sachet endpoint are all keyless. Nothing here needs a key, so unlike
+# the air jobs there is no missing-secret path to report.
+#
+# COST: 48 runs a day, about a minute each. Most produce no commit — the
+# detector stamps a clock, and scripts/data-refresh-changed.mjs reverts a file
+# whose only change is a clock, so a quiet half-hour costs nothing and deploys
+# nothing.
+
+on:
+  schedule:
+    # Every 30 minutes at :05 and :35 — clear of air-hourly's :35 hourly run by
+    # being a different workflow entirely, and clear of data-refresh's :40.
+    - cron: '5,35 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Read the feeds and score, but write and commit nothing'
+        type: boolean
+        default: true
+
+concurrency:
+  group: climate-events
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # The detector and the generator use node built-ins only.
+      - run: npm ci --omit=dev
+
+      - name: Read the news and the alert feeds
+        run: |
+          # ── EXIT 75 IS NOT A FAILURE ─────────────────────────────────────
+          # Same convention as air-hourly.yml. 75 means every news source was
+          # silent, which is a statement about the internet and not about the
+          # weather. Nothing is written, the page keeps the event it has with
+          # its age printed beside it, and the run stays green. Turning it red
+          # would email a human every half hour about somebody else's server,
+          # which is how you train someone to ignore the alert that matters.
+          set +e
+          node scripts/detect-climate-events.mjs ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
+          code=$?
+          set -e
+          if [ "$code" = "75" ]; then
+            echo "::notice::No news source answered. Nothing written; the page keeps what it has."
+            echo "UPSTREAM_SILENT=1" >> "$GITHUB_ENV"
+          elif [ "$code" != "0" ]; then
+            echo "::error::detect-climate-events.mjs exited $code"
+            exit "$code"
+          fi
+
+      - name: Discard clock-only churn, keep real changes
+        id: changed
+        if: env.UPSTREAM_SILENT != '1'
+        run: |
+          # checked.json is stamped on EVERY run, including quiet ones, because
+          # "we looked and nothing crossed" differs from "we have not looked".
+          # It is a clock, so this reverts it when nothing else moved — the
+          # page is rebuilt in this same job, so a quiet run never needs a
+          # commit to stay honest.
+          node scripts/data-refresh-changed.mjs | tee /tmp/changed.log
+          n=$(grep -oE '^CHANGED=[0-9]+' /tmp/changed.log | tail -1 | cut -d= -f2)
+          echo "count=${n:-0}" >> "$GITHUB_OUTPUT"
+          {
+            echo '### Climate event detection'
+            echo ''
+            echo '```'
+            cat /tmp/changed.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Rebuild the page the events feed
+        if: steps.changed.outputs.count != '0' && env.UPSTREAM_SILENT != '1'
+        run: |
+          # ★ THE VALIDATOR RUNS HERE, NOT AT DEPLOY.
+          # build-situation-climate-event.mjs loads every dossier through
+          # lib/climate-events.mjs, which throws on a figure without a source,
+          # a hazard with no context pack, a published automated event under
+          # the corroboration bar, or a published event with an empty
+          # `uncertain` list. A dossier that would produce a page making an
+          # unattributed claim fails THIS step, and the commit below never
+          # runs. That is the whole reason the rebuild lives in this job.
+          # BOTH pages, in this order. build:situations includes the standing
+          # page AND build:climate-disasters, which emits one page per published
+          # event. The disaster pages must exist before next build runs, because
+          # design-routes.ts derives their routes from the same dossiers and
+          # refuses to route a file that is not on disk.
+          npm run build:situations
+          npm run verify:final
+
+      - name: Commit and push
+        if: steps.changed.outputs.count != '0' && env.UPSTREAM_SILENT != '1' && github.event.inputs.dry_run != 'true'
+        run: |
+          git config user.name  'swechha-climate-events[bot]'
+          git config user.email 'actions@github.com'
+          # design/ and docs/design/FINAL.md are build output too — see
+          # data-refresh.yml's commit step for why omitting either breaks the
+          # "generated pages are current" gate on the next pull request.
+          git add -A data public/_pages design docs/design/FINAL.md
+          if git diff --cached --quiet; then
+            echo "Nothing staged after the rebuild — no commit."
+            exit 0
+          fi
+          summary=$(node -e '
+            const fs=require("node:fs"), p="data/climate-events/active";
+            if(!fs.existsSync(p)){console.log("no events");process.exit(0)}
+            const live=fs.readdirSync(p).filter(f=>f.endsWith(".json"))
+              .map(f=>JSON.parse(fs.readFileSync(p+"/"+f,"utf8")))
+              .filter(e=>e.publish_state==="published");
+            console.log(live.length ? live.map(e=>`${e.hazard} @ ${e.location.text} (${e.significance_score})`).join("; ") : "no published event");
+          ')
+          git commit -m "data(climate-event): ${summary}" \
+            -m "Automated by .github/workflows/climate-events.yml. The detector read the news and official alert feeds, scored what it found against an itemised rubric, and wrote a dossier for anything over threshold. Every figure is attributed and status-marked; nothing is claimed in the site's own voice. The page was rebuilt in the same run and verify:final passed."
+          git push
+
+      - name: Report what did not answer
+        if: always()
+        run: |
+          if [ -n "${UPSTREAM_SILENT:-}" ]; then
+            echo "Every news source was silent this run. Nothing written." >> "$GITHUB_STEP_SUMMARY"
+          fi

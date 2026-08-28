@@ -137,8 +137,25 @@ for (const abs of files) {
      "Campaigns"), seeded from each route's PRE-Task-5 title. The SEO
      title still makes the page findable — it goes into the search-token
      blob below, never onto the row itself. */
-  const indexName = text(seo(route).indexName);
-  const seoTitle = text(seo(route).title);
+  /* ── DERIVED EVENT PAGES CARRY THEIR OWN NAMES ────────────────────────
+     `/now/climate-event/<slug>` exists only while an event is above the
+     detector's publication bar. Those pages are deliberately absent from
+     data/seo/pages.json — a static register cannot hold an entry per page
+     when the set changes on its own, and committing one for an event that
+     has since expired would be worse than having none.
+
+     They are still INDEXED, because a live disaster is exactly the thing a
+     reader arrives searching for. The name and title come from the page's
+     own <h1> and <title>, which build-climate-disaster-pages.mjs wrote from
+     the dossier — so the index stays complete without the register having to
+     predict what will happen. */
+  const isDerivedEvent = /^\/now\/climate-event\/.+/.test(route);
+  const indexName = isDerivedEvent
+    ? text(h1 || pageTitleTag.replace(/\s*—\s*Swechha\s*$/, ''))
+    : text(seo(route).indexName);
+  const seoTitle = isDerivedEvent
+    ? text(pageTitleTag)
+    : text(seo(route).title);
 
   entries.push({
     route,

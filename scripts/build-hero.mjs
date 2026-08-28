@@ -54,6 +54,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import { stampLastmod } from './lib/lastmod.mjs';
+import { currentEvent } from './lib/climate-events.mjs';
 
 const CHECK = process.argv.includes('--check');
 /* ── TWO FILES, AND THE DISTINCTION IS THE WHOLE OF AD-28 §7 HERE. ────────
@@ -73,6 +74,17 @@ const HOME = S.HOME_SRC;
 const SHIP = join(S.V3, 'home.html');
 
 const J = (f) => JSON.parse(readFileSync(join(S.ROOT, 'data', f), 'utf8'));
+
+/* The archive fallback for the ticker's climate cell, COMPUTED rather than
+   typed — the worst station's breach count in the last complete year, the same
+   figure /now/climate-event leads on when no event is current. It used to be
+   hand-written into home.html with nothing checking it. */
+const { days: climateDays, year: climateYear } = (() => {
+  const c = J('climate-india.json');
+  const worst = [...c.stations].sort((a, b) =>
+    b.last_complete.extreme_days - a.last_complete.extreme_days)[0];
+  return { days: worst.last_complete.extreme_days, year: worst.last_complete.year };
+})();
 
 let bad = 0;
 const fail = (m) => { console.error(`  FAIL ${m}`); bad++; };
@@ -476,6 +488,58 @@ if (rainNormal === null) {
     }
     src = src.replace(re, to);
     ok(`${'tk-air'.padEnd(10)} ${label}`);
+  }
+}
+
+/* ── THE TICKER'S CLIMATE CELL FOLLOWS THE CURRENT EVENT ────────────────
+   ★ IT WAS THE LAST HAND-TYPED READING ON THIS PAGE, and it had the same
+   defect the air cell had before AD-27.6-A: "13 days / Mangaluru" was typed
+   into the markup with no id, so no build step could reach it and no gate
+   cross-checked it against data/climate-india.json. It would have gone stale
+   silently the first time that figure moved.
+
+   It now carries two jobs, and which one it does depends on the world:
+
+     an event is current   the cell names it — the hazard and the place — and
+                           links into /now/climate-event, which is opening on
+                           the same event. The homepage is where most people
+                           arrive, so a disaster that the situation page is
+                           leading on cannot be absent from the front door.
+     nothing is current    it falls back to the archive reading, computed from
+                           the dataset rather than typed, so it can no longer
+                           drift from it.
+
+   ★ THE ARIA LABEL MOVES WITH THE CELL, both or neither — the same rule the
+   air cell above follows, for the same reason. */
+{
+  const ev = currentEvent();
+  const HAZ = {
+    glof: 'Glacial flood', cloudburst: 'Cloudburst', flood: 'Flood',
+    landslide: 'Landslide', cyclone: 'Cyclone', extreme_rain: 'Extreme rain',
+  };
+  const name = ev ? (HAZ[ev.hazard] || 'Climate event') : 'Climate Event';
+  const value = ev ? ev.location.text.split(',')[0].trim() : `${climateDays} days`;
+  const aria = ev
+    ? `Climate event, ${(HAZ[ev.hazard] || 'event').toLowerCase()} at ${ev.location.text}, `
+      + `${ev.tier === 1 ? 'in India' : 'in the region upstream of India'}, being tracked`
+    : `Climate event, ${climateDays} days over India's heavy-rain threshold in one city in ${climateYear}`;
+
+  const CLIMATE = [
+    [/(id="tk-climate" href="\/now\/climate-event" aria-label=")[^"]*(")/,
+      `$1${aria}$2`, 'ticker: the aria-label'],
+    [/(<span class="lbl s-ticker-name" id="tk-climate-n">)[^<]*(<\/span>)/,
+      `$1${name}$2`, 'ticker: the cell name'],
+    [/(<span class="s-ticker-v)(?: is-over)?(" id="tk-climate-v"><b>)[^<]*(<\/b>)/,
+      `$1 is-over$2${value}$3`, 'ticker: the figure'],
+  ];
+  for (const [re, to, label] of CLIMATE) {
+    const hits = src.match(new RegExp(re.source, 'g'));
+    if (!hits || hits.length !== 1) {
+      fail(`${label} matched ${hits ? hits.length : 0} times, expected exactly 1 — the markup moved`);
+      continue;
+    }
+    src = src.replace(re, to);
+    ok(`${'tk-climate'.padEnd(10)} ${label}`);
   }
 }
 
