@@ -241,7 +241,66 @@ jobs:
           ')
           git commit -m "data(climate-event): ${summary}" \
             -m "Automated by .github/workflows/climate-events.yml. The detector read the news and official alert feeds, scored what it found against an itemised rubric, and wrote a dossier for anything over threshold. Every figure is attributed and status-marked; nothing is claimed in the site's own voice. The page was rebuilt in the same run and verify:final passed."
-          git push
+
+          # ── PUSHING AGAINST A MOVING BRANCH ──────────────────────────────
+          # ★ THE FIRST REAL RUN OF THIS WORKFLOW DIED HERE, ON A BARE
+          # `git push`. It read the feeds, scored, passed the validator, built
+          # the page and committed —
+          #
+          #   [main 2e23c04] data(climate-event): flood @ Bihar (17); glof @ Nepal (22)
+          #
+          # — and then threw all of it away because the Air publisher had
+          # landed an AQI reading during the four minutes it was working.
+          #
+          # The shared `publish` concurrency group above stops the bots
+          # colliding from now on, but it cannot stop a HUMAN merging a pull
+          # request mid-run, and it does not cover a run already in flight
+          # under an older definition of this file — which is exactly what
+          # happened on that first run.
+          #
+          # ★ IT RE-DERIVES; IT DOES NOT RESOLVE. Same shape as the loop in
+          # air-hourly.yml, which is why Air is the one publisher that has
+          # never lost a reading to this. A conflict here is in generated HTML
+          # that several jobs rewrite in full, so there is no honest merge —
+          # "ours" and "theirs" are both whole files and picking one silently
+          # reverts somebody's figures. Instead: keep the evidence, take the
+          # new main wholesale, and rebuild the pages on top of it.
+          #
+          # Carrying data/climate-events/ across the reset is safe because this
+          # workflow is its only writer. No other job runs the detector, so no
+          # other job can have a newer version of a dossier to lose.
+          for attempt in 1 2 3; do
+            if git push; then
+              echo "::notice::Published on attempt ${attempt}."
+              exit 0
+            fi
+
+            if [ "$attempt" = "3" ]; then
+              echo "::error::Could not publish after 3 attempts; main is moving faster than this job can land. The evidence is not lost — the next scheduled run re-reads the same feeds from a clean base."
+              exit 1
+            fi
+
+            echo "::warning::Push rejected on attempt ${attempt} — main moved under us. Re-deriving on top of it."
+            rm -rf /tmp/ce-evidence
+            cp -R data/climate-events /tmp/ce-evidence
+            git fetch --quiet origin main || { echo "::error::git fetch failed."; exit 1; }
+            git reset --hard --quiet origin/main || { echo "::error::git reset failed."; exit 1; }
+            cp -R /tmp/ce-evidence/. data/climate-events/
+
+            # The pages are a pure function of the dossiers, so they are built
+            # again rather than merged. verify:final still gates: if the
+            # rebuild on the new base is not sound, nothing is pushed.
+            npm run build:situations || { echo "::error::Rebuild on the new base failed; nothing published."; exit 1; }
+            npm run verify:final     || { echo "::error::verify:final refused on the new base; nothing published."; exit 1; }
+
+            git add -A data public/_pages design docs/design/FINAL.md
+            if git diff --cached --quiet; then
+              echo "::notice::After replaying on the new main there is nothing left to commit — another run published the same evidence."
+              exit 0
+            fi
+            git commit -m "data(climate-event): ${summary}" \
+              -m "Automated by .github/workflows/climate-events.yml, replayed onto main after a push race. Every figure is attributed and status-marked; the page was rebuilt on the new base and verify:final passed."
+          done
 
 
       # ── TELL THE SEARCH ENGINES, AFTER THE PUSH ─────────────────────────
