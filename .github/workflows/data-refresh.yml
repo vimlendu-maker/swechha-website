@@ -29,7 +29,35 @@ on:
         default: true
 
 concurrency:
-  group: data-refresh
+  # ★ ONE PUBLISHER AT A TIME, ACROSS ALL THREE WORKFLOWS.
+  # air-hourly.yml, data-refresh.yml and climate-events.yml are independent in
+  # what they READ — that separation is deliberate and documented in each file —
+  # but they are not independent in what they WRITE. All three commit to `data`
+  # and `public/_pages`, and all three rebuild the SAME page list (situations,
+  # work, about, impact, farm, act, stories, publications, posters, search,
+  # essays). Three writers, one branch.
+  #
+  # They each used to hold a group of their own, which protects a workflow from
+  # ITSELF and from nothing else. The result was measurable: data-refresh.yml
+  # failed all six times it has ever run, every one at `git push` —
+  #
+  #   error: failed to push some refs
+  #   hint: Updates were rejected because the remote contains work that you do
+  #         not have locally. This is usually caused by another repository
+  #         pushing to the same ref.
+  #
+  # It checks out, spends eight minutes fetching, and the air publisher lands
+  # underneath it. Rebasing out of that is not the fix it looks like: the
+  # conflicting files are generated HTML that both jobs rewrite in full, so a
+  # merge resolution is a coin flip on whose figures survive, on a site whose
+  # entire premise is that the figures are current.
+  #
+  # A shared group removes the race instead of resolving it. The cost is that a
+  # daily eight-minute refresh can make one air run wait, and GitHub keeps only
+  # the newest pending run per group — so an air poll may be cancelled while
+  # queued. That is harmless here: the next dispatch is fifteen minutes out and
+  # /api/cron/air re-dispatches on its own once no recent run covers the slot.
+  group: publish
   cancel-in-progress: false
 
 permissions:
@@ -169,7 +197,41 @@ jobs:
           git commit -m "data: the situations re-read their sources" \
             -m "Changed: ${files:-none}" \
             -m "Automated by .github/workflows/data-refresh.yml. Air is intentionally excluded here and is owned by the dedicated 15-minute air workflow."
-          git push
+
+          # ── PUSHING AGAINST A MOVING BRANCH ──────────────────────────────
+          # The shared `publish` concurrency group above keeps the three bot
+          # publishers off each other, which is what was actually breaking this
+          # step. It cannot keep a HUMAN off it: a pull request merged during
+          # the eight minutes this job spends fetching rejects the push just as
+          # surely, and then a day of readings is thrown away for a race that a
+          # single retry would have won.
+          #
+          # ★ IT REBASES ONLY WHEN THE REBASE IS CLEAN, AND NEVER RESOLVES.
+          # Most of this commit is generated HTML that several jobs rewrite in
+          # full. There is no honest automatic resolution for a conflict in a
+          # built page — "ours" and "theirs" are both whole files, and picking
+          # one silently reverts somebody's figures. So a conflict aborts and
+          # fails the run loudly, which is the same outcome as before this loop
+          # existed. The only behaviour added is winning the cases that never
+          # needed resolving: a merge that touched docs, or source, or a page
+          # this run did not rebuild.
+          for attempt in 1 2 3; do
+            if git push; then
+              exit 0
+            fi
+            echo "::notice::Push rejected on attempt ${attempt}. Fetching and replaying on top of main."
+            git fetch origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo "::error::Rebase onto main conflicted, so this run's data was NOT published. \
+          The conflict is in files that more than one publisher rewrites in full; resolving it \
+          automatically would silently discard one side's figures. Re-run this workflow — a fresh \
+          fetch on top of the current main will produce a clean commit."
+              exit 1
+            fi
+          done
+          echo "::error::Still could not push after 3 attempts; main is moving faster than this job can land."
+          exit 1
 
       - name: Report what did not refresh
         if: always()

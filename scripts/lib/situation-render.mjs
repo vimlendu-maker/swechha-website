@@ -790,11 +790,9 @@ ${tabs('Satellite imagery', panels)}
       ${imagery.frame ? `<p class="cap as-eo-fr">Frame ${imagery.frame.south}&ndash;${imagery.frame.north}&deg;N,
         ${imagery.frame.west}&ndash;${imagery.frame.east}&deg;E. ${esc(imagery.frame.note)}</p>` : ''}
 ${(e.reported_imagery || []).length ? `      <div class="as-eo-rep">
-        <p class="lbl as-eo-rep-h">Higher-resolution before-and-after, at its publisher</p>
+        <p class="lbl as-eo-rep-h">Higher resolution, at its publisher &mdash; linked, not reproduced</p>
 ${(e.reported_imagery || []).map((r) => `        <p class="as-eo-rep-i"><a class="lk" href="${esc(r.url)}">${esc(r.title)}</a>
-          <span class="cap">${esc(r.publisher)}${r.date ? ` &middot; ${esc(r.date)}` : ''} &mdash; ${esc(r.shows)}</span></p>`).join('\n')}
-        <p class="cap as-eo-rep-n"><b>Linked, not reproduced:</b> it stays licensed to its
-          publisher. What is above is NASA&rsquo;s, public domain.</p>
+          <span class="cap">${esc(r.publisher)}${r.date ? ` &middot; ${esc(r.date)}` : ''}${r.shows ? ` &mdash; ${esc(r.shows)}` : ''}</span></p>`).join('\n')}
       </div>` : ''}
 ${(() => {
     /* ── THE LIVE COMPARISON ────────────────────────────────────────────
@@ -816,7 +814,7 @@ ${(() => {
     });
     if (!wv) return '';
     return `      <p class="as-eo-live"><a class="act" href="${esc(wv)}" target="_blank" rel="noopener">Open the live comparison ${ARROW}</a>
-        <span class="cap as-eo-live-c">Live at NASA&rsquo;s viewer: zoom, re-date, switch to radar.</span></p>`;
+        <span class="cap as-eo-live-c">Zoom, re-date, or switch to radar.</span></p>`;
   })()}
       <p class="cap as-eo-at"><a class="lk" href="${esc(imagery.attribution.url)}">${esc(imagery.attribution.name)}</a>.
         ${esc(imagery.attribution.note)}
@@ -1204,8 +1202,30 @@ ${(e.uncertain || []).map((u) => `          <li>${esc(u)}</li>`).join('\n')}
           <code>${esc(e.detector?.script || 'the detector')}</code>, which scored this event
           ${e.significance_score} against a publication threshold of ${e.detector?.threshold ?? '—'}.
           ${esc(e.detector?.note || '')}</p>`)}
-      <p class="cap as-stamp">Feeds last read ${esc(istStamp(e.last_checked?.epochMs || e.last_updated.epochMs))},
-        and re-read every 30 minutes.</p>
+      ${/* ── THE STAMP SAYS WHAT THE STAMP CAN PROVE ──────────────────────
+           ★ THIS LINE USED TO READ "Feeds last read <time>, and re-read every
+           30 minutes" AND THE FIRST HALF COULD NEVER BE TRUE. `last_checked`
+           is frozen to its previous value whenever the evidence fingerprint is
+           unchanged (detect-climate-events.mjs), so it is the time the page
+           last CHANGED, not the time the feeds were last READ. A reader who
+           came back at 23:30 and saw "last read 18:53" concluded the pipeline
+           was dead. It wasn't lying about the cadence — it was labelling the
+           wrong number.
+
+           MAKING IT A REAL READ-TIME IS THE EXPENSIVE FIX AND IT IS NOT WORTH
+           IT. A moving clock has to be committed to be visible, and every
+           commit is a deploy: 48 a day for this page alone, on top of Air's,
+           against a Hobby ceiling of 100. Exhausting that budget is not
+           hypothetical here — every deployment failed from 27 August 18:08
+           over a cron expression, and the live site served a 27-hour-old AQI
+           until it was found. Spending the headroom on a clock would put every
+           real figure on the site at risk to make one timestamp twitch.
+
+           So the page states both true things and names the trap between
+           them. */ ''}
+      <p class="cap as-stamp">Feeds re-read every 30 minutes. This page last changed
+        ${esc(istStamp(e.last_updated.epochMs))} &mdash; a re-read that finds nothing new
+        does not move that.</p>
     </div>`;
 }
 
@@ -1513,7 +1533,6 @@ a.as-src-t:hover{color:var(--mustard-2)}
 .as-eo-rep-h{color:var(--fg-3);margin:0 0 .7em}
 .as-eo-rep-i{margin:0 0 .9em;line-height:1.4}
 .as-eo-rep-i .cap{display:block;margin-top:3px;max-width:64ch}
-.as-eo-rep-n{max-width:70ch;margin:1em 0 0}
 
 /* ── (p) CARD ROWS ARE FLEX, NOT AUTO-FIT GRID ────────────────────────────
    ★ AUTO-FIT ALWAYS ORPHANS A LAST ROW, and it shipped a four-cell grey hole.
