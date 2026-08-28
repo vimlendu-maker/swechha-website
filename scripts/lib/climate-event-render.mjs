@@ -35,7 +35,29 @@
    district collector's estimate and a news wire's figure is the product.
    ═══════════════════════════════════════════════════════════════════════════ */
 import { esc, ARROW, imgDim } from './situation-shell.mjs';
-import { CLAIM_STATUS, RELEVANCE, ago, istStamp } from './climate-events.mjs';
+import { CLAIM_STATUS, RELEVANCE, istStamp } from './climate-events.mjs';
+
+/* ── TIME IN THE MARKUP IS ABSOLUTE. RELATIVE TIME IS THE BROWSER'S JOB. ──
+   ★ THIS WAS A REAL DEFECT AND THE REPOSITORY'S OWN GATE CAUGHT IT.
+   The first version wrote "updated 6 minutes ago" straight into the committed
+   HTML. That makes the page's BYTES change every minute even when not one
+   figure has moved — so `generated-current.yml`, which regenerates every page
+   and fails if the tree moved, went red and would have stayed red forever.
+   Worse: air-hourly.yml rebuilds every page on its own schedule (all the
+   generators share home.html's shell), so the air job would have committed a
+   ticking clock on this page every twenty minutes. This repository already
+   has a rule for exactly that — IT COMMITS FIGURES, NOT CLOCKS — and this
+   broke it.
+
+   So the markup carries the ABSOLUTE instant, which is stable across rebuilds
+   and is the complete, honest statement on its own. CE_TIME_JS then rewrites
+   it to "6 minutes ago" in the browser, keeping the absolute value in the
+   title attribute. With JavaScript off the reader sees a real timestamp
+   rather than nothing — which is the right way round. */
+const stamp = (epochMs, prefix = '') => {
+  const abs = istStamp(epochMs);
+  return `<time class="ce-t" datetime="${new Date(epochMs).toISOString()}" title="${esc(abs)}">${prefix ? esc(prefix) + ' ' : ''}${esc(abs)}</time>`;
+};
 
 const HAZARD_LABEL = {
   glof: 'Glacial lake outburst flood',
@@ -175,7 +197,7 @@ function liveConditions(lc) {
 }
 
 /* ── THE ACTIVE-EVENT BOARD ───────────────────────────────────────────── */
-export function renderEvent(e, ctx, now = Date.now()) {
+export function renderEvent(e, ctx) {
   const S = e.sourceIndex;
   const hazard = HAZARD_LABEL[e.hazard] || e.hazard;
   const relLabel = RELEVANCE[e.india_relevance];
@@ -234,9 +256,9 @@ export function renderEvent(e, ctx, now = Date.now()) {
         <p class="ce-meta">
           <span class="ce-place">${esc(e.location.text)}</span>
           <i class="ce-sep">&middot;</i>
-          <span>Reported ${esc(ago(e.occurred.epochMs, now))}</span>
+          <span>Reported ${stamp(e.occurred.epochMs)}</span>
           <i class="ce-sep">&middot;</i>
-          <span>Updated ${esc(ago(e.last_updated.epochMs, now))}</span>
+          <span>Updated ${stamp(e.last_updated.epochMs)}</span>
         </p>
 
         ${statusRow(e)}
@@ -350,7 +372,7 @@ export function renderEvent(e, ctx, now = Date.now()) {
    below three screens of something with a completely different clock. This
    states that an event is live, gives the four figures that fit on one line,
    and gets out of the way — the board itself is one click down. */
-export function renderBanner(e, now = Date.now()) {
+export function renderBanner(e) {
   const hazard = HAZARD_LABEL[e.hazard] || e.hazard;
   const S = e.sourceIndex;
   const deaths = e.impact?.deaths;
@@ -362,7 +384,7 @@ export function renderBanner(e, now = Date.now()) {
             <i class="ce-sep">&middot;</i>${e.tier === 1 ? 'In India' : 'Regional'}</span>
           <span class="ce-ban-h">${esc(e.headline)}</span>
           <span class="cap ce-ban-m">${esc(e.location.text)}
-            <i class="ce-sep">&middot;</i>updated ${esc(ago(e.last_updated.epochMs, now))}
+            <i class="ce-sep">&middot;</i>updated ${stamp(e.last_updated.epochMs)}
             <i class="ce-sep">&middot;</i>${e.corroboration.independent_publishers} publisher${e.corroboration.independent_publishers === 1 ? '' : 's'}${e.corroboration.official_alerts ? `, ${e.corroboration.official_alerts} official alert${e.corroboration.official_alerts === 1 ? '' : 's'}` : ''}
             ${deaths ? `<i class="ce-sep">&middot;</i>${esc(String(deaths.value))} dead, ${esc(CLAIM_STATUS[deaths.status]?.label.toLowerCase() || '')}` : '<i class="ce-sep">&middot;</i>no toll established'}</span>
         </span>
@@ -372,7 +394,7 @@ export function renderBanner(e, now = Date.now()) {
 }
 
 /* ── THE QUIET STATE ─────────────────────────────────────────────────────── */
-export function renderQuiet({ wetNow, total, seasonTo, checkedMs, headlines = [] }, now = Date.now()) {
+export function renderQuiet({ wetNow, total, seasonTo, checkedMs, headlines = [] }) {
   const recent = headlines.slice(0, 3).map((h) => `<li class="ce-hl">
             <a class="ce-hl-t" href="${esc(h.link)}">${esc(h.title)}</a>
             <span class="cap ce-hl-p">${esc(h.publisher || 'unattributed')}${h.published ? ` &middot; ${esc(h.published)}` : ''}</span>
@@ -394,9 +416,9 @@ export function renderQuiet({ wetNow, total, seasonTo, checkedMs, headlines = []
           ${recent}
         </ul>` : ''}
         <p class="ce-meta">
-          <span>News and official alert feeds last read ${esc(ago(checkedMs, now))}</span>
+          <span>News and official alert feeds are re-read every 30 minutes</span>
           <i class="ce-sep">&middot;</i>
-          <span>${esc(istStamp(checkedMs))}</span>
+          <span>this page last changed ${stamp(checkedMs)}</span>
         </p>
         <p style="margin:0"><a class="act" href="#said">The whole register ${ARROW}</a></p>
       </div>
@@ -593,4 +615,42 @@ export const CE_BANNER_CSS = `
   display:inline-flex;align-items:center;gap:8px}
 .ce-ban-go svg{width:15px;height:15px}
 @media (max-width:639px){.ce-ban-go{margin-left:auto}}
+`;
+
+/* ── THE ONLY SCRIPT ON THESE PAGES ───────────────────────────────────────
+   Rewrites the absolute stamps written by stamp() into relative ages. It
+   touches ONLY <time class="ce-t"> elements, never a reading — the rule that
+   nothing on this site repaints a figure is intact, because a clock is not a
+   figure and the absolute value stays in the title attribute either way.
+
+   It runs once on load. There is deliberately no setInterval: a page that
+   silently re-counts itself while you read is a liability on a disaster page,
+   and the difference between "8 minutes ago" and "9 minutes ago" is not worth
+   a timer that keeps running in a background tab. */
+export const CE_TIME_JS = `
+(function(){
+  var N = ['ce-t'];
+  function rel(ms){
+    var s = Math.max(0, Math.round((Date.now() - ms) / 1000));
+    if (s < 90) return 'just now';
+    var m = Math.round(s / 60);
+    if (m < 90) return m + ' minute' + (m === 1 ? '' : 's') + ' ago';
+    var h = Math.round(m / 60);
+    if (h < 36) return h + ' hour' + (h === 1 ? '' : 's') + ' ago';
+    var d = Math.round(h / 24);
+    return d + ' day' + (d === 1 ? '' : 's') + ' ago';
+  }
+  function go(){
+    var t = document.getElementsByClassName('ce-t');
+    for (var i = 0; i < t.length; i++) {
+      var iso = t[i].getAttribute('datetime');
+      if (!iso) continue;
+      var ms = Date.parse(iso);
+      if (!ms) continue;
+      t[i].textContent = rel(ms);
+    }
+  }
+  if (document.readyState === 'loading') addEventListener('DOMContentLoaded', go, {once:true});
+  else go();
+})();
 `;

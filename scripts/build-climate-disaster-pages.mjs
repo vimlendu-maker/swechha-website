@@ -37,7 +37,7 @@ import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import { loadEvents, isCurrent, loadContext, istStamp } from './lib/climate-events.mjs';
-import { renderEvent, CE_CSS } from './lib/climate-event-render.mjs';
+import { renderEvent, CE_CSS, CE_TIME_JS } from './lib/climate-event-render.mjs';
 
 const { esc, ARROW, crumb, siblings } = S;
 
@@ -162,7 +162,7 @@ ${S.newsletter('climate')}
     desc: description(e),
     bands: BANDS, index: INDEX, sh, clashes,
     pageCss: CE_CSS + DZ_CSS,
-    script: S.NEWSLETTER_JS,
+    script: S.NEWSLETTER_JS + CE_TIME_JS,
     sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),
     note: `${e.hazard} @ ${e.location.text} — score ${e.significance_score}, ${e.origin}, `
         + `${e.corroboration.independent_publishers} publishers, `

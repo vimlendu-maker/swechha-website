@@ -586,6 +586,31 @@ async function dossier(c, s, existing) {
      disaster is exactly the sentence nobody should be inventing. */
   const lead = pickLead(c.items, c.hazard);
 
+  /* ── A QUIET RUN MUST PRODUCE AN IDENTICAL FILE ────────────────────────
+     ★ SAME LESSON AS THE RELATIVE TIMESTAMPS, ONE LAYER DOWN.
+     Stamping last_updated and last_checked on every run means a dossier's
+     bytes move every thirty minutes whether or not a single source changed —
+     and this repository's rule is that it commits figures, not clocks.
+     data-refresh-changed.mjs only treats `fetched` as noise, so these two
+     would have produced a commit and a deploy on every quiet run.
+
+     So the evidence is fingerprinted. If the score, the corroboration counts,
+     the headline and the set of sources are all unchanged, the previous
+     timestamps are preserved and the file re-serialises byte-identically. The
+     fact that we looked is still recorded — once, globally, in checked.json,
+     which is itself clock-only and gets reverted when nothing else moved. */
+  const fingerprint = JSON.stringify({
+    score: s.total,
+    pubs: s.publishers.length,
+    alerts: s.matchedAlerts.length,
+    hazard: c.hazard,
+    tier: c.tier,
+    headline: existing?.origin === 'editor' && existing.headline
+      ? existing.headline : cleanHeadline(lead.title, lead.publisher),
+    sources: sources.map((x) => x.id).sort(),
+  });
+  const unchanged = existing && existing.evidence_fingerprint === fingerprint;
+
   return {
     slug,
     /* Preserve an editor's own headline and prose across re-detections. The
@@ -600,13 +625,25 @@ async function dossier(c, s, existing) {
     origin: existing?.origin === 'editor' ? 'editor' : 'automated',
     publish_state: publishable(s) ? 'published' : 'draft',
     location: { text: c.place, country: c.tier === 1 ? 'India' : null },
-    occurred: { epochMs: s.freshestMs || NOW, precision: 'reported' },
+    occurred: { epochMs: unchanged && existing.occurred?.epochMs
+      ? existing.occurred.epochMs : (s.freshestMs || NOW), precision: 'reported' },
     first_detected: { epochMs: existing?.first_detected?.epochMs || NOW },
-    last_updated: { epochMs: NOW },
-    last_checked: { epochMs: NOW },
+    /* Moves only when the evidence moved — see the fingerprint note above. */
+    last_updated: { epochMs: unchanged ? existing.last_updated.epochMs : NOW },
+    last_checked: { epochMs: unchanged ? existing.last_checked.epochMs : NOW },
+    evidence_fingerprint: fingerprint,
     significance_score: s.total,
-    score_breakdown: s.parts,
-    corroboration: {
+    /* ★ FROZEN WHEN THE EVIDENCE IS UNCHANGED, and the reason is subtle.
+       `items_read` is the raw count of matching headlines, and Google News
+       returns a slightly different set on every fetch — so it drifts by one or
+       two even when the score, the publishers, the alerts and the sources are
+       all identical. Two of the score_breakdown strings quote that count, so
+       the drift propagated into them too, and the file churned on every run
+       for no reason a reader would recognise as a change. The fingerprint has
+       already established these are the same evidence; the raw tally is not
+       worth a commit and a deploy. */
+    score_breakdown: unchanged ? existing.score_breakdown : s.parts,
+    corroboration: unchanged ? existing.corroboration : {
       independent_publishers: s.publishers.length,
       official_alerts: s.matchedAlerts.length,
       items_read: c.items.length,
@@ -641,7 +678,11 @@ async function dossier(c, s, existing) {
         : 'Whether this event is continuing or has passed is not established.',
     ],
     sources,
-    live_conditions: await liveWeather(c.place),
+    /* Live weather is a reading, and it genuinely does move every run — but a
+       quiet run must not churn the file, so it is only refreshed when the
+       evidence moved. The page labels it with its own fetch time either way. */
+    live_conditions: unchanged && existing.live_conditions
+      ? existing.live_conditions : await liveWeather(c.place),
     detector: {
       script: 'scripts/detect-climate-events.mjs',
       threshold: THRESHOLD,
@@ -738,8 +779,16 @@ if (!DRY) {
       published: i.published, publishedMs: i.publishedMs, hazard: i.hazard, place: i.place,
     }));
 
+  /* ★ THE CLOCK FIELD IS CALLED `fetched` ON PURPOSE.
+     data-refresh-changed.mjs treats exactly three key names as noise —
+     `fetched`, `fetchedAt`, `_gathered` — and reverts a file whose only change
+     is one of them. Naming this `checked` would have put a 48-commits-a-day
+     clock outside that filter. `fetched` is also the honest name: it is when
+     this file was written. Everything else here (what was read, what cleared,
+     the recent items) is real content, so a run that finds something new does
+     produce a commit. */
   writeFileSync(join(DIR, 'checked.json'), JSON.stringify({
-    checked: { epochMs: NOW },
+    fetched: { epochMs: NOW },
     read: { news_items: news.length, official_alerts: alerts.length },
     clusters_considered: clusters.length,
     published: clusters.filter((x) => publishable(x.s)).length,

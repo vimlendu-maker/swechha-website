@@ -1217,10 +1217,10 @@ pointer-events:none;transition:background .12s}
           <span class="lbl ce-ban-k"><i class="ce-dot" aria-hidden="true"></i>Active situation
             <i class="ce-sep">&middot;</i>Glacial lake outburst flood
             <i class="ce-sep">&middot;</i>Regional</span>
-          <span class="ce-ban-h">Flood risk forces halt to rescues in Tibet, as Nepal death toll rises to 469</span>
+          <span class="ce-ban-h">Nepal floods: 6 ways to help victims of the glacial collapse that left hundreds dead or missing</span>
           <span class="cap ce-ban-m">Nepal
-            <i class="ce-sep">&middot;</i>updated 6 minutes ago
-            <i class="ce-sep">&middot;</i>121 publishers
+            <i class="ce-sep">&middot;</i>updated <time class="ce-t" datetime="2026-08-28T13:23:52.838Z" title="18:53 IST, 28 Aug 2026">18:53 IST, 28 Aug 2026</time>
+            <i class="ce-sep">&middot;</i>125 publishers
             <i class="ce-sep">&middot;</i>no toll established</span>
         </span>
         <span class="ce-ban-go">The full situation <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
@@ -1984,6 +1984,32 @@ pointer-events:none;transition:background .12s}
         go.disabled=false; msg.textContent='That did not work. Nothing was stored.';
       });
   });
+})();
+
+(function(){
+  var N = ['ce-t'];
+  function rel(ms){
+    var s = Math.max(0, Math.round((Date.now() - ms) / 1000));
+    if (s < 90) return 'just now';
+    var m = Math.round(s / 60);
+    if (m < 90) return m + ' minute' + (m === 1 ? '' : 's') + ' ago';
+    var h = Math.round(m / 60);
+    if (h < 36) return h + ' hour' + (h === 1 ? '' : 's') + ' ago';
+    var d = Math.round(h / 24);
+    return d + ' day' + (d === 1 ? '' : 's') + ' ago';
+  }
+  function go(){
+    var t = document.getElementsByClassName('ce-t');
+    for (var i = 0; i < t.length; i++) {
+      var iso = t[i].getAttribute('datetime');
+      if (!iso) continue;
+      var ms = Date.parse(iso);
+      if (!ms) continue;
+      t[i].textContent = rel(ms);
+    }
+  }
+  if (document.readyState === 'loading') addEventListener('DOMContentLoaded', go, {once:true});
+  else go();
 })();
 </script>
 </body>

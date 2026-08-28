@@ -19,7 +19,7 @@
 import * as S from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
 import { loadEvents, currentEvent } from './lib/climate-events.mjs';
-import { renderBanner, renderQuiet, CE_CSS, CE_BANNER_CSS } from './lib/climate-event-render.mjs';
+import { renderBanner, renderQuiet, CE_CSS, CE_BANNER_CSS, CE_TIME_JS } from './lib/climate-event-render.mjs';
 const { esc, n0, n1, compact, opener, tabs, hole, kd, KIND_LEGEND, ARROW, MON, MON3,
   stateChip, measureRow, measureHead, disclose, crumb, siblings } = S;
 
@@ -37,7 +37,7 @@ const NEWS = S.J('coverage-climate-event.json');
 const CHECKED = (() => {
   try { return S.J('climate-events/checked.json'); } catch { return null; }
 })();
-const CHECKED_MS = CHECKED?.checked?.epochMs || NEWS.fetched?.epochMs || Date.now();
+const CHECKED_MS = CHECKED?.fetched?.epochMs || NEWS.fetched?.epochMs || Date.now();
 
 const CAT = CL.categories;
 const NAT = CL.national;
@@ -602,7 +602,7 @@ await S.assemble({
   file: 'situation-climate-event.html',
   title: TITLE,
   bands: BANDS, index: INDEX, sh, clashes,
-  pageCss: PAGE_CSS, script: S.NEWSLETTER_JS,
+  pageCss: PAGE_CSS, script: S.NEWSLETTER_JS + CE_TIME_JS,
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),
   note: `9 bands + footer. ${CURRENT ? `TOP: ${CURRENT.hazard} @ ${CURRENT.location.text} `
       + `(score ${CURRENT.significance_score}, ${CURRENT.origin}, ${CURRENT.corroboration.independent_publishers} publishers). `
