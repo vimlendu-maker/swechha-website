@@ -3,10 +3,10 @@
    ───────────────────────────────────────────────────────────────────────────
    Two states, one band:
 
-     ACTIVE   a full situation board — status row, what is claimed and by whom,
-              live conditions over the region, the river path to India, the
-              timeline, why this hazard happens, how it compares with the
-              Himalayan events before it, what is not known, and every source.
+     ACTIVE   a COMPACT banner: an event is being tracked, the four figures that
+              fit on one line, and a link to its own page. The full board used to
+              be here and is now fifteen bands in situation-render.mjs — see the
+              note further down for what moved and what was replaced.
 
      QUIET    no event is current, so the freshest genuine signal from the
               archive holds the slot, with the three most recent headlines.
@@ -34,8 +34,9 @@
    Value, status word, publisher. On a disaster page the difference between a
    district collector's estimate and a news wire's figure is the product.
    ═══════════════════════════════════════════════════════════════════════════ */
-import { esc, ARROW, imgDim } from './situation-shell.mjs';
-import { CLAIM_STATUS, RELEVANCE, istStamp } from './climate-events.mjs';
+import { esc, ARROW } from './situation-shell.mjs';
+import { CLAIM_STATUS, istStamp } from './climate-events.mjs';
+import { eventName } from './event-figures.mjs';
 
 /* ── TIME IN THE MARKUP IS ABSOLUTE. RELATIVE TIME IS THE BROWSER'S JOB. ──
    ★ THIS WAS A REAL DEFECT AND THE REPOSITORY'S OWN GATE CAUGHT IT.
@@ -68,302 +69,42 @@ const HAZARD_LABEL = {
   extreme_rain: 'Extreme rainfall',
 };
 
-/* An illustrative photograph per hazard, drawn from this repository's own
-   library. ★ IT IS NEVER A PHOTOGRAPH OF THE EVENT and the caption says so in
-   as many words — a picture of a different flood placed under a live headline
-   is a false claim made in pictures, which is the easiest kind to make by
-   accident and the hardest for a reader to catch. */
-const HAZARD_PHOTO = {
-  glof: { src: '/images/photos/river-valley-hillside-climb.jpg',
-    alt: 'A Himalayan river valley below steep hillsides',
-    credit: 'Swechha field archive' },
-  cloudburst: { src: '/images/photos/river-valley-hillside-climb.jpg',
-    alt: 'A Himalayan river valley below steep hillsides',
-    credit: 'Swechha field archive' },
-  landslide: { src: '/images/photos/river-valley-hillside-climb.jpg',
-    alt: 'A steep hillside above a river valley',
-    credit: 'Swechha field archive' },
-  flood: { src: '/images/photos/monsoon-flooded-fields.jpg',
-    alt: 'Flooded fields under monsoon cloud',
-    credit: 'Swechha field archive' },
-  extreme_rain: { src: '/images/photos/monsoon-flooded-fields.jpg',
-    alt: 'Flooded fields under monsoon cloud',
-    credit: 'Swechha field archive' },
-  cyclone: { src: '/images/photos/monsoon-flooded-fields.jpg',
-    alt: 'Flooded fields under heavy cloud',
-    credit: 'Swechha field archive' },
-};
+/* ═══ THE FULL BOARD LIVES IN situation-render.mjs NOW ═══════════════════
+   `renderEvent()` was here — one function emitting the whole
+   /now/climate-event/<slug> page as a single bordered card with eleven stacked
+   subsections inside it. It is replaced, not moved: the page is fifteen bands
+   built by scripts/lib/situation-render.mjs, so the shell's own layout system
+   (band grounds, `opener()` headings, the header's section index, anchors a
+   reader can jump to) applies to each question the page answers instead of to
+   one thing called "The situation".
 
-function srcName(sources, id) {
-  const s = sources[id];
-  if (!s) return '';
-  const name = esc(s.publisher);
-  return s.url ? `<a class="lk" href="${esc(s.url)}">${name}</a>` : name;
-}
+   WHAT WENT WITH IT, and each was load-bearing for that design and is not for
+   this one:
 
-function claim(c, sources) {
-  if (!c) return '';
-  const st = CLAIM_STATUS[c.status];
-  const ids = Array.isArray(c.source) ? c.source : [c.source];
-  const who = ids.map((id) => srcName(sources, id)).filter(Boolean).join(', ');
-  return `<div class="ce-claim">
-          <span class="ce-claim-v">${esc(String(c.value))}${c.unit ? `<i>${esc(c.unit)}</i>` : ''}</span>
-          <span class="lbl ce-claim-k">${esc(c.label || '')}</span>
-          <span class="ce-st ce-st-${st.cls}">${esc(st.label)}</span>
-          ${who ? `<span class="cap ce-claim-s">${who}</span>` : ''}
-          ${c.note ? `<span class="cap ce-claim-n">${esc(c.note)}</span>` : ''}
-        </div>`;
-}
+     statusRow()      four cells rendered unconditionally, with an em dash and
+                      "not established" in any it had no figure for. The new
+                      hero renders a card per figure that EXISTS, and the
+                      figures exist because event-figures.mjs reads them out of
+                      the headlines the page was already citing.
+     HAZARD_PHOTO     a stock Himalayan valley under a live disaster headline,
+                      with a caption confessing it was not a photograph of the
+                      event. The page now publishes the actual NASA frame for
+                      the region and the dates either side, or prints why it
+                      cannot — see scripts/lib/event-imagery.mjs.
+     liveConditions() the rainfall panel. The forecast series it read now
+                      drives a COMPUTED risk level in the "what happens next"
+                      band, against IMD's published day categories.
+     riverPath()      the flat origin-to-India chain. Now a real projected map
+                      of the downstream places plus the chain as a separate
+                      diagram, because they answer two different questions.
+     claim()          the generic figure row, superseded by the metric card and
+                      the per-outlet ledger under it.
 
-/* ── THE STATUS ROW ───────────────────────────────────────────────────────
-   Deaths, missing, injured, and how severe. ★ EVERY ONE OF THESE IS EMPTY
-   UNTIL SOMEBODY SOURCES IT. A disaster board with four confident numerals is
-   the thing this whole subsystem exists to avoid; the honest version shows the
-   slot and says the figure is not established, which is also the true state of
-   the world in the first days of a disaster. */
-function statusRow(e) {
-  const S = e.sourceIndex;
-  const cells = [
-    ['Deaths', e.impact?.deaths],
-    ['Missing', e.impact?.missing],
-    ['Injured', e.impact?.injured],
-    ['Displaced', e.impact?.displaced],
-  ];
-  return `<div class="ce-status">
-          ${cells.map(([label, c]) => {
-    if (!c) {
-      return `<div class="ce-stat is-none">
-            <span class="ce-stat-v">&mdash;</span>
-            <span class="lbl ce-stat-l">${label}</span>
-            <span class="cap ce-stat-n">not established</span>
-          </div>`;
-    }
-    const st = CLAIM_STATUS[c.status];
-    const ids = Array.isArray(c.source) ? c.source : [c.source];
-    return `<div class="ce-stat">
-            <span class="ce-stat-v">${esc(String(c.value))}</span>
-            <span class="lbl ce-stat-l">${label}</span>
-            <span class="cap ce-stat-n"><i class="ce-st ce-st-${st.cls}">${esc(st.label)}</i> ${ids.map((i) => srcName(S, i)).filter(Boolean).join(', ')}</span>
-          </div>`;
-  }).join('\n          ')}
-        </div>`;
-}
-
-/* ── THE RIVER PATH ───────────────────────────────────────────────────────
-   A schematic, not a map. Drawn as inline SVG because it must work with no
-   network, no tiles and no key, and because the thing worth showing is not
-   geography — it is the CHAIN: where the water starts, what it runs into, and
-   which Indian state is at the bottom of it. A tile map would show terrain and
-   hide exactly that. */
-function riverPath(e, ctx) {
-  const chain = ctx?.india_path || (e.tier === 2
-    ? [esc(e.location.text), 'Himalayan river system', 'India, downstream']
-    : [esc(e.location.text), 'India']);
-  if (!chain.length) return '';
-  const w = 100 / chain.length;
-  return `<div class="ce-path" role="img" aria-label="Path from ${esc(chain[0])} to ${esc(chain[chain.length - 1])}">
-          ${chain.map((n, i) => `<span class="ce-path-n${i === chain.length - 1 ? ' is-end' : ''}${i === 0 ? ' is-start' : ''}" style="--w:${w}%">
-            <i class="ce-path-d" aria-hidden="true"></i><b>${esc(n)}</b></span>`).join('\n          ')}
-        </div>`;
-}
-
-/* ── LIVE CONDITIONS ──────────────────────────────────────────────────────
-   The only genuinely real-time reading on this page. It is a forecast-model
-   value over a representative point for the region, NOT a gauge at the event,
-   and the caption says both things because the difference matters. */
-function liveConditions(lc) {
-  if (!lc) return '';
-  const cells = [
-    ['Rain now', lc.precipitation_mm == null ? '—' : `${lc.precipitation_mm}`, 'mm/hr'],
-    ['Rain, 7 days', lc.rain_7d_mm == null ? '—' : `${lc.rain_7d_mm}`, 'mm'],
-    ['Temperature', lc.temperature_c == null ? '—' : `${Math.round(lc.temperature_c)}`, '°C'],
-    ['Humidity', lc.humidity_pct == null ? '—' : `${Math.round(lc.humidity_pct)}`, '%'],
-  ];
-  const max = Math.max(1, ...(lc.daily || []).map((d) => d.mm || 0));
-  const bars = (lc.daily || []).map((d) => `<i class="ce-bar" style="--h:${Math.max(2, Math.round((d.mm || 0) / max * 100))}%" title="${esc(d.date)}: ${d.mm == null ? 'no data' : `${d.mm} mm`}"></i>`).join('');
-  return `<p class="lbl ce-lbl">Conditions over the region, now</p>
-        <div class="ce-live">
-          ${cells.map(([l, v, u]) => `<div class="ce-lv">
-            <span class="ce-lv-v">${esc(v)}<i>${esc(u)}</i></span>
-            <span class="lbl ce-lv-l">${esc(l)}</span>
-          </div>`).join('\n          ')}
-        </div>
-        ${bars ? `<div class="ce-bars" role="img" aria-label="Daily rainfall, seven days past and three ahead">${bars}</div>
-        <p class="cap ce-bars-c">Daily rainfall, seven days back and three forward.</p>` : ''}
-        <p class="cap ce-live-c"><b>This is a model, not a gauge, and it is not the site of the event.</b>
-          Read at ${lc.point.lat.toFixed(2)}&deg;, ${lc.point.lon.toFixed(2)}&deg; &mdash; ${esc(lc.point.note)}.
-          ${esc(lc.source.name)}, ${esc(lc.source.note)}.
-          ${lc.observed_at ? `Model time ${esc(lc.observed_at)}.` : ''}</p>`;
-}
-
-/* ── THE ACTIVE-EVENT BOARD ───────────────────────────────────────────── */
-export function renderEvent(e, ctx) {
-  const S = e.sourceIndex;
-  const hazard = HAZARD_LABEL[e.hazard] || e.hazard;
-  const relLabel = RELEVANCE[e.india_relevance];
-  const photo = HAZARD_PHOTO[e.hazard];
-
-  const impact = Object.entries(e.impact || {})
-    .filter(([k]) => !['deaths', 'missing', 'injured', 'displaced'].includes(k))
-    .map(([k, c]) => claim({ ...c, label: c.label || k.replace(/_/g, ' ') }, S))
-    .filter(Boolean).join('\n        ');
-  const figures = (e.figures || []).map((c) => claim(c, S)).filter(Boolean).join('\n        ');
-  const ctxFigures = (ctx?.figures || []).map((c) => claim(c, ctx.sourceIndex)).filter(Boolean).join('\n        ');
-
-  const precedents = (ctx?.precedents || []).slice(0, 4).map((p) => `<li class="ce-prec">
-            <span class="ce-prec-w">${esc(p.when)}</span>
-            <span class="ce-prec-t">${esc(p.what)}</span>
-            ${p.toll ? `<span class="cap ce-prec-n">${esc(String(p.toll.value))} ${esc(p.toll.label || 'deaths')} &middot; ${esc(CLAIM_STATUS[p.toll.status]?.label || '')}${p.toll.source ? ` &middot; ${srcName(ctx.sourceIndex, Array.isArray(p.toll.source) ? p.toll.source[0] : p.toll.source)}` : ''}</span>` : ''}
-          </li>`).join('\n          ');
-
-  const timeline = (e.timeline || []).slice(0, 10).map((t) => `<li class="ce-tl">
-            <span class="ce-tl-w">${esc(t.when || '')}</span>
-            <span class="ce-tl-t">${esc(t.what)}${t.source ? ` <span class="cap">&mdash; ${srcName(S, t.source)}</span>` : ''}</span>
-          </li>`).join('\n          ');
-
-  const uncertain = (e.uncertain || []).map((u) => `<li>${esc(u)}</li>`).join('\n            ');
-  const known = (e.known || []).map((u) => `<li>${esc(u)}</li>`).join('\n            ');
-
-  const newsSrc = Object.values(S).filter((s) => s.tier === 'news');
-  const offSrc = Object.values(S).filter((s) => s.tier === 'official');
-  const sciSrc = Object.values(S).filter((s) => s.tier === 'scientific');
-  const srcList = (list) => list.slice(0, 24).map((s) => `<li class="ce-src-i">
-              ${s.url ? `<a class="ce-src-t" href="${esc(s.url)}">${esc(s.title)}</a>` : `<span class="ce-src-t">${esc(s.title)}</span>`}
-              <span class="cap ce-src-p">${esc(s.publisher)}${s.published ? ` &middot; ${esc(s.published)}` : ''}</span>
-            </li>`).join('\n            ');
-
-  /* "Why this happens" is the HAZARD's mechanism, not this event's cause —
-     the distinction is in the heading and in the caption, because nobody has
-     established this event's cause and the page must not imply otherwise. */
-  const why = ctx?.mechanism ? Object.entries(ctx.mechanism).map(([k, v]) => `<div class="ce-why-c">
-            <p class="lbl ce-why-h">${esc({ trigger: 'Immediate trigger', conditions: 'Environmental conditions', assessment: 'What science says', human: 'Human factors' }[k] || k)}</p>
-            <p class="ce-why-t">${esc(v)}</p>
-          </div>`).join('\n          ') : '';
-
-  const watch = (ctx?.what_to_watch || []).map((w) => `<li>${esc(w)}</li>`).join('\n            ');
-
-  return `    <div class="wrap ce-wrap">
-      <div class="ce-card ce-live-card">
-        <div class="ce-head">
-          <p class="lbl ce-eyebrow"><span class="ce-flag">Active situation</span>
-            <i class="ce-sep">&middot;</i> ${e.tier === 1 ? 'In India' : 'Regional'}
-            <i class="ce-sep">&middot;</i> ${esc(hazard)}</p>
-          <span class="ce-track"><i class="ce-dot" aria-hidden="true"></i>Tracking</span>
-        </div>
-
-        <h2 class="ce-h">${esc(e.headline)}</h2>
-
-        <p class="ce-meta">
-          <span class="ce-place">${esc(e.location.text)}</span>
-          <i class="ce-sep">&middot;</i>
-          <span>Reported ${stamp(e.occurred.epochMs)}</span>
-          <i class="ce-sep">&middot;</i>
-          <span>Updated ${stamp(e.last_updated.epochMs)}</span>
-        </p>
-
-        ${statusRow(e)}
-
-        ${e.what_happened ? `<p class="ce-said">${esc(e.what_happened)}</p>` : `
-        <p class="ce-auto"><b>Assembled automatically</b> from
-          ${e.corroboration.independent_publishers} independent publisher${e.corroboration.independent_publishers === 1 ? '' : 's'}${e.corroboration.official_alerts ? ` and ${e.corroboration.official_alerts} official alert${e.corroboration.official_alerts === 1 ? '' : 's'}` : ''}.
-          <b>No summary of this event has been written by a person yet</b>, and this page will not
-          generate one &mdash; a fluent paragraph about a live disaster, assembled from headlines by
-          something that cannot check them, is the one thing here that would read as authored and be
-          least worth trusting. The reporting itself is below, attributed.</p>`}
-
-        ${e.why_it_matters ? `<p class="ce-why-p">${esc(e.why_it_matters)}</p>` : ''}
-
-        ${photo ? `<figure class="ce-fig">
-          <img class="ce-img" src="${photo.src}" alt="${esc(photo.alt)}"${imgDim(photo.src)} loading="lazy" decoding="async">
-          <figcaption class="cap ce-figc"><b>This is not a photograph of this event.</b>
-            ${esc(photo.alt)} &mdash; an illustration of the terrain this hazard occurs in.
-            ${esc(photo.credit)}.</figcaption>
-        </figure>` : ''}
-
-        ${e.tier === 2 || ctx?.india_path ? `<p class="lbl ce-lbl">Could India be affected</p>
-        ${riverPath(e, ctx)}
-        ${e.india_relevance_note ? `<p class="ce-rel">
-          <span class="lbl ce-rel-l">${esc(relLabel)}</span>
-          ${esc(e.india_relevance_note)}</p>` : ''}
-        ${ctx?.india_watch ? `<p class="cap ce-watch"><b>Under watch downstream:</b> ${esc(ctx.india_watch)}</p>` : ''}` : ''}
-
-        ${liveConditions(e.live_conditions)}
-
-        ${impact || figures ? `<p class="lbl ce-lbl">What is claimed, and by whom</p>
-        <div class="ce-claims">
-        ${impact}
-        ${figures}
-        </div>` : ''}
-
-        ${timeline ? `<p class="lbl ce-lbl">How it developed</p>
-        <ol class="ce-tls">
-          ${timeline}
-        </ol>` : ''}
-
-        ${why ? `<p class="lbl ce-lbl">Why this kind of event happens</p>
-        <div class="ce-whys">
-          ${why}
-        </div>
-        <p class="cap ce-why-c">This is the mechanism for ${esc(hazard.toLowerCase())}s in general, researched in
-          advance. <b>It is not a finding about the cause of this event</b>, which has not been established.</p>` : ''}
-
-        ${known ? `<p class="lbl ce-lbl">What is established</p>
-        <ul class="ce-kn">
-            ${known}
-        </ul>` : ''}
-
-        <p class="lbl ce-lbl">What is not known</p>
-        <ul class="ce-unc">
-            ${uncertain}
-        </ul>
-
-        <p class="lbl ce-lbl">Satellite and official imagery</p>
-        <p class="ce-sat">This page publishes no before-and-after imagery of its own. These are the
-          public services that would carry it, linked rather than reproduced, so what you see is
-          theirs and dated by them.</p>
-        <ul class="ce-sats">
-          <li><a class="lk" href="https://worldview.earthdata.nasa.gov/">NASA Worldview</a> &mdash; daily global imagery, MODIS and VIIRS</li>
-          <li><a class="lk" href="https://browser.dataspace.copernicus.eu/">Copernicus Browser</a> &mdash; Sentinel-1 radar, which sees through cloud</li>
-          <li><a class="lk" href="https://rapidmapping.emergency.copernicus.eu/">Copernicus Emergency Mapping</a> &mdash; activated only when an authority requests it</li>
-          <li><a class="lk" href="https://bhuvan.nrsc.gov.in/">Bhuvan</a>, ISRO/NRSC &mdash; India's own platform</li>
-        </ul>
-
-        ${precedents ? `<p class="lbl ce-lbl">The pattern it belongs to</p>
-        <ul class="ce-precs">
-          ${precedents}
-        </ul>` : ''}
-
-        ${ctxFigures ? `<p class="lbl ce-lbl">${esc(ctx.title || 'Standing facts for this hazard')}</p>
-        ${ctx.summary ? `<p class="ce-ctx-lead">${esc(ctx.summary)}</p>` : ''}
-        <div class="ce-claims ce-claims-ctx">
-        ${ctxFigures}
-        </div>
-        <p class="cap ce-ctx-src">Standing figures are researched and cited in advance, not assembled
-          during an event. ${(ctx.sources || []).length} source${(ctx.sources || []).length === 1 ? '' : 's'}.</p>` : ''}
-
-        ${watch ? `<p class="lbl ce-lbl">What to watch next</p>
-        <ul class="ce-watchl">
-            ${watch}
-        </ul>` : ''}
-
-        <details class="ce-det">
-          <summary class="ce-sum">Every source behind this board
-            (${newsSrc.length} report${newsSrc.length === 1 ? '' : 's'}${offSrc.length ? `, ${offSrc.length} official` : ''}${sciSrc.length ? `, ${sciSrc.length} scientific` : ''})</summary>
-          <div class="ce-det-in">
-            ${offSrc.length ? `<p class="lbl ce-src-h">Official</p><ul class="ce-srcs">${srcList(offSrc)}</ul>` : ''}
-            ${sciSrc.length ? `<p class="lbl ce-src-h">Scientific</p><ul class="ce-srcs">${srcList(sciSrc)}</ul>` : ''}
-            ${newsSrc.length ? `<p class="lbl ce-src-h">Reported</p><ul class="ce-srcs">${srcList(newsSrc)}</ul>` : ''}
-            <p class="cap ce-det-n">A headline is evidence that something was said. It is never
-              evidence that it is true &mdash; the same rule this page applies to its coverage band.</p>
-          </div>
-        </details>
-      </div>
-
-      <p class="cap ce-stamp">Feeds last read ${esc(istStamp(e.last_checked?.epochMs || e.last_updated.epochMs))},
-        and re-read every 30 minutes. <a class="lk" href="#top">The archive below is unchanged</a>, and is
-        still periodic.</p>
-    </div>`;
-}
+   ★ CE_CSS BELOW IS DELIBERATELY NOT TRIMMED. Some of its rules were only ever
+   used by the function above and are now dead weight on /now/climate-event's
+   stylesheet. Cutting them is a change to a page that is not in this pass's
+   scope, and the banner and the quiet state below share several of them; the
+   right time is the next time that page is opened on purpose. */
 
 /* ── THE COMPACT BANNER ───────────────────────────────────────────────────
    What /now/climate-event shows when something is happening. Deliberately
@@ -374,7 +115,6 @@ export function renderEvent(e, ctx) {
    and gets out of the way — the board itself is one click down. */
 export function renderBanner(e) {
   const hazard = HAZARD_LABEL[e.hazard] || e.hazard;
-  const S = e.sourceIndex;
   const deaths = e.impact?.deaths;
   return `    <div class="wrap ce-wrap">
       <a class="ce-ban" href="/now/climate-event/${esc(e.slug)}">
@@ -382,7 +122,15 @@ export function renderBanner(e) {
           <span class="lbl ce-ban-k"><i class="ce-dot" aria-hidden="true"></i>Active situation
             <i class="ce-sep">&middot;</i>${esc(hazard)}
             <i class="ce-sep">&middot;</i>${e.tier === 1 ? 'In India' : 'Regional'}</span>
-          <span class="ce-ban-h">${esc(e.headline)}</span>
+          <!-- THE EVENT'S NAME, NOT THE OUTLET'S HEADLINE. The detector picks the
+               least-penalised real headline and prints it verbatim, which is
+               right for the reporting and wrong for a heading: on the Nepal
+               event it chose "Nepal floods: 6 ways to help victims of the
+               glacial collapse that left hundreds dead or missing" — a service
+               piece — and that was the largest text in this banner and the
+               browser tab of the page it links to. The headline keeps its place
+               on that page, as the reporting it is. -->
+          <span class="ce-ban-h">${esc(eventName(e))}</span>
           <span class="cap ce-ban-m">${esc(e.location.text)}
             <i class="ce-sep">&middot;</i>updated ${stamp(e.last_updated.epochMs)}
             <i class="ce-sep">&middot;</i>${e.corroboration.independent_publishers} publisher${e.corroboration.independent_publishers === 1 ? '' : 's'}${e.corroboration.official_alerts ? `, ${e.corroboration.official_alerts} official alert${e.corroboration.official_alerts === 1 ? '' : 's'}` : ''}

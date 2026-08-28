@@ -121,6 +121,28 @@ jobs:
             exit "$code"
           fi
 
+      # ── THE FIGURES AND THE PICTURE, BETWEEN DETECTION AND THE REBUILD ──
+      # Both read only what the detector just wrote plus, for the imagery, a
+      # keyless NASA endpoint. Neither is allowed to fail the run: a disaster
+      # page that ships without a satellite frame is a page with a named gap in
+      # one band, and a page that does not ship at all is a page with nothing.
+      #
+      # extract-event-figures is the BACKFILL path. New events arrive with
+      # `impact` already filled by the detector; this catches the dossiers that
+      # predate that, and is a no-op once they are done.
+      #
+      # fetch-event-imagery throttles itself to one probe cycle every three
+      # hours per event unless a slot is still empty, which is what keeps a
+      # thirty-minute schedule from becoming 2,880 requests a day to a public
+      # service nobody is paying for.
+      - name: Read the numbers out of the headlines, and go and get the picture
+        if: env.UPSTREAM_SILENT != '1'
+        run: |
+          set +e
+          npm run data:event-figures || echo "::warning::figure extraction failed; the pages keep what they have"
+          npm run data:event-imagery || echo "::warning::imagery fetch failed; the satellite band will print its reason"
+          set -e
+
       - name: Discard clock-only churn, keep real changes
         id: changed
         if: env.UPSTREAM_SILENT != '1'

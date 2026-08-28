@@ -50,11 +50,13 @@
    Usage:  node scripts/build-hero.mjs [--check]
            --check reports what would change and writes nothing.
    ═══════════════════════════════════════════════════════════════════════════ */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import { stampLastmod } from './lib/lastmod.mjs';
 import { currentEvent } from './lib/climate-events.mjs';
+import { homepageSlot, situationHref, TYPE_LABEL } from './lib/active-situation.mjs';
+import { METRIC_ORDER, METRIC_LABEL, METRIC_SHORT, HAZARD_SHORT, eventName } from './lib/event-figures.mjs';
 
 const CHECK = process.argv.includes('--check');
 /* ── TWO FILES, AND THE DISTINCTION IS THE WHOLE OF AD-28 §7 HERE. ────────
@@ -70,6 +72,11 @@ const CHECK = process.argv.includes('--check');
    WHY IT COULD NOT BE DONE IN PLACE: seven CSS ranges in situation-shell.mjs
    and work-shell.mjs pin this file by absolute line number, all of them above
    3033, and stripping comments moves every line below the first one. */
+/* Pulled off the shell rather than re-declared: this file already imports
+   everything as `S`, and two copies of an escaper is how one of them ends up
+   not escaping something. */
+const { esc, n0 } = S;
+
 const HOME = S.HOME_SRC;
 const SHIP = join(S.V3, 'home.html');
 
@@ -343,6 +350,18 @@ const SLIDES = [
    Each slide already links to exactly one situation, so the mapping is the
    href, restated. If a fifth slide is added without an entry here the build
    fails rather than shipping an unstated cadence. */
+/* The four confidence words' display labels, for the screen-reader sentence.
+   Imported by value rather than re-derived so the homepage cannot invent a
+   fifth word the validator would reject on the page itself. */
+const CLAIM_STATUS_LABEL = {
+  preliminary: 'Preliminary', media_report: 'Media report',
+  official_estimate: 'Official estimate', confirmed: 'Confirmed',
+};
+const HAZ_WORD = {
+  glof: 'glacial lake outburst flood', cloudburst: 'cloudburst', flood: 'flood',
+  landslide: 'landslide', cyclone: 'cyclone', extreme_rain: 'extreme rainfall',
+};
+
 const HERO_CADENCE = {
   'h-air': 'air', 'h-yamuna': 'yamuna', 'h-monsoon': 'climate', 'h-fire': 'fire',
 };
@@ -511,8 +530,299 @@ if (rainNormal === null) {
 
    ★ THE ARIA LABEL MOVES WITH THE CELL, both or neither — the same rule the
    air cell above follows, for the same reason. */
+
+/* ═══ THE ACTIVE-SITUATION SLIDE ═════════════════════════════════════════
+   ★ WHAT THIS CLOSES. When a regional disaster was being tracked, the
+   homepage's only mention of it was one ticker cell reading "Glacial flood /
+   Nepal" whose href was `/now/climate-event` — the standing rainfall archive,
+   not the event. So the front door of the site pointed a reader who had just
+   been told a disaster was happening at a page about how many days over 64.5mm
+   Bhagalpur had in 2025. The deck above it, meanwhile, opened on air quality.
+
+   ★ THE MECHANISM IS ONE ATTRIBUTE, AND THAT IS THE DESIGN.
+   `rig()` builds the tab strip from `track.children` filtered by `!hidden`, so
+   a hidden slide is not in the deck at all — no tab, no place in the count, no
+   keyboard stop. Removing `hidden` therefore promotes the slide to FIRST with
+   nothing else changing, and restoring it demotes it and gives Air the first
+   position back automatically. There is no ordering code, no feature flag and
+   no second source of truth about what the homepage leads on.
+
+   ★ STABILISING MOVES THE BLOCK; IT DOES NOT HIDE IT.
+   homepageSlot() returns 'rotation' for a stabilising event, which means still
+   in the deck but no longer first. DOM order is the deck's order, so the block
+   is spliced to sit after Air. It is written in home.html as one contiguous
+   element with no other slide's markup inside it precisely so that this splice
+   is a substring move rather than a parse.
+
+   ★ THE FIGURES COME FROM THE SAME PLACE THE PAGE'S DO.
+   `impact` on the dossier, read by event-figures.mjs out of the headlines and
+   attributed there. So the numeral on the homepage and the numeral on
+   /now/climate-event/<slug> cannot disagree — they are one value read twice,
+   which is the whole reason this script exists for the other four slides. */
+const SIT_ID = 'h-situation';
+
+/* ── WHERE THE LCP HINT GOES, AS ONE FUNCTION WITH ONE ANSWER ─────────────
+   ★ IT HAS TO BE REVERSIBLE AND THE FIRST VERSION WAS NOT. Moving the hint to
+   the satellite frame when a situation is primary is correct; leaving it there
+   after a demotion is not, because the satellite frame is then inside a hidden
+   slide and the homepage ships with NO priority hint on the image that is
+   actually the largest thing in the viewport. Tested by demoting the event and
+   reading the artefact: `fetchpriority` on india-gate came back False.
+
+   So the hint is not "moved" at all. It is SET, every run, from the one fact
+   that decides it, and the losing tag is cleaned. */
+function setLcp(html, toSatellite) {
+  /* ★ TAG-SCOPED, NOT POSITIONAL, AND THAT WAS A REAL FAILURE.
+     The first version matched `<img class="s-hero-eo" fetchpriority="high"`
+     — the class immediately after the tag name. Then the box-reservation pass
+     at the foot of this file inserted `width` and `height` there, so on the
+     next run the tag read `<img width="1400" height="1232" class="s-hero-eo"
+     fetchpriority="high"` and the clearing regex matched nothing. Demoting the
+     event therefore left the hint on an image inside a hidden slide AND put a
+     second one on Air: two priority hints, one of them on nothing. Measured off
+     the artefact, not reasoned about.
+
+     So each tag is rewritten as a tag. Attribute order stops mattering. */
+  return html.replace(/<img\b[^>]*>/g, (tag) => {
+    const isSat = /class="[^"]*\bs-hero-eo\b/.test(tag);
+    const isAir = /src="\/images\/photos\/india-gate-hero\.jpg"/.test(tag);
+    if (!isSat && !isAir) return tag;
+    let t = tag
+      .replace(/\s+fetchpriority="[^"]*"/g, '')
+      .replace(/\s+loading="lazy"/g, '');
+    const want = (isSat && toSatellite) || (isAir && !toSatellite)
+      ? ' fetchpriority="high"'
+      : ' loading="lazy"';
+    return t.replace(/^<img/, `<img${want}`);
+  });
+}
+
+/* Read once and shared: the ticker cell below needs the same answer, and two
+   calls could in principle straddle a midnight that ages the event out. */
+const HOMEPAGE = homepageSlot();
+
 {
-  const ev = currentEvent();
+  const { slot, event: ev, status } = HOMEPAGE;
+  const range = panelRange(src, SIT_ID);
+
+  if (!range) {
+    fail(`${SIT_ID} is not in design/home.html — the active-situation slide was removed`);
+  } else if (!slot) {
+    /* NO EVENT, OR A DEMOTED ONE. The slide goes back to hidden and Air is
+       first again, which is the state this page shipped in for months and must
+       return to cleanly. */
+    const [start, end] = range;
+    const block = src.slice(start, end);
+    if (!/\shidden\b/.test(block)) {
+      src = src.slice(0, start) + block.replace(/(role="tabpanel"[^>]*?)>/, '$1 hidden>') + src.slice(end);
+      changed++;
+      ok(`${SIT_ID.padEnd(10)} no active situation — slide hidden, Air is first`);
+    } else {
+      ok(`${SIT_ID.padEnd(10)} no active situation — already hidden`);
+    }
+    src = setLcp(src, false);
+    ok(`${SIT_ID.padEnd(10)} the LCP hint is on Air, which is first again`);
+  } else {
+    const impact = ev.impact || {};
+    const rows = METRIC_ORDER.map((k) => [k, impact[k]]).filter(([, c]) => c?.value != null);
+    const lead = rows[0];
+    const second = rows[1];
+    const name = eventName(ev);
+    /* "Nepal / Glacial flood" — the same construction the other four slides use
+       ("Delhi-NCR / Air quality index"), so the deck reads as one instrument
+       rather than four plus a guest. THE SHORT HAZARD FORM, because this column
+       is narrow: the full "Glacial lake outburst flood" wrapped to two lines
+       here and the page's own heading carries the long form anyway. */
+    const subject = `${ev.location.text} / ${HAZARD_SHORT[ev.hazard] || ev.hazard}`;
+    const href = situationHref(ev);
+    const img = (() => {
+      const f = join(S.ROOT, 'data/climate-events/imagery', `${ev.slug}.json`);
+      if (!existsSync(f)) return null;
+      const j = JSON.parse(readFileSync(f, 'utf8'));
+      return j.after || j.latest || j.before || null;
+    })();
+
+    /* WITHOUT A FIGURE THERE IS NO NUMERAL, and the slide must still work. An
+       active situation whose outlets have not printed a count is a real state —
+       it is the state the Nepal event was in for its first hours — so the
+       readout falls back to the corroboration count, which IS a number this
+       repository performed itself and can stand behind. */
+    const readout = lead ? n0(lead[1].value) : n0(ev.corroboration.independent_publishers);
+    const unit = lead
+      ? (METRIC_SHORT[lead[0]] || (lead[1].label || METRIC_LABEL[lead[0]] || '').toLowerCase())
+      : 'independent publishers reporting it';
+    const mult = second
+      ? `<b>${n0(second[1].value)}</b> ${esc(METRIC_SHORT[second[0]] || (second[1].label || '').toLowerCase())}`
+      : '<b>&mdash;</b>';
+    const sr = `${name}. ${TYPE_LABEL}, ${status.label.toLowerCase()}. `
+      + (lead ? `${lead[1].value} ${(lead[1].label || '').toLowerCase()}, ${(CLAIM_STATUS_LABEL[lead[1].status] || '').toLowerCase()}.`
+        : `No count reported yet; ${ev.corroboration.independent_publishers} publishers carrying it.`);
+
+    /* ★ SHOWING IS DONE OUTSIDE THE MATCHED-EXACTLY-ONCE TABLE, BECAUSE IT IS
+       THE ONE EDIT THAT IS NOT A VALUE REPLACEMENT. Every other row below
+       swaps text for text and is therefore idempotent by construction; this
+       one removes an attribute, so on the second run there is nothing to
+       remove and the table's own gate — matched 0 times, the markup moved —
+       fired on a file that was already exactly right. */
+    const EDITS = [
+      [/(id="h-situation"[^>]*?data-tab=")[^"]*(")/, `$1${esc(name.split(':')[0].trim())}$2`, 'the tab word'],
+      [/(id="h-situation"[^>]*?aria-label=")[^"]*(")/, `$1${esc(name)} — ${esc(TYPE_LABEL.toLowerCase())}$2`, 'the panel label'],
+      [/(<span class="readout" aria-hidden="true">)[^<]*(<\/span>)/, `$1${readout}$2`, 'the numeral'],
+      [/(<span class="sr">)[^<]*(<\/span>)/, `$1${esc(sr)}$2`, 'the screen-reader sentence'],
+      /* ★ BOTH `s-hero-id` ELEMENTS, and the reason is responsive.
+         h-air carries the identity twice — once beside the numeral
+         (`.s-hero-num-side`) and once above the verdict (`.s-hero-acct`) —
+         because which of the two is visible depends on the width. Replacing
+         only the first left the visible one reading the placeholder "Active
+         situation" at 1440, directly above the verdict, where a reader is
+         looking for the subject. */
+      [/(<p class="lbl s-hero-id">)[^<]*(<\/p>)([\s\S]*?<span class="unit">)[^<]*(<\/span>)/,
+        `$1${esc(subject)}$2$3${esc(unit)}$4`, 'the identity beside the numeral, and the unit'],
+      [/(<div class="s-hero-acct">\s*<p class="lbl s-hero-id">)[^<]*(<\/p>)/,
+        `$1${esc(subject)}$2`, 'the identity above the verdict'],
+      [/(<p class="mult">)[\s\S]*?(<\/p>)/, `$1${mult}$2`, 'the second figure'],
+      /* THE VERDICT IS THE CONTENT TYPE, NOT THE STATUS WORD. It is the one
+         large coloured line on the slide, and "ACTIVE" on its own is an
+         adjective with no noun — the reader needs to know they are looking at a
+         situation. The status word keeps the chip at the foot of the plate,
+         where the other four slides put their season tag. */
+      [/(<p class="verdict bad">)[^<]*(<\/p>)/, `$1${esc(TYPE_LABEL)}$2`, 'the verdict line'],
+      [/(<p class="s-hero-why">)[\s\S]*?(<\/p>)/, `$1${esc(status.line)}$2`, 'the explanatory line'],
+      [/(<span class="limit">)[\s\S]*?(<\/span>)/,
+        `$1${lead && lead[1].spread?.max > lead[1].spread?.min
+          ? `Outlets report ${n0(lead[1].spread.min)}&ndash;${n0(lead[1].spread.max)}. <b>Not settled.</b>`
+          : 'Every figure carries the outlet that reported it.'}$2`, 'the limit line'],
+      [/(<p class="cap s-hero-src">)[\s\S]*?(<\/p>)/,
+        `$1${esc(ev.location.text)} &middot; ${esc(HAZ_WORD[ev.hazard] || ev.hazard)}. `
+        + `${ev.corroboration.independent_publishers} independent publishers`
+        + `${ev.corroboration.official_alerts ? `, ${ev.corroboration.official_alerts} official alerts` : ''}. `
+        + `Feeds re-read every 30 minutes.$2`, 'the source line'],
+      [/(<span class="tag tag-season">)[^<]*(<\/span>)/, `$1${esc(status.label)}$2`, 'the status tag'],
+      [/(<p class="s-hero-act"><a class="act" href=")[^"]*(")/, `$1${href}$2`, 'the link to the full situation'],
+    ];
+
+    let block = src.slice(range[0], range[1]);
+    if (/\shidden\b/.test(block)) {
+      block = block.replace(/(<div class="sit s-hero-sit" id="h-situation"[^>]*?)\s+hidden>/, '$1>');
+      ok(`${SIT_ID.padEnd(10)} the slide is shown`);
+    } else {
+      ok(`${SIT_ID.padEnd(10)} the slide is already shown`);
+    }
+    for (const [re, to, label] of EDITS) {
+      const hits = block.match(new RegExp(re.source, 'g'));
+      if (!hits || hits.length !== 1) {
+        fail(`${SIT_ID}: ${label} matched ${hits ? hits.length : 0} times, expected exactly 1 — the markup moved`);
+        continue;
+      }
+      block = block.replace(re, to);
+      ok(`${SIT_ID.padEnd(10)} ${label}`);
+    }
+
+    /* THE PICTURE. Event-specific or absent — never a stand-in. */
+    if (img) {
+      /* ★ THE BOX IS RESERVED FROM THE IMAGERY RECORD, HERE, and NOT left to
+         the pass at the foot of this file. That pass is idempotent by bailing
+         out on any tag that already has a `width`, which is right for the four
+         hand-placed photographs and wrong for this one: the frame's aspect
+         ratio is derived per hazard and per place, so a new event's image is a
+         different shape, and the stale attributes would have shipped a
+         reserved box the picture does not fit. */
+      /* Un-hide first: a previous run may have hidden it when nothing was
+         available, and this is the moment that becomes wrong. */
+      block = block.replace(/(<figure class="s-hero-shot")\s+hidden/, '$1');
+      const dim = ` width="${img.width}" height="${img.height}"`;
+      block = block.replace(/<img\b[^>]*class="[^"]*\bs-hero-eo\b[^>]*>/, (tag) => tag
+        .replace(/\s+width="[^"]*"/g, '').replace(/\s+height="[^"]*"/g, '')
+        .replace(/(\ssrc=")[^"]*(")/, `$1${img.src}$2`)
+        .replace(/(\salt=")[^"]*(")/, `$1${esc(`${img.layerName} satellite view of the region, ${img.date} — ${img.satellite}, ${img.sensor}`)}$2`)
+        .replace(/^<img/, `<img${dim}`));
+      ok(`${SIT_ID.padEnd(10)} the satellite frame, ${img.layerName} ${img.date} (${img.width}x${img.height})`);
+    } else {
+      /* ★ HIDDEN, NOT REMOVED, AND REMOVING IT WAS A ONE-WAY DOOR THAT ALSO
+         BROKE THE BUILD. This deleted the <figure> outright, which is wrong
+         twice over: it is written on one line, so the deletion moved the file's
+         line count and the guard below correctly refused to write at all — an
+         active situation with no usable satellite frame would have failed every
+         hero build until somebody restored the element by hand. And even had it
+         written, the element would be gone from the SOURCE, so the next event
+         that DID have imagery would have nothing to fill and the picture would
+         never come back, silently.
+
+         An attribute is reversible and costs no lines. `hidden` on the figure
+         collapses it, the panel sits on the band ground, and the frame returns
+         the moment an overpass gives one. */
+      block = block.replace(/<figure class="s-hero-shot"(?![^>]*\shidden)/, '<figure class="s-hero-shot" hidden');
+      ok(`${SIT_ID.padEnd(10)} no usable satellite frame — the <figure> is hidden, not removed`);
+    }
+
+    src = src.slice(0, range[0]) + block + src.slice(range[1]);
+    changed++;
+
+    /* ── POSITION ─────────────────────────────────────────────────────────
+       PRIMARY leaves the block where it is written, which is first in the
+       track. ROTATION moves it to sit after the Air slide. */
+    /* ── POSITION ─────────────────────────────────────────────────────────
+       ★ THE MOVE HAS TO WORK IN BOTH DIRECTIONS, AND AT FIRST IT DID NOT.
+       PRIMARY originally did nothing, on the reasoning that the block is
+       "written first in the track". True on a clean file and false for ever
+       after: once a STABILISING run had moved it behind Air, promoting it back
+       to ACTIVE left it second, so the promotion silently did not promote.
+       Tested by cycling active -> stabilising -> active and reading the
+       artefact. So both cases move it, explicitly, to a named place.
+
+       ★ THE MOVE IS NEWLINE-NEUTRAL, and the line-count guard caught it doing
+       otherwise. The first version re-inserted the block with a `'\n' +` in
+       front, which leaves the original break behind and adds a new one:
+       5286 -> 5287, and shell() pins this file's stylesheet by absolute line
+       number, so the build refused to write. Correct behaviour by the guard,
+       and the reason the guard exists. The block is therefore cut FROM ITS OWN
+       LINE BREAK — leading newline and indentation included — and re-inserted
+       whole. Its documentation comment travels with it, because a comment
+       explaining a slide's place in the deck that stays behind while the slide
+       moves is worse than no comment. */
+    const moveSlide = (html, toFront) => {
+      const r2 = panelRange(html, SIT_ID);
+      if (!r2) return html;
+      let from = html.lastIndexOf('\n', r2[0]);
+      const cEnd = html.lastIndexOf('-->', r2[0]);
+      if (cEnd > 0 && !html.slice(cEnd + 3, r2[0]).trim()) {
+        const cStart = html.lastIndexOf('<!--', cEnd);
+        if (cStart > 0) from = html.lastIndexOf('\n', cStart);
+      }
+      const to = r2[1] + '</div>'.length;
+      const blk = html.slice(from, to);
+      const rest = html.slice(0, from) + html.slice(to);
+
+      if (toFront) {
+        /* Immediately after the track opens, which is the first slide slot. */
+        const m = /<div class="rig-track"[^>]*>/.exec(rest);
+        if (!m) { fail('the .rig-track element is not in home.html'); return html; }
+        const at = m.index + m[0].length;
+        return rest.slice(0, at) + blk + rest.slice(at);
+      }
+      const air = panelRange(rest, 'h-air');
+      if (!air) { fail('h-air is not in home.html, so the slide cannot be placed after it'); return html; }
+      const at = air[1] + '</div>'.length;
+      return rest.slice(0, at) + blk + rest.slice(at);
+    };
+
+    src = moveSlide(src, slot === 'primary');
+    ok(`${SIT_ID.padEnd(10)} ${status.label.toUpperCase()} — `
+      + (slot === 'primary' ? 'first in the deck, ahead of Air' : 'after Air, still in the deck'));
+
+    const toSat = slot === 'primary' && Boolean(img);
+    src = setLcp(src, toSat);
+    ok(`${SIT_ID.padEnd(10)} the LCP hint is on ${toSat ? 'the satellite frame' : 'Air'}`);
+  }
+}
+
+{
+  /* ★ THE SAME LIFECYCLE AS THE SLIDE, AND NOT `currentEvent()`.
+     currentEvent() answers "is an event inside its evidence window", which
+     knows nothing about `situation_status` — so demoting an event hid the
+     slide and left this cell still naming it and still linking to it. Tested
+     by demotion and read off the artefact. One decision, one caller. */
+  const ev = HOMEPAGE.event;
   const HAZ = {
     glof: 'Glacial flood', cloudburst: 'Cloudburst', flood: 'Flood',
     landslide: 'Landslide', cyclone: 'Cyclone', extreme_rain: 'Extreme rain',
@@ -525,8 +835,14 @@ if (rainNormal === null) {
     : `Climate event, ${climateDays} days over India's heavy-rain threshold in one city in ${climateYear}`;
 
   const CLIMATE = [
-    [/(id="tk-climate" href="\/now\/climate-event" aria-label=")[^"]*(")/,
-      `$1${aria}$2`, 'ticker: the aria-label'],
+    /* ★ THE HREF IS THE EVENT'S OWN PAGE WHEN THERE IS ONE, AND THAT WAS THE
+       DEFECT. This cell said "Glacial flood / Nepal" and linked to
+       `/now/climate-event` — the standing rainfall archive. A reader told on the
+       front page that a disaster was happening, who clicked, arrived at a page
+       about how many days over 64.5mm one city had in 2025. */
+    [/(id="tk-climate" href=")[^"]*(" aria-label=")[^"]*(")/,
+      `$1${ev ? situationHref(ev) : '/now/climate-event'}$2${aria}$3`,
+      'ticker: the href and the aria-label'],
     [/(<span class="lbl s-ticker-name" id="tk-climate-n">)[^<]*(<\/span>)/,
       `$1${name}$2`, 'ticker: the cell name'],
     [/(<span class="s-ticker-v)(?: is-over)?(" id="tk-climate-v"><b>)[^<]*(<\/b>)/,
