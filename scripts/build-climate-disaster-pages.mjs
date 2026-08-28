@@ -49,7 +49,7 @@ import { coordsFor } from './lib/event-terms.mjs';
 import { statusOf, adminHelp, TYPE_LABEL, situationHref } from './lib/active-situation.mjs';
 import { eventName } from './lib/event-figures.mjs';
 import {
-  heroBand, whereBand, causeBand, eoBand, timelineBand,
+  heroBand, explainBand, whereBand, causeBand, eoBand, timelineBand,
   precedentBand, nextBand, climateBand, indiaBand, sourcesBand, strip, AS_CSS, AS_JS,
 } from './lib/situation-render.mjs';
 
@@ -149,6 +149,7 @@ for (const e of published) {
   const sections = {
     top: () => heroBand(e, ctx, imagery, { crumb: crumb('climate') }),
     strip: () => strip(e, ctx, imagery),
+    explain: () => explainBand(e, ctx),
     where: () => whereBand(e, ctx, imagery, coordsFor),
     cause: () => causeBand(e, ctx),
     eo: () => eoBand(e, imagery),
@@ -201,7 +202,13 @@ ${S.newsletter('climate')}
   const ALL = [
     ['top', 't1', '#0D0D0B', 'The situation'],
     ['strip', '', '#151512', null],
-    ['climate', 't2', '#0D0D0B', 'The numbers'],
+    /* ★ THE DEFINITION COMES BEFORE THE ARGUMENT. Every band after this one
+       was written for a reader who already knows what the hazard is; most
+       people arriving from a news cycle do not. It sits after the readings
+       strip rather than between the hero and its strip, because that pair is
+       one unit on all six situation pages. */
+    ['explain', 't2', '#0D0D0B', 'What it is'],
+    ['climate', 'dark-2 t2', '#151512', 'The numbers'],
     ['where', 'dark-2 t2', '#151512', 'Where'],
     ['cause', 'dark-2 t2', '#151512', 'What caused it'],
     ['eo', 't2', '#0D0D0B', 'Satellite'],
