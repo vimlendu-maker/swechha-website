@@ -268,9 +268,19 @@ export const PLACE_COORDS = {
      These are representative points on named rivers, which is exactly what
      every river entry in this table already is, and the caption on the map
      says so. */
-  'bhote koshi': [27.90, 85.85], 'sun koshi': [27.20, 86.10],
+  /* ★ TWO DIFFERENT RIVERS ARE CALLED THE BHOTE KOSHI, and picking the wrong
+     one drew the wrong basin on the map. The one in SINDHUPALCHOK, from
+     Kodari, feeds the Sun Koshi and the Saptakoshi. The one in RASUWA, from
+     Kyirong at Rasuwagadhi, becomes the TRISHULI, then the Narayani, then the
+     Gandak. The August 2026 event is the Rasuwa one — the dossier's own
+     sources report a rescue from the Trishuli tunnel and a body recovered in
+     the Narayani, and the supplied imagery is of Manakamana, which sits above
+     the Trishuli in Gorkha. */
+  'bhote koshi': [27.95, 85.20], 'sun koshi': [27.20, 86.10],
   rasuwagadhi: [28.28, 85.38], rasuwa: [28.12, 85.30],
   'lhende khola': [28.28, 85.38],
+  trishuli: [27.85, 84.65], manakamana: [27.93, 84.62],
+  narayani: [27.70, 84.43], gandak: [26.75, 84.55], gandaki: [27.70, 84.43],
 };
 
 export const coordsFor = (place) => PLACE_COORDS[String(place || '').toLowerCase()] || null;

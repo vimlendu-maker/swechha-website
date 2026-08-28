@@ -650,10 +650,10 @@ function suppliedBlock(imgs) {
       </div>`
       : `      <div class="as-eo-two">${suppliedFigure(img, 'before')}${suppliedFigure(img, 'after')}</div>`;
     return `${body}
-      <p class="cap as-eo-k">${img.shows ? `${esc(img.shows)} ` : ''}${pair ? 'Drag to wipe between the two dates. ' : ''}
+      <p class="cap as-eo-k">${img.place ? `<b>${esc(img.place)}.</b> ` : ''}${img.shows ? `${esc(img.shows)} ` : ''}${pair ? 'Drag to wipe between the two dates. ' : ''}
         <b>${esc(img.credit || 'Supplied')}</b>${img.credit_url ? ` &mdash; <a class="lk" href="${esc(img.credit_url)}">the report this came from</a>` : ''}.
         ${img.permission ? `Published here by permission: ${esc(img.permission.basis)}${img.permission.asserted_by ? `, confirmed by ${esc(img.permission.asserted_by)}` : ''}${img.permission.asserted_on ? ` on ${esc(img.permission.asserted_on)}` : ''}.` : ''}
-        ${img.provider ? `Imagery: ${esc(img.provider)}.` : ''}</p>`;
+        ${img.published_by ? `Seen in <a class="lk" href="${esc(img.credit_url)}">${esc(img.published_by)}</a>&rsquo;s report.` : ''}</p>`;
   }).join('\n');
 }
 
