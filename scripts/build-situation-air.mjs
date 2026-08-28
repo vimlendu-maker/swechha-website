@@ -1869,6 +1869,26 @@ const SCRIPT = `/* ── TABS. Canonical ARIA tabs with a roving tabindex. Pane
   var warned=false;
   function giveUp(why){ if(warned) return; warned=true;
     console.warn('air: the chip stays PERIODIC — '+why); }
+  /* UTC ISO -> "HH:MM IST". The offset is ADDED to the epoch and read back
+     with getUTC*, never local getters: the visitor's machine may be in any
+     zone, and this label says IST. Same discipline as the rest of the repo. */
+  function istHHMM(iso){
+    var ms=Date.parse(iso); if(!isFinite(ms)) return null;
+    var d=new Date(ms+19800000);
+    return ('0'+d.getUTCHours()).slice(-2)+':'+('0'+d.getUTCMinutes()).slice(-2)+' IST';
+  }
+  /* Rewrite only the time that follows "last checked", leaving every other
+     word alone. A format change makes this a silent no-op, which leaves the
+     build's value standing — the safe direction to fail. */
+  function stampChecked(node,iso){
+    if(!node) return;
+    var t=istHHMM(iso); if(!t) return;
+    var before=node.textContent;
+    var after=before.replace(/last checked( by Swechha)? [0-9]{2}:[0-9]{2} IST/,
+      'last checked$1 '+t);
+    if(after!==before) node.textContent=after;
+  }
+
   var ctl=window.AbortController?new AbortController():null;
   var deadline=setTimeout(function(){ if(ctl) ctl.abort(); giveUp('the live fetch did not resolve within 6s'); },6000);
 
@@ -1891,6 +1911,23 @@ const SCRIPT = `/* ── TABS. Canonical ARIA tabs with a roving tabindex. Pane
     if(at===null) return giveUp('the feed did not stamp its observation');
     var age=Date.now()-at;
     if(age>=7200000||age<=-600000) return giveUp('the newest observation is over two hours old');
+      /* ── THE CHECK CLOCK IS READ LIVE, NOT BAKED IN — AD-49 ────────────
+         "Last checked by Swechha" is the one thing on this page that says the
+         system is ALIVE, and it was the one thing that could not move without
+         a deployment. Vercel Hobby allows 100 deploys a day, so the publisher
+         only pushes when the reading moves or every 30 minutes — which left
+         this timestamp visibly stuck for half an hour at a time, saying we had
+         not looked when we had, four times an hour.
+         So it comes from the route instead, which genuinely asks CPCB on every
+         request. Zero deployments, and MORE accurate than the build value.
+         ★ ONLY AFTER BOTH CONDITIONS ABOVE PASS. If CPCB has moved on, the
+         page is showing a superseded reading, and stamping "checked just now"
+         beside it would assert we had confirmed a figure we had not. In that
+         case the build's own timestamp stands and the chip stays PERIODIC.
+         ★ IT IS A CLOCK, NOT A READING. AD-27.6-A forbids repainting the
+         numeral, the band, the limit line or any figure, and this touches none
+         of them — no digit of the AQI is written from here. */
+      stampChecked(el('air-src-w'), d.time && d.time.swechha_checked_utc);
     state.className='state p2-state live';
     var w=el('air-state-w'); if(w) w.textContent='Live';
     var x=el('air-state-x');
