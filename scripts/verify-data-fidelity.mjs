@@ -22,6 +22,10 @@
  *
  * WHAT DOES NOT (reported, exit 0):
  *   · key REORDERING — JSON objects are unordered and Keystatic rewrites order
+ *   · ELEMENT REORDERING in an array of records — paired by `id`/`label`/etc.
+ *     rather than by position, because comparing records positionally reports
+ *     every shifted element as an edit and some as losses. See the note at the
+ *     array branch; it called a real reorder a deletion.
  *   · whitespace / trailing-newline changes
  *   · a value CHANGING to another non-empty value — that is an edit, the point
  *     of a CMS. This tool guards against silent deletion, not against editing.
@@ -78,6 +82,50 @@ function compare(before, after, path, losses) {
     if (!Array.isArray(after)) { losses.push({ path, kind: 'type changed', was: 'array' }); return; }
     if (after.length < before.length) {
       losses.push({ path, kind: 'array shortened', was: `${before.length} items`, now: `${after.length}` });
+    }
+    /* ── AN ARRAY OF RECORDS IS MATCHED BY IDENTITY, NOT BY POSITION ──────
+       ★ THIS TOOL CALLED A REORDER A DELETION, and it did it on a real commit.
+       data/climate-events/context/glof.json's `figures[]` were re-sorted into
+       editorial order — which figure appears in which band on the page — and
+       nothing was removed. Compared positionally, every element that shifted
+       looked like an edit and two looked like losses: "value emptied
+       figures[5].unit" and "key removed figures[5].supports", when figures[5]
+       before and figures[5] after were simply DIFFERENT FIGURES. The 766-event
+       figure still carried its unit throughout.
+
+       That is worse than a nuisance. A reorder in the same commit as a genuine
+       deletion buries the deletion in a wall of false positives, which is the
+       failure mode of a guard nobody can read.
+
+       So where both sides are arrays of objects and `before` has a field that
+       is present and unique across all of its elements, the two are paired by
+       that field. A `before` record whose identity is absent from `after` is
+       still a loss — that is a record removed, and it is the thing this tool is
+       for. Identity fields are tried in order of how strongly they identify.
+       No usable field, or a ragged array, falls back to position, which is the
+       right answer for an array of plain strings. */
+    const IDENTITY = ['id', 'slug', 'label', 'card', 'name', 'key', 'when', 'date'];
+    const objects = (a) => a.length && a.every((v) => v && typeof v === 'object' && !Array.isArray(v));
+    const idField = objects(before) && objects(after)
+      ? IDENTITY.find((f) => {
+        const vals = before.map((v) => v[f]);
+        if (vals.some((v) => v === undefined || v === null || v === '')) return false;
+        return new Set(vals.map(String)).size === before.length;
+      })
+      : undefined;
+
+    if (idField) {
+      const byId = new Map(after.map((v) => [String(v[idField]), v]));
+      for (const v of before) {
+        const key = String(v[idField]);
+        const match = byId.get(key);
+        if (match === undefined) {
+          losses.push({ path: `${path}[${idField}=${key}]`, kind: 'record removed', was: summarise(v) });
+          continue;
+        }
+        compare(v, match, `${path}[${idField}=${key}]`, losses);
+      }
+      return;
     }
     before.forEach((v, i) => { if (i < after.length) compare(v, after[i], `${path}[${i}]`, losses); });
     return;
