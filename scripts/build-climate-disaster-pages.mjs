@@ -119,6 +119,24 @@ for (const e of published) {
   const sh = S.shell();
   const ctx = e.contextMissing ? null : loadContext(e.hazard);
   const imagery = J(join(S.ROOT, 'data/climate-events/imagery', `${e.slug}.json`));
+
+  /* ── SUPPLIED IMAGERY: ONLY WHAT IS ACTUALLY ON DISK ──────────────────
+     A dossier may name a higher-resolution before/after that an editor has
+     permission to publish. It is filtered HERE, against the filesystem, so a
+     named-but-not-yet-committed image produces no markup rather than a broken
+     picture on a live disaster page — and so the page degrades to the NASA
+     frames on its own the moment a file is missing. */
+  if (imagery && (e.owner_images || []).length) {
+    const onDisk = e.owner_images.filter((img) => ['before', 'after']
+      .every((k) => !img[k] || existsSync(join(S.ROOT, 'public', img[k].replace(/^\//, '')))))
+      .filter((img) => img.before || img.after);
+    if (onDisk.length) imagery.supplied = onDisk;
+    const missing = e.owner_images.length - onDisk.length;
+    if (missing) {
+      console.log(`  ${e.slug}: ${missing} supplied image set(s) named in the dossier have no file `
+        + 'on disk yet — not rendered. Commit the files and rebuild.');
+    }
+  }
   const st = statusOf(e);
   const route = situationHref(e);
 

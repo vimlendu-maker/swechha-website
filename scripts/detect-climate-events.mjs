@@ -587,6 +587,7 @@ const EDITOR_OWNED = [
   'occurred_detail',       // a precise onset the feeds do not carry
   'owner_figures',         // figures supplied by an editor, with their own sources
   'reported_imagery',      // higher-resolution before/after at its publisher, linked not reproduced
+  'owner_images',          // and the same imagery published HERE, where permission exists
   'editor_note',
 ];
 
