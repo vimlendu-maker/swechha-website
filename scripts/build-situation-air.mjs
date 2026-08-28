@@ -1828,7 +1828,15 @@ const SCRIPT = `/* ── TABS. Canonical ARIA tabs with a roving tabindex. Pane
      data-driven — set state_label back to PERIODIC in the fetch and this
      page returns to shipping Periodic and confirming its way to Live, with
      the two AD-27.6-A regex gates below still guarding that path. */
-  if((state.getAttribute('data-state')||'')==='live') return;
+  /* ★ THE CHIP MAY ALREADY BE LIVE — THAT IS NOT A REASON TO SKIP THE FETCH.
+     This used to "return" here, because the only job left was upgrading the
+     chip and an already-Live chip needs no upgrade. AD-49 gave the block a
+     SECOND job — reading the check clock live — and that one matters most
+     precisely when the chip is already Live, which is the ordinary case for
+     any observation under three hours old. Returning early made the live
+     clock inert on exactly the pages that needed it.
+     So the fetch always runs; only the chip WRITE is conditional. */
+  var CHIP_ALREADY_LIVE=((state.getAttribute('data-state')||'')==='live');
 
   /* THE COMMITTED VALUE, AS THE MARKUP STATED IT. Read from the attribute and
      not from textContent: the attribute is what the build wrote, and it is the
@@ -1868,7 +1876,9 @@ const SCRIPT = `/* ── TABS. Canonical ARIA tabs with a roving tabindex. Pane
      swallow, because a silently dead IIFE is the one thing nobody notices. */
   var warned=false;
   function giveUp(why){ if(warned) return; warned=true;
-    console.warn('air: the chip stays PERIODIC — '+why); }
+    console.warn('air: '+(CHIP_ALREADY_LIVE
+      ? 'the check clock keeps its committed value — '
+      : 'the chip stays PERIODIC — ')+why); }
   /* UTC ISO -> "HH:MM IST". The offset is ADDED to the epoch and read back
      with getUTC*, never local getters: the visitor's machine may be in any
      zone, and this label says IST. Same discipline as the rest of the repo. */
@@ -1928,6 +1938,7 @@ const SCRIPT = `/* ── TABS. Canonical ARIA tabs with a roving tabindex. Pane
          numeral, the band, the limit line or any figure, and this touches none
          of them — no digit of the AQI is written from here. */
       stampChecked(el('air-src-w'), d.time && d.time.swechha_checked_utc);
+    if(CHIP_ALREADY_LIVE) return;
     state.className='state p2-state live';
     var w=el('air-state-w'); if(w) w.textContent='Live';
     var x=el('air-state-x');

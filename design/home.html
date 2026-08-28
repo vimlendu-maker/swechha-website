@@ -5066,7 +5066,15 @@ document.querySelectorAll('.rig').forEach(rig);
      state_label back to PERIODIC in fetch-air.mjs and this deck returns to
      shipping Periodic and confirming its way to Live. /now/air carries the
      identical guard for the identical reason. */
-  if(badge.className.indexOf('live')>-1) return;
+  /* ★ THE CHIP MAY ALREADY BE LIVE — THAT IS NOT A REASON TO SKIP THE FETCH.
+     This used to "return" here, because the only job left was upgrading the
+     chip and an already-Live chip needs no upgrade. AD-49 gave the block a
+     SECOND job — reading the check clock live — and that one matters most
+     precisely when the chip is already Live, which is the ordinary case for
+     any observation under three hours old. Returning early made the live
+     clock inert on exactly the pages that needed it.
+     So the fetch always runs; only the chip WRITE is conditional. */
+  var CHIP_ALREADY_LIVE=(badge.className.indexOf('live')>-1);
   /* Read off the ATTRIBUTE, never off the element: the attribute is what the
      build wrote, and it is the only value this page is entitled to confirm. */
   var committed=(out.getAttribute('data-committed')||'').trim();
@@ -5074,7 +5082,9 @@ document.querySelectorAll('.rig').forEach(rig);
 
   var warned=false;
   function give(why){ if(!warned){ warned=true;
-    console.warn('hero air: the chip stays PERIODIC — '+why); } }
+    console.warn('hero air: '+(CHIP_ALREADY_LIVE
+      ? 'the check clock keeps the build\'s value — '
+      : 'the chip stays PERIODIC — ')+why); } }
 
   /* THE OBSERVATION STAMP IS NOT AN ISO STRING, AND Date.parse ON IT IS THE
      SILENT FAILURE THIS BLOCK EXISTS TO AVOID. lib/air.ts's observedLabel()
@@ -5158,6 +5168,7 @@ document.querySelectorAll('.rig').forEach(rig);
          numeral, the band, the limit line or any figure, and this touches none
          of them — no digit of the AQI is written from here. */
       stampChecked(document.querySelector('.s-hero-prov'), d.time && d.time.swechha_checked_utc);
+      if(CHIP_ALREADY_LIVE) return;
       badge.className='state live';
       badge.innerHTML='<i></i>Live';
     }).catch(function(e){
