@@ -144,6 +144,56 @@ export function observedLabel(raw: string | null | undefined): string | null {
   return `${hh}:${mi} IST, ${Number(d)} ${name} ${y}`;
 }
 
+/**
+ * How old is an observation, in hours, from the label `observedLabel` prints?
+ *
+ * ★ THE OFFSET IS SUBTRACTED FROM A UTC CONSTRUCTION, NEVER ADDED TO A LOCAL
+ * ONE. The stamp is IST wall-clock text. Comparing it to `Date.now()` with
+ * local getters is wrong by 5:30 wherever the code runs outside IST — which
+ * is every Vercel function and every CI runner. This is the same arithmetic
+ * scripts/fetch-air.mjs uses, and it is timezone-independent by construction.
+ *
+ * Returns null when the label cannot be read: a missing age is not age zero.
+ */
+export function observedAgeHours(label: string | null | undefined): number | null {
+  const m = /^(\d{2}):(\d{2}) IST, (\d{1,2}) ([A-Za-z]+) (\d{4})$/.exec(String(label ?? '').trim());
+  if (!m) return null;
+  const [, hh, mi, d, month, y] = m;
+  const mo = MON.indexOf(month);
+  if (mo < 0) return null;
+  const instant = Date.UTC(Number(y), mo, Number(d), Number(hh), Number(mi)) - 5.5 * 3600 * 1000;
+  return Math.round(((Date.now() - instant) / 3600000) * 10) / 10;
+}
+
+/**
+ * The state chip's word, EARNED rather than asserted — AD-47.
+ *
+ * This route used to answer `state: 'LIVE'` unconditionally, on the reading
+ * that the word names THIS ROUTE's cadence (it really does ask CPCB per
+ * request) rather than the observation's age. That reading is defensible in
+ * prose and indefensible in a field called `state` sitting beside a figure:
+ * measured 28 August 2026 at 08:45 IST, the route answered `state: "LIVE"`
+ * over an observation stamped 05:00 IST — three and three-quarter hours old.
+ * scripts/fetch-air.mjs had already been corrected for exactly this and earns
+ * its label against a three-hour bound; two halves of one system may not hold
+ * opposite rules under one field name.
+ *
+ * The bound is the same three hours, for the same reason: the feed claims
+ * hourly, and three hours is generous to it.
+ *
+ * A stamp in the FUTURE is refused in the same test. It is a broken feed, not
+ * an extra-fresh reading, and a negative age would otherwise sail under any
+ * upper bound — the same rule the page's own chip-confirm already applies, at
+ * the same ten minutes of tolerated clock skew.
+ */
+export const STALE_HOURS = 3;
+const FUTURE_SKEW_HOURS = 1 / 6;   // ten minutes
+export function stateFor(observed: string | null | undefined): 'LIVE' | 'PERIODIC' {
+  const age = observedAgeHours(observed);
+  if (age === null) return 'PERIODIC';
+  return age > STALE_HOURS || age < -FUTURE_SKEW_HOURS ? 'PERIODIC' : 'LIVE';
+}
+
 export type StationQuality = {
   /** Channels dropped as stuck instruments: min === max === avg over 24h. */
   flatlined: string[];

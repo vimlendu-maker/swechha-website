@@ -53,6 +53,9 @@ import {
   SERVED_BY_CAAQMS, SERVED_BY_MIRROR,
 } from './lib/fetch-caaqms.mjs';
 import { recordObservation } from './lib/air-history.mjs';
+/* isStuck and the 0-500 scale bound, with the self-check that runs on import —
+   see scripts/lib/air-rules.mjs for why they are no longer transcribed here. */
+import { isStuck, isOffScale, AQI_SCALE_MAX } from './lib/air-rules.mjs';
 
 const RESOURCE = '3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69';
 const KEY = process.env.DATA_GOV_IN_KEY;
@@ -147,32 +150,6 @@ for (const [sub, want] of [[51, 31], [100, 60], [225, 98]]) {
   }
 }
 
-
-/**
- * A stuck instrument, by the same test as lib/air.ts's `isStuck`. The two are
- * transcribed and must not drift; `selfCheckStuck()` below pins the cases that
- * matter with real numbers off the feed.
- */
-function isStuck(min, max, avg) {
-  if (min === null || max === null || avg === null) return false;
-  if (max < min) return false;
-  if (max === 0) return min === 0;
-  return (max - min) / max < 0.02;
-}
-
-/* The two readings that made this rule, and the one that must survive it. */
-for (const [mn, mx, av, want, why] of [
-  [187, 188, 188, true,  'Leh CO — one point across 24h, ranked Leh 1st in India'],
-  [101, 103, 102, true,  'Navi Mumbai CO — the analyser that was frozen at 101 hours earlier'],
-  [5, 6, 5, false,       'Madurai ozone — LOW, not stuck; an absolute test would wrongly drop it'],
-  [94, 248, 158, false,  'Leh ozone — a live channel at the same station'],
-]) {
-  if (isStuck(mn, mx, av) !== want) {
-    console.error(`STUCK-CHANNEL TEST IS WRONG: ${mn}/${mx}/${av} should be ` +
-      `${want ? 'stuck' : 'live'} (${why}). Refusing to run.`);
-    process.exit(1);
-  }
-}
 
 /* ── FETCH ───────────────────────────────────────────────────────────────
    Paged. `total` came back as 301 rows for Delhi (station x pollutant), so
@@ -390,6 +367,38 @@ for (const r of rows) {
   };
 }
 
+/* ── AN INDEX OFF CPCB'S OWN SCALE IS NOT A READING — AD-47 ──────────────
+   Everything above this point validates the SHAPE of a value — is it a
+   number, is the channel stuck at one point across 24 hours, did paging drop
+   a row — and nothing validated its MAGNITUDE. CPCB's National AQI runs
+   0-500 and the band table stops at Severe/500, but `bandFor` falls back to
+   the last band for anything above it, so a sub-index of 4000 off one
+   mis-parsed field would have become the worst monitor in Delhi, banded
+   "Severe", and gone out as the headline.
+
+   THIS IS NOT A "LARGE CHANGE = REJECT" RULE, which the brief rightly
+   forbids: the bound is CPCB's own published scale, not the previous
+   reading, so a genuine 500 on a genuinely severe day still publishes
+   untouched. Only a number that cannot be an index on the scale it claims to
+   be on is dropped — recorded like a stuck channel, never silently.
+
+   IT RUNS BEFORE THE AQI LOOP BELOW, so the station's AQI, governing
+   pollutant, band and `suspect` flag are all computed once from clean
+   channels. Dropping a channel afterwards would mean unpicking each of them
+   by hand, which is the kind of second pass that drifts. */
+for (const st of stations.values()) {
+  for (const [pid, pol] of Object.entries(st.pollutants)) {
+    if (isOffScale(pol.sub)) {
+      (st.offScale ||= []).push(`${pid}=${pol.sub}`);
+      delete st.pollutants[pid];
+    }
+  }
+  if (st.offScale) {
+    console.warn(`OFF-SCALE: ${st.station} reported ${st.offScale.join(', ')} — above CPCB's `
+      + `0-${AQI_SCALE_MAX} index scale, so it is not an index. Dropped and recorded.`);
+  }
+}
+
 // Station AQI = the WORST sub-index. CPCB: "The worst sub-index determines
 // the overall AQI." The governing pollutant is recorded by name, because the
 // multiplier is meaningless without it (D-15.3).
@@ -405,7 +414,7 @@ for (const st of stations.values()) {
   // particulates is either a local source or an uncalibrated channel.
   const pmSub = Math.max(st.pollutants['PM2.5']?.sub ?? -1, st.pollutants['PM10']?.sub ?? -1);
   st.quality = {
-    flatlined: st.flatlined || [], missing: st.missing || [],
+    flatlined: st.flatlined || [], missing: st.missing || [], offScale: st.offScale || [],
     suspect: !!(best && GASES.has(best.pid) && best.sub > 100 && pmSub >= 0 && pmSub < best.sub / 2),
   };
   st.quality.suspectReason = st.quality.suspect
@@ -665,19 +674,89 @@ try {
     + 'the current-state file outranks the store.');
 }
 
-if (!process.env.AIR_ALLOW_REGRESSION && existsSync(OUT)) {
-  try {
-    const prev = prevFile ?? JSON.parse(readFileSync(OUT, 'utf8'));
-    const prevStamp = prev?.observed?.raw;
-    const nextStamp = out?.observed?.raw;
-    if (prevStamp && nextStamp && prevStamp !== nextStamp
-        && newerStamp(prevStamp, nextStamp) === 'a') {
-      console.log(`REFUSING TO WALK BACKWARD: the committed observation (${prevStamp}) is newer `
-        + `than the fetched one (${nextStamp}, ${out.source.served_by}). Keeping the file as it is.`);
-      process.exit(0);
-    }
-  } catch { /* an unreadable previous file must never block a fresh write */ }
+/* ── WHAT KIND OF CHECK WAS THIS? — AD-47 ─────────────────────────────────
+   A poll has more than two outcomes, and collapsing them is how this pipeline
+   kept lying in both directions: a run that genuinely checked and found the
+   same hour used to look identical to a run that never reached CPCB, and a
+   run that correctly REFUSED an older observation used to look like a
+   failure. So every run now states which of these it was, in the file:
+
+     new_observation   CPCB has moved on; the reading here is new.
+     same_observation  We asked, CPCB is publishing the same hour. A CHECK,
+                       not a measurement. The reading does not move; the
+                       check clock does.
+     stale_refused     The source served an observation OLDER than the one on
+                       disk (the laggy mirror behind a fresher earlier read).
+                       Last known good is preserved untouched — but we DID
+                       ask, and successfully, so the check clock still moves
+                       and the reason is recorded where a reader can see it.
+     source_unavailable / pipeline failure never reach this point: they exit
+                       75 and 1 respectively, above, and write NOTHING.
+
+   THE RULE THIS ENCODES (owner's brief, requirement 6): a successful check
+   updates "last checked" even when the observation has not changed — and a
+   FAILED source must never be dressed up as a successful check. Those are the
+   same rule seen from its two sides, and the enum is what keeps them apart.
+   ──────────────────────────────────────────────────────────────────────── */
+const prevStamp = prevFile?.observed?.raw ?? null;
+const nextStamp = out?.observed?.raw ?? null;
+const REGRESSED = !process.env.AIR_ALLOW_REGRESSION
+  && !!(prevStamp && nextStamp && prevStamp !== nextStamp && newerStamp(prevStamp, nextStamp) === 'a');
+
+if (REGRESSED) {
+  /* ── LAST KNOWN GOOD IS PRESERVED, AND THE REASON IS VISIBLE ────────────
+     On 26 August the hourly job replaced a committed 14:00 observation with
+     an 02:00 one because the only guard was "did the figure MOVE" — a
+     difference test, not a direction test. The guard that fixed that used to
+     `process.exit(0)` WITHOUT writing, which fixed the reading and broke the
+     clock: the site then showed a check timestamp hours older than the last
+     time it had actually, successfully asked CPCB. Requirement 7 says
+     preserve the trusted data; requirement 6 says do not freeze the clock
+     with it; and "do not permanently freeze data without making the reason
+     visible" says the refusal has to be written down. All three are the same
+     write: the previous OBSERVATION, verbatim, with a new check block. */
+  const kept = { ...prevFile };
+  kept.time = {
+    ...(prevFile.time || {}),
+    swechha_checked_utc: CHECKED_UTC,
+    observation_age_minutes_at_check: OBS_AGE_H === null ? null : Math.round(OBS_AGE_H * 60),
+  };
+  kept.check = {
+    status: 'stale_refused',
+    at: CHECKED_UTC,
+    served_by: out.source.served_by,
+    kept_observation: prevStamp,
+    refused_observation: nextStamp,
+    reason: `The source served ${nextStamp}, which is OLDER than the observation already `
+      + `published here (${prevStamp}). An unattended job may not walk the site backward in `
+      + `time, so the earlier, fresher reading stands. This check itself succeeded.`,
+  };
+  mkdirSync(dirname(OUT), { recursive: true });
+  writeFileSync(OUT, JSON.stringify(kept, null, 2) + '\n');
+  console.log(`REFUSING TO WALK BACKWARD: the committed observation (${prevStamp}) is newer `
+    + `than the fetched one (${nextStamp}, ${out.source.served_by}). The reading is kept; `
+    + `last-checked advances to ${CHECKED_UTC}; the refusal is recorded in check.status.`);
+  console.log(`wrote ${OUT} (check.status=stale_refused)`);
+  process.exit(0);
 }
+
+out.check = {
+  status: (prevStamp && nextStamp && prevStamp === nextStamp) ? 'same_observation' : 'new_observation',
+  at: CHECKED_UTC,
+  served_by: out.source.served_by,
+  previous_observation: prevStamp,
+  reason: null,
+};
+
+/* ── THE CROSS-CHECK VERDICT IS CARRIED, NOT RECOMPUTED — AD-47 ───────────
+   verify-air-crosscheck.mjs compares our city_mean against CPCB's OWN daily
+   bulletin and stamps its verdict into this file. That bulletin is published
+   once a day, so the gate runs a few times a day, not on every 15-minute
+   poll — but this file is rewritten by EVERY poll, so without this line the
+   verdict would survive exactly one fetch and then vanish.
+   It is carried with its own `at` timestamp attached, so a stale verdict
+   reads as a stale verdict rather than as a fresh pass. */
+out.crosscheck = prevFile?.crosscheck ?? null;
 
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, JSON.stringify(out, null, 2) + '\n');

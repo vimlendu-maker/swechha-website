@@ -16,13 +16,39 @@ function unauthorized() {
 }
 
 /**
- * External heartbeat for the Air pipeline.
+ * External backstop for the Air pipeline.
  *
- * Vercel Cron calls this route every 15 minutes. The route then dispatches the
- * existing GitHub Actions workflow, which remains the sole writer of committed
- * Air data and generated pages. This deliberately removes the old single point
- * of failure where both the primary poll and its GitHub watchdog depended on
- * GitHub's own `schedule` service waking up.
+ * Vercel Cron calls this route and it dispatches the GitHub Actions workflow,
+ * which remains the sole writer of committed Air data and generated pages.
+ * The point is that this trigger does not depend on GitHub's own `schedule`
+ * service — measured on this repository 26-28 August 2026, that service
+ * delivered five scheduled events in forty-eight hours across seven
+ * workflows, and a GitHub-hosted watchdog for it (since deleted) fired once
+ * in twenty-four hours.
+ *
+ * ★★ IT IS A DAILY BACKSTOP, NOT A 15-MINUTE HEARTBEAT, AND THE REASON IS THE
+ * PLAN. This route was introduced on 27 August with a
+ * fifteen-minute cron expression in vercel.json's `schedule`. Vercel's own documentation: "Hobby accounts are limited to
+ * cron jobs that run once per day. Cron expressions that would run more
+ * frequently will fail during deployment." They did. EVERY Vercel deployment
+ * from 27 August 18:08 IST onward failed at build time on that one line, so
+ * the live site stopped receiving ANY update — which is why swechha.in went on
+ * serving a 27-hour-old AQI even on the runs where the pipeline worked. The
+ * failing deployment's own error link redirects to
+ * vercel.com/docs/cron-jobs/usage-and-pricing.
+ *
+ * So the schedule is once daily, which deploys and which genuinely exercises
+ * this path. Restoring a true 15-minute external heartbeat needs ONE of:
+ *   · a Vercel Pro plan, on which a fifteen-minute expression is legal; or
+ *   · an external pinger (cron-job.org, UptimeRobot and similar are free)
+ *     calling this route with the CRON_SECRET bearer token on its own
+ *     schedule — no plan change, one more third-party account.
+ * Until then the 15-minute cadence rests on GitHub's schedule alone, with the
+ * reliability measured above. Do not change this line back without changing
+ * the plan first.
+ *
+ * Hobby scheduling precision is per-hour (+/-59 min), so the stated minute is
+ * indicative.
  */
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
@@ -68,8 +94,11 @@ export async function GET(request: NextRequest) {
   const started = run?.run_started_at ? Date.parse(run.run_started_at) : NaN;
   const ageMinutes = Number.isFinite(started) ? Math.floor((Date.now() - started) / 60000) : null;
 
-  // A healthy run in the last 12 minutes means the native schedule/another
-  // dispatch has already done this slot. Otherwise dispatch a fresh poll.
+  // A healthy run in the last 12 minutes means GitHub's own schedule, or
+  // another dispatch, has already covered this slot. Otherwise dispatch a
+  // fresh poll. The window is deliberately shorter than the workflow's
+  // 15-minute cadence so a daily backstop always finds work to do if the
+  // GitHub schedule really has gone quiet.
   if (ageMinutes !== null && ageMinutes >= 0 && ageMinutes < 12) {
     return NextResponse.json({
       ok: true,

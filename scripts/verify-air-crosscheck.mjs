@@ -82,8 +82,48 @@ const RATIO_MIN = 0.85;
 const MIN_MATCHED = 100;
 const MAX_KM = 25;
 
-const fail = (m) => { console.error(m); process.exit(2); };
 const J = (p) => JSON.parse(readFileSync(p, 'utf8'));
+
+/* ── THE VERDICT IS WRITTEN WHERE THE READING IS — AD-47 ──────────────────
+   This file used to write data/air-crosscheck-verdicts.json and stop. Nothing
+   read that file. So the one gate built to catch a repeat of the eleven-week
+   double-conversion bug produced an artefact that no page, no build and no
+   workflow ever consulted — and then, in the 27 August "sole owner" refactor,
+   stopped being called at all.
+   Now the verdict is ALSO stamped onto data/air-delhi.json, beside the
+   reading it judges, in the shape the fetch carries forward. Three states,
+   and the third is not a pass:
+     passed       the gate ran and our figures agree with CPCB's own
+     failed       the gate ran and they do not — our parser has drifted
+     unavailable  the gate could not run. NOT a pass; it is a check that
+                  did not happen, and it says so with a reason.
+   `at` always rides along, so a stale verdict cannot read as a fresh one. */
+function stamp(status, extra) {
+  try {
+    if (!existsSync(DELHI)) return;
+    const d = J(DELHI);
+    d.crosscheck = {
+      status,
+      at: new Date().toISOString(),
+      source: 'CPCB daily AQI bulletin (cpcb.nic.in) — same publisher, same scale, same '
+        + 'definition as our city_mean, so any gap is our bug, not a methodology difference',
+      compared: 'our city_mean against CPCB\'s own published city figure — never the '
+        + 'headline, which is the worst monitor and has no bulletin counterpart',
+      ...extra,
+    };
+    writeFileSync(DELHI, JSON.stringify(d, null, 2) + '\n');
+    console.log(`stamped crosscheck.status=${status} onto ${DELHI}`);
+  } catch (e) {
+    console.warn(`could not stamp the verdict onto ${DELHI} (${e.message}) — the verdict file `
+      + 'still holds it; the reading outranks the stamp.');
+  }
+}
+
+const fail = (m) => {
+  console.error(m);
+  stamp('unavailable', { reason: String(m).split('\n')[0] });
+  process.exit(2);
+};
 
 /* ── TIER 1: CPCB'S OWN DAILY BULLETIN ───────────────────────────────────
    cpcb.nic.in/aqi_report.php 302s to the current day's PDF at a dated,
@@ -325,8 +365,24 @@ writeFileSync(OUT, JSON.stringify({
 }, null, 2) + '\n');
 console.log(`\nwrote ${OUT}`);
 
+const summary = {
+  matched: rows.length, ratio: +ratio.toFixed(3), mae: +mae.toFixed(2), bias: +bias.toFixed(2),
+  bulletin_heading: bulletin.heading, bulletin_url: bulletin.url,
+  thresholds: { ratioMin: RATIO_MIN, ratioMax: RATIO_MAX, minMatched: MIN_MATCHED },
+  suspect_readings: suspects.length,
+  suspect_unresolved: verdicts.filter(v => v.verdict === 'NO COVERAGE').length,
+};
+
 if (bad) {
+  stamp('failed', {
+    ...summary,
+    reason: `Our mean city figure across ${rows.length} cities is ${ratio.toFixed(2)}x CPCB's own `
+      + `published figure, outside the ${RATIO_MIN}-${RATIO_MAX} band. These are the same statistic `
+      + `from the same stations, so a gap this size is a parser fault here, not a difference of `
+      + `method. A ratio near 2.00 means the sub-indexes are being converted a second time.`,
+  });
   console.error(`\nREFUSING: ${bad} gate(s) failed. The published figures disagree with CPCB's own.`);
   process.exit(1);
 }
+stamp('passed', { ...summary, reason: null });
 console.log('all gates pass.');

@@ -9,11 +9,19 @@
  *
  *   LIVE describes the fetch. The age describes the observation.
  *
- * Both are printed. The value genuinely moves between observations, but the
- * badge must never stand in for "observed 13:00, an hour ago". The page prints
- * the age beside the badge, always — and that matters more than it reads:
- * measured 25 August 2026 at 13:59 IST, the feed was still serving 05:00 IST
- * nationwide. LIVE has never meant "now", and here it means it less than usual.
+ * ★ AND THE LABEL IS NOW EARNED AGAINST THAT AGE — AD-47. `state` used to be
+ * the constant 'LIVE' on the argument above: the word names this route's
+ * cadence, not the observation's. Measured 28 August 2026 at 08:45 IST, that
+ * argument returned `state: "LIVE"` over a 05:00 IST observation — three and
+ * three-quarter hours old. scripts/fetch-air.mjs had already been corrected
+ * for precisely this and earns its own label against a three-hour bound, so
+ * the two halves of one system were holding opposite rules under one field
+ * name. `state` now comes from `stateFor()` and the age it was judged on is
+ * returned beside it.
+ *
+ * The page prints the age beside the badge, always — and that matters more
+ * than it reads: measured 25 August 2026 at 13:59 IST, the feed was still
+ * serving 05:00 IST nationwide. LIVE has never meant "now".
  *
  * ★ THE KEY NEVER REACHES THE CLIENT. That is the whole reason this is a
  * server route rather than a browser fetch. `DATA_GOV_IN_KEY` is read from the
@@ -31,7 +39,7 @@
  * /api/ward cannot disagree about the same station. See the header there.
  */
 import { NextResponse } from 'next/server';
-import { fetchDelhiLive, foldStations, worstStation, cityMean, bandFor, selfCheck, AQI_LIMIT } from '@/lib/air';
+import { fetchDelhiLive, foldStations, worstStation, cityMean, bandFor, selfCheck, stateFor, observedAgeHours, STALE_HOURS, AQI_LIMIT } from '@/lib/air';
 
 /* ── RUN THIS FUNCTION IN MUMBAI — A-44.12 ─────────────────────────────────
    Vercel's default region is iad1 (US-East). From there, the production
@@ -100,7 +108,13 @@ export async function GET() {
 
   return NextResponse.json({
     ok: true,
-    state: 'LIVE',
+    /* EARNED, NOT ASSERTED — AD-47. See `stateFor` in lib/air.ts for why this
+       stopped being the constant 'LIVE'. The age it was judged on rides out
+       beside it, so a consumer never has to re-derive the thing that was
+       already decided here. */
+    state: stateFor(worst.observed),
+    observationAgeHours: observedAgeHours(worst.observed),
+    staleAfterHours: STALE_HOURS,
     reading: {
       scope: 'worst-monitor',
       city: 'Delhi',
