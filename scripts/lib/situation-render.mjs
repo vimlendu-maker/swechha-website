@@ -313,6 +313,50 @@ ${metricCards(impact, e.owner_figures)}
     </div>`;
 }
 
+/* ═══ A2. WHAT THIS EVEN IS ═══════════════════════════════════════════════
+   ★ THE ONE THING THE PAGE ASSUMED AND SHOULD NOT HAVE.
+   Every band on this page was built for a reader who already knows what a
+   glacial lake outburst flood is. The hero says "glacial lake outburst flood",
+   the cause band lists moraine breach against ice-rock avalanche, and the
+   climate band counts 25,614 of the lakes — none of which means anything to
+   somebody who has not met the word before, which on a page reached from a news
+   cycle is most people.
+
+   So: the definition, immediately after the hero, in two registers side by
+   side. The PLAIN one carries the weight — it is written to be understood by a
+   ten-year-old and it is the wider column, because that is the one most
+   readers need. The TECHNICAL one sits beside it for the reader who wants
+   precision, and because a page that only offers the analogy is talking down.
+
+   ★ IT IS HAZARD-LEVEL, NOT EVENT-LEVEL. It lives in the context pack, so
+   every glacial flood ever published gets the same explanation and nobody
+   rewrites it under deadline. A hazard whose pack has no `explainer` renders no
+   band, which is the right degradation — an invented definition is worse than
+   none.
+
+   "GLOBAL HEATING, NOT WARMING" IS THE OWNER'S OWN FORMULATION and it is in the
+   copy deliberately, in both packs. It is not a slip to be tidied. */
+export function explainBand(e, ctx) {
+  const x = ctx?.explainer;
+  if (!x || !x.plain?.length) return null;
+
+  return `${opener('explain', esc(x.heading || `What is a ${x.term}`), esc(x.hook || ''))}
+    <div class="wrap">
+      <div class="as-exp">
+        <div class="as-exp-plain">
+${x.plain.map((para) => `          <p class="as-exp-p">${esc(para)}</p>`).join('\n')}
+        </div>
+        <aside class="as-exp-tech">
+          <p class="lbl as-exp-tech-h">The technical version</p>
+          ${x.expands && x.term && x.expands.toLowerCase() !== x.term.toLowerCase()
+    ? `<p class="as-exp-ex"><b>${esc(x.term)}</b> &mdash; ${esc(x.expands)}.</p>` : ''}
+          <p class="as-exp-t">${esc(x.technical || '')}</p>
+          ${x.not ? `<p class="as-exp-not">${esc(x.not)}</p>` : ''}
+        </aside>
+      </div>
+    </div>`;
+}
+
 /* ═══ B. WHERE ════════════════════════════════════════════════════════════ */
 
 /* ── THE MAP ──────────────────────────────────────────────────────────────
@@ -1429,6 +1473,27 @@ a.as-src-t:hover{color:var(--mustard-2)}
 .as-sig-c.is-lead .as-sig-v{font-size:clamp(34px,3.6vw,52px)}
 .as-sig-c.is-lead .as-sig-l{max-width:34ch}
 
+/* ── (q) THE EXPLAINER. Two registers, side by side: the plain reading takes
+      the wider column because it is the one most readers need, and the
+      technical definition sits beside it rather than under it so neither
+      reads as the footnote of the other. ─────────────────────────────────── */
+.as-exp{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);
+  gap:clamp(22px,3vw,56px);align-items:start}
+.as-exp-p{font-size:clamp(16px,1.35vw,21px);line-height:1.5;color:var(--fg);
+  max-width:44ch;margin:0 0 .85em}
+.as-exp-p:last-child{margin-bottom:0;color:var(--fg-2)}
+.as-exp-tech{border-top:2px solid var(--hair);padding-top:13px}
+.as-exp-tech-h{color:var(--fg-3);margin:0 0 .8em}
+.as-exp-ex{font-size:14px;line-height:1.45;color:var(--fg-2);margin:0 0 .8em}
+.as-exp-ex b{color:var(--fg)}
+.as-exp-t{font-size:clamp(14px,1.05vw,16px);line-height:1.55;color:var(--fg-2);
+  max-width:42ch;margin:0 0 1em}
+.as-exp-not{font-size:clamp(14px,1.05vw,16px);line-height:1.5;color:var(--fg);
+  max-width:38ch;margin:0;border-left:2px solid var(--red);padding-left:13px}
+.paper .as-exp-p,.paper .as-exp-ex b,.paper .as-exp-not{color:var(--ink)}
+.paper .as-exp-t,.paper .as-exp-ex,.paper .as-exp-p:last-child{color:var(--ink-2)}
+.paper .as-exp-tech{border-top-color:var(--rule-2)}
+
 /* ── (o) THE HERO BANNER, on Air and Yamuna's own picture-band component.
       Only the overrides this page needs are here; .pic, .ht and .pic-over come from the shared stylesheet. ───────────────────────── */
 .as-pic-i{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 38%}
@@ -1522,6 +1587,7 @@ a.as-src-t:hover{color:var(--mustard-2)}
   .as-card-v{font-size:clamp(32px,10.5vw,44px)}
   .as-pill{margin-left:0}
   .as-prec-p{min-height:0}
+  .as-exp{grid-template-columns:1fr;gap:clamp(20px,5vw,30px)}
   .as-casc-s{padding-left:34px}
   .as-casc-s::before{width:20px}
   .as-casc-s::after{left:25px}
