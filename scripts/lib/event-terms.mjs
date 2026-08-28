@@ -262,6 +262,15 @@ export const PLACE_COORDS = {
   koshi: [26.50, 86.90], brahmaputra: [26.20, 91.75], ganga: [25.32, 83.01],
   yamuna: [28.61, 77.25], sutlej: [31.35, 76.30], godavari: [17.00, 81.78],
   alaknanda: [30.22, 78.78], bhagirathi: [30.73, 78.44], mandakini: [30.49, 79.06],
+  /* THE KOSHI HEADWATERS, added for the August 2026 Nepal event. The dossier's
+     own place was "Nepal", whose centroid is 250 km from the Bhote Koshi and in
+     a different basin's catchment — so a map built on it drew the wrong river.
+     These are representative points on named rivers, which is exactly what
+     every river entry in this table already is, and the caption on the map
+     says so. */
+  'bhote koshi': [27.90, 85.85], 'sun koshi': [27.20, 86.10],
+  rasuwagadhi: [28.28, 85.38], rasuwa: [28.12, 85.30],
+  'lhende khola': [28.28, 85.38],
 };
 
 export const coordsFor = (place) => PLACE_COORDS[String(place || '').toLowerCase()] || null;

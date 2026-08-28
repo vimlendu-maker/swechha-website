@@ -553,6 +553,51 @@ function pickLead(items, hazard) {
   })[0];
 }
 
+/* ── FIELDS THE DETECTOR MUST NEVER TOUCH ─────────────────────────────────
+   ★ THIS WAS A LIVE BUG AND IT HAD A THIRTY-MINUTE FUSE.
+   dossier() below rebuilds the object from a FIXED key set, so any field not
+   named in it is dropped on the next run. That silently discarded:
+
+     situation_status   the lifecycle. An editor demoting an event off the
+                        homepage would have had the decision reverted by the
+                        next scheduled detection, thirty minutes later, with
+                        the page quietly promoting itself again.
+     hero_days          read by isCurrent() in lib/climate-events.mjs. A slow
+                        event granted a longer window lost it the same way,
+                        and this one predates the lifecycle entirely.
+     cause_status       an editor raising a candidate cause from "under
+                        investigation" to "confirmed" once fieldwork lands.
+
+   AN ALLOWLIST, NOT A SPREAD OF `existing`. Spreading the previous file over
+   the new one would also freeze the score, the corroboration counts, the
+   sources and the timestamps — the things this script exists to update. The
+   division is the same one the whole file runs on: the detector owns the
+   EVIDENCE, a person owns the EDITORIAL JUDGEMENT, and neither may overwrite
+   the other. Adding a new human-set field means adding it here, and a comment
+   saying so sits on each of them at the point of use. */
+const EDITOR_OWNED = [
+  'situation_status',      // active | developing | stabilising | demoted | archived
+  'situation_status_why',  // printed beside it when a person set it
+  'hero_days',             // overrides the 14-day evidence window
+  'cause_status',          // { causeId: confirmed | likely | under_investigation | not_established }
+  'location_detail',       // a precise place the feeds do not carry
+  'coords', 'coords_note', // and its coordinates, which drive the map and the satellite frame
+  'downstream', 'downstream_note', // THIS event's river, not the hazard's generic chain
+  'mechanism_stated',
+  'occurred_detail',       // a precise onset the feeds do not carry
+  'owner_figures',         // figures supplied by an editor, with their own sources
+  'editor_note',
+];
+
+/** Carry every editor-owned field across untouched. */
+function keepEditorFields(next, existing) {
+  if (!existing) return next;
+  for (const k of EDITOR_OWNED) {
+    if (existing[k] !== undefined) next[k] = existing[k];
+  }
+  return next;
+}
+
 /** Build the dossier. Every figure it emits is a count this script performed
  *  itself; every sentence it emits is either quoted from a headline or is the
  *  standing `why` string from the geography table. */
@@ -770,7 +815,10 @@ console.log(`\n${clusters.length} candidate cluster(s), threshold ${THRESHOLD}:\
 
 let written = 0;
 for (const { c, s } of clusters) {
-  const d = await dossier(c, s, existing.get(slugify(`${c.place}-${c.hazard}`)));
+  const prior = existing.get(slugify(`${c.place}-${c.hazard}`));
+  /* keepEditorFields() carries the human-set fields across — see EDITOR_OWNED
+     above for why an allowlist and not a spread. */
+  const d = keepEditorFields(await dossier(c, s, prior), prior);
   const mark = publishable(s) ? 'PUBLISH' : 'draft  ';
   console.log(`  ${mark} ${String(s.total).padStart(3)}  ${c.hazard} @ ${c.place}`
     + `  (${s.publishers.length} publishers, ${s.matchedAlerts.length} alerts, ${c.items.length} items)`);

@@ -198,7 +198,12 @@ let wrote = 0;
 const report = [];
 
 for (const e of events) {
-  const coords = coordsFor(e.location.text);
+  /* ★ THE EVENT'S OWN COORDINATES FIRST. `coordsFor(e.location.text)` resolves
+     "Nepal" to the country centroid, and bboxFor() then opens the frame to 2.6
+     degrees because a country is a coarse place — a 1,481 km box in which the
+     event is a few pixels. An editor-supplied point gets the hazard's own tight
+     span instead. */
+  const coords = e.coords || coordsFor(e.location.text);
   const file = join(OUT_DATA, `${e.slug}.json`);
   const prev = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null;
 
@@ -222,7 +227,7 @@ for (const e of events) {
   }
 
   const [lat, lon] = coords;
-  const bbox = bboxFor({ lat, lon }, e.hazard, e.location.text);
+  const bbox = bboxFor({ lat, lon }, e.hazard, e.coords ? '' : e.location.text);
 
   /* ── THE THROTTLE ─────────────────────────────────────────────────────
      Skip entirely when the last run found everything it was looking for and
