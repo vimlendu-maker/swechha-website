@@ -171,27 +171,54 @@ ${ownerFigures.length ? `        ${ownerFigures.map((f) => `<div class="as-card 
    is the one piece of this design language that is literally about "the four
    numbers on this page". Four cells, each an anchor into the band that
    explains it. */
-export function strip(e, impact, imagery) {
+/* ── THE READINGS STRIP ───────────────────────────────────────────────────
+   THE SAME COMPONENT AIR AND YAMUNA USE, deliberately down to the class names,
+   because it is what makes those two pages scannable.
+
+   ★ IT MUST NOT REPEAT THE HERO, AND THE FIRST VERSION DID.
+   Its opening two cells were "547 confirmed dead, 160-547 reported" and "750
+   missing, 750-1,468 reported" — the exact two cards sitting directly above it,
+   restated four centimetres lower with the same ranges. On /now/air the strip
+   carries the readings the hero does NOT: the count of stations above the
+   limit, the national rank, the attention ratio. Its job is a table of
+   contents made of numbers, one door into each band a reader should jump to —
+   not a summary of the thing they have just read.
+
+   So every cell here comes from a DIFFERENT band, and the hero's casualty
+   figures are deliberately absent from it. Each falls back in turn, so a flood
+   event with no context pack still gets a strip rather than a gap. */
+export function strip(e, ctx, imagery) {
   const cells = [];
-  const first = METRIC_ORDER.map((k) => [k, impact?.[k]]).filter(([, c]) => c?.value != null);
-  for (const [, c] of first.slice(0, 2)) {
-    cells.push([n0(c.value), c.label, c.spread?.max > c.spread?.min
-      ? `${n0(c.spread.min)}–${n0(c.spread.max)} reported` : 'reported', '#top', true]);
-  }
+  const fig = (band, match) => (ctx?.figures || [])
+    .find((f) => f.band === band && f.value != null && (!match || match.test(f.label)));
+
+  /* THE STANDING SCALE -> the band the whole page now leads on. */
+  const scale = fig('scale', /Indian Himalayan river basins/) || fig('scale');
+  if (scale) cells.push([esc(String(scale.value)), 'Glacial lakes', 'mapped above India', '#climate', false]);
+
+  /* EXPOSURE INSIDE INDIA -> the alarm band. */
+  const ind = fig('india', /Alaknanda/) || fig('india');
+  if (ind) cells.push([esc(String(ind.value)), 'Alaknanda', 'dangerous lakes above it', '#india', true]);
+
   const lc = e.live_conditions;
   if (lc && lc.rain_7d_mm != null) {
     cells.push([`${lc.rain_7d_mm}`, 'Rain, 7 days', 'mm over the region', '#next', false]);
   }
   if (imagery?.after) {
-    cells.push([imagery.after.date.slice(5).replace('-', '/'), 'Satellite', `${imagery.after.satellite} · ${imagery.after.obscuredPct}% cloud`, '#eo', false]);
+    cells.push([imagery.after.date.slice(5).replace('-', '/'), 'Satellite',
+      `${esc(imagery.after.satellite)} &middot; ${imagery.after.obscuredPct}% cloud`, '#eo', false]);
   }
-  cells.push([n0(e.corroboration.independent_publishers), 'Publishers', 'reporting it', '#sources', false]);
+  /* Only if the four above could not be filled. */
+  if (cells.length < 4) {
+    cells.push([n0(e.corroboration.independent_publishers), 'Publishers', 'reporting it', '#sources', false]);
+  }
 
   return `    <div class="wide p-strip-in">
-${cells.slice(0, 4).map(([v, l, s, href, red]) => `      <a class="p-cell" href="${href}">
+${cells.slice(0, 4).map(([v, l, sub, href, red]) => `      <a class="p-cell" href="${href}">
         <span class="p-cell-v${red ? ' is-red' : ''}">${v}</span>
-        <span class="lbl p-cell-l">${esc(l)}</span><span class="cap p-cell-s">${esc(s)}</span></a>`).join('\n')}
-      <p class="cap p-strip-note">One reading, one label. <a class="lk" href="#sources">Every source behind them</a>.</p>
+        <span class="lbl p-cell-l">${esc(l)}</span><span class="cap p-cell-s">${sub}</span></a>`).join('\n')}
+      <p class="cap p-strip-note">Four readings this page holds, and where each one is explained.
+        <a class="lk" href="#sources">Every source behind them</a>.</p>
     </div>`;
 }
 
