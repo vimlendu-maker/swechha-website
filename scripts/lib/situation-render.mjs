@@ -606,11 +606,72 @@ function imageFig(img, label) {
           </figure>`;
 }
 
+/* ── SUPPLIED IMAGERY, WITH ITS PERMISSION ON THE PAGE ────────────────────
+   ★ A CREDIT LINE IS NOT A LICENCE, so this block prints the BASIS as well as
+   the credit. Commercial high-resolution satellite imagery is licensed to the
+   outlet that bought it; republishing it because the outlet is named is a
+   copyright claim waiting to happen. What makes it publishable here is a
+   permission, and a permission has a grantor and a date — so the caption
+   carries all three and a reader can see which of them is doing the work.
+
+   ★ IT RENDERS ONLY IF THE FILE IS ON DISK. build-climate-disaster-pages.mjs
+   filters `owner_images` to entries whose files exist before passing them, so a
+   dossier naming an image nobody has committed yet produces no markup at all
+   rather than a broken picture on a live disaster page.
+
+   IT GOES ABOVE THE NASA FRAMES, not instead of them. Supplied imagery is
+   higher resolution and shows what 250 m cannot; the NASA pair stays because it
+   is dated, machine-chosen, reproducible and public domain, and because the two
+   together are a stronger statement than either alone. */
+function suppliedFigure(img, which) {
+  const src = img[which];
+  if (!src) return '';
+  return `<figure class="as-eo-f">
+            <img class="as-eo-i" src="${esc(src)}" alt="${esc(`${which === 'before' ? 'Before' : 'After'} the event: ${img.shows || 'the affected valley'}`)}"${imgDim(src)} loading="lazy" decoding="async">
+            <figcaption class="cap as-eo-c"><b>${which === 'before' ? 'Before' : 'After'}</b>${img.date ? ` &middot; ${esc(img.date)}` : ''}</figcaption>
+          </figure>`;
+}
+
+function suppliedBlock(imgs) {
+  if (!imgs?.length) return '';
+  return imgs.map((img) => {
+    const pair = img.before && img.after;
+    const body = pair
+      ? `      <div class="as-cmp" data-cmp>
+        <img class="as-cmp-b" src="${esc(img.before)}" alt="${esc(`The valley before the event: ${img.shows || ''}`)}"${imgDim(img.before)} loading="lazy" decoding="async">
+        <div class="as-cmp-a" style="--x:50%">
+          <img src="${esc(img.after)}" alt="${esc(`The same valley after the event: ${img.shows || ''}`)}"${imgDim(img.after)} loading="lazy" decoding="async">
+        </div>
+        <span class="as-cmp-h" aria-hidden="true"></span>
+        <span class="lbl as-cmp-lb">Before</span>
+        <span class="lbl as-cmp-la">After</span>
+        <input class="as-cmp-r" type="range" min="0" max="100" value="50" step="1"
+          aria-label="Reveal the after image. Left is before the event, right is after.">
+      </div>`
+      : `      <div class="as-eo-two">${suppliedFigure(img, 'before')}${suppliedFigure(img, 'after')}</div>`;
+    return `${body}
+      <p class="cap as-eo-k">${img.shows ? `${esc(img.shows)} ` : ''}${pair ? 'Drag to wipe between the two dates. ' : ''}
+        <b>${esc(img.credit || 'Supplied')}</b>${img.credit_url ? ` &mdash; <a class="lk" href="${esc(img.credit_url)}">the report this came from</a>` : ''}.
+        ${img.permission ? `Published here by permission: ${esc(img.permission.basis)}${img.permission.asserted_by ? `, confirmed by ${esc(img.permission.asserted_by)}` : ''}${img.permission.asserted_on ? ` on ${esc(img.permission.asserted_on)}` : ''}.` : ''}
+        ${img.provider ? `Imagery: ${esc(img.provider)}.` : ''}</p>`;
+  }).join('\n');
+}
+
 export function eoBand(e, imagery) {
-  const head = opener('eo', 'What the satellite sees',
-    'Imagery published here, not linked to. The same public NASA layers a newsroom would use, over the region the reporting names, on the dates either side of the event.');
+  const supplied = suppliedBlock(imagery?.supplied);
+  const head = opener('eo', 'What the satellite sees', supplied
+    ? 'The high-resolution before-and-after, published by permission, and beneath it the public NASA frames this site fetches for itself.'
+    : 'Imagery published here, not linked to. The same public NASA layers a newsroom would use, over the region the reporting names, on the dates either side of the event.');
 
   if (!imagery || (!imagery.before && !imagery.after && !imagery.latest)) {
+    /* Supplied imagery can carry the band on its own when the NASA ladder
+       found nothing — which is the whole point of having the slot. */
+    if (supplied) {
+      return `${head}
+    <div class="wrap">
+${supplied}
+    </div>`;
+    }
     const why = imagery?.after_pending || imagery?.reason
       || 'No usable frame has been found over this region yet.';
     return `${head}
@@ -667,6 +728,8 @@ export function eoBand(e, imagery) {
 
   return `${head}
     <div class="wrap">
+${supplied ? `${supplied}
+      <p class="lbl as-eo-sub">And the public frames this site fetches for itself</p>` : ''}
 ${tabs('Satellite imagery', panels)}
       ${imagery.frame ? `<p class="cap as-eo-fr">Frame ${imagery.frame.south}&ndash;${imagery.frame.north}&deg;N,
         ${imagery.frame.west}&ndash;${imagery.frame.east}&deg;E. ${esc(imagery.frame.note)}</p>` : ''}
@@ -1210,6 +1273,8 @@ export const AS_CSS = `
 .as-eo-c{display:block;margin-top:9px;max-width:52ch}
 .as-eo-k{max-width:66ch;margin:12px 0 0}
 .as-eo-fr,.as-eo-at{max-width:74ch;margin:14px 0 0}
+.as-eo-sub{color:var(--fg-3);margin:clamp(22px,2.6vw,36px) 0 clamp(10px,1.2vw,16px);
+  border-top:1px solid var(--hair);padding-top:14px}
 .as-eo-leg p{margin:0 0 .9em}
 .as-eo-pend{border-top:2px solid var(--mustard);padding-top:14px;max-width:66ch}
 .as-eo-pend-l{color:var(--mustard-2);margin:0 0 .5em}
