@@ -55,7 +55,7 @@
  * is the worst available bug (D-16.4). So the HEADER is validated, and a
  * failure is recorded as null. Never as zero.
  */
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
 const KEY = process.env.FIRMS_MAP_KEY;
@@ -178,15 +178,92 @@ async function sample(year) {
   };
 }
 
+/* ── A COMPLETED YEAR IS HISTORY, AND HISTORY DOES NOT MOVE — AD-48 ───────
+   This job used to re-download all fourteen years on EVERY run — twenty-eight
+   FIRMS requests a day for a fixed ten-day window, 21-30 March, in years that
+   finished as long ago as 2013. The series runs on VIIRS S-NPP SCIENCE
+   QUALITY, whose whole point is that it is the final, reprocessed product: a
+   past March cannot change. So the re-download bought nothing and cost three
+   things, all of which we then paid:
+
+     · TIME. Nine-plus minutes of the daily refresh, most of the job.
+     · RELIABILITY. NASA's host is unreachable from GitHub runners often
+       enough to matter (measured 24, 25 and 26 August 2026: every year
+       failed with `connect ETIMEDOUT 198.118.194.34:443`). One outage failed
+       fourteen years of already-known data and turned the whole daily refresh
+       red — which is how data-refresh.yml came to be red on three consecutive
+       days for a dataset nobody had actually lost.
+     · QUOTA. FIRMS rate-limits by key.
+
+   So a year already carried in the committed file, marked `ok`, is REUSED and
+   never re-requested. Only years we do not yet hold are fetched — in practice
+   the current one, which is also the only one whose March can still be
+   revised or arrive late.
+
+   FF_REFETCH=1 forces the full re-download: for the day FIRMS reprocesses the
+   archive, or the sample window/sensor/area constants above change. Any of
+   those makes the cached years incomparable with the new ones, and that is a
+   human's call to make, not an unattended job's.
+
+   ★ THE CACHE IS KEYED ON THE THINGS THAT WOULD INVALIDATE IT. If the sensor,
+   the sample window or the bounding box differs from what the committed file
+   was built with, nothing is reused — a cached 2013 sampled over a different
+   box is not the same measurement, and silently mixing the two would be the
+   "two hours presented as one" error in another costume.
+   ──────────────────────────────────────────────────────────────────────── */
+const CACHE_KEY = `${SERIES_SENSOR.id}|${SAMPLE.from}|${SAMPLE.days}|${AREA}`;
+const cached = new Map();
+if (!process.env.FF_REFETCH && existsSync(OUT)) {
+  try {
+    const prev = JSON.parse(readFileSync(OUT, 'utf8'));
+    if (prev?.series?.cache_key === CACHE_KEY) {
+      for (const y of prev.series.years || []) {
+        if (y.ok && y.count !== null) cached.set(String(y.year), y);
+      }
+    } else if (prev?.series?.years?.length) {
+      console.log('cache: the committed file was built with a different sensor, sample window '
+        + 'or area — refetching every year rather than mixing two measurements.');
+    }
+  } catch { /* an unreadable previous file must never block a fresh fetch */ }
+}
+
+/* THE CURRENT YEAR IS ALWAYS REFETCHED. Its March may still be arriving, being
+   reprocessed, or not have happened yet; only a year strictly in the past is
+   settled. */
+const THIS_YEAR = new Date(Date.now() + 19800000).getUTCFullYear();
+
 /* ── RUN ────────────────────────────────────────────────────────────────── */
 console.log(`FIRMS over ${AREA}\nseries sensor: ${SERIES_SENSOR.id}, fixed sample ${SAMPLE.label} (${SAMPLE.days} days)\n`);
 const series = [];
+let reused = 0;
 for (const y of YEARS) {
+  const hit = Number(y) < THIS_YEAR ? cached.get(String(y)) : null;
+  if (hit) {
+    series.push(hit);
+    reused++;
+    console.log(`  ${y}  ${String(hit.count).padStart(7)} detections   (held — a settled year is not re-requested)`);
+    continue;
+  }
   const r = await sample(Number(y));
   series.push(r);
   console.log(`  ${y}  ` + (r.ok
     ? `${String(r.count).padStart(7)} detections   FRP total ${String(r.frp_sum).padStart(10)} MW   peak ${r.frp_max} MW`
     : `FAILED — ${r.error}`));
+}
+console.log(`\n  ${reused} of ${YEARS.length} years held from the committed file; `
+  + `${YEARS.length - reused} requested. FF_REFETCH=1 forces a full re-download.`);
+
+/* ★ A YEAR WE ALREADY HELD MUST NEVER BE LOST TO A FAILED REQUEST. The current
+   year is refetched every run; if that request fails while the file already
+   carries a good value for it, keep the good value rather than publishing a
+   hole where a number was. */
+for (let i = 0; i < series.length; i++) {
+  if (series[i].ok) continue;
+  const held = cached.get(String(series[i].year));
+  if (held) {
+    console.log(`  ${series[i].year}  request failed (${series[i].error}) — keeping the value already committed.`);
+    series[i] = held;
+  }
 }
 
 console.log(`\ncross-sensor, the last 5 days to ${TODAY}${inSeason ? '' : ' (OUT OF SEASON — a low count here is the season, not a fault)'}:`);
@@ -250,6 +327,9 @@ const out = {
               + 'inside that sensor\'s archive window, so the series never switches processing level.',
   },
   series: {
+    /* What the cached years were measured with. A run whose constants differ
+       from this refuses to reuse them — see the AD-48 note above. */
+    cache_key: CACHE_KEY,
     sensor: SERIES_SENSOR,
     window: SAMPLE,
     years: series,
