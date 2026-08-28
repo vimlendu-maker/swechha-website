@@ -53,7 +53,7 @@ import { esc, ARROW, imgDim, disclose, opener, n0, tabs } from './situation-shel
 import { CLAIM_STATUS, RELEVANCE, istStamp } from './climate-events.mjs';
 import { statusOf, TYPE_LABEL } from './active-situation.mjs';
 import { METRIC_ORDER, METRIC_LABEL, eventName, HAZARD_NAME } from './event-figures.mjs';
-import { layerById } from './event-imagery.mjs';
+import { layerById, worldviewUrl } from './event-imagery.mjs';
 
 const HAZARD_LABEL = {
   glof: 'Glacial lake outburst flood', cloudburst: 'Cloudburst', flood: 'Flood',
@@ -796,6 +796,30 @@ ${(e.reported_imagery || []).map((r) => `        <p class="as-eo-rep-i"><a class
           permit it &mdash; NASA&rsquo;s, which is public domain &mdash; at the resolution that
           actually exists for free, stated on the frame.</p>
       </div>` : ''}
+${(() => {
+    /* ── THE LIVE COMPARISON ────────────────────────────────────────────
+       ★ THE ONE THING THIS PAGE CANNOT DO, HANDED TO THE READER.
+       The frames above are 250 m per pixel and committed at two fixed dates.
+       Worldview's A/B mode is the same NASA imagery, live, with the controls
+       this page has no business reimplementing: zoom, any pair of dates, and
+       the layer menu — including the OPERA Sentinel-1 radar products, which see
+       through the cloud that spoils the optical pair here.
+
+       A LINK, NOT AN EMBED. This site is static HTML on a CDN with no runtime
+       map anywhere in it; embedding a tile map would add a third-party script
+       and a per-read network dependency for a view most readers will not open. */
+    const wv = worldviewUrl({
+      frame: imagery.frame,
+      before: imagery.before?.date,
+      after: imagery.after?.date,
+      layer: imagery.after?.layer || imagery.before?.layer,
+    });
+    if (!wv) return '';
+    return `      <p class="as-eo-live"><a class="act" href="${esc(wv)}">Open the live comparison ${ARROW}</a>
+        <span class="cap as-eo-live-c">The same NASA imagery at NASA&rsquo;s own viewer, opened on this
+        valley with these two dates side by side. Zoom in, change either date, or switch to the
+        Sentinel-1 radar layers, which see through cloud. Nothing here is stored by this site.</span></p>`;
+  })()}
       <p class="cap as-eo-at"><a class="lk" href="${esc(imagery.attribution.url)}">${esc(imagery.attribution.name)}</a>.
         ${esc(imagery.attribution.note)}
         ${imagery.before_pending ? `<b>Before the event:</b> ${esc(imagery.before_pending)}` : ''}
@@ -1327,6 +1351,8 @@ export const AS_CSS = `
 .as-eo-fr,.as-eo-at{max-width:74ch;margin:14px 0 0}
 .as-eo-sub{color:var(--fg-3);margin:clamp(22px,2.6vw,36px) 0 clamp(10px,1.2vw,16px);
   border-top:1px solid var(--hair);padding-top:14px}
+.as-eo-live{margin:clamp(18px,2vw,26px) 0 0}
+.as-eo-live-c{display:block;margin-top:9px;max-width:66ch}
 .as-eo-leg p{margin:0 0 .9em}
 .as-eo-pend{border-top:2px solid var(--mustard);padding-top:14px;max-width:66ch}
 .as-eo-pend-l{color:var(--mustard-2);margin:0 0 .5em}
