@@ -1,28 +1,74 @@
-name: Air, every 15 minutes — live poll and timestamp
+name: Air — poll, validate, publish
 
-# Sole publisher of committed Air data. A run has three explicit outcomes:
-# SUCCESS: Delhi fetch/build/commit/push completed.
-# UPSTREAM_UNAVAILABLE: Delhi sources were silent/unusable; previous data is preserved.
-# PIPELINE_FAILURE: a real workflow/build/push error turns the run red.
+# THE ONLY WORKFLOW THAT WRITES AIR DATA OR AIR PAGES.
+# data-refresh.yml excludes Air by name; nothing else touches data/air-*.
 #
-# IMPORTANT: this 15-minute heartbeat intentionally fetches DELHI ONLY.
-# The national table is much larger and has its own workflow/cadence. A failure
-# in the national fetch must never block Delhi's visible AQI or last-checked time.
+# ── WHAT A RUN CAN CONCLUDE ─────────────────────────────────────────────────
+#   success               Delhi was checked and the result published. Which KIND
+#                         of check it was is in data/air-delhi.json's `check`
+#                         block: new_observation | same_observation |
+#                         stale_refused. All three are successes, all three move
+#                         the "last checked by Swechha" clock, and only the first
+#                         moves the reading.
+#   upstream_unavailable  No Delhi source answered (fetch exit 75). NOTHING is
+#                         written; the site keeps its reading and prints its age.
+#                         GREEN, because someone else's server being down is not
+#                         a defect here — see the exit-75 note below.
+#   pipeline_failure      A source answered and the answer was wrong, or a build
+#                         gate refused, or the push could not be made safely.
+#                         RED, because that one is ours.
+#
+# ── DELHI AND INDIA ARE TWO LEGS AND ONLY ONE OF THEM IS LOAD-BEARING ───────
+# Delhi is the 15-minute live reading. The national table (262 cities) is a much
+# larger read on a slower, flakier path. Requirement 8 of the AQI brief: a
+# national failure must NEVER hold back Delhi's figure. So the India fetch runs
+# inside an `if`, its exit code is swallowed, and the page no longer claims the
+# two share an hour. Each panel prints its own observation stamp; see the AD-47
+# note in scripts/build-situation-air.mjs.
+#
+# This replaces the arrangement of 27 August, where the fetch was decoupled but
+# the BUILD GATE still demanded both files carry the identical stamp. Every
+# successful Delhi poll then advanced Delhi's hour, failed that gate, and
+# published nothing — the site sat on a 27-hour-old reading for a day and a half
+# while the workflow dutifully went red every time it succeeded.
+#
+# ── EXIT 75 IS NOT A FAILURE ────────────────────────────────────────────────
+#   75  no source answered      -> stay green, publish nothing
+#    1  a source answered wrongly -> fail loudly; that one is ours
+# Measured 26 August from a GitHub runner: airquality.cpcb.gov.in refuses TCP
+# 3/3, api.data.gov.in refuses TCP 3/3, cpcb.nic.in answers fine. Reachability
+# of these hosts from any given cloud changes week to week, which is why the
+# fetch climbs a transport ladder (native fetch -> curl -4 -> the Vercel relay)
+# before it concludes silence. Turning the run red for their outage trains a
+# human to ignore the alert that matters.
+#
+# SECRETS: DATA_GOV_IN_KEY (required), AIR_RELAY_TOKEN (optional third transport
+# rung; without it the rung skips itself).
+
 on:
   schedule:
-    - cron: '4 * * * *'
-    - cron: '19 * * * *'
-    - cron: '34 * * * *'
-    - cron: '49 * * * *'
+    # Every fifteen minutes, offset off the hour. CPCB publishes the
+    # top-of-hour observation with a 15-35 minute lag, so an on-the-hour poll
+    # is the one time it is guaranteed to find nothing new.
+    #
+    # ★ DO NOT RELY ON THIS ALONE. Measured on this repository 26-28 August
+    # 2026: GitHub's schedule service delivered FIVE scheduled events in
+    # forty-eight hours across seven scheduled workflows, and none at all to
+    # this one for thirty-four hours. The dependable trigger is the Vercel
+    # cron in vercel.json, which calls /api/cron/air and dispatches this
+    # workflow from outside GitHub entirely. This cron is the cheap best-effort
+    # rung; that one is the heartbeat.
+    - cron: '4,19,34,49 * * * *'
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Fetch and rebuild, but do not commit or push'
+        description: 'Fetch, validate and rebuild, but commit nothing'
         type: boolean
         default: false
 
 concurrency:
-  group: air-hourly
+  # A run that overruns must not race the next one into a push.
+  group: air
   cancel-in-progress: false
 
 permissions:
@@ -36,108 +82,220 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Record trigger
-        run: |
-          echo "Trigger: ${{ github.event_name }}"
-          echo "Scheduled slot: ${{ github.event.schedule }}"
-          echo "Started: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci --omit=dev
+      - run: npm ci --omit=dev
 
-      - name: Fetch Delhi air data
-        id: fetch
+      - name: Poll CPCB, rebuild, publish
+        id: run
         env:
           DATA_GOV_IN_KEY: ${{ secrets.DATA_GOV_IN_KEY }}
           AIR_RELAY_TOKEN: ${{ secrets.AIR_RELAY_TOKEN }}
+          WAQI_TOKEN: ${{ secrets.WAQI_TOKEN }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run || 'false' }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
+
           if [ -z "${DATA_GOV_IN_KEY:-}" ]; then
-            echo "::error::DATA_GOV_IN_KEY is not set."
+            echo "::error::DATA_GOV_IN_KEY is not set. Nothing fetched, nothing committed."
             exit 1
           fi
 
-          set +e
-          npm run data:air:delhi
-          code=$?
-          set -e
-
-          if [ "$code" = "0" ]; then
-            echo "state=success" >> "$GITHUB_OUTPUT"
-            echo "::notice::Delhi Air sources returned usable data."
-            exit 0
-          fi
-
-          if [ "$code" = "75" ]; then
-            echo "state=upstream_unavailable" >> "$GITHUB_OUTPUT"
-            echo "::warning::Delhi Air sources were silent, rate-limited, or returned no usable data. Previous committed data is intentionally preserved."
-            exit 0
-          fi
-
-          echo "state=pipeline_failure" >> "$GITHUB_OUTPUT"
-          echo "::error::Delhi fetch failed with exit code $code."
-          exit "$code"
-
-      - name: Report upstream unavailable
-        if: steps.fetch.outputs.state == 'upstream_unavailable'
-        run: |
-          echo "## Air poll: upstream unavailable" >> "$GITHUB_STEP_SUMMARY"
-          echo "No new usable Delhi Air reading was obtained, so nothing was rebuilt or published." >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Rebuild Air pages after successful Delhi poll
-        if: steps.fetch.outputs.state == 'success'
-        run: |
-          set -euo pipefail
-          npm run build:situation-air
-          npm run build:hero
-          npm run verify:final
-
-      - name: Commit and push successful Delhi poll
-        if: steps.fetch.outputs.state == 'success' && (github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true')
-        run: |
-          set -euo pipefail
-          git config user.name 'swechha-air-hourly[bot]'
+          git config user.name  'swechha-air[bot]'
           git config user.email 'actions@github.com'
-          git add data/air-delhi.json data/air-history.ndjson public/_pages/v3/situation-air.html public/_pages/v3/home.html design/home.html
 
-          if git diff --cached --quiet; then
-            echo "::error::Successful Delhi Air poll produced no staged changes. The fetch pipeline must update the checked timestamp or data on every successful poll."
-            exit 1
-          fi
+          # ── THE WHOLE CYCLE, RETRIED FROM THE TOP ────────────────────────
+          # The previous publisher committed first and then `git rebase
+          # origin/main`, which replays a commit touching two generated HTML
+          # files and a dataset onto a branch that may have moved. That
+          # conflicts every single time main has advanced, and the logs show
+          # exactly that: "error: could not apply ... data(air): checked",
+          # three times, then exit 1. Generated artefacts are not rebased;
+          # they are REGENERATED. So a lost push resets to the new main and
+          # runs the whole cycle again — which also picks up a fresher CPCB
+          # hour, so the retry is worth more than the replay would have been.
+          attempt=0
+          while [ "$attempt" -lt 3 ]; do
+            attempt=$((attempt + 1))
+            echo "::group::attempt $attempt"
 
-          aqi=$(node -p 'JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).city_reading?.aqi ?? "N/A"')
-          checked=$(node -p 'JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).time?.swechha_checked_utc ?? JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).fetched?.epochMs ?? "unknown"')
-          git commit -m "data(air): checked — AQI ${aqi}, checked ${checked}"
+            git fetch --quiet origin main || { echo "::error::git fetch failed."; exit 1; }
+            git reset --hard --quiet origin/main || { echo "::error::git reset failed."; exit 1; }
 
-          for attempt in 1 2 3; do
-            git fetch origin main
-            if git rebase origin/main; then
-              if git push origin HEAD:main; then
-                echo "Published Air update on attempt $attempt."
-                exit 0
-              fi
+            # ── DELHI: the leg that matters ──────────────────────────────
+            npm run data:air:delhi
+            code=$?
+
+            if [ "$code" = "75" ]; then
+              echo "state=upstream_unavailable" >> "$GITHUB_OUTPUT"
+              echo "::notice::No Delhi source answered. Nothing written; the pages keep their committed reading and print its age."
+              echo "::endgroup::"
+              exit 0
             fi
-            git rebase --abort 2>/dev/null || true
-            sleep $((attempt * 3))
+            if [ "$code" != "0" ]; then
+              echo "state=pipeline_failure" >> "$GITHUB_OUTPUT"
+              echo "::error::data:air:delhi exited $code — a source answered and the answer was wrong."
+              echo "::endgroup::"
+              exit "$code"
+            fi
+
+            status=$(node -p 'JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).check?.status ?? "unknown"')
+            echo "Delhi check: $status"
+
+            # ── INDIA: never allowed to sink Delhi ───────────────────────
+            # Its failure is a warning and the national panel keeps its own
+            # (older, and clearly labelled) hour. The build's 48-hour ceiling
+            # is what stops that degrading indefinitely.
+            if npm run data:air:india; then
+              echo "National table refreshed."
+            else
+              echo "::warning::The national fetch did not complete. Delhi is unaffected; the national panel keeps its committed snapshot and states its own hour. Only a snapshot older than 48h fails the build."
+            fi
+
+            # ── CROSS-CHECK: CPCB'S OWN BULLETIN, AS A GATE ──────────────
+            # This is the tier that would have caught the eleven-week double
+            # conversion on day one: our city_mean against CPCB's own published
+            # city figure, across ~245 cities, tripping outside 0.85-1.15.
+            # Measured 28 August: ratio 0.96, MAE 8.7. It was built in AD-42D,
+            # then wired to nothing — data-refresh.yml handed Air validation to
+            # this workflow and this workflow never called it, so the gate sat
+            # switched off while the pipeline it guards broke twice.
+            #
+            # ★ CADENCE. CPCB publishes the bulletin ONCE A DAY and it is a
+            # multi-MB PDF, so running it on every 15-minute poll would
+            # re-download the same document 96 times to re-derive the same
+            # verdict. It runs when the stamped verdict is older than
+            # CROSSCHECK_MAX_AGE_H, and the verdict is carried forward by the
+            # fetch in between, with its own timestamp attached so a stale
+            # verdict cannot read as a fresh pass.
+            #
+            # ★ WHAT EACH EXIT MEANS.
+            #   0  gates pass                  -> publish
+            #   1  our figures disagree with CPCB's own -> OUR parser has
+            #      drifted. Do not publish, do not overwrite the trusted
+            #      reading, go red. Requirement 7: last known good stands and
+            #      the reason is recorded (crosscheck.status=failed).
+            #   2  the gate could not run (bulletin unreachable, poppler
+            #      missing, too few cities parsed) -> NOT a pass. Stamped
+            #      `unavailable` with its reason and publication continues on
+            #      the fetch's own gates, which did run.
+            CROSSCHECK_MAX_AGE_H=6
+            due=$(node -p '
+              const fs=require("node:fs");
+              let at=null;
+              try { at = JSON.parse(fs.readFileSync("data/air-delhi.json","utf8")).crosscheck?.at ?? null; } catch {}
+              const maxH = Number(process.env.CROSSCHECK_MAX_AGE_H || 6);
+              (!at || (Date.now() - Date.parse(at)) / 3600000 > maxH) ? "1" : "0"
+            ' 2>/dev/null || echo 1)
+
+            if [ "$due" = "1" ]; then
+              echo "::group::cross-check against CPCB's own bulletin"
+              # The bulletin is a PDF and the parse needs poppler. A missing
+              # binary would degrade the gate to a permanent, silent
+              # 'unavailable' — which is precisely the failure mode this whole
+              # cleanup exists to stop — so it is installed explicitly rather
+              # than assumed present in the runner image.
+              command -v pdftotext >/dev/null 2>&1 || sudo apt-get install -y -qq poppler-utils
+
+              # The WAQI comparison and forecast PANEL is a different artefact
+              # from the GATE below, and it is rendered on the page. It was
+              # last written on 26 August and then orphaned with the rest of
+              # the cross-check tier, so /now/air was showing a two-day-old
+              # "independent reading" beside a live one. Refreshed here,
+              # non-fatally: a WAQI outage must not stop Delhi publishing.
+              npm run data:air:crosscheck || echo "::warning::The WAQI comparison panel did not refresh. It keeps its committed reading, which carries its own observation stamp."
+
+              npm run verify:crosscheck
+              xc=$?
+              echo "::endgroup::"
+              if [ "$xc" = "1" ]; then
+                echo "::error::CROSS-CHECK FAILED — our published figures disagree with CPCB's own bulletin beyond the 0.85-1.15 band. This is a parser fault here, not an upstream one. Nothing is published; the previously trusted reading stands and the reason is recorded in data/air-delhi.json's crosscheck block."
+                git checkout -- data public/_pages design 2>/dev/null || true
+                echo "state=validation_failed" >> "$GITHUB_OUTPUT"
+                exit 1
+              fi
+              if [ "$xc" != "0" ]; then
+                echo "::warning::The cross-check could not run (exit $xc). It is stamped 'unavailable' with its reason — that is not a pass. Delhi's own gates did run, so publication continues."
+              fi
+            else
+              echo "Cross-check verdict is under ${CROSSCHECK_MAX_AGE_H}h old; carried forward."
+            fi
+
+            # ── BUILD: EVERY GENERATOR, NOT THE TWO AIR ONES ─────────────
+            # generated-current.yml regenerates all eleven on the next push and
+            # fails if the tree moves. The previous 15-minute workflow rebuilt
+            # two of them, leaving that gate primed to fail on the next pull
+            # request anyone opened, for a change that touched none of it.
+            # SITUATIONS BEFORE THE HERO, AND THAT ORDER IS LOAD-BEARING:
+            # build-hero.mjs cross-checks the hero's figure against the figure
+            # already in situation-air.html and refuses to write if they
+            # differ. Build the hero first and it compares fresh data against a
+            # page that has not been rebuilt yet, fails, and stops the run.
+            # (generated-current.yml runs hero-first for the opposite and
+            # equally correct reason: it starts from a tree already in step.)
+            for t in situations hero work about impact farm act stories publications search essays; do
+              npm run "build:$t" || { echo "::error::build:$t refused to write. A generator gate failed; nothing is published."; exit 1; }
+            done
+            npm run verify:final || { echo "::error::verify:final refused."; exit 1; }
+
+            # ── COMMIT ───────────────────────────────────────────────────
+            # -A across the three generated trees: the previous version named
+            # five paths by hand and one of them (data/air-history.ndjson) did
+            # not exist — AD-46 stores history in a DIRECTORY,
+            # data/air-history/. Under `set -e` that `git add` exits 128, so
+            # the publisher was one gate-fix away from failing on every run
+            # instead. Naming trees, not files, cannot rot that way.
+            git add -A data public/_pages design
+
+            if git diff --cached --quiet; then
+              echo "::error::A successful Delhi check ($status) staged nothing. Every successful check must at least move time.swechha_checked_utc — see the AD-47 note in scripts/fetch-air.mjs."
+              echo "::endgroup::"
+              exit 1
+            fi
+
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "state=dry_run" >> "$GITHUB_OUTPUT"
+              echo "::notice::Dry run — checked, built and validated ($status), committed nothing."
+              echo "::endgroup::"
+              exit 0
+            fi
+
+            aqi=$(node -p 'JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).city_reading?.aqi ?? "n/a"')
+            obs=$(node -p 'JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).observed?.raw ?? "n/a"')
+            chk=$(node -p 'JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).time?.swechha_checked_utc ?? "n/a"')
+
+            git commit --quiet -m "data(air): ${status} — Delhi AQI ${aqi}, observed ${obs}" \
+              -m "Checked ${chk}. Automated by .github/workflows/air-hourly.yml. CPCB stamps when the air was measured; this job separately records when it last asked. Both are printed on the page."
+
+            if git push --quiet origin HEAD:main; then
+              echo "state=success" >> "$GITHUB_OUTPUT"
+              echo "check_status=$status" >> "$GITHUB_OUTPUT"
+              echo "::notice::Published: $status, AQI $aqi, observed $obs, checked $chk."
+              echo "::endgroup::"
+              exit 0
+            fi
+
+            echo "::warning::Push rejected on attempt $attempt — main moved. Resetting and running the whole cycle again."
+            echo "::endgroup::"
+            sleep $((attempt * 5))
           done
 
-          echo "::error::Could not safely publish the Air update after 3 attempts."
+          echo "state=pipeline_failure" >> "$GITHUB_OUTPUT"
+          echo "::error::Could not publish after 3 full attempts."
           exit 1
 
-      - name: Dry-run summary
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' && steps.fetch.outputs.state == 'success'
-        run: |
-          echo "## Air poll dry run succeeded" >> "$GITHUB_STEP_SUMMARY"
-          echo "Usable Delhi data was fetched and Air pages rebuilt, but nothing was committed or pushed." >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Final outcome summary
+      - name: Outcome
         if: always()
         run: |
-          echo "## Air workflow outcome" >> "$GITHUB_STEP_SUMMARY"
-          echo "Fetch state: ${{ steps.fetch.outputs.state || 'not reached' }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "Workflow conclusion: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo '## Air'
+            echo ''
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Run state | \`${{ steps.run.outputs.state || 'not reached' }}\` |"
+            echo "| Delhi check | \`${{ steps.run.outputs.check_status || '—' }}\` |"
+            echo "| Job | \`${{ job.status }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"

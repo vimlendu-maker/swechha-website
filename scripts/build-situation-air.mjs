@@ -220,24 +220,65 @@ const istDay = (ms) => { const d = new Date(ms + 19800000);
 const FIRE_TO = FIRE.fetched?.epochMs ? istDay(FIRE.fetched.epochMs) : null;
 const REC_FROM = AIR.observed ? `${AIR.observed.d} ${MON[AIR.observed.m - 1]} ${AIR.observed.y}` : null;
 
-/* ── THE HERO AND THE NATIONAL PANEL MUST BE ONE HOUR (AD-27.6-A) ────────
-   Delhi's row in "India, right now" used to be repainted from the live fetch
-   so it could not contradict the hero. Nothing repaints anything now, so the
-   two are only consistent if the datasets under them were read at the same
-   observation hour — and two figures for one city on one screen is the exact
-   defect that repaint existed to hide. `npm run data:air` fetches both files
-   in one run, so they agree today; this refuses to build a page that says
-   "all nine figures were read together" on a day when they were not. */
+/* ── TWO PIPELINES, TWO CLOCKS, BOTH PRINTED ─────────────────────────────
+   AD-47, replacing AD-27.6-A's same-hour rule.
+
+   The old gate demanded that air-delhi.json and air-india.json carry the
+   IDENTICAL observation stamp, because the page claimed "all nine figures
+   were read together" and `npm run data:air` fetched both in one go. That
+   claim was true only while the two were welded to one fetch — and welding
+   them is precisely what must not happen: Delhi is the 15-minute live
+   reading, the national table is a much larger fetch on a slower leg, and a
+   national failure may never hold back Delhi's figure.
+
+   So the coupling is gone from the DATA and moved into the COPY. The hero
+   prints Delhi's own observation hour, the national panel prints the national
+   snapshot's hour, and when the two differ the panel says so in words rather
+   than a build refusing to exist. Two honest hours beat one hour asserted.
+
+   WHAT IS STILL REFUSED, because it is still a lying page:
+     · either stamp missing or unparseable — a panel with no hour is the
+       original defect, and it is still fatal;
+     · a national snapshot older than NAT_MAX_AGE_H under a heading that
+       reads "India, right now". Past that, no label rescues it.
+   ──────────────────────────────────────────────────────────────────────── */
+const NAT_MAX_AGE_H = 48;
+const IST_OFFSET_MS = 5.5 * 3600 * 1000;
+/** CPCB's "DD-MM-YYYY HH:MM:SS" IST wall-clock text -> parts. Never Date-parsed. */
+const natStampParts = (() => {
+  const m = /^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})/.exec(String(IND.observed || ''));
+  return m ? { d: +m[1], m: +m[2], y: +m[3], hh: +m[4], mi: +m[5] } : null;
+})();
+/** Age in hours of an IST wall-clock stamp. Timezone-independent: the IST
+    offset is SUBTRACTED from a UTC construction, so this is correct on a UTC
+    runner and on an IST laptop alike (the standing date rule in this repo). */
+const istAgeHours = (o) => o === null ? null
+  : Math.round(((Date.now() - (Date.UTC(o.y, o.m - 1, o.d, o.hh, o.mi) - IST_OFFSET_MS)) / 3600000) * 10) / 10;
+const NAT_AGE_H = istAgeHours(natStampParts);
+/** Do the hero and the national panel happen to be describing the same hour? */
+const NAT_SAME_HOUR = !!(AIR.observed && natStampParts
+  && natStampParts.y === AIR.observed.y && natStampParts.m === AIR.observed.m
+  && natStampParts.d === AIR.observed.d && natStampParts.hh === AIR.observed.hh
+  && natStampParts.mi === AIR.observed.mi);
+/** The national snapshot's hour, spelled the way the hero's is (188's OBS). */
+const NAT_OBS = natStampParts
+  ? `${String(natStampParts.hh).padStart(2, '0')}:${String(natStampParts.mi).padStart(2, '0')} IST, `
+    + `${natStampParts.d} ${MON[natStampParts.m - 1]} ${natStampParts.y}`
+  : 'time not stated';
 {
-  const a = AIR.observed, i = String(IND.observed || '');
-  const m = /^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})/.exec(i);
-  if (!a) { console.error('AIR/IND HOUR: air-delhi.json has no observed block'); bad++; }
-  else if (!m) { console.error(`AIR/IND HOUR: air-india.json's observed ("${i}") is not "DD-MM-YYYY HH:MM:SS"`); bad++; }
-  else if (+m[1] !== a.d || +m[2] !== a.m || +m[3] !== a.y || +m[4] !== a.hh || +m[5] !== a.mi) {
-    console.error(`AIR/IND HOUR: the hero reads ${OBS} and the national panel reads ${i}. `
-      + 'The page states that all nine figures were read together. Re-run `npm run data:air`, '
-      + 'which fetches both in one go, rather than shipping two hours as one.');
+  if (!AIR.observed) { console.error('AIR/IND HOUR: air-delhi.json has no observed block'); bad++; }
+  else if (!natStampParts) {
+    console.error(`AIR/IND HOUR: air-india.json's observed ("${IND.observed}") is not "DD-MM-YYYY HH:MM:SS". `
+      + 'The national panel prints its own hour and cannot print one it cannot read.');
     bad++;
+  } else if (NAT_AGE_H !== null && NAT_AGE_H > NAT_MAX_AGE_H) {
+    console.error(`AIR/IND HOUR: the national snapshot is ${NAT_AGE_H}h old (${NAT_OBS}), past the `
+      + `${NAT_MAX_AGE_H}h ceiling for a panel headed "India, right now". Delhi's own leg is `
+      + 'unaffected by this — run `npm run data:air:india` and rebuild.');
+    bad++;
+  } else if (!NAT_SAME_HOUR) {
+    console.log(`AIR/IND HOUR: hero ${OBS}, national panel ${NAT_OBS} (${NAT_AGE_H}h old) — `
+      + 'different hours, and the panel states both. This is expected: the two legs are separate.');
   }
 }
 
@@ -531,12 +572,17 @@ ${crumb('air')}
           India set for itself.</b> ${IND.totals.good} read &ldquo;Good&rdquo;.${ONE_ST
     ? ` ${esc(ONE_ST.city)} reports from one station and Delhi from ${dr ? dr.stations : AIR.spread.stations} &mdash;
           a city with one monitor is measured <b>less</b>, not better.` : ''}</p>
-        <p class="cap p-hole p2-nat-t"><b>All nine figures were read together, and none of them
+        <p class="cap p-hole p2-nat-t"><b>These nine figures were read together, and none of them
           moves while you are here.</b> The eight cities above and Delhi&rsquo;s row beside them come
-          from one snapshot, taken at ${esc(IND.observed || 'the snapshot hour')} &mdash; the same
-          hour as the reading at the top of this page. That is what makes them comparable, and it
-          is why the order is printed as a reading of one hour rather than as a standing claim: by
-          the time you read it, CPCB has published another.</p>
+          from one national snapshot, taken at ${esc(NAT_OBS)}. That is what makes them comparable
+          with each other, and it is why the order is printed as a reading of one hour rather than
+          as a standing claim: by the time you read it, CPCB has published another.${NAT_SAME_HOUR
+    ? ' It is also the same hour as the reading at the top of this page.'
+    : ` The reading at the top of this page is a different fetch, from Delhi&rsquo;s own monitors at
+          ${esc(OBS)}, so Delhi&rsquo;s row here and the figure above it need not agree &mdash; they
+          are two hours, and each is labelled with its own. The national table is a much larger read
+          and runs on its own schedule; it is kept separate so that a slow national fetch can never
+          hold back Delhi&rsquo;s live figure.`}</p>
         <p style="margin:0"><a class="act" href="${INDIA_PAGE}">All ${n0(IND.totals.cities)} cities ${ARROW}</a></p>
       </div>
       </div>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { mkdtempSync, readFileSync, appendFileSync, readdirSync } from 'node:fs'
+import { mkdtempSync, readFileSync, appendFileSync, readdirSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 // The repo's standing convention allows importing .mjs script modules into
@@ -160,17 +160,82 @@ describe('a temp store never leaks into the repo', () => {
 // must stage the Air data/history and commit it. The old heartbeat= marker was
 // intentionally removed when every successful poll began refreshing the visible
 // check timestamp, so tests must not pin an obsolete implementation detail.
-describe('air-hourly.yml carries the 15-minute publish contract', () => {
-  const yml = readFileSync(join(__dirname, '..', '.github', 'workflows', 'air-hourly.yml'), 'utf8')
+describe('air-hourly.yml is the sole Air publisher, and its contract holds', () => {
+  const wfDir = join(__dirname, '..', '.github', 'workflows')
+  const yml = readFileSync(join(wfDir, 'air-hourly.yml'), 'utf8')
+
   it('polls every 15 minutes, offset off the hour', () => {
     const compact = yml.includes("cron: '4,19,34,49 * * * *'")
     const explicit = ["cron: '4 * * * *'", "cron: '19 * * * *'", "cron: '34 * * * *'", "cron: '49 * * * *'"]
       .every((slot) => yml.includes(slot))
     expect(compact || explicit).toBe(true)
   })
-  it('commits Air data and history after successful polls', () => {
-    expect(yml).toContain('Commit and push every successful poll')
-    expect(yml).toMatch(/git add -A data public\/_pages design/)
-    expect(yml).toContain('data(air): checked')
+
+  /* ★ THE ASSERTION THAT WOULD HAVE CAUGHT THE REAL BUG.
+     The previous version of this block asserted that the workflow CONTAINED a
+     particular step TITLE. It went red the moment someone renamed the step in
+     the GitHub web UI — turning main red for a rename — while saying nothing
+     at all about the defect actually sitting three lines below it: the commit
+     step named `data/air-history.ndjson`, a path that has never existed
+     (AD-46 stores history in the DIRECTORY data/air-history/). Under
+     `set -e` that is `git add` exiting 128 on every run.
+     So: never assert prose. Assert that every path the workflow stages is a
+     path this repository actually has. */
+  it('stages only paths that exist in this repository', () => {
+    const staged = [...yml.matchAll(/^\s*git add (?:-A )?(.+)$/gm)]
+      .flatMap((m) => m[1].trim().split(/\s+/))
+      .filter((p) => !p.startsWith('-'))
+    expect(staged.length).toBeGreaterThan(0)
+    for (const rel of staged) {
+      expect(existsSync(join(__dirname, '..', rel)), `air-hourly.yml stages "${rel}", which does not exist`).toBe(true)
+    }
+  })
+
+  it('stages the Air data and the observation history', () => {
+    const staged = [...yml.matchAll(/^\s*git add (?:-A )?(.+)$/gm)]
+      .flatMap((m) => m[1].trim().split(/\s+/))
+    // `data` covers data/air-delhi.json, data/air-india.json and
+    // data/air-history/ in one tree — the point is that history is reachable.
+    expect(staged.some((p) => p === 'data' || p.startsWith('data/air'))).toBe(true)
+    expect(yml).toContain('data(air):')
+  })
+
+  /* Exit 75 ("no source answered") must stay green and publish nothing; exit 1
+     ("a source answered wrongly") must stay red. Collapsing the two is how the
+     job spent August emailing a human about someone else's server. */
+  it('keeps the exit-75 and exit-1 outcomes apart', () => {
+    expect(yml).toMatch(/"\$code" = "75"/)
+    expect(yml).toContain('upstream_unavailable')
+    expect(yml).toContain('pipeline_failure')
+  })
+
+  /* The national fetch may never sink the Delhi leg (requirement 8). */
+  it('never lets the national fetch fail the run', () => {
+    const india = /if npm run data:air:india; then[\s\S]*?\n            fi/.exec(yml)
+    expect(india, 'the India fetch must be wrapped so its exit code cannot fail the job').not.toBeNull()
+  })
+
+  /* Generated artefacts are regenerated onto the new main, never rebased —
+     `git rebase` on two generated HTML files plus a dataset conflicted on
+     every run where main had moved, three attempts, then exit 1. */
+  it('publishes by regenerating onto the latest main, not by rebasing', () => {
+    // Comment lines are stripped first: the file EXPLAINS why the rebase is
+    // gone, and an assertion that cannot tell a command from its own
+    // rationale is the same species of test as the one this block replaced.
+    const commands = yml.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n')
+    expect(commands).not.toMatch(/git rebase/)
+    expect(commands).toMatch(/git reset --hard/)
+  })
+
+  /* There is ONE Air publisher. A second workflow that can write Air data or
+     dispatch this one is the arrangement this cleanup removed. */
+  it('is the only workflow that fetches or dispatches Air', () => {
+    const others = readdirSync(wfDir).filter((f) => f !== 'air-hourly.yml' && f.endsWith('.yml'))
+    for (const f of others) {
+      const other = readFileSync(join(wfDir, f), 'utf8')
+      expect(other, `${f} runs an Air fetch; air-hourly.yml is the sole Air owner`).not.toMatch(/npm run data:air/)
+      expect(other, `${f} dispatches air-hourly.yml; the external heartbeat is Vercel cron, not a second GitHub schedule`)
+        .not.toMatch(/workflows\/air-hourly\.yml\/dispatches/)
+    }
   })
 })
