@@ -130,7 +130,7 @@ for (const e of published) {
      dropped band cannot leave two identical grounds adjacent. */
   const sections = {
     top: () => heroBand(e, ctx, imagery, { crumb: crumb('climate') }),
-    strip: () => strip(e, e.impact || {}, imagery),
+    strip: () => strip(e, ctx, imagery),
     where: () => whereBand(e, ctx, imagery, coordsFor),
     damage: () => damageBand(e),
     cause: () => causeBand(e, ctx),
