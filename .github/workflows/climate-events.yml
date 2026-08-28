@@ -195,6 +195,14 @@ jobs:
             echo "Nothing staged after the rebuild — no commit."
             exit 0
           fi
+          # WHICH PAGES CHANGED, recorded before the commit so the IndexNow step
+          # after the push submits exactly those and nothing else. Staged-file
+          # list, not a sitemap dump: the protocol asks for changed URLs, and a
+          # scheduled job re-submitting an inventory every half hour is
+          # indistinguishable from abuse.
+          changed_pages=$(git diff --cached --name-only -- 'public/_pages/**/*.html' | tr '\n' ' ')
+          echo "CHANGED_PAGES=$changed_pages" >> "$GITHUB_ENV"
+          echo "Pages changed: ${changed_pages:-none}"
           summary=$(node -e '
             const fs=require("node:fs"), p="data/climate-events/active";
             if(!fs.existsSync(p)){console.log("no events");process.exit(0)}
@@ -206,6 +214,32 @@ jobs:
           git commit -m "data(climate-event): ${summary}" \
             -m "Automated by .github/workflows/climate-events.yml. The detector read the news and official alert feeds, scored what it found against an itemised rubric, and wrote a dossier for anything over threshold. Every figure is attributed and status-marked; nothing is claimed in the site's own voice. The page was rebuilt in the same run and verify:final passed."
           git push
+
+
+      # ── TELL THE SEARCH ENGINES, AFTER THE PUSH ─────────────────────────
+      # A disaster page is worth finding on the day, and sitemap discovery is a
+      # crawl schedule — hours to days, which is most of an event page's useful
+      # life. One POST reaches Bing, Yandex, Seznam and Naver.
+      #
+      # GOOGLE IS NOT IN THAT LIST AND CANNOT BE PUSHED TO. Both legacy sitemap
+      # pings are gone — google.com/ping answers 404 "Sitemaps ping is
+      # deprecated", bing.com/ping answers 410 — and Google's stated
+      # replacement is the sitemap `lastmod`, which this repo already computes
+      # from a content hash so it moves only on a real change.
+      #
+      # AFTER the push, not before: IndexNow verifies ownership by fetching the
+      # key file from the live host, so the submission has to follow the deploy.
+      # A rejection is a warning and never fails the run — the page is already
+      # published and correct; this is only a notification about it.
+      - name: Submit the changed pages to IndexNow
+        if: steps.changed.outputs.count != '0' && env.UPSTREAM_SILENT != '1' && github.event.inputs.dry_run != 'true'
+        continue-on-error: true
+        run: |
+          if [ -z "${CHANGED_PAGES// /}" ]; then
+            echo "No page files changed — nothing to submit."
+            exit 0
+          fi
+          node scripts/ping-indexnow.mjs --changed "$CHANGED_PAGES"
 
       - name: Report what did not answer
         if: always()
