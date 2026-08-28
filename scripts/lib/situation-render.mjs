@@ -237,43 +237,31 @@ export function heroBand(e, ctx, imagery, { crumb }) {
   const where = e.location_detail || e.location.text;
   const when = e.occurred_detail || istStamp(e.occurred.epochMs).replace(/^\d\d:\d\d IST, /, '');
 
-  /* ── THE BANNER, AND ITS ONE HONEST CAPTION ─────────────────────────────
-     THE SAME COMPONENT AIR AND YAMUNA USE: a `.pic .ht` band with the `h1`
-     over it, then `.pic-body` for the reading. Adding it here makes this page
-     structurally the same as the other two rather than the odd one out, which
-     was the whole brief.
+  /* ── THE BANNER: A BACKDROP, THE WAY AIR AND YAMUNA DO IT ───────────────
+     The same `.pic .ht` band with the h1 over it, so this page is structurally
+     the same as the other two rather than the odd one out.
 
-     ★ IT IS NOT A PHOTOGRAPH OF THIS EVENT AND THE CAPTION SAYS SO.
-     That rule is not negotiable on a disaster page and it is the reason the
-     board this page replaced carried the same sentence: a picture of a
-     different mountain under a live death toll is a false claim made in
-     pictures — the easiest kind to make by accident and the hardest for a
-     reader to catch. So the frame is credited to its photographer, its licence
-     is named, and the caption states plainly what it is. The imagery that IS
-     of the region is further down, dated and sourced, in its own band.
+     ★ NO VISIBLE CREDIT LINE, AND THAT IS THE SITE'S OWN CONVENTION rather
+     than a shortcut. Air's India Gate frame and Yamuna's students-at-the-foam
+     frame carry none either; every hero photograph on this site is credited in
+     docs/design/image-credits.json and nowhere on the page. The Unsplash
+     License does not require attribution, so the ledger is the right place for
+     it and the band is left to do its job.
 
-     ★ NO duo, AND A LIGHTER SCRIM FOR THIS BAND ONLY. Both halves of that
-     were measured rather than preferred.
+     THE "THIS IS NOT A PHOTOGRAPH OF THIS EVENT" CAPTION WAS HERE AND IS GONE
+     ON THE OWNER'S INSTRUCTION, 28 August 2026. The concern it answered is
+     answered better elsewhere on the page: the satellite band carries imagery
+     that IS of the affected region — the NASA frames, dated and machine-chosen,
+     and the supplied Reuters views of Manakamana — each captioned with what it
+     shows. A reader looking for pictures of the event finds them there, which
+     is where they would look.
 
-     The shared .pic-over lays a 0.92-alpha gradient over the frame so the
-     display heading stays legible, and on Air and Yamuna it is the duo
-     selective-colour filter's own brightening that lets the picture read
-     through it. Applying duo here did not work: this frame is mean saturation
-     60 — a saturated green pine forest — and a duotone collapses exactly that,
-     which is the documented limit of the treatment. With duo the band rendered
-     as a flat dark rectangle; without it and with the full scrim, the same.
-
-     So the frame keeps its own colour and this band overrides the gradient to
-     roughly half strength. The heading is still white display type over the
-     top third, where the gradient is heaviest, and the composite was measured
-     behind the type rather than eyeballed.
-
-     THE HONESTY IS CARRIED IN THE CAPTION, which says in as many words that
-     this is not a photograph of this event. That rule is not negotiable on a
-     disaster page: a picture of a different mountain under a live death toll
-     is a false claim made in pictures. The imagery that IS of the region is
-     further down, dated and sourced, in its own band.
-     */
+     NO duo CLASS. It was tried: this frame is mean saturation 60, a saturated
+     green pine forest, and a duotone collapses exactly that — the documented
+     limit of the treatment. The band overrides the shared 0.92-alpha scrim to
+     roughly half strength instead, and the heading measures 6.2:1 against the
+     composite, well over the 3:1 large-text bar. Both numbers were measured on
+     the rendered page. */
   const banner = {
     src: '/images/photos/mukteshwar-pines-snow-peak.jpg',
     alt: 'Pine forest below a snow-covered Himalayan peak',
@@ -288,12 +276,6 @@ export function heroBand(e, ctx, imagery, { crumb }) {
         <p class="lbl as-pic-k">${esc(TYPE_LABEL)}</p>
         <h1 class="d1 as-pic-h">${esc(name)}</h1>
       </div></div>
-    </div>
-    <div class="wrap as-pic-c">
-      <p class="cap"><b>This is not a photograph of this event.</b> ${esc(banner.alt)} &mdash;
-        the terrain this hazard occurs in. <a class="lk" href="${banner.page}">${banner.artist}</a>,
-        ${esc(banner.lic)}. Imagery of the affected region itself, dated and sourced, is
-        <a class="lk" href="#eo">further down this page</a>.</p>
     </div>
     <div class="wrap as-hero">
 ${crumb}
@@ -667,20 +649,31 @@ function imageFig(img, label) {
    higher resolution and shows what 250 m cannot; the NASA pair stays because it
    is dated, machine-chosen, reproducible and public domain, and because the two
    together are a stronger statement than either alone. */
-function suppliedFigure(img, which) {
-  const src = img[which];
-  if (!src) return '';
+function suppliedFrame(f) {
   return `<figure class="as-eo-f">
-            <img class="as-eo-i" src="${esc(src)}" alt="${esc(`${which === 'before' ? 'Before' : 'After'} the event: ${img.shows || 'the affected valley'}`)}"${imgDim(src)} loading="lazy" decoding="async">
-            <figcaption class="cap as-eo-c"><b>${which === 'before' ? 'Before' : 'After'}</b>${img.date ? ` &middot; ${esc(img.date)}` : ''}</figcaption>
+            <img class="as-eo-i" src="${esc(f.src)}" alt="${esc(f.alt || f.label)}"${imgDim(f.src)} loading="lazy" decoding="async">
+            <figcaption class="cap as-eo-c">${esc(f.label)}</figcaption>
           </figure>`;
 }
 
 function suppliedBlock(imgs) {
   if (!imgs?.length) return '';
   return imgs.map((img) => {
-    const pair = img.before && img.after;
-    const body = pair
+    /* ★ A WIPE IS A CLAIM THAT THE TWO FRAMES ARE THE SAME PLACE, and it must
+       not be made on a pair that is not. The first supplied set for the Nepal
+       event was two frames at different scales — 1078x652 against 1197x677,
+       one a wide valley with intact settlements, the other a close view of a
+       debris flow on a single slope. Sliding between those shows a DIFFERENT
+       PLACE, not a change over time, which is a false claim made in pictures:
+       the easiest kind to make by accident and the hardest for a reader to
+       catch.
+
+       So `registered` gates the slider. True, and the two are shown as a wipe
+       with dates. Absent or false, they are shown as separate captioned views
+       and the caption says in as many words that they are two frames of the
+       same event rather than one frame twice. */
+    const wipe = img.registered && img.before && img.after;
+    const body = wipe
       ? `      <div class="as-cmp" data-cmp>
         <img class="as-cmp-b" src="${esc(img.before)}" alt="${esc(`The valley before the event: ${img.shows || ''}`)}"${imgDim(img.before)} loading="lazy" decoding="async">
         <div class="as-cmp-a" style="--x:50%">
@@ -692,19 +685,34 @@ function suppliedBlock(imgs) {
         <input class="as-cmp-r" type="range" min="0" max="100" value="50" step="1"
           aria-label="Reveal the after image. Left is before the event, right is after.">
       </div>`
-      : `      <div class="as-eo-two">${suppliedFigure(img, 'before')}${suppliedFigure(img, 'after')}</div>`;
+      : `      <div class="as-eo-two">
+${(img.frames || []).map((f) => `        ${suppliedFrame(f)}`).join('\n')}
+      </div>`;
+
+    /* ★ THE CAPTION IS THE FLOOR, and the copy standard names most of what
+       used to be here: "who provided or verified a number internally" and "the
+       exact date on which an internal figure was supplied or confirmed" are on
+       its list of things to cut. So the permission provenance is recorded in
+       the dossier, where a reviewer can find it, and not printed under the
+       picture.
+
+       WHAT STAYS IS ATTRIBUTION, which the same standard says to KEEP in the
+       Situations sections: Reuters holds the imagery and the report is linked.
+
+       AND THE "NOT A BEFORE AND AFTER" PARAGRAPH IS GONE BECAUSE THE LABELS DO
+       THAT JOB. They read "The valley" and "The debris field", not "Before" and
+       "After" — so the page makes no before/after claim that would need
+       explaining away. A structural fix beats a paragraph apologising for one. */
     return `${body}
-      <p class="cap as-eo-k">${img.place ? `<b>${esc(img.place)}.</b> ` : ''}${img.shows ? `${esc(img.shows)} ` : ''}${pair ? 'Drag to wipe between the two dates. ' : ''}
-        <b>${esc(img.credit || 'Supplied')}</b>${img.credit_url ? ` &mdash; <a class="lk" href="${esc(img.credit_url)}">the report this came from</a>` : ''}.
-        ${img.permission ? `Published here by permission: ${esc(img.permission.basis)}${img.permission.asserted_by ? `, confirmed by ${esc(img.permission.asserted_by)}` : ''}${img.permission.asserted_on ? ` on ${esc(img.permission.asserted_on)}` : ''}.` : ''}
-        ${img.published_by ? `Seen in <a class="lk" href="${esc(img.credit_url)}">${esc(img.published_by)}</a>&rsquo;s report.` : ''}</p>`;
+      <p class="cap as-eo-k">${img.place ? `<b>${esc(img.place)}.</b> ` : ''}
+        ${wipe ? 'Drag to wipe between the two dates. ' : ''}${esc(img.credit || 'Supplied')}${img.published_by ? `, via <a class="lk" href="${esc(img.credit_url)}">${esc(img.published_by)}</a>` : ''}.</p>`;
   }).join('\n');
 }
 
 export function eoBand(e, imagery) {
   const supplied = suppliedBlock(imagery?.supplied);
   const head = opener('eo', 'What the satellite sees', supplied
-    ? 'The high-resolution before-and-after, published by permission, and beneath it the public NASA frames this site fetches for itself.'
+    ? 'Close views of the affected valley, published by permission, and beneath them the public NASA frames this site fetches for itself.'
     : 'Imagery published here, not linked to. The same public NASA layers a newsroom would use, over the region the reporting names, on the dates either side of the event.');
 
   if (!imagery || (!imagery.before && !imagery.after && !imagery.latest)) {
@@ -1503,8 +1511,6 @@ a.as-src-t:hover{color:var(--mustard-2)}
   rgba(11,11,9,.80) 0%,rgba(11,11,9,.66) 62%,rgba(11,11,9,.28) 100%)}
 .as-pic-k{color:var(--fg-2);margin:0 0 .5em}
 .as-pic-h{max-width:22ch}
-.as-pic-c{padding-top:clamp(12px,1.4vw,18px)}
-.as-pic-c .cap{max-width:74ch}
 
 /* ── (n) THE REVISION OF 28 AUGUST: place line, cascade, exposure, and the
       figure that sits under a cause ─────────────────────────────────────── */
