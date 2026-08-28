@@ -60,15 +60,18 @@ const HAZARD_LABEL = {
   landslide: 'Landslide', cyclone: 'Cyclone', extreme_rain: 'Extreme rainfall',
 };
 
-/* TIME IN THE MARKUP IS ABSOLUTE — the rule the page this replaces established
-   and the one thing about it that was exactly right. A relative age written
-   into committed HTML makes the file's bytes move every minute, which turns
-   the repository's own "the tree moved" gate permanently red. The browser
-   rewrites it to "6 minutes ago" and keeps the absolute in the title. */
-const stamp = (epochMs) => {
-  const abs = istStamp(epochMs);
-  return `<time class="ce-t" datetime="${new Date(epochMs).toISOString()}" title="${esc(abs)}">${esc(abs)}</time>`;
-};
+/* ── NO ABSOLUTE-INSTANT HELPER HERE ANY MORE ─────────────────────────────
+   `stamp()` lived here and rendered a <time class="ce-t"> carrying the absolute
+   instant, which AS_JS then rewrote to "2 hours ago" in the browser. Its only
+   caller was the OCCURRED / LAST UPDATED pair, removed 2026-08-28.
+
+   THE RULE IT EMBODIED STILL STANDS AND MUST NOT BE FORGOTTEN: a relative age
+   written into committed HTML makes the file's bytes move every minute, so
+   `generated-current.yml` — which regenerates every page and fails if the tree
+   moved — would go red and stay red. Anything reintroducing a human-readable
+   age to this page must commit the INSTANT and let the browser relativise it.
+   `istStamp()` from lib/climate-events.mjs is what the sources band uses, and
+   it is absolute. */
 
 const srcName = (sources, id) => {
   const s = sources[id];
@@ -115,7 +118,7 @@ function pill(st) {
    THE DISAGREEMENT IS ON THE CARD, NOT BEHIND IT. Where outlets differ, the
    range and the outlet count sit under the figure in the same glance. That is
    the part a newspaper cannot do and a dashboard can. */
-function metricCards(impact, sources) {
+function metricCards(impact, ownerFigures = []) {
   const rows = METRIC_ORDER
     .map((k) => [k, impact?.[k]])
     .filter(([, c]) => c && c.value != null);
@@ -136,25 +139,31 @@ ${rows.slice(0, 6).map(([k, c]) => {
     : `<span class="cap as-card-sp">${sp ? `${sp.outlets} source${sp.outlets === 1 ? '' : 's'}, agreeing` : 'one source'}</span>`}
         </div>`;
   }).join('\n')}
-      </div>
-${figureLedger(rows, sources)}`;
+${ownerFigures.length ? `        ${ownerFigures.map((f) => `<div class="as-card as-card-owner">
+          <span class="as-card-v">${f.hedge ? `<i class="as-hedge">${esc(f.hedge)}</i>` : '<i class="as-hedge" aria-hidden="true">&nbsp;</i>'}${esc(String(f.value))}</span>
+          <span class="lbl as-card-l">${esc(f.label)}</span>
+          <span class="as-card-st as-st-estimate">${esc(CLAIM_STATUS[f.status]?.label || 'Reported')}</span>
+          <span class="cap as-card-sp">${esc(f.source_name)}</span>
+        </div>`).join('\n        ')}` : ''}
+      </div>`;
 }
 
-/** Every reading behind every card, with the exact words it was read out of.
- *  This is the audit trail, and it is one click rather than a page of prose. */
-function figureLedger(rows, sources) {
-  const body = rows.map(([k, c]) => `<p class="lbl as-led-h">${esc(c.label || METRIC_LABEL[k] || k)}</p>
-          <ul class="as-led">
-            ${(c.readings || []).map((r) => `<li><b>${withHedge(r.value, r.hedge)}</b>
-              <span class="cap">${srcName(sources, r.source) || esc(r.publisher || '')}${r.matched ? ` &mdash; &ldquo;${esc(r.matched)}&rdquo;` : ''}</span></li>`).join('\n            ')}
-          </ul>`).join('\n          ');
-  return disclose('Every figure, and the words it was read out of',
-    `<p class="as-led-p">No number on this page is this site&rsquo;s own. Each one was read out of a
-        published headline and is printed here beside that headline&rsquo;s own wording, so a figure and
-        the sentence it came from can be checked against each other. Where outlets disagree, all of
-        them are below &mdash; nothing is averaged and nothing is reconciled.</p>
-          ${body}`);
-}
+/* ── WHAT USED TO BE HERE: THE FIGURE LEDGER ──────────────────────────────
+   A `<details>` under the cards listing every outlet's reading beside the exact
+   words it was quoted from — the audit trail for "where did 547 come from".
+   Removed on the owner's instruction, 2026-08-28, along with the timestamp pair
+   and the quoted lede.
+
+   ★ THE PROVENANCE IS NOT LOST, AND THAT IS WHY THIS IS SAFE TO REMOVE.
+   Each card still carries its confidence word and, where outlets disagree, the
+   range and the number of sources ("Outlets report 160-547 · 5 sources"). Every
+   contributing outlet is still in `impact.<metric>.source` on the dossier and
+   still listed, linked, in the sources band at the foot of the page. What went
+   is the per-outlet breakdown as a reading-flow element, not the attribution.
+
+   IF IT COMES BACK, it belongs in the sources band's disclosure rather than
+   under the hero: that band is already the page's answer to "who says so", and
+   the hero's job is the figures. */
 
 /* ── THE READINGS STRIP ───────────────────────────────────────────────────
    THE SAME COMPONENT AIR AND YAMUNA USE, deliberately down to the class
@@ -191,54 +200,33 @@ export function heroBand(e, ctx, imagery, { crumb }) {
   const hazard = HAZARD_LABEL[e.hazard] || e.hazard;
   const name = eventName(e);
   const impact = e.impact || {};
-  const S = e.sourceIndex;
+
+  /* WHERE AND WHEN, AS PRECISELY AS ANYONE HAS SAID. The feeds carry only the
+     country; `location_detail` and `occurred_detail` are the precision a person
+     added, and they are in EDITOR_OWNED so a re-detection cannot rebuild over
+     them. Printed on one line under the heading rather than as two cards — the
+     pair of cards that used to be here said the same thing twice and cost the
+     first figure its place above the fold on a phone. */
+  const where = e.location_detail || e.location.text;
+  const when = e.occurred_detail || istStamp(e.occurred.epochMs).replace(/^\d\d:\d\d IST, /, '');
 
   return `    <div class="wrap as-hero">
 ${crumb}
       <div class="as-head">
         <p class="lbl as-kicker">${esc(TYPE_LABEL)}
-          <i class="as-sep">&middot;</i>${esc(e.location.text)}
           <i class="as-sep">&middot;</i>${esc(hazard)}</p>
         ${pill(st)}
       </div>
 
       <h1 class="d1 as-h1">${esc(name)}</h1>
 
-${metricCards(impact, S)}
+      <p class="as-place"><b>${esc(where)}</b>
+        <i class="as-sep">&middot;</i>${esc(when)}
+        ${e.mechanism_stated ? `<span class="as-place-m">${esc(e.mechanism_stated)}</span>` : ''}</p>
 
-      <!-- WHEN, AFTER WHAT AND HOW BAD. MEASURED AT 375x635, WHICH IS AN
-           IPHONE-CLASS VISIBLE HEIGHT AND NOT THE 812 LOGICAL ONE. With the
-           two timestamp cards above the figures, the first screen of this page
-           on a phone ended on "LAST UPDATED / 89 minutes ago" and not one
-           casualty number was above the fold — on a page whose entire purpose
-           is that the numbers are the first thing you see. The order is now
-           what the brief's own principle says: what, how bad, then when. It
-           reads correctly at 1440 too, so this is one order rather than a
-           breakpoint. -->
-      <div class="as-when">
-        <div class="as-when-c">
-          <span class="lbl as-when-l">Occurred</span>
-          <span class="as-when-v">${stamp(e.occurred.epochMs)}</span>
-          <span class="cap as-when-n">${e.occurred.precision === 'reported'
-    ? 'The hour the first report carried, not a verified onset time.'
-    : 'As dated by the source.'}</span>
-        </div>
-        <div class="as-when-c">
-          <span class="lbl as-when-l">Last updated</span>
-          <span class="as-when-v">${stamp(e.last_updated.epochMs)}</span>
-          <span class="cap as-when-n">Feeds re-read every 30 minutes. This moves only when the evidence does.</span>
-        </div>
-      </div>
-${Object.keys(impact).length ? '' : `      <p class="p-hole">No casualty or damage figure has been reported in a form this page can
-        attribute yet. ${e.corroboration.independent_publishers} publishers are carrying the event;
-        none of their headlines states a count. <a class="lk" href="#sources">The reporting is here</a>.</p>`}
+${metricCards(impact, e.owner_figures)}
 
-      <p class="as-lede">${esc(e.headline)}
-        <span class="cap as-lede-s">&mdash; ${srcName(S, Object.keys(S)[0]) || 'reported'}, the most corroborated
-        headline of ${n0(e.corroboration.items_read || e.corroboration.independent_publishers)} read.
-        This site writes no summary of a live disaster; it prints the reporting and names it.</span></p>
-
-      <p style="margin:0"><a class="act" href="#where">Where it happened ${ARROW}</a></p>
+      <p style="margin:0"><a class="act" href="#climate">Why this keeps happening ${ARROW}</a></p>
     </div>`;
 }
 
@@ -260,7 +248,13 @@ ${Object.keys(impact).length ? '' : `      <p class="p-hole">No casualty or dama
 const ORIGIN_RING = 13;
 
 function mapSvg(e, ctx, imagery, coordsFor) {
-  const origin = coordsFor(e.location.text);
+  /* ★ THE EVENT'S OWN COORDINATES WIN, and getting this wrong drew the wrong
+     river. The dossier's place is "Nepal", whose centroid sits 250 km from the
+     Bhote Koshi in a different catchment — so the map centred there and then
+     took the HAZARD's generic downstream list, which runs to Assam and north
+     Bengal. Those are the Brahmaputra and the Teesta. They are not downstream
+     of this event and never were. */
+  const origin = e.coords || coordsFor(e.location.text);
   if (!origin) return null;
 
   /* ★ THE MAP PLOTS `downstream`, NOT `india_path`, AND THE DIFFERENCE IS WHY
@@ -273,7 +267,7 @@ function mapSvg(e, ctx, imagery, coordsFor) {
      one. `downstream` is the same journey written as places.
 
      A place with no coordinate is DROPPED rather than approximated. */
-  const located = (ctx?.downstream || [])
+  const located = (e.downstream || ctx?.downstream || [])
     .map((label) => {
       const c = coordsFor(label);
       return c ? { label, lat: c[0], lon: c[1] } : null;
@@ -287,7 +281,8 @@ function mapSvg(e, ctx, imagery, coordsFor) {
     .filter((p, i, all) => !all.slice(0, i).some((q) =>
       Math.abs(q.lat - p.lat) < 0.5 && Math.abs(q.lon - p.lon) < 0.5));
 
-  const pts = [{ label: e.location.text, lat: origin[0], lon: origin[1], origin: true }, ...located];
+  const originLabel = (e.location_detail || e.location.text).split(/[,–—]/)[0].trim();
+  const pts = [{ label: originLabel, lat: origin[0], lon: origin[1], origin: true }, ...located];
   const lats = pts.map((p) => p.lat); const lons = pts.map((p) => p.lon);
   /* ★ THE SATELLITE FRAME IS PART OF THE EXTENT. It is drawn on this map, and
      the first version sized the map from the POINTS alone — so the imagery box,
@@ -339,7 +334,7 @@ function mapSvg(e, ctx, imagery, coordsFor) {
      rather than competing with the downstream ones. */
   const placed = [{
     x: X(pts[0].lon) + ORIGIN_RING + 7, y: Y(pts[0].lat) - LH / 2,
-    w: e.location.text.length * 6.2, h: LH,
+    w: originLabel.length * 6.2, h: LH,
   }];
   const overlaps = (b) => placed.some((o) =>
     b.x < o.x + o.w && b.x + b.w > o.x && b.y < o.y + o.h && b.y + b.h > o.y);
@@ -373,27 +368,42 @@ function mapSvg(e, ctx, imagery, coordsFor) {
             ${frame}
             ${path}
             ${dots}
-            <circle cx="${X(pts[0].lon).toFixed(1)}" cy="${Y(pts[0].lat).toFixed(1)}" r="${ORIGIN_RING}" class="as-m-ring"><title>${esc(e.location.text)} — the region named in the reporting, not a located event site</title></circle>
+            <circle cx="${X(pts[0].lon).toFixed(1)}" cy="${Y(pts[0].lat).toFixed(1)}" r="${e.coords ? 6 : ORIGIN_RING}" class="as-m-ring"><title>${esc(e.location_detail || e.location.text)}</title></circle>
             <circle cx="${X(pts[0].lon).toFixed(1)}" cy="${Y(pts[0].lat).toFixed(1)}" r="2.5" class="as-m-ringc"/>
-            <text x="${(X(pts[0].lon) + ORIGIN_RING + 7).toFixed(1)}" y="${(Y(pts[0].lat) + 4).toFixed(1)}" class="as-m-t as-m-t-o">${esc(e.location.text)}</text>
+            <text x="${(X(pts[0].lon) + (e.coords ? 6 : ORIGIN_RING) + 7).toFixed(1)}" y="${(Y(pts[0].lat) + 4).toFixed(1)}" class="as-m-t as-m-t-o">${esc(originLabel)}</text>
             ${labels}
           </svg>
           <p class="p-legend p-map-lg"><span class="lbl"><i class="as-sw as-sw-o"></i>Region named in the reporting</span><span class="lbl"><i class="p-sw as-sw-d"></i>Downstream, in the path</span>${frame ? '<span class="lbl"><i class="as-sw as-sw-b"></i>The satellite frame below</span>' : ''}</p>
-          <p class="cap">Frame ${n0(kmWide)} km wide. The ring is an AREA, not a point &mdash;
-            this page knows the region the reporting names and does not know where inside it the
-            event was. Positions of the downstream places are true.</p>`;
+          <p class="cap">Frame ${n0(kmWide)} km wide.
+            ${e.coords
+    ? `The marked point is ${esc(e.location_detail || e.location.text)}${e.coords_note ? ` &mdash; ${esc(e.coords_note.replace(/^[A-Z]/, (c) => c.toLowerCase()))}` : ''}`
+    : 'The ring is an AREA, not a point: this page knows the region the reporting names and not where inside it the event was'}.
+            ${e.downstream_note ? esc(e.downstream_note) : 'Positions of the downstream places are true.'}</p>`;
 }
 
-/** ORIGIN → DIRECT → INDIRECT, the compact hierarchy the brief asks for. It is
- *  a separate element from the map on purpose: the map answers "where", this
- *  answers "and then where does it go", and one diagram doing both does
- *  neither well. */
+/* ── ORIGIN → DOWNSTREAM, FROM THE EVENT'S OWN RIVER ─────────────────────
+   ★ THIS CONTRADICTED THE MAP BESIDE IT. The chain was built from the hazard
+   pack's `india_path`, a generic GLOF sequence ending "Bihar, Assam, north
+   Bengal" — so the map said in its caption that Assam and Bengal are a
+   different basin and not downstream of this event, while the diagram directly
+   under it listed them as the last step. One of the two had to go, and the one
+   that was wrong was the generic one.
+
+   It is now the event's own `downstream`, which an editor set, with the roles
+   the brief asks for laid over it. A pack with no event-specific river falls
+   back to `india_path` — thinner, and honest about being the hazard's shape
+   rather than this event's. */
 function chainDiagram(e, ctx) {
-  const chain = ctx?.india_path?.length ? ctx.india_path : [e.location.text, 'India, downstream'];
-  const ROLE = ['Origin', 'Direct impact', 'In the path', 'Downstream', 'Under watch'];
+  const own = e.downstream || [];
+  const chain = own.length
+    ? [e.location_detail || e.location.text, ...own]
+    : (ctx?.india_path?.length ? ctx.india_path : [e.location.text, 'India, downstream']);
+  const ROLE = own.length
+    ? ['Where it started', 'The river it entered', 'Downstream', 'Downstream', 'Reaches India']
+    : ['Origin', 'Direct impact', 'In the path', 'Downstream', 'Under watch'];
   return `      <ol class="as-chain">
 ${chain.map((node, i) => `        <li class="as-chain-n${i === 0 ? ' is-start' : ''}${i === chain.length - 1 ? ' is-end' : ''}">
-          <span class="lbl as-chain-r">${esc(ROLE[Math.min(i, ROLE.length - 1)])}</span>
+          <span class="lbl as-chain-r">${esc(i === chain.length - 1 && own.length ? 'Reaches India' : ROLE[Math.min(i, ROLE.length - 1)])}</span>
           <span class="as-chain-t">${esc(node)}</span>
         </li>`).join('\n')}
       </ol>`;
@@ -401,7 +411,7 @@ ${chain.map((node, i) => `        <li class="as-chain-n${i === 0 ? ' is-start' :
 
 export function whereBand(e, ctx, imagery, coordsFor) {
   const map = mapSvg(e, ctx, imagery, coordsFor);
-  return `${opener('where', 'Where', `${esc(e.location.text)} &mdash; and every place the water reaches after it. `
+  return `${opener('where', 'Where', `${esc(e.location_detail || e.location.text)} &mdash; and the river it runs into. `
     + 'Positions are real coordinates; the extent of the event is not known.')}
     <div class="wrap">
       <div class="p-map">
@@ -491,15 +501,23 @@ export function causeBand(e, ctx) {
   const causes = ctx?.causes || [];
   if (!causes.length) return null;
   const set = e.cause_status || {};
+  /* ★ EACH CAUSE CARRIES THE FIGURE THAT MAKES IT PLAUSIBLE, on the owner's
+     instruction to link the numbers to the causes. A "likely" or "under
+     investigation" word is an assertion; the same word with a counted thing
+     under it is an argument. The link is declared in the pack — a figure's
+     `supports` names a cause id — so neither side can drift. */
+  const supporting = (id) => (ctx.figures || [])
+    .find((f) => f.supports === id && f.value != null);
   const rows = causes
-    .map((c) => ({ ...c, status: set[c.id] || c.default_status || 'under_investigation' }))
+    .map((c) => ({ ...c, status: set[c.id] || c.default_status || 'under_investigation',
+      figure: supporting(c.id) }))
     .sort((a, b) => (CAUSE_STATUS[b.status]?.rank ?? 0) - (CAUSE_STATUS[a.status]?.rank ?? 0));
 
   const anyConfirmed = rows.some((r) => r.status === 'confirmed');
 
   return `${opener('cause', 'What caused it', anyConfirmed
     ? 'One mechanism has been established. The others remain candidates.'
-    : `Candidate mechanisms for a ${esc((HAZARD_NAME[e.hazard] || e.hazard).toLowerCase())}, each with what is actually known about it here. Nothing on this list is established for this event.`)}
+    : `Candidate mechanisms, each with the evidence word it has actually earned and, where one exists, the counted thing that makes it plausible. Nothing on this list is established for this event.`)}
     <div class="wrap">
       <div class="as-causes">
 ${rows.slice(0, 5).map((r) => {
@@ -508,6 +526,11 @@ ${rows.slice(0, 5).map((r) => {
           <span class="as-cause-st">${esc(st.label)}</span>
           <span class="as-cause-t">${esc(r.label)}</span>
           ${r.short ? `<span class="cap as-cause-n">${esc(r.short)}</span>` : ''}
+          ${r.figure ? `<span class="as-cause-f">
+            <b>${esc(String(r.figure.value))}${r.figure.unit ? ` ${esc(r.figure.unit)}` : ''}</b>
+            <i>${esc(r.figure.label)}</i>
+            <span class="cap">${srcNames(ctx.sourceIndex, r.figure.source)}</span>
+          </span>` : ''}
         </div>`;
   }).join('\n')}
       </div>
@@ -611,8 +634,14 @@ ${tabs('Satellite imagery', panels)}
 /* ═══ F. THE TIMELINE ═════════════════════════════════════════════════════ */
 export function timelineBand(e) {
   const S = e.sourceIndex;
-  const items = (e.timeline || []).slice(0, 8);
-  if (!items.length) return null;
+  /* ★ ONE ENTRY IS NOT A TIMELINE, AND THE ONE ENTRY WAS THE DETECTOR'S OWN
+     FILLER: "First reported in the sources below." A band with a heading, a
+     lead, a rule and a single row saying nothing is the kind of empty section
+     the owner asked to have removed. Two real developments or the band does not
+     exist \u2014 and the sources band already says when the feeds were last read. */
+  const FILLER = /^first reported in the sources below\.?$/i;
+  const items = (e.timeline || []).filter((t) => t.what && !FILLER.test(t.what.trim())).slice(0, 8);
+  if (items.length < 2) return null;
   const fmt = (w) => {
     const ms = Date.parse(w || '');
     if (!Number.isFinite(ms)) return esc(String(w || ''));
@@ -782,13 +811,26 @@ ${later.slice(0, 5).map((w) => row(w, null, null)).join('\n')}
 
 /* ═══ J. THE CLIMATE SIGNAL ═══════════════════════════════════════════════ */
 export function climateBand(e, ctx) {
-  const figures = (ctx?.figures || []).filter((f) => f?.value != null);
+  const all = (ctx?.figures || []).filter((f) => f?.value != null);
+  /* ★ ONLY THE `scale` FIGURES ARE CARDS HERE. The owner's instruction was to
+     keep every one of these numbers and spread them across sections rather
+     than stack sixteen cards in one band: the size of the risk argues here, the
+     mechanism figures argue beside the CAUSE they make plausible, and the
+     Indian exposure figures argue in the India band. Every figure, band-tagged
+     or not, is still in this band's disclosure. */
+  const figures = all.filter((f) => f.band === 'scale');
   if (!figures.length) return null;
   const S = ctx.sourceIndex;
-  return `${opener('climate', 'Is this a climate signal', 'What is established about this KIND of event, at scale, with citations. Read the two statements at the foot of this band together; neither is complete on its own.')}
+  const cascade = ctx.cascade || [];
+
+  /* ★ THIS BAND LEADS THE PAGE NOW, on the owner's instruction. It is the one
+     section that answers why a Nepal event is on an Indian site at all, and it
+     does it with counted things rather than with an argument. */
+  return `${opener('climate', 'The numbers we cannot ignore',
+    'The geography of this risk is already mapped. What follows is what has been counted, and by whom.')}
     <div class="wrap">
       <div class="as-sig">
-${figures.slice(0, 6).map((f) => {
+${figures.map((f) => {
     const st = CLAIM_STATUS[f.status] || CLAIM_STATUS.preliminary;
     return `        <div class="as-sig-c">
           <span class="as-sig-v">${esc(String(f.value))}${f.unit ? `<i>${esc(f.unit)}</i>` : ''}</span>
@@ -797,23 +839,36 @@ ${figures.slice(0, 6).map((f) => {
         </div>`;
   }).join('\n')}
       </div>
+      <p class="cap as-sig-n">The danger is not a distant hypothetical. The question is whether
+        monitoring, planning and construction follow what is already known.</p>
+
+${cascade.length ? `      <p class="lbl as-sub">And they are not separate hazards. This is one chain.</p>
+      <ol class="as-casc">
+${cascade.map((step, i) => `        <li class="as-casc-s${i === cascade.length - 1 ? ' is-end' : ''}">${esc(step)}</li>`).join('\n')}
+      </ol>
+      <p class="cap as-casc-n">Flood, landslide, cloudburst, avalanche, outburst &mdash; described one
+        at a time, they look like separate accidents. They are a sequence, and it is why assessment
+        project by project cannot see what arrives catchment by catchment.</p>` : ''}
+
       <div class="as-attr">
         <div class="as-attr-c as-attr-can">
           <p class="lbl as-attr-h">What science can say</p>
-          <p class="as-attr-t">${esc(ctx.summary_short || (ctx.mechanism?.assessment || '').split('. ').slice(0, 2).join('. ') + '.')}</p>
+          <p class="as-attr-t">${esc(ctx.summary_short || '')}</p>
         </div>
         <div class="as-attr-c as-attr-cant">
           <p class="lbl as-attr-h">What has not been attributed</p>
-          <p class="as-attr-t">Nobody has established that climate change caused THIS event. Single-event
-            attribution takes months of modelling and for a glacial or landslide-driven flood it is
-            often not possible at all. A rising hazard across a region is not a finding about one
-            flood in it, and this page will not print one as though it were.</p>
+          <p class="as-attr-t">Nobody has established that climate change caused THIS event.
+            Single-event attribution takes months, and for a glacier or rock collapse it is often not
+            possible at all. A rising hazard across a region is not a finding about one flood in it.</p>
         </div>
       </div>
-${disclose(`The full standing pack for this hazard (${(ctx.sources || []).length} sources)`,
+${disclose(`All ${all.length} standing figures for this hazard, and their sources`,
     `${ctx.summary ? `<p>${esc(ctx.summary)}</p>` : ''}
-        ${figures.map((f) => `<p><b>${esc(String(f.value))}${f.unit ? ` ${esc(f.unit)}` : ''} &mdash; ${esc(f.label)}.</b>
+        ${all.map((f) => `<p><b>${esc(String(f.value))}${f.unit ? ` ${esc(f.unit)}` : ''} &mdash; ${esc(f.label)}.</b>
           ${esc(f.note || '')} <span class="cap">${srcNames(S, f.source, 4)}</span></p>`).join('\n        ')}
+        <p class="cap"><b>Some of these are named but not linked.</b> Where a figure came from
+          Swechha&rsquo;s own briefing, the originating publication is named and this site has not
+          opened the primary document &mdash; so no link is given and none is invented.</p>
         ${(ctx.withheld || []).length ? `<p class="lbl as-how-h">Figures deliberately not published here</p>
         <ul>${(ctx.withheld || []).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}`)}
     </div>`;
@@ -823,20 +878,23 @@ ${disclose(`The full standing pack for this hazard (${(ctx.sources || []).length
 export function indiaBand(e, ctx) {
   const S = e.sourceIndex;
   const impact = e.impact || {};
+  const corridors = ctx?.india_corridors || [];
+  const exposure = (ctx?.figures || []).filter((f) => f.band === 'india' && f.value != null);
+
   /* CONFIRMED vs UNDER WATCH, and the split is the whole band. An Indians-
-     missing count reported by the Ministry of External Affairs IS a confirmed
-     Indian impact; a river that could rise is not. Mixing them is the generic
-     paragraph the brief specifically rejects. */
+     missing count the Ministry of External Affairs gave IS a confirmed Indian
+     impact; a valley with nine dangerous lakes above it is not. Mixing them is
+     the generic "Himalayan rivers can affect India" paragraph this band was
+     rebuilt to replace. */
   const confirmed = METRIC_ORDER
     .filter((k) => k.startsWith('indians_'))
     .map((k) => [k, impact[k]])
     .filter(([, c]) => c?.value != null);
 
-  if (!confirmed.length && !ctx?.india_watch && !e.india_relevance_note) return null;
+  if (!confirmed.length && !corridors.length && !ctx?.india_watch) return null;
 
-  return `${opener('india', 'India', e.tier === 1
-    ? 'This event is in India. What follows is what has been counted and what is still being watched.'
-    : `${esc(e.location.text)} is outside India. This band is why an Indian site is carrying it, and it separates what has been counted from what has not.`)}
+  return `${opener('india', 'The alarm for India',
+    'Nepal is not somebody else\u2019s disaster. The triggers differ; the vulnerability is the same, and it is already measured.')}
     <div class="wrap">
       <div class="as-ind">
         <div class="as-ind-half">
@@ -851,16 +909,29 @@ ${confirmed.map(([k, c]) => {
               <span class="cap as-card-sp">${srcNames(S, c.source)}</span>
             </div>`;
   }).join('\n')}
-          </div>` : `          <p class="p-hole">No Indian casualty, evacuation or damage figure has been
-            reported in a form this page can attribute.</p>`}
+          </div>` : `          <p class="p-hole">No Indian casualty or evacuation figure has been reported
+            in a form this page can attribute.</p>`}
         </div>
         <div class="as-ind-half">
-          <p class="lbl as-ind-h as-ind-h-w">Potential, and under watch</p>
-          ${e.india_relevance_note ? `<p class="body as-ind-t">${esc(e.india_relevance_note)}</p>` : ''}
-          ${ctx?.india_watch ? `<p class="body as-ind-t"><b>Downstream:</b> ${esc(ctx.india_watch)}</p>` : ''}
-          ${ctx?.india_relevance ? `<p class="cap">${esc(ctx.india_relevance)}</p>` : ''}
-          <p class="cap"><b>This column is a mechanism, not an outcome.</b> These are the basins and
-            districts the hazard reaches when it reaches India. Nothing here is a report that it has.</p>
+          <p class="lbl as-ind-h as-ind-h-w">What is already counted above India</p>
+${exposure.length ? `          <div class="as-expo">
+${exposure.map((f) => `            <div class="as-expo-r">
+              <span class="as-expo-v">${esc(String(f.value))}</span>
+              <span class="as-expo-l">${esc(f.label)}</span>
+              <span class="cap as-expo-s">${srcNames(ctx.sourceIndex, f.source)}</span>
+            </div>`).join('\n')}
+          </div>` : ''}
+          <p class="lbl as-sub">The corridors this maps onto</p>
+${corridors.length ? `          <div class="as-corr">
+${corridors.map((c) => `            <div class="as-corr-r">
+              <span class="as-corr-n">${esc(c.name)}</span>
+              <span class="as-corr-w">${esc(c.why)}</span>
+              ${c.source ? `<span class="cap as-corr-s">${srcNames(ctx.sourceIndex, c.source)}</span>` : ''}
+            </div>`).join('\n')}
+          </div>` : ''}
+          ${ctx?.india_watch ? `<p class="cap as-ind-t"><b>Downstream of this event:</b> ${esc(ctx.india_watch)}</p>` : ''}
+          <p class="cap"><b>This column is exposure, not an outcome.</b> Nothing in it is a report
+            that anything has happened in India. It is where the same hazard would arrive.</p>
         </div>
       </div>
     </div>`;
@@ -923,69 +994,16 @@ ${(e.uncertain || []).map((u) => `          <li>${esc(u)}</li>`).join('\n')}
     </div>`;
 }
 
-/* ═══ G. VIMLENDU, ON THE RECORD ══════════════════════════════════════════
-   ★ WHY THIS BAND IS LINKS AND NOT PROSE, and it is the same rule as
-   everywhere else on this page pointed at a person instead of a number.
-   Swechha's director is on television and on X about most of these events.
-   The useful thing is therefore to SHOW THAT and hand the reader the actual
-   item; the harmful thing would be to compose a paragraph of his position on a
-   disaster he has not yet commented on, in his name, from a generator. So this
-   band prints titles the platforms published, verbatim, each linked, and says
-   nothing in his voice at all.
+/* ── WHAT USED TO BE HERE: "WHAT SWECHHA SAYS" ────────────────────────────
+   A band carrying Vimlendu Jha's own published items on this hazard — the
+   Dharali videos, the Vaishno Devi interview, the TEDx talk — each linked, none
+   paraphrased. Removed on the owner's instruction, 2026-08-28.
 
-   ★ IT IS PLACED HERE, BEFORE THE HISTORY AND THE SCIENCE, ON PURPOSE.
-   The instruction was a prominent section. Above the fold would displace the
-   numbers, which are the thing a first-time visitor came for; below the
-   precedents and the climate pack it would be the ninth screen. Directly after
-   the timeline is the first point at which a reader knows what happened and is
-   ready to hear who is saying what about it.
-
-   ★ MATCHED BY HAZARD, AND IT DEGRADES BY SAYING SO.
-   An event whose hazard has nothing tagged for it falls back to the general
-   items and labels them as the wider record rather than passing them off as
-   comment on this event. */
-export function voiceBand(e, voice) {
-  if (!voice?.items?.length) return null;
-  const onHazard = voice.items.filter((i) => (i.hazards || []).includes(e.hazard));
-  const general = voice.items.filter((i) => (i.hazards || []).includes('general'));
-  const items = (onHazard.length ? onHazard : general).slice(0, 4);
-  if (!items.length) return null;
-  const specific = onHazard.length > 0;
-
-  const KIND = {
-    tv: 'Television', video: 'Video', talk: 'Talk', post: 'Post', essay: 'Written',
-  };
-
-  const person = voice.person || {};
-  const channels = (voice.channels || []);
-
-  return `${opener('voice', 'What Swechha says', specific
-    ? `Vimlendu Jha has been on the record on this hazard before. These are the items themselves, not a summary of them &mdash; this page does not write anybody&rsquo;s opinion for them.`
-    : `Vimlendu Jha on the wider subject. Nothing here is comment on this specific event, and it is not presented as though it were.`)}
-    <div class="wrap">
-      <div class="as-voice">
-        <div class="as-voice-who">
-          ${person.photo ? `<img class="as-voice-p" src="${esc(person.photo)}" alt="${esc(person.name)}"${imgDim(person.photo)} loading="lazy" decoding="async">` : ''}
-          <p class="as-voice-n">${esc(person.name || 'Vimlendu Jha')}</p>
-          <p class="cap as-voice-r">${esc(person.role || '')}</p>
-          ${person.profile ? `<p style="margin:0"><a class="act as-voice-a" href="${esc(person.profile)}">Who he is ${ARROW}</a></p>` : ''}
-          <p class="lbl as-voice-ch-h">Where he posts</p>
-${channels.map((c) => `          <p class="as-voice-ch"><a class="lk" href="${esc(c.url)}">${esc(c.label)}</a>
-            <span class="cap">${esc(c.handle)}${c.whose === 'organisation' ? ' &middot; the organisation&rsquo;s account' : ''}</span></p>`).join('\n')}
-        </div>
-        <div class="as-voice-list">
-${items.map((i) => `          <a class="as-voice-i" href="${esc(i.url)}">
-            <span class="lbl as-voice-k">${esc(KIND[i.kind] || 'Item')}${i.where ? ` <i class="as-sep">&middot;</i>${esc(i.where)}` : ''}${i.date ? ` <i class="as-sep">&middot;</i>${esc(i.date)}` : ''}</span>
-            <span class="as-voice-t">${esc(i.title)}</span>
-            ${i.note ? `<span class="cap as-voice-nt">${esc(i.note)}</span>` : ''}
-          </a>`).join('\n')}
-          <p class="cap as-voice-c">${specific
-    ? 'Titles are the platforms&rsquo; own, verbatim. What he said is in the item; this page does not paraphrase it.'
-    : 'These are on the subject, not on this event. When there is comment on this event it appears here in its place.'}</p>
-        </div>
-      </div>
-    </div>`;
-}
+   THE REGISTER IS KEPT: data/media/vimlendu-voice.json still holds the person,
+   the channels (@vimlendu and @swechhaindia) and the eight verified items with
+   their hazard tags. Nothing was deleted from it, so restoring the band is one
+   import and one entry in the band table of
+   scripts/build-climate-disaster-pages.mjs. */
 
 /* ═══ CSS ═════════════════════════════════════════════════════════════════
    ONLY WHAT HAS NO PRECEDENT. Everything this page can borrow, it borrows:
@@ -1028,14 +1046,6 @@ export const AS_CSS = `
 
 /* OCCURRED AND LAST UPDATED, side by side, because the gap between them is
    itself information on a live page. */
-.as-when{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));
-  gap:1px;background:var(--hair-2);margin:clamp(14px,1.6vw,22px) 0 clamp(18px,2vw,28px)}
-.as-when-c{background:var(--ground);padding:13px 15px}
-.as-when-l{display:block;color:var(--fg-3);margin:0 0 5px}
-.as-when-v{display:block;font-size:clamp(15px,1.2vw,18px);color:var(--fg);
-  font-variant-numeric:tabular-nums}
-.as-when-n{display:block;margin-top:5px;max-width:44ch}
-.ce-t{font-variant-numeric:tabular-nums}
 
 /* ── (b) THE METRIC CARDS. The page's whole reason for existing. ───────── */
 .as-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));
@@ -1065,19 +1075,8 @@ export const AS_CSS = `
 .as-st-media{color:var(--fg-3)}
 .as-st-prelim{color:var(--mustard-2)}
 
-.as-lede{font-size:clamp(15px,1.15vw,18px);line-height:1.55;color:var(--fg-2);
-  max-width:58ch;margin:clamp(16px,1.8vw,24px) 0 clamp(16px,1.8vw,24px);
-  border-left:2px solid var(--hair);padding-left:15px}
-.as-lede-s{display:block;margin-top:.6em;color:var(--fg-3);font-size:13.5px;line-height:1.45}
 
 /* THE LEDGER behind the cards. */
-.as-led-p{max-width:62ch}
-.as-led-h{color:var(--fg-2);margin:1.2em 0 .4em}
-.as-led{list-style:none;padding:0;margin:0}
-.as-led li{padding:5px 0;border-bottom:1px solid var(--hair-2);
-  display:flex;gap:12px;flex-wrap:wrap;align-items:baseline}
-.as-led li b{font-variant-numeric:tabular-nums;min-width:5.5em;color:var(--fg)}
-.as-led li .cap{flex:1 1 20ch}
 
 /* ── (c) WHERE. The map borrows .p-map/.p-map-s; only the marks are new. ─ */
 .as-map{max-width:560px}
@@ -1287,27 +1286,75 @@ a.as-src-t:hover{color:var(--mustard-2)}
 .as-unc li{margin-bottom:.6em;line-height:1.5;color:var(--fg-2)}
 .as-stamp{margin-top:clamp(16px,1.8vw,24px)}
 
+/* ── (n) THE REVISION OF 28 AUGUST: place line, cascade, exposure, and the
+      figure that sits under a cause ─────────────────────────────────────── */
+.as-place{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 4px;
+  font-size:clamp(14.5px,1.15vw,17.5px);line-height:1.5;color:var(--fg-2);
+  margin:0 0 clamp(18px,2vw,26px);max-width:70ch}
+.as-place b{color:var(--fg);font-weight:400}
+.as-place-m{display:block;width:100%;color:var(--fg-3);font-size:13.5px;margin-top:.35em}
+
+.as-card-owner .as-card-v{color:var(--fg)}
+.as-sig-n{max-width:62ch;margin:clamp(12px,1.4vw,18px) 0 clamp(20px,2.4vw,34px)}
+
+/* THE CASCADE. Numbered, because the argument is that it is a SEQUENCE — the
+   thing the page exists to say and the thing a bullet list would lose. */
+.as-casc{list-style:none;padding:0;margin:0 0 clamp(12px,1.4vw,18px);counter-reset:casc;
+  max-width:72ch}
+.as-casc-s{counter-increment:casc;position:relative;padding:9px 0 9px 44px;
+  border-top:1px solid var(--hair-2);font-size:clamp(14.5px,1.1vw,17px);line-height:1.4;
+  color:var(--fg)}
+.as-casc-s::before{content:counter(casc);position:absolute;left:0;top:9px;width:26px;
+  text-align:right;font-family:Archivo,system-ui,sans-serif;font-size:11px;letter-spacing:.06em;
+  color:var(--fg-3);font-variant-numeric:tabular-nums}
+.as-casc-s::after{content:"";position:absolute;left:31px;top:22px;bottom:-9px;width:1px;
+  background:var(--hair-2)}
+.as-casc-s:last-child::after{display:none}
+.as-casc-s.is-end{color:var(--red)}
+.as-casc-n{max-width:66ch;margin:0 0 clamp(20px,2.4vw,32px)}
+
+/* THE FIGURE UNDER A CAUSE. Set apart by a rule rather than a box: it is
+   evidence FOR the card it sits in, not a second card. */
+.as-cause-f{display:block;margin-top:11px;padding-top:10px;border-top:1px solid var(--hair-2)}
+.as-cause-f b{display:block;font-size:clamp(19px,1.7vw,25px);line-height:1;color:var(--fg);
+  font-variant-numeric:tabular-nums}
+.as-cause-f i{display:block;font-style:normal;font-size:12.5px;line-height:1.35;
+  color:var(--fg-2);margin-top:5px;max-width:26ch}
+.as-cause-f .cap{display:block;margin-top:4px}
+
+/* INDIAN EXPOSURE. A list of counted things, so rows and not cards. */
+.as-expo{display:flex;flex-direction:column;margin:0 0 clamp(16px,1.8vw,24px)}
+.as-expo-r{display:grid;grid-template-columns:minmax(0,5.2em) minmax(0,1fr);gap:2px 14px;
+  padding:9px 0;border-bottom:1px solid var(--hair-2);align-items:baseline}
+.as-expo-v{font-size:clamp(18px,1.5vw,23px);line-height:1;color:var(--red);
+  font-variant-numeric:tabular-nums}
+.as-expo-l{font-size:clamp(13.5px,1vw,15.5px);line-height:1.4;color:var(--fg)}
+.as-expo-s{grid-column:2}
+.paper .as-expo-v{color:var(--red-ink)}
+.paper .as-expo-l,.paper .as-casc-s,.paper .as-place b{color:var(--ink)}
+.paper .as-cause-f b{color:var(--ink)}
+.paper .as-cause-f i,.paper .as-place{color:var(--ink-2)}
+
 /* ── PAPER BANDS. Two of these bands sit on the light ground, and every
       token above that names a dark foreground has to flip. ───────────── */
-.paper .as-card,.paper .as-when-c,.paper .as-dmg-c,.paper .as-cause,.paper .as-prec,
+.paper .as-card,.paper .as-dmg-c,.paper .as-cause,.paper .as-prec,
 .paper .as-risk-r,.paper .as-sig-c,.paper .as-scount-c,.paper .as-voice-i,
 .paper .as-voice-c{background:var(--paper)}
-.paper .as-cards,.paper .as-when,.paper .as-dmg,.paper .as-causes,.paper .as-precs,
+.paper .as-cards,.paper .as-dmg,.paper .as-causes,.paper .as-precs,
 .paper .as-risk,.paper .as-sig,.paper .as-scount,.paper .as-voice-list{background:var(--rule-2)}
 .paper .as-card-v{color:var(--red-ink)}
 .paper .as-card-in .as-card-v,.paper .as-dmg-v,.paper .as-sig-v,.paper .as-scount-v,
-.paper .as-prec-p,.paper .as-cause-t,.paper .as-risk-t,.paper .as-tl-t,.paper .as-when-v,
+.paper .as-prec-p,.paper .as-cause-t,.paper .as-risk-t,.paper .as-tl-t,
 .paper .as-voice-t,.paper .as-voice-n,.paper .as-h1{color:var(--ink)}
 .paper .as-card-l,.paper .as-dmg-l,.paper .as-sig-l,.paper .as-scount-l,.paper .as-prec-l,
-.paper .as-attr-t,.paper .as-ind-t,.paper .as-lede,.paper .as-chain-t{color:var(--ink-2)}
+.paper .as-attr-t,.paper .as-ind-t,.paper .as-chain-t{color:var(--ink-2)}
 .paper .as-kicker,.paper .as-hedge,.paper .as-cause-st,.paper .as-risk-l,
-.paper .as-chain-r,.paper .as-when-l{color:var(--ink-3)}
+.paper .as-chain-r{color:var(--ink-3)}
 .paper .as-st-confirmed{color:var(--ink)}
 .paper .as-st-estimate{color:var(--ink-2)}
 .paper .as-st-media{color:var(--ink-3)}
 .paper .as-st-prelim{color:var(--mustard-ink)}
 .paper .as-tl-w{color:var(--red-ink)}
-.paper .as-when,.paper .as-lede{border-color:var(--rule-2)}
 
 /* ── PHONE. Measured at 375 wide: every grid above is auto-fit with a
       min-width at or under 300px, so all of them collapse to one column on
@@ -1323,12 +1370,15 @@ a.as-src-t:hover{color:var(--mustard-2)}
     margin-bottom:clamp(12px,3.2vw,18px)}
   .as-hero{padding-top:14px}
   .as-head{margin:10px 0 10px}
-  .as-when-c{padding:11px 13px}
   .as-card-v{font-size:clamp(32px,10.5vw,44px)}
   .as-pill{margin-left:0}
   .as-risk-r{grid-template-columns:1fr;gap:6px}
   .as-risk-w{grid-column:1}
   .as-prec-p{min-height:0}
+  .as-casc-s{padding-left:34px}
+  .as-casc-s::before{width:20px}
+  .as-casc-s::after{left:25px}
+  .as-expo-r{grid-template-columns:minmax(0,4.4em) minmax(0,1fr)}
   .as-cmp-lb,.as-cmp-la{bottom:6px;font-size:9.5px;padding:4px 7px}
 }
 `;
@@ -1341,12 +1391,8 @@ a.as-src-t:hover{color:var(--mustard-2)}
    both frames are visible and captioned, which is a working comparison rather
    than a broken widget.
 
-   ★ THE CLOCK REWRITES ABSOLUTE TIMES TO RELATIVE ONES IN THE BROWSER, and
-   never the other way round. The committed markup carries the instant, so the
-   page's bytes do not move every minute and the repository's "the tree moved"
-   gate stays green; the reader gets "6 minutes ago" with the absolute time in
-   the title attribute. This is the one behaviour carried over unchanged from
-   the board this page replaces, because it was right. */
+   The relative-time loop that used to sit beside it went with the timestamp
+   pair it rewrote — see the note where it stood. */
 export const AS_JS = `
 (function(){
   var boxes = document.querySelectorAll('[data-cmp]');
@@ -1366,28 +1412,8 @@ export const AS_JS = `
   })(boxes[i]);
 })();
 
-(function(){
-  function rel(ms){
-    var s = Math.max(0, Math.round((Date.now() - ms) / 1000));
-    if (s < 90) return 'just now';
-    var m = Math.round(s / 60);
-    if (m < 90) return m + ' minute' + (m === 1 ? '' : 's') + ' ago';
-    var hh = Math.round(m / 60);
-    if (hh < 36) return hh + ' hour' + (hh === 1 ? '' : 's') + ' ago';
-    var d = Math.round(hh / 24);
-    return d + ' day' + (d === 1 ? '' : 's') + ' ago';
-  }
-  function go(){
-    var t = document.getElementsByClassName('ce-t');
-    for (var i = 0; i < t.length; i++) {
-      var iso = t[i].getAttribute('datetime');
-      if (!iso) continue;
-      var ms = Date.parse(iso);
-      if (!ms) continue;
-      t[i].textContent = rel(ms);
-    }
-  }
-  if (document.readyState === 'loading') addEventListener('DOMContentLoaded', go, {once:true});
-  else go();
-})();
+/* THE RELATIVE-TIME LOOP IS GONE WITH THE ELEMENT IT REWROTE. It walked
+   the .ce-t class and replaced each absolute instant with "2 hours ago"; the only
+   the .ce-t class on this page was the timestamp pair. Bring it back with any element
+   that carries an instant — and keep the instant in the markup, never the age. */
 `;

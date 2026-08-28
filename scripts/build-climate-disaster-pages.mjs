@@ -49,7 +49,7 @@ import { coordsFor } from './lib/event-terms.mjs';
 import { statusOf, adminHelp, TYPE_LABEL, situationHref } from './lib/active-situation.mjs';
 import { eventName } from './lib/event-figures.mjs';
 import {
-  heroBand, whereBand, damageBand, causeBand, eoBand, timelineBand, voiceBand,
+  heroBand, whereBand, damageBand, causeBand, eoBand, timelineBand,
   precedentBand, nextBand, climateBand, indiaBand, sourcesBand, strip, AS_CSS, AS_JS,
 } from './lib/situation-render.mjs';
 
@@ -61,7 +61,6 @@ const HAZARD_LABEL = {
 };
 
 const J = (p) => (existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : null);
-const VOICE = J(join(S.ROOT, 'data/media/vimlendu-voice.json'));
 
 /** A meta description inside assemble()'s 140-158 character window, built from
  *  the event's own facts and trimmed on a word boundary. Unchanged in method
@@ -137,7 +136,6 @@ for (const e of published) {
     cause: () => causeBand(e, ctx),
     eo: () => eoBand(e, imagery),
     developing: () => timelineBand(e),
-    voice: () => voiceBand(e, VOICE),
     pattern: () => precedentBand(e, ctx),
     next: () => nextBand(e, ctx),
     climate: () => climateBand(e, ctx),
@@ -167,19 +165,34 @@ ${S.newsletter('climate')}
 
   /* [id, class, ground, contents-label]. `paper` bands carry the light ground
      and the CSS flips every token; see the PAPER block in AS_CSS. */
+  /* ── THE ORDER, AND THE ONE CHANGE THE OWNER ASKED FOR ────────────────
+     `climate` — "the numbers we cannot ignore" — comes THIRD, immediately after
+     the hero and its readings strip. It was tenth. The instruction was to bring
+     it up, and it is also the order the owner's own briefing runs in: the event,
+     then the counted scale of the risk, then everything else. It is the band
+     that answers why a Nepal event is on an Indian site, so a reader who leaves
+     after two screens has still had the argument.
+
+     `india` follows the geography and the evidence rather than closing the
+     page, because "the alarm for India" only lands once the reader has seen
+     what happened and what caused it.
+
+     A BAND WITH NOTHING IN IT DOES NOT APPEAR. Each renderer returns null when
+     it has no content, `.filter` drops it here, and the ground chain and the
+     contents index are both derived AFTER the filter — so an absent band cannot
+     leave two identical grounds adjacent or a dead anchor in the header. */
   const ALL = [
     ['top', 't1', '#0D0D0B', 'The situation'],
     ['strip', '', '#151512', null],
-    ['where', 't2', '#0D0D0B', 'Where'],
-    ['damage', 'dark-2 t2', '#151512', 'What is broken'],
-    ['cause', 't2', '#0D0D0B', 'What caused it'],
-    ['eo', 'dark-2 t2', '#151512', 'Satellite'],
-    ['developing', 't2', '#0D0D0B', 'How it developed'],
-    ['voice', 'dark-2 t2', '#151512', 'What Swechha says'],
+    ['climate', 't2', '#0D0D0B', 'The numbers'],
+    ['where', 'dark-2 t2', '#151512', 'Where'],
+    ['damage', 't2', '#0D0D0B', 'What is broken'],
+    ['cause', 'dark-2 t2', '#151512', 'What caused it'],
+    ['eo', 't2', '#0D0D0B', 'Satellite'],
+    ['developing', 'dark-2 t2', '#151512', 'How it developed'],
     ['pattern', 'paper t2', '#F3F2F0', 'It has happened before'],
-    ['next', 't2', '#0D0D0B', 'What happens next'],
-    ['climate', 'dark-2 t2', '#151512', 'The climate signal'],
-    ['india', 't2', '#0D0D0B', 'India'],
+    ['india', 't2', '#0D0D0B', 'The alarm for India'],
+    ['next', 'dark-2 t2', '#151512', 'What happens next'],
     ['sources', 'paper t2', '#F3F2F0', 'Data and sources'],
     ['back', 't2', '#0D0D0B', null],
     ['act', 'dark-2 t3', '#151512', 'What you can do'],

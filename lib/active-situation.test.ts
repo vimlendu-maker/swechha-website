@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 // Importing the .mjs script modules directly is the repo's standing convention
 // for these — see caaqms.test.ts and air-history.test.ts. `allowJs` is on, so
 // types are inferred and no suppression is needed.
@@ -294,5 +296,49 @@ describe('the lifecycle', () => {
 
   it('the homepage link is the event page, never the section index', () => {
     expect(situationHref({ slug: 'nepal-glof' })).toBe('/now/climate-event/nepal-glof')
+  })
+})
+
+/**
+ * ★ THE DETECTOR MUST NOT EAT AN EDITOR'S DECISION, and this had a
+ * thirty-minute fuse in production.
+ *
+ * `dossier()` in scripts/detect-climate-events.mjs rebuilds the event object
+ * from a FIXED key set, so any field not named in it is dropped on the next
+ * run — and that run happens every thirty minutes in CI. An editor demoting an
+ * event off the homepage would have had the decision reverted automatically,
+ * with the page quietly promoting itself again. `hero_days` had the same hole
+ * and predates the lifecycle entirely.
+ *
+ * This test reads the SCRIPT rather than running it, because running it means
+ * hitting Google News. What it asserts is the wiring: that every field this
+ * repository treats as human-set is in the allowlist, and that the allowlist is
+ * actually applied to the dossier before it is written.
+ */
+describe('the detector preserves what a person set', () => {
+  const src = readFileSync(join(__dirname, '..', 'scripts', 'detect-climate-events.mjs'), 'utf8')
+
+  it('carries every editor-owned field across a re-detection', () => {
+    for (const field of [
+      'situation_status',      // the lifecycle — read by lib/active-situation.mjs
+      'situation_status_why',
+      'hero_days',             // read by isCurrent() in lib/climate-events.mjs
+      'cause_status',          // read by the cause band
+    ]) {
+      expect(src, `${field} is human-set and must be in EDITOR_OWNED, or the next `
+        + 'scheduled detection silently discards it').toContain(`'${field}'`)
+    }
+  })
+
+  it('applies the allowlist to the dossier it is about to write', () => {
+    expect(src).toMatch(/keepEditorFields\(await dossier\(/)
+  })
+
+  it('does NOT preserve by spreading the previous file over the new one', () => {
+    // A spread would also freeze the score, the corroboration counts and the
+    // timestamps — the things the detector exists to update. The division is
+    // evidence for the detector, judgement for a person, neither overwriting
+    // the other.
+    expect(src).not.toMatch(/return\s*\{\s*\.\.\.existing/)
   })
 })
