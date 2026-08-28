@@ -186,11 +186,32 @@ asserts behaviour: every staged path exists, exit 75 and exit 1 stay apart, the
 national fetch cannot fail the run, no rebase, and no second workflow fetches
 or dispatches Air.
 
+### A-47.9 — One stuck-channel rule, with its test attached
+
+`isStuck` lived in three places: `lib/air.ts`, `scripts/fetch-air.mjs` and
+`scripts/fetch-india.mjs`. The two `.mjs` copies had already drifted in the way
+that matters — `fetch-air.mjs` carried the self-check that fails the run when
+the rule is wrong, and `fetch-india.mjs` carried only a comment saying it was
+"transcribed from `lib/air.ts`". A rule with its test attached and a rule
+without it are not the same rule, and **the national table is exactly where the
+Leh reading came from.**
+
+**Ruling.** Both `.mjs` callers import `scripts/lib/air-rules.mjs`, whose
+self-check runs *on import* — a caller cannot take the rule without taking the
+test. The 0–500 scale bound moves there with it. `lib/air.ts` keeps its own
+transcription and its own vitest cases: two implementations across a language
+boundary is the floor, three was not.
+
+Verified behaviour-preserving: both fetchers run before and after against live
+CPCB, datasets byte-identical once the fields that must differ between two runs
+are stripped (58,231 and 83,904 bytes each side). Verified protective: breaking
+the 2% constant now makes **both** fetchers refuse to run and write nothing.
+
 ## Source hierarchy, restated on measurement
 
 | Source | Role | Measured 28 August |
 |---|---|---|
-| CPCB CAAQMS `airquality.cpcb.gov.in` | Primary | **Unreachable from GitHub runners (3/3 TCP refusals) and from Vercel bom1.** Reachable from an Indian residential connection, where it served an 0.3h-old observation. |
+| CPCB CAAQMS `airquality.cpcb.gov.in` | Primary | **Unreachable from GitHub runners (3/3 TCP refusals) and from Vercel bom1.** Reachable from an Indian residential connection, where it served a 0.3h-old observation — so the host is alive and the ladder is right to keep trying it; what fails is cloud egress, and it is not ours to fix. |
 | data.gov.in mirror | Fallback | The only source that has served CI since 26 August. Lags 4–10 hours. |
 | CPCB daily bulletin `cpcb.nic.in` | Cross-check gate | Reachable from runners. 248 cities parsed. |
 | WAQI | Adjudication of suspect stations only, never a gate | US EPA scale; distance-guarded at 25 km |
@@ -201,7 +222,8 @@ every record says which one actually answered.
 
 ## Not changed
 
-`isStuck`'s relative 2%-of-channel test, the gas-above-clean-particulates
+The *substance* of `isStuck` (the relative 2%-of-channel test — only its home
+moved), the gas-above-clean-particulates
 `suspect` flag, the CAAQMS per-station integrity gate, the transport ladder,
 the worst-monitor headline (AD-42C), the two-clock discipline (AD-46), and the
 rule that nothing on the page repaints a reading (AD-27.6-A).
