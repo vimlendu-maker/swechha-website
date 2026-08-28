@@ -124,8 +124,7 @@ export const layerById = (id) => LAYERS.find((l) => l.id === id) || null;
 export const ATTRIBUTION = {
   name: 'NASA Worldview Snapshots / NASA EOSDIS GIBS',
   url: 'https://worldview.earthdata.nasa.gov/',
-  note: 'Imagery courtesy of NASA EOSDIS Global Imagery Browse Services, '
-      + 'rendered through Worldview Snapshots. Free to use, no key required.',
+  note: 'Imagery courtesy of NASA EOSDIS Global Imagery Browse Services.',
 };
 
 /* ── THE FRAME ────────────────────────────────────────────────────────────

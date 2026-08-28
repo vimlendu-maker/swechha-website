@@ -265,8 +265,7 @@ for (const e of events) {
     frame: {
       ...bbox,
       centre: { lat, lon },
-      note: 'A representative point for the region named in the reporting, not a located '
-          + 'event site. The frame is what was imaged; the flood may be anywhere inside it.',
+      note: 'The region reported, not a located site.',
     },
     attribution: ATTRIBUTION,
     checked: { epochMs: Date.now() },
