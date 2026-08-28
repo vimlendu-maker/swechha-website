@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { foldStations, worstStation, cityMean, isStuck, impliedConcentration, selfCheck } from './air'
+import { foldStations, worstStation, cityMean, isStuck, impliedConcentration, selfCheck,
+  observedAgeHours, stateFor, STALE_HOURS } from './air'
 
 /**
  * THE BUG THIS FILE EXISTS TO PREVENT.
@@ -274,5 +275,57 @@ describe('plausibility — a dead instrument is not a reading', () => {
       last_update: '26-08-2026 12:00:00', latitude: '28.6', longitude: '77.2',
     })
     expect(foldStations([na('PM2.5'), na('PM10'), na('CO')])).toEqual([])
+  })
+})
+
+/* ── THE CHIP IS EARNED, NOT ASSERTED — AD-47 ──────────────────────────────
+   /api/air answered the constant `state: 'LIVE'`, on the argument that the
+   word names the ROUTE's cadence rather than the observation's age. Measured
+   28 August 2026 at 08:45 IST it therefore said LIVE over a 05:00 IST
+   observation, three and three-quarter hours old, while scripts/fetch-air.mjs
+   — corrected for exactly this — was calling the same age PERIODIC. One
+   system, one field name, two opposite rules.
+
+   ★ EVERY CASE HERE IS PINNED TO A FIXED INSTANT. An age test that reads the
+   real clock passes at 09:00 and fails at noon, which is worse than no test.
+   The offset arithmetic is the other half: the stamps are IST wall-clock text
+   and the assertions below run in whatever timezone CI happens to use, so a
+   local-getter implementation fails these rather than shipping a 5:30 error. */
+describe('the state chip is earned against the observation age', () => {
+  afterEach(() => { vi.useRealTimers() })
+  /* 28 August 2026, 09:30 IST — expressed in UTC so the test does not depend
+     on the machine's zone, which is the entire point. */
+  const at = (utc: string) => { vi.useFakeTimers(); vi.setSystemTime(new Date(utc)) }
+
+  it('reads an IST stamp correctly from a UTC machine', () => {
+    at('2026-08-28T04:00:00Z')            // 09:30 IST
+    expect(observedAgeHours('09:00 IST, 28 August 2026')).toBe(0.5)
+    expect(observedAgeHours('05:00 IST, 28 August 2026')).toBe(4.5)
+    expect(observedAgeHours('23:00 IST, 27 August 2026')).toBe(10.5)
+  })
+
+  it('LIVE inside the bound, PERIODIC outside it', () => {
+    at('2026-08-28T04:00:00Z')            // 09:30 IST
+    expect(stateFor('09:00 IST, 28 August 2026')).toBe('LIVE')      // 0.5h
+    expect(stateFor('07:00 IST, 28 August 2026')).toBe('LIVE')      // 2.5h, inside 3
+    expect(stateFor('05:00 IST, 28 August 2026')).toBe('PERIODIC')  // 4.5h — the real case
+    expect(STALE_HOURS).toBe(3)
+  })
+
+  it('an unreadable stamp is PERIODIC, never LIVE — a missing age is not age zero', () => {
+    at('2026-08-28T04:00:00Z')
+    for (const bad of [null, undefined, '', 'yesterday', '2026-08-28T09:00:00Z', '09:00 IST, 28 Smarch 2026']) {
+      expect(observedAgeHours(bad as string | null), `age of ${String(bad)}`).toBeNull()
+      expect(stateFor(bad as string | null), `state of ${String(bad)}`).toBe('PERIODIC')
+    }
+  })
+
+  it('a stamp in the future is not fresher than now — it is a broken feed', () => {
+    at('2026-08-28T04:00:00Z')                                      // 09:30 IST
+    expect(observedAgeHours('12:00 IST, 28 August 2026')).toBe(-2.5)
+    expect(stateFor('12:00 IST, 28 August 2026')).toBe('PERIODIC')
+    // Ten minutes of clock skew is tolerated, exactly as the page's own
+    // chip-confirm tolerates it; a stamp on the minute still reads LIVE.
+    expect(stateFor('09:30 IST, 28 August 2026')).toBe('LIVE')
   })
 })
