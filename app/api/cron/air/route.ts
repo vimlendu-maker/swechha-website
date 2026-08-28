@@ -50,14 +50,45 @@ function unauthorized() {
  * Hobby scheduling precision is per-hour (+/-59 min), so the stated minute is
  * indicative.
  */
+/**
+ * ★ WHY THIS ANSWERS POST AS WELL AS GET.
+ * Vercel Cron sends GET. The external pingers that have to carry the
+ * 15-minute cadence on a Hobby plan are split — cron-job.org sends GET by
+ * default, Cloudflare Workers and Google Cloud Scheduler are usually wired to
+ * POST — and a heartbeat that silently 405s because someone picked the other
+ * verb is the kind of failure that looks like "the schedule just isn't
+ * running". Both verbs, one handler, no ambiguity.
+ */
+export async function POST(request: NextRequest) {
+  return GET(request);
+}
+
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret || request.headers.get('authorization') !== `Bearer ${cronSecret}`) {
+  /* ★ A MISSING SECRET AND A WRONG ONE LOOK IDENTICAL FROM OUTSIDE, ON
+     PURPOSE — the response must not tell a stranger whether this deployment
+     is configured. But the operator setting it up needs to tell them apart or
+     they cannot debug their own pinger, so the distinction is written to the
+     server log, which only they can read (Vercel dashboard -> Logs). Without
+     this, "401" means both "your header is wrong" and "the env var was never
+     set", and those have completely different fixes. */
+  if (!cronSecret) {
+    console.error('CRON_SECRET is not set in this environment. Every call to '
+      + '/api/cron/air will be refused, including Vercel Cron\'s own. Set it in '
+      + 'Project -> Settings -> Environment Variables (Production) and redeploy.');
+    return unauthorized();
+  }
+  if (request.headers.get('authorization') !== `Bearer ${cronSecret}`) {
+    console.warn('/api/cron/air refused a call: the Authorization header did not match '
+      + 'CRON_SECRET. Expected exactly `Authorization: Bearer <CRON_SECRET>`.');
     return unauthorized();
   }
 
   const token = process.env.GITHUB_AIR_DISPATCH_TOKEN;
   if (!token) {
+    console.error('GITHUB_AIR_DISPATCH_TOKEN is not set. The caller authenticated correctly, '
+      + 'so the heartbeat is reaching this route — it simply has no credential to dispatch the '
+      + 'workflow with. Needs a GitHub token with Actions: read and write on this repository.');
     return NextResponse.json({ ok: false, error: 'dispatch token not configured' }, {
       status: 503,
       headers: { 'Cache-Control': 'no-store' },
