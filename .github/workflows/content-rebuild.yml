@@ -170,7 +170,31 @@ jobs:
             exit 0
           fi
           changed=$(git diff --cached --name-only -- data | sed 's|^data/||' | tr '\n' ' ')
+          # Which PAGES changed, for the IndexNow step after the push. Recorded
+          # here because the staged list is only available before the commit.
+          changed_pages=$(git diff --cached --name-only -- 'public/_pages/**/*.html' | tr '\n' ' ')
+          echo "CHANGED_PAGES=$changed_pages" >> "$GITHUB_ENV"
           git commit -m "content: the pages catch up with the edit" \
             -m "Edited: ${changed:-none}" \
             -m "Automated by .github/workflows/content-rebuild.yml, answering a content commit. The nulls Keystatic cannot express were restored, no key was lost against the parent commit, and every generator gate passed — so no page is out of step with the data under it."
           git push
+
+      # ── TELL THE SEARCH ENGINES, AFTER THE PUSH ─────────────────────────
+      # One POST reaches Bing, Yandex, Seznam and Naver. Google does not
+      # participate in IndexNow and both legacy sitemap pings are gone
+      # (google.com/ping answers 404 "Sitemaps ping is deprecated",
+      # bing.com/ping answers 410); Google's stated replacement is the sitemap
+      # `lastmod`, which this repo already computes from a content hash.
+      #
+      # AFTER the push, because IndexNow verifies ownership by fetching the key
+      # file from the live host. A rejection never fails the run: the page is
+      # already published and correct, and this is only a notification.
+      - name: Submit the changed pages to IndexNow
+        if: github.event.inputs.dry_run != 'true'
+        continue-on-error: true
+        run: |
+          if [ -z "${CHANGED_PAGES// /}" ]; then
+            echo "No page files changed — nothing to submit."
+            exit 0
+          fi
+          node scripts/ping-indexnow.mjs --changed "$CHANGED_PAGES"
