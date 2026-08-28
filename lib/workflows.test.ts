@@ -118,3 +118,53 @@ describe('the situation fetch list is defined in one place', () => {
     for (const m of members) expect(m in pkg, `data:situations names ${m}, which does not exist`).toBe(true)
   })
 })
+
+/**
+ * ★ THE DEPLOY BUDGET. Vercel Hobby: "You are able to deploy 100 times every
+ * 86400 seconds (1 day). Should you hit the rate limit, you will need to wait
+ * another day before you can deploy again." Every push to `main` is a
+ * deployment, so the Air workflow's push rate is a platform budget, not a
+ * style choice.
+ *
+ * Shipped on 28 August 2026 and caught the same day: a 15-minute poll that
+ * commits every successful check is 96 deployments/day from Air alone, before
+ * data-refresh, content-rebuild or a human pushing anything — through the
+ * ceiling, with a full day of no deploys as the penalty. That is the site
+ * frozen, which is the exact failure this cleanup existed to end.
+ */
+describe('the Air workflow cannot exhaust the Vercel Hobby deploy budget', () => {
+  const yml = readFileSync(join(WF_DIR, 'air-hourly.yml'), 'utf8')
+
+  /** Scheduled polls per day, from the cron lines. */
+  function pollsPerDay(y: string): number {
+    let n = 0
+    for (const m of y.matchAll(/- cron: '([^']+)'/g)) {
+      const minute = m[1].trim().split(/\s+/)[0]
+      n += minute === '*' ? 60 : minute.split(',').length
+    }
+    return n * 24
+  }
+
+  it('polls often enough to catch a new CPCB hour promptly', () => {
+    expect(pollsPerDay(yml)).toBeGreaterThanOrEqual(24 * 4 - 1)   // ~15-minute cadence
+  })
+
+  it('does NOT publish on every poll — there is a minimum publish interval', () => {
+    expect(yml, 'air-hourly.yml must throttle publishing; every push is a Vercel deployment')
+      .toMatch(/MIN_PUBLISH_MINUTES/)
+    const floor = Number(/MIN_PUBLISH_MINUTES:-(\d+)/.exec(yml)?.[1] ?? 0)
+    expect(floor, 'the default publish floor must be a real number of minutes').toBeGreaterThan(0)
+
+    // Worst case: one publish per floor-interval, plus CPCB's hourly
+    // observation changes, which share the same slots rather than adding to
+    // them. Budget 100/day and leave room for every other workflow and for a
+    // human pushing.
+    const worstCase = Math.ceil((24 * 60) / floor)
+    expect(worstCase, `a ${floor}-minute floor allows ${worstCase} Air deployments/day, `
+      + 'which leaves too little of the 100/day Hobby budget for anything else').toBeLessThanOrEqual(60)
+  })
+
+  it('a new observation is always published, whatever the floor says', () => {
+    expect(yml).toMatch(/if \[ "\$status" = "new_observation" \]/)
+  })
+})

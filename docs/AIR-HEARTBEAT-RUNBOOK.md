@@ -17,12 +17,44 @@ the live site stopped receiving any update at all, and went on serving a
 27-hour-old AQI even on the runs where the pipeline worked. `lib/air-history.test.ts`
 now fails if anyone reinstates a sub-daily schedule.
 
+## ★ The other Hobby ceiling: 100 deployments a day
+
+> *"You are able to deploy 100 times every 86400 seconds (1 day). Should you
+> hit the rate limit, you will need to wait another day before you can deploy
+> again."* — Vercel limits
+
+**Every push to `main` is a deployment.** So the pipeline's *publish* rate is a
+platform budget, not a preference. Polling every 15 minutes and committing
+every successful check is **96 deployments/day from Air alone** — before
+`data-refresh`, `content-rebuild`, or a human pushing anything. That goes
+through the ceiling, and the penalty is a full day with no deploys: the site
+frozen, which is the exact failure this work existed to end.
+
+So polling and publishing are separated, because they were never the same
+thing:
+
+| Outcome | Published? |
+|---|---|
+| `new_observation` — the reading moved | **always** (CPCB gives at most 24/day) |
+| `same_observation` / `stale_refused` | at most once per `MIN_PUBLISH_MINUTES` (default **30**) |
+
+Worst case ≈ **48 Air deployments/day**, leaving real headroom.
+`lib/workflows.test.ts` fails if the floor is removed or set so low the budget
+is blown.
+
+**What this costs, stated rather than hidden:** on a skipped run the check
+genuinely happened and is genuinely discarded — the runner resets to
+`origin/main` next time, so the history store's `checks` counter samples at the
+publish cadence, not the poll cadence, and the page's *last checked* is
+accurate but granular to 30 minutes. That is the honest trade for a hard deploy
+ceiling. On Pro, set `MIN_PUBLISH_MINUTES: 0` and every poll publishes.
+
 ---
 
 ## What triggers what
 
 ```
-external pinger (every 15 min)  ─┐
+external pinger (every 15 min)  ─┐   poll != publish; see the deploy budget above
 Vercel Cron  (once daily, backstop) ─┼─→  GET/POST /api/cron/air
 GitHub schedule (best effort)    ─┘         (Authorization: Bearer CRON_SECRET)
                                               │

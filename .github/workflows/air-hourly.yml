@@ -10,6 +10,10 @@ name: Air — poll, validate, publish
 #                         stale_refused. All three are successes, all three move
 #                         the "last checked by Swechha" clock, and only the first
 #                         moves the reading.
+#   checked_not_published Checked fine, CPCB has the same observation, and the
+#                         last publish is inside MIN_PUBLISH_MINUTES. Nothing
+#                         pushed, so no Vercel deployment is spent. GREEN.
+#                         See the deploy-ceiling note in the job below.
 #   upstream_unavailable  No Delhi source answered (fetch exit 75). NOTHING is
 #                         written; the site keeps its reading and prints its age.
 #                         GREEN, because someone else's server being down is not
@@ -144,6 +148,54 @@ jobs:
 
             status=$(node -p 'JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8")).check?.status ?? "unknown"')
             echo "Delhi check: $status"
+
+            # ── THE PLATFORM'S HARD CEILING DECIDES THE PUBLISH RATE ──────
+            # Vercel Hobby: "You are able to deploy 100 times every 86400
+            # seconds (1 day). Should you hit the rate limit, you will need to
+            # wait another day before you can deploy again." EVERY push to
+            # main is a deployment.
+            #
+            # A fifteen-minute poll that commits every successful check is
+            # ninety-six deployments a day from Air alone — before
+            # data-refresh, content-rebuild, or a human pushing anything. That
+            # does not merely approach the ceiling, it goes through it, and the
+            # penalty is a full day with NO deploys: the site frozen exactly
+            # the way this whole cleanup was undertaken to stop.
+            #
+            # So POLLING and PUBLISHING are separated, because they were never
+            # the same thing:
+            #   · A NEW OBSERVATION always publishes. That is the reading
+            #     changing, which is the entire point, and CPCB gives us at
+            #     most twenty-four a day.
+            #   · Anything else — same_observation, stale_refused — publishes
+            #     at most once per MIN_PUBLISH_MINUTES, so the "last checked"
+            #     clock keeps moving without spending a deployment every
+            #     quarter hour.
+            # Worst case is ~48 deployments a day, leaving real headroom.
+            #
+            # ★ WHAT THIS COSTS, STATED RATHER THAN HIDDEN. On a skipped run
+            # the check genuinely happened and is genuinely discarded: the
+            # runner resets to origin/main next time, so the history store's
+            # `checks` counter samples at the publish cadence, not the poll
+            # cadence. The page's "last checked" is therefore accurate but
+            # granular to MIN_PUBLISH_MINUTES. That is the honest trade for a
+            # plan with a hard deploy ceiling, and it is a trade, not a bug.
+            # On Vercel Pro this can go to 0 and every poll publishes.
+            MIN_PUBLISH_MINUTES=${MIN_PUBLISH_MINUTES:-30}
+            if [ "$status" = "new_observation" ]; then
+              echo "publish: the observation moved — always published."
+            else
+              last=$(git log -1 --format=%ct -- data/air-delhi.json)
+              age_min=$(( ( $(date +%s) - ${last:-0} ) / 60 ))
+              if [ "$age_min" -lt "$MIN_PUBLISH_MINUTES" ]; then
+                echo "state=checked_not_published" >> "$GITHUB_OUTPUT"
+                echo "check_status=$status" >> "$GITHUB_OUTPUT"
+                echo "::notice::Checked successfully ($status). CPCB is publishing the same observation and the last publish was ${age_min}m ago, under the ${MIN_PUBLISH_MINUTES}m floor — nothing pushed, so no deployment is spent. The page keeps its reading and its own stamps."
+                echo "::endgroup::"
+                exit 0
+              fi
+              echo "publish: same observation, but the last publish was ${age_min}m ago (floor ${MIN_PUBLISH_MINUTES}m) — publishing to move the check clock."
+            fi
 
             # ── INDIA: never allowed to sink Delhi ───────────────────────
             # Its failure is a warning and the national panel keeps its own
