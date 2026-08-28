@@ -469,7 +469,7 @@ function mapSvg(e, ctx, imagery, coordsFor) {
   const frame = imagery?.frame ? `<rect x="${X(imagery.frame.west).toFixed(1)}" y="${Y(imagery.frame.north).toFixed(1)}" `
     + `width="${(X(imagery.frame.east) - X(imagery.frame.west)).toFixed(1)}" `
     + `height="${(Y(imagery.frame.south) - Y(imagery.frame.north)).toFixed(1)}" class="as-m-box">`
-    + '<title>The area the satellite image below covers</title></rect>' : '';
+    + '<title>The area the satellite frames cover</title></rect>' : '';
 
   return `<svg viewBox="0 0 ${W} ${H}" class="p-map-s as-map" role="img"
             aria-label="${esc(e.location.text)} and the ${located.length} places downstream of it, at their true positions. The frame is ${kmWide} kilometres wide.">
@@ -482,7 +482,7 @@ function mapSvg(e, ctx, imagery, coordsFor) {
             <text x="${(X(pts[0].lon) + (e.coords ? 6 : ORIGIN_RING) + 7).toFixed(1)}" y="${(Y(pts[0].lat) + 4).toFixed(1)}" class="as-m-t as-m-t-o">${esc(originLabel)}</text>
             ${labels}
           </svg>
-          <p class="p-legend p-map-lg"><span class="lbl"><i class="as-sw as-sw-o"></i>Region named in the reporting</span><span class="lbl"><i class="p-sw as-sw-d"></i>Downstream, in the path</span>${frame ? '<span class="lbl"><i class="as-sw as-sw-b"></i>The satellite frame below</span>' : ''}</p>
+          <p class="p-legend p-map-lg"><span class="lbl"><i class="as-sw as-sw-o"></i>Region named in the reporting</span><span class="lbl"><i class="p-sw as-sw-d"></i>Downstream, in the path</span>${frame ? '<span class="lbl"><i class="as-sw as-sw-b"></i>The satellite frame</span>' : ''}</p>
           <p class="cap">Frame ${n0(kmWide)} km wide.
             ${e.coords
     ? `The marked point is ${esc(e.location_detail || e.location.text)}${e.coords_note ? ` &mdash; ${esc(e.coords_note.replace(/^[A-Z]/, (c) => c.toLowerCase()))}` : ''}`
@@ -606,17 +606,17 @@ ${rows.slice(0, 5).map((r) => {
         </div>`;
   }).join('\n')}
       </div>
-${disclose('How would we know?', `<p>Each of these leaves different evidence, and the evidence arrives at
-        different speeds. That is why the status words above are what they are.</p>
-        <dl class="as-how">
+${disclose('How would we know?', `<dl class="as-how as-how-t">
 ${rows.map((r) => `          <dt>${esc(r.label)}</dt>
-          <dd>${esc(r.evidence || 'How this would be established for this event has not been set out.')}</dd>`).join('\n')}
+          <dd>${esc(r.evidence || 'Not set out for this event.')}</dd>`).join('\n')}
         </dl>
-        ${ctx?.mechanism ? `<p class="lbl as-how-h">The mechanism in general, researched in advance</p>
-        ${Object.entries(ctx.mechanism).map(([k, v]) => `<p><b>${esc({ trigger: 'Immediate trigger', conditions: 'Environmental conditions', assessment: 'What science says', human: 'Human factors' }[k] || k)}.</b> ${esc(v)}</p>`).join('\n        ')}
-        <p class="cap"><b>This is the mechanism for this kind of event, not a finding about this
-          one.</b> The classification above is this page&rsquo;s reading of how the event was first
-          reported. Himalayan disasters are often reclassified once fieldwork is done.</p>` : ''}`)}
+        ${ctx?.mechanism ? `<p class="lbl as-how-h">The mechanism in general</p>
+        <dl class="as-how as-how-t">
+${Object.entries(ctx.mechanism).map(([k, v]) => `          <dt>${esc({ trigger: 'Trigger', conditions: 'Conditions', assessment: 'What science says', human: 'Human factors' }[k] || k)}</dt>
+          <dd>${esc(v)}</dd>`).join('\n')}
+        </dl>
+        <p class="cap as-how-n">The mechanism for this kind of event, not a finding about this one.
+          Himalayan disasters are often reclassified once fieldwork is done.</p>` : ''}`)}
     </div>`;
 }
 
@@ -756,9 +756,8 @@ ${supplied}
         <input class="as-cmp-r" type="range" min="0" max="100" value="50" step="1"
           aria-label="Reveal the after image. Left is before the event, right is after.">
       </div>
-      <p class="cap as-eo-k">Drag to wipe between the two dates. Both frames are the same layer,
-        the same box and the same satellite, so what changes between them is the ground.
-        ${imagery.before.obscuredPct}% cloud before, ${imagery.after.obscuredPct}% after.</p>`
+      <p class="cap as-eo-k">Drag to wipe. Same layer, same box, same satellite.
+        Cloud ${imagery.before.obscuredPct}% before, ${imagery.after.obscuredPct}% after.</p>`
     : `      <div class="as-eo-two">
         ${imagery.before ? imageFig(imagery.before, 'Before') : ''}
         ${imagery.after ? imageFig(imagery.after, 'After') : ''}
@@ -768,8 +767,13 @@ ${supplied}
   const panels = [];
   panels.push([pair && imagery.comparable ? 'Before and after' : 'The frames', compare]);
   if (imagery.latest) panels.push(['Latest view', `      <div class="as-eo-two">${imageFig(imagery.latest, 'Latest')}</div>`]);
-  panels.push(['What the colours mean', `      <div class="as-eo-leg">
-        <p class="body">${esc(L?.shows || '')}</p>
+  /* ★ THE TAB CANNOT STILL BE CALLED "WHAT THE COLOURS MEAN" once the house
+     treatment prints these frames in black and white — it would be describing
+     a picture the reader is not looking at. The layer's colour key stays,
+     because it is what the SOURCE imagery is, and the last line says plainly
+     what happened to it between the satellite and this page. */
+  panels.push(['What the frame shows', `      <div class="as-eo-leg">
+        <p class="body">${esc(L?.shows || '')} Printed here in black and white.</p>
         <p class="cap"><b>Cloud and snow are not separated.</b> Both are bright and colourless at this
           resolution and there is no honest way to tell them apart from colour alone, so the figure
           this page prints is &ldquo;cloud or snow&rdquo; and means exactly that.</p>
@@ -789,12 +793,8 @@ ${(e.reported_imagery || []).length ? `      <div class="as-eo-rep">
         <p class="lbl as-eo-rep-h">Higher-resolution before-and-after, at its publisher</p>
 ${(e.reported_imagery || []).map((r) => `        <p class="as-eo-rep-i"><a class="lk" href="${esc(r.url)}">${esc(r.title)}</a>
           <span class="cap">${esc(r.publisher)}${r.date ? ` &middot; ${esc(r.date)}` : ''} &mdash; ${esc(r.shows)}</span></p>`).join('\n')}
-        <p class="cap as-eo-rep-n"><b>Linked, not reproduced, and that is a licence question
-          rather than a preference.</b> Commercial high-resolution imagery is licensed to the outlet
-          that bought it; a credit line is not a licence to republish it, and this site will not put
-          Swechha&rsquo;s name on a copyright claim. What is published above is imagery whose terms
-          permit it &mdash; NASA&rsquo;s, which is public domain &mdash; at the resolution that
-          actually exists for free, stated on the frame.</p>
+        <p class="cap as-eo-rep-n"><b>Linked, not reproduced:</b> it stays licensed to its
+          publisher. What is above is NASA&rsquo;s, public domain.</p>
       </div>` : ''}
 ${(() => {
     /* ── THE LIVE COMPARISON ────────────────────────────────────────────
@@ -815,10 +815,8 @@ ${(() => {
       layer: imagery.after?.layer || imagery.before?.layer,
     });
     if (!wv) return '';
-    return `      <p class="as-eo-live"><a class="act" href="${esc(wv)}">Open the live comparison ${ARROW}</a>
-        <span class="cap as-eo-live-c">The same NASA imagery at NASA&rsquo;s own viewer, opened on this
-        valley with these two dates side by side. Zoom in, change either date, or switch to the
-        Sentinel-1 radar layers, which see through cloud. Nothing here is stored by this site.</span></p>`;
+    return `      <p class="as-eo-live"><a class="act" href="${esc(wv)}" target="_blank" rel="noopener">Open the live comparison ${ARROW}</a>
+        <span class="cap as-eo-live-c">Live at NASA&rsquo;s viewer: zoom, re-date, switch to radar.</span></p>`;
   })()}
       <p class="cap as-eo-at"><a class="lk" href="${esc(imagery.attribution.url)}">${esc(imagery.attribution.name)}</a>.
         ${esc(imagery.attribution.note)}
@@ -1339,9 +1337,37 @@ export const AS_CSS = `
 .as-how dt{font-family:Archivo,system-ui,sans-serif;font-size:11px;letter-spacing:.07em;
   text-transform:uppercase;color:var(--fg-2);margin:1.1em 0 .3em}
 .as-how dd{margin:0;max-width:62ch;line-height:1.55;color:var(--fg-2)}
-.as-how-h{color:var(--fg-2);margin:1.4em 0 .5em}
+.as-how-h{color:var(--fg-2);margin:1.9em 0 .1em}
+/* ── THE ANSWER IS A TABLE, NOT AN ESSAY ──────────────────────────────────
+   Cause on the left, the evidence that would settle it on the right, a hairline
+   between every pair. Scoped to .as-how-t: the precedent and withheld bands use
+   bare .as-how and are deliberately left as running prose. */
+.as-how-t{display:grid;grid-template-columns:minmax(0,17ch) minmax(0,1fr);
+  column-gap:clamp(18px,2.4vw,40px)}
+.as-how-t dt{margin:0;padding:.95em 0 1.05em;border-top:1px solid var(--hair-2);color:var(--fg)}
+.as-how-t dd{margin:0;padding:.95em 0 1.05em;border-top:1px solid var(--hair-2);max-width:64ch}
+.as-how-n{margin:1.1em 0 0;max-width:60ch}
+@media (max-width:640px){
+  .as-how-t{grid-template-columns:1fr}
+  .as-how-t dt{padding:.95em 0 .35em}
+  .as-how-t dd{padding:0 0 1.05em;border-top:0}
+}
 
 /* ── (f) EARTH OBSERVATION ────────────────────────────────────────────── */
+/* ── EVERY PICTURE ON AN ACTIVE-SITUATION PAGE IS BLACK AND WHITE ────────
+   ★ HOUSE TREATMENT, applied at one selector rather than per image, so a
+   picture added later cannot arrive in colour by omission. These three
+   selectors — the banner, the supplied frames and BOTH halves of the wipe —
+   are between them every image an event page can emit. Both halves, because a
+   wipe with one grey half and one colour half would read as the treatment
+   changing rather than the ground.
+
+   ★ THE COST IS REAL AND IS ACCEPTED: on a true-colour satellite pair, green
+   vegetation against brown debris is the change the frames exist to show, and
+   grayscale reduces that to a tonal difference. What survives is the shape of
+   the scar, which is what the 250 m resolution can honestly support anyway. */
+.as-pic-i,.as-eo-i,.as-cmp img{filter:grayscale(1) contrast(1.04)}
+
 .as-eo-two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr));
   gap:clamp(14px,1.6vw,22px)}
 .as-eo-f{margin:0}
