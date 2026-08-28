@@ -127,9 +127,16 @@ for (const e of published) {
      picture on a live disaster page — and so the page degrades to the NASA
      frames on its own the moment a file is missing. */
   if (imagery && (e.owner_images || []).length) {
-    const onDisk = e.owner_images.filter((img) => ['before', 'after']
-      .every((k) => !img[k] || existsSync(join(S.ROOT, 'public', img[k].replace(/^\//, '')))))
-      .filter((img) => img.before || img.after);
+    /* Every file an entry names must exist — whether it is a registered
+       before/after pair or a list of separate frames. A named-but-uncommitted
+       image renders nothing rather than a broken tag. */
+    const has = (src) => !src || existsSync(join(S.ROOT, 'public', src.replace(/^\//, '')));
+    const onDisk = e.owner_images
+      .map((img) => (img.frames
+        ? { ...img, frames: img.frames.filter((f) => has(f.src)) }
+        : img))
+      .filter((img) => ['before', 'after'].every((k) => has(img[k])))
+      .filter((img) => img.before || img.after || (img.frames || []).length);
     if (onDisk.length) imagery.supplied = onDisk;
     const missing = e.owner_images.length - onDisk.length;
     if (missing) {
