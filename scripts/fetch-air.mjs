@@ -200,8 +200,20 @@ async function fetchAll(city) {
          reading rather than a missing one. Delhi is one page today, so this
          should never fire; it exists because the version that could not fire
          is the version that let it happen elsewhere. */
+      /* ★ THE KEY INCLUDES THE OBSERVATION HOUR — AD-50, 29 August 2026.
+         Keyed on (station, pollutant) alone, this guard fires whenever the
+         upstream serves TWO HOURS in one response: every pair appears twice,
+         so total=616 against distinct=308 reads as "half the rows were lost to
+         unstable paging" when in fact nothing was lost at all. That is exactly
+         what happened at 09:12 IST on 29 August, at the precise moment the
+         mirror finally caught up after sitting on 05:00 for three and a half
+         hours — the one run that was handed fresh data refused it.
+         With the hour in the key, a two-hour response gives distinct=616=total
+         and passes, while the defect this guard was built for — duplicate rows
+         of the SAME station, pollutant AND hour masking real losses — still
+         trips it, because those duplicates still collapse. */
       const total = Number(body.total);
-      const distinct = new Set(rows.map(r => `${r.station}|${r.pollutant_id}`)).size;
+      const distinct = new Set(rows.map(r => `${r.station}|${r.pollutant_id}|${r.last_update}`)).size;
       if (Number.isFinite(total) && distinct < total) {
         console.error(`INTEGRITY: upstream reports total=${total} but only ${distinct} distinct `
           + `(station, pollutant) rows arrived — ${total - distinct} lost to unstable paging. `
@@ -330,6 +342,30 @@ if (caaqms && mirrorRows && newerStamp(mirrorStamp, caaqms.stamp) === 'a') {
   console.error('Leaving the previous file alone. The page keeps its committed reading '
     + 'and prints the age of the observation, which is the designed failure mode.');
   process.exit(75);
+}
+
+/* ── ONE SNAPSHOT MEANS ONE HOUR — AD-50 ──────────────────────────────────
+   The page asserts that every station figure in a band was read at the same
+   hour, and until 29 August that was true only because the upstream happened
+   to serve one hour at a time. During the mirror's catch-up window it serves
+   two, and the grouping below would then take whichever row for a station
+   arrived first for the station's stamp while later rows overwrote its
+   pollutants — silently mixing two hours inside one station.
+   So a multi-hour response is narrowed to its NEWEST hour before anything is
+   computed. Dropping the older rows loses nothing: they describe an hour we
+   have already published, and the monotonicity guard would refuse them anyway.
+   Logged rather than silent, because a response that spans hours is a fact
+   about the upstream worth seeing in the run. */
+{
+  const stamps = [...new Set(rows.map((r) => r.last_update).filter(Boolean))];
+  if (stamps.length > 1) {
+    const newest = stamps.reduce((a, b) => (newerStamp(a, b) === 'a' ? a : b));
+    const before = rows.length;
+    rows = rows.filter((r) => r.last_update === newest);
+    console.log(`SPANS ${stamps.length} HOURS: ${stamps.sort().join(', ')} — keeping the newest `
+      + `(${newest}); ${before - rows.length} row(s) from earlier hours dropped, so this snapshot `
+      + 'is one hour as the page claims.');
+  }
 }
 
 /* ── GROUP BY STATION, COMPUTE SUB-INDICES ───────────────────────────── */
