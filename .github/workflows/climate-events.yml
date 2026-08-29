@@ -15,12 +15,22 @@ name: Climate events — the page notices something happened
 # in the region upstream of it — it writes an event dossier that the page then
 # opens on. When nothing is happening it says so, with the time it last looked.
 #
-# ★ IT IS SEPARATE FROM THE AIR JOBS, ON PURPOSE AND BY INSTRUCTION.
-# air-hourly.yml and data-refresh.yml are untouched by this file and this file
-# is untouched by them. They share no script, no dataset and no step. The air
-# pipeline's CPCB transport ladder, its bulletin cross-check and its exit-75
-# convention are its own; nothing here can turn that job red and nothing there
-# can stop this one running.
+# ★ IT IS SEPARATE FROM THE AIR JOBS IN WHAT IT READS, AND NOT IN WHAT IT
+# WRITES. air-hourly.yml and data-refresh.yml are untouched by this file and
+# this file is untouched by them. They share no script, no dataset and no step.
+# The air pipeline's CPCB transport ladder, its bulletin cross-check and its
+# exit-75 convention are its own.
+#
+# ★ THE SENTENCE THAT USED TO END THAT PARAGRAPH — "nothing here can turn that
+# job red and nothing there can stop this one running" — WAS FALSE, and it was
+# false in the direction that mattered. All three publishers commit to `main`,
+# so they share the one thing that can reject a run outright. Measured on
+# 29 August 2026: the air job's :13 push landed inside this job's window and
+# this job's push was rejected, once an hour, for six hours. See the push step
+# below for the timings, and for why the shared `publish` concurrency group did
+# not prevent it. They are independent in what they read. They are not
+# independent in what they write, and pretending otherwise is what left this
+# job as the only publisher with no way to recover from losing the race.
 #
 # ★ NEWS TRIGGERS. OFFICIAL FEEDS CORROBORATE. THAT ORDER IS THE POINT.
 # India's official feeds — IMD's CAP alerts, NDMA's Sachet aggregation — are
@@ -102,11 +112,24 @@ concurrency:
   # merge resolution is a coin flip on whose figures survive, on a site whose
   # entire premise is that the figures are current.
   #
-  # A shared group removes the race instead of resolving it. The cost is that a
-  # daily eight-minute refresh can make one air run wait, and GitHub keeps only
-  # the newest pending run per group — so an air poll may be cancelled while
-  # queued. That is harmless here: the next dispatch is fifteen minutes out and
-  # /api/cron/air re-dispatches on its own once no recent run covers the slot.
+  # A shared group was meant to remove the race instead of resolving it. The
+  # cost is that a daily eight-minute refresh can make one air run wait, and
+  # GitHub keeps only the newest pending run per group — so an air poll may be
+  # cancelled while queued. That is harmless here: the next dispatch is fifteen
+  # minutes out and /api/cron/air re-dispatches on its own once no recent run
+  # covers the slot.
+  #
+  # ★ IT DOES NOT ACTUALLY REMOVE THE RACE, and that sentence stood here
+  # unchallenged for a day. Measured 29 August 2026, both runs schedule-
+  # triggered, both declaring THIS group at top level with these exact values:
+  #
+  #   air-hourly       07:11:01 -> 07:13:20
+  #   climate-events   07:12:22 -> 07:13:57      58 seconds of overlap
+  #
+  # GitHub started the second while the first was still running. So the group
+  # is a useful reducer and not a guarantee, and every publisher needs a push
+  # that can lose and recover on its own. All three now have one; this file was
+  # the last, and until then it was the one that always lost.
   group: publish
   cancel-in-progress: false
 
@@ -241,7 +264,58 @@ jobs:
           ')
           git commit -m "data(climate-event): ${summary}" \
             -m "Automated by .github/workflows/climate-events.yml. The detector read the news and official alert feeds, scored what it found against an itemised rubric, and wrote a dossier for anything over threshold. Every figure is attributed and status-marked; nothing is claimed in the site's own voice. The page was rebuilt in the same run and verify:final passed."
-          git push
+
+          # ── PUSH, AND WIN THE RACE THIS JOB HAD BEEN LOSING EVERY HOUR ─────
+          # ★ MEASURED, 29 AUGUST 2026. This was a bare `git push`, and it was
+          # the ONLY one of the three bot publishers without a retry —
+          # air-hourly.yml has had one since AD-47 and data-refresh.yml got one
+          # at 13d23c8. So when two publishers overlapped, this job was always
+          # the one that lost:
+          #
+          #   air-hourly       07:11:01 -> 07:13:20   pushed AQI 415 at 07:13:16
+          #   climate-events   07:12:22 -> 07:13:57   push REJECTED, run failed
+          #
+          #   ! [rejected]  main -> main (fetch first)
+          #
+          # It failed at 22:12, 23:12, 00:12, 05:12, 06:12 and 07:12 — once an
+          # hour, whenever the air job's :13 push landed inside this job's
+          # window. And a rejected push does not merely delay the data, it
+          # DISCARDS IT: the 07:12 run had detected a new event and written
+          # data/climate-events/active/meghalaya-flood.json, and that dossier
+          # never reached main. A disaster page can be up to thirty minutes
+          # late for a reason that has nothing to do with the disaster.
+          #
+          # ★ THE SHARED `publish` CONCURRENCY GROUP DOES NOT PREVENT THIS, and
+          # the timings above are the proof. Both workflows declare
+          # `group: publish` with `cancel-in-progress: false`, at top level,
+          # identically — and GitHub still ran them with 58 seconds of overlap.
+          # The group is worth keeping; it is not a guarantee, so the push has
+          # to be able to lose and recover on its own.
+          #
+          # ★ A CONFLICT STILL FAILS LOUDLY, and deliberately. Most of this
+          # commit is generated HTML that several jobs rewrite in full, so
+          # "ours" and "theirs" are both whole files and picking one silently
+          # reverts somebody's figures. The only cases this wins are the ones
+          # that never needed resolving — a push that touched data, source or a
+          # page this run did not rebuild. Same reasoning, same shape, as
+          # data-refresh.yml's loop.
+          for attempt in 1 2 3; do
+            if git push; then
+              exit 0
+            fi
+            echo "::notice::Push rejected on attempt ${attempt}. Fetching and replaying on top of main."
+            git fetch origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo "::error::Rebase onto main conflicted, so this run's dossiers were NOT published. \
+          The conflict is in files that more than one publisher rewrites in full; resolving it \
+          automatically would silently discard one side's figures. Re-run this workflow — a fresh \
+          fetch on top of the current main will produce a clean commit."
+              exit 1
+            fi
+          done
+          echo "::error::Could not publish after 3 attempts; main is moving faster than this job can rebase."
+          exit 1
 
 
       # ── TELL THE SEARCH ENGINES, AFTER THE PUSH ─────────────────────────
