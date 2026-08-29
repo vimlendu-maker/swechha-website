@@ -44,6 +44,7 @@ import { writeFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from 
 import { resolve, join } from 'node:path';
 import { HAZARD_TERMS, TIER1, TIER2, SEVERITY_TERMS, NEGATIVE_TERMS, hay, ownedElsewhere, coordsFor, regionOf } from './lib/event-terms.mjs';
 import { consolidate } from './lib/event-figures.mjs';
+import { dedupeFeedItems, anchorPublished } from './lib/event-feed.mjs';
 import { HAZARDS, hasContext } from './lib/climate-events.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..');
@@ -145,15 +146,17 @@ async function collectNews() {
     if (!parsed) { unreachable.push({ source: f.publisher, error: 'not an RSS document' }); continue; }
     items.push(...parsed);
   }
-  // De-duplicate by link, then by normalised title — wire copy runs verbatim
-  // across outlets, and counting it twice would fake corroboration.
-  const seenLink = new Set(), seenTitle = new Set(), out = [];
-  for (const i of items) {
-    const t = (i.title || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').slice(0, 70);
-    if (seenLink.has(i.link) || seenTitle.has(t)) continue;
-    seenLink.add(i.link); seenTitle.add(t); out.push(i);
-  }
-  return out;
+  /* De-duplicate by link, then by normalised title — wire copy runs verbatim
+     across outlets, and counting it twice would fake corroboration.
+
+     ★ THE DUPLICATE IS RECONCILED, NOT DROPPED, and that one word is the fix
+     for the 600-to-160 incident. This loop used to keep whichever copy the
+     query order surfaced first; Google News hands the SAME URL a different
+     pubDate in different queries, and query membership churns between runs, so
+     an article already on the page could have its recorded publication time
+     jump six hours forward. dedupeFeedItems keeps the earliest. The full
+     measurement is at the top of scripts/lib/event-feed.mjs. */
+  return dedupeFeedItems(items);
 }
 
 /* ── OFFICIAL CORROBORATION ───────────────────────────────────────────────
@@ -629,6 +632,13 @@ async function dossier(c, s, existing) {
     });
   }
 
+  /* ★ A TIME ALREADY ON THE PAGE MAY NOT MOVE FORWARD. The dedupe above makes
+     one run deterministic; this makes the SEQUENCE of runs stable, so a feed
+     inventing a later stamp on some future fetch cannot re-order a register a
+     reader has already been shown. News rows only — see event-feed.mjs on why
+     `official-N` ids are positional and must not be anchored. */
+  const register = anchorPublished(sources, existing?.sources);
+
   /* The headline is the most-corroborated actual headline, verbatim. The
      script does not write one of its own — a generated headline about a
      disaster is exactly the sentence nobody should be inventing. */
@@ -655,7 +665,7 @@ async function dossier(c, s, existing) {
     tier: c.tier,
     headline: existing?.origin === 'editor' && existing.headline
       ? existing.headline : cleanHeadline(lead.title, lead.publisher),
-    sources: sources.map((x) => x.id).sort(),
+    sources: register.map((x) => x.id).sort(),
   });
   const unchanged = existing && existing.evidence_fingerprint === fingerprint;
 
@@ -723,7 +733,7 @@ async function dossier(c, s, existing) {
        the same asymmetry `headline` and `what_happened` already have — the
        detector may add under a human's writing and may never replace it. */
     impact: (() => {
-      const read = consolidate(sources, { place: c.place });
+      const read = consolidate(register, { place: c.place });
       const kept = { ...read };
       /* ── ONLY AN EDITOR'S ROW SURVIVES A RE-DETECTION ──────────────────
          ★ THIS MERGE USED TO BE `{ ...read, ...existing.impact }` AND IT
@@ -772,7 +782,7 @@ async function dossier(c, s, existing) {
     })(),
     figures: existing?.figures || [],
     timeline: (existing?.timeline || []).length ? existing.timeline : [
-      { when: lead.published || null, what: 'First reported in the sources below.', source: sources[0]?.id || null },
+      { when: lead.published || null, what: 'First reported in the sources below.', source: register[0]?.id || null },
     ],
     /* ★ ALWAYS NON-EMPTY FOR AN AUTOMATED DOSSIER, AND HONESTLY SO.
        The publish gate in lib/climate-events.mjs requires this list. A machine
@@ -794,7 +804,7 @@ async function dossier(c, s, existing) {
         ? 'Downstream consequences for India are a known mechanism for this hazard, not a confirmed outcome of this event.'
         : 'Whether this event is continuing or has passed is not established.',
     ],
-    sources,
+    sources: register,
     /* Live weather is a reading, and it genuinely does move every run — but a
        quiet run must not churn the file, so it is only refreshed when the
        evidence moved. The page labels it with its own fetch time either way. */
