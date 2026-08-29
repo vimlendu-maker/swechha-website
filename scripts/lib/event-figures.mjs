@@ -405,12 +405,68 @@ export function figuresFromText(text) {
    who disagree is this page choosing the more alarming one. Recency is a fact
    about the record; magnitude is an editorial preference.
 
+   ★ AND RECENCY ALONE PUT 160 DEAD ON A LIVE DISASTER PAGE. See
+   scripts/lib/event-feed.mjs for the full incident: one article's recorded
+   pubDate moved forward six hours, a stale "nearly 160 lives" headline became
+   the newest reading, and the toll this page had already published at 600
+   collapsed to 160 under the words CONFIRMED DEAD for four and a half hours.
+
+   event-feed.mjs stops the timestamp moving. It is not enough on its own, and
+   the arithmetic says why: read with its TRUE 13:39 stamp, that headline was
+   STILL the most recently published death figure in the register for four
+   hours and forty-five minutes, while the Times of India (500), India Today
+   (587), Maktoob (469) and Al Jazeera (470) had each already printed three to
+   four times it. Recency would have published 160 anyway, earlier in the day.
+   Any rule that trusts one field of one reading fails the same way the next
+   time an outlet republishes an old number, and outlets do that daily.
+
+   ★ SO: A COLLAPSE MUST BE CORROBORATED BEFORE IT MAY LEAD.
+   Deaths, missing, injured — these accumulate. A newer figure far BELOW an
+   established one is a stale republish, a narrower scope, or a correction; it
+   is never new knowledge, because knowledge does not un-find a body. Such a
+   reading is skipped for the lead and the next-newest is asked instead. It is
+   not suppressed: it stays in `readings`, keeps its attribution, and still
+   sets one end of the range the card prints — which is the honest treatment,
+   because the disagreement is real and hiding it would be the other failure.
+
+   Movement INSIDE the agreement band passes straight through untouched (600 →
+   547 is 8.8% and is ordinary revision), so recency still decides the ordinary
+   case, which it is right about.
+
+   ★ THE COMPARISON WINDOW IS TWELVE HOURS, and that is what keeps the guard
+   from becoming a ratchet. A missing count genuinely falls as people are
+   accounted for. Comparing only against the preceding twelve hours means a
+   real, sustained fall is published once yesterday's peak has aged out of the
+   window, instead of being frozen behind it for the two days the register
+   holds. A monotonic floor with no window would have been a worse bug than the
+   one it fixed.
+
    ★ THE SPREAD DECIDES THE CONFIDENCE WORD, and it is computed, not chosen.
    Outlets agreeing inside 15% is a REPORTED figure. Outlets ranging 160 to 547
    is a PRELIMINARY one, and saying so is the most useful thing this page can
    do with that row.
 */
 const AGREEMENT = 0.15;
+const REVISION_WINDOW_MS = 12 * 3600 * 1000;
+
+/** The reading that leads the card. `readings` must already be newest-first.
+ *  Walks forward from the newest, skipping any reading that would collapse a
+ *  figure published in the preceding twelve hours by more than the agreement
+ *  band. Falls back to the newest when every reading is such a collapse, which
+ *  can only happen if the record itself is falling — in which case recency is
+ *  the right answer again. */
+function electLead(readings) {
+  for (const cand of readings) {
+    let priorMax = 0;
+    for (const r of readings) {
+      if (r.when < cand.when && cand.when - r.when <= REVISION_WINDOW_MS && r.value > priorMax) {
+        priorMax = r.value;
+      }
+    }
+    if (!priorMax || cand.value >= priorMax * (1 - AGREEMENT)) return cand;
+  }
+  return readings[0];
+}
 
 /* ── THE PLACE GUARD ──────────────────────────────────────────────────────
    ★ THIS CAUGHT A FIGURE ABOUT TO BE PUBLISHED ON THE WRONG EVENT, and it is
@@ -495,7 +551,7 @@ export function consolidate(sources, { place = null } = {}) {
   const out = {};
   for (const [metric, readings] of rows) {
     readings.sort((a, b) => b.when - a.when || b.value - a.value);
-    const lead = readings[0];
+    const lead = electLead(readings);
     const values = readings.map((r) => r.value);
     const min = Math.min(...values);
     const max = Math.max(...values);

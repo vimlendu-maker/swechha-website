@@ -5,6 +5,7 @@ import { join } from 'node:path'
 // for these — see caaqms.test.ts and air-history.test.ts. `allowJs` is on, so
 // types are inferred and no suppression is needed.
 import { figuresFromText, consolidate, eventName, mentionsPlace } from '../scripts/lib/event-figures.mjs'
+import { dedupeFeedItems, anchorPublished } from '../scripts/lib/event-feed.mjs'
 import { statusOf, homepageSlot, situationHref, SITUATION_STATUS } from '../scripts/lib/active-situation.mjs'
 
 /**
@@ -133,13 +134,16 @@ describe('consolidating disagreeing outlets', () => {
   it('leads on the most recently published figure, not the largest', () => {
     const rows = rowsOf(consolidate([
       src('a', 'A', 'flood death toll hits 900', 'Fri, 28 Aug 2026 02:00:00 GMT'),
-      src('b', 'B', 'flood death toll hits 500', 'Fri, 28 Aug 2026 12:00:00 GMT'),
+      src('b', 'B', 'flood death toll hits 940', 'Fri, 28 Aug 2026 12:00:00 GMT'),
+      src('c', 'C', 'flood death toll hits 820', 'Fri, 28 Aug 2026 22:00:00 GMT'),
     ]))
-    // B is newer and lower. Recency is a fact about the record; magnitude is a
-    // preference, and taking the larger would be this page choosing the more
-    // alarming of two numbers it cannot adjudicate.
-    expect(rows.deaths.value).toBe(500)
-    expect(rows.deaths.spread).toMatchObject({ min: 500, max: 900, outlets: 2 })
+    // C is newest and LOWER than both. Recency is a fact about the record;
+    // magnitude is a preference, and taking the larger would be this page
+    // choosing the more alarming of numbers it cannot adjudicate. 820 against
+    // a 940 peak is a 12.8% revision — inside the agreement band, so it is
+    // ordinary movement and it leads.
+    expect(rows.deaths.value).toBe(820)
+    expect(rows.deaths.spread).toMatchObject({ min: 820, max: 940, outlets: 3 })
   })
 
   it('calls a wide spread PRELIMINARY and a tight one a MEDIA REPORT', () => {
@@ -334,11 +338,212 @@ describe('the detector preserves what a person set', () => {
     expect(src).toMatch(/keepEditorFields\(await dossier\(/)
   })
 
+  it('reconciles the feeds rather than keeping whichever query was read first', () => {
+    // The 600-to-160 incident. A bare `seenLink`/`seenTitle` Set drops the
+    // duplicate copy of an article and keeps the first one's pubDate, which
+    // Google varies per query — so the recorded publication time of a story
+    // already on the page depended on which feed surfaced it that run.
+    expect(src).toContain('dedupeFeedItems(items)')
+    expect(src).not.toMatch(/seenLink\.has\(/)
+  })
+
+  it('anchors a news source\'s publication time against a later feed answer', () => {
+    expect(src).toMatch(/anchorPublished\(sources, existing\?\.sources\)/)
+    // And everything downstream must read the ANCHORED register, or the anchor
+    // is computed and then thrown away.
+    expect(src).toContain('consolidate(register, { place: c.place })')
+    expect(src).toContain('sources: register,')
+  })
+
   it('does NOT preserve by spreading the previous file over the new one', () => {
     // A spread would also freeze the score, the corroboration counts and the
     // timestamps — the things the detector exists to update. The division is
     // evidence for the detector, judgement for a person, neither overwriting
     // the other.
     expect(src).not.toMatch(/return\s*\{\s*\.\.\.existing/)
+  })
+})
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * THE 600 → 160 INCIDENT, 28–29 AUGUST 2026.
+ * ───────────────────────────────────────────────────────────────────────────
+ * /now/climate-event/nepal-glof led on "600 CONFIRMED DEAD" at 19:10 IST and
+ * on "160 CONFIRMED DEAD" from 21:17 IST until 01:12, four and a half hours,
+ * on a live disaster page. Nothing about the disaster changed. One field did.
+ *
+ * MEASURED CAUSE, both halves reproduced below.
+ *
+ *  1. GOOGLE NEWS GIVES THE SAME ARTICLE TWO DIFFERENT pubDates. The News On
+ *     AIR piece "Nepal flash flood claims nearly 160 lives" is returned by the
+ *     `india flood...` query stamped 19:48:50 GMT and by the
+ *     `india OR nepal ... cloudburst` query stamped 13:39:10 GMT — same URL,
+ *     same title, six hours and nine minutes apart. Verified live against both
+ *     feeds on 29 August 2026. collectNews() de-duplicated by link keeping
+ *     whichever query surfaced it first, and query membership churns run to
+ *     run, so the recorded publication time of an article already on the page
+ *     moved FORWARD by six hours between two runs.
+ *
+ *  2. consolidate() elected the lead figure by that one field alone. A stale
+ *     "nearly 160 lives" headline re-stamped to 19:48 became the most recent
+ *     reading, and a death toll the page had already published at 600 fell to
+ *     160 under the words CONFIRMED DEAD.
+ *
+ * The same article's "over 750 Missing" simultaneously displaced India Today's
+ * 2,500 on the missing card, which is the same defect on a second figure and
+ * is why the tests below cover both.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+describe('an article\'s publication time may not move', () => {
+  const item = (link: string, title: string, published: string) =>
+    ({ link, title, publisher: 'News On AIR', published, publishedMs: Date.parse(published) })
+
+  const LINK = 'https://news.google.com/rss/articles/CBMimAFBVV95cUxQUFAy'
+  const TITLE = 'Nepal flash flood claims nearly 160 lives; over 750 Missing, including 133 Indians'
+
+  it('keeps the earliest pubDate when one feed disagrees with another', () => {
+    // Exactly the two rows Google returned for one URL. Whichever query is
+    // read first, the article keeps the earlier time — so the answer no longer
+    // depends on which feed happened to surface it this run.
+    const late = dedupeFeedItems([
+      item(LINK, TITLE, 'Fri, 28 Aug 2026 19:48:50 GMT'),
+      item(LINK, TITLE, 'Fri, 28 Aug 2026 13:39:10 GMT'),
+    ])
+    const early = dedupeFeedItems([
+      item(LINK, TITLE, 'Fri, 28 Aug 2026 13:39:10 GMT'),
+      item(LINK, TITLE, 'Fri, 28 Aug 2026 19:48:50 GMT'),
+    ])
+    expect(late).toHaveLength(1)
+    expect(early).toHaveLength(1)
+    expect(late[0].publishedMs).toBe(Date.parse('Fri, 28 Aug 2026 13:39:10 GMT'))
+    expect(early[0].publishedMs).toBe(late[0].publishedMs)
+  })
+
+  it('still counts one story once, however many feeds carry it', () => {
+    const out = dedupeFeedItems([
+      item('l1', 'Nepal flood toll rises to 547', 'Fri, 28 Aug 2026 12:00:00 GMT'),
+      item('l2', 'Nepal flood toll rises to 547', 'Fri, 28 Aug 2026 14:00:00 GMT'),
+      item('l3', 'Nepal flood toll rises to 579', 'Fri, 28 Aug 2026 15:00:00 GMT'),
+    ])
+    expect(out).toHaveLength(2)
+    expect(out[0].publishedMs).toBe(Date.parse('Fri, 28 Aug 2026 12:00:00 GMT'))
+  })
+
+  it('never lets a stamp already on the page move forward on a later run', () => {
+    // The persistence half. Even if a feed invents a third, later time on some
+    // future run, the register keeps what it first recorded for that article.
+    const previous = [
+      { id: 'a', tier: 'news', publisher: 'News On AIR', title: TITLE, url: LINK,
+        published: 'Fri, 28 Aug 2026 13:39:10 GMT' },
+    ]
+    const fetched = [
+      { id: 'a', tier: 'news', publisher: 'News On AIR', title: TITLE, url: LINK,
+        published: 'Fri, 28 Aug 2026 19:48:50 GMT' },
+    ]
+    expect(anchorPublished(fetched, previous)[0].published)
+      .toBe('Fri, 28 Aug 2026 13:39:10 GMT')
+  })
+
+  it('accepts an EARLIER stamp, and a stamp for an article it has not seen', () => {
+    const previous = [
+      { id: 'a', tier: 'news', publisher: 'P', title: 'T', published: 'Fri, 28 Aug 2026 19:48:50 GMT' },
+    ]
+    expect(anchorPublished(
+      [{ id: 'a', tier: 'news', publisher: 'P', title: 'T', published: 'Fri, 28 Aug 2026 13:39:10 GMT' }],
+      previous,
+    )[0].published).toBe('Fri, 28 Aug 2026 13:39:10 GMT')
+
+    expect(anchorPublished(
+      [{ id: 'b', tier: 'news', publisher: 'P', title: 'T2', published: 'Fri, 28 Aug 2026 20:00:00 GMT' }],
+      previous,
+    )[0].published).toBe('Fri, 28 Aug 2026 20:00:00 GMT')
+  })
+
+  it('leaves official alerts alone — their ids are positional, not the article\'s', () => {
+    // `official-1` is the first matched alert of whatever run wrote it. Two
+    // runs' `official-1` are different alerts, so an id match means nothing.
+    const previous = [{ id: 'official-1', tier: 'official', publisher: 'IMD', title: 'A',
+      published: 'Fri, 28 Aug 2026 01:00:00 GMT' }]
+    const fetched = [{ id: 'official-1', tier: 'official', publisher: 'IMD', title: 'B',
+      published: 'Fri, 28 Aug 2026 20:00:00 GMT' }]
+    expect(anchorPublished(fetched, previous)[0].published).toBe('Fri, 28 Aug 2026 20:00:00 GMT')
+  })
+})
+
+/**
+ * THE SECOND HALF: the lead figure must survive one bad timestamp.
+ *
+ * Fixing the feed is necessary and it is not sufficient. Read with its TRUE
+ * 13:39 stamp, the News On AIR "nearly 160 lives" headline was still, for four
+ * hours and forty-five minutes, the most recently published death figure in
+ * the register — while the Times of India (500), India Today (587), Maktoob
+ * (469) and Al Jazeera (470) had all already printed three to four times that.
+ * Recency alone would have put 160 on the page anyway, just earlier in the day.
+ *
+ * So: a death toll and a missing count only accumulate. A newer figure that
+ * COLLAPSES an established one is a stale republish, a different scope or a
+ * correction — never new knowledge — and this page will not lead on it until
+ * the rest of the record agrees. Movement inside the agreement band is normal
+ * revision and still passes straight through, because that is the ordinary
+ * case and recency is right about it.
+ */
+describe('the lead figure survives one bad reading', () => {
+  const src = (id: string, publisher: string, title: string, published: string) =>
+    ({ id, publisher, title, published, tier: 'news' })
+
+  it('does not let a stale headline collapse an established toll', () => {
+    const rows = rowsOf(consolidate([
+      src('toi', 'The Times of India', 'Nepal flood toll nears 500', 'Fri, 28 Aug 2026 04:05:00 GMT'),
+      src('it', 'India Today', 'Nepal flood toll rises to 587', 'Fri, 28 Aug 2026 06:58:00 GMT'),
+      src('mak', 'Maktoob', 'Nepal flood death toll rises to 469', 'Fri, 28 Aug 2026 07:20:00 GMT'),
+      src('noa', 'News On AIR', 'Nepal flash flood claims nearly 160 lives; over 750 Missing',
+        'Fri, 28 Aug 2026 13:39:10 GMT'),
+    ]))
+    expect(rows.deaths.value).toBe(587)
+    // The 160 is not suppressed. It is still a reading, still attributed, and
+    // still one end of the range the card prints.
+    expect(rows.deaths.spread).toMatchObject({ min: 160, max: 587 })
+    expect(rows.deaths.readings.map((r) => r.value)).toContain(160)
+  })
+
+  it('lets an ordinary downward revision through', () => {
+    // 600 → 547 is 8.8%, inside the agreement band: outlets counting the same
+    // event slightly differently, which is the normal case and not a collapse.
+    const rows = rowsOf(consolidate([
+      src('it', 'India Today', 'Nepal flood toll nears 600', 'Fri, 28 Aug 2026 18:24:00 GMT'),
+      src('et', 'The Economic Times', 'Nepal flood toll hits 547', 'Fri, 28 Aug 2026 23:08:00 GMT'),
+    ]))
+    expect(rows.deaths.value).toBe(547)
+  })
+
+  it('fixes the missing count the same reading was understating', () => {
+    // Live on the page at the time of writing: "OVER 750 · MISSING · Outlets
+    // report 750–2,500". India Today's 2,500 is the figure that stands.
+    const rows = rowsOf(consolidate([
+      src('it', 'India Today', 'Nepal toll nears 600, search for 2,500 missing continues',
+        'Fri, 28 Aug 2026 18:24:00 GMT'),
+      src('noa', 'News On AIR', 'Nepal flash flood claims nearly 160 lives; over 750 Missing',
+        'Fri, 28 Aug 2026 19:48:50 GMT'),
+    ]))
+    expect(rows.missing.value).toBe(2500)
+  })
+
+  it('accepts a sustained fall once the high reading is a day old', () => {
+    // A missing count genuinely falls as people are accounted for. The guard
+    // compares against the last twelve hours only, so a real, sustained fall
+    // is published rather than frozen behind yesterday's peak.
+    const rows = rowsOf(consolidate([
+      src('a', 'A', 'Nepal flood: 2,500 missing', 'Fri, 28 Aug 2026 02:00:00 GMT'),
+      src('b', 'B', 'Nepal flood: missing now 400', 'Sat, 29 Aug 2026 06:00:00 GMT'),
+    ]))
+    expect(rows.missing.value).toBe(400)
+  })
+
+  it('still prefers the newer of two figures that agree', () => {
+    const rows = rowsOf(consolidate([
+      src('a', 'A', 'flood death toll hits 540', 'Fri, 28 Aug 2026 02:00:00 GMT'),
+      src('b', 'B', 'flood death toll hits 547', 'Fri, 28 Aug 2026 12:00:00 GMT'),
+    ]))
+    expect(rows.deaths.value).toBe(547)
   })
 })
