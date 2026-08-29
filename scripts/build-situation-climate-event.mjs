@@ -125,7 +125,9 @@ const CURRENT = homepageSlot(EVENTS).event;
 /* This page shows only the COMPACT banner; the full board, and the hazard
    context pack behind it, live on /now/climate-event/<slug>. Keeping the two
    apart is the whole point of the split — this page's clock is annual and the
-   board's is half-hourly, and they were fighting for the same screen. */
+   board's is hourly (was half-hourly; cut back 29 August — see
+   climate-events.yml's own header), and they were fighting for the same
+   screen. */
 
 /* ═══ BAND SEQUENCE — id, tier class, ground hex ══════════════════════════
    ★ ONE BAND INSERTED, NOTHING REORDERED, AND THAT IS DELIBERATE.

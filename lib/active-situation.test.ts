@@ -309,7 +309,8 @@ describe('the lifecycle', () => {
  *
  * `dossier()` in scripts/detect-climate-events.mjs rebuilds the event object
  * from a FIXED key set, so any field not named in it is dropped on the next
- * run — and that run happens every thirty minutes in CI. An editor demoting an
+ * run — and that run happens on every scheduled CI tick (hourly; was
+ * half-hourly, cut back 29 August). An editor demoting an
  * event off the homepage would have had the decision reverted automatically,
  * with the page quietly promoting itself again. `hero_days` had the same hole
  * and predates the lifecycle entirely.

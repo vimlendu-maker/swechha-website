@@ -697,7 +697,7 @@ const HOMEPAGE = homepageSlot();
         `$1${esc(ev.location.text)} &middot; ${esc(HAZ_WORD[ev.hazard] || ev.hazard)}. `
         + `${ev.corroboration.independent_publishers} independent publishers`
         + `${ev.corroboration.official_alerts ? `, ${ev.corroboration.official_alerts} official alerts` : ''}. `
-        + `Feeds re-read every 30 minutes.$2`, 'the source line'],
+        + `Feeds re-read every hour.$2`, 'the source line'],
       [/(<span class="tag tag-season">)[^<]*(<\/span>)/, `$1${esc(status.label)}$2`, 'the status tag'],
       [/(<p class="s-hero-act"><a class="act" href=")[^"]*(")/, `$1${href}$2`, 'the link to the full situation'],
     ];

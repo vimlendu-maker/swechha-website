@@ -63,7 +63,8 @@ name: Climate events — the page notices something happened
 #   /now/climate-event          the standing picture, with a compact banner
 #                               when something is happening. Annual clock.
 #   /now/climate-event/<slug>   one page per published event, the full board.
-#                               Half-hourly clock.
+#                               Hourly clock — was half-hourly; see the
+#                               29 August storage note below.
 # They were one page and it did not work: the board pushed the death table and
 # the twelve cities below three screens of something with a different cadence.
 #
@@ -71,16 +72,28 @@ name: Climate events — the page notices something happened
 # NDMA's Sachet endpoint are all keyless. Nothing here needs a key, so unlike
 # the air jobs there is no missing-secret path to report.
 #
-# COST: 48 runs a day, about a minute each. Most produce no commit — the
-# detector stamps a clock, and scripts/data-refresh-changed.mjs reverts a file
-# whose only change is a clock, so a quiet half-hour costs nothing and deploys
-# nothing.
+# COST, AND WHY IT WAS CUT FROM 48 RUNS A DAY TO 24. Most quiet runs still
+# produce no commit — the detector stamps a clock, and
+# scripts/data-refresh-changed.mjs reverts a file whose only change is a
+# clock. But an ACTIVE, still-developing event is not quiet: measured
+# 29 August 2026 during the Assam-flood/Nepal-GLOF window, the dossier's
+# corroboration counts and extracted casualty figures were moving on nearly
+# every run, so nearly every half-hour tick was a real commit — a real
+# deployment, each retaining its own build artefact — for a week straight.
+# That is what actually grew Vercel's Deployment Storage to ~23GB, not a
+# stuck-timestamp bug (the noise filter above is working correctly). Halving
+# the schedule halves the worst-case deploy count from this workflow; the
+# trade is real, deliberately accepted: a fast-breaking event's page can now
+# lag the news by up to an hour instead of thirty minutes. If that trade turns
+# out to be wrong for a specific kind of event, the fix is a smarter
+# publish-decision (taper cadence once a dossier has been stable for a few
+# hours), not reverting this line — see the storage audit this commit is
+# part of.
 
 on:
   schedule:
-    # Every 30 minutes at :05 and :35 — clear of air-hourly's :35 hourly run by
-    # being a different workflow entirely, and clear of data-refresh's :40.
-    - cron: '5,35 * * * *'
+    # Hourly at :05 — clear of air-hourly's :35 and data-refresh's :40.
+    - cron: '5 * * * *'
   workflow_dispatch:
     inputs:
       dry_run:

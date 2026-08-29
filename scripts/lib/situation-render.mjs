@@ -1214,16 +1214,19 @@ ${(e.uncertain || []).map((u) => `          <li>${esc(u)}</li>`).join('\n')}
 
            MAKING IT A REAL READ-TIME IS THE EXPENSIVE FIX AND IT IS NOT WORTH
            IT. A moving clock has to be committed to be visible, and every
-           commit is a deploy: 48 a day for this page alone, on top of Air's,
-           against a Hobby ceiling of 100. Exhausting that budget is not
-           hypothetical here — every deployment failed from 27 August 18:08
-           over a cron expression, and the live site served a 27-hour-old AQI
-           until it was found. Spending the headroom on a clock would put every
-           real figure on the site at risk to make one timestamp twitch.
+           commit is a deploy: up to 24 a day for this page alone (cut from 48
+           on 29 August — a Deployment Storage audit found an actively-moving
+           dossier was committing on nearly every half-hourly tick, which is
+           what was actually growing it), on top of Air's, against a Hobby
+           ceiling of 100. Exhausting that budget is not hypothetical here —
+           every deployment failed from 27 August 18:08 over a cron
+           expression, and the live site served a 27-hour-old AQI until it was
+           found. Spending the headroom on a clock would put every real figure
+           on the site at risk to make one timestamp twitch.
 
            So the page states both true things and names the trap between
            them. */ ''}
-      <p class="cap as-stamp">Feeds re-read every 30 minutes. This page last changed
+      <p class="cap as-stamp">Feeds re-read every hour. This page last changed
         ${esc(istStamp(e.last_updated.epochMs))} &mdash; a re-read that finds nothing new
         does not move that.</p>
     </div>`;

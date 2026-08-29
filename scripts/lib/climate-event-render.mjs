@@ -164,7 +164,7 @@ export function renderQuiet({ wetNow, total, seasonTo, checkedMs, headlines = []
           ${recent}
         </ul>` : ''}
         <p class="ce-meta">
-          <span>News and official alert feeds are re-read every 30 minutes</span>
+          <span>News and official alert feeds are re-read every hour</span>
           <i class="ce-sep">&middot;</i>
           <span>this page last changed ${stamp(checkedMs)}</span>
         </p>

@@ -14,8 +14,9 @@
    run, against a public service nobody is paying for.
 
    ★ IT REFUSES TO CHURN, AND THAT IS A DEPLOY BUDGET, NOT TIDINESS.
-   climate-events.yml runs every thirty minutes and every commit to main is a
-   Vercel deployment against a hundred-a-day ceiling. So a slot that already
+   climate-events.yml runs hourly (was half-hourly; cut back 29 August — see
+   its own header) and every commit to main is a Vercel deployment against a
+   hundred-a-day ceiling. So a slot that already
    holds a good image is left alone: re-probing is throttled to once every
    RETRY_HOURS, and a BEFORE frame is never re-chosen at all once found —
    the past does not improve. What does get retried, every run, is a slot the
