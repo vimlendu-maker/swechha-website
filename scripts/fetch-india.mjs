@@ -153,7 +153,17 @@ async function fetchPage(offset, limit) {
   if (!Array.isArray(body?.records)) throw new Error('unexpected response shape — no `records` array');
   return body;
 }
-const KEY_OF = (r) => `${r.station}|${r.pollutant_id}`;
+/* ★ THE OBSERVATION HOUR IS PART OF THE KEY — AD-50, 29 August 2026.
+   Without it, a response spanning TWO hours (which the mirror serves while
+   catching up) shows every pair twice: distinct=308 against total=616 reads as
+   "half the rows were lost to unstable paging". In the Delhi fetcher that
+   refused one run outright; HERE it is worse, because the paging loop RETRIES
+   while distinct < total — so a two-hour response would retry through every
+   backoff and then fail, at exactly the moment fresh data arrived.
+   With the hour in the key a two-hour response is complete and passes, while
+   duplicates of the same station, pollutant AND hour still collapse and still
+   trip the guard, which is the loss this key exists to catch. */
+const KEY_OF = (r) => `${r.station}|${r.pollutant_id}|${r.last_update}`;
 
 let rows = [];
 let attempt = 0;
@@ -303,6 +313,24 @@ for (; !rows.length;) {
 }
 if (!rows.length) { console.error('upstream returned no records at all. Refusing to publish an absence.'); process.exit(1); }
 if (!SERVED) SERVED = 'mirror'; // the loop above delivered, or AIR_FIXTURE replayed mirror-shape rows
+
+/* ── ONE SNAPSHOT MEANS ONE HOUR — AD-50 ──────────────────────────────────
+   The national page states that every city in the table was read at one hour.
+   Across a two-hour response the fold below would take whichever row for a
+   station arrived first while later rows overwrote its pollutants, mixing
+   hours inside a city. So the newest hour wins and the rest are dropped: they
+   describe an hour already published, and the monotonicity guard would refuse
+   them anyway. Same rule as scripts/fetch-air.mjs. */
+{
+  const stamps = [...new Set(rows.map((r) => r.last_update).filter(Boolean))];
+  if (stamps.length > 1) {
+    const newest = stamps.reduce((a, b) => (newerStamp(a, b) === 'a' ? a : b));
+    const before = rows.length;
+    rows = rows.filter((r) => r.last_update === newest);
+    console.log(`SPANS ${stamps.length} HOURS: keeping the newest (${newest}); `
+      + `${before - rows.length} row(s) from earlier hours dropped.`);
+  }
+}
 
 /* ── FOLD: row -> station -> city ──────────────────────────────────────── */
 
