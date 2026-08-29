@@ -1284,6 +1284,21 @@ export const AS_CSS = `
 .as-cards{display:flex;flex-wrap:wrap;gap:1px;background:var(--hair-2);margin:0 0 clamp(14px,1.6vw,20px)}
 .as-card{flex:1 1 200px;background:var(--ground);padding:clamp(14px,1.5vw,20px) clamp(13px,1.4vw,18px);
   display:flex;flex-direction:column;gap:0}
+/* THE ORPHAN ROW. Measured at 1400px on nepal-glof with seven cards: five sat
+   at 229px and the two on the second row stretched to 574px each, a 62px
+   numeral adrift in a half-page box. flex-grow shares a line's free space
+   between whatever landed on that line, so a short last row inflates. This
+   zero-basis, high-grow spacer is the last flex item, so it only ever joins
+   the LAST line and soaks up its slack: the short row's cards stay at their
+   basis (226px, against the full row's 229px) and the remainder renders as
+   --ground, which is the page. A full last row is unaffected because the
+   spacer contributes no width of its own.
+
+   ONLY FROM SIX CARDS UP, and bihar-flood is why. That page's row holds ONE
+   card, which fills the width and should: a lone 200px box beside a void is
+   worse than a wide one. Below six there is no orphan to fix, so the rule does
+   not fire. A browser without :has() simply keeps the old behaviour. */
+.as-cards:has(.as-card:nth-child(6))::after{content:"";flex:999 1 0;background:var(--ground)}
 .as-card-v{font-size:clamp(38px,4.6vw,62px);line-height:.94;color:var(--red);
   font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .as-card-in .as-card-v{color:var(--fg)}
