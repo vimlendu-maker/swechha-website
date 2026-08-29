@@ -53,12 +53,19 @@ const PIPELINES = [
     inputs: { dry_run: 'false' },
   },
   {
-    /* Half-hourly by design. Reading news RSS on a 15-minute heartbeat instead
-       is not the expensive part — the imagery fetch self-throttles to one probe
-       cycle per event per three hours, and the "discard clock-only churn" step
-       means a quiet run makes no commit and therefore no deploy. */
+    /* Hourly by design — was half-hourly until 29 August 2026, cut back in
+       the Deployment Storage audit: an actively-developing event committed
+       (and therefore deployed) on nearly every half-hourly tick, which is
+       what actually grew Vercel's storage, not a bug. Reading news RSS on a
+       15-minute heartbeat instead was never the expensive part — the imagery
+       fetch self-throttles to one probe cycle per event per three hours, and
+       the "discard clock-only churn" step means a quiet run makes no commit
+       and therefore no deploy — the expensive part was a genuinely-moving
+       dossier committing every thirty minutes. coverMinutes is just under
+       the workflow's now-hourly cadence, same convention as air-hourly's 12
+       against its 15-minute one. */
     workflow: 'climate-events.yml',
-    coverMinutes: 25,
+    coverMinutes: 55,
     inputs: { dry_run: 'false' },
   },
 ] as const;

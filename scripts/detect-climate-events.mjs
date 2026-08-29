@@ -647,7 +647,7 @@ async function dossier(c, s, existing) {
   /* ── A QUIET RUN MUST PRODUCE AN IDENTICAL FILE ────────────────────────
      ★ SAME LESSON AS THE RELATIVE TIMESTAMPS, ONE LAYER DOWN.
      Stamping last_updated and last_checked on every run means a dossier's
-     bytes move every thirty minutes whether or not a single source changed —
+     bytes move every run whether or not a single source changed —
      and this repository's rule is that it commits figures, not clocks.
      data-refresh-changed.mjs only treats `fetched` as noise, so these two
      would have produced a commit and a deploy on every quiet run.

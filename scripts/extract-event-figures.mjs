@@ -64,7 +64,7 @@ for (const f of readdirSync(DIR).filter((x) => x.endsWith('.json'))) {
      validateEvent() is what the page build runs, and it throws on a claim
      whose source id is not in the file's own register. Running it here means a
      bad extraction fails this script rather than the build of a live disaster
-     page thirty minutes later. */
+     page on the next scheduled run. */
   try {
     validateEvent(`active/${f}`, next);
   } catch (err) {

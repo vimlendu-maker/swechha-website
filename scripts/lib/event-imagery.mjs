@@ -189,7 +189,7 @@ export function snapshotUrl({ layer, bbox, date, width, height, format = 'image/
 /* ═══ A PNG DECODER, BECAUSE THE MEASUREMENT HAS TO HAPPEN SOMEWHERE ══════
    Sixty lines against a native image library, and the trade is deliberate: a
    dependency here would have to build in CI on every run of a workflow that
-   fires every thirty minutes, and this repository has kept every generator on
+   fires every hour, and this repository has kept every generator on
    Node built-ins for exactly that reason. GIBS answers PNG as 8-bit RGB or
    RGBA, non-interlaced, which is the one case this handles — anything else
    returns null and the candidate is skipped rather than guessed at. */
