@@ -170,3 +170,31 @@ export function lastUpdatedFrom(previousMs, sources, now = Date.now()) {
      function is here to survive. The test for it is the one that caught this. */
   return Math.max(previousMs || 0, freshest) || now;
 }
+
+/* ── A COLLAPSE IS NOT A QUIET DAY ────────────────────────────────────────
+   The detector exits 75 when NOTHING answers, which is a statement about the
+   internet rather than the weather. This is the case that slips past it: the
+   sources answer, the RSS parses, and a fraction of the usual items come back.
+   On 5 September one run read 218 news items where the run fifty minutes
+   before it read 574, and the Nepal glacial flood went from 137 independent
+   publishers to 2 with 1,344 dead. Everything downstream survives that now —
+   publication latches, and a fade waits a day before demoting — but nothing
+   noticed it happen. It looked like an ordinary run.
+
+   THE THRESHOLD IS MEASURED. Across the 59 runs in checked.json's committed
+   history the run-over-run ratio has a median of 1.00; the two real collapses
+   both landed at 0.38 and both recovered to full volume on the next run; the
+   lowest non-collapse ratio is 0.66. Half sits in the middle of that gap, so
+   this fires twice in 59 runs and both times on something real. A baseline
+   floor keeps it quiet when the previous run was itself tiny — comparing two
+   small numbers is how a ratio test turns into noise.
+
+   Returns null when the run looks normal, so the caller reads as a question. */
+export const COLLAPSE_RATIO = 0.5;
+export const COLLAPSE_MIN_BASELINE = 100;
+
+export function feedCollapse(current, previous) {
+  if (typeof previous !== 'number' || previous < COLLAPSE_MIN_BASELINE) return null;
+  if (typeof current !== 'number' || current >= previous * COLLAPSE_RATIO) return null;
+  return { current, previous, pct: Math.round((current / previous) * 100) };
+}

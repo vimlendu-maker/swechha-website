@@ -44,7 +44,7 @@ import { writeFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from 
 import { resolve, join } from 'node:path';
 import { HAZARD_TERMS, TIER1, TIER2, SEVERITY_TERMS, NEGATIVE_TERMS, hay, ownedElsewhere, coordsFor, regionOf } from './lib/event-terms.mjs';
 import { consolidate } from './lib/event-figures.mjs';
-import { dedupeFeedItems, anchorPublished, lastUpdatedFrom } from './lib/event-feed.mjs';
+import { dedupeFeedItems, anchorPublished, lastUpdatedFrom, feedCollapse } from './lib/event-feed.mjs';
 import { HAZARDS, hasContext } from './lib/climate-events.mjs';
 import { publishStateFor } from './lib/active-situation.mjs';
 
@@ -904,6 +904,48 @@ if (!news.length) {
   console.error(`No news source answered (${unreachable.length} unreachable). Nothing written; existing events left alone.`);
   for (const u of unreachable) console.error(`  ${u.source}: ${u.error}`);
   process.exit(75);
+}
+
+/* ── A COLLAPSE IS NOT A QUIET DAY EITHER ─────────────────────────────────
+   ★ THE FAILURE THIS MAKES VISIBLE, WHICH RAN SILENTLY FOR WEEKS.
+   Exit 75 above catches TOTAL silence: nothing answered, so nothing is
+   written. What it cannot catch is the feed answering with a fraction of its
+   usual volume — sources reachable, RSS well-formed, five per cent of the
+   items. On 5 September one run read 218 news items where the run fifty
+   minutes earlier read 574, and the Nepal glacial flood went from 137
+   independent publishers to 2 with 1,344 dead. Everything downstream now
+   survives that (publication latches, and `faded_since` waits a day before it
+   demotes anything), but nothing NOTICED it. It looked like an ordinary run.
+
+   THE THRESHOLD IS MEASURED, NOT PICKED. Across the 59 runs in the committed
+   history of checked.json the run-over-run ratio has a median of 1.00, and the
+   two genuine collapses both landed at 0.38 — each recovering to full volume
+   on the very next run. The lowest non-collapse ratio is 0.66. Half sits in
+   the middle of that gap with a wide margin on both sides, so this fires twice
+   in 59 runs and both times on something real.
+
+   IT WARNS AND DOES NOT BLOCK, deliberately. A sustained genuine drop — Google
+   changing how much it returns, a quiet fortnight — must not freeze the
+   pipeline, and the downstream hysteresis already absorbs a single bad run.
+   The alert exists so a human can tell an anomaly from the weather, which is
+   the same reason exit 75 emits a notice rather than a red run. */
+{
+  let prevRead = null;
+  try {
+    prevRead = JSON.parse(readFileSync(join(DIR, 'checked.json'), 'utf8'))?.read?.news_items ?? null;
+  } catch { /* first run, or the file has never been written */ }
+  /* The rule and the measurement behind it live in lib/event-feed.mjs. */
+  const collapse = feedCollapse(news.length, prevRead);
+  if (collapse) {
+    console.log(`\n::warning:: NEWS FEED COLLAPSE — read ${collapse.current} items, `
+      + `${collapse.pct}% of the ${collapse.previous} the previous run read. Sources answered, `
+      + `so this is not the silent-upstream case that exits 75. Corroboration counts written `
+      + `this run will be understated, and that is visible on the pages until the feed recovers.`);
+    console.log('  Nothing is blocked: publication latches, and a fade needs 24h below the bar');
+    console.log('  before it demotes anything, so a single bad run cannot close an event.');
+    console.log(`  ${unreachable.length} source(s) unreachable this run.`);
+    for (const u of unreachable) console.log(`    ${u.source}: ${u.error}`);
+  }
 }
 
 const { clusters: rawClusters, routed, noPack } = cluster(news);
