@@ -295,13 +295,31 @@ describe('the scheduled workflows together cannot exhaust the deploy budget', ()
  * to 18. Anyone adding a slot by eye will put one inside the window sooner or
  * later, and nothing about the result would look wrong.
  *
- * It covers every scheduled workflow, not only the ones that commit —
- * ward-alerts.yml deploys nothing and still pulls from data.gov.in, and the
- * email it may send lands on a person at whatever hour it runs.
+ * It covers every scheduled workflow, not only the ones that commit — a job
+ * that deploys nothing still pulls from somewhere, and may put an email in
+ * front of a person at whatever hour it runs.
+ *
+ * ★ WITH ONE EXEMPTION, HELD HERE BY NAME SO IT CANNOT BE ASSUMED.
+ * ward-alerts.yml runs through the night on purpose: Delhi's air is frequently
+ * at its worst between midnight and five, so the window the rule would have
+ * skipped is the window a subscriber who asked to be told most needs telling
+ * in. It was blacked out on 5 September and the owner reversed it the same day.
+ *
+ * The exemption is affordable only because that job COMMITS NOTHING — the
+ * quiet hours exist to protect the deployment budget, and a job that pushes no
+ * commit costs none. That condition is asserted below rather than trusted, so
+ * adding a commit step to an exempt workflow fails the test instead of quietly
+ * spending 24 deployments a day.
  */
 describe('no scheduled job runs during the Indian night', () => {
   const IST_OFFSET_MIN = 330
   const QUIET_UNTIL_HOUR = 5
+
+  /** Workflow -> why it is allowed to run in the quiet hours. */
+  const EXEMPT: Record<string, string> = {
+    'ward-alerts.yml':
+      'air alerts are most needed in exactly those hours; it commits nothing, so it costs no deploys',
+  }
 
   /** Every (hour, minute) a cron field pair fires at, in IST. */
   function istSlots(y: string): Array<{ h: number; m: number; utc: string }> {
@@ -341,7 +359,19 @@ describe('no scheduled job runs during the Indian night', () => {
     expect(scheduled.length).toBeGreaterThanOrEqual(4)
   })
 
-  for (const f of scheduled) {
+  it('every exemption is real, and still free', () => {
+    for (const [f, why] of Object.entries(EXEMPT)) {
+      expect(scheduled, `${f} is exempted from the quiet hours but is not a scheduled workflow — `
+        + 'a stale exemption hides the next one that matters').toContain(f)
+      expect(why.length, `${f}'s exemption must say why`).toBeGreaterThan(20)
+      expect(read(f).includes('git commit'),
+        `${f} is exempt from the quiet hours ONLY because it commits nothing. It now commits, `
+        + 'so running it overnight spends deployments the budget has not been given. Either drop '
+        + 'the commit step or drop the exemption.').toBe(false)
+    }
+  })
+
+  for (const f of scheduled.filter((w) => !(w in EXEMPT))) {
     it(`${f} sleeps until ${QUIET_UNTIL_HOUR}am IST`, () => {
       const inside = istSlots(read(f))
         .filter((s) => s.h < QUIET_UNTIL_HOUR)
