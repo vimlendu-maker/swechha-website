@@ -44,7 +44,7 @@ import { writeFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from 
 import { resolve, join } from 'node:path';
 import { HAZARD_TERMS, TIER1, TIER2, SEVERITY_TERMS, NEGATIVE_TERMS, hay, ownedElsewhere, coordsFor, regionOf } from './lib/event-terms.mjs';
 import { consolidate } from './lib/event-figures.mjs';
-import { dedupeFeedItems, anchorPublished } from './lib/event-feed.mjs';
+import { dedupeFeedItems, anchorPublished, lastUpdatedFrom } from './lib/event-feed.mjs';
 import { HAZARDS, hasContext } from './lib/climate-events.mjs';
 import { publishStateFor } from './lib/active-situation.mjs';
 
@@ -372,11 +372,19 @@ const THRESHOLD = 14;
 const MIN_PUBLISHERS = 8;
 const MIN_PUBLISHERS_WITH_ALERT = 4;
 
-function publishable(s) {
-  if (s.total < THRESHOLD) return false;
+/* THE BREADTH HALF OF THE TEST, ON ITS OWN, because two callers need it: the
+   publication gate below, and the FADE stamp in dossier(), which records when
+   an event stopped clearing this bar. One expression, so the two can never
+   drift into disagreeing about what "corroborated" means. */
+function corroborated(s) {
   const pub = s.publishers.length;
   const alerts = s.matchedAlerts.length;
   return pub >= MIN_PUBLISHERS || (pub >= MIN_PUBLISHERS_WITH_ALERT && alerts >= 1);
+}
+
+function publishable(s) {
+  if (s.total < THRESHOLD) return false;
+  return corroborated(s);
 }
 
 function score(c, alerts) {
@@ -673,6 +681,29 @@ async function dossier(c, s, existing) {
      able to disagree about whether this event is public. */
   const pubState = publishStateFor({ existing, publishableNow: publishable(s) });
 
+  /* The newest thing anyone has published about this event — see
+     lastUpdatedFrom()'s own note, which carries the reasoning and the rule. */
+  const freshestReport = lastUpdatedFrom(existing?.last_updated?.epochMs, register, NOW);
+
+  /* ── WHEN THE COVERAGE FADED, WHICH IS NOT THE SAME AS WHEN IT DIPPED ────
+     An event below the corroboration bar is one that would not be published
+     today. That is the honest signal for "no longer a developing situation" —
+     but the raw counts are NOISE: a single run read 11 items where the one
+     fifty minutes earlier read 235, taking the Nepal glacial flood from 137
+     independent publishers to 2 with 1,344 dead. A rule keyed on the live
+     counts would have called that event closed.
+
+     So this records WHEN the event first fell below the bar, and clears the
+     moment it climbs back. statusOf() then demotes only after the event has
+     stayed below for a grace period. Measured over the committed history, a
+     dip is a single hourly run and a genuine fade is 1.3 to 5.4 days — two
+     orders of magnitude apart, which is what makes the distinction safe. */
+  const isCorroborated = corroborated(s);
+  const fadedSince = isCorroborated ? undefined
+    : (existing?.faded_since?.epochMs
+      ? existing.faded_since
+      : { epochMs: NOW });
+
   return {
     slug,
     /* Preserve an editor's own headline and prose across re-detections. The
@@ -695,8 +726,24 @@ async function dossier(c, s, existing) {
     occurred: { epochMs: unchanged && existing.occurred?.epochMs
       ? existing.occurred.epochMs : (s.freshestMs || NOW), precision: 'reported' },
     first_detected: { epochMs: existing?.first_detected?.epochMs || NOW },
-    /* Moves only when the evidence moved — see the fingerprint note above. */
-    last_updated: { epochMs: unchanged ? existing.last_updated.epochMs : NOW },
+    /* ★ "UPDATED" MEANS NEW REPORTING ARRIVED, NOT THAT ANY NUMBER MOVED.
+       This read `unchanged ? existing : NOW`, so it advanced whenever the
+       fingerprint changed — and the fingerprint includes the score and the
+       publisher count, both of which move as coverage DECAYS. So an event the
+       wires had dropped kept looking freshly updated, statusOf()'s age ladder
+       kept calling it "Active. Being tracked now. Figures move while you are
+       on this page", and nine pages said exactly that about stories nobody
+       was covering. Losing a source is not an update. A bad fetch is not an
+       update either — see the run that read 11 items where the one before it
+       read 235.
+
+       So the clock follows the freshest piece of reporting in the register,
+       and never runs backwards. anchorPublished() has already pinned each
+       source's date to the first value seen, so a republished item cannot
+       drag this forward, and the value is derived from the data rather than
+       from when the job happened to run — which keeps it stable across
+       rebuilds, the same reason stamp() writes absolute instants. */
+    last_updated: { epochMs: freshestReport },
     last_checked: { epochMs: unchanged ? existing.last_checked.epochMs : NOW },
     evidence_fingerprint: fingerprint,
     significance_score: s.total,
@@ -730,6 +777,9 @@ async function dossier(c, s, existing) {
         official_alerts: s.matchedAlerts.length,
       })
       : (existing?.published_on || undefined),
+    /* Absent while the event is corroborated — the absence IS the "still
+       carried" signal, so it must not be written as null. */
+    faded_since: fadedSince,
     /* Editor-authored prose. Empty for an automated dossier, and the page
        renders the context pack in its place rather than a gap. */
     what_happened: existing?.what_happened || null,

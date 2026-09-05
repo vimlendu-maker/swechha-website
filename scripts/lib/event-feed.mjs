@@ -64,7 +64,10 @@
  *  as corroboration and changing it would move the scores. */
 const titleKey = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').slice(0, 70);
 
-const msOf = (p) => (p ? Date.parse(p) || 0 : 0);
+/* Exported because the detector needs the same reading of a source's date
+   that anchorPublished() uses, to decide when new reporting actually
+   arrived — see last_updated in detect-climate-events.mjs. */
+export const msOf = (p) => (p ? Date.parse(p) || 0 : 0);
 
 /**
  * De-duplicate feed items by link, then by normalised title — wire copy runs
@@ -137,4 +140,33 @@ export function anchorPublished(sources, previous) {
     if (!a || !b) return before ? { ...s, published: before } : s;
     return b > a ? { ...s, published: before } : s;
   });
+}
+
+/* ── WHAT "LAST UPDATED" IS ALLOWED TO MEAN ───────────────────────────────
+   The freshest piece of reporting we hold about an event, never earlier than
+   what was already recorded and never later than now.
+
+   It was `fingerprint changed ? now : keep`, and the fingerprint includes the
+   score and the publisher count — both of which move as coverage DECAYS. So an
+   event the wires had dropped kept looking freshly updated and the derived
+   status ladder kept calling it active. Losing a source is not an update, and
+   neither is a bad fetch: one run read 11 items where the run fifty minutes
+   before it read 235.
+
+   MONOTONIC, so a shrinking register cannot walk the clock backwards, and
+   DERIVED FROM THE DATA rather than from when the job ran, so a rebuild that
+   learns nothing new writes the same value — the same reason the pages commit
+   absolute instants and let the browser do relative time.
+
+   anchorPublished() above has already pinned each source's date to the first
+   value seen, so an item that is merely republished cannot drag this forward. */
+export function lastUpdatedFrom(previousMs, sources, now = Date.now()) {
+  const reported = (sources || []).map((x) => msOf(x?.published)).filter((m) => m > 0);
+  const freshest = reported.length ? Math.min(Math.max(...reported), now) : 0;
+  /* `|| now` is the FIRST-DETECTION fallback only — nothing recorded and no
+     readable date anywhere. It must not apply when a previous value exists:
+     an earlier draft folded it into the expression and an empty register then
+     jumped the clock to now, which is precisely the bad-fetch case this
+     function is here to survive. The test for it is the one that caught this. */
+  return Math.max(previousMs || 0, freshest) || now;
 }
