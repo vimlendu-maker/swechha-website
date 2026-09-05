@@ -166,7 +166,14 @@ jobs:
 
           # Air pages are rebuilt only by air-hourly.yml. The daily workflow
           # rebuilds the remaining situations and the site-wide generated pages.
-          for t in situations work about impact farm act stories publications posters search essays; do
+          # `hero` is in this list because the homepage carries a reading from
+          # nearly every situation in its ticker — the Yamuna's dissolved
+          # oxygen, the burnt area, the tree-cover loss — so a daily refresh
+          # that rebuilt every page EXCEPT the one showing all of them left the
+          # tree out of step. It sits after `situations` for the reason
+          # air-hourly.yml gives: build-hero.mjs cross-checks its air figure
+          # against situation-air.html and refuses to write if they disagree.
+          for t in situations hero work about impact farm act stories publications posters search essays; do
             echo "::group::npm run build:$t"
             if npm run "build:$t"; then
               echo "::endgroup::"
