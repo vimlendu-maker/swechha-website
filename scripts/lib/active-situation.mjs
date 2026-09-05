@@ -103,6 +103,25 @@ const DERIVED = [
   [21, 'stabilising'],
 ];
 
+/* ── HOW LONG COVERAGE MUST STAY GONE BEFORE THE PAGE SAYS SO ─────────────
+   The detector stamps `faded_since` when an event drops below the
+   corroboration bar and clears it the moment it climbs back — an event below
+   that bar is one that would not be published today, which is the honest
+   reading of "no longer a developing situation".
+
+   IT IS NOT ACTED ON IMMEDIATELY, and that is the whole design. The counts
+   behind it are noisy: one detector run read 11 items where the run fifty
+   minutes earlier read 235, taking the Nepal glacial flood from 137
+   independent publishers to 2 with 1,344 dead. Demoting on the live counts
+   would have closed the site's biggest live disaster on a bad fetch.
+
+   Twenty-four hours is chosen against the measured shapes rather than picked.
+   Across the committed history a dip is a SINGLE hourly run, and a genuine
+   fade runs 1.3 to 5.4 days: two orders of magnitude apart. A day sits far
+   above the noise and comfortably below every real fade, so it demotes what
+   has actually gone quiet and nothing that merely flickered. */
+const FADE_GRACE_HOURS = 24;
+
 /* ── PUBLICATION IS A ONE-WAY DOOR ────────────────────────────────────────
    ★ THIS IS A COARSER GATE THAN statusOf(), AND IT COMES FIRST.
    `publish_state` decides whether the event has a public URL AT ALL:
@@ -172,6 +191,17 @@ export function statusOf(e, now = Date.now()) {
   if (e?.publish_state !== 'published') {
     return { status: 'archived', ...SITUATION_STATUS.archived, source: 'unpublished', why: null };
   }
+  /* ★ COVERAGE THAT HAS GONE IS NOT A DEVELOPING SITUATION, WHATEVER THE
+     CLOCK SAYS. The ladder below reads `last_updated`, which now means "the
+     freshest reporting we have" — honest, but it cannot tell one outlet from
+     a hundred. An event carried by a single publisher yesterday is recent and
+     is not being tracked. `faded_since` is the volume signal, and the grace
+     period above is what makes it safe to act on. */
+  const faded = e?.faded_since?.epochMs;
+  if (faded && now - faded >= FADE_GRACE_HOURS * 3600000) {
+    return { status: 'demoted', ...SITUATION_STATUS.demoted, source: 'derived', why: null };
+  }
+
   const ageDays = (now - (e.last_updated?.epochMs ?? 0)) / DAY;
   for (const [days, status] of DERIVED) {
     if (ageDays <= days) {

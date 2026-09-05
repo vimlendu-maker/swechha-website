@@ -5,7 +5,7 @@ import { join } from 'node:path'
 // for these — see caaqms.test.ts and air-history.test.ts. `allowJs` is on, so
 // types are inferred and no suppression is needed.
 import { figuresFromText, consolidate, eventName, mentionsPlace } from '../scripts/lib/event-figures.mjs'
-import { dedupeFeedItems, anchorPublished } from '../scripts/lib/event-feed.mjs'
+import { dedupeFeedItems, anchorPublished, lastUpdatedFrom } from '../scripts/lib/event-feed.mjs'
 import { statusOf, homepageSlot, situationHref, publishStateFor, SITUATION_STATUS } from '../scripts/lib/active-situation.mjs'
 
 /**
@@ -625,5 +625,111 @@ describe('every built event page is routed', () => {
       return JSON.parse(readFileSync(f, 'utf8')).publish_state !== 'published'
     })
     expect(unrouted).toEqual([])
+  })
+})
+
+/**
+ * "LAST UPDATED" MEANT "ANY NUMBER MOVED", WHICH INCLUDED DECAY.
+ *
+ * The detector set it from the evidence fingerprint, and that fingerprint
+ * carries the score and the publisher count — both of which move as coverage
+ * falls away. So an event the wires had dropped kept looking freshly updated,
+ * the derived ladder kept calling it "Active. Being tracked now. Figures move
+ * while you are on this page", and nine pages said that about stories nobody
+ * was covering. Nine dossiers had to carry a hand-set situation_status to stop
+ * them; these rules are what let those come back out.
+ */
+describe('last_updated: the clock follows new reporting, nothing else', () => {
+  const NOW = Date.UTC(2026, 8, 5, 12, 0, 0)
+  const at = (iso: string) => ({ published: iso })
+  const DAY = 86400000
+
+  it('advances to the freshest report on a first detection', () => {
+    expect(lastUpdatedFrom(0, [at('Thu, 03 Sep 2026 09:00:00 +0000')], NOW))
+      .toBe(Date.UTC(2026, 8, 3, 9))
+  })
+
+  it('does NOT advance when the register only loses sources', () => {
+    // The decay case, and the reason this function exists. Four sources become
+    // one; nothing newer has been published; the clock must not move.
+    const before = lastUpdatedFrom(0, [
+      at('Tue, 01 Sep 2026 09:00:00 +0000'), at('Wed, 02 Sep 2026 09:00:00 +0000'),
+    ], NOW)
+    expect(lastUpdatedFrom(before, [at('Tue, 01 Sep 2026 09:00:00 +0000')], NOW)).toBe(before)
+  })
+
+  it('does NOT advance on a bad fetch that returns almost nothing', () => {
+    // The run that read 11 items where the one fifty minutes earlier read 235.
+    const before = lastUpdatedFrom(0, [at('Fri, 04 Sep 2026 09:00:00 +0000')], NOW)
+    expect(lastUpdatedFrom(before, [], NOW)).toBe(before)
+  })
+
+  it('DOES advance when something genuinely newer arrives', () => {
+    const before = lastUpdatedFrom(0, [at('Wed, 02 Sep 2026 09:00:00 +0000')], NOW)
+    const after = lastUpdatedFrom(before, [at('Fri, 04 Sep 2026 18:00:00 +0000')], NOW)
+    expect(after).toBe(Date.UTC(2026, 8, 4, 18))
+    expect(after).toBeGreaterThan(before)
+  })
+
+  it('never runs backwards and never runs into the future', () => {
+    const later = lastUpdatedFrom(NOW, [at('Mon, 31 Aug 2026 09:00:00 +0000')], NOW)
+    expect(later).toBe(NOW)
+    expect(lastUpdatedFrom(0, [at('Sun, 20 Sep 2026 09:00:00 +0000')], NOW)).toBe(NOW)
+  })
+
+  it('falls back to now when no source carries a readable date', () => {
+    expect(lastUpdatedFrom(0, [{ published: 'not a date' }], NOW)).toBe(NOW)
+  })
+
+  it('is stable across a rebuild that learns nothing', () => {
+    const srcs = [at('Thu, 03 Sep 2026 09:00:00 +0000')]
+    const a = lastUpdatedFrom(0, srcs, NOW)
+    expect(lastUpdatedFrom(a, srcs, NOW + DAY)).toBe(a)
+  })
+})
+
+/**
+ * AND THE VOLUME SIGNAL, WHICH THE CLOCK CANNOT CARRY.
+ *
+ * A single publisher yesterday is recent and is not "being tracked". Falling
+ * below the corroboration bar says the event would not be published today,
+ * which is what `demoted` means — but the raw counts are noise, so the
+ * detector stamps WHEN the fall began and this waits out a grace period.
+ * Measured against the committed history: a dip is one hourly run, a real fade
+ * is 1.3 to 5.4 days.
+ */
+describe('faded coverage demotes, a dip does not', () => {
+  const now = Date.now()
+  const H = 3600000
+  const ev = (over: Record<string, unknown> = {}) => ({
+    slug: 'e', publish_state: 'published', tier: 2, hazard: 'glof',
+    significance_score: 22, location: { text: 'Nepal' },
+    last_updated: { epochMs: now }, ...over,
+  })
+
+  it('leaves an event with no fade stamp to the age ladder', () => {
+    expect(statusOf(ev(), now).status).toBe('active')
+  })
+
+  it('ignores a dip inside the grace period', () => {
+    // Nepal: 137 independent publishers to 2 in fifty minutes, 1,344 dead.
+    expect(statusOf(ev({ faded_since: { epochMs: now - 1 * H } }), now).status).toBe('active')
+    expect(statusOf(ev({ faded_since: { epochMs: now - 23 * H } }), now).status).toBe('active')
+  })
+
+  it('demotes once the coverage has stayed gone', () => {
+    expect(statusOf(ev({ faded_since: { epochMs: now - 25 * H } }), now).status).toBe('demoted')
+    expect(homepageSlot([ev({ faded_since: { epochMs: now - 30 * H } })], now).slot).toBeNull()
+  })
+
+  it('demotes on volume even when the reporting is recent', () => {
+    // The exact case the hand-set fields existed for: one publisher, today.
+    const thin = ev({ last_updated: { epochMs: now }, faded_since: { epochMs: now - 4 * 24 * H } })
+    expect(statusOf(thin, now).status).toBe('demoted')
+  })
+
+  it('still lets an editor overrule it', () => {
+    expect(statusOf(ev({ faded_since: { epochMs: now - 99 * H }, situation_status: 'active' }), now))
+      .toMatchObject({ status: 'active', source: 'admin' })
   })
 })
