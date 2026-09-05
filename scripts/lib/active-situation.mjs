@@ -103,6 +103,53 @@ const DERIVED = [
   [21, 'stabilising'],
 ];
 
+/* ── PUBLICATION IS A ONE-WAY DOOR ────────────────────────────────────────
+   ★ THIS IS A COARSER GATE THAN statusOf(), AND IT COMES FIRST.
+   `publish_state` decides whether the event has a public URL AT ALL:
+   design-routes.ts routes exactly the published ones, the sitemap is derived
+   from those routes, and IndexNow pushes what the sitemap carries. statusOf()
+   then decides how loudly that URL speaks. The two must not be confused, and
+   for a while they were.
+
+   ★ THE BUG THIS EXISTS TO PREVENT.
+   The detector set `publish_state` from publishable() on EVERY run, and
+   publishable() reads CURRENT reporting volume — a score built from a rolling
+   window of headlines, plus a publisher count. Coverage of a real disaster
+   decays by design: the wires move on, the window empties, the score falls.
+   So an event that had been published, routed, listed in the sitemap, pushed
+   to IndexNow and indexed by Google was rewritten to `draft` a few days later,
+   its route vanished, and every reader arriving from a search result got a
+   404. Nine pages were in that state when it was found — assam-landslide,
+   assam-flood, tamil-nadu-flood and six more — each still sitting in
+   public/_pages/v3/climate-event/, because the builder writes published events
+   and never deletes.
+
+   ★ WHY LATCHING IS THE RIGHT SHAPE AND NOT A WORKAROUND.
+   Two rules already written into this repository say a page must keep its
+   address: build-climate-disaster-pages.mjs's "situation_status decides
+   PROMINENCE, never existence — a demoted event keeps its page for ever", and
+   the `archived` line thirty lines above this one, "Kept at this address so
+   anything that cited it still resolves." Decay already HAS a lifecycle —
+   active -> developing -> stabilising -> demoted, derived below, every step of
+   which keeps the page and only changes how it presents. Score decay was a
+   second, undesigned lifecycle fighting the first, and it was the one holding
+   the URL.
+
+   So the threshold governs MINTING, which is what it was written for: it stops
+   one mis-scraped headline becoming a public address. It does not govern
+   keeping, because nothing is gained by withdrawing an address and a reader
+   with a link to it is lost.
+
+   ★ WHAT THIS DELIBERATELY DOES NOT DO. It is not a retraction mechanism. A
+   page published in error should be withdrawn by a person, and withdrawing it
+   properly means deciding what its URL answers afterwards — a redirect, or a
+   tombstone, never a bare 404. Nobody has needed that yet; when they do it is
+   its own change, not a special case here. */
+export function publishStateFor({ existing, publishableNow }) {
+  if (existing?.publish_state === 'published') return 'published';
+  return publishableNow ? 'published' : 'draft';
+}
+
 /** The status word for an event, and where it came from. Never throws on a
  *  missing field; throws on a status word this module does not know, because a
  *  typo silently downgrading a live disaster to nothing is the failure this

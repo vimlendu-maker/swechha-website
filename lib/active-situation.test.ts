@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 // Importing the .mjs script modules directly is the repo's standing convention
 // for these — see caaqms.test.ts and air-history.test.ts. `allowJs` is on, so
 // types are inferred and no suppression is needed.
 import { figuresFromText, consolidate, eventName, mentionsPlace } from '../scripts/lib/event-figures.mjs'
 import { dedupeFeedItems, anchorPublished } from '../scripts/lib/event-feed.mjs'
-import { statusOf, homepageSlot, situationHref, SITUATION_STATUS } from '../scripts/lib/active-situation.mjs'
+import { statusOf, homepageSlot, situationHref, publishStateFor, SITUATION_STATUS } from '../scripts/lib/active-situation.mjs'
 
 /**
  * consolidate() keys its result by metric name at runtime, so the inferred type
@@ -546,5 +546,84 @@ describe('the lead figure survives one bad reading', () => {
       src('b', 'B', 'flood death toll hits 547', 'Fri, 28 Aug 2026 12:00:00 GMT'),
     ]))
     expect(rows.deaths.value).toBe(547)
+  })
+})
+
+/**
+ * PUBLICATION IS A ONE-WAY DOOR, AND IT WAS NOT.
+ *
+ * The detector recomputed `publish_state` from `publishable()` on every run,
+ * and `publishable()` is a function of CURRENT reporting volume — score >= 14
+ * and either eight independent publishers, or four plus a matching official
+ * alert. Coverage of a real disaster decays: outlets move on, the rolling
+ * window empties, the score falls. So an event that had been published, routed
+ * by design-routes.ts, listed in the sitemap, pushed to IndexNow and indexed by
+ * Google silently reverted to `draft` on a later run — and its URL began
+ * returning 404 to every reader arriving from a search result.
+ *
+ * Nine pages were in that state when this was found, `assam-landslide` among
+ * them, each still sitting in public/_pages/v3/climate-event/ because the
+ * builder writes published events and never deletes.
+ *
+ * Two rules already in the codebase said this must not happen:
+ *   build-climate-disaster-pages.mjs  "situation_status decides PROMINENCE,
+ *                                      never existence — a demoted event keeps
+ *                                      its page for ever."
+ *   active-situation.mjs `archived`   "Kept at this address so anything that
+ *                                      cited it still resolves."
+ *
+ * The lifecycle for "the news has moved on" is statusOf()'s derived
+ * active → developing → stabilising → demoted, every one of which KEEPS the
+ * page. Score decay was a second, undesigned lifecycle fighting the first.
+ */
+describe('publish_state: a URL that went public has to keep resolving', () => {
+  it('publishes a new event that clears the bar', () => {
+    expect(publishStateFor({ existing: null, publishableNow: true })).toBe('published')
+  })
+
+  it('leaves a new event that misses the bar as a draft', () => {
+    expect(publishStateFor({ existing: null, publishableNow: false })).toBe('draft')
+  })
+
+  it('KEEPS an already-published event published once its coverage decays', () => {
+    // assam-landslide: published at score 18-19, then 14, 13, 12 as the wires
+    // moved on. Every one of those later runs rewrote it to draft.
+    const existing = { publish_state: 'published', significance_score: 12 }
+    expect(publishStateFor({ existing, publishableNow: false })).toBe('published')
+  })
+
+  it('lets a draft that never went public stay a draft', () => {
+    const existing = { publish_state: 'draft', significance_score: 3 }
+    expect(publishStateFor({ existing, publishableNow: false })).toBe('draft')
+  })
+
+  it('promotes a standing draft the day its evidence clears the bar', () => {
+    const existing = { publish_state: 'draft', significance_score: 9 }
+    expect(publishStateFor({ existing, publishableNow: true })).toBe('published')
+  })
+
+  it('treats a dossier with no publish_state as new rather than as published', () => {
+    expect(publishStateFor({ existing: {}, publishableNow: false })).toBe('draft')
+  })
+})
+
+/**
+ * THE STANDING INVARIANT, checked against the real committed tree: every page
+ * under public/_pages/v3/climate-event/ must belong to a published dossier.
+ * design-routes.ts routes exactly the published ones, so a built page whose
+ * dossier is a draft is a URL that 404s — which is the whole defect above,
+ * stated as the thing a future change must not reintroduce.
+ */
+describe('every built event page is routed', () => {
+  it('has a published dossier behind each committed page', () => {
+    const dir = join(process.cwd(), 'public/_pages/v3/climate-event')
+    const built = readdirSync(dir).filter((f) => f.endsWith('.html')).map((f) => f.replace(/\.html$/, ''))
+    expect(built.length).toBeGreaterThan(0)
+    const unrouted = built.filter((slug) => {
+      const f = join(process.cwd(), 'data/climate-events/active', `${slug}.json`)
+      if (!existsSync(f)) return true
+      return JSON.parse(readFileSync(f, 'utf8')).publish_state !== 'published'
+    })
+    expect(unrouted).toEqual([])
   })
 })
