@@ -46,6 +46,7 @@ import { HAZARD_TERMS, TIER1, TIER2, SEVERITY_TERMS, NEGATIVE_TERMS, hay, ownedE
 import { consolidate } from './lib/event-figures.mjs';
 import { dedupeFeedItems, anchorPublished } from './lib/event-feed.mjs';
 import { HAZARDS, hasContext } from './lib/climate-events.mjs';
+import { publishStateFor } from './lib/active-situation.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const DIR = join(ROOT, 'data', 'climate-events');
@@ -668,6 +669,9 @@ async function dossier(c, s, existing) {
     sources: register.map((x) => x.id).sort(),
   });
   const unchanged = existing && existing.evidence_fingerprint === fingerprint;
+  /* Decided once, because `publish_state` and `published_on` below must not be
+     able to disagree about whether this event is public. */
+  const pubState = publishStateFor({ existing, publishableNow: publishable(s) });
 
   return {
     slug,
@@ -681,7 +685,12 @@ async function dossier(c, s, existing) {
     india_relevance: c.relevance,
     india_relevance_note: c.why || null,
     origin: existing?.origin === 'editor' ? 'editor' : 'automated',
-    publish_state: publishable(s) ? 'published' : 'draft',
+    /* ★ PUBLICATION LATCHES. publishable() decides whether this event may be
+       MINTED as a public URL; it does not get to withdraw one. Writing
+       publishable(s) straight into this field meant a decaying score
+       un-published an already-indexed page and every search visitor hit a 404
+       — see publishStateFor()'s own note, which carries the full account. */
+    publish_state: pubState,
     location: { text: c.place, country: c.tier === 1 ? 'India' : null },
     occurred: { epochMs: unchanged && existing.occurred?.epochMs
       ? existing.occurred.epochMs : (s.freshestMs || NOW), precision: 'reported' },
@@ -706,6 +715,21 @@ async function dossier(c, s, existing) {
       official_alerts: s.matchedAlerts.length,
       items_read: c.items.length,
     },
+    /* ★ THE EVIDENCE THAT MINTED THE URL, WRITTEN ONCE AND NEVER REWRITTEN.
+       `corroboration` above is a live reading and decays as the wires move on;
+       this is the day the page became public and what justified it that day.
+       Both publication gates test THIS, so a real event no longer falls below
+       its own bar a week later and un-publishes itself — see publishStateFor()
+       in lib/active-situation.mjs and validateEvent() in lib/climate-events.mjs,
+       which between them carry the whole account. Absent on a draft, because a
+       draft has never been minted. */
+    published_on: pubState === 'published'
+      ? (existing?.published_on || {
+        epochMs: NOW,
+        independent_publishers: s.publishers.length,
+        official_alerts: s.matchedAlerts.length,
+      })
+      : (existing?.published_on || undefined),
     /* Editor-authored prose. Empty for an automated dossier, and the page
        renders the context pack in its place rather than a gap. */
     what_happened: existing?.what_happened || null,

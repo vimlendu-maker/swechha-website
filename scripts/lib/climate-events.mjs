@@ -282,15 +282,33 @@ export function validateEvent(file, e) {
        allowed to publish at all. See scripts/detect-climate-events.mjs, which
        computes these; this is the second, independent check that they held. */
     if (origin === 'automated') {
-      const outlets = e.corroboration?.independent_publishers ?? 0;
-      const official = e.corroboration?.official_alerts ?? 0;
+      /* ★ THE BAR IS TESTED AGAINST THE EVIDENCE THAT MINTED THE PAGE, NOT
+         AGAINST TODAY'S. `corroboration` is recomputed on every detector run
+         from a rolling window of headlines, so it DECAYS — assam-landslide was
+         published on eleven independent publishers and read four a week later;
+         assam-flood went from five-plus-eight-alerts to one. Testing the live
+         counts therefore failed every real event a few days after it happened,
+         which un-published nine already-indexed pages and turned their URLs
+         into 404s. The wording above is the giveaway and was right all along:
+         an event "REACHES the public page" only if corroborated. Reaching is
+         minting. Nothing about a decayed news cycle makes the corroboration
+         that existed on the day retroactively untrue.
+
+         `published_on` is that day's counts, written once by the detector at
+         first publication and never rewritten. An older dossier that predates
+         the field falls back to the live counts, which is the same test this
+         has always applied and keeps the gate meaningful for a hand-written
+         automated dossier that has no minting record. */
+      const minted = e.published_on;
+      const outlets = minted?.independent_publishers ?? e.corroboration?.independent_publishers ?? 0;
+      const official = minted?.official_alerts ?? e.corroboration?.official_alerts ?? 0;
       /* Mirrors publishable() in scripts/detect-climate-events.mjs, deliberately
          restated here rather than imported: this is the SECOND, independent
          check that the bar held, and a gate that shares its implementation with
          the thing it is checking is not a gate. Eight independent outlets, or
          four plus a matching official alert. */
       if (!(outlets >= 8 || (outlets >= 4 && official >= 1))) {
-        throw new EventError(file, `is origin:automated and published on ${outlets} independent publisher(s) and ${official} official alert(s). Automatic publication needs 8+ publishers, or 4+ with a matching official alert. Routine monsoon reporting clears a lower bar every week.`);
+        throw new EventError(file, `is origin:automated and published on ${outlets} independent publisher(s) and ${official} official alert(s)${minted ? ' when it was first published' : ''}. Automatic publication needs 8+ publishers, or 4+ with a matching official alert. Routine monsoon reporting clears a lower bar every week.`);
       }
     }
   }
