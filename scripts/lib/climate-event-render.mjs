@@ -37,6 +37,7 @@
 import { esc, ARROW } from './situation-shell.mjs';
 import { CLAIM_STATUS, istStamp } from './climate-events.mjs';
 import { eventName } from './event-figures.mjs';
+import { statusOf } from './active-situation.mjs';
 
 /* ── TIME IN THE MARKUP IS ABSOLUTE. RELATIVE TIME IS THE BROWSER'S JOB. ──
    ★ THIS WAS A REAL DEFECT AND THE REPOSITORY'S OWN GATE CAUGHT IT.
@@ -138,6 +139,74 @@ export function renderBanner(e) {
         </span>
         <span class="ce-ban-go">The full situation ${ARROW}</span>
       </a>
+    </div>`;
+}
+
+/* ── THE LIST OF EVERY OTHER PAGE ─────────────────────────────────────────
+   ★ THE PAGES WERE ORPHANS AND THE ONLY WAY IN WAS GOOGLE.
+   Four events are published; this page linked exactly one of them — whichever
+   one homepageSlot() had picked for the banner above. The other three were
+   reachable from `/search` and the sitemap and from nowhere else, so a reader
+   who arrived on the Bihar page from a search result could not discover the
+   Assam one, and a reader who started here could not reach either. That is a
+   navigation gap, not a design decision: the banner is deliberately ONE event
+   (see renderBanner) and nothing was ever built to carry the rest.
+
+   IT LISTS EVERY PUBLISHED EVENT, INCLUDING THE CLOSED ONES, and that is the
+   point of the status chip on each row. A demoted page is still a real record
+   at a real address that other things cite — active-situation.mjs's own
+   `archived` line says so — and hiding it here would make this list disagree
+   with the sitemap it is supposed to mirror. The chip, not the omission, is
+   what stops a four-week-old flood reading as tonight's emergency.
+
+   DRAFTS ARE ABSENT because they have no URL: design-routes.ts routes only
+   `publish_state === 'published'`, so a row for a draft would be a link to a
+   404. The two filters are deliberately the same one. */
+export function renderMore(events, { exclude = null, now = Date.now(), heading = null, intro = null } = {}) {
+  const rows = events
+    .filter((e) => e.publish_state === 'published' && e.slug !== exclude)
+    .map((e) => ({ e, st: statusOf(e, now) }))
+    /* Liveliest first, then freshest. Same ordering idea as homepageSlot(),
+       deliberately without heroRank(): that scale exists to pick ONE event for
+       the front of the site, and re-running it here would let a high-scoring
+       closed event outrank a developing one in a list whose whole job is to
+       say what is happening now. */
+    .sort((a, b) => b.st.rank - a.st.rank
+      || b.e.last_updated.epochMs - a.e.last_updated.epochMs);
+  if (!rows.length) return '';
+
+  /* "Other" is only true when one of them is already on screen above. In the
+     quiet state the banner is absent and nothing has been excluded, so the
+     word would be pointing at nothing. A caller whose page frames these
+     differently — /now, where six standing measurements sit directly above —
+     overrides both lines rather than inheriting words written for a context
+     it does not share. */
+  const head = heading || (exclude ? 'The other situations we have pages for'
+    : 'Situations we have pages for');
+  const blurb = intro || 'One page each: what happened, what the satellite sees, and every '
+    + 'figure with the outlet it came from. A page keeps its address after the event closes.';
+
+  return `    <div class="wrap ce-more">
+      <p class="lbl ce-more-h">${esc(head)}</p>
+      <p class="cap ce-more-i">${esc(blurb)}</p>
+      <ul class="ce-more-l">
+        ${rows.map(({ e, st }) => {
+    const deaths = e.impact?.deaths;
+    const chip = st.pill ? ` is-${st.pill}` : '';
+    return `<li><a class="ce-more-r" href="/now/climate-event/${esc(e.slug)}">
+          <span class="ce-more-t">
+            <span class="ce-more-n">${esc(eventName(e))}</span>
+            <span class="cap ce-more-m">${esc(HAZARD_LABEL[e.hazard] || e.hazard)}
+              <i class="ce-more-sep">&middot;</i>${e.tier === 1 ? 'In India' : 'Regional'}
+              <i class="ce-more-sep">&middot;</i>updated ${stamp(e.last_updated.epochMs)}${deaths
+      ? `<i class="ce-more-sep">&middot;</i>${esc(String(deaths.value))} dead, `
+        + `${esc(CLAIM_STATUS[deaths.status]?.label.toLowerCase() || '')}` : ''}</span>
+          </span>
+          <span class="ce-more-s${chip}"><i class="ce-more-dot" aria-hidden="true"></i>${esc(st.label)}<span class="sr"> &mdash; ${esc(st.line)}</span></span>
+          <span class="ce-more-go" aria-hidden="true">${ARROW}</span>
+        </a></li>`;
+  }).join('\n        ')}
+      </ul>
     </div>`;
 }
 
@@ -363,6 +432,47 @@ export const CE_BANNER_CSS = `
   display:inline-flex;align-items:center;gap:8px}
 .ce-ban-go svg{width:15px;height:15px}
 @media (max-width:639px){.ce-ban-go{margin-left:auto}}
+`;
+
+/* THE LIST OF OTHER PAGES, under the banner or the quiet card. Quieter than
+   the banner on purpose: one event is the news and the rest are the archive,
+   and a second block of red would make the page argue with itself. */
+export const CE_MORE_CSS = `
+.ce-more{padding-bottom:clamp(26px,3vw,44px)}
+.ce-more-h{display:block;color:var(--fg-3);margin:0 0 .5em}
+.ce-more-i{max-width:62ch;color:var(--fg-3);margin:0 0 clamp(10px,1.2vw,16px)}
+.ce-more-l{list-style:none;margin:0;padding:0;border-top:1px solid var(--hair)}
+.ce-more-r{display:flex;align-items:center;gap:clamp(10px,1.6vw,22px);flex-wrap:wrap;
+  padding:clamp(11px,1.3vw,16px) 0;border-bottom:1px solid var(--hair-2);
+  text-decoration:none;color:inherit}
+.ce-more-r:hover .ce-more-n{color:var(--fg);text-decoration:underline}
+.ce-more-r:hover .ce-more-go{color:var(--mustard)}
+.ce-more-r:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+.ce-more-t{flex:1 1 260px;min-width:0}
+.ce-more-n{display:block;font-family:Newsreader,Georgia,serif;
+  font-size:clamp(16px,1.35vw,19px);line-height:1.25;color:var(--fg-2);margin-bottom:.25em}
+.ce-more-m{display:block;color:var(--fg-3)}
+/* THE DOT AND THE SEPARATOR ARE RESTATED, NOT BORROWED. .ce-dot and .ce-sep
+   live in CE_CSS, which is on /now/climate-event and NOT on /now — a component
+   that silently loses its bullet on the second page that mounts it is not a
+   component. These two rules are what make CE_MORE_CSS the only stylesheet a
+   caller has to include. */
+.ce-more-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.ce-more-sep{font-style:normal;color:var(--fg-3);margin:0 .35em}
+/* The chip carries the same four words and the same colour logic as the pill
+   on the event page itself (situation-render.mjs's .as-pill) — restated rather
+   than imported because that stylesheet is not on this page, and a fifth
+   status can only be added in active-situation.mjs, which fails loudly. */
+.ce-more-s{flex:none;display:inline-flex;align-items:center;gap:7px;
+  font-family:Archivo,system-ui,sans-serif;font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;padding:5px 9px;border:1px solid currentColor;
+  white-space:nowrap;color:var(--fg-3)}
+.ce-more-s.is-red{color:var(--red)}
+.ce-more-s.is-amber{color:var(--mustard-2)}
+.ce-more-s.is-ochre{color:var(--fg-2)}
+.ce-more-go{flex:none;color:var(--fg-3);display:inline-flex;align-items:center}
+.ce-more-go svg{width:15px;height:15px}
+@media (max-width:639px){.ce-more-go{display:none}}
 `;
 
 /* ── THE ONLY SCRIPT ON THESE PAGES ───────────────────────────────────────

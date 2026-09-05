@@ -33,6 +33,8 @@
 // h1 claimed four illegal over a set containing three.
 import * as S from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
+import { loadEvents } from './lib/climate-events.mjs';
+import { renderMore, CE_MORE_CSS, CE_TIME_JS } from './lib/climate-event-render.mjs';
 const { esc, n0, n1, compact, opener, ARROW, stateChip, disclose } = S;
 
 const sh = S.shell();
@@ -45,6 +47,15 @@ const FF = S.J('forest-fire-india.json');
 const ISFR = S.J('forest-isfr-2023.json');
 const GFW = S.J('gfw-india.json');
 const CL = S.J('climate-india.json');
+/* ★ THE SIX ARE NOT THE WHOLE INDEX, AND THIS PAGE USED TO SAY THEY WERE.
+   Every published one-off event has its own page at /now/climate-event/<slug>,
+   and until this pass NOTHING on this page linked to any of them — the climate
+   card points at the standing pan-India page, which itself only ever carried
+   the single event the banner had picked. So three of the four live event
+   pages were reachable from the sitemap and from /search and from nowhere a
+   reader would look. Validated on load, same as everywhere else: a malformed
+   dossier fails this build rather than reaching the page. */
+const EVENTS = loadEvents();
 const DTH = S.J('deaths-ncrb-2024.json');
 
 const airRd = AIR.city_reading;   // the HEADLINE: the WORST MONITOR, named (AD-42C)
@@ -326,7 +337,13 @@ B.set = () => {
         legal <i>requirement</i> that names no quantity at all. And one has
         <b>no threshold in law to break</b> &mdash; which is the weakest position of the six,
         not the safest.</p>
-    </div>`;
+    </div>
+${renderMore(EVENTS, {
+    heading: 'And the single events, while they happen',
+    intro: 'The six above are standing measurements that never stop. These are one-off '
+      + 'disasters, each with a page of its own: what happened, what the satellite sees, and '
+      + 'every figure with the outlet it came from. A page keeps its address after it closes.',
+  })}`;
 };
 
 /* WHAT WE DO ABOUT IT. On paper, short, and sourced. The client's instruction
@@ -511,6 +528,14 @@ const PAGE_CSS = `
 @media (min-width:1100px){
   .ix-cards{grid-template-columns:repeat(3,1fr)}
 }
+
+${CE_MORE_CSS}
+/* THE EVENT LIST IS A SECOND SUBJECT INSIDE THE SET BAND, so it takes a rule
+   and a gap that it does not need on /now/climate-event, where the banner
+   directly above already closes with one. Stated here rather than as a variant
+   in the component: this is chrome belonging to THIS page's band sequence. */
+.ce-more{padding-top:clamp(30px,3.4vw,48px);margin-top:clamp(26px,3vw,40px);
+  border-top:2px solid var(--hair)}
 `;
 
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */
@@ -527,9 +552,18 @@ await S.assemble({
   title: TITLE,
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
-  script: [IX_LIVE, S.NEWSLETTER_JS].join('\n'),
+  /* CE_TIME_JS RIDES WITH THE LIST, because the list is what it is for: it
+     rewrites the absolute stamps in <time class="ce-t"> into "7 days ago" and
+     touches nothing else. Without it the rows here would print a full IST
+     timestamp while the identical rows on /now/climate-event print an age —
+     one component, two readings of the same field. The bytes stay absolute
+     either way, which is the rule that put this script here in the first
+     place (see its own header). */
+  script: [IX_LIVE, S.NEWSLETTER_JS, CE_TIME_JS].join('\n'),
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),
-  note: `3 bands + footer. ${SITUATIONS.length} situations, ${UNITS.length} units, `
+  note: `3 bands + footer. ${SITUATIONS.length} situations + `
+      + `${EVENTS.filter(e => e.publish_state === 'published').length} published event page(s) `
+      + `linked under the set, ${UNITS.length} units, `
       + `${KINDS.length} kinds of limit (all distinct: ${kindsAllDistinct}). `
       + `${breaches} over a published limit. States: ${states.join(', ')}.`,
 });

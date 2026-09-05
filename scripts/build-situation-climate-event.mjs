@@ -20,7 +20,7 @@ import * as S from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
 import { loadEvents } from './lib/climate-events.mjs';
 import { homepageSlot } from './lib/active-situation.mjs';
-import { renderBanner, renderQuiet, CE_CSS, CE_BANNER_CSS, CE_TIME_JS } from './lib/climate-event-render.mjs';
+import { renderBanner, renderQuiet, renderMore, CE_CSS, CE_BANNER_CSS, CE_MORE_CSS, CE_TIME_JS } from './lib/climate-event-render.mjs';
 const { esc, n0, n1, compact, opener, tabs, hole, kd, KIND_LEGEND, ARROW, MON, MON3,
   stateChip, measureRow, measureHead, disclose, crumb, siblings } = S;
 
@@ -167,6 +167,9 @@ const B = {};
    archive genuinely knows does. There is deliberately no "nothing to report"
    empty state — a blank box reads as a broken page, and this one is never
    blank because the season is always doing something. */
+/* ★ AND EVERY OTHER PUBLISHED PAGE IS LISTED UNDER IT — see renderMore().
+   The banner is one event by design; without this list the other published
+   pages had no link anywhere on the site and arrived only through search. */
 B.situation = () => (CURRENT
   ? renderBanner(CURRENT)
   : renderQuiet({
@@ -194,7 +197,7 @@ B.situation = () => (CURRENT
       .map((i) => ({
         title: i.title, link: i.link, publisher: i.publisher, published: shortDate(i.published),
       })),
-  }));
+  })) + renderMore(EVENTS, { exclude: CURRENT?.slug || null });
 
 B.top = () => `    <div class="pic ht p2-pic">
       <img class="duo" src="/images/photos/monsoon-flooded-fields.jpg" alt="Flooded fields under monsoon cloud"${S.imgDim('/images/photos/monsoon-flooded-fields.jpg')} fetchpriority="high" style="--op:70% 45%">
@@ -586,6 +589,7 @@ const PAGE_CSS = `
 
 ${CE_CSS}
 ${CE_BANNER_CSS}
+${CE_MORE_CSS}
 @media (min-width:760px){ .c-two{grid-template-columns:1fr 1fr} }
 @media (max-width:639px){
   .c-cats{grid-template-columns:1fr}
@@ -616,6 +620,8 @@ await S.assemble({
   note: `9 bands + footer. ${CURRENT ? `TOP: ${CURRENT.hazard} @ ${CURRENT.location.text} `
       + `(score ${CURRENT.significance_score}, ${CURRENT.origin}, ${CURRENT.corroboration.independent_publishers} publishers). `
       : `TOP: quiet state, ${wetNow.length}/${ST.length} cities above normal. `}`
+      + `${EVENTS.filter(e => e.publish_state === 'published').length} published event page(s), `
+      + `${EVENTS.filter(e => e.publish_state === 'published').length - (CURRENT ? 1 : 0)} listed under the banner. `
       + `PAN-INDIA, ${ST.length} stations. Record: ${WC.extreme_days} days over `
       + `${CAT.heavy}mm at ${worstCity.name} in ${LASTYR} (${WC.annual_mm}mm, ${wcDep}% on normal). `
       + `Archive record ${REC.mm}mm at ${REC.name} ${REC.date} moved to context. `
