@@ -48,8 +48,21 @@ const REPO = 'vimlendu-maker/swechha-website';
  */
 const PIPELINES = [
   {
+    /* ★ 12 WAS "JUST UNDER THE 15-MINUTE CADENCE" AND THE CADENCE IS NOW AN
+       HOUR. Air was cut to one poll an hour on 5 September, and this number
+       was not moved with it — so the workflow's cron said hourly while this
+       route went on dispatching every twelve minutes, and air kept running
+       four times an hour. The cron change had no effect on the actual rate at
+       all: `schedule` and `workflow_dispatch` are different triggers, and this
+       one was the loud one. Every dispatched run in the Actions list is
+       attributed to the token owner, which is what made it look like a person
+       clicking re-run rather than a machine on a timer.
+
+       55, so a heartbeat arriving on any minute still finds work when GitHub's
+       schedule has gone quiet — which is the whole reason this route exists —
+       without stacking a second run inside the hour. */
     workflow: 'air-hourly.yml',
-    coverMinutes: 12,
+    coverMinutes: 55,
     inputs: { dry_run: 'false' },
   },
   {
@@ -65,10 +78,38 @@ const PIPELINES = [
        the workflow's now-hourly cadence, same convention as air-hourly's 12
        against its 15-minute one. */
     workflow: 'climate-events.yml',
-    coverMinutes: 55,
+    /* Two-hourly since 5 September, so this moved with it — 115, the same
+       "just under the cadence" convention as air's 55 above. Left at 55 it
+       would have doubled the detector's real rate the same way air's 12 did. */
+    coverMinutes: 115,
     inputs: { dry_run: 'false' },
   },
 ] as const;
+
+/* ── THE QUIET HOURS APPLY HERE TOO, AND THAT IS THE POINT ────────────────
+   Nothing is pulled between midnight and 05:00 IST (owner's instruction,
+   5 September). That rule was written into every workflow's cron — and cron is
+   not what drives these two. This route dispatches them from outside GitHub
+   precisely because `schedule` on this repository is unreliable, so a rule
+   enforced only in cron is a rule with a hole in it exactly the size of this
+   file: the heartbeat would have gone on waking Air and the detector at 03:00
+   IST while the schedules slept.
+
+   IST is UTC+5:30 and the offset is half an hour, so the window is a real
+   calculation rather than an hour range. `ward-alerts.yml` is deliberately
+   exempt from the quiet hours, and equally deliberately absent from PIPELINES,
+   so nothing here has to carry an exception. */
+const QUIET_FROM_IST_HOUR = 0;
+const QUIET_UNTIL_IST_HOUR = 5;
+
+export function istHour(now: Date): number {
+  return new Date(now.getTime() + 330 * 60_000).getUTCHours();
+}
+
+export function isQuietHour(now: Date): boolean {
+  const h = istHour(now);
+  return h >= QUIET_FROM_IST_HOUR && h < QUIET_UNTIL_IST_HOUR;
+}
 
 type PipelineResult = {
   workflow: string;
@@ -258,6 +299,21 @@ export async function GET(request: NextRequest) {
   /* In parallel, not in sequence. maxDuration is 15 seconds and each pipeline
      costs two GitHub round-trips; a serial loop spends the budget for no
      reason, and the pipelines share no state. */
+  /* ★ THE HEARTBEAT SLEEPS WHEN THE SITE DOES. A caller that keeps pinging
+     through the night gets a 200 and no dispatch, rather than an error — the
+     pinger is behaving correctly and its dashboard should stay green. */
+  const now = new Date();
+  if (isQuietHour(now)) {
+    return NextResponse.json({
+      ok: true,
+      dispatched: [],
+      quiet_hours: true,
+      note: `Nothing is pulled between ${QUIET_FROM_IST_HOUR}:00 and `
+        + `${QUIET_UNTIL_IST_HOUR}:00 IST. It is ${istHour(now)}:xx IST; no workflow was driven.`,
+      checked_at: now.toISOString(),
+    }, { status: 200, headers: { 'Cache-Control': 'no-store' } });
+  }
+
   const results = await Promise.all(PIPELINES.map((p) => drive(p, headers)));
   const failed = results.filter((r) => !r.ok);
 

@@ -256,9 +256,82 @@ describe('the scheduled workflows together cannot exhaust the deploy budget', ()
   const CEILING = 100          // Vercel Hobby deployments per day
   const RESERVED_FOR_PEOPLE = 20 // pushes and their previews, during a review day
 
+  /* ★ CRON IS NOT THE ONLY TRIGGER, AND TRUSTING IT UNDERSTATED THE BUDGET.
+     app/api/cron/air/route.ts dispatches Air and the detector from OUTSIDE
+     GitHub — that route exists because `schedule` on this repository is
+     unreliable — and `workflow_dispatch` ignores cron entirely. Air's cron was
+     cut to hourly on 5 September while the route's `coverMinutes` stayed at 12,
+     so the real rate stayed at four an hour and this test, reading only cron,
+     reported 19 a day for something doing up to 96. A budget check that can be
+     satisfied while the real number is five times larger is worse than none.
+
+     `coverMinutes` is how recently a run must have started for the route to
+     leave it alone, so a heartbeat calling often enough drives that workflow
+     every `coverMinutes` minutes. The worst case is therefore whichever of the
+     two triggers is FASTER — and the quiet hours cut both, since the route now
+     refuses to dispatch during them too. */
+  const ROUTE = readFileSync(join(ROOT, 'app', 'api', 'cron', 'air', 'route.ts'), 'utf8')
+  const WAKING_HOURS = 19   // 05:00-23:59 IST; nothing is pulled before five
+
+  function dispatchedPerDay(workflow: string): number {
+    const block = new RegExp(`workflow:\\s*'${workflow.replace('.', '\\.')}'[\\s\\S]*?\\}`, 'm')
+      .exec(ROUTE)?.[0]
+      ?? new RegExp(`coverMinutes[\\s\\S]{0,400}?'${workflow.replace('.', '\\.')}'`, 'm').exec(ROUTE)?.[0]
+    if (!block) return 0
+    const cover = Number(/coverMinutes:\s*(\d+)/.exec(block)?.[1] ?? 0)
+    if (!cover) return 0
+    return Math.ceil((WAKING_HOURS * 60) / cover)
+  }
+
   const committing = workflows.filter((f) => read(f).includes('git commit'))
-  const budget = committing.map((f) => [f, scheduledPerDay(read(f))] as const)
+  const budget = committing.map((f) => {
+    const y = read(f)
+    const byCron = scheduledPerDay(y)
+    const byDispatch = dispatchedPerDay(f)
+    /* The publish floor caps Air however it is triggered. */
+    const floor = Number(/MIN_PUBLISH_MINUTES:-(\d+)/.exec(y)?.[1] ?? 0)
+    const worst = Math.max(byCron, byDispatch)
+    return [f, floor > 0 ? Math.min(worst, Math.ceil((24 * 60) / floor)) : worst] as const
+  })
   const total = budget.reduce((a, [, n]) => a + n, 0)
+
+  it('counts the dispatch path, not only cron', () => {
+    /* The regression this exists for: Air dispatched every 12 minutes while
+       its cron said hourly. If the route stops naming a workflow, or drops
+       coverMinutes, this returns 0 and the assertion below silently relaxes —
+       so the wiring is checked here rather than assumed. */
+    expect(dispatchedPerDay('air-hourly.yml'),
+      'app/api/cron/air/route.ts must still declare coverMinutes for air-hourly.yml')
+      .toBeGreaterThan(0)
+    expect(dispatchedPerDay('climate-events.yml')).toBeGreaterThan(0)
+  })
+
+  it('keeps the dispatcher no faster than the cron it stands in for', () => {
+    for (const w of ['air-hourly.yml', 'climate-events.yml']) {
+      const byCron = scheduledPerDay(read(w), { ignoreFloor: true })
+      /* `coverMinutes` is meant to sit JUST under the cadence, so the heartbeat
+         always finds work when GitHub's schedule has gone quiet — 55 against an
+         hour fits 21 slots into the 19 waking hours where cron fits 19. A fifth
+         over is that convention working. Five TIMES over is the bug: air at
+         coverMinutes 12 scored 95 against a cron of 19. */
+      expect(dispatchedPerDay(w), `${w}: the heartbeat drives it ${dispatchedPerDay(w)} times a `
+        + `day against a cron of ${byCron}. coverMinutes in app/api/cron/air/route.ts must sit `
+        + 'just UNDER the workflow\'s cadence, not under an older, faster one — this is exactly '
+        + 'how Air kept running four times an hour after being cut to hourly.')
+        .toBeLessThanOrEqual(Math.ceil(byCron * 1.2))
+    }
+  })
+
+  it('the dispatcher observes the quiet hours as well', () => {
+    /* The CALL SITE, not the symbol. A first version matched the bare name
+       `isQuietHour`, which still passed when the guard was disabled and the
+       function merely renamed — it was asserting that the word appeared
+       somewhere in the file. The guard has to be reached. */
+    expect(ROUTE, 'app/api/cron/air/route.ts drives workflows from outside GitHub, so a '
+      + 'quiet-hours rule written only into cron has a hole exactly the size of this route. '
+      + 'The route must short-circuit on isQuietHour() before dispatching.')
+      .toMatch(/if\s*\(\s*isQuietHour\s*\(/)
+  })
 
   it('has at least one scheduled committer to measure', () => {
     expect(committing.length).toBeGreaterThan(0)
