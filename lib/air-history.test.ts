@@ -156,19 +156,36 @@ describe('a temp store never leaks into the repo', () => {
 })
 
 // Guard the workflow contract without YAML parsing. The load-bearing contract
-// is the 15-minute cadence plus a successful-poll publish path: the workflow
-// must stage the Air data/history and commit it. The old heartbeat= marker was
+// is the poll cadence plus a successful-poll publish path: the workflow must
+// stage the Air data/history and commit it. The old heartbeat= marker was
 // intentionally removed when every successful poll began refreshing the visible
 // check timestamp, so tests must not pin an obsolete implementation detail.
 describe('air-hourly.yml is the sole Air publisher, and its contract holds', () => {
   const wfDir = join(__dirname, '..', '.github', 'workflows')
   const yml = readFileSync(join(wfDir, 'air-hourly.yml'), 'utf8')
 
-  it('polls every 15 minutes, offset off the hour', () => {
-    const compact = yml.includes("cron: '4,19,34,49 * * * *'")
-    const explicit = ["cron: '4 * * * *'", "cron: '19 * * * *'", "cron: '34 * * * *'", "cron: '49 * * * *'"]
-      .every((slot) => yml.includes(slot))
-    expect(compact || explicit).toBe(true)
+  /* ★ HOURLY NOW, NOT EVERY FIFTEEN MINUTES, AND SILENT OVERNIGHT.
+     This pinned the literal string `cron: '4,19,34,49 * * * *'`. Four polls an
+     hour around the clock is 96 deployments a day before anything else runs,
+     and on 5 September the account hit Vercel's hundred-a-day ceiling and
+     froze every deploy for a full day. The owner's instruction is one pull an
+     hour and none between midnight and 05:00 IST.
+
+     THE ASSERTION IS NOW THE PROPERTY, NOT THE STRING. What matters is that
+     the poll clears CPCB's 15-35 minute publication lag — with four slots one
+     was always late enough, with one it has to be — and that the schedule is
+     hourly rather than denser. Pinning the exact cron text is what made this
+     test fail for a cadence change that was deliberate; the shape is the
+     contract, and lib/workflows.test.ts owns the budget and the quiet hours. */
+  it('polls once an hour, late enough to clear CPCB\'s publication lag', () => {
+    const crons = [...yml.matchAll(/cron: '(\d+(?:,\d+)*) ([^']+)'/g)]
+    expect(crons.length, 'air-hourly.yml must carry at least one cron').toBeGreaterThan(0)
+    for (const [, minutes] of crons) {
+      const slots = minutes.split(',').map(Number)
+      expect(slots.length, 'one poll per hour — the budget cannot carry four').toBe(1)
+      expect(slots[0], 'a single hourly poll must land after the 15-35 minute lag')
+        .toBeGreaterThanOrEqual(30)
+    }
   })
 
   /* ★ THE ASSERTION THAT WOULD HAVE CAUGHT THE REAL BUG.
