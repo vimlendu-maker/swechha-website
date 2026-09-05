@@ -234,7 +234,26 @@ for (const e of events) {
      Skip entirely when the last run found everything it was looking for and
      was recent. A slot still pending is always retried. */
   const ageH = prev?.checked?.epochMs ? (Date.now() - prev.checked.epochMs) / 3600000 : Infinity;
-  const complete = prev?.after?.src && prev?.before?.src;
+  /* ★ A SLOT IS FILLED WHEN THE FILE IS ON DISK, NOT WHEN THE JSON SAYS SO.
+     This read `prev?.after?.src && prev?.before?.src` — the recorded filename
+     — and that made the throttle self-sealing. climate-events.yml staged
+     `data public/_pages design docs/` and never `public/images`, so every
+     frame this script downloaded was written on the runner, recorded in the
+     JSON, committed as metadata, and thrown away with the runner. The next run
+     read its own record, concluded both slots were filled, and skipped. The
+     result was 23 of 25 referenced frames missing from the repository and a
+     satellite band pointing at 404s on every disaster page, with nothing
+     re-fetching them because the register insisted they were already there.
+
+     Staging public/images fixes the cause; this fixes the trap it left behind,
+     and it is the same rule build-climate-disaster-pages.mjs already applies
+     at the other end — a named-but-absent image renders nothing rather than a
+     broken picture. Both ends now believe the filesystem over the record.
+
+     `latest` is deliberately not part of this test, as before: it is meant to
+     be re-probed, so it must never hold a run back. */
+  const onDisk = (rel) => !!rel && existsSync(join(ROOT, 'public', rel.replace(/^\//, '')));
+  const complete = onDisk(prev?.after?.src) && onDisk(prev?.before?.src);
   if (!FORCE && complete && ageH < RETRY_HOURS) {
     console.log(`   fresh (${ageH.toFixed(1)}h old, both slots filled) — not re-probing.`);
     report.push([e.slug, 'fresh']);

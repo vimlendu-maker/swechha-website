@@ -269,7 +269,16 @@ jobs:
           # design/ and docs/design/FINAL.md are build output too — see
           # data-refresh.yml's commit step for why omitting either breaks the
           # "generated pages are current" gate on the next pull request.
-          git add -A data public/_pages design docs/design/FINAL.md
+          #
+          # ★ AND public/images, WITHOUT WHICH THE SATELLITE BAND IS A ROW OF
+          # 404s. fetch-event-imagery.mjs downloads each frame to
+          # public/images/eo/<slug>/ and records it in data/climate-events/
+          # imagery/<slug>.json. The record was staged by `data` and the pages
+          # citing it by `public/_pages`; the JPEGs themselves were staged by
+          # nothing and died with the runner. 23 of the 25 frames the committed
+          # metadata referenced were absent from the repository — every event
+          # page's before/after comparison among them.
+          git add -A data public/images public/_pages design docs/design/FINAL.md
           if git diff --cached --quiet; then
             echo "Nothing staged after the rebuild — no commit."
             exit 0
