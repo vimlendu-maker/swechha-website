@@ -158,6 +158,25 @@ const rd = AIR.city_reading;      // the HEADLINE: the WORST MONITOR, named (AD-
 const ws = AIR.worst_station;     // the worst monitor, named, never as the city
 const gov = ws.pollutants[ws.governing];
 const govLimit = AIR.limits[ws.governing];
+/* ★ THE GOVERNING POLLUTANT NEED NOT BE ONE THIS FILE HOLDS A LIMIT FOR, and
+   on 5 September that took the whole Air pipeline down for two hours.
+
+   `AIR.limits` carries PM2.5 and PM10 — the two the page argues about. But
+   `ws.governing` is whichever of CPCB's EIGHT sub-indexes is worst at the worst
+   monitor, and in September, when Delhi's particulates fall, that is routinely
+   NO2. `govLimit` was then undefined, and the method table below dereferenced
+   its authority with no guard, so build:situation-air threw
+   `Cannot read properties of undefined`, build:situations refused to write, and
+   air-hourly.yml failed thirteen runs in a row with the readings fetched
+   perfectly each time. The line below had the guard all along; the one place
+   that needed it as much did not.
+
+   THE AUTHORITY IS NOT INVENTED WHEN THE POLLUTANT IS MISSING. Every entry in
+   the table states the same one, and the row is about `aqiLimit` — CPCB's index
+   limit — rather than this pollutant's concentration, so reading it from any
+   published entry says exactly what it said before. The literal is the last
+   resort for a limits table that has been emptied, not the normal path. */
+const limitAuthority = (govLimit || Object.values(AIR.limits)[0] || {}).authority || 'CPCB';
 /* The multiplier belongs to the CONCENTRATION, and that concentration is now
    IMPLIED back out of CPCB's sub-index rather than measured — the feed carries
    no µg/m³ at all. Marked with a tilde wherever it is printed. */
@@ -689,7 +708,7 @@ B.measured = () => {
         <table class="p-tbl"><thead><tr><th>Figure</th><th>Kind</th><th>Source</th><th>Cadence</th></tr></thead><tbody>
           <tr><td>AQI, ${rd.aqi}</td><td>Read, then selected</td><td>CPCB’s published sub-indexes; worst of ${AIR.spread.stations} monitors (${esc(rd.station)}). CPCB’s own city mean is ${AIR.city_mean.aqi}.</td><td>Hourly</td></tr>
           <tr><td>Station concentrations</td><td>Measured</td><td>CPCB, ${AIR.spread.stations} Delhi stations</td><td>Hourly</td></tr>
-          <tr><td>Published limit, ${AIR.aqiLimit}</td><td>Standard</td><td>${esc(govLimit.authority)}</td><td>Fixed</td></tr>
+          <tr><td>Published limit, ${AIR.aqiLimit}</td><td>Standard</td><td>${esc(limitAuthority)}</td><td>Fixed</td></tr>
           <tr><td>Source split</td><td>Modelled</td><td>published apportionment study</td><td>Per study</td></tr>
           <tr><td>Farm-fire counts</td><td>Measured</td><td>NASA FIRMS, per sensor</td><td>Daily</td></tr>
           <tr><td>Attention</td><td>Measured</td><td>Wikipedia pageviews</td><td>Daily</td></tr>

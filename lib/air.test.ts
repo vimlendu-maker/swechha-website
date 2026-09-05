@@ -329,3 +329,53 @@ describe('the state chip is earned against the observation age', () => {
     expect(stateFor('09:30 IST, 28 August 2026')).toBe('LIVE')
   })
 })
+
+/**
+ * THE GOVERNING POLLUTANT NEED NOT BE ONE WE HOLD A LIMIT FOR.
+ *
+ * `data/air-delhi.json`'s `limits` carries PM2.5 and PM10 — the two the page
+ * argues about. `worst_station.governing` is whichever of CPCB's EIGHT
+ * sub-indexes is worst at that monitor, and in September, when Delhi's
+ * particulates fall, that is routinely NO2.
+ *
+ * On 5 September build-situation-air.mjs read `govLimit.authority` with no
+ * guard, `AIR.limits.NO2` was undefined, and the generator threw
+ * `Cannot read properties of undefined (reading 'authority')`. build:situations
+ * refused to write and air-hourly.yml failed thirteen consecutive runs — with
+ * the readings themselves fetched perfectly every time. Two lines above the
+ * crash, the same value was already being used behind a `govLimit &&` guard.
+ *
+ * Reproduced before fixing: with `governing` set to NO2 the old generator threw
+ * that exact TypeError, and the patched one wrote the page.
+ */
+describe('a governing pollutant with no published limit does not take the page down', () => {
+  const gen = readFileSync(join(__dirname, '..', 'scripts', 'build-situation-air.mjs'), 'utf8')
+
+  it('never dereferences govLimit without a guard', () => {
+    /* Comments are stripped FIRST. The note beside the fix in that file quotes
+       the very expression that failed, and a checker which reads an explanation
+       of a bug as the bug is worse than no checker — this one did exactly that
+       on its first run. Continuation lines inside a block comment need not
+       begin with a star, so line-shape filtering is not enough. */
+    const code = gen.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    const bare = code.split('\n')
+      .filter((l) => /govLimit\.\w+/.test(l))
+      .filter((l) => !/govLimit\s*(\|\||&&|\?)/.test(l))
+      .map((l) => l.trim())
+    expect(bare, 'build-situation-air.mjs dereferences govLimit unguarded. `limits` holds two '
+      + 'pollutants and `worst_station.governing` can be any of CPCB\'s eight sub-indexes, so '
+      + 'this throws the first time a gas governs the worst monitor — which is normal in September')
+      .toEqual([])
+  })
+
+  it('still names an authority when the governing pollutant is absent from limits', () => {
+    expect(gen).toMatch(/limitAuthority/)
+    // Derived from the table, never a bare literal standing in for a source.
+    expect(gen).toMatch(/Object\.values\(AIR\.limits\)/)
+  })
+
+  it('the limits table really is narrower than the sub-index set — the premise of all this', () => {
+    const air = JSON.parse(readFileSync(join(__dirname, '..', 'data', 'air-delhi.json'), 'utf8'))
+    expect(Object.keys(air.limits).length).toBeLessThan(8)
+  })
+})
