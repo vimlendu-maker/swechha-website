@@ -18,18 +18,21 @@ on:
   schedule:
     # Hourly at :20. Deliberately not :00 — CPCB stamps the hour and publishes
     # a little after it, and every cron on earth fires at :00.
-    # ★ NOT BETWEEN MIDNIGHT AND 05:00 IST. Owner's instruction, 5 September:
-    # no data is pulled in those hours, and this job pulls from data.gov.in.
-    # It commits nothing, so it costs no deployments — the reason it changes
-    # is the rule, plus the fact that a band-change alert is an EMAIL, and one
-    # that arrives at 02:50 IST wakes a subscriber for air they cannot act on
-    # until morning. UTC 00:20-18:20 is IST 05:50 through 23:50.
+    # ★ HOURLY, ALL NIGHT — THE ONE JOB EXEMPT FROM THE QUIET HOURS.
+    # Everything else on this repository's schedule stops between midnight and
+    # 05:00 IST (owner's instruction, 5 September). This does not, and the
+    # exemption is deliberate: Delhi's air is frequently at its WORST in those
+    # hours, so the window this job would have skipped is the window a person
+    # who asked to be told most needs telling in. Briefly blacked out on
+    # 5 September and reversed the same day.
     #
-    # THE TRADE, NAMED: a band change during the night is not alerted until the
-    # 05:50 IST run. Delhi's air is often at its worst in those hours, so this
-    # is a real delay — it is accepted because the alert is for a person, and
-    # the page itself carries the reading whenever they look.
-    - cron: '20 0-18 * * *'
+    # THE EXEMPTION IS AFFORDABLE BECAUSE THIS JOB COMMITS NOTHING. Every commit
+    # to main is a Vercel deployment and the quiet hours exist to protect that
+    # budget; this pushes no commit, so running it 24 times a day costs zero
+    # deployments. lib/workflows.test.ts holds the exemption by name and asserts
+    # that condition — add a commit step here and the test fails, correctly,
+    # because the exemption would no longer be free.
+    - cron: '20 * * * *'
   workflow_dispatch:
     inputs:
       dry_run:
