@@ -62,7 +62,24 @@ on:
     # cron in vercel.json, which calls /api/cron/air and dispatches this
     # workflow from outside GitHub entirely. This cron is the cheap best-effort
     # rung; that one is the heartbeat.
-    - cron: '4,19,34,49 * * * *'
+    #
+    # ★ ONE POLL AN HOUR, AND NONE BETWEEN MIDNIGHT AND 05:00 IST.
+    # Owner's instruction, 5 September. This was four polls an hour around the
+    # clock — 96 a day — which is how the account reached Vercel's hundred-a-day
+    # deployment ceiling and froze every deploy for 24 hours.
+    #
+    # :34 is chosen, not inherited. With four polls a slot could be early and
+    # another would catch the reading; with one, the single poll has to land
+    # after CPCB's 15-35 minute lag, so it sits at the far end of that window.
+    # THE COST IS REAL AND IS ACCEPTED: an observation published later than :34
+    # is missed for that hour and picked up on the next poll, where before a
+    # :49 poll would have caught it.
+    #
+    # UTC 00:34-17:34 and 23:34 is IST 05:04 through 23:04 — nineteen hourly
+    # readings covering every waking hour, and silence from midnight to five.
+    # IST is UTC+5:30, so the night maps to UTC 18:30-23:30, which is why the
+    # kept hours are 0-17 and 23 rather than a tidy range.
+    - cron: '34 0-17,23 * * *'
   workflow_dispatch:
     inputs:
       dry_run:

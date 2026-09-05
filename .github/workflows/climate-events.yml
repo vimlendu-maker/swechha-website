@@ -93,7 +93,13 @@ name: Climate events — the page notices something happened
 on:
   schedule:
     # Hourly at :05 — clear of air-hourly's :35 and data-refresh's :40.
-    - cron: '5 * * * *'
+    # ★ EVERY TWO HOURS, AND NOT DURING THE IST NIGHT. Owner's instruction,
+    # 5 September; this was hourly. UTC 00:05-18:05 on even hours is IST 05:35
+    # through 23:35 — ten runs a day. The detection promise is unchanged in
+    # kind: a disaster reported at noon still reaches the site the same
+    # afternoon. What it gives up is up to two hours on an overnight event,
+    # which the IST blackout would have deferred to morning regardless.
+    - cron: '5 0,2,4,6,8,10,12,14,16,18 * * *'
   workflow_dispatch:
     inputs:
       dry_run:

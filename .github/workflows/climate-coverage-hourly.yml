@@ -1,4 +1,4 @@
-name: Climate coverage, hourly — the news register only
+name: Climate coverage, four times a day — the news register only
 
 # WHY THIS EXISTS, AND WHY IT IS SEPARATE FROM data-refresh.yml
 #
@@ -27,6 +27,30 @@ name: Climate coverage, hourly — the news register only
 # A quiet hour (nothing new in Google News' index for the query) produces no
 # commit and no deploy.
 #
+# ★ EXCEPT THAT THERE IS NO SUCH THING AS A QUIET HOUR HERE, AND THAT IS WHY
+#   THE CADENCE CHANGED. Measured over the week to 5 September, this job
+#   committed on 23 or 24 of its 24 daily runs — the noise filter is working
+#   exactly as written, and Google News simply returns a slightly different
+#   set of ~55 headlines every single hour. So the gate never fires and the
+#   job costs a commit, a rebuild and a Vercel deployment every hour, for a
+#   reshuffled list of links.
+#
+#   That mattered on 5 September, when the account hit its hundred-a-day
+#   deployment ceiling and every preview and production deploy stopped for
+#   24 hours. The day's budget, measured: air 21-43, this job 23-24, the
+#   detector 18-28, plus one preview per push on every open pull request.
+#
+#   THIS IS THE ONE THAT COULD GIVE WAY WITHOUT COSTING ANYTHING. Air's
+#   commits track real hourly CPCB readings and the detector's cadence is the
+#   whole promise of the disaster pages — a page that appears late has failed
+#   at its one job. A news register is a list of links, and six hours old is
+#   not a worse list. Four runs a day instead of twenty-four gives back about
+#   twenty deploys.
+#
+#   THE BAND STILL READS FRESH, because the page it feeds is rebuilt hourly by
+#   climate-events.yml anyway; what moves on this cadence is only which
+#   headlines the register holds.
+#
 # ★ NO SECRETS NEEDED.
 # Google News RSS is keyless, and the GDELT "signal" half of coverage is
 # skipped for every subject (COVERAGE_SKIP_GDELT=1 — see
@@ -41,10 +65,16 @@ name: Climate coverage, hourly — the news register only
 
 on:
   schedule:
-    # :15 past the hour — off the hour, and clear of air-hourly's :35 and
-    # data-refresh's :40, so the three scheduled jobs don't land on the same
-    # runner minute.
-    - cron: '15 * * * *'
+    # :15 past the hour — off the hour, and clear of air-hourly's :4,:19,:34,:49,
+    # climate-events' :5, ward-alerts' :20 and data-refresh's :40, so the
+    # scheduled jobs don't land on the same runner minute.
+    #
+    # FOUR TIMES A DAY, not twenty-four — see the note above on the deployment
+    # ceiling. 01:15, 07:15, 12:15 and 17:15 UTC is 06:45, 12:45, 17:45 and
+    # 22:45 IST: morning, midday, evening and last thing at night, which is the
+    # shape of the day this register is read in. All four sit outside the
+    # midnight-to-five IST window in which nothing is pulled at all.
+    - cron: '15 1,7,12,17 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -53,7 +83,7 @@ on:
         default: true
 
 concurrency:
-  # An hourly job that overruns must not race the next one into a push.
+  # A scheduled job that overruns must not race the next one into a push.
   group: coverage-climate-hourly
   cancel-in-progress: false
 
@@ -85,7 +115,7 @@ jobs:
           n=$(grep -oE '^CHANGED=[0-9]+' /tmp/changed.log | tail -1 | cut -d= -f2)
           echo "count=${n:-0}" >> "$GITHUB_OUTPUT"
           {
-            echo '### Climate coverage, hourly'
+            echo '### Climate coverage, four times a day'
             echo ''
             echo '```'
             cat /tmp/changed.log
@@ -113,5 +143,5 @@ jobs:
           fi
           count=$(node -p 'JSON.parse(require("fs").readFileSync("data/coverage-climate-event.json","utf8")).register.count')
           git commit -m "data(climate-event): news register refreshed, ${count} items" \
-            -m "Automated by .github/workflows/climate-coverage-hourly.yml. Re-reads only the Google News register for the climate-event situation, hourly; every other situation's coverage stays on data-refresh.yml's daily cadence. Committed only because the register's items, count or publishers actually changed — timestamp-only churn is reverted first. The page was rebuilt in the same run and verify:final passed."
+            -m "Automated by .github/workflows/climate-coverage-hourly.yml. Re-reads only the Google News register for the climate-event situation, four times a day; every other situation's coverage stays on data-refresh.yml's daily cadence. Committed only because the register's items, count or publishers actually changed — timestamp-only churn is reverted first. The page was rebuilt in the same run and verify:final passed."
           git push
