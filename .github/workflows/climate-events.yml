@@ -244,6 +244,21 @@ jobs:
           # design-routes.ts derives their routes from the same dossiers and
           # refuses to route a file that is not on disk.
           npm run build:situations
+          # ★ AND THE HOMEPAGE, WHICH IS FED BY THE SAME DOSSIERS.
+          # This step rebuilt the two situation pages and stopped, but the
+          # homepage reads the very same data through homepageSlot(): the hero
+          # situation slide, the climate ticker cell and the og:image all come
+          # out of it. So every run of this workflow that moved an event left
+          # home.html behind, main drifted out of step with its own data within
+          # the hour, and "Generated pages are current" was red on every pull
+          # request anyone opened — for a page none of them had touched.
+          #
+          # AFTER build:situations, NOT BEFORE, and the order is load-bearing
+          # for the same reason air-hourly.yml states: build-hero.mjs
+          # cross-checks the hero's air figure against the one already in
+          # situation-air.html and refuses to write when they differ. Hero
+          # first would compare against a page not yet rebuilt and stop the run.
+          npm run build:hero
           npm run verify:final
 
       - name: Commit and push
