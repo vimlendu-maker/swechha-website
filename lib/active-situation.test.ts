@@ -5,7 +5,7 @@ import { join } from 'node:path'
 // for these — see caaqms.test.ts and air-history.test.ts. `allowJs` is on, so
 // types are inferred and no suppression is needed.
 import { figuresFromText, consolidate, eventName, mentionsPlace } from '../scripts/lib/event-figures.mjs'
-import { dedupeFeedItems, anchorPublished, lastUpdatedFrom } from '../scripts/lib/event-feed.mjs'
+import { dedupeFeedItems, anchorPublished, lastUpdatedFrom, feedCollapse } from '../scripts/lib/event-feed.mjs'
 import { statusOf, homepageSlot, situationHref, publishStateFor, SITUATION_STATUS } from '../scripts/lib/active-situation.mjs'
 
 /**
@@ -731,5 +731,69 @@ describe('faded coverage demotes, a dip does not', () => {
   it('still lets an editor overrule it', () => {
     expect(statusOf(ev({ faded_since: { epochMs: now - 99 * H }, situation_status: 'active' }), now))
       .toMatchObject({ status: 'active', source: 'admin' })
+  })
+})
+
+/**
+ * THE FEED CAN COLLAPSE WITHOUT ANYTHING LOOKING WRONG.
+ *
+ * Exit 75 catches total silence — nothing answered, nothing written. What ran
+ * unnoticed for weeks is the partial case: sources reachable, RSS well-formed,
+ * a fraction of the items. One run read 218 where the run fifty minutes before
+ * it read 574, and the Nepal glacial flood went from 137 independent publishers
+ * to 2 with 1,344 dead.
+ *
+ * The series below is the real `read.news_items` column from checked.json's
+ * committed history, oldest first. It is the calibration and the regression
+ * test at once: the rule must fire on both genuine collapses and on nothing
+ * else, including the recoveries that immediately follow them and the soft
+ * patch in the middle where volume sagged for several runs without collapsing.
+ */
+describe('a feed collapse is visible, a quiet day is not', () => {
+  const HISTORY = [
+    585, 583, 583, 576, 578, 576, 579, 567, 577, 575, 581, 588, 585, 565, 570, 576,
+    382, 408, 482, 325, 317, 219, 563, 421, 582, 586, 593, 586, 587, 590, 595, 588,
+    586, 586, 584, 575, 576, 577, 572, 575, 581, 586, 578, 580, 582, 582,
+    221, 582, 583, 583, 574, 581, 581, 579, 581, 586, 575,
+    218, 577, 574,
+  ]
+
+  it('fires on the two real collapses and on nothing else in 59 comparisons', () => {
+    const fired: number[] = []
+    for (let i = 1; i < HISTORY.length; i++) {
+      const c = feedCollapse(HISTORY[i], HISTORY[i - 1])
+      if (c) fired.push(HISTORY[i])
+    }
+    expect(fired).toEqual([221, 218])
+  })
+
+  it('reports how far it fell, for the human reading the log', () => {
+    expect(feedCollapse(218, 574)).toMatchObject({ current: 218, previous: 574, pct: 38 })
+  })
+
+  it('does not fire on the recovery that follows a collapse', () => {
+    // 218 -> 577 is 2.65x. An anomaly ending is not an anomaly.
+    expect(feedCollapse(577, 218)).toBeNull()
+  })
+
+  it('does not fire on the soft patch where volume merely sagged', () => {
+    // The lowest non-collapse ratio in the whole history, 0.66.
+    expect(feedCollapse(382, 576)).toBeNull()
+  })
+
+  it('stays quiet when the previous run was itself tiny', () => {
+    // Comparing two small numbers is how a ratio test turns into noise.
+    expect(feedCollapse(3, 40)).toBeNull()
+  })
+
+  it('stays quiet on the first run, when there is nothing to compare against', () => {
+    expect(feedCollapse(574, null)).toBeNull()
+    expect(feedCollapse(574, undefined)).toBeNull()
+  })
+
+  it('treats total silence as the other mechanism\'s business, not a ratio', () => {
+    // news.length === 0 exits 75 before this is ever reached; if it were
+    // reached it would still be reported rather than divided by zero.
+    expect(feedCollapse(0, 574)).toMatchObject({ pct: 0 })
   })
 })
