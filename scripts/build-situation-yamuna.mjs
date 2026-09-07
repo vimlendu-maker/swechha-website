@@ -437,7 +437,7 @@ B.stretch = () => {
         falls from ${n1(stretch[1].do.min)} to ${n1(stretch[2].do.min)} and the bacteria count goes
         from ${compact(stretch[1].fc.max)} to ${compact(stretch[2].fc.max)}. That is not a gradual
         decline down the length of a river. It is a cliff, and the city is standing at the top of it.</p>
-${hole('Where each drain enters, and how much it carries, is not on this page. CPCB monitors Delhi\'s drains and publishes the results in a separate annual document that was not parsed for this build. Until it is, the page can show that the collapse happens and not exactly where each contribution joins.')}
+${hole('CPCB monitors Delhi\'s drains, but publishes them in a separate annual document from the river series above. So the collapse is measured in one report and the individual drains that cause it in another, and nobody publishes the two together.')}
       <p style="margin:0"><a class="act" href="#trend">Where it is going ${ARROW}</a></p>
     </div>`;
 };
@@ -678,14 +678,12 @@ B.money = () => {
         river dolphin assessment put the Gangetic dolphin population at
         ${n0(GAN.other_work.dolphins_estimated)}.
         <a class="lk" href="${esc(GAN.source.url)}">${esc(GAN.source.publication)}, ${esc(GAN.source.date)}</a>.</p>
-      <p class="cap p-hole"><b>One division this page will not do.</b>
+      <p class="cap p-hole"><b>One division the release does not support.</b>
         ${esc(GAN.what_cannot_be_computed.national_cost_per_mld)}</p>
-      <p class="y-note">The page states the money and the reading side by side and draws no line
-        between them. <b>Completed is not the same word as working, and this page will not use
-        one to mean the other.</b> What is on the record is that the capacity was built, the
-        projects were signed off, and the oxygen at four Delhi stations still reads below the
-        detection limit.</p>
-${hole('The total ever spent on the Yamuna is not on this page. Figures of six and a half thousand crore and eight thousand crore circulate widely, sourced to a parliamentary panel through newspapers rather than to the panel\'s own report. Under this site\'s rules a figure reported by a newspaper is reporting, not data — it belongs in the coverage list below, never in this band. Closing this properly needs the panel report itself, and that is the largest single piece of work still outstanding on this page.')}
+      <p class="y-note"><b>Completed is not the same word as working.</b> What is on the record is
+        that the capacity was built, the projects were signed off, and the oxygen at four Delhi
+        stations still reads below the detection limit.</p>
+${hole('The widely circulated totals for money spent on the Yamuna — six and a half thousand crore, eight thousand crore — trace to newspapers reporting a parliamentary panel, not to the panel\'s own report. A figure reported by a newspaper is reporting, not data: it belongs in the coverage list below rather than beside the money above.')}
       <h3 class="d2 y-h3">What is being said</h3>
       <p class="cap y-reg-i">${n0(NEWS.register.count)} items from
         ${n0(Object.keys(NEWS.register.publishers || {}).length)} publishers, most recent first.

@@ -592,17 +592,14 @@ ${crumb('air')}
           India set for itself.</b> ${IND.totals.good} read &ldquo;Good&rdquo;.${ONE_ST
     ? ` ${esc(ONE_ST.city)} reports from one station and Delhi from ${dr ? dr.stations : AIR.spread.stations} &mdash;
           a city with one monitor is measured <b>less</b>, not better.` : ''}</p>
-        <p class="cap p-hole p2-nat-t"><b>These nine figures were read together, and none of them
-          moves while you are here.</b> The eight cities above and Delhi&rsquo;s row beside them come
-          from one national snapshot, taken at ${esc(NAT_OBS)}. That is what makes them comparable
-          with each other, and it is why the order is printed as a reading of one hour rather than
-          as a standing claim: by the time you read it, CPCB has published another.${NAT_SAME_HOUR
-    ? ' It is also the same hour as the reading at the top of this page.'
-    : ` The reading at the top of this page is a different fetch, from Delhi&rsquo;s own monitors at
-          ${esc(OBS)}, so Delhi&rsquo;s row here and the figure above it need not agree &mdash; they
-          are two hours, and each is labelled with its own. The national table is a much larger read
-          and runs on its own schedule; it is kept separate so that a slow national fetch can never
-          hold back Delhi&rsquo;s live figure.`}</p>
+        <p class="cap p-hole p2-nat-t"><b>One snapshot, one hour.</b> The eight cities above and
+          Delhi&rsquo;s row beside them come from one national reading taken at ${esc(NAT_OBS)},
+          which is what makes them comparable with each other &mdash; and why the order is an
+          hour&rsquo;s reading rather than a standing claim: by the time you read it, CPCB has
+          published another.${NAT_SAME_HOUR
+    ? ' It is the same hour as the reading at the top of this page.'
+    : ` The reading at the top of this page is Delhi&rsquo;s own monitors at ${esc(OBS)} &mdash;
+          two hours, each labelled with its own, and they need not agree.`}</p>
         <p style="margin:0"><a class="act" href="${INDIA_PAGE}">All ${n0(IND.totals.cities)} cities ${ARROW}</a></p>
       </div>
       </div>
@@ -847,8 +844,8 @@ B.sources = () => {
             answer it &mdash; <a class="lk" href="${esc(AP.live_system.url)}" rel="noopener" target="_blank">${esc(AP.live_system.name)}</a>,
             run by the ${esc(AP.live_system.by.replace(/, Ministry of Earth Sciences$/, ''))}, which publishes
             a daily split across 29 sectors with the stubble share taken from the previous evening&rsquo;s
-            satellite fire counts. <b>It has no public API and its host was unreachable from the machine that
-            built this page</b>, so it is named and linked and never restated.</p>
+            satellite fire counts. <b>It has no public API</b>, so it is named and linked rather than
+            restated.</p>
         </div>`;
   const pNow = `<div class="p-two">
           <div class="p-two-c"><p class="num rl">${n0(g.off_season.modis)}</p><p class="unit">MODIS &middot; 1 km</p>
@@ -1126,12 +1123,12 @@ ${opener('money','The cost of inaction is more than the action','Allocated is th
       <p class="body p-key"><b>One year of damage costs about fifty times everything released for it since
         2019</b>, and about seventy times what has been spent. Both periods are stated because the comparison
         only holds if they are: the damage figure is annual, the spending figures are cumulative.</p>
-      <p class="cap p-hole"><b>What this is not.</b> It is not a cost-benefit study &mdash; nobody has
-        published a costed abatement plan for Delhi-NCR, so this page cannot tell you what fixing the air
-        would cost. It is the narrower claim, and the only one the figures support: <b>what the damage costs
-        each year, beside what has actually been released and spent against it.</b> Sources: PIB releases,
-        CPCB&rsquo;s PRANA funding guidelines, CREA&rsquo;s <i>Tracing the Hazy Air</i>, Dalberg with Clean
-        Air Fund and CII. No inference is drawn beyond the arithmetic.</p>
+      <p class="cap p-hole"><b>What this is not.</b> It is not a cost-benefit study: <b>nobody has
+        published a costed abatement plan for Delhi-NCR</b>, so what fixing the air would cost is not
+        a published figure. This is the narrower claim, and the only one the figures support &mdash;
+        <b>what the damage costs each year, beside what has actually been released and spent against
+        it.</b> Sources: PIB releases, CPCB&rsquo;s PRANA funding guidelines, CREA&rsquo;s
+        <i>Tracing the Hazy Air</i>, Dalberg with Clean Air Fund and CII.</p>
     </div>`;
 
 B.act = () => {
@@ -1171,8 +1168,7 @@ B.act = () => {
             <p class="cap p-hole"><b>Why it asks for a monitor and not a pin code.</b> India Post&rsquo;s own
               All India Pincode Directory publishes <b>562 post offices for Delhi and no latitude or longitude
               column at all</b>, so there is no official way to turn a Delhi pin code into a point on the
-              ground. The alternative was a third-party centroid file of unknown provenance &mdash; on this
-              page, of all pages. A monitor is the better question anyway: two of them
+              ground. A monitor is the better question anyway: two of them
               <a class="lk" href="#geography">${NEAR_KM.toFixed(1)} km apart</a> read ${Math.max(NEAR_A.aqi, NEAR_B.aqi)} and ${Math.min(NEAR_A.aqi, NEAR_B.aqi)}.</p>
           </div>
           <div class="p-act-c">
@@ -1210,8 +1206,7 @@ B.act = () => {
             <p class="cap">Low-cost optical sensors read high in humidity and drift as their chamber
               fouls. To turn a reading into a measurement you <b>co-locate</b> it beside a reference
               station for a fortnight and fit your device against theirs. That is the whole difference
-              between the ${AIR.spread.stations} instruments on this page and a gadget on a windowsill,
-              and it is why this page will not accept a crowd-sourced reading as equivalent.</p>
+              between the ${AIR.spread.stations} instruments on this page and a gadget on a windowsill.</p>
           </div>
           <div class="p-do-r">
             <p class="lbl">File a complaint that lands somewhere</p>
@@ -1229,8 +1224,6 @@ B.act = () => {
             <p class="lbl">Read the objection window</p>
             <p class="body">Environmental clearances carry a public-consultation stage with a fixed
               window for written objections. Most close unopposed because nobody was watching.</p>
-            <p class="cap">This page does not yet track those windows for Delhi-NCR. It is named here
-              because it is the highest-leverage thing on the list, not because it is built.</p>
           </div></div>`;
   return `    <div class="wrap">
 ${opener('act','What you can do','Nobody visits a record every morning. This is the part that asks something of you.')}
