@@ -67,8 +67,24 @@ export const programmeSchema = z.strictObject({
   title: z.string().min(1),
   description: z.string().min(140).max(158),
   deck: z.string().min(1),
+  /* Who Swechha is, in one sentence. It exists on exactly one other page in the
+     site (the homepage), and this one is a landing page a funder forwards, so a
+     cold visitor arrives here with no answer to "who is this?". */
+  identity: z.string().min(1),
+  /* The parent programme. This page is Bridge the Gap's 2025-26 chapter, not a
+     separate thing, and the masthead says so in one line. */
+  ancestor: z.strictObject({ label: z.string(), href: z.string() }),
   partnership: z.string().min(1),
   figures: z.array(figureSchema).min(4),
+  /* The funder register, same grammar as data/work/projects/bridge-the-gap.json.
+     funders_lead counts how many leading entries carry the lead mark — a rank on
+     a published list is a claim, so funders_source is required alongside it,
+     exactly as the WORK build already demands. */
+  with: z.strictObject({
+    funders: z.array(z.string()).min(1),
+    funders_lead: z.number().int().positive(),
+    funders_source: z.string().min(1),
+  }),
   bands: z.record(z.string(), z.unknown()),
   quotes: z.array(quoteSchema),
   holes: z.array(z.string()).min(1),

@@ -46,6 +46,23 @@ describe('healthy-cities data', () => {
     expect(d.length).toBeLessThanOrEqual(158)
   })
 
+  it('names the parent programme and links to it', () => {
+    const anc = loadProgramme().ancestor
+    expect(anc.label).toBeTruthy()
+    expect(anc.href).toMatch(/^\//)
+  })
+
+  it('says who Swechha is on the page itself', () => {
+    expect(loadProgramme().identity.trim().length).toBeGreaterThan(0)
+  })
+
+  it('sources the funder rank and never marks more leads than there are funders', () => {
+    const w = loadProgramme().with
+    expect(w.funders.length).toBeGreaterThan(0)
+    expect(w.funders_source, 'a rank on a published list is a claim').toBeTruthy()
+    expect(w.funders_lead).toBeLessThanOrEqual(w.funders.length)
+  })
+
   it('gives every frame a descriptive alt of at least six words', () => {
     const frames = [...loadProgramme().frames ?? [], ...loadFellows().flatMap(f => f.frames ?? [])]
     for (const fr of frames) {
