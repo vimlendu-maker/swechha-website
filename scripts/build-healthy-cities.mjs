@@ -44,6 +44,7 @@ import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import * as W from './lib/work-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
+import { imageSize } from './lib/jpeg-size.mjs';
 
 const { esc, hole, ARROW } = S;
 
@@ -141,6 +142,60 @@ const VOICES = PROG.voices.map((v, i) => {
   }
   return { ...q, fellow: f };
 }).filter(Boolean);
+
+/* ★ THE PHOTO-LIBRARY GATE, and this generator shipped eight photographs
+   without one. `alt` is served out of data/healthy-cities/**, so the library
+   row beside each file — its dimensions, its credit, its provenance note — was
+   hand-verified and nothing but a person re-reading both files would ever see
+   them disagree again. The other two generators that publish photography both
+   gate: build-work-pages.mjs refuses a frame with no library entry (AD-17
+   §8.2), and build-impact-page.mjs additionally checks the library's recorded
+   size against the file. This is that second check, copied rather than
+   reinvented, down to the rule it turns on: THE FILE WINS OVER THE LIBRARY.
+   The drift it exists to catch is not hypothetical. scripts/lib/jpeg-size.mjs's
+   own header records that seven frames were recorded 2000x1500 while every
+   browser renders them 1500x2000, because the numbers were raw pixels and the
+   files carry EXIF Orientation 6 — and that a portrait frame in a letterbox
+   cell renders as an unreadable sliver, reported as "the image is not visible".
+   WHAT IS DELIBERATELY NOT COPIED is /impact's CREDIT_OK allow-list, which
+   accepts only "Swechha archive" or a named Wikimedia licence. Four of this
+   microsite's frames are credited "Influence India Fellowship final reports" —
+   correct, and ruled so (ruling 34) — so that list would refuse them. It is
+   /impact's own decision about /impact's own frames and is not a fact about
+   photographs in general; the flags below are. */
+const LIB = new Map(JSON.parse(readFileSync(join(S.ROOT, 'content/photo-library.json'), 'utf8'))
+  .photos.map(e => [e.src, e]));
+/* Every frame this generator can RENDER, from both loaders — the hub's four
+   slots and each fellow's own contact sheet — so a frame added to a fellow file
+   is gated by the same line as one added to programme.json. */
+const ALL_FRAMES = [
+  ...(PROG.frames || []).map(fr => ['programme.json', fr]),
+  ...FELLOWS.flatMap(f => (f.frames || []).map(fr => [`fellows/${f.slug}.json`, fr])),
+];
+for (const [where, fr] of ALL_FRAMES) {
+  const e = LIB.get(fr.src);
+  if (!e) {
+    dataFail(`${where}: frame ${fr.src} is not in content/photo-library.json. An unregistered frame `
+      + 'has no recorded credit and no recorded provenance, so it counts as unavailable (AD-17 §8.2).');
+    continue;
+  }
+  /* Both flags refuse outright, as they do on every WORK page (AD-17 §8.1,
+     W-31): a bought frame is somebody else's real photograph and a synthetic
+     one is nobody's, and neither may be published as evidence of this work.
+     Neither fires today — all eight are camera originals or report embeds. */
+  if (e.stock) dataFail(`${where}: frame ${fr.src} is flagged stock:true and may not be published as our work.`);
+  if (e.synthetic) dataFail(`${where}: frame ${fr.src} is flagged synthetic:true — it is not a photograph `
+    + 'of this work and may never be published as one. A named hole is the answer, not this frame.');
+  let real;
+  try { real = imageSize(join(S.ROOT, 'public' + fr.src)); }
+  catch (err) { dataFail(`${where}: frame ${fr.src} could not be measured: ${err.message}`); continue; }
+  if (e.width !== real.width || e.height !== real.height) {
+    dataFail(`${where}: frame ${fr.src} — the library says ${e.width}x${e.height}, the file renders `
+      + `${real.width}x${real.height} (EXIF orientation ${real.orientation}). THE FILE WINS — correct `
+      + 'content/photo-library.json. Every <img> on this page takes its width/height from the file via '
+      + 'imgDim(), so a wrong library row is a wrong credit and a wrong provenance note, not a wrong layout.');
+  }
+}
 
 if (bad) { console.error(`\nREFUSING TO WRITE: ${bad} data check(s) failed.`); process.exit(1); }
 
@@ -493,6 +548,27 @@ const PAGE_CSS = `
 .w7-pj-pre{margin:0;color:var(--ink-3)}
 .wk-dark .w7-pj-pre{color:var(--fg-3)}
 #fellows .w7-pj-rows .w7-pj-n{grid-row:1/span 3}
+
+/* ── THE SPLIT BAND'S PHOTOGRAPH HONOURS ITS OWN CROP, and until this rule
+      existed it could not. .ht>img is frozen in home.html as
+      width:100%;height:100%;object-fit:cover and states NO object-position, so
+      .w7-pj-fig — height clamp(176px,22vw,320px), about 560x315 inside a
+      1240px wrap — centre-crops whatever it is handed. Meanwhile splitBand has
+      emitted style="--op:VALUE" on that image since it was written and NOTHING
+      read the property: the crop could not be steered even deliberately.
+      THIS IS THE SAME DEFECT THE SHARED SHELL ALREADY RECORDS ONE COMPONENT
+      ALONG. See the note above .pic>img in situation-shell: the situation heroes
+      carried --zh/--zt copied from the Air page, .pic>img read none of them, and
+      every hero was a centre crop whether or not that was the right crop. One
+      property, wired the same way, with the centre crop as the default — so the
+      two split frames that ask for no crop render byte-identically.
+      IT IS STATED HERE RATHER THAN IN work-shell's WORK_CSS DELIBERATELY. That
+      stylesheet is shared by twenty WORK pages plus every other page built on
+      the WORK shell, and no frame on any of them asks for a split crop today:
+      putting it there would rewrite two dozen built files for a crop only this
+      page needs. The day a second caller wants it, it moves up one layer and
+      this rule is deleted. ── */
+.w7-pj-fig>img{object-position:var(--op,50% 50%)}
 
 /* ── the prose column of a split, and the quote panels. A panel is a block
       here rather than a tab, so the stack needs the block rhythm the tab group
