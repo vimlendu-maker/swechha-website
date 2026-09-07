@@ -372,7 +372,18 @@ const body = {};
      the PARTNERSHIP, first thing under the h1, which is the strongest credit
        this design language can give anyone without importing a logo;
      the IDENTITY sentence, because it exists on exactly one other page in the
-       site and this is the page a cold visitor arrives at from an email;
+       site and this is the page a cold visitor arrives at from an email —
+       AT `.cap` AND NOT AT `.lbl`, which is the one difference between this
+       call and the fellow pages'. `.lbl` is uppercase at .15em tracking, and
+       the site's own footer exempts its one explanatory sentence from caps
+       because "twenty words of caps is a shout, not a label". The identity line
+       is twenty-two words. Stacked under the eleven-word partnership credit it
+       was thirty-three words of micro-caps between the h1 and the deck, and
+       measured at 375x635 it pushed the whole figure rail off the first screen
+       — which is the one thing ruling 8 put the rail inside `#top` to achieve.
+       `.cap` is the site's own caption class: 13.5px Newsreader, sentence case,
+       the same ink. The fellow pages keep `.lbl` on their `.hc-eye`, because
+       there it carries a place and a period and that IS a label;
      the DECK.
    ★ AND THE RAIL SITS IN A SECOND .pic-body RATHER THAN IN A BAND OF ITS OWN,
    mirroring /impact — "immediately after the hero, mirroring the homepage's
@@ -394,7 +405,7 @@ body.top = () => `${W.masthead({
   ancestor: W.anc(PROG.ancestor.label, PROG.ancestor.href),
   lines: [
     `<p class="lbl hc-credit">${PROG.partnership}</p>`,
-    `<p class="lbl hc-eye">${PROG.identity}</p>`,
+    `<p class="cap hc-eye">${PROG.identity}</p>`,
   ],
 })}
     <div class="pic-body hc-rail">${dark(W.figureRail(PROG.figures.map(f => ({
@@ -611,10 +622,10 @@ const B = applyCanvas(BANDS, body);
    and `section` carries overflow-x:clip, which crops the damage instead of
    showing it. Gate 7 checks it mechanically. */
 const PAGE_CSS = `
-/* ── the two micro-caps lines under the headline. --fg-3 is the masthead's own
-      caption ink and the band is #0D0D0B; stated for paper as well because the
-      masthead is the one band whose ground is pinned and a page that ever moves
-      it must not silently lose the colour. Every paper rule in this project is
+/* ── the two lines under the headline. --fg-3 is the masthead's own caption ink
+      and the band is #0D0D0B; stated for paper as well because the masthead is
+      the one band whose ground is pinned and a page that ever moves it must not
+      silently lose the colour. Every paper rule in this project is
       written .paper X,.paper-2 X: a rule authored for .paper alone leaves
       .paper-2 uncovered and the element keeps its dark-ground ink on a light
       band, which has shipped as a real defect more than once. ── */
@@ -666,6 +677,29 @@ const PAGE_CSS = `
 .hc-prose+.hc-prose{margin-top:var(--gap-row)}
 .hc-voices{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--gap-block);
   margin-top:var(--gap-row)}
+
+/* ── A QUOTE PANEL WITH NO PHOTOGRAPH IS ONE COLUMN, and until this rule
+      existed not one of the nineteen was. WORK_CSS's .wk-panel becomes
+      minmax(0,1.15fr) minmax(0,1fr) above 900px so a panel can set its frame
+      beside its words — which is right for the six journeys panels that
+      component was written for, and wrong for every panel here, because no
+      quote carries a frame. Measured at 1440: the panel is 1148px wide, the
+      computed tracks are 590.938px and 513.859px, and there is ONE child. So
+      45 per cent of the most-read band on all eleven pages was empty ground,
+      and the words were reading at 590px in a 1148px measure.
+      :not(:has(...)) RATHER THAN A MODIFIER CLASS, because the class would
+      have to be added in work-shell's own panel(), and that component is
+      shared by every WORK page — the same reason the crop rule above lives
+      here. The precedent is situation-render.mjs's .as-cards:has() rule and its
+      note: a browser without :has() simply keeps the old behaviour, which is
+      the layout that ships today. Scoped to .hc-voices so it cannot reach a
+      panel some later band on these pages puts a frame in.
+      The rule survives a quote that DOES get a photograph: the panel then has
+      a .wk-panel-fig, :not(:has()) stops matching, and the two-column
+      composition comes back on that panel alone. ── */
+@media (min-width:900px){
+  .hc-voices .wk-panel:not(:has(.wk-panel-fig)){grid-template-columns:minmax(0,1fr)}
+}
 `;
 
 /* ═══ THE HUB'S OWN CSS ══════════════════════════════════════════════════
@@ -974,10 +1008,13 @@ if (fail) {
 console.log(`\n${OUT.length.toLocaleString('en-IN')} bytes. All hub gates pass.`);
 
 /* ═══ THE TEN FELLOW PAGES ═══════════════════════════════════════════════
-   One page per file in data/healthy-cities/fellows/, five bands each, and the
-   spine stays five because most fellows have five things: who they are and what
-   they counted, what they did, who spoke, what the report does not settle, and
-   the way on to the other nine.
+   One page per file in data/healthy-cities/fellows/, up to five bands each: who
+   they are and what they counted, what they did, who spoke, what the report
+   does not settle, and the way on to the other nine. TWO OF THOSE FIVE ARE
+   CONDITIONAL — `voices` where the report carries publishable direct speech and
+   `gaps` where it leaves something named — so seven pages run to five bands and
+   three to four. A band with nothing in it is omitted rather than opened over a
+   sentence saying so.
 
    ★ EACH PAGE BUILDS ITS OWN INDEX. The hub's five chips are #top, #schools,
    #fellows, #voices and #gaps; three of those bands do not exist here. An
@@ -1022,17 +1059,26 @@ const F_CHIP = {
   gaps: 'What we cannot say yet', onward: 'The cohort',
 };
 
-/* NO TESTIMONIAL, SAID AS A SENTENCE. Three of the ten reports carry no direct
-   speech at all — miyawaki-forests records what was planted and where,
-   swapnil-chaurasiya puts two fathers' account in the report's own words rather
-   than theirs, and tawheed-zubair's three Hindi testimonials survive only as
-   broken text. So this band would be a heading over nothing on three pages, and
-   `hole()` is the site's device for exactly that: a named absence in the SOURCE
-   RECORD, set as a real sentence rather than a dash or a zero. It is one
-   sentence for all three because it is the one thing true of all three; each
-   file's own `holes` then says which of the three cases it is, in its own
-   words, one band down. */
-const NO_VOICE = 'The report on this project sets down nothing in anybody&rsquo;s own words.';
+/* ★ NO QUOTES MEANS NO BAND, AND THIS REPLACED A SENTENCE.
+   Three of the ten reports carry no publishable direct speech —
+   miyawaki-forests records what was planted and where, swapnil-chaurasiya puts
+   two fathers' account in the report's own words rather than theirs, and
+   tawheed-zubair's three Hindi testimonials survive only as broken encoding.
+   Those three pages used to open a `voices` band anyway and fill it with one
+   shared sentence saying there was nothing to put in it. TWO THINGS WERE WRONG
+   WITH THAT. The copy standard strikes "empty-state confessions" outright: a
+   hole in an external record may be stated as a fact about the record, never as
+   an apology about our own page. And one sentence could not tell "no
+   testimonial exists" from "testimonials exist and cannot be published" — so
+   tawheed-zubair's page said nothing was set down in anybody's own words while
+   the very next band named Zaid, Ansh and Somya and said their words survive
+   only as broken text. The page contradicted itself two bands apart.
+   So the band is OMITTED, which is the mechanism this generator already uses
+   for the hub's `statement` band and for a fellow's own `gaps`: bandChain
+   re-derives the whole ground rhythm from whatever is on, the index chips are
+   built from the same list, and the omission is PRINTED in the build note so it
+   can never be silent. The fact itself belongs to the `gaps` band, where all
+   three fellows' own files now state which of the three cases theirs is. */
 
 /* ── THE NAMED LIST, one group per column, `--n` from the membership.
       This is the component AD-17's band 5 built for "schools, partners and
@@ -1182,18 +1228,20 @@ for (const f of FELLOWS) {
         set with raw glyphs, never entity-encoded, and not one character of it
         is altered here. The hub's caption names the fellow because ten
         projects' quotes sit in one band there; on this page that would be the
-        page's own h1 repeated under every panel, so it is dropped. */
-  fb.voices = [
+        page's own h1 repeated under every panel, so it is dropped.
+        THE BAND IS BUILT ONLY WHERE THERE IS SOMETHING TO PUT IN IT — see the
+        note above F_HEAD. Three of the ten fellows have no publishable quote,
+        and on those pages `voices` never joins F_IDS, so this value is never
+        read; guarded anyway rather than left to render an empty container. */
+  fb.voices = (f.quotes || []).length ? [
     W.openBand('voices', F_HEAD.voices),
-    (f.quotes || []).length
-      ? `      <div class="hc-voices">\n${f.quotes.map(q => `        ${W.panel({
-        name: q.speaker,
-        p: `&ldquo;${q.text}&rdquo;`,
-        cap: [q.role, q.place].filter(Boolean).join(' &middot; '),
-        frame: q.frame || null,
-      })}`).join('\n')}\n      </div>`
-      : hole(plain(NO_VOICE)),
-  ];
+    `      <div class="hc-voices">\n${f.quotes.map(q => `        ${W.panel({
+      name: q.speaker,
+      p: `&ldquo;${q.text}&rdquo;`,
+      cap: [q.role, q.place].filter(Boolean).join(' &middot; '),
+      frame: q.frame || null,
+    })}`).join('\n')}\n      </div>`,
+  ] : null;
 
   /* ── BAND 4. WHAT THE REPORT DOES NOT SETTLE. Named holes in the SOURCE
         RECORD — a headcount that does not settle, a plantation with four dates
@@ -1225,9 +1273,19 @@ for (const f of FELLOWS) {
       plain(PROG.title)} ${ARROW}</a></p>`,
   ];
 
-  const F_IDS = ['top', 'did', 'voices',
+  /* TWO OF THE FIVE BANDS ARE CONDITIONAL, and both conditions are the same
+     rule: a band opens where there is something to put in it and is omitted
+     where there is not. `voices` needs a publishable quote; `gaps` needs a
+     named hole. Derived rather than declared, so the omission note below cannot
+     drift from the spine. */
+  const F_IDS = ['top', 'did',
+    ...((f.quotes || []).length ? ['voices'] : []),
     ...((f.holes || []).length ? ['gaps'] : []),
     'onward'];
+  const F_OMITTED = [
+    ...((f.quotes || []).length ? [] : ['voices (no publishable quote in the report)']),
+    ...((f.holes || []).length ? [] : ['gaps (the report leaves nothing named)']),
+  ];
   const F_BANDS = W.bandChain(F_IDS)
     .map(([id, cls, hex, tier]) => [id, [cls, tier].filter(Boolean).join(' '), hex, tier]);
   for (const [id, cls, hex] of F_BANDS) {
@@ -1255,7 +1313,8 @@ for (const f of FELLOWS) {
       + `${spill.length ? ` (${rail.length} on the rail, ${spill.length} with the work: `
         + `${spill.map(x => `"${x.label}"`).join(', ')})` : ''}, `
       + `${f.aims.length} aim(s), ${f.did.length} done, ${(f.quotes || []).length} quote(s), `
-      + `${(f.holes || []).length} hole(s), ${f.partners.length} partner(s), ${others.length} onward.`,
+      + `${(f.holes || []).length} hole(s), ${f.partners.length} partner(s), ${others.length} onward.`
+      + (F_OMITTED.length ? ` OMITTED: ${F_OMITTED.join('; ')}.` : ''),
   });
   fellowPages.push({ slug: f.slug, bytes: FOUT.length });
   fbad += fellowGates({ f, OUT: FOUT, ids: F_IDS, index: F_INDEX, figs, others });
@@ -1341,15 +1400,23 @@ function fellowGates({ f, OUT: HTML, ids, index, figs, others }) {
   const lost = figs.filter(x => !HTML.includes(plain(x.value).replace(/\+$/, '<sup>+</sup>')));
   g(lost.length === 0, `published figure(s) that do not render: ${lost.map(x => x.value).join(', ')}`);
 
-  /* 6. EVERY QUOTE IS VERBATIM AND EVERY HOLE IS STATED — and a page with no
-        quote states THAT, in a sentence, rather than opening an empty band. */
+  /* 6. EVERY QUOTE IS VERBATIM, EVERY HOLE IS STATED — AND A PAGE WITH NO
+        QUOTE HAS NO VOICES BAND AT ALL. That last half is the assertion that
+        changed: it used to require the band to be present and to carry one
+        fixed sentence, which is the empty-state confession the copy standard
+        strikes. Asserted in BOTH directions, because "the band is gone" and
+        "the band is there with panels in it" are the only two correct states
+        and a heading over nothing is what sits between them. */
   const unsaid = (f.quotes || []).filter(q => !HTML.includes(q.text));
   g(unsaid.length === 0, `quote(s) not rendered verbatim: ${unsaid.map(q => q.speaker).join(', ')}`);
-  const voicesBand = (HTML.split('id="voices"')[1] || '').split('</section>')[0];
-  g((f.quotes || []).length
-    ? /class="wk-panel"/.test(voicesBand)
-    : /class="p-hole"/.test(voicesBand) && voicesBand.includes(plain(NO_VOICE)),
-  (f.quotes || []).length ? 'the voices band renders no panel' : 'the voices band is empty where it should state a named hole');
+  const hasVoices = (f.quotes || []).length > 0;
+  g(HTML.includes('id="voices"') === hasVoices,
+    hasVoices ? 'the voices band is missing on a fellow who has quotes'
+      : 'a voices band was rendered for a fellow with no publishable quote — it must be omitted, not confessed');
+  if (hasVoices) {
+    const voicesBand = (HTML.split('id="voices"')[1] || '').split('</section>')[0];
+    g(/class="wk-panel"/.test(voicesBand), 'the voices band renders no panel');
+  }
   const unheld = (f.holes || []).filter(h => !HTML.includes(esc(plain(h))));
   g(unheld.length === 0, `named hole(s) that do not render: ${unheld.length}`);
 
