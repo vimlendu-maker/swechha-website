@@ -19,6 +19,17 @@ export const WITHHELD = [
   'Swachha Foundation',
 ] as const
 
+/* THE BANDS THE HUB'S PROSE IS READ OUT OF, listed because `bands` is a
+   `z.record` and a record requires no key: `bands: {}` validates forever, and a
+   band whose prose key is dropped renders as an empty band with a heading and
+   nothing under it. The generator dies on a missing key too — this is the same
+   assertion made in the test suite, so it fails on a commit nobody rebuilt.
+   Adding a band to the hub means adding its id here in the same change. */
+export const REQUIRED_BAND_KEYS = [
+  'top', 'what', 'fellows', 'statement', 'schools', 'green',
+  'voices', 'watch', 'gaps', 'with', 'onward',
+] as const
+
 export const figureSchema = z.strictObject({
   value: z.string().min(1),
   label: z.string().min(1),
@@ -33,6 +44,14 @@ export const frameSchema = z.strictObject({
   alt: z.string().min(1),
   ramp: z.enum(['duo', 'duo-dim']),
   op: z.string().optional(),
+  /* WHICH BAND THE FRAME BELONGS TO, on the programme's own `frames` array.
+     The hub's bands each take at most one photograph and the components that
+     hold them are different objects — a masthead letterbox, a statement band's
+     seam-to-seam field, a split's inset figure — so a frame cannot be assigned
+     by array position without the order silently deciding the layout. Optional,
+     because a fellow's `frames` are a contact sheet where order is the only
+     thing that matters. */
+  slot: z.string().optional(),
 })
 
 export const quoteSchema = z.strictObject({

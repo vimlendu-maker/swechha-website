@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readdirSync } from 'node:fs'
-import { loadFellows, loadProgramme, FELLOW_DIR, WITHHELD } from './schema'
+import { loadFellows, loadProgramme, FELLOW_DIR, WITHHELD, REQUIRED_BAND_KEYS } from './schema'
 
 describe('healthy-cities data', () => {
   it('has exactly ten fellows, one file each', () => {
@@ -44,6 +44,18 @@ describe('healthy-cities data', () => {
     const d = loadProgramme().description
     expect(d.length).toBeGreaterThanOrEqual(140)
     expect(d.length).toBeLessThanOrEqual(158)
+  })
+
+  /* `bands` is a z.record, so `bands: {}` passes the schema forever and a
+     dropped key renders a band with a heading and nothing under it. The list
+     lives in schema.ts; this is what makes dropping one fail on a commit
+     nobody rebuilt. */
+  it('carries prose for every band the hub renders', () => {
+    const bands = loadProgramme().bands
+    for (const key of REQUIRED_BAND_KEYS) {
+      expect(bands[key], `bands.${key} is missing`).toBeDefined()
+      expect(Object.keys(bands[key] as object).length, `bands.${key} is empty`).toBeGreaterThan(0)
+    }
   })
 
   it('names the parent programme and links to it', () => {

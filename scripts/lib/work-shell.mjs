@@ -216,6 +216,18 @@ export const TIER = {
      (`sheet`) correctly takes — a contact sheet of frames that back up an
      argument made in type. Here the type backs up the sheets. */
   posters: 't2',
+  /* ── /healthy-cities. Six new ids, declared here rather than defaulted for the
+        reason the throw below states: a band's weight is the same wherever the
+        band appears, so it belongs in this table and not in one generator.
+        `fellows` is t2 because it is the band that page exists for — the ten
+        named projects — and t2 is the weight `record` and `kinds` already carry
+        for a full-membership register. `schools` is t2 for the same reason
+        `what` is: it is one of the two halves of the programme, argued in prose
+        beside a frame. `green`, `voices` and `watch` are t3, the supporting
+        weight `sheet` and `who` take — they back the argument up with what was
+        built, who said what, and what was filmed. `gaps` is t2 because a stated
+        hole in the source record is content on this page, not a footnote. */
+  fellows: 't2', schools: 't2', green: 't3', voices: 't3', watch: 't3', gaps: 't2',
   onward: 't3',
 };
 
@@ -1657,12 +1669,27 @@ export const anc = (label, href) =>
    still accepted and deliberately ignored, so a caller that still passes one
    cannot resurrect it; the AD-28 gate in this file fails the build if a
    `.p-hole` reaches any WORK page by any route at all. */
-export function masthead({ h1, deck, frame, ancestor, chip, note }) {
+/* `lines` — MICRO-CAPS LINES BETWEEN THE ANCESTOR AND THE DECK, and they exist
+   because /healthy-cities is a page somebody FORWARDS. Two sentences have to be
+   on the first screen there and nowhere else on the site puts them in a
+   masthead: who Swechha is (that sentence exists on exactly one other page, the
+   homepage — it is not in the footer and not on /about, so a cold visitor
+   arriving from a funder's email has no answer to "who is this?"), and who the
+   chapter is funded by. The credit goes here rather than into a logo wall
+   because this design has refused every foreign trademark for the whole site,
+   and the highest place a non-display element may sit is the strongest credit
+   the language can give anyone.
+   Each entry is a whole element, so the caller owns its class and its copy;
+   default [] means every existing caller's output is byte-identical. Display
+   type may sit on a photograph and nothing else may, so these land in
+   .pic-body with the deck, never in .pic-over. */
+export function masthead({ h1, deck, frame, ancestor, chip, note, lines = [] }) {
   const head = `        <h1 class="d1" id="top-h">${h1}</h1>`;
   void note;
   const noteP = '';
   const under = [
     ancestor ? `        <p style="margin:0">${ancestor}</p>` : '',
+    ...lines.map(l => `        ${l}`),
     deck ? `        <p class="lead">${deck}</p>` : '',
     noteP ? `        ${noteP}` : '',
     chip ? `        <p style="margin:0">${chip}</p>` : '',
@@ -1675,7 +1702,7 @@ export function masthead({ h1, deck, frame, ancestor, chip, note }) {
        putting it under the h1 instead would set a 62ch paragraph beneath 104px
        display type and read as a second deck. Below 900 .im-head stacks and the
        note follows the deck, which is the reading order either way. */
-    const col2 = [deck ? `<p class="lead">${deck}</p>` : '', noteP].filter(Boolean).join('');
+    const col2 = [...lines, deck ? `<p class="lead">${deck}</p>` : '', noteP].filter(Boolean).join('');
     return `    <div class="wk-mast"><div class="wrap">
 ${ancestor ? `      <p style="margin:0 0 6px">${ancestor}</p>` : ''}
       <div class="im-head">
@@ -1795,8 +1822,17 @@ export const regRows = (items, { duration = false, start = 1 } = {}) => {
     const lead = duration && it.duration
       ? `<span class="w7-jr-dur w7-pj-n"><span class="num">${it.duration.value}</span><i>${esc(it.duration.unit)}</i></span>`
       : `<span class="lbl w7-pj-n" aria-hidden="true">${String(start + i).padStart(2, '0')}</span>`;
+    /* THE ONE LICENSED INLINE PRE-LINE, the same one displayRows already
+       carries: the `.lbl` hook above an item's name, as the frozen homepage's
+       band 7 has it. A row may carry ONE, and on /healthy-cities it names the
+       place and state a fellow worked in — which is the fact that distinguishes
+       ten rows of one person's name each. Omitted where absent, so every
+       existing register in this section renders exactly as before; a row with a
+       pre-line has three rows in its content column instead of two, which is
+       why the ordinal's span is re-stated per page rather than here. */
+    const pre = it.pre ? `\n          <p class="lbl w7-pj-pre">${it.pre}</p>` : '';
     return `        <li id="${esc(it.anchor)}"><a href="${it.href}">
-          ${lead}
+          ${lead}${pre}
           <h3 class="w7-pj-rt">${it.name}</h3>
           <p class="w7-pj-rf">${it.line}</p>
         </a></li>`;

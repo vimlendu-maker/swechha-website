@@ -199,6 +199,16 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
        page, a routed page and a linked page are one change, and any two of them
        without the third is a defect. */
     '/posters': 'posters.html',
+    /* `/healthy-cities` — the 2025-26 Bridge the Gap chapter funded by the Bupa
+       Foundation and Niva Bupa. It is routed in the same commit that builds it,
+       for the reason the four paragraphs above give: a built page, a routed page
+       and a linked page are one change, and any two of them without the third is
+       a defect. The footer row and the `bridge-the-gap` cross-sell are the third
+       part and land with the fellow pages. It is NOT a seventh nav word — the
+       nav is closed at six plus the Give chip — and it is a top-level route
+       rather than a `/work/**` child because a microsite's whole purpose is a
+       short link somebody hands a partner. */
+    '/healthy-cities': 'healthy-cities.html',
     '/about': 'about.html',
     '/impact': 'impact.html',
     '/farm': 'farm.html',
