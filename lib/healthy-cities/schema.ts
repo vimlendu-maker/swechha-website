@@ -122,6 +122,36 @@ export const programmeSchema = z.strictObject({
     funders: z.array(z.string()).min(1),
     funders_lead: z.number().int().positive(),
     funders_source: z.string().min(1),
+    /* ★ THE ONE THIRD-PARTY MARK ON THIS SITE, and the only reason it is here is
+       that the owner asked for it (ruling 42), reversing ruling 10's "no funder
+       logos". It is DATA rather than a path in the generator for the same reason
+       every figure on this page is: a trademark's file, its alt, its licensee
+       and its acknowledgement wording are content, and content that lives in a
+       build script cannot be reviewed by the person whose mark it is.
+
+       ★ IT IS NOT A `frame`, AND THAT IS THE LOAD-BEARING DISTINCTION. A frame
+       is a PHOTOGRAPH: `frameSchema` pins it under /images/photos/, the
+       generator's photo-library gate refuses it without a registered credit and
+       provenance row, the test suite demands a six-word descriptive alt, and
+       every renderer hands it `class="duo"` for the site-wide monochrome ramp.
+       A logo fails or corrupts every one of those. It is a mark, it renders in
+       COLOUR (the design language's own words: "hue lives only in type, data,
+       marks and controls"), its alt is the organisation's name and nothing else,
+       and it may never be recoloured. So it gets its own shape, its own pool
+       under /images/partners/, and its own gates.
+
+       `holder` is the licensee's full legal name and `trademark` is the
+       acknowledgement their own site carries — reproducing somebody's registered
+       marks without it would be worse than not showing them. `source` is the
+       provenance of the exact bytes we ship, which for a photograph would be the
+       library row; a mark has no library, so this is it. */
+    mark: z.strictObject({
+      src: z.string().startsWith('/images/partners/'),
+      alt: z.string().min(1),
+      holder: z.string().min(1),
+      trademark: z.string().min(1),
+      source: z.string().min(1),
+    }),
   }),
   bands: z.record(z.string(), z.unknown()),
   quotes: z.array(quoteSchema),

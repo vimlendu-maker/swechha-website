@@ -75,6 +75,49 @@ describe('healthy-cities data', () => {
     expect(w.funders_lead).toBeLessThanOrEqual(w.funders.length)
   })
 
+  /* Ruling 42 put the one third-party mark on this site into the `#with` band.
+     These are the parts of that a build gate cannot see, because they are facts
+     about the DATA rather than about the rendered page. */
+  describe('the funder mark', () => {
+    it('lives in the partner pool and not in the photograph pool', () => {
+      const m = loadProgramme().with.mark
+      expect(m.src).toMatch(/^\/images\/partners\//)
+      expect(m.src, 'a trademark is not a photograph').not.toMatch(/^\/images\/photos\//)
+    })
+
+    it('names the organisation in its alt rather than describing the artwork', () => {
+      const m = loadProgramme().with.mark
+      expect(m.alt).toContain('Niva Bupa')
+      /* A frame's alt must be six words of description (see the frame test
+         above); a mark's must be the opposite — the organisation's name, short,
+         and with no talk of shapes or colours in it. */
+      expect(m.alt.trim().split(/\s+/).length).toBeLessThanOrEqual(6)
+      expect(m.alt).not.toMatch(/logo|blue|cyan|square|heartbeat|wordmark/i)
+    })
+
+    it('acknowledges the trademarks and names the licensee in full', () => {
+      const m = loadProgramme().with.mark
+      expect(m.holder).toBe('Niva Bupa Health Insurance Company Limited')
+      expect(m.trademark, 'the acknowledgement must name the licensee').toContain(m.holder)
+      expect(m.trademark).toMatch(/Bupa/)
+      expect(m.trademark).toMatch(/HEARTBEAT/)
+      expect(m.trademark).toMatch(/licence/i)
+    })
+
+    it('records where the bytes came from, since a mark has no library row', () => {
+      expect(loadProgramme().with.mark.source).toMatch(/nivabupa\.com/)
+    })
+
+    /* The whole point of the mark is that it is credited ALONGSIDE the type,
+       not instead of it. If a future edit deletes a funder from the list on the
+       grounds that the logo says it, this fails. */
+    it('does not replace either funder in the type register', () => {
+      const w = loadProgramme().with
+      expect(w.funders).toContain('Bupa Foundation')
+      expect(w.funders).toContain('Niva Bupa Health Insurance')
+    })
+  })
+
   it('resolves every voice pointer to a real quote on that fellow page', () => {
     const fellows = loadFellows()
     expect(loadProgramme().quotes, 'the hub copies nothing').toHaveLength(0)

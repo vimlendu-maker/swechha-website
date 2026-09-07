@@ -34,9 +34,24 @@
 //     pages. There is no published limit on a school garden.
 //   · NO SECOND `@keyframes`. The homepage's live pulse is the only one on the
 //     whole site.
-//   · NO FUNDER LOGOS. This design has refused every foreign trademark on every
-//     page; the credit is type, in the highest place a non-display element may
-//     sit, and again in its own band in the same grammar bridge-the-gap uses.
+//   · ONE FUNDER LOGO, IN THE `#with` BAND, AND IT IS THE ONLY THIRD-PARTY MARK
+//     ON THE SITE. Ruling 10 refused every foreign trademark on every page and
+//     ruling 42 reversed it: the owner asked for Niva Bupa's mark. Three things
+//     travel with that. (a) IT ADDS TO THE TYPE CREDIT AND REPLACES NOTHING —
+//     both funders are still named in the masthead's `.pic-body` line and still
+//     listed in `#with` in bridge-the-gap's own grammar, weight step and all;
+//     the logo sits alongside, and a gate below proves both `<li>`s survived.
+//     (b) IT IS NOT IN THE MASTHEAD, so the page still opens on the work rather
+//     than on somebody's brand. (c) A LOGO IS A MARK, NOT A PHOTOGRAPH: the
+//     site's black-and-white-without-exception rule is about photography, and
+//     the design language's own sentence is "hue lives only in type, data, marks
+//     and controls" — so it renders IN COLOUR, carries no `duo`/`duo-dim`, lives
+//     in its own pool under /images/partners/ rather than the photograph pool,
+//     and is NOT registered in content/photo-library.json. Gate 6 now polices
+//     that partition in both directions instead of banning logos outright.
+//     THE BUPA FOUNDATION STAYS TYPE-ONLY. It is a separate legal entity (a UK
+//     charity) with no published asset and no published brand policy, so there
+//     is nothing to place; approximating one would be inventing a trademark.
 //   · NO CUMULATIVE FIGURE. Gate 1 computes the sum the rail is tempted by and
 //     asserts its absence from the rendered page in every format it could take.
 import { readFileSync, readdirSync, mkdirSync } from 'node:fs';
@@ -195,6 +210,36 @@ for (const [where, fr] of ALL_FRAMES) {
       + 'content/photo-library.json. Every <img> on this page takes its width/height from the file via '
       + 'imgDim(), so a wrong library row is a wrong credit and a wrong provenance note, not a wrong layout.');
   }
+}
+
+/* ★ THE PARTNER MARK IS CHECKED HERE AND DELIBERATELY NOT ABOVE. It goes through
+   NONE of the frame machinery: it is not in `frames`, so it never reaches
+   ALL_FRAMES, and it is not in content/photo-library.json, so the gate above
+   would refuse it as "unregistered" if it did. That is the correct outcome for a
+   photograph and the wrong question to ask about a trademark — the library
+   records a credit, a provenance note and a stock/synthetic flag, and a logo has
+   no photographer, cannot be stock in that sense and cannot be synthetic in that
+   sense. Its provenance is `with.mark.source` in the data instead, which the
+   build note below prints, and the schema pins its path to /images/partners/ so
+   it can never drift into the photograph pool the gate above owns.
+   WHAT STILL HAS TO BE TRUE IS THE GEOMETRY. `imgDim()` returns the empty string
+   for a file it cannot find or parse, so a moved or renamed mark ships an <img>
+   with no width and no height and no build error anywhere — an unreserved box on
+   the one band a funder looks at. Measured here, asserted in gate 6. */
+const MARK = PROG.with.mark;
+const MARK_DIM = S.imgDim(MARK.src);
+if (!MARK_DIM) {
+  dataFail(`with.mark.src is ${MARK.src} and nothing at public${MARK.src} could be measured. `
+    + 'imgDim() omits width/height rather than guessing, so this would ship an unreserved box.');
+}
+if (LIB.has(MARK.src)) {
+  dataFail(`with.mark.src ${MARK.src} is registered in content/photo-library.json. That file is the `
+    + 'PHOTOGRAPH pool and its rows carry a credit and a provenance note for a photograph; a partner '
+    + 'trademark is neither, and putting it there would put a logo into every check that reads the library.');
+}
+if (!MARK.trademark.includes(MARK.holder)) {
+  dataFail('with.mark.trademark must name with.mark.holder. Reproducing a registered mark without naming '
+    + 'the licensee is the acknowledgement missing the only fact it exists to carry.');
 }
 
 if (bad) { console.error(`\nREFUSING TO WRITE: ${bad} data check(s) failed.`); process.exit(1); }
@@ -476,10 +521,46 @@ body.gaps = [
 /* ── WHO IT IS WITH. The same grammar as bridge-the-gap's own `#with` band, to
       the class: an opener, then `.wk-names wk-names-1` with a `.lbl` over a
       plain `<ul>`, and ONE WEIGHT STEP on the leading entries. No size change,
-      no colour change, no rule change, and no logo — the two pages must not
-      look like they credit differently.
+      no colour change, no rule change — the two pages must not look like they
+      credit differently.
       `funders_lead` is a rank on a published list, which is a claim, so the
-      data carries a source for it and the check that it does is below. */
+      data carries a source for it and the check that it does is below.
+
+      ★ AND THEN THE ONE LOGO ON THE SITE, UNDERNEATH THAT LIST AND NOT INSTEAD
+      OF IT (ruling 42; see the head of this file). Both funders stay named as
+      type in the block above, unchanged; the mark is an addition below it, so
+      the credit the other twenty WORK pages give is still the credit this page
+      gives. Only Niva Bupa gets one — the Bupa Foundation is a separate legal
+      entity with no published asset.
+
+      ★ THE WHITE PANEL IS THE ASSET'S REQUIREMENT, NOT A STYLING CHOICE. The
+      file has an OPAQUE white background and this band is #0D0D0B, so without a
+      light panel the reader gets a white rectangle floating on black. Niva Bupa
+      publish no brand guidelines at all — no clear-space rule, no minimum size,
+      nothing — so the margin is conservative by construction rather than quoted:
+      the panel's 24px padding alone exceeds HALF THE HEIGHT OF THE "niva"
+      WORDMARK at the rendered size (the wordmark is 95px of the 668x388 file, so
+      at a 280px display width it is 39.8px tall and half of it is 19.9px), and
+      the file's own built-in margin adds another 18.9px on top, for about 43px
+      of clear space on every side — a shade over one full wordmark height.
+      Nothing is cropped, recoloured, rotated, stretched, filtered or separated:
+      `width:280px;height:auto` on the whole 668x388 file, `imgDim()` for the box.
+
+      ★ AND THE TRADEMARK ACKNOWLEDGEMENT, at `.cap`, from the data. Niva Bupa
+      carry it site-wide on their own pages; reproducing their marks — this file
+      contains the HEARTBEAT logo as well as the wordmark — without it would be
+      worse than not showing them at all. `.cap` is already `--fg-3`, the
+      dark-ground caption ink, so it needs no `.wk-dark` restatement the way
+      `.w7-pj-pre` did.
+      THE IRDAI REGISTRATION NUMBER IS DELIBERATELY NOT HERE. Registration 145
+      (Category: Health) is a disclosure that belongs on the insurer's own
+      solicitation material, where it exists so that somebody about to buy a
+      policy can verify the seller. This page sells nothing, offers nothing and
+      names Niva Bupa only as a funder; printing a regulatory registration number
+      beside their mark on an NGO's project page would dress the band up as
+      insurance marketing, which is the one thing it must not look like. The
+      trademark line is required because we reproduce their marks; the
+      registration number is not, because we distribute nothing of theirs. */
 const w = PROG.with;
 if (w.funders_lead > w.funders.length) {
   dataFail(`with.funders_lead is ${w.funders_lead} but there are ${w.funders.length} funders.`);
@@ -493,6 +574,14 @@ body.with = [
         <div><span class="lbl">Funders</span><ul>${w.funders
   .map((n, i) => `<li${i < w.funders_lead ? ' class="wk-lead"' : ''}>${esc(n)}</li>`).join('')}</ul></div>
       </div>`,
+  /* NO esc() ON `trademark`: it is authored with entities like every other
+     string in this data file, and esc() would ship the reader "&ldquo;". alt IS
+     esc()'d — it is an attribute, and the mark's alt is a bare organisation name
+     with no entity in it either way. */
+  `      <figure class="hc-mark">
+        <span class="hc-mark-p"><img class="hc-mark-i" src="${MARK.src}" alt="${esc(MARK.alt)}"${MARK_DIM} loading="lazy"></span>
+        <figcaption class="cap hc-mark-tm">${MARK.trademark}</figcaption>
+      </figure>`,
 ];
 
 /* ── THE CLOSE. Three doors and one ask. The doors are the three pages this
@@ -579,6 +668,40 @@ const PAGE_CSS = `
   margin-top:var(--gap-row)}
 `;
 
+/* ═══ THE HUB'S OWN CSS ══════════════════════════════════════════════════
+   The rules the hub needs and the ten fellow pages do not, kept out of PAGE_CSS
+   for exactly the reason FELLOW_CSS further down is kept out of it: PAGE_CSS
+   ships to all eleven pages, and four rules for an element that exists on one
+   of them would rewrite ten files, restamp ten sitemap entries and leave dead
+   selectors on every one. The CSS-string gates below run over PAGE_CSS AND
+   this, so nothing moved out of the gated string by being moved here.
+   THE NO-BACKTICK RULE APPLIES HERE TOO — see the head of PAGE_CSS. */
+const HUB_CSS = `
+/* ── THE FUNDER'S MARK, AND THE PANEL IS LOAD-BEARING. The asset is an opaque
+      white PNG and this band is #0D0D0B, so the panel is what makes the mark
+      legible instead of a white rectangle on black. background is a literal
+      #FFF and not a token on purpose: every ground token on this site moves with
+      the theme, and the mark's own background does not — it is baked into the
+      file, so the panel has to match the file rather than the page.
+      280px IS THE MEASURED DISPLAY WIDTH and the number in IMG_SIZES under
+      hc-mark-p depends on it; change one and change both, or the srcset asks the
+      optimizer for the wrong variant. max-width:100% on both is what lets the
+      pair shrink together under about 375px instead of pushing the band wide.
+      24px OF PADDING IS THE CLEAR SPACE, derived rather than quoted: no Niva
+      Bupa clear-space rule is published, the "niva" wordmark is 95px of the
+      668x388 file and therefore 39.8px at a 280px render, and half of that is
+      19.9px. The file's own margin adds about 19px more on each side. As the
+      panel shrinks the requirement shrinks with it and the padding does not, so
+      this stays conservative at every width.
+      NO duo, NO duo-dim, NO filter OF ANY KIND, and gate 6 asserts it: those
+      classes are the site-wide monochrome ramp for PHOTOGRAPHS, and a duotoned
+      trademark is an altered trademark. ── */
+.hc-mark{margin:var(--gap-row) 0 0}
+.hc-mark-p{display:block;width:max-content;max-width:100%;background:#FFF;padding:24px}
+.hc-mark-i{display:block;width:280px;max-width:100%;height:auto}
+.hc-mark-tm{margin:12px 0 0;max-width:62ch}
+`;
+
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */
 const REG = seo('/healthy-cities');
 
@@ -590,7 +713,7 @@ const OUT = await S.assemble({
   /* COMPONENT_CSS and WORK_CSS both, in the order work-shell's own buildPage
      emits them: the extracted homepage components first, then the layer that
      re-scopes them and states them for the other ground. */
-  pageCss: [sh.COMPONENT_CSS, W.WORK_CSS, PAGE_CSS].join('\n'),
+  pageCss: [sh.COMPONENT_CSS, W.WORK_CSS, PAGE_CSS, HUB_CSS].join('\n'),
   sectionFor: (id) => {
     const v = B[id];
     return typeof v === 'function' ? v() : (v ?? '    <div class="wrap"><p class="lead">&mdash;</p></div>');
@@ -598,7 +721,14 @@ const OUT = await S.assemble({
   note: `${BANDS.length} bands + footer. ${FELLOWS.length} fellows in ${STATES.length} states, `
       + `${PROG.figures.length} rail figures, ${VOICES.length} resolved voices, `
       + `${PROG.videos.length} video series, ${PROG.holes.length} holes.`
-      + (OMITTED.length ? ` OMITTED (no frame yet): ${OMITTED.join(', ')}.` : ''),
+      + (OMITTED.length ? ` OMITTED (no frame yet): ${OMITTED.join(', ')}.` : '')
+      /* THE MARK'S PROVENANCE, in the one place a mark can carry it. A
+         photograph's provenance is its content/photo-library.json row and a
+         trademark has no row there by design (see the data gate above), so it
+         travels here — where the next person reading this page's source finds
+         it, and where a person cannot ship the file without also shipping the
+         sentence saying whose it is and where it came from. */
+      + ` PARTNER MARK: ${plain(MARK.src)} — ${plain(MARK.source)}; ${plain(MARK.holder)}.`,
 });
 
 /* ═══ POST-WRITE GATES ═══════════════════════════════════════════════════
@@ -693,19 +823,79 @@ gate(!/\b(LIVE|PERIODIC|OUT OF SEASON|NO SEASON)\b/.test(RENDERED),
 const readoutEls = [...OUT.matchAll(/class="[^"]*\breadout\b[^"]*"/g)].map(m => m[0]);
 gate(readoutEls.length === 0,
   `no .readout element on this page — the rail uses .num${readoutEls.length ? `; FOUND: ${readoutEls.join(', ')}` : ''}`);
-gate(!/--t-readout/.test(PAGE_CSS), 'this page does not restate the readout scale');
-gate(!/@keyframes/.test(PAGE_CSS), 'this page adds no second @keyframes');
-gate(!/--red\b/.test(PAGE_CSS), 'no red in the page CSS');
+/* PAGE_CSS + HUB_CSS, never either alone: the hub's stylesheet is the two
+   concatenated, and gating one of them would leave the other unread. */
+const OWN_CSS = PAGE_CSS + HUB_CSS;
+gate(!/--t-readout/.test(OWN_CSS), 'this page does not restate the readout scale');
+gate(!/@keyframes/.test(OWN_CSS), 'this page adds no second @keyframes');
+gate(!/--red\b/.test(OWN_CSS), 'no red in the page CSS');
+gate(!/\bfilter:/.test(OWN_CSS), 'this page filters nothing — the partner mark renders as its own file');
 
-/* 6. NO BORROWED LOGO. The site carries zero foreign trademarks on zero pages
-      and the only image treated as a logo anywhere is Swechha's own mark in the
-      chrome. A funder credited in type cannot regress into a logo wall without
-      tripping this. */
+/* 6. EXACTLY ONE THIRD-PARTY MARK, IN EXACTLY ONE BAND, IN COLOUR, AND THE
+      PHOTOGRAPHS ARE STILL ALL MONOCHROME.
+      This gate used to read "no logo file in this page's own bands" and it was
+      right until ruling 42, when the owner asked for Niva Bupa's mark. What
+      replaces it is not a weaker gate — it is a partition, and it is stricter in
+      every direction the old one covered plus three it did not:
+
+        · Swechha's own /brand/ files still may not appear in a band. The chrome
+          carries the site mark; a band restating it is the logo wall the old
+          gate was written against, and that half is unchanged.
+        · There is ONE image on this page that is not a photograph, it is the
+          exact path the data registers, and there is exactly one of it. A second
+          partner logo — the Bupa Foundation mark somebody sources next year, a
+          school's crest — fails here rather than in review.
+        · It renders IN COLOUR. `duo`/`duo-dim` are the site's monochrome ramp
+          for photography; on a trademark they are an alteration of somebody
+          else's registered mark, and they would also flatten the cyan and amber
+          that are the only reason the mark is recognisable.
+        · Every photograph STILL carries the ramp. That is the half of the old
+          rule that mattered and nothing above weakens it, so it is now asserted
+          positively instead of being implied by "there are no other images".
+        · The box is reserved. imgDim() returns '' for a file it cannot measure,
+          so a renamed mark would otherwise ship silently without width/height.
+        · And it is NOT IN THE MASTHEAD. The page opens on the work; the credit
+          sits where the site already credits people. */
 const brandRefs = [...new Set([...OWN.matchAll(/\/brand\/[^"']+/g)].map(m => m[0]))];
-gate(brandRefs.length === 0, `no logo file in this page's own bands${brandRefs.length ? `; FOUND: ${brandRefs.join(', ')}` : ''}`);
+gate(brandRefs.length === 0,
+  `no Swechha brand file in this page's own bands${brandRefs.length ? `; FOUND: ${brandRefs.join(', ')}` : ''}`);
+
+const imgTags = [...OWN.matchAll(/<img\b[^>]*>/g)].map(m => m[0]);
+const srcOf = (t) => (t.match(/\ssrc="([^"]+)"/) || [])[1] || '';
+const photoTags = imgTags.filter(t => srcOf(t).startsWith('/images/photos/'));
+const markTags = imgTags.filter(t => srcOf(t).startsWith('/images/partners/'));
+const strayTags = imgTags.filter(t => !photoTags.includes(t) && !markTags.includes(t));
+
+gate(markTags.length === 1 && srcOf(markTags[0]) === MARK.src,
+  `exactly one partner mark on the page, and it is the path the data registers (${MARK.src})`
+  + `${markTags.length === 1 ? '' : `; FOUND ${markTags.length}`}`);
+gate(strayTags.length === 0,
+  'every image on this page is either a photograph or the registered partner mark'
+  + `${strayTags.length ? `; STRAY: ${strayTags.map(srcOf).join(', ')}` : ''}`);
+gate(markTags.every(t => !/\bduo(-dim)?\b/.test(t)),
+  'the partner mark carries no duo/duo-dim — a mark is not a photograph and renders in colour');
+gate(markTags.every(t => /\swidth="\d+"/.test(t) && /\sheight="\d+"/.test(t)),
+  'the partner mark reserves its box (width and height from imgDim, not hand-written)');
+const unramped = photoTags.filter(t => !/\bduo(-dim)?\b/.test(t));
+gate(photoTags.length > 0 && unramped.length === 0,
+  `all ${photoTags.length} photographs still carry the monochrome ramp`
+  + `${unramped.length ? `; UNRAMPED: ${unramped.map(srcOf).join(', ')}` : ''}`);
+
+/* The mark's band, and the two type credits it was added to rather than
+   substituted for. Sliced between the two band ids so "in #with" is a fact
+   about position and not about the string appearing somewhere on the page. */
+const WITH_BAND = OUT.slice(OUT.indexOf('id="with"'), OUT.indexOf('id="onward"'));
+gate(WITH_BAND.includes(MARK.src), 'the mark sits inside the #with band, not the masthead');
+const stillTyped = w.funders.filter(n => !WITH_BAND.includes(`>${esc(n)}</li>`));
+gate(stillTyped.length === 0,
+  `all ${w.funders.length} funders are still credited as type in #with — the logo adds, it does not replace`
+  + `${stillTyped.length ? `; MISSING: ${stillTyped.join(', ')}` : ''}`);
+gate(TEXT.includes(plain(MARK.holder)),
+  `the trademark acknowledgement renders and names the licensee (${plain(MARK.holder)})`);
+gate(WITH_BAND.includes('hc-mark-tm'), 'the acknowledgement sits with the mark, at .cap scale');
 
 /* 7. NO BARE 1fr TRACK. Invisible to an overflow sweep; see PAGE_CSS. */
-const bareFr = [...PAGE_CSS.matchAll(/grid-template-columns:[^;}]*(?<![\w),])1fr\b[^;}]*/g)]
+const bareFr = [...OWN_CSS.matchAll(/grid-template-columns:[^;}]*(?<![\w),])1fr\b[^;}]*/g)]
   .map(m => m[0]).filter(t => !t.includes('minmax(0,1fr)'));
 gate(bareFr.length === 0, `every grid track is minmax(0,1fr)${bareFr.length ? `; BARE: ${bareFr.join(' | ')}` : ''}`);
 
@@ -1115,6 +1305,13 @@ function fellowGates({ f, OUT: HTML, ids, index, figs, others }) {
   g(ro.length === 0, `.readout element: ${ro.join(', ')}`);
   const brand2 = [...new Set([...OWN2.matchAll(/\/brand\/[^"']+/g)].map(m => m[0]))];
   g(brand2.length === 0, `logo file in this page's own bands: ${brand2.join(', ')}`);
+  /* AND NO PARTNER MARK ON A PERSON'S PAGE. Ruling 42 put Niva Bupa's logo in
+     the HUB's `#with` band and nowhere else: a fellow's page is about a fellow,
+     these ten pages have no `#with` band at all, and a mark reaching one could
+     only be a copy-paste. Ten assertions cost nothing and the alternative is a
+     grep somebody has to remember to run. */
+  const partner2 = [...new Set([...OWN2.matchAll(/\/images\/partners\/[^"']+/g)].map(m => m[0]))];
+  g(partner2.length === 0, `partner mark on a fellow's page (it belongs to the hub's #with band only): ${partner2.join(', ')}`);
   const dz = [...new Set([...OWN2.matchAll(/href="(\/design\/[^"]*)"/g)].map(m => m[1]))];
   g(dz.length === 0, `/design/ href: ${dz.join(', ')}`);
   g(!/\$\{/.test(HTML), 'unexpanded template hole in the output');
