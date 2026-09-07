@@ -40,8 +40,9 @@ import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import * as W from './lib/work-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
+import { REQUIRED_BAND_KEYS } from '../lib/healthy-cities/schema.ts';
 
-const { esc, opener, hole, ARROW } = S;
+const { esc, hole, ARROW } = S;
 
 /* workShell(), not shell(): every WORK component used below — the register
    rows, the split, the figure rail, the named list, the panels, the doors —
@@ -204,7 +205,11 @@ const IDS = ['top', 'what', 'fellows',
      whatever is on, which is why no chain is written down anywhere. */
   ...(PROG.frames && PROG.frames.find(f => f.slot === 'statement') ? ['statement'] : []),
   'schools', 'green', 'voices', 'watch', 'gaps', 'with', 'onward'];
-const OMITTED = ['statement'].filter(id => !IDS.includes(id));
+/* Derived rather than hardcoded: any required band this build did not render —
+   not just `statement` by name — is a gap the omission note must keep naming.
+   If a second band ever becomes frame-conditional, this line does not need
+   editing to keep reporting it. */
+const OMITTED = REQUIRED_BAND_KEYS.filter(id => !IDS.includes(id));
 
 const BANDS = W.bandChain(IDS).map(([id, cls, hex, tier]) => [id, [cls, tier].filter(Boolean).join(' '), hex, tier]);
 const clashes = S.groundChain(BANDS);
