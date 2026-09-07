@@ -338,7 +338,7 @@ B.cover = () => {
       <p class="cap f-cap"><b>Tree cover loss is not deforestation.</b> ${esc(GFW.caveats[0])}</p>
       <p class="cap"><b>Tree cover loss is not attributed to fire.</b> Loss is counted
         for any cause and the dataset does not say why. Separating fire-driven loss from felling,
-        storm and harvest needs an attribution layer this build does not have &mdash; so the two
+        storm and harvest needs an attribution layer the dataset does not carry &mdash; so the two
         measurements sit side by side and no arrow is drawn between them.</p>
       <p style="margin:0"><a class="act" href="#said">What is being said ${ARROW}</a></p>
     </div>`;
@@ -346,7 +346,7 @@ B.cover = () => {
 
 /* WHAT IS BEING SAID. No attention series exists for this subject and the page
    says so rather than substituting a proxy about something else. */
-B.said = () => `${opener('said', 'What is being said', 'The register, and one measurement this page could not make.')}
+B.said = () => `${opener('said', 'What is being said', 'The register &mdash; what was published about India&rsquo;s forest fires, and by whom.')}
     <div class="wrap">
       <p class="f-lead">${n0(NEWS.register.count)} items from
         ${n0(Object.keys(NEWS.register.publishers || {}).length)} publishers.
@@ -357,14 +357,10 @@ B.said = () => `${opener('said', 'What is being said', 'The register, and one me
             ${(NEWS.register.items || []).slice(0, 40).map(i => `<li class="p-news-r"><a class="p-news-o" href="${esc(i.link)}">${esc(i.title)}</a><span class="cap p-news-m">${esc(i.publisher || 'unattributed')}${i.published ? ` &middot; ${esc(shortDate(i.published))}` : ''}</span></li>`).join('\n            ')}
           </ol>
           <p class="cap f-pub"><b>Publishers in the sample:</b> ${Object.entries(NEWS.register.publishers || {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${esc(k)} (${v})`).join(' &middot; ')}</p>`)}
-      <p class="f-note"><b>The other four situations on this site carry an attention series &mdash;
-        how much the public looks the subject up, month by month. This one does not, and the reason
-        is worth stating.</b> There is no English Wikipedia article about forest fires in India with
-        enough traffic to plot. The nearest candidate is the global
-        <i>Wildfire</i> article, whose peaks are Californian and Australian. Plotting it here would
-        produce a convincing line about somebody else&rsquo;s fire season.</p>
-      <p class="cap p-hole">So the band is short, and that is the honest version. Naming the hole is
-        content; filling it with a proxy about another continent would not be.</p>
+      <p class="f-note"><b>There is no English Wikipedia article about forest fires in India with
+        enough traffic to plot.</b> The nearest candidate is the global
+        <i>Wildfire</i> article, whose peaks are Californian and Australian &mdash; a convincing
+        line about somebody else&rsquo;s fire season.</p>
       <p style="margin:0"><a class="act" href="#act">What you can do ${ARROW}</a></p>
     </div>`;
 

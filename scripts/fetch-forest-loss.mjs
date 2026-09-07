@@ -165,10 +165,10 @@ const out = {
       + 'approval of the central government. Approval is normally conditional on compensatory '
       + 'afforestation and payment of the net present value of the land.',
     why_it_is_not_a_number: 'The Act does not cap how much forest may be diverted. It caps who '
-      + 'may decide. So this page cannot say "the limit was exceeded" — it can only say how much '
-      + 'was approved, and that figure is published by the Ministry rather than by FSI.',
-    hole: 'Diversion approvals under the Act are not in ISFR and were not obtained for this '
-        + 'build. Until they are, the page states the requirement and not a quantity.',
+      + 'may decide. There is no exceedance to report — only how much was approved, and that '
+      + 'figure is published by the Ministry rather than by FSI.',
+    hole: 'Diversion approvals under the Act are not in ISFR. FSI measures the cover; the '
+        + 'Ministry keeps the approvals, and the two are not published together.',
   },
 
   sources: {

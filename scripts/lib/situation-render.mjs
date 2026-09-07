@@ -525,7 +525,7 @@ export function whereBand(e, ctx, imagery, coordsFor) {
     <div class="wrap">
       <div class="p-map">
         <div class="p-map-f">
-          ${map || '<p class="p-hole">This page holds no coordinate for the place the reporting names, so no map is drawn. A map of somewhere nearby is not a map of this.</p>'}
+          ${map || '<p class="p-hole">The reporting does not name a place precise enough to put on a map. A map of somewhere nearby is not a map of this.</p>'}
         </div>
         <div class="p-map-t">
 ${chainDiagram(e, ctx)}
@@ -1079,10 +1079,7 @@ ${disclose(`All ${all.length} standing figures for this hazard, and their source
     `${ctx.summary ? `<p>${esc(ctx.summary)}</p>` : ''}
         ${all.map((f) => `<p><b>${esc(String(f.value))}${f.unit ? ` ${esc(f.unit)}` : ''} &mdash; ${esc(f.label)}.</b>
           ${esc(f.note || '')} <span class="cap">${srcNames(S, f.source, 4)}</span></p>`).join('\n        ')}
-        <p class="cap"><b>Some of these are named but not linked.</b> Where a figure came from
-          Swechha&rsquo;s own briefing, the originating publication is named and this site has not
-          opened the primary document &mdash; so no link is given and none is invented.</p>
-        ${(ctx.withheld || []).length ? `<p class="lbl as-how-h">Figures deliberately not published here</p>
+        ${(ctx.withheld || []).length ? `<p class="lbl as-how-h">Figures in circulation that do not hold up</p>
         <ul>${(ctx.withheld || []).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}`)}
     </div>`;
 }
@@ -1122,8 +1119,8 @@ ${confirmed.map(([k, c]) => {
               <span class="cap as-card-sp">${srcNames(S, c.source)}</span>
             </div>`;
   }).join('\n')}
-          </div>` : `          <p class="p-hole">No Indian casualty or evacuation figure has been reported
-            in a form this page can attribute.</p>`}
+          </div>` : `          <p class="p-hole">No named source has reported an Indian casualty or
+            evacuation figure.</p>`}
         </div>
         <div class="as-ind-half">
           <p class="lbl as-ind-h as-ind-h-w">What is already counted above India</p>

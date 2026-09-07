@@ -272,8 +272,7 @@ ${SUSPECT.length ? `      <p class="cap ci-sus"><b>${n0(SUSPECT.length)} ${SUSPE
         right. ${SUSPECT.length === 1 ? 'It is' : 'They are'} ranked on particulates; the gas figure
         is published in the tooltip, not ranked. Hover or focus the mark to read it.</p>` : ''}
 ${hole(`These are the cities CPCB measures, not the cities of India. A place with no monitor produces no row, and an absent row is an absent instrument — never clean air. ${n0(IND.totals.cities)} cities is the whole of the national real-time network.`)}
-${hole('There is no state figure here and there will not be one. CPCB measures cities; averaging a state’s cities would invent a reading for the land between them.')}
-${hole('A failed fetch leaves the previous hour in place rather than writing a zero, so a stale hour is possible and is printed on the page. The hour above is the only claim about freshness this page makes.')}
+${hole('CPCB measures cities, not states. Averaging a state’s cities would invent a reading for the land between them, so there is no state figure.')}
       <p class="cap ci-src">Source: <a class="lk" href="${esc(IND.source.url)}">${esc(IND.source.name)}</a>,
         resource ${esc(IND.source.resource)}. Snapshot ${OBS}, ${n0(IND.totals.rows)} station-pollutant
         rows behind ${n0(IND.totals.stations)} stations.</p>

@@ -305,7 +305,7 @@ ${KIND_LEGEND}
         ${n0(DTH.causes.find(c => /other than above/i.test(c.cause)).y2024)} deaths in the same table
         &mdash; ${DTH.causes.find(c => /other than above/i.test(c.cause)).pct}% &mdash; have no named
         cause at all.</p>
-${hole('There is no national count of landslide EVENTS, flash floods or cloudbursts. NCRB counts deaths by cause; nobody publishes how many times the ground moved. So this page can tell you how many people a landslide killed and not how many landslides there were.')}
+${hole('There is no national count of landslide EVENTS, flash floods or cloudbursts. NCRB counts deaths by cause; nobody publishes how many times the ground moved. A landslide’s death toll is counted. The landslide is not.')}
       <p style="margin:0"><a class="act" href="#measured">What counts as extreme ${ARROW}</a></p>
     </div>`;
 };
