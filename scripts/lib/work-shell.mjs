@@ -1639,6 +1639,36 @@ ${under ? `      <p class="lbl w7-say-ans">${under}</p>` : ''}
  * reading as five stacked rectangles.
  */
 export const splitBand = ({ left, frame, right, kick, title, say, nums, flip = false, href }) => {
+  /* ★ A FRAME AND A `right` TOGETHER IS A BUILD FAILURE, AND IT USED TO BE A
+     SILENT DELETION. The second column is either the photograph or the prose —
+     it cannot be both, because there is one column — and every branch from the
+     frame branch onward stops referencing `right` entirely. So a caller passing
+     both got valid markup, a passing schema and its authored prose dropped on
+     the floor with nothing anywhere saying so.
+     THAT IS NOT HYPOTHETICAL: /healthy-cities's `schools` and `green` bands
+     passed both from the day the page was built, and two of the best paragraphs
+     on it never shipped — found only when a later pass tried to add a sentence
+     to one of them and could not make it appear. The generator's own call was
+     then fixed (build-healthy-cities.mjs's `deliverable()` emits the prose ABOVE
+     the split where the band has a frame, and passes `right: ''` there), and
+     this is what stops the next caller re-learning it the same way.
+     `''` IS DELIBERATELY ALLOWED, which is what makes the guard usable: the
+     test is truthiness, so `right: frame ? '' : prose` — the shape a caller
+     wants when the composition is conditional — passes untouched.
+     CHECKED AGAINST THE OTHER CALLER BEFORE ADDING IT. build-work-pages.mjs
+     passes a conditional frame alongside `right: figureBlock(...)`, and its
+     frame resolves to `it.statement.frame && !hasStatement(it)` — i.e. non-null
+     only for an item with a statement FRAME but no statement LINE. Every one of
+     the thirteen items carrying a `statement` in data/work/** has both, so that
+     expression is null on all of them and this throw cannot fire today. If one
+     ever loses its line, the frame appears and the figures vanish — which is
+     precisely the failure this is here to make loud. */
+  if (frame && right) {
+    throw new Error('splitBand was given BOTH a frame and a `right` column. The band has one second '
+      + 'column and the frame takes it, so the `right` payload would be discarded in silence — put that '
+      + 'content somewhere that renders (the band lead, its rows, or prose emitted above the split) '
+      + 'rather than leaving it in the data unrendered.');
+  }
   if (!frame && right) {
     return `      <div class="w7-pj-split${flip ? ' wk-flip' : ''}">
         <div class="w7-pj-reg">${left}</div>
