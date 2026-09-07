@@ -172,6 +172,12 @@ for the App Router routes. Two rules are easy to break and both are gated:
 - `docs/SHARE-CARD-STANDARD.md` — how every page's `og:image`/`twitter:image`
   is derived from its own hero photograph, why AD-27.49's one-brand-card ruling
   was reversed, and the ten pages that legitimately still fall back.
+- `docs/LASTMOD-MERGE-DRIVER.md` — why `data/seo/lastmod.json` has a custom
+  key-wise merge driver, why neither `union` nor `ours` is a substitute, and the
+  reason it matters: a conflicted PR has no `refs/pull/N/merge`, so
+  `generated-current.yml` silently cannot run at all on exactly the PRs it
+  exists to check. Read it before re-testing the driver — a two-route test is a
+  false pass.
 - `.superpowers/sdd/2026-08-16-foundation-and-story-vertical/` — the
   task-by-task briefs, reports, and per-commit review diffs from the build
   that produced the current codebase.
