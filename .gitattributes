@@ -1,0 +1,14 @@
+# THE SITEMAP LASTMOD REGISTER MERGES KEY-WISE, NOT AS TEXT.
+# data/seo/lastmod.json is a flat map of route -> { hash, date } in which every
+# entry is independent, and main takes ~13 bot commits every six hours that each
+# restamp it. Any branch touching a shared component (the footer is in all 60
+# built pages) collided with those within the hour — and a conflicted PR has no
+# refs/pull/N/merge, so the generated-current.yml gate silently could not run at
+# all on exactly the PRs it exists to check.
+#
+# `lastmod` is a CUSTOM driver: scripts/git-merge-lastmod.mjs, registered per
+# clone by scripts/setup-git-merge-driver.mjs via npm's `prepare` hook. Read the
+# comment at the top of the driver before changing this line — in particular,
+# neither `union` (produces invalid JSON) nor `ours` (not a built-in; git
+# silently text-merges) is a working substitute.
+data/seo/lastmod.json merge=lastmod
