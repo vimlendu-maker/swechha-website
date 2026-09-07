@@ -1066,9 +1066,29 @@ const HUB_CSS = `
       where it must keep the spacing that composition was measured at. ── */
 #workshops .w7-pj-nums,#cityscapes .w7-pj-nums,#actions .w7-pj-nums,#fellows .w7-pj-nums{
   margin-top:var(--gap-row);padding-top:var(--gap-row);border-top:1px solid var(--hair)}
-/* The paper statement changes only the RULE'S COLOUR, so it is safe on the
-   class: where the rule above has not reached, there is no border to recolour. ── */
-.paper .w7-pj-nums,.paper-2 .w7-pj-nums{border-top-color:var(--rule)}
+/* ★ AND THE PAPER STATEMENT IS QUALIFIED BY THE SAME IDS, because the comment
+   that used to sit here was WRONG and a measurement caught it. It said the
+   paper statement "is safe on the class", reasoning that the colour is only
+   recoloured where the rule above has drawn one. True — and irrelevant: the
+   rule above is "#workshops .w7-pj-nums", one id plus one class, and
+   ".paper .w7-pj-nums" is two classes. The id wins, so on the two deliverable
+   bands this page puts on paper the hairline kept --hair, which is
+   rgba(251,248,240,.20) — the DARK-ground hairline, white at a fifth opacity,
+   composited to #EFEEEA on #ECEBE8 and #F5F3F0 on #F3F2F0. Measured 1.03:1 and
+   1.01:1: white on white, no hairline at all, on the band that closes two of
+   the four deliverables. --rule (#DEDDD9) is what was intended and gives 1.10
+   and 1.13:1, which is this site's hairline everywhere.
+   Same shape of miss as the kissing rule above and the same fix: the ground
+   statement is qualified with the ids so it matches the rule it is correcting,
+   and it is written for all four bands rather than the two that are paper
+   today, because bandChain re-derives which is which. Gate 16 resolves the
+   winning declaration per element and checks the token family against the
+   band's ground, so a hairline this low cannot be argued past a contrast
+   floor. ── */
+#workshops.paper .w7-pj-nums,#workshops.paper-2 .w7-pj-nums,
+#cityscapes.paper .w7-pj-nums,#cityscapes.paper-2 .w7-pj-nums,
+#actions.paper .w7-pj-nums,#actions.paper-2 .w7-pj-nums,
+#fellows.paper .w7-pj-nums,#fellows.paper-2 .w7-pj-nums{border-top-color:var(--rule)}
 
 /* ── THE FUNDER'S MARK, AND THE PANEL IS LOAD-BEARING. The asset is an opaque
       white PNG and this band is #0D0D0B, so the panel is what makes the mark
@@ -1093,6 +1113,36 @@ const HUB_CSS = `
 .hc-mark-p{display:block;width:max-content;max-width:100%;background:#FFF;padding:24px}
 .hc-mark-i{display:block;width:280px;max-width:100%;height:auto}
 .hc-mark-tm{margin:12px 0 0;max-width:62ch}
+
+/* ── THE KISSING RULE, ON THIS PAGE'S DARK BANDS. AN ID BEATS THREE CLASSES,
+      AND THAT IS THE WHOLE DEFECT.
+      WORK_CSS gives the 2px kissing rule its paper ink under a list of BAND
+      IDS — "#kinds .w7-do-t.rl::after" and "#what,#weight,…,#fellows
+      .w7-pj-num.rl::after", both "--rl-c:var(--ink-2)" — because on the
+      homepage and on /work every one of those bands is paper. It also carries
+      the dark statement, but on the CLASS: ".wk-dark .w7-do-t.rl::after". One
+      id plus two classes beats three classes, so on a dark band the paper ink
+      WINS and the dark override never fires. Measured on the built page before
+      this rule existed: #4C473F on #151512, 1.99:1, on the four display rows of
+      "#kinds" and on six of the twelve figure numerals.
+      This page's ground chain puts "kinds", "cityscapes" and "fellows" on
+      #151512 and "what", "workshops" and "actions" on paper — and the chain is
+      DERIVED, so which is which changes the moment a band is added or omitted.
+      So the override is not written for the three that happen to be dark today:
+      it is written for all six, hung off the ".wk-dark" wrapper that
+      canvasFor() opens ONLY on a dark band. Whichever of the six lands dark
+      gets the dark ink; the others have no ".wk-dark" and the rule never
+      matches them. One id + three classes, so it wins by one class.
+      IT LIVES HERE AND NOT IN WORK_CSS on purpose: those two lines are shared
+      with the homepage and /work/index.html, where the paper ink is correct and
+      editing them would restamp built pages this branch does not own.
+      --fg-3 is the token the dark statement already names (#9C9585, 6.4:1 on
+      #151512) — nothing new is introduced. Gate 16 computes the resolved colour
+      of every .rl::after against its band's ground and refuses below 3:1. ── */
+#kinds .wk-dark .w7-do-t.rl::after{--rl-c:var(--fg-3)}
+#what .wk-dark .w7-pj-num.rl::after,#workshops .wk-dark .w7-pj-num.rl::after,
+#cityscapes .wk-dark .w7-pj-num.rl::after,#actions .wk-dark .w7-pj-num.rl::after,
+#fellows .wk-dark .w7-pj-num.rl::after{--rl-c:var(--fg-3)}
 `;
 
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */
@@ -1570,6 +1620,252 @@ gate(!/id="gaps"/.test(OUT), 'no gaps band on the page');
 gate(!/class="p-hole"/.test(OWN), 'no named hole in this page\'s own bands');
 gate(!/cannot say yet|do not settle/i.test(TEXT),
   'the page does not narrate what it cannot say — a hole in an external record is a fact, ours is not');
+
+/* 16. THE RENDERED COLOUR OF EVERY KISSING RULE, RESOLVED THROUGH THE CASCADE
+       AND MEASURED AGAINST ITS BAND'S GROUND. REFUSES BELOW 3:1.
+       ─────────────────────────────────────────────────────────────────────
+       THIS IS THE THIRD TIME THIS EXACT DEFECT HAS SHIPPED ON THIS PAGE. The
+       figure rail's caption ink was the paper caption on a dark masthead
+       (2.7:1). The split band's prose drop was the same shape. And on
+       2026-09-07 the four display rows of `#kinds` measured 1.99:1 because
+       WORK_CSS scopes their paper ink under a BAND ID and its dark override
+       under three CLASSES — an id beats three classes, so the override that
+       exists to prevent this never fired. Every one of the three read
+       CORRECTLY in the source: the token named in the rule you find by grep is
+       the right token, and the rule that loses is the one you do not think to
+       look for. Gate 2 above cannot see any of them either, because in all
+       three cases the component WAS inside its .wk-dark wrapper — the wrapper
+       was there and lost the cascade.
+       So this gate does not assert that a rule exists. It RESOLVES, for every
+       .rl element the page actually wrote, which --rl-c declaration wins:
+       it reads the stylesheet the page ships, matches every selector against
+       that element's real ancestor chain, ranks by specificity then source
+       order, follows the var() chain to a literal, composites any alpha over
+       the band's declared ground and computes WCAG contrast. Below 3:1 is a
+       failure. 3:1 is the non-text contrast minimum, which is the right floor:
+       these are 2px strokes carrying no glyph.
+       AND IT DOES THE SAME FOR THE FIGURE GROUP'S HAIRLINE, by token family
+       rather than by ratio — this site's hairlines are 1.1:1 on paper and
+       1.8:1 on dark BY DESIGN, so a ratio floor is the wrong instrument for
+       them, but a dark-ground hairline token on a paper band (which is what
+       #workshops and #actions shipped: 1.01:1, white on white) is a defect the
+       same cascade resolver catches for free. */
+
+/* The stylesheet this page actually ships, comments out, media blocks held
+   aside. A media-scoped colour would be a colour that is right at one width
+   and wrong at another, and the resolver below has no width — so rather than
+   silently treating such a rule as unconditional, the media blocks are checked
+   separately for the two properties this gate resolves, and finding one there
+   is itself a failure. */
+const STYLE_SRC = [...OUT.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n')
+  .replace(/\/\*[\s\S]*?\*\//g, '');
+const MEDIA_BLOCKS = [];
+const CSS_FLAT = STYLE_SRC.replace(/@(?:media|supports|container)[^{]*\{/g, (m, i) => {
+  /* balance the block from this point so its body can be lifted whole */
+  let depth = 0, j = i;
+  for (; j < STYLE_SRC.length; j++) {
+    if (STYLE_SRC[j] === '{') depth++;
+    else if (STYLE_SRC[j] === '}' && --depth === 0) break;
+  }
+  MEDIA_BLOCKS.push(STYLE_SRC.slice(i, j + 1));
+  return m;
+});
+const MEDIA_TEXT = MEDIA_BLOCKS.join('\n');
+
+const TOKENS = {};
+for (const m of STYLE_SRC.matchAll(/--([a-z0-9-]+)\s*:\s*(#[0-9A-Fa-f]{3,8}|rgba?\([^)]*\))\s*(?=[;}])/g)) {
+  TOKENS[m[1]] = m[2];                                   // last definition wins, as the cascade does
+}
+const rgba = (v) => {
+  const s = String(v).trim();
+  let m = s.match(/^#([0-9A-Fa-f]{6})$/);
+  if (m) return [0, 2, 4].map(i => parseInt(m[1].slice(i, i + 2), 16)).concat(1);
+  m = s.match(/^#([0-9A-Fa-f]{3})$/);
+  if (m) return [...m[1]].map(c => parseInt(c + c, 16)).concat(1);
+  m = s.match(/^rgba?\(([^)]*)\)$/i);
+  if (m) {
+    const p = m[1].split(/[,\s/]+/).filter(Boolean).map(Number);
+    if (p.slice(0, 3).some(Number.isNaN)) return null;
+    return [p[0], p[1], p[2], p.length > 3 && !Number.isNaN(p[3]) ? p[3] : 1];
+  }
+  return null;
+};
+/* var() with a fallback, to any depth — .rl::after's own border-left names
+   var(--rl-c,var(--hair)), so the no-override case is a two-deep chain. */
+const resolveColour = (v, d = 0) => {
+  if (d > 8) return null;
+  const s = String(v).trim();
+  const m = s.match(/^var\(\s*--([a-z0-9-]+)\s*(?:,([\s\S]*))?\)$/);
+  if (!m) return rgba(s);
+  if (TOKENS[m[1]] !== undefined) return resolveColour(TOKENS[m[1]], d + 1);
+  return m[2] ? resolveColour(m[2], d + 1) : null;
+};
+const over = (fg, bg) => [0, 1, 2].map(i => Math.round(fg[i] * fg[3] + bg[i] * (1 - fg[3]))).concat(1);
+const relLum = (c) => {
+  const f = c.slice(0, 3).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+  return 0.2126 * f[0] + 0.7152 * f[1] + 0.0722 * f[2];
+};
+const ratio = (a, b) => {
+  const l1 = relLum(a), l2 = relLum(b);
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+};
+const hex = (c) => '#' + c.slice(0, 3).map(v => v.toString(16).padStart(2, '0').toUpperCase()).join('');
+
+/* ── THE DOM WALK. Script, style and comment bodies are cut first: they hold
+      `<` in strings and would corrupt the ancestor stack. */
+const VOID_TAGS = new Set(['img', 'br', 'hr', 'meta', 'link', 'input', 'source', 'path', 'use',
+  'circle', 'rect', 'line', 'polygon', 'area', 'col', 'embed', 'track', 'wbr', 'base', 'stop']);
+const MARKUP = OUT
+  .replace(/<script\b[\s\S]*?<\/script>/gi, '')
+  .replace(/<style\b[\s\S]*?<\/style>/gi, '')
+  .replace(/<!--[\s\S]*?-->/g, '');
+function walk(html, want) {
+  const found = [], stack = [];
+  const tagRe = /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)((?:"[^"]*"|'[^']*'|[^>"'])*?)(\/?)>/g;
+  let m;
+  while ((m = tagRe.exec(html))) {
+    const closing = m[1] === '/', tag = m[2].toLowerCase(), attrs = m[3], selfClose = m[4] === '/';
+    if (closing) {
+      for (let i = stack.length - 1; i >= 0; i--) if (stack[i].tag === tag) { stack.length = i; break; }
+      continue;
+    }
+    const node = {
+      tag,
+      id: (attrs.match(/\bid="([^"]*)"/) || [])[1] || '',
+      classes: ((attrs.match(/\bclass="([^"]*)"/) || [])[1] || '').split(/\s+/).filter(Boolean),
+    };
+    if (want(node)) found.push({ ...node, chain: stack.slice() });
+    if (!selfClose && !VOID_TAGS.has(tag)) stack.push(node);
+  }
+  return found;
+}
+
+/* ── SELECTOR MATCHING AND SPECIFICITY. Only the descendant combinator is
+      supported, which is every selector that touches either property here; a
+      selector this cannot reason about is REPORTED rather than skipped
+      quietly, because a resolver that silently ignores the rule that wins is
+      the failure mode this whole gate exists to close. */
+const compound = (c) => ({
+  ids: [...c.matchAll(/#([A-Za-z][\w-]*)/g)].map(x => x[1]),
+  cls: [...c.matchAll(/\.([A-Za-z][\w-]*)/g)].map(x => x[1]),
+  tag: (c.match(/^([a-zA-Z][\w-]*)/) || [])[1] || '',
+  pseudoEl: /::[a-z-]+/.test(c),
+  pseudoCl: [...c.replace(/::[a-z-]+/g, '').matchAll(/:([a-z-]+)(?:\([^)]*\))?/g)].map(x => x[1]),
+});
+const UNREASONABLE = /[>+~[]|:hover|:focus|:active|:not\(/;
+const nodeHas = (n, c) => (!c.tag || n.tag === c.tag)
+  && c.ids.every(i => n.id === i) && c.cls.every(k => n.classes.includes(k));
+const selMatches = (sel, el) => {
+  const comps = sel.trim().split(/\s+/).map(compound);
+  if (!nodeHas(el, comps[comps.length - 1])) return false;
+  let ci = comps.length - 2, ai = el.chain.length - 1;
+  while (ci >= 0) {
+    while (ai >= 0 && !nodeHas(el.chain[ai], comps[ci])) ai--;
+    if (ai < 0) return false;
+    ai--; ci--;
+  }
+  return true;
+};
+const specificity = (sel) => sel.trim().split(/\s+/).map(compound).reduce(
+  (a, x) => a + x.ids.length * 1e6 + (x.cls.length + x.pseudoCl.length) * 1e3 + (x.pseudoEl ? 1 : 0) + (x.tag ? 1 : 0), 0);
+
+/* Every declaration of the named properties, in source order. */
+const declsFor = (props) => {
+  const out = [], unreasoned = [];
+  let n = 0;
+  for (const r of CSS_FLAT.matchAll(/([^{}@]+)\{([^{}]*)\}/g)) {
+    const body = r[2];
+    const hits = props.filter(p => new RegExp(`(?:^|;)\\s*${p}\\s*:`).test(body));
+    if (!hits.length) continue;
+    for (const sel of r[1].split(',')) {
+      const s = sel.trim().replace(/\s+/g, ' ');
+      if (!s) continue;
+      if (UNREASONABLE.test(s)) { unreasoned.push(s); continue; }
+      for (const p of hits) {
+        const v = body.match(new RegExp(`(?:^|;)\\s*${p}\\s*:\\s*([^;]+)`))[1].trim();
+        out.push({ sel: s, prop: p, value: v, spec: specificity(s), order: n++ });
+      }
+    }
+  }
+  return { out, unreasoned };
+};
+/* The declaration that wins, over ONE OR MORE competing property names ranked
+   TOGETHER by specificity then source order. Ranking them together is the whole
+   point and the first draft of this got it wrong: a longhand
+   (border-top-color) and a shorthand carrying the same component
+   (border-top:1px solid …) compete on specificity like any other pair of
+   declarations, and preferring the longhand because it is more specific AS A
+   PROPERTY made the gate answer "--rule" for a paper band whose real hairline
+   was --hair. It passed the reverted-fix perturbation, which is how it was
+   caught: a gate has to fail when the defect is put back or it is decoration. */
+const winner = (decls, el, ...props) => decls
+  .filter(d => props.includes(d.prop) && selMatches(d.sel, el))
+  .sort((a, b) => (a.spec - b.spec) || (a.order - b.order)).pop() || null;
+
+const GROUND_OF = new Map(BANDS.map(([id, , h]) => [id, h]));
+const bandOf = (el) => {
+  for (let i = el.chain.length - 1; i >= 0; i--) if (el.chain[i].tag === 'section' && el.chain[i].id) return el.chain[i].id;
+  return null;
+};
+
+/* ── (a) EVERY .rl ELEMENT'S RESOLVED STROKE COLOUR, AT 3:1. */
+const RL_DECLS = declsFor(['--rl-c']);
+const RL_ELS = walk(MARKUP, (n) => n.classes.includes('rl'));
+const rlRows = [], rlBad = [];
+for (const el of RL_ELS) {
+  const band = bandOf(el);
+  const ground = resolveColour(GROUND_OF.get(band) || '#0D0D0B');
+  /* A ground class between the band and the element would move the canvas out
+     from under this reading, and there is none on this page — asserted, not
+     assumed, because the reading is worthless if it is against the wrong ground. */
+  const restated = el.chain.some(n => n.classes.some(c => c === 'paper' || c === 'paper-2' || c === 'dark-2') && n.tag !== 'section');
+  const w = winner(RL_DECLS.out, el, '--rl-c');
+  const col = resolveColour(w ? w.value : 'var(--hair)');
+  if (!col || restated) { rlBad.push(`${band}/.${el.classes.join('.')} — colour unresolvable`); continue; }
+  const r = ratio(over(col, ground), ground);
+  rlRows.push({ band, cls: el.classes.filter(c => c !== 'rl').join('.') || '(bare)', from: w ? w.sel : '.rl::after fallback', colour: hex(over(col, ground)), on: hex(ground), r: +r.toFixed(2) });
+  if (r < 3) rlBad.push(`${band} .${el.classes.join('.')} — ${hex(over(col, ground))} on ${hex(ground)} = ${r.toFixed(2)}:1 (wins: ${w ? w.sel : 'the component default'})`);
+}
+gate(RL_ELS.length > 0 && rlBad.length === 0 && MEDIA_BLOCKS.every(b => !/--rl-c/.test(b)),
+  `every kissing rule resolves to 3:1 or better against its own band — ${RL_ELS.length} .rl element(s) `
+  + `in ${new Set(rlRows.map(x => x.band)).size} band(s), ${RL_DECLS.out.length} --rl-c declaration(s) ranked, `
+  + `worst ${rlRows.length ? Math.min(...rlRows.map(x => x.r)).toFixed(2) : 'n/a'}:1`
+  + (RL_DECLS.unreasoned.length ? `; state-only selectors not resolved: ${[...new Set(RL_DECLS.unreasoned)].join(', ')}` : '')
+  + (rlBad.length ? `\n       BELOW 3:1 -> ${rlBad.join('\n                    ')}` : '')
+  + (MEDIA_TEXT.includes('--rl-c') ? '; A MEDIA QUERY SETS --rl-c, which this resolver has no width for' : ''));
+
+/* ── (b) THE FIGURE GROUP'S HAIRLINE, BY TOKEN FAMILY. Same resolver, different
+      instrument: --hair on a paper band is white on white (1.01:1 measured) and
+      --rule on a dark band is the mirror, and neither can be caught by a ratio
+      floor because a correct hairline on this site is 1.1:1. */
+const HAIR_DECLS = declsFor(['border-top-color', 'border-top']);
+const NUMS_ELS = walk(MARKUP, (n) => n.classes.includes('w7-pj-nums'));
+const hairBad = [], hairRows = [];
+for (const el of NUMS_ELS) {
+  const band = bandOf(el);
+  const g = GROUND_OF.get(band) || '#0D0D0B';
+  const ground = resolveColour(g);
+  const isDark = DARK_HEX.has(g);
+  const w = winner(HAIR_DECLS.out, el, 'border-top-color', 'border-top');
+  const raw = w ? (w.prop === 'border-top' ? (w.value.match(/(var\([^)]*\)|#[0-9A-Fa-f]{3,8}|rgba?\([^)]*\))\s*$/) || [])[1] : w.value) : null;
+  const want = (isDark ? ['--hair', '--hair-2'] : ['--rule', '--rule-2']).map(t => hex(over(resolveColour(`var(${t})`), ground)));
+  const col = raw ? resolveColour(raw) : null;
+  const got = col ? hex(over(col, ground)) : null;
+  hairRows.push({ band, ground: g, from: w ? `${w.sel} {${w.prop}}` : '(none)', got, r: col ? +ratio(over(col, ground), ground).toFixed(2) : null });
+  if (!got || !want.includes(got)) {
+    hairBad.push(`${band} (${g}) resolves to ${got || 'nothing'} via "${w ? w.sel : 'no rule'}" — a `
+      + `${isDark ? 'dark' : 'paper'} band's hairline must be ${isDark ? '--hair/--hair-2' : '--rule/--rule-2'} (${want.join(' or ')})`);
+  }
+}
+gate(NUMS_ELS.length > 0 && hairBad.length === 0,
+  `every figure group's hairline resolves to its own ground's token family — ${NUMS_ELS.length} group(s): `
+  + hairRows.map(x => `${x.band} ${x.got}@${x.r}:1`).join(', ')
+  + (hairBad.length ? `\n       WRONG FAMILY -> ${hairBad.join('\n                       ')}` : ''));
+
+if (process.env.HC_CONTRAST_TABLE) {
+  console.log('\n  RESOLVED STROKE COLOURS');
+  for (const x of rlRows) console.log(`    ${x.band.padEnd(12)} .${x.cls.padEnd(14)} ${x.colour} on ${x.on} = ${String(x.r).padStart(5)}:1   <- ${x.from}`);
+}
 
 if (fail) {
   console.error(`\n${fail} gate(s) failed. The file is written — fix the generator and rebuild.`);
