@@ -120,6 +120,18 @@ keys. This runs in CI.
    `build-situation-air.mjs` as text. The intended end state is that the block
    moves into the shell and Air imports it; prove that migration with a
    byte-identical rebuild.
-3. **`situation-soon.html` is dead** and nothing links to it. Safe to delete.
-4. **`home.html` is hand-maintained**, which is why its ticker fallback figure
-   is typed rather than injected (D-24.5).
+3. **`situation-soon.html`, `system.html` and `_mobile.html` are not on this
+   register any more, because none of them is in `public/_pages/v3` any more** —
+   all three moved to `docs/prototypes/` when AD-17 §6.4 closed
+   `public/design/`, archived rather than destroyed (see design-routes.ts).
+   There is nothing left here to delete. The one live concern any of them
+   carried — `system.html`'s footer link ("The system sheet") 404ing at
+   `/design/v3/system.html` — closed when AD-27.10 pulled that link from the
+   footer: the footer today carries no "system sheet" text and no `/design/`
+   href.
+4. **`design/home.html`, the source, is hand-maintained; the `home.html` it
+   builds is not** — `npm run build:hero` emits the shipped copy from that
+   source, stripping comments and injecting the readings it can derive. Its
+   ticker fallback figure stays typed rather than injected because D-24.5
+   left it as an editorial judgement (see build-hero.mjs), not because the
+   shipped file is hand-edited.
