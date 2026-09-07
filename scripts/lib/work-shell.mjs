@@ -216,6 +216,39 @@ export const TIER = {
      (`sheet`) correctly takes — a contact sheet of frames that back up an
      argument made in type. Here the type backs up the sheets. */
   posters: 't2',
+  /* ── /healthy-cities. Declared here rather than defaulted for the reason the
+        throw below states: a band's weight is the same wherever the band
+        appears, so it belongs in this table and not in one generator.
+
+        ★ THE FOUR DELIVERABLES ALL TAKE t2, AND THAT IS THE POINT. `workshops`,
+        `cityscapes`, `actions` and `fellows` are the programme cut into the four
+        things it delivered, and a reader has to read them as ONE SET rather than
+        as a strong band and three footnotes — so they carry the same weight,
+        the way `what` and `record` do on a WORK page. `fellows` was already t2
+        as the band that page exists for; the other three join it.
+        `voices` and `watch` are t3, the supporting weight `sheet` and `who`
+        take — they back the argument up with who said what and what was filmed.
+
+        ★ `schools`, `green` AND `gaps` ARE GONE. The first two were the old
+        two-band schools half, and their content moved into `workshops` and
+        `actions` when the programme was recut into its four deliverables
+        (2026-09-07 restructure). `gaps` was the "What we cannot say yet" band,
+        struck by the owner on 2026-09-07; three gates in
+        build-healthy-cities.mjs now assert its absence, and leaving its tier
+        row in this table reads as a licence to bring it back.
+
+        `did` is the fellow pages' second band — what one fellow set out to do
+        and what they did — at t2 for the reason `what` is: it is the band its
+        page exists for, argued in ruled prose. IT IS NOT NAMED `work`, which is
+        what it carries and would read better as an anchor, because a band id may
+        not be a nav word: `Work` is one of the six, and both this section's
+        generators gate on that collision — the frozen active-section strip
+        resolves chips against band ids and a page that declares one named after
+        a nav destination is a page whose own strip and whose primary nav
+        disagree about what is current. */
+  did: 't2',
+  fellows: 't2', workshops: 't2', cityscapes: 't2', actions: 't2',
+  voices: 't3', watch: 't3',
   onward: 't3',
 };
 
@@ -750,8 +783,15 @@ export const WORK_CSS = `
 @media (max-width:759px){.wk-way .b{width:100%;justify-content:center}}
 @media (max-width:759px){.wk-kinds-all .b{width:100%;justify-content:center;
   padding-top:16px;padding-bottom:16px}}
+/* THE READING PAIR'S 2px RULE IS SCOPED BY BAND ID, so a band that renders
+   figures() and is not named here silently gets the 1px light default instead
+   of the kissing rule the component was designed with. The four /healthy-cities
+   deliverable bands were added when that page was recut into its four
+   deliverables (2026-09-07) and each one closes on a figures() group. */
 #what .w7-pj-num.rl::after,#weight .w7-pj-num.rl::after,
-#done .w7-pj-num.rl::after,#list .w7-pj-num.rl::after{--rl-w:2px;--rl-c:var(--ink-2)}
+#done .w7-pj-num.rl::after,#list .w7-pj-num.rl::after,
+#workshops .w7-pj-num.rl::after,#cityscapes .w7-pj-num.rl::after,
+#actions .w7-pj-num.rl::after,#fellows .w7-pj-num.rl::after{--rl-w:2px;--rl-c:var(--ink-2)}
 
 /* ── (b) THE SAME COMPONENTS, STATED FOR THE DARK GROUND.
       The register rows, the reading pair and the four-kinds rows are all frozen
@@ -1599,6 +1639,36 @@ ${under ? `      <p class="lbl w7-say-ans">${under}</p>` : ''}
  * reading as five stacked rectangles.
  */
 export const splitBand = ({ left, frame, right, kick, title, say, nums, flip = false, href }) => {
+  /* ★ A FRAME AND A `right` TOGETHER IS A BUILD FAILURE, AND IT USED TO BE A
+     SILENT DELETION. The second column is either the photograph or the prose —
+     it cannot be both, because there is one column — and every branch from the
+     frame branch onward stops referencing `right` entirely. So a caller passing
+     both got valid markup, a passing schema and its authored prose dropped on
+     the floor with nothing anywhere saying so.
+     THAT IS NOT HYPOTHETICAL: /healthy-cities's `schools` and `green` bands
+     passed both from the day the page was built, and two of the best paragraphs
+     on it never shipped — found only when a later pass tried to add a sentence
+     to one of them and could not make it appear. The generator's own call was
+     then fixed (build-healthy-cities.mjs's `deliverable()` emits the prose ABOVE
+     the split where the band has a frame, and passes `right: ''` there), and
+     this is what stops the next caller re-learning it the same way.
+     `''` IS DELIBERATELY ALLOWED, which is what makes the guard usable: the
+     test is truthiness, so `right: frame ? '' : prose` — the shape a caller
+     wants when the composition is conditional — passes untouched.
+     CHECKED AGAINST THE OTHER CALLER BEFORE ADDING IT. build-work-pages.mjs
+     passes a conditional frame alongside `right: figureBlock(...)`, and its
+     frame resolves to `it.statement.frame && !hasStatement(it)` — i.e. non-null
+     only for an item with a statement FRAME but no statement LINE. Every one of
+     the thirteen items carrying a `statement` in data/work/** has both, so that
+     expression is null on all of them and this throw cannot fire today. If one
+     ever loses its line, the frame appears and the figures vanish — which is
+     precisely the failure this is here to make loud. */
+  if (frame && right) {
+    throw new Error('splitBand was given BOTH a frame and a `right` column. The band has one second '
+      + 'column and the frame takes it, so the `right` payload would be discarded in silence — put that '
+      + 'content somewhere that renders (the band lead, its rows, or prose emitted above the split) '
+      + 'rather than leaving it in the data unrendered.');
+  }
   if (!frame && right) {
     return `      <div class="w7-pj-split${flip ? ' wk-flip' : ''}">
         <div class="w7-pj-reg">${left}</div>
@@ -1657,12 +1727,27 @@ export const anc = (label, href) =>
    still accepted and deliberately ignored, so a caller that still passes one
    cannot resurrect it; the AD-28 gate in this file fails the build if a
    `.p-hole` reaches any WORK page by any route at all. */
-export function masthead({ h1, deck, frame, ancestor, chip, note }) {
+/* `lines` — MICRO-CAPS LINES BETWEEN THE ANCESTOR AND THE DECK, and they exist
+   because /healthy-cities is a page somebody FORWARDS. Two sentences have to be
+   on the first screen there and nowhere else on the site puts them in a
+   masthead: who Swechha is (that sentence exists on exactly one other page, the
+   homepage — it is not in the footer and not on /about, so a cold visitor
+   arriving from a funder's email has no answer to "who is this?"), and who the
+   chapter is funded by. The credit goes here rather than into a logo wall
+   because this design has refused every foreign trademark for the whole site,
+   and the highest place a non-display element may sit is the strongest credit
+   the language can give anyone.
+   Each entry is a whole element, so the caller owns its class and its copy;
+   default [] means every existing caller's output is byte-identical. Display
+   type may sit on a photograph and nothing else may, so these land in
+   .pic-body with the deck, never in .pic-over. */
+export function masthead({ h1, deck, frame, ancestor, chip, note, lines = [] }) {
   const head = `        <h1 class="d1" id="top-h">${h1}</h1>`;
   void note;
   const noteP = '';
   const under = [
     ancestor ? `        <p style="margin:0">${ancestor}</p>` : '',
+    ...lines.map(l => `        ${l}`),
     deck ? `        <p class="lead">${deck}</p>` : '',
     noteP ? `        ${noteP}` : '',
     chip ? `        <p style="margin:0">${chip}</p>` : '',
@@ -1675,7 +1760,7 @@ export function masthead({ h1, deck, frame, ancestor, chip, note }) {
        putting it under the h1 instead would set a 62ch paragraph beneath 104px
        display type and read as a second deck. Below 900 .im-head stacks and the
        note follows the deck, which is the reading order either way. */
-    const col2 = [deck ? `<p class="lead">${deck}</p>` : '', noteP].filter(Boolean).join('');
+    const col2 = [...lines, deck ? `<p class="lead">${deck}</p>` : '', noteP].filter(Boolean).join('');
     return `    <div class="wk-mast"><div class="wrap">
 ${ancestor ? `      <p style="margin:0 0 6px">${ancestor}</p>` : ''}
       <div class="im-head">
@@ -1795,8 +1880,17 @@ export const regRows = (items, { duration = false, start = 1 } = {}) => {
     const lead = duration && it.duration
       ? `<span class="w7-jr-dur w7-pj-n"><span class="num">${it.duration.value}</span><i>${esc(it.duration.unit)}</i></span>`
       : `<span class="lbl w7-pj-n" aria-hidden="true">${String(start + i).padStart(2, '0')}</span>`;
+    /* THE ONE LICENSED INLINE PRE-LINE, the same one displayRows already
+       carries: the `.lbl` hook above an item's name, as the frozen homepage's
+       band 7 has it. A row may carry ONE, and on /healthy-cities it names the
+       place and state a fellow worked in — which is the fact that distinguishes
+       ten rows of one person's name each. Omitted where absent, so every
+       existing register in this section renders exactly as before; a row with a
+       pre-line has three rows in its content column instead of two, which is
+       why the ordinal's span is re-stated per page rather than here. */
+    const pre = it.pre ? `\n          <p class="lbl w7-pj-pre">${it.pre}</p>` : '';
     return `        <li id="${esc(it.anchor)}"><a href="${it.href}">
-          ${lead}
+          ${lead}${pre}
           <h3 class="w7-pj-rt">${it.name}</h3>
           <p class="w7-pj-rf">${it.line}</p>
         </a></li>`;
