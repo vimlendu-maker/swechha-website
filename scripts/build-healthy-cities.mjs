@@ -61,7 +61,17 @@ import * as W from './lib/work-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
 import { imageSize } from './lib/jpeg-size.mjs';
 
-const { esc, hole, ARROW } = S;
+/* `hole()` IS DELIBERATELY NOT IMPORTED. These eleven pages used to render a
+   "What we cannot say yet" band out of it, and on 7 September 2026 the owner
+   struck the whole band: the copy standard's Removed column already covered it
+   ("what this page cannot say yet", gap counters, empty-state confessions, and
+   the page narrating its own construction), and what those holes actually
+   described was the state of the Word documents we were handed rather than
+   anything about the programme. The nine pages that still call `hole()` —
+   the six situation pages, /now/air/india, /posters and the Nepal GLOF page —
+   are naming holes in an EXTERNAL record (an absent monitor, an official figure
+   nobody published), which the standard permits and this page never had. */
+const { esc, ARROW } = S;
 
 /* workShell(), not shell(): every WORK component used below — the register
    rows, the split, the figure rail, the named list, the panels, the doors —
@@ -108,7 +118,7 @@ const dataFail = (m) => { console.error(`DATA IS WRONG: ${m}`); bad++; };
    as in the test suite — the test catches a commit nobody rebuilt, this catches
    the build that is running. */
 const BAND_PROSE = ['top', 'what', 'fellows', 'statement', 'schools', 'green',
-  'voices', 'watch', 'gaps', 'with', 'onward'];
+  'voices', 'watch', 'with', 'onward'];
 for (const k of BAND_PROSE) {
   if (!BD[k] || !Object.keys(BD[k]).length) {
     dataFail(`bands.${k} is missing from programme.json. Every band reads its prose from there.`);
@@ -307,7 +317,7 @@ const IDS = ['top', 'what', 'fellows',
      section's own mechanism — bandChain re-derives the whole ground chain from
      whatever is on, which is why no chain is written down anywhere. */
   ...(PROG.frames && PROG.frames.find(f => f.slot === 'statement') ? ['statement'] : []),
-  'schools', 'green', 'voices', 'watch', 'gaps', 'with', 'onward'];
+  'schools', 'green', 'voices', 'watch', 'with', 'onward'];
 /* Derived rather than hardcoded: any required band this build did not render —
    not just `statement` by name — is a gap the omission note must keep naming.
    If a second band ever becomes frame-conditional, this line does not need
@@ -330,7 +340,6 @@ const INDEX = [
   ['In the schools', '#schools'],
   ['The fellows', '#fellows'],
   ['Voices', '#voices'],
-  ['What we cannot say yet', '#gaps'],
 ];
 
 /* ── THE CANVAS IS CHOSEN FROM THE BAND'S DECLARED GROUND, never by hand.
@@ -517,17 +526,32 @@ body.watch = [
   }))),
 ];
 
-/* ── WHAT WE CANNOT SAY YET. Four named holes, each a real sentence.
-      These are holes in the SOURCE RECORD — thirty-one videos with no speaker
-      named, a 20-against-26 count that was never re-counted, three testimonials
-      surviving only as broken encoding, a plantation report with no year — and
-      that is the story rather than an apology about this page. A hole about our
-      own filing or about why a metric is unavailable does NOT belong here and
-      goes to the owner instead. */
-body.gaps = [
-  W.openBand('gaps', BD.gaps.head, BD.gaps.lead),
-  PROG.holes.map(h => hole(plain(h))).join('\n'),
-];
+/* ── THERE IS NO `gaps` BAND, AND THE TWO FACTS IT HELD ARE NOW CONTENT.
+      It ran under "What we cannot say yet" over five sentences, and four of the
+      five were about the documents rather than about the year: thirty-one
+      videos that do not caption their speakers, three testimonials surviving as
+      broken encoding, a plantation report with no year on it, two names nobody
+      could confirm. That is our filing, and a reader has no use for it.
+      The two facts worth keeping moved into the bands they belong to, in the
+      programme's own voice: the THIRTY-ONE FILMED ACCOUNTS are content and now
+      open `bands.watch`, and TWENTY GARDENS ACROSS TWENTY-SIX SCHOOLS is
+      `bands.green`'s own lead. That second move corrected an overclaim in the
+      same stroke — the lead read "Every school built something it has to keep
+      alive", which is the sentence the struck hole was contradicting two bands
+      further down. Nothing was deleted that was true about the work; what went
+      was the account of the paperwork.
+      ★ AND IT WENT IN THE LEAD RATHER THAN IN `bands.green.prose`, BECAUSE THE
+      PROSE DOES NOT RENDER. splitBand takes `right` only when it has NO frame
+      (work-shell.mjs, the `if (!frame && right)` branch); `schools` and `green`
+      both have one, so the second column is the photograph and both bands'
+      authored `prose` has been dropped in silence since this page was built.
+      That is a defect in this generator's call and not in the component, but
+      fixing it is a composition change and this was a copy pass — so the fact
+      was put where it renders today, and the dead `prose` key is reported.
+      The band's id, its prose key, its index chip and `programme.holes` all
+      went with it — bandChain re-derives the ground rhythm from whatever is
+      left, so no chain needed editing, and gate 15 asserts the band cannot
+      come back by data alone. */
 
 /* ── WHO IT IS WITH. The same grammar as bridge-the-gap's own `#with` band, to
       the class: an opener, then `.wk-names wk-names-1` with a `.lbl` over a
@@ -754,7 +778,7 @@ const OUT = await S.assemble({
   },
   note: `${BANDS.length} bands + footer. ${FELLOWS.length} fellows in ${STATES.length} states, `
       + `${PROG.figures.length} rail figures, ${VOICES.length} resolved voices, `
-      + `${PROG.videos.length} video series, ${PROG.holes.length} holes.`
+      + `${PROG.videos.length} video series.`
       + (OMITTED.length ? ` OMITTED (no frame yet): ${OMITTED.join(', ')}.` : '')
       /* THE MARK'S PROVENANCE, in the one place a mark can carry it. A
          photograph's provenance is its content/photo-library.json row and a
@@ -999,7 +1023,18 @@ for (const [, href] of INDEX) gate(OUT.includes(`id="${href.slice(1)}"`), `index
 const designHrefs = [...new Set([...OWN.matchAll(/href="(\/design\/[^"]*)"/g)].map(m => m[1]))];
 gate(designHrefs.length === 0, `no /design/ href in this page's own bands${designHrefs.length ? `; FOUND: ${designHrefs.join(', ')}` : ''}`);
 gate(!/\$\{/.test(OUT), 'no unexpanded template hole in the output');
-gate(!/undefined|\[object Object\]/.test(TEXT), 'no undefined or stringified object in the rendered text');
+/* 15. NO GAP BAND, NO NAMED HOLE, NO CONFESSION — ASSERTED, BECAUSE THE OLD
+       GATES ASSERTED THE OPPOSITE. Until 7 September 2026 this build proved
+       that five holes rendered; the band is struck, so the assertion has to be
+       inverted rather than deleted, or the next session that adds a `holes`
+       array to programme.json gets a silent pass. Three checks, because there
+       are three ways it comes back: the band id, `hole()`'s own markup, and
+       the heading as prose. This is the same shape as build-stories-page.mjs's
+       own reversal, which had asserted two named holes and now asserts none. */
+gate(!/id="gaps"/.test(OUT), 'no gaps band on the page');
+gate(!/class="p-hole"/.test(OWN), 'no named hole in this page\'s own bands');
+gate(!/cannot say yet|do not settle/i.test(TEXT),
+  'the page does not narrate what it cannot say — a hole in an external record is a fact, ours is not');
 
 if (fail) {
   console.error(`\n${fail} gate(s) failed. The file is written — fix the generator and rebuild.`);
@@ -1008,26 +1043,39 @@ if (fail) {
 console.log(`\n${OUT.length.toLocaleString('en-IN')} bytes. All hub gates pass.`);
 
 /* ═══ THE TEN FELLOW PAGES ═══════════════════════════════════════════════
-   One page per file in data/healthy-cities/fellows/, up to five bands each: who
-   they are and what they counted, what they did, who spoke, what the report
-   does not settle, and the way on to the other nine. TWO OF THOSE FIVE ARE
-   CONDITIONAL — `voices` where the report carries publishable direct speech and
-   `gaps` where it leaves something named — so seven pages run to five bands and
-   three to four. A band with nothing in it is omitted rather than opened over a
-   sentence saying so.
+   One page per file in data/healthy-cities/fellows/, up to four bands each: who
+   they are and what they counted, what they did, who spoke, and the way on to
+   the other nine. ONE OF THOSE FOUR IS CONDITIONAL — `voices`, where the report
+   carries publishable direct speech — so seven pages run to four bands and
+   three to three. A band with nothing in it is omitted rather than opened over
+   a sentence saying so.
 
-   ★ EACH PAGE BUILDS ITS OWN INDEX. The hub's five chips are #top, #schools,
-   #fellows, #voices and #gaps; three of those bands do not exist here. An
-   in-page href to a missing id is `FAIL:no-such-id` to the WORK section's link
-   census, and the frozen section strip silently drops the chip — so the visible
-   result of borrowing the hub's index is a control strip where three of five
-   controls do nothing. The chips are derived from the bands this page actually
-   rendered, and a gate below asserts every one of them resolves.
+   ★ THERE IS NO `gaps` BAND. Each of these ten pages had one, headed "What we
+   cannot say yet", and it was struck on 7 September 2026 with the hub's — see
+   the note where the hub's band used to be. What those twenty-one sentences
+   mostly described was the state of a Word document (broken Devanagari, blank
+   objective fields, unticked urban/rural boxes, a spelling nobody could check),
+   which is our filing rather than anybody's work. The programme facts wearing
+   that voice were moved into the band they belong to and re-voiced: the
+   orphanage unit into Anjali Choudhary's `did`, the wheat harvest that decided
+   the Miyawaki planting days into that project's `aims`, the year's head start
+   into S Vineeth Kumar's deck, the two Bilaspur fathers into Swapnil
+   Chaurasiya's `did`, the zine's due date into Taniya Gill's, the youth
+   implementers into Tanuz Kalita's, and Zaid, Ansh and Somya into Tawheed
+   Zubair's, as three of the fourteen who ran it.
 
-   ★ AND EACH PAGE BUILDS ITS OWN BAND CHAIN, because `gaps` is conditional:
-   a fellow whose report settles everything gets no named-hole band rather than
-   a heading over nothing. bandChain re-derives the whole ground rhythm from
-   whatever is on, which is why no chain is written down here either.
+   ★ EACH PAGE BUILDS ITS OWN INDEX. The hub's four chips are #top, #schools,
+   #fellows and #voices; two of those bands do not exist here. An in-page href
+   to a missing id is `FAIL:no-such-id` to the WORK section's link census, and
+   the frozen section strip silently drops the chip — so the visible result of
+   borrowing the hub's index is a control strip where half the controls do
+   nothing. The chips are derived from the bands this page actually rendered,
+   and a gate below asserts every one of them resolves.
+
+   ★ AND EACH PAGE BUILDS ITS OWN BAND CHAIN, because `voices` is conditional:
+   a fellow whose report carries no publishable speech gets no quote band rather
+   than a heading over nothing. bandChain re-derives the whole ground rhythm
+   from whatever is on, which is why no chain is written down here either.
 
    ★ WHAT IS DELIBERATELY NOT HERE is what is not on the hub, for the same
    reasons and checked by the same gates: no state chip, no `.readout`, no
@@ -1041,14 +1089,13 @@ mkdirSync(join(S.V3, 'healthy-cities', 'fellows'), { recursive: true });
    pages differ from the hub. The hub reads every heading out of
    programme.json's `bands` because those headings ARE that page's content, and
    an editor renaming "The ten" should not need a generator. A fellow page's
-   four headings are identical on all ten pages — they are the template, the way
+   three headings are identical on all ten pages — they are the template, the way
    onwardBand's own "Get involved" is — and moving them into programme.json
    would put them inside `bands`, where the hub's OMITTED line reads every key
    the hub did not render and would start reporting them as bands it dropped. */
 const F_HEAD = {
   did: 'The work',
   voices: 'What people said',
-  gaps: 'What we cannot say yet',
   onward: 'The rest of the cohort',
 };
 /* The section strip's own words. Shorter than the heads where the head is long:
@@ -1056,29 +1103,25 @@ const F_HEAD = {
    one place on the page where a label is competing for width. */
 const F_CHIP = {
   top: 'The fellow', did: 'The work', voices: 'What people said',
-  gaps: 'What we cannot say yet', onward: 'The cohort',
+  onward: 'The cohort',
 };
 
 /* ★ NO QUOTES MEANS NO BAND, AND THIS REPLACED A SENTENCE.
-   Three of the ten reports carry no publishable direct speech —
-   miyawaki-forests records what was planted and where, swapnil-chaurasiya puts
-   two fathers' account in the report's own words rather than theirs, and
-   tawheed-zubair's three Hindi testimonials survive only as broken encoding.
-   Those three pages used to open a `voices` band anyway and fill it with one
-   shared sentence saying there was nothing to put in it. TWO THINGS WERE WRONG
-   WITH THAT. The copy standard strikes "empty-state confessions" outright: a
-   hole in an external record may be stated as a fact about the record, never as
-   an apology about our own page. And one sentence could not tell "no
-   testimonial exists" from "testimonials exist and cannot be published" — so
-   tawheed-zubair's page said nothing was set down in anybody's own words while
-   the very next band named Zaid, Ansh and Somya and said their words survive
-   only as broken text. The page contradicted itself two bands apart.
+   Three of the ten reports carry no publishable direct speech, and those three
+   pages used to open a `voices` band anyway and fill it with one shared
+   sentence saying there was nothing to put in it. The copy standard strikes
+   "empty-state confessions" outright: a hole in an external record may be
+   stated as a fact about the record, never as an apology about our own page.
    So the band is OMITTED, which is the mechanism this generator already uses
-   for the hub's `statement` band and for a fellow's own `gaps`: bandChain
-   re-derives the whole ground rhythm from whatever is on, the index chips are
-   built from the same list, and the omission is PRINTED in the build note so it
-   can never be silent. The fact itself belongs to the `gaps` band, where all
-   three fellows' own files now state which of the three cases theirs is. */
+   for the hub's `statement` band: bandChain re-derives the whole ground rhythm
+   from whatever is on, the index chips are built from the same list, and the
+   omission is PRINTED in the build note so it can never be silent.
+   NOTHING ON THE PAGE SAYS SO, and that is the second half of the ruling. The
+   one sentence went to the build log, not to the reader — a reader arriving on
+   Swapnil Chaurasiya's page reads what he did and what changed in twenty-six
+   households, and is owed no note about which fields of a report were filled
+   in. Where somebody's own account IS the missing thing, the answer is to go
+   and ask them again, not to print that we have not. */
 
 /* ── THE NAMED LIST, one group per column, `--n` from the membership.
       This is the component AD-17's band 5 built for "schools, partners and
@@ -1199,10 +1242,9 @@ for (const f of FELLOWS) {
   /* ── BAND 2. THE WORK: WHAT IT SET OUT TO DO, THEN WHAT WAS DONE.
         The aims are a heading over a sentence each, which is exactly the ruled
         prose row's shape and the same component the hub's own `what` band uses.
-        s-vineeth-kumar HAS EXACTLY ONE AIM — two of his three objectives were
-        left blank in the report — so nothing here may assume a pair: doRows
-        renders one row as one row, and the schema's `.min(1)` plus the hub's
-        data gate are what guarantee there is at least that. */
+        s-vineeth-kumar HAS EXACTLY ONE AIM, so nothing here may assume a pair:
+        doRows renders one row as one row, and the schema's `.min(1)` plus the
+        hub's data gate are what guarantee there is at least that. */
   fb.did = [
     W.openBand('did', F_HEAD.did),
     W.doRows(f.aims.map(a => ({ h: a.h, p: a.p }))),
@@ -1243,17 +1285,7 @@ for (const f of FELLOWS) {
     })}`).join('\n')}\n      </div>`,
   ] : null;
 
-  /* ── BAND 4. WHAT THE REPORT DOES NOT SETTLE. Named holes in the SOURCE
-        RECORD — a headcount that does not settle, a plantation with four dates
-        and no year, testimonials that survive only as broken encoding — which
-        is the story rather than an apology about this page. The band is omitted
-        where a file has none, rather than opening a heading over nothing. */
-  fb.gaps = [
-    W.openBand('gaps', F_HEAD.gaps),
-    (f.holes || []).map(h => hole(plain(h))).join('\n'),
-  ];
-
-  /* ── BAND 5. THE WAY ON. The other nine, in the register the hub uses, each
+  /* ── BAND 4. THE WAY ON. The other nine, in the register the hub uses, each
         row carrying the pre-line that tells nine rows of a person's name apart,
         and one link back to the page this one was opened from. No ask: the
         cohort is what a reader of one fellow's page wants next, and the
@@ -1273,18 +1305,15 @@ for (const f of FELLOWS) {
       plain(PROG.title)} ${ARROW}</a></p>`,
   ];
 
-  /* TWO OF THE FIVE BANDS ARE CONDITIONAL, and both conditions are the same
-     rule: a band opens where there is something to put in it and is omitted
-     where there is not. `voices` needs a publishable quote; `gaps` needs a
-     named hole. Derived rather than declared, so the omission note below cannot
-     drift from the spine. */
+  /* ONE OF THE FOUR BANDS IS CONDITIONAL, on the rule the whole file follows:
+     a band opens where there is something to put in it and is omitted where
+     there is not. `voices` needs a publishable quote. Derived rather than
+     declared, so the omission note below cannot drift from the spine. */
   const F_IDS = ['top', 'did',
     ...((f.quotes || []).length ? ['voices'] : []),
-    ...((f.holes || []).length ? ['gaps'] : []),
     'onward'];
   const F_OMITTED = [
     ...((f.quotes || []).length ? [] : ['voices (no publishable quote in the report)']),
-    ...((f.holes || []).length ? [] : ['gaps (the report leaves nothing named)']),
   ];
   const F_BANDS = W.bandChain(F_IDS)
     .map(([id, cls, hex, tier]) => [id, [cls, tier].filter(Boolean).join(' '), hex, tier]);
@@ -1313,7 +1342,7 @@ for (const f of FELLOWS) {
       + `${spill.length ? ` (${rail.length} on the rail, ${spill.length} with the work: `
         + `${spill.map(x => `"${x.label}"`).join(', ')})` : ''}, `
       + `${f.aims.length} aim(s), ${f.did.length} done, ${(f.quotes || []).length} quote(s), `
-      + `${(f.holes || []).length} hole(s), ${f.partners.length} partner(s), ${others.length} onward.`
+      + `${f.partners.length} partner(s), ${others.length} onward.`
       + (F_OMITTED.length ? ` OMITTED: ${F_OMITTED.join('; ')}.` : ''),
   });
   fellowPages.push({ slug: f.slug, bytes: FOUT.length });
@@ -1323,9 +1352,10 @@ for (const f of FELLOWS) {
 /* ═══ THE FELLOW PAGES' GATES ════════════════════════════════════════════
    The hub's, minus the four that are about the programme's own rail and its
    resolved-pointer voices band, plus the five that are about a person's page:
-   every figure they published reaches it, every quote is verbatim, every named
-   hole is stated, a page with no quote states that instead of nothing, and the
-   crumb back to the register row this page was opened from is present.
+   every figure they published reaches it, every quote is verbatim, a page with
+   no quote omits the band rather than confessing, nothing on the page narrates
+   what our own record does not say, and the crumb back to the register row this
+   page was opened from is present.
    Declared as a function below the loop and hoisted, so the loop above reads as
    the page and not as the checking. */
 function fellowGates({ f, OUT: HTML, ids, index, figs, others }) {
@@ -1400,13 +1430,10 @@ function fellowGates({ f, OUT: HTML, ids, index, figs, others }) {
   const lost = figs.filter(x => !HTML.includes(plain(x.value).replace(/\+$/, '<sup>+</sup>')));
   g(lost.length === 0, `published figure(s) that do not render: ${lost.map(x => x.value).join(', ')}`);
 
-  /* 6. EVERY QUOTE IS VERBATIM, EVERY HOLE IS STATED — AND A PAGE WITH NO
-        QUOTE HAS NO VOICES BAND AT ALL. That last half is the assertion that
-        changed: it used to require the band to be present and to carry one
-        fixed sentence, which is the empty-state confession the copy standard
-        strikes. Asserted in BOTH directions, because "the band is gone" and
-        "the band is there with panels in it" are the only two correct states
-        and a heading over nothing is what sits between them. */
+  /* 6. EVERY QUOTE IS VERBATIM — AND A PAGE WITH NO QUOTE HAS NO VOICES BAND
+        AT ALL. That second half is asserted in BOTH directions, because "the
+        band is gone" and "the band is there with panels in it" are the only two
+        correct states and a heading over nothing is what sits between them. */
   const unsaid = (f.quotes || []).filter(q => !HTML.includes(q.text));
   g(unsaid.length === 0, `quote(s) not rendered verbatim: ${unsaid.map(q => q.speaker).join(', ')}`);
   const hasVoices = (f.quotes || []).length > 0;
@@ -1417,8 +1444,16 @@ function fellowGates({ f, OUT: HTML, ids, index, figs, others }) {
     const voicesBand = (HTML.split('id="voices"')[1] || '').split('</section>')[0];
     g(/class="wk-panel"/.test(voicesBand), 'the voices band renders no panel');
   }
-  const unheld = (f.holes || []).filter(h => !HTML.includes(esc(plain(h))));
-  g(unheld.length === 0, `named hole(s) that do not render: ${unheld.length}`);
+  /* 6b. NO GAP BAND, NO NAMED HOLE, NO CONFESSION — AND THIS IS THE INVERSE OF
+         WHAT USED TO BE CHECKED HERE. The old assertion was that every string
+         in `holes` rendered; the band is struck, so the assertion is turned
+         round rather than dropped, and a `holes` array re-added to a fellow
+         file fails the schema AND this. Three ways it comes back: the band id,
+         `hole()`'s markup, the heading as prose. */
+  g(!/id="gaps"/.test(HTML), 'a gaps band was rendered');
+  g(!/class="p-hole"/.test(OWN2), 'a named hole was rendered in this page\'s own bands');
+  g(!/cannot say yet|does not settle|do not settle/i.test(TEXT2),
+    'the page narrates what it cannot say — that is our record, not a fact about the work');
 
   /* 7. EVERY AIM RENDERS. s-vineeth-kumar has exactly one, so a block that
         assumed a pair would drop his only one or print an empty slot beside it. */

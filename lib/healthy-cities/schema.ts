@@ -27,7 +27,7 @@ export const WITHHELD = [
    Adding a band to the hub means adding its id here in the same change. */
 export const REQUIRED_BAND_KEYS = [
   'top', 'what', 'fellows', 'statement', 'schools', 'green',
-  'voices', 'watch', 'gaps', 'with', 'onward',
+  'voices', 'watch', 'with', 'onward',
 ] as const
 
 export const figureSchema = z.strictObject({
@@ -97,7 +97,17 @@ export const fellowSchema = z.strictObject({
   partners: z.array(z.string()),
   quotes: z.array(quoteSchema),
   frames: z.array(frameSchema).optional(),
-  holes: z.array(z.string()).optional(),
+  /* THERE IS NO `holes` FIELD, AND ITS ABSENCE IS THE RULING RATHER THAN AN
+     OMISSION. Every fellow file carried one, and every one of them was struck
+     on 7 September 2026: the copy standard puts "what this page cannot say
+     yet", gap counters and empty-state confessions in the Removed column, and
+     these were not holes in an external record — they were the state of a Word
+     document we were handed (broken Devanagari, unticked boxes, a blank
+     objective, an unconfirmed spelling). A reader of a fellow's page has no use
+     for any of it. The facts inside them that WERE programme detail were moved
+     into `deck`, `aims` and `did` in the same commit and re-voiced; the rest
+     went. Because this is a `z.strictObject`, re-adding the key fails the
+     schema instead of quietly reaching a renderer that no longer exists. */
   links: z.array(z.strictObject({ label: z.string(), href: z.string().url() })).optional(),
 })
 
@@ -161,7 +171,13 @@ export const programmeSchema = z.strictObject({
      "A workshop participant" and s-vineeth-kumar two "A farmer on the pilot
      plots", so a speaker key would resolve ambiguously. */
   voices: z.array(z.strictObject({ fellow: z.string(), quote: z.string() })).min(1),
-  holes: z.array(z.string()).min(1),
+  /* NO `holes` HERE EITHER, AND IT USED TO BE `.min(1)` — see the note on
+     fellowSchema above. The hub's five were the same class of thing: a video
+     set that does not name its speakers, an encoding failure, a report with no
+     year on it. Two of the five carried a real programme fact and those two
+     were moved: the thirty-one filmed accounts into `bands.watch` as
+     content, the twenty-against-twenty-six count into `bands.green` as prose
+     about how a school takes on a garden. The `gaps` band went with them. */
   videos: z.array(z.strictObject({
     name: z.string(), blurb: z.string(), href: z.string().url(),
     frame: frameSchema.optional(),
