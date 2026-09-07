@@ -73,7 +73,7 @@ export const programmeSchema = z.strictObject({
   identity: z.string().min(1),
   /* The parent programme. This page is Bridge the Gap's 2025-26 chapter, not a
      separate thing, and the masthead says so in one line. */
-  ancestor: z.strictObject({ label: z.string(), href: z.string() }),
+  ancestor: z.strictObject({ label: z.string().min(1), href: z.string().min(1) }),
   partnership: z.string().min(1),
   figures: z.array(figureSchema).min(4),
   /* The funder register, same grammar as data/work/projects/bridge-the-gap.json.
@@ -87,6 +87,12 @@ export const programmeSchema = z.strictObject({
   }),
   bands: z.record(z.string(), z.unknown()),
   quotes: z.array(quoteSchema),
+  /* Ruling 14: the hub points at quotes, it does not copy them. Same grammar as
+     /impact naming a figure by (kind, slug, label). `quote` is the full text
+     because `speaker` is NOT unique within a fellow file — taniya-gill has two
+     "A workshop participant" and s-vineeth-kumar two "A farmer on the pilot
+     plots", so a speaker key would resolve ambiguously. */
+  voices: z.array(z.strictObject({ fellow: z.string(), quote: z.string() })).min(1),
   holes: z.array(z.string()).min(1),
   videos: z.array(z.strictObject({
     name: z.string(), blurb: z.string(), href: z.string().url(),

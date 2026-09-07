@@ -63,6 +63,16 @@ describe('healthy-cities data', () => {
     expect(w.funders_lead).toBeLessThanOrEqual(w.funders.length)
   })
 
+  it('resolves every voice pointer to a real quote on that fellow page', () => {
+    const fellows = loadFellows()
+    expect(loadProgramme().quotes, 'the hub copies nothing').toHaveLength(0)
+    for (const v of loadProgramme().voices) {
+      const f = fellows.find(x => x.slug === v.fellow)
+      expect(f, `voices points at ${v.fellow}, which is not a fellow`).toBeDefined()
+      expect(f!.quotes.map(q => q.text), `${v.fellow} has no such quote`).toContain(v.quote)
+    }
+  })
+
   it('gives every frame a descriptive alt of at least six words', () => {
     const frames = [...loadProgramme().frames ?? [], ...loadFellows().flatMap(f => f.frames ?? [])]
     for (const fr of frames) {
