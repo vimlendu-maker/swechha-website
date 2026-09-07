@@ -163,6 +163,28 @@ function disasterRoutes(): Record<string, string> {
   return out
 }
 
+/* THE TEN FELLOW PAGES, DERIVED FROM THE BUILT FILES rather than typed, for the
+   reason `workRoutes` and `disasterRoutes` above are: a typed list of ten paths
+   is ten chances to route a page that was never built or to build one that is
+   never routed, and both failures look like a working commit. Reading the
+   directory makes the two impossible in the same move — a fellow page exists at
+   its route if and only if the generator wrote it — and an eleventh fellow needs
+   no edit here at all.
+
+   The hub's register band links to every one of these, and its own build gate
+   asserts it does, so an unrouted fellow page would show as ten live links to a
+   404 on the one page a partner is handed. */
+function fellowRoutes(): Record<string, string> {
+  const dir = join(PUBLIC, '_pages/v3/healthy-cities/fellows')
+  if (!existsSync(dir)) return {}
+  const out: Record<string, string> = {}
+  for (const f of readdirSync(dir).filter((n) => n.endsWith('.html')).sort()) {
+    out[`/healthy-cities/fellows/${f.slice(0, -'.html'.length)}`] =
+      `healthy-cities/fellows/${f}`
+  }
+  return out
+}
+
 export function designRoutes(): Array<{ source: string; destination: string }> {
   const map: Record<string, string> = {
     '/': 'home.html',
@@ -199,6 +221,18 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
        page, a routed page and a linked page are one change, and any two of them
        without the third is a defect. */
     '/posters': 'posters.html',
+    /* `/healthy-cities` — the 2025-26 Bridge the Gap chapter funded by the Bupa
+       Foundation and Niva Bupa. It is routed in the same commit that builds it,
+       for the reason the four paragraphs above give: a built page, a routed page
+       and a linked page are one change, and any two of them without the third is
+       a defect. The ten fellow pages the register band links to are routed just
+       below, from the built files; the footer row and the `bridge-the-gap`
+       cross-sell are the third part. It is NOT a seventh nav word — the
+       nav is closed at six plus the Give chip — and it is a top-level route
+       rather than a `/work/**` child because a microsite's whole purpose is a
+       short link somebody hands a partner. */
+    '/healthy-cities': 'healthy-cities.html',
+    ...fellowRoutes(),
     '/about': 'about.html',
     '/impact': 'impact.html',
     '/farm': 'farm.html',

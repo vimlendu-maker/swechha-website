@@ -164,6 +164,27 @@ const IMG_SIZES = new Map([
      cap the honest unit is px, not vw. */
   ['pst-f', '(max-width:639px) 90vw, (max-width:1319px) 46vw, 565px'],
   ['mark', '170px'],
+  /* The funder's own mark in /healthy-cities' `#with` band — the only
+     third-party logo on the site (ruling 42). It is NOT `mark`, which is 170px
+     and is Swechha's own chrome lockup: a partner mark reproduced at 170px
+     would put the "Health Insurance" line under 9px.
+     A SINGLE px VALUE, and it is measured rather than derived: `.hc-mark-i` is
+     `width:280px;max-width:100%` inside a panel that is `width:max-content`, so
+     the box does not track the viewport at all above the point where the panel
+     stops fitting. getBoundingClientRect on the built page, five widths:
+       320  -> 232px  (panel 280 — the only width where the wrap gutter bites)
+       375  -> 280px  (panel 328)
+       768  -> 280px
+       1024 -> 280px
+       1440 -> 280px
+     There is no vw fraction to write down here — the honest unit is px, the
+     same conclusion `pst-f` above reaches above the 1240px `.wrap` cap, arrived
+     at from the other direction. 280px OVER-STATES THE 320px CASE BY 48px AND
+     THAT IS THE RIGHT WAY ROUND: the error is one variant at worst, in the
+     never-blurry direction, and both 232 and 280 resolve to the same 640w pick
+     on a DPR-2 phone anyway. A vw value written to fit 320 would under-serve
+     every width above it. */
+  ['hc-mark-p', '280px'],
 ]);
 
 /* The wrapper is the open tag immediately before the image — true of every
