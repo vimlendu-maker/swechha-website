@@ -216,28 +216,39 @@ export const TIER = {
      (`sheet`) correctly takes — a contact sheet of frames that back up an
      argument made in type. Here the type backs up the sheets. */
   posters: 't2',
-  /* ── /healthy-cities. Seven new ids, declared here rather than defaulted for
-        the reason the throw below states: a band's weight is the same wherever
-        the band appears, so it belongs in this table and not in one generator.
-        `fellows` is t2 because it is the band that page exists for — the ten
-        named projects — and t2 is the weight `record` and `kinds` already carry
-        for a full-membership register. `schools` is t2 for the same reason
-        `what` is: it is one of the two halves of the programme, argued in prose
-        beside a frame. `green`, `voices` and `watch` are t3, the supporting
-        weight `sheet` and `who` take — they back the argument up with what was
-        built, who said what, and what was filmed. `gaps` is t2 because a stated
-        hole in the source record is content on this page, not a footnote.
+  /* ── /healthy-cities. Declared here rather than defaulted for the reason the
+        throw below states: a band's weight is the same wherever the band
+        appears, so it belongs in this table and not in one generator.
+
+        ★ THE FOUR DELIVERABLES ALL TAKE t2, AND THAT IS THE POINT. `workshops`,
+        `cityscapes`, `actions` and `fellows` are the programme cut into the four
+        things it delivered, and a reader has to read them as ONE SET rather than
+        as a strong band and three footnotes — so they carry the same weight,
+        the way `what` and `record` do on a WORK page. `fellows` was already t2
+        as the band that page exists for; the other three join it.
+        `voices` and `watch` are t3, the supporting weight `sheet` and `who`
+        take — they back the argument up with who said what and what was filmed.
+
+        ★ `schools`, `green` AND `gaps` ARE GONE. The first two were the old
+        two-band schools half, and their content moved into `workshops` and
+        `actions` when the programme was recut into its four deliverables
+        (2026-09-07 restructure). `gaps` was the "What we cannot say yet" band,
+        struck by the owner on 2026-09-07; three gates in
+        build-healthy-cities.mjs now assert its absence, and leaving its tier
+        row in this table reads as a licence to bring it back.
+
         `did` is the fellow pages' second band — what one fellow set out to do
-        and what they did — at t2 for the reason `what` and `schools` are: it is
-        the band its page exists for, argued in ruled prose. IT IS NOT NAMED
-        `work`, which is what it carries and would read better as an anchor,
-        because a band id may not be a nav word: `Work` is one of the six, and
-        both this section's generators gate on that collision — the frozen
-        active-section strip resolves chips against band ids and a page that
-        declares one named after a nav destination is a page whose own strip and
-        whose primary nav disagree about what is current. */
+        and what they did — at t2 for the reason `what` is: it is the band its
+        page exists for, argued in ruled prose. IT IS NOT NAMED `work`, which is
+        what it carries and would read better as an anchor, because a band id may
+        not be a nav word: `Work` is one of the six, and both this section's
+        generators gate on that collision — the frozen active-section strip
+        resolves chips against band ids and a page that declares one named after
+        a nav destination is a page whose own strip and whose primary nav
+        disagree about what is current. */
   did: 't2',
-  fellows: 't2', schools: 't2', green: 't3', voices: 't3', watch: 't3', gaps: 't2',
+  fellows: 't2', workshops: 't2', cityscapes: 't2', actions: 't2',
+  voices: 't3', watch: 't3',
   onward: 't3',
 };
 
@@ -772,8 +783,15 @@ export const WORK_CSS = `
 @media (max-width:759px){.wk-way .b{width:100%;justify-content:center}}
 @media (max-width:759px){.wk-kinds-all .b{width:100%;justify-content:center;
   padding-top:16px;padding-bottom:16px}}
+/* THE READING PAIR'S 2px RULE IS SCOPED BY BAND ID, so a band that renders
+   figures() and is not named here silently gets the 1px light default instead
+   of the kissing rule the component was designed with. The four /healthy-cities
+   deliverable bands were added when that page was recut into its four
+   deliverables (2026-09-07) and each one closes on a figures() group. */
 #what .w7-pj-num.rl::after,#weight .w7-pj-num.rl::after,
-#done .w7-pj-num.rl::after,#list .w7-pj-num.rl::after{--rl-w:2px;--rl-c:var(--ink-2)}
+#done .w7-pj-num.rl::after,#list .w7-pj-num.rl::after,
+#workshops .w7-pj-num.rl::after,#cityscapes .w7-pj-num.rl::after,
+#actions .w7-pj-num.rl::after,#fellows .w7-pj-num.rl::after{--rl-w:2px;--rl-c:var(--ink-2)}
 
 /* ── (b) THE SAME COMPONENTS, STATED FOR THE DARK GROUND.
       The register rows, the reading pair and the four-kinds rows are all frozen

@@ -1,6 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import { readdirSync } from 'node:fs'
-import { loadFellows, loadProgramme, FELLOW_DIR, WITHHELD, REQUIRED_BAND_KEYS } from './schema'
+import { loadFellows, loadProgramme, figureSchema, FELLOW_DIR, WITHHELD, REQUIRED_BAND_KEYS } from './schema'
+
+/* THE FOUR DELIVERABLE BANDS EACH CLOSE ON A figures() GROUP, and those figures
+   live inside `bands`, which is a z.record of unknown — so nothing in
+   programmeSchema validates them. This walks every band for a `figures` array
+   and runs the real figureSchema over each entry, which is what keeps a band
+   figure to the same standard as a rail figure: a value, a label, a period, a
+   basis out of the enum, and a source. */
+const bandFigures = () => {
+  const out: { band: string; fig: unknown }[] = []
+  for (const [band, v] of Object.entries(loadProgramme().bands)) {
+    const figs = (v as { figures?: unknown[] })?.figures
+    if (Array.isArray(figs)) for (const fig of figs) out.push({ band, fig })
+  }
+  return out
+}
 
 describe('healthy-cities data', () => {
   it('has exactly ten fellows, one file each', () => {
@@ -21,8 +36,42 @@ describe('healthy-cities data', () => {
     expect(all.length).toBeGreaterThan(0)
     for (const fig of all) {
       expect(fig.period, `${fig.label} needs a period`).toBeTruthy()
-      expect(['counted', 'modelled']).toContain(fig.basis)
+      expect(['counted', 'modelled', 'planned']).toContain(fig.basis)
       expect(fig.source, `${fig.label} needs a source`).toBeTruthy()
+    }
+  })
+
+  /* The masthead rail is what the year achieved. `planned` exists so the two
+     proposal targets the owner asked for (100 classroom workshops, five
+     curriculum modules) can be published without claiming somebody counted
+     them — and the place they may NOT appear is the rail, where four numerals
+     sit on the first screen with no room to qualify themselves. Asserted in the
+     data as well as in the build, because the build only sees the run that is
+     happening. */
+  it('publishes no planned target on the masthead rail', () => {
+    for (const fig of loadProgramme().figures) {
+      expect(fig.basis, `${fig.label} is a target, not an achieved figure`).not.toBe('planned')
+    }
+  })
+
+  /* Every `planned` figure has to name the document that planned it. The only
+     source for either of them is the funding proposal; a target sourced to an
+     impact report would mean the report reported it, and neither does. */
+  it('holds every deliverable band figure to the figure schema', () => {
+    const found = bandFigures()
+    expect(found.length, 'the four deliverable bands each close on figures').toBeGreaterThanOrEqual(8)
+    for (const { band, fig } of found) {
+      const r = figureSchema.safeParse(fig)
+      expect(r.success, `bands.${band} has an invalid figure: ${JSON.stringify(fig)}`).toBe(true)
+    }
+  })
+
+  it('sources every planned target to the proposal', () => {
+    const planned = [...loadProgramme().figures, ...loadFellows().flatMap(f => f.figures),
+      ...bandFigures().map(x => x.fig as { basis: string; label: string; source: string })]
+      .filter(f => f.basis === 'planned')
+    for (const fig of planned) {
+      expect(fig.source, `${fig.label} must name the proposal`).toMatch(/proposal/i)
     }
   })
 

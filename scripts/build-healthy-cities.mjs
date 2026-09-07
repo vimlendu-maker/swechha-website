@@ -32,6 +32,21 @@
 //     a PUBLISHED LEGAL LIMIT. It appears five times on the homepage, once per
 //     situation page and zero times on about/impact/act/farm and all twenty WORK
 //     pages. There is no published limit on a school garden.
+//     ★ THAT RULING WAS NEVER A CAP ON NUMERAL SIZE, and reading it as one is
+//     what made this page fail its review. The owner said it does not convey
+//     scale; the grounds were measured and were not the fault (60 per cent dark
+//     against the homepage's 64, no paper touching paper) and the page already
+//     carried MORE running prose than the homepage. What it had was a hole in
+//     the middle of the type ladder — 104px display heads, then nothing until
+//     42px, then nothing until 20.5px — and the largest numeral on it was
+//     `.ip-ovl-v`, the SMALLEST numeral treatment on this site, smaller on a
+//     phone than a `.d2` sentence. The 2026-09-07 restructure fills the missing
+//     rungs with treatments that already exist and are already measured: the
+//     four deliverables as `.d1` display rows (43.2 -> 104px), /farm's masthead
+//     rail in place of /impact's (34 -> 69.1px), a `figures()` group at the foot
+//     of each deliverable band (32 -> 46.1px), and ONE `.d2` sentence carrying
+//     the health argument (24 -> 44px). `.readout` stays refused, and three
+//     gates still prove it.
 //   · NO SECOND `@keyframes`. The homepage's live pulse is the only one on the
 //     whole site.
 //   · ONE FUNDER LOGO, IN THE `#with` BAND, AND IT IS THE ONLY THIRD-PARTY MARK
@@ -52,8 +67,16 @@
 //     THE BUPA FOUNDATION STAYS TYPE-ONLY. It is a separate legal entity (a UK
 //     charity) with no published asset and no published brand policy, so there
 //     is nothing to place; approximating one would be inventing a trademark.
-//   · NO CUMULATIVE FIGURE. Gate 1 computes the sum the rail is tempted by and
-//     asserts its absence from the rendered page in every format it could take.
+//   · NO CUMULATIVE FIGURE, AND NOW NOT PER GROUP EITHER. Gate 1 computes the
+//     sum of EVERY figure group on the page — the masthead rail and each of the
+//     four deliverables' own — plus the grand total, and asserts each is absent
+//     from the rendered page in every format it could take. The four
+//     deliverables SHARE THEIR PEOPLE BY CONSTRUCTION: the 2,000+ students in
+//     the workshops are drawn from the same twenty-six schools whose students
+//     took the twenty trips and built the twenty gardens, so a "young people
+//     reached" aggregate would be a real arithmetic result about nobody. The
+//     sums are derived from the groups rather than listed, so a fifth group is
+//     covered the day somebody authors it.
 import { readFileSync, readdirSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
@@ -117,22 +140,79 @@ const dataFail = (m) => { console.error(`DATA IS WRONG: ${m}`); bad++; };
    render a heading with nothing under it, so the keys are required here as well
    as in the test suite — the test catches a commit nobody rebuilt, this catches
    the build that is running. */
-const BAND_PROSE = ['top', 'what', 'fellows', 'statement', 'schools', 'green',
-  'voices', 'watch', 'with', 'onward'];
+const BAND_PROSE = ['top', 'what', 'kinds', 'workshops', 'cityscapes', 'statement',
+  'actions', 'fellows', 'voices', 'watch', 'with', 'onward'];
+/* THE FOUR DELIVERABLES, IN THE ORDER THEY APPEAR, and the list is what the
+   `kinds` band's display rows, the four bands themselves and the figure-group
+   gates below all read. Naming them once means the display row that opens a
+   deliverable and the band it opens cannot get out of step. */
+const DELIVERABLES = ['workshops', 'cityscapes', 'actions', 'fellows'];
 for (const k of BAND_PROSE) {
   if (!BD[k] || !Object.keys(BD[k]).length) {
     dataFail(`bands.${k} is missing from programme.json. Every band reads its prose from there.`);
   }
 }
 
-for (const f of PROG.figures) {
-  if (!f.period) dataFail(`rail figure "${f.label}" has no period. A figure without a span is not a reading.`);
-  if (!['counted', 'modelled'].includes(f.basis)) dataFail(`rail figure "${f.label}" has basis "${f.basis}".`);
-  if (!f.source) dataFail(`rail figure "${f.label}" has no source.`);
+/* ★ EVERY FIGURE ON THIS PAGE GOES THROUGH ONE CHECK, wherever it is authored.
+   The rail is `programme.figures`; each of the four deliverable bands closes on
+   its own `figures` array inside `bands`, and `bands` is a z.record of unknown
+   in the schema, so nothing there validates them. Collected once, checked once,
+   and used again by the sum gates after the write. */
+const BAND_FIG = DELIVERABLES.flatMap(id => ((BD[id] && BD[id].figures) || [])
+  .map(f => ({ ...f, where: `bands.${id}` })));
+const ALL_FIG = [...PROG.figures.map(f => ({ ...f, where: 'the masthead rail' })), ...BAND_FIG];
+for (const f of ALL_FIG) {
+  if (!f.period) dataFail(`${f.where}: figure "${f.label}" has no period. A figure without a span is not a reading.`);
+  if (!['counted', 'modelled', 'planned'].includes(f.basis)) dataFail(`${f.where}: figure "${f.label}" has basis "${f.basis}".`);
+  if (!f.source) dataFail(`${f.where}: figure "${f.label}" has no source.`);
+  /* A TARGET NAMES THE DOCUMENT THAT SET IT. The only source for either of the
+     two `planned` figures is the funding proposal; sourcing a target to an
+     impact report would say the report reported it, and neither report does. */
+  if (f.basis === 'planned' && !/proposal/i.test(f.source)) {
+    dataFail(`${f.where}: figure "${f.label}" is basis "planned" but its source is "${f.source}". `
+      + 'A target is sourced to the document that set it, which for this programme is the proposal.');
+  }
 }
+/* ★ NO TARGET ON THE MASTHEAD RAIL. The rail is four numerals on the first
+   screen of a page a funder is handed by link, with a label and a span and no
+   room to qualify itself; what belongs there is what the year achieved. The two
+   `planned` figures the owner asked for — the proposal's 100 classroom
+   workshops and its five curriculum modules — sit in the `workshops` band with
+   the prose that says what a module is. */
+for (const f of PROG.figures) {
+  if (f.basis === 'planned') {
+    dataFail(`rail figure "${f.label}" is basis "planned". The rail publishes what the year achieved; `
+      + 'a target belongs in the deliverable band it was set for, beside the prose that explains it.');
+  }
+}
+/* THE RAIL IS FOUR CELLS WIDE. It is no longer figureRail() — see the masthead
+   note below — so nothing slices a fifth figure away in silence any more; the
+   grid takes its column count from the membership. Four is still what is
+   authored and still what the /farm pattern was measured at, so a change to it
+   is a change somebody should have to make here on purpose. */
 if (PROG.figures.length !== W.FIGURE_RAIL_MAX) {
-  dataFail(`the rail takes exactly ${W.FIGURE_RAIL_MAX} tiles and programme.figures has ${PROG.figures.length}. `
-    + 'figureRail() silently slices the rest, so a fifth figure would be authored and never shown.');
+  dataFail(`the masthead rail is authored at ${W.FIGURE_RAIL_MAX} cells and programme.figures has `
+    + `${PROG.figures.length}. The /farm rail pattern this page uses was measured at four across; `
+    + 'widen .hc-rail\'s breakpoints in the same change if that is really the intent.');
+}
+/* Every band that carries figures carries at least two of them. ONE FIGURE IS
+   NOT A GROUP: `figures()` renders a single reading pair in a flex row, which
+   at 46px beside a two-line label reads as an orphan rather than as a set. */
+for (const id of DELIVERABLES) {
+  const n = ((BD[id] && BD[id].figures) || []).length;
+  if (n && n < W.FIGURE_RAIL_MIN) {
+    dataFail(`bands.${id} has ${n} figure. A group is two or more — one numeral beside a heading reads as an orphan.`);
+  }
+}
+/* THE HUB'S SHARE DESCRIPTION IS WRITTEN IN TWO PLACES AND HAS TO BE ONE
+   STRING. The fellow pages already check this (they pass their own `desc` into
+   assemble and verify-seo asserts the shipped head matches the register); the
+   hub takes the register's copy, so the drift shows up as data/seo/pages.json
+   and programme.json disagreeing about the same sentence with nothing to catch
+   it. Checked here, at the build that would make it. */
+if (seo('/healthy-cities').description !== plain(PROG.description)) {
+  dataFail('data/seo/pages.json\'s description for /healthy-cities is not programme.json\'s own. '
+    + 'The register is what ships in the head; the data is what the schema length-checks. They are one sentence.');
 }
 
 const slugs = new Set();
@@ -308,7 +388,14 @@ const STATES = [...new Set(FELLOWS.map(f => f.state))];
    The tier is joined into the class here because situation-shell's assemble()
    reads only [id, class] — work-shell's own buildPage composes the same two
    values, and a band with no tier class would take `section`'s zero padding. */
-const IDS = ['top', 'what', 'fellows',
+/* ★ THE SPINE, AFTER THE 2026-09-07 RECUT. The programme is now the four things
+   it delivered, in the order it delivered them, and `kinds` names all four at
+   display scale before any of them opens. `schools` and `green` are gone: they
+   were the schools half in two bands, and their content is now inside
+   `workshops` and `actions` where the deliverable it belongs to can carry it.
+   The `statement` sits between the third and fourth school-side deliverable so
+   the four do not run as four consecutive rectangles. */
+const IDS = ['top', 'what', 'kinds', 'workshops', 'cityscapes',
   /* `statement` renders only with a photograph: the band IS a display line
      against a frame that runs to the seam, and statementBand has no frameless
      variant because a statement with nothing behind it is a heading. The prose
@@ -317,7 +404,7 @@ const IDS = ['top', 'what', 'fellows',
      section's own mechanism — bandChain re-derives the whole ground chain from
      whatever is on, which is why no chain is written down anywhere. */
   ...(PROG.frames && PROG.frames.find(f => f.slot === 'statement') ? ['statement'] : []),
-  'schools', 'green', 'voices', 'watch', 'with', 'onward'];
+  'actions', 'fellows', 'voices', 'watch', 'with', 'onward'];
 /* Derived rather than hardcoded: any required band this build did not render —
    not just `statement` by name — is a gap the omission note must keep naming.
    If a second band ever becomes frame-conditional, this line does not need
@@ -335,10 +422,15 @@ if (bad) { console.error(`\nREFUSING TO WRITE: ${bad} check(s) failed.`); proces
 
 const frameFor = (slot) => (PROG.frames || []).find(f => f.slot === slot) || null;
 
+/* The section strip's own words, and every one has to resolve to a band this
+   build actually rendered (gate 13). Short forms: the strip scrolls
+   horizontally at 940 and below and is the one place a label competes for
+   width. `#kinds` is the door to all four deliverables, so it stands for them
+   rather than the strip carrying four chips of its own. */
 const INDEX = [
   ['The programme', '#top'],
-  ['In the schools', '#schools'],
-  ['The fellows', '#fellows'],
+  ['What it built', '#kinds'],
+  ['The fellowship', '#fellows'],
   ['Voices', '#voices'],
 ];
 
@@ -399,14 +491,40 @@ const body = {};
    hero -> ticker; a returning reader should recognise the gesture". It costs no
    band id, no ground re-derivation, and it lands all four figures on the first
    screen.
-   ★ .wk-dark IS MANDATORY HERE AND IT IS THE CALLER'S JOB. .ip-ovl-s is the
-   PAPER caption ink (#615B50) because /impact's rail sits on a light masthead;
-   the dark correction is a separate caller-supplied selector. The natural
-   `<div class="wrap">` around the rail would ship #615B50 on #0D0D0B — about
-   2.7:1 on the four period captions, directly under the four headline numbers,
-   on the first screen of a page distributed by link. Nothing catches it:
-   figureRail returns valid markup, the schema passes and the source reads
-   correctly. Gate 2 is the only thing that sees it. */
+
+   ★ THE RAIL IS NOW /farm's, NOT figureRail(). MEASURED, AND THAT IS WHY.
+   The owner reviewed this page and said it does not convey scale. The grounds
+   were not the fault — the alternation here is 60 per cent dark against the
+   homepage's 64, with no paper touching paper — and the page already carries
+   MORE running prose than the homepage (about 630 words to 518). What it had
+   was a hole in the middle of the type ladder, and the rail was the largest
+   part of it: figureRail's `.ip-ovl-v` is clamp(26px,3.4vw,42px), which is the
+   SMALLEST numeral treatment anywhere on this site — smaller on a phone than
+   `.d2`. Four figures on the first screen of a page a funder opens, set smaller
+   than a sentence.
+   `/farm`'s masthead rail is the same object one size class up:
+   clamp(34px,4.8vw,72px) at build-farm-page.mjs:322-326 and :546-552, which is
+   34px against 26 at 375 and 69.1 against 42 at 1440. It is the right structural
+   precedent and not a borrowed one — `/farm`'s rail sits on RULED FACTS with no
+   live reading anywhere on the page, which is exactly this rail's situation, and
+   it is a masthead rail in a `.pic-body` under an h1 on #0D0D0B like this one.
+   `.readout` (99.2 -> 272px) is still refused and three gates still prove it:
+   that scale is licensed by a live reading against a PUBLISHED LEGAL LIMIT, and
+   there is no legal limit on a school garden. What was never true is that the
+   ruling capped numeral size at 42px.
+
+   ★ SO THE RAIL NO LONGER NEEDS .wk-dark, AND THAT IS A REAL DIFFERENCE.
+   figureRail's caption is `.ip-ovl-s`, the PAPER caption ink (#615B50), because
+   /impact's rail sits on a light masthead — so the natural `<div class="wrap">`
+   round it shipped about 2.7:1 on the four period captions, and only a rendered
+   contrast check could see it. The /farm pattern states its own ink for the dark
+   ground (`.hc-rail-l{color:var(--fg-2)}`), the way `.fm-rail-l` does, so the
+   colour is a property of the component instead of a duty of the caller.
+   Gate 2 was rewritten to match: it no longer looks for `.ip-ovl` in a
+   `.wk-dark`, it checks that EVERY paper-frozen component this page renders on
+   a dark band is inside one — which now covers the four deliverables' figure
+   groups and the ten register rows as well, and would have caught the original
+   defect too. */
 body.top = () => `${W.masthead({
   h1: BD.top.h1,
   deck: PROG.deck,
@@ -417,19 +535,144 @@ body.top = () => `${W.masthead({
     `<p class="cap hc-eye">${PROG.identity}</p>`,
   ],
 })}
-    <div class="pic-body hc-rail">${dark(W.figureRail(PROG.figures.map(f => ({
-  ...f, label: plain(f.label), period: plain(f.period),
-}))))}</div>`;
+    <div class="pic-body hc-rail-body"><div class="wrap">
+      <div class="hc-rail" style="--n:${PROG.figures.length}">
+${PROG.figures.map(f => `        <div class="hc-rail-c"><p class="num hc-rail-v">${
+  plain(f.value).replace(/\+$/, '<sup>+</sup>')}</p><p class="lbl hc-rail-l">${
+  esc(plain(f.label))}</p><p class="cap hc-rail-s">${esc(plain(f.period))}</p></div>`).join('\n')}
+      </div>
+    </div></div>`;
 
-/* ── BAND 2. WHAT THE YEAR WAS. ──────────────────────────────────────────
-   Two halves and what came back, as ruled prose rows. openBand rather than
-   opener because it omits its lead paragraph instead of emptying it. */
+/* ── BAND 2. THE HEALTH ARGUMENT, AND THE GAP THE PROGRAMME IS NAMED AFTER.
+   ★ ONE `.d2` SENTENCE, AND HEALTH NEVER GETS A NUMERAL.
+   There are ZERO health statistics and zero citations in the proposal, the
+   impact deck, the synopsis and the fellowship criteria — no AQI figure, no
+   morbidity rate, no WHO or CPCB reference, no disease-burden claim. The
+   programme's health case is entirely a case, and it is a good one. So it is
+   carried by prose and by ONE promoted sentence, and by nothing that looks like
+   a measurement. If a health figure is ever supplied it goes in the data with a
+   period, a basis and a source like every other figure on the page, and it will
+   be a figure about the programme rather than about the country.
+   `.d2` is 24px at 375 and 44px at 1440, Newsreader 300 — the rung that was
+   missing between the display heads and the reading pairs, and it appears
+   exactly ONCE on this page. It is a SENTENCE CARRYING AN ARGUMENT and never a
+   section head: the heading above it is `.d1` and does the heading's work, and
+   using `.d2` for a title is refused by the design language by name. Capped at
+   about 24ch so it breaks as a promoted line rather than as a paragraph.
+   The rows under it are the four things the title actually means: the five
+   environment-to-health links that ARE the curriculum, the 60/40 government-to-
+   private split and the programme's own gloss on "bridge the gap", the theory of
+   change, and the fact that there are two strands and not one strand in two
+   stages. */
 body.what = [
   W.openBand('what', BD.what.head, BD.what.lead),
+  `      <p class="d2 hc-say">${BD.what.line}</p>`,
   W.doRows(BD.what.rows),
 ];
 
-/* ── BAND 3. THE REGISTER, AND THE BAND THIS PAGE EXISTS FOR. ────────────
+/* ── BAND 3. THE FOUR DELIVERABLES, AT DISPLAY SCALE. ────────────────────
+   ★ THIS IS THE LARGEST TYPE MOVE ON THE PAGE AND IT IS ONE FUNCTION CALL.
+   `displayRows` sets each row's name as `.d1 rl` — clamp(2.7rem,8vw,6.5rem),
+   so 43.2px at 375 and 104px at 1440 — with the 2px rule kissing the word and
+   the written line under it. Four of those in a column is a wall of display
+   type where the page previously had one heading, which is the answer to "it
+   does not convey scale" that re-cutting the grounds could not be.
+   THE BAND IS `kinds` AND NOT `deliverables`, deliberately: `kinds` is already
+   declared in work-shell's TIER, already ground-scoped in WORK_CSS (its
+   `--w7-do-def` track and its `.rl` rule), and its precedent is the homepage's
+   own band 4, whose comment says the four kinds ARE the headline. A new id would
+   have needed both of those restated for one page.
+   IT STILL TAKES AN openBand, and that is not a hedge against the precedent.
+   `assemble()` writes `aria-labelledby="kinds-h"` on every section and gate 13
+   asserts the id exists; `displayRows` emits `<h3>`s and no band heading, so a
+   band composed of it alone is a section labelled by nothing. /work's own kinds
+   band makes the same call for the same reason. The head and lead are two short
+   lines above four 104px rows — they are not competing with them.
+   Each row links to the band it opens, so the display type is also the index. */
+body.kinds = [
+  W.openBand('kinds', BD.kinds.head, BD.kinds.lead),
+  W.displayRows(BD.kinds.rows),
+];
+
+/* ── THE FOUR DELIVERABLE BANDS, COMPOSED ONCE. ──────────────────────────
+   Each one is the same four things in the same order, so a reader who has read
+   `workshops` knows where to look in `actions`: the heading and its lead, the
+   argument in running prose, the ruled rows that say what the thing is made of,
+   and then the band's own figures at the foot.
+
+   ★ THE FIGURES RECUR DOWN THE PAGE INSTEAD OF APPEARING ONCE ABOVE THE FOLD,
+   and that is the second half of the scale answer. `figures()` is the reading
+   pair at clamp(2rem,3.2vw,3.1rem) — 32px at 375, 46.1 at 1440 — with no cap on
+   how many it takes, and it is already the component ten WORK pages use. Three
+   or four per band across four bands means a numeral is never more than a screen
+   away, which is what the masthead rail alone could not do however large it was
+   set. WORK_CSS's 2px rule for `.w7-pj-num.rl` is scoped by band id and the four
+   ids were added to that selector list in the same change; without it these
+   groups would silently take the 1px light default.
+
+   ★ AND THE PROSE RENDERS, WHICH IT DID NOT BEFORE. `splitBand` takes its
+   `right` column ONLY when it has no frame (the `if (!frame && right)` branch),
+   so on the two old bands that had a photograph the authored `prose` was dropped
+   in silence — the previous pass found that and recorded it rather than fixing
+   it, because fixing it was a composition change and that was a copy pass. This
+   is the composition change. Where a band has a frame the prose is emitted above
+   the split, in the measure it was written for; where it has none it rides in
+   the split's own second column as the component intends. Either way it is on
+   the page, and a gate below asserts every authored sentence reached it. */
+const deliverable = (id, flip) => {
+  const b = BD[id];
+  const frame = frameFor(id);
+  const prose = (b.prose || []).map(p => `<p class="body hc-prose">${p}</p>`);
+  return [
+    W.openBand(id, b.head, b.lead),
+    frame && prose.length ? `      ${prose.join('\n      ')}` : '',
+    W.splitBand({
+      left: W.doRows(b.rows),
+      frame,
+      right: frame ? '' : prose.join('\n        '),
+      flip,
+    }),
+    (b.figures || []).length ? W.figures(b.figures.map(f => ({
+      ...f, label: plain(f.label), period: plain(f.period),
+    }))) : '',
+  ];
+};
+body.workshops = deliverable('workshops', false);
+body.cityscapes = deliverable('cityscapes', true);
+body.actions = deliverable('actions', false);
+
+/* ── BAND 8. THE GREEN FELLOWSHIP, FRAMED CORRECTLY. ─────────────────────
+   ★ THIS IS THE CORRECTION THAT PROMPTED THE REBUILD, IN THE OWNER'S OWN
+   WORDS: "10 fellowship are different from school work participants. They are
+   not the ones who went to their respective areas. These were 10 heroes
+   selected from across the country and were granted resource and mentorship
+   (in some situations) to pilot their climate and health solution."
+   The documents confirm it completely. It is a NATIONAL OPEN CALL — ninety-five
+   applications against a target of fifty, eligibility 18 to 35, open to
+   students, early-career professionals, community leaders, social entrepreneurs
+   and grassroots innovators; a grant, mentorship, implementation support and
+   certification as a Green Fellow; five selection criteria at twenty per cent
+   each. NO pathway, referral, pipeline or eligibility link between a school
+   participant and a fellow exists in any source, and not one fellow worked in a
+   Delhi partner school — the ten projects are in Moradabad, Majuli, Delhi,
+   Chikkaballapura, Bilaspur, Unnao, Bharuch, Uttarkashi and Sangli. Two strands
+   under one grant, not one strand with two stages, and the band's own rows say
+   so in the fellowship's own terms rather than by denying the other reading.
+   ★ WHO SELECTED THEM IS NEVER STATED in any of the four documents — the
+   criteria say only that applications "will be evaluated" — so no jury, panel or
+   committee is named here. Inventing one would be the easiest sentence on the
+   page to write and there is nothing behind it.
+   ★ AND IT IS THE "GREEN FELLOWSHIP" (owner's ruling, 7 September 2026,
+   reversing an earlier call). That is the name in the grant documents the funder
+   signed, and it is what the proposal, the criteria and the synopsis all call
+   it. The operational Drive artefacts for the same cohort are branded "Influence
+   India Fellowship", which is why the figure sources below still name those
+   reports — a source citation names the document that exists, not the name we
+   publish. The page's own name for the programme is Green Fellowship
+   everywhere, and the closing door reconciles the two by saying Swechha runs it
+   as Influence, which is a fact about the programme rather than about our
+   filing.
+
    Ten rows, one per fellow, each carrying `id="<slug>"` so an inbound link
    lands on itself, and each linking to that fellow's own page. The one licensed
    `.lbl` pre-line names where they worked, which is the fact that tells ten
@@ -439,6 +682,7 @@ body.what = [
    end labels are a published `value` string quoted verbatim. */
 body.fellows = [
   W.openBand('fellows', BD.fellows.head, BD.fellows.lead),
+  W.doRows(BD.fellows.rows),
   W.regRows(FELLOWS.map(f => ({
     anchor: f.slug,
     href: `/healthy-cities/fellows/${f.slug}`,
@@ -459,32 +703,46 @@ body.fellows = [
     }],
     axis: [BD.fellows.range.axis_low, plain(HIGH.value)],
   }),
+  /* The fellowship's own four figures, at the same weight as the other three
+     deliverables'. The grant is published because the criteria document states
+     it per fellow; the TOTAL is not, because no document states that total and
+     ten times a published number is arithmetic somebody did, not a figure
+     anybody reported. */
+  W.figures(BD.fellows.figures.map(f => ({
+    ...f, label: plain(f.label), period: plain(f.period),
+  }))),
 ];
 
 /* ── THE STATEMENT. One display line over a frame, and no figure: a figure
       without its period, its basis and its source is not a reading, and this
       band has room for none of them. The line under it is the eight states,
-      read off the register rather than typed. */
+      read off the register rather than typed.
+      ★ AND THE STATES NOW CARRY A SUBJECT, because the band moved. It used to
+      follow `#fellows`, where an unlabelled list of eight states could only
+      have been the cohort's. The recut puts it between two SCHOOLS-side
+      deliverables, and there an unlabelled "ASSAM / CHHATTISGARH / DELHI …"
+      under "Twenty-six schools gave it a place in the year" reads as the
+      schools' own states — which would be false, since every partner school is
+      in Delhi-NCR. Four words fix it, and they are in the data rather than
+      here because they are the caption a reader sees. */
 body.statement = () => W.statementBand({
   line: BD.statement.line,
-  under: STATES.join(' &nbsp;/&nbsp; '),
+  under: `${BD.statement.under_label} &nbsp;&middot;&nbsp; ${STATES.join(' &nbsp;/&nbsp; ')}`,
   frame: frameFor('statement'),
 });
 
-/* ── BANDS: THE SCHOOLS HALF, IN TWO. ────────────────────────────────────
-   The split puts a short ruled register beside running prose, and `flip`
-   alternates between the two so five stacked bands do not read as five stacked
-   rectangles. `green` takes the frame where there is one; both bands compose
-   without one, which is splitBand's own second branch rather than a special
-   case here. */
-const split = (b, slot, flip) => W.splitBand({
-  left: W.doRows(b.rows),
-  frame: frameFor(slot),
-  right: b.prose.map(p => `<p class="body hc-prose">${p}</p>`).join('\n        '),
-  flip,
-});
-body.schools = [W.openBand('schools', BD.schools.head, BD.schools.lead), split(BD.schools, 'schools', false)];
-body.green = [W.openBand('green', BD.green.head, BD.green.lead), split(BD.green, 'green', true)];
+/* ── THERE IS NO `schools` BAND AND NO `green` BAND, AND NOTHING WAS LOST.
+      They were the schools half of the programme in two bands — "In the
+      schools" and "What is still in the ground" — written before the owner
+      asked for the programme to be cut into its four deliverables. Every
+      sentence in them is now inside the deliverable it belongs to, where the
+      figures for that deliverable sit with it: the one-subject-not-three row and
+      the school-year prose went to `workshops`, the exposure-trip row became the
+      `cityscapes` band in full, and the twenty gardens, the three thousand
+      saplings and the plantation-drive-is-a-photograph prose went to `actions`.
+      Their tier rows were deleted from work-shell's TIER in the same change, so
+      re-adding either id throws rather than silently defaulting to a weight
+      nobody chose. */
 
 /* ── THE VOICES. Every quote is RESOLVED out of the fellow's own file, so this
       band cannot quote somebody the fellow page does not. The panel is the
@@ -662,7 +920,7 @@ const PAGE_CSS = `
       padding of a body block and none of the bottom: the band's tier supplies
       that, and doubling them put 84px of nothing between the numbers and the
       seam. ── */
-.hc-rail{padding-bottom:0}
+.hc-rail-body{padding-bottom:0}
 
 /* ── the register's pre-line. .w7-pj-rows is frozen on paper tokens and the
       .wk-dark statement is what carries it onto a dark band, exactly as the
@@ -735,6 +993,83 @@ const PAGE_CSS = `
    this, so nothing moved out of the gated string by being moved here.
    THE NO-BACKTICK RULE APPLIES HERE TOO — see the head of PAGE_CSS. */
 const HUB_CSS = `
+/* ── THE MASTHEAD RAIL, ONE SIZE CLASS UP. This is /farm's own rail
+      (build-farm-page.mjs:546-552) restated for this page rather than imported,
+      because it lives in that generator's PAGE_CSS and neither the shared shell
+      nor WORK_CSS carries it — the same reason /impact's .ip-pair is restated
+      wherever it is wanted. Every declaration below is /farm's, with three
+      differences and no invented values:
+        · THE COLUMN COUNT COMES FROM THE MEMBERSHIP (--n), written by the
+          caller from programme.figures.length, so nothing slices a fifth figure
+          away in silence the way figureRail did.
+        · THERE IS A THIRD LINE PER CELL. /farm's cells are a numeral and a unit;
+          these are a numeral, the population it counts and the span it counts
+          over, because a figure without its span is not a reading on this site
+          and /impact's rail — the thing this replaces — carried all three.
+        · THE INK IS STATED FOR BOTH GROUNDS. --fg-2/--fg-3 are the dark-ground
+          label and caption inks and this band's ground is pinned to #0D0D0B,
+          but the paper statement is written anyway: the one defect the old rail
+          shipped was a paper caption ink on a dark band, and a component that
+          states its own colour cannot have it got wrong by a caller again.
+      34px at 375 and 69.1 at 1440, against the 26 and 42 this page had. ── */
+.hc-rail{display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));
+  gap:clamp(14px,2.2vw,40px);border-top:1px solid var(--hair);
+  margin-top:var(--gap-row);padding-top:var(--gap-row)}
+.hc-rail-c>*{margin:0;min-width:0}
+.hc-rail-v{font-size:clamp(34px,4.8vw,72px);line-height:.9;color:var(--fg)}
+/* The plus sign on "2,000+" and "3,000+", set exactly as the frozen
+   .w7-pj-num sup sets it (home.html:2403-2405) rather than left to the
+   browser's default superscript, which at 69px would be a 57px plus sign. ── */
+.hc-rail-v sup{font-size:.3em;font-variation-settings:'wdth' 88,'wght' 700;
+  letter-spacing:.02em;vertical-align:baseline;position:relative;top:-.66em;
+  color:var(--fg-2)}
+.hc-rail-l{margin-top:10px;color:var(--fg-2)}
+.hc-rail-s{margin-top:8px;color:var(--fg-3)}
+.paper .hc-rail,.paper-2 .hc-rail{border-top-color:var(--rule)}
+.paper .hc-rail-v,.paper-2 .hc-rail-v{color:var(--ink)}
+.paper .hc-rail-v sup,.paper-2 .hc-rail-v sup{color:var(--ink-2)}
+.paper .hc-rail-l,.paper-2 .hc-rail-l{color:var(--ink-2)}
+.paper .hc-rail-s,.paper-2 .hc-rail-s{color:var(--ink-3)}
+/* /farm's own two breakpoints, unchanged: four cells become two under 900 and
+   one under 420, because a 34px numeral over a two-line label needs about 150px
+   of column and a 375px screen minus the gutters gives 335px for the row. ── */
+@media (max-width:900px){.hc-rail{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}}
+@media (max-width:420px){.hc-rail{grid-template-columns:minmax(0,1fr);gap:18px}}
+
+/* ── THE PROMOTED HEALTH SENTENCE. One on the page, and .d2's own declarations
+      (Newsreader 300, var(--t-d2), line-height 1.12) arrive in the inherited
+      stylesheet — so this rule is only its measure, its space and its ink on
+      the two grounds it can land on. 24ch is what makes it break as a promoted
+      line rather than as a paragraph; the same reason the display heads above it
+      carry a max-width in ch and not in pixels. ── */
+.hc-say{margin:var(--gap-row) 0 0;max-width:24ch;color:var(--fg)}
+.paper .hc-say,.paper-2 .hc-say{color:var(--ink)}
+
+/* ── THE ARGUMENT WHERE IT SITS ABOVE THE SPLIT RATHER THAN INSIDE IT.
+      splitBand takes its right column ONLY when it has no frame, so on a band
+      that HAS a photograph the prose is emitted between the opener and the
+      split — which is the fix for the two paragraphs this page dropped in
+      silence from the day it was built. It needs the row gap the split's own
+      grid would otherwise have given it. Written as a sibling relationship
+      rather than a second class, because it is the same paragraph either way. ── */
+.im-head+.hc-prose{margin-top:var(--gap-row)}
+.hc-prose+.w7-pj-split{margin-top:var(--gap-row)}
+
+/* ── A FIGURE GROUP AT THE FOOT OF A DELIVERABLE BAND. .w7-pj-nums is frozen as
+      a flex row with no margin of its own, because on the homepage it sits
+      inside a project card whose padding supplies the space. Here it closes a
+      band, under a split or under a register, so it has to state its own — on a
+      hairline, because the group is a separate object from the rows above it and
+      without one the numerals read as one more row.
+      Scoped by band id and not written on the class: .w7-pj-nums also appears on
+      the ten fellow pages, in the spill group beside the record of the work,
+      where it must keep the spacing that composition was measured at. ── */
+#workshops .w7-pj-nums,#cityscapes .w7-pj-nums,#actions .w7-pj-nums,#fellows .w7-pj-nums{
+  margin-top:var(--gap-row);padding-top:var(--gap-row);border-top:1px solid var(--hair)}
+/* The paper statement changes only the RULE'S COLOUR, so it is safe on the
+   class: where the rule above has not reached, there is no border to recolour. ── */
+.paper .w7-pj-nums,.paper-2 .w7-pj-nums{border-top-color:var(--rule)}
+
 /* ── THE FUNDER'S MARK, AND THE PANEL IS LOAD-BEARING. The asset is an opaque
       white PNG and this band is #0D0D0B, so the panel is what makes the mark
       legible instead of a white rectangle on black. background is a literal
@@ -776,9 +1111,12 @@ const OUT = await S.assemble({
     const v = B[id];
     return typeof v === 'function' ? v() : (v ?? '    <div class="wrap"><p class="lead">&mdash;</p></div>');
   },
-  note: `${BANDS.length} bands + footer. ${FELLOWS.length} fellows in ${STATES.length} states, `
-      + `${PROG.figures.length} rail figures, ${VOICES.length} resolved voices, `
-      + `${PROG.videos.length} video series.`
+  note: `${BANDS.length} bands + footer. ${DELIVERABLES.length} deliverables `
+      + `(${DELIVERABLES.map(id => `${id}: ${((BD[id] && BD[id].figures) || []).length} fig`).join(', ')}), `
+      + `${FELLOWS.length} fellows in ${STATES.length} states, `
+      + `${PROG.figures.length} rail figures at 34-69px, ${BAND_FIG.length} band figures at 32-46px, `
+      + `${VOICES.length} resolved voices, ${PROG.videos.length} video series, `
+      + `${(PROG.frames || []).length} frames (${(PROG.frames || []).map(f => f.slot).join(', ')}).`
       + (OMITTED.length ? ` OMITTED (no frame yet): ${OMITTED.join(', ')}.` : '')
       /* THE MARK'S PROVENANCE, in the one place a mark can carry it. A
          photograph's provenance is its content/photo-library.json row and a
@@ -822,39 +1160,119 @@ const fmts = (n) => [...new Set([
   n.toLocaleString('en-IN'), n.toLocaleString('en-US'), String(n), S.compact(n),
   `${(n / 1e5).toFixed(1)} lakh`, `${(n / 1e6).toFixed(1)} million`,
 ])];
-const SUM_FORMS = fmts(RAIL_SUM);
-const alsoReal = PROG.figures.concat(...FELLOWS.map(f => f.figures || []))
-  .filter(f => SUM_FORMS.includes(String(f.value)));
-if (alsoReal.length) {
-  console.error(`REFUSING TO PASS: "${alsoReal[0].label}" is published as ${alsoReal[0].value}, which is also the `
-    + 'sum of the four rail figures. One of the two has to change — this gate cannot tell them apart.');
-  fail++;
+/* ★ AND IT IS EVERY GROUP NOW, NOT JUST THE RAIL. The restructure gave four
+   more bands a figures() group of their own, and each of those is a fresh
+   temptation to print a subtotal under it — "2,105 workshop touchpoints" out of
+   100 workshops, 5 modules and 2,000+ students would be a number about nothing.
+   So the gate runs over every group this page renders plus the grand total of
+   all of them, and it is DERIVED from the groups rather than listing them, so a
+   fifth group is covered the day it is authored. */
+const GROUPS = [
+  ['the masthead rail', PROG.figures],
+  ...DELIVERABLES.filter(id => ((BD[id] && BD[id].figures) || []).length)
+    .map(id => [`the ${id} band`, BD[id].figures]),
+];
+const SUMS = [
+  ...GROUPS.map(([where, figs]) => [where, figs.reduce((a, f) => a + (magnitude(f.value) || 0), 0)]),
+  ['every figure group together', ALL_FIG.reduce((a, f) => a + (magnitude(f.value) || 0), 0)],
+];
+const ALL_PUBLISHED = PROG.figures.concat(BAND_FIG, ...FELLOWS.map(f => f.figures || []));
+let sumOk = true;
+for (const [where, n] of SUMS) {
+  const forms = fmts(n);
+  const alsoReal = ALL_PUBLISHED.filter(f => forms.includes(String(plain(f.value))));
+  if (alsoReal.length) {
+    console.error(`REFUSING TO PASS: "${alsoReal[0].label}" is published as ${alsoReal[0].value}, which is also `
+      + `the sum of ${where}. One of the two has to change — this gate cannot tell them apart.`);
+    fail++; sumOk = false;
+  }
+  const leaked = forms.filter(t => TEXT.includes(t));
+  if (leaked.length) {
+    console.error(`  the sum of ${where} is ${n.toLocaleString('en-IN')} and it LEAKED as: ${leaked.join(', ')}`);
+    sumOk = false;
+  }
 }
-const leaked = SUM_FORMS.filter(t => TEXT.includes(t));
-gate(leaked.length === 0,
-  `no cumulative total is printed — the ${PROG.figures.length} rail figures sum to `
-  + `${RAIL_SUM.toLocaleString('en-IN')} and it appears in no format`
-  + `${leaked.length ? `. LEAKED: ${leaked.join(', ')}` : ''}`);
+gate(sumOk,
+  `no cumulative total is printed — ${SUMS.length} sums (${GROUPS.length} figure group(s) and the grand `
+  + 'total) appear in no format the page could take. The four deliverables SHARE THEIR PEOPLE by '
+  + 'construction: the 2,000+ students in the workshops are drawn from the same schools whose students '
+  + 'took the twenty trips and built the twenty gardens, so an aggregate would be a real number about '
+  + 'nobody. RAIL_SUM = ' + RAIL_SUM.toLocaleString('en-IN'));
 
-/* 2. THE FIGURE RAIL IS INSIDE A .wk-dark ANCESTOR.
-      .ip-ovl-s is #615B50, the paper caption ink, because /impact's rail sits
-      on a light masthead. This one sits on #0D0D0B. Written the natural way it
-      ships about 2.7:1 on the four period captions and NOTHING else notices:
-      the markup is valid, the schema passes, a source read looks right and so
-      does the accessibility tree. Only a rendered contrast check sees it, and
-      only if somebody runs one. So the structure is asserted instead — every
-      .ip-ovl on this page opens inside a .wk-dark. */
-const rails = [...OUT.matchAll(/<div class="ip-ovl"/g)];
-const railsInDark = rails.filter((m) => {
-  const before = OUT.slice(0, m.index);
-  const open = before.lastIndexOf('wk-dark');
-  /* The wrapper must still be OPEN: no closing tag may sit between it and the
-     rail, or the .wk-dark it found is a previous band's. */
-  return open !== -1 && !before.slice(open).includes('</div>');
-});
-gate(rails.length > 0 && railsInDark.length === rails.length,
-  `all ${rails.length} figure rail(s) sit inside a .wk-dark wrapper`);
+/* 2. EVERY PAPER-FROZEN COMPONENT ON A DARK BAND IS INSIDE A .wk-dark, AND THIS
+      GATE IS WIDER THAN THE ONE IT REPLACES.
+      It used to assert that every `.ip-ovl` opened inside a `.wk-dark`, because
+      `.ip-ovl-s` is #615B50 — the PAPER caption ink, since /impact's rail sits
+      on a light masthead — and written the natural way it shipped about 2.7:1 on
+      the four period captions under the four headline numbers, on the first
+      screen of a page distributed by link. Nothing else noticed: the markup was
+      valid, the schema passed, the source read correctly and so did the
+      accessibility tree. Only a rendered contrast check sees it, and only if
+      somebody runs one.
+      The masthead rail is no longer `.ip-ovl` — it states its own ink for both
+      grounds — so an unchanged gate would have passed on an empty set, which is
+      the worst outcome available. What replaced it checks the CLASS OF DEFECT
+      instead of the one instance: the register rows, the reading pairs and the
+      four-kinds rows are ALL frozen on paper tokens (--ink, --ink-2, --ink-3,
+      --rule), the restructure put reading pairs on three more bands and
+      four-kinds rows on a fourth, and any of those landing on #0D0D0B or
+      #151512 without the wrapper is the same 1-to-3:1 failure. Asserted per
+      BAND, from the ground the band itself declares. */
+const DARK_HEX = new Set(['#0D0D0B', '#151512']);
+const PAPER_FROZEN = ['ip-ovl', 'w7-pj-nums', 'w7-pj-rows', 'w7-do-list', 'wk-names'];
+/* THE RANGES IN WHICH A .wk-dark <div> IS ACTUALLY OPEN, by counting div depth
+   rather than by looking for the next closing tag. The old version of this gate
+   asked whether any `</div>` sat between the wrapper and the component, which
+   was true of the one case it was written for (the rail was the wrapper's first
+   child) and false the moment a component followed a nested block — the split's
+   own two columns close before the figure group opens. A gate that is right
+   about one arrangement and wrong about the next is worse than none. */
+const wkDarkRanges = (html) => {
+  const out = [];
+  const open = /<div class="wrap wk-dark">/g;
+  let m;
+  while ((m = open.exec(html))) {
+    let depth = 0, i = m.index;
+    const tag = /<(\/?)div\b/g;
+    tag.lastIndex = i;
+    let t;
+    while ((t = tag.exec(html))) {
+      depth += t[1] ? -1 : 1;
+      if (depth === 0) { out.push([m.index, t.index]); break; }
+    }
+  }
+  return out;
+};
+const RANGES = wkDarkRanges(OUT);
+const inDarkWrap = (i) => RANGES.some(([a, b]) => i > a && i < b);
+const unlit = [];
+let litBands = 0;
+for (const [id, , hex] of BANDS) {
+  if (!DARK_HEX.has(hex)) continue;
+  const start = OUT.indexOf(`id="${id}"`);
+  if (start === -1) continue;
+  const end = OUT.indexOf('</section>', start);
+  const bandHtml = OUT.slice(start, end);
+  const present = PAPER_FROZEN.filter(c => new RegExp(`class="(?:[^"]*\\s)?${c}\\b`).test(bandHtml));
+  if (!present.length) continue;
+  litBands++;
+  for (const c of present) {
+    const re = new RegExp(`class="(?:[^"]*\\s)?${c}\\b`, 'g');
+    let m;
+    while ((m = re.exec(bandHtml))) {
+      if (!inDarkWrap(start + m.index)) { unlit.push(`${id}/.${c}`); break; }
+    }
+  }
+}
+gate(litBands > 0 && unlit.length === 0,
+  `every paper-frozen component on a dark band sits inside an open .wk-dark `
+  + `(${litBands} band(s), ${RANGES.length} wrapper(s))`
+  + `${unlit.length ? `; UNLIT: ${unlit.join(', ')}` : ''}`);
 gate(/<div class="wrap wk-dark">/.test(OUT), 'the page states .wk-dark for its paper-authored components on dark ground');
+/* AND THE MASTHEAD RAIL STATES ITS OWN INK RATHER THAN INHERITING A CALLER'S.
+   The whole reason the /farm pattern is safe where figureRail was not. */
+gate(/\.hc-rail-l\{[^}]*color:var\(--fg-2\)/.test(HUB_CSS) && /\.hc-rail-s\{[^}]*color:var\(--fg-3\)/.test(HUB_CSS),
+  'the masthead rail states the dark-ground label and caption inks itself');
 
 /* 3. NO DOUBLE-ESCAPED ENTITY. This data is authored with HTML entities and
       three shared components esc() their arguments, so one wrong call ships the
@@ -978,6 +1396,123 @@ gate(unquoted.length === 0,
   `all ${VOICES.length} resolved quotes render${unquoted.length ? `; MISSING: ${unquoted.map(q => q.speaker).join(', ')}` : ''}`);
 gate(OUT.includes(plain(LOW.value)) && OUT.includes(plain(HIGH.value)),
   `the engagement range prints its two published endpoints (${LOW.value} from ${LOW.fellow.slug}, ${HIGH.value} from ${HIGH.fellow.slug})`);
+
+/* 9b. EVERY DELIVERABLE BAND'S OWN FIGURES REACH THE PAGE, IN THE BAND THAT
+       AUTHORED THEM. Asserted by position and not just by presence: a figure
+       group emitted into the wrong band would still be "on the page", and the
+       whole reason these exist is that the numeral recurs beside the argument it
+       belongs to. */
+const lostFig = [];
+for (const id of DELIVERABLES) {
+  const figs = (BD[id] && BD[id].figures) || [];
+  if (!figs.length) continue;
+  const start = OUT.indexOf(`id="${id}"`);
+  const bandHtml = start === -1 ? '' : OUT.slice(start, OUT.indexOf('</section>', start));
+  for (const f of figs) {
+    if (!bandHtml.includes(plain(f.value).replace(/\+$/, '<sup>+</sup>'))) lostFig.push(`${id}/${f.value}`);
+  }
+}
+gate(lostFig.length === 0,
+  `all ${BAND_FIG.length} deliverable-band figures render in their own band`
+  + `${lostFig.length ? `; MISSING: ${lostFig.join(', ')}` : ''}`);
+
+/* 9c. EVERY AUTHORED SENTENCE OF PROSE RENDERS — AND THIS GATE EXISTS BECAUSE
+       IT DID NOT. `splitBand` takes its `right` column only when it has no
+       frame, so both bands that carried a photograph dropped their authored
+       `prose` in silence from the day this page was built: valid markup, passing
+       schema, and two of the best paragraphs on the page never shipped. The
+       composition was changed (see `deliverable()`), and this is what stops it
+       silently reverting. Checked per band, by the sentence. */
+const lostProse = [];
+for (const id of DELIVERABLES) {
+  const prose = (BD[id] && BD[id].prose) || [];
+  const start = OUT.indexOf(`id="${id}"`);
+  const bandHtml = start === -1 ? '' : OUT.slice(start, OUT.indexOf('</section>', start));
+  for (const p of prose) if (!bandHtml.includes(p)) lostProse.push(`${id}: ${p.slice(0, 48)}...`);
+}
+gate(lostProse.length === 0,
+  `every authored prose paragraph renders in its own band`
+  + `${lostProse.length ? `; DROPPED: ${lostProse.join(' | ')}` : ''}`);
+
+/* 9d. THE TYPE LADDER HAS NO HOLE IN THE MIDDLE OF IT, AND THAT IS THE WHOLE
+       POINT OF THE RESTRUCTURE. The owner said the page does not convey scale.
+       It was not the grounds — the alternation measured 60 per cent dark against
+       the homepage's 64 with no paper touching paper, and the page already
+       carried more running prose than the homepage. It was that the page ran
+       104px display heads, then nothing until 42px, then nothing until 20.5px:
+       the rungs at 69, 46 and 44 were all missing, and the largest numeral on it
+       was the SMALLEST numeral treatment on the site. Four rungs are asserted
+       here as elements, because a page can lose one of them to a data edit and
+       nothing else would say so:
+         · `.d1 rl w7-do-t` — the four deliverables at 43.2 -> 104px;
+         · `.num hc-rail-v`  — the masthead rail at 34 -> 69.1px;
+         · `.w7-pj-num`      — the reading pairs at 32 -> 46.1px;
+         · `.d2`             — the one promoted health sentence at 24 -> 44px.
+       `.readout` (99.2 -> 272px) stays refused and gate 5 still proves it. */
+const LADDER = [
+  ['the four deliverables at display scale', /class="d1 rl w7-do-t"/, 4],
+  ['the masthead rail', /class="num hc-rail-v"/, PROG.figures.length],
+  ['the reading pairs', /class="w7-pj-num rl"/, BAND_FIG.length],
+  ['the promoted health sentence', /class="d2 hc-say"/, 1],
+];
+for (const [what, re, n] of LADDER) {
+  const found = (OUT.match(new RegExp(re.source, 'g')) || []).length;
+  gate(found === n, `${what}: ${found} of ${n} expected`);
+}
+/* AND THE HEALTH SENTENCE IS THE ONLY `.d2` ON THE PAGE. Used more than once it
+   stops being a promotion, and used as a heading it is refused by the design
+   language by name — the heading above it is the `.d1` that does that work. */
+const d2s = [...OUT.matchAll(/class="[^"]*\bd2\b[^"]*"/g)].map(m => m[0]);
+gate(d2s.length === 1 && d2s[0] === 'class="d2 hc-say"',
+  `exactly one .d2 on the page and it is the health sentence${d2s.length === 1 ? '' : `; FOUND: ${d2s.join(', ')}`}`);
+
+/* 9e. HEALTH CARRIES NO NUMERAL, AND IT IS THE OWNER'S SECOND INSTRUCTION.
+       There are ZERO health statistics and zero citations in the proposal, the
+       impact deck, the synopsis and the fellowship criteria — no AQI figure, no
+       morbidity rate, no disease-burden claim, no WHO or CPCB reference. So no
+       figure on this page may be labelled as a health measurement: every one of
+       them counts students, schools, saplings, trips, gardens, modules,
+       applications, fellows, states or rupees, and a figure whose label reached
+       for a health outcome would be a number this programme never measured. */
+const healthy = ALL_PUBLISHED.filter(f => /\b(health|respiratory|asthma|morbidity|disease|AQI|PM2\.?5|PM10)\b/i
+  .test(plain(f.label)));
+gate(healthy.length === 0,
+  'no figure claims a health measurement — the sources carry none, so the argument is prose and one sentence'
+  + `${healthy.length ? `; FOUND: ${healthy.map(f => `"${f.label}"`).join(', ')}` : ''}`);
+
+/* 9f. THE FOUR DISPLAY ROWS OPEN THE FOUR BANDS. `kinds` is the page's index at
+       display scale, so a row pointing at a band this build did not render is a
+       104px control that does nothing — the same defect the section strip's own
+       chips are gated against, one size class louder. */
+const deadKind = BD.kinds.rows.filter(r => !r.href.startsWith('#') || !IDS.includes(r.href.slice(1)));
+gate(deadKind.length === 0,
+  `all ${BD.kinds.rows.length} display rows open a band on this page`
+  + `${deadKind.length ? `; DEAD: ${deadKind.map(r => r.href).join(', ')}` : ''}`);
+gate(BD.kinds.rows.length === DELIVERABLES.length
+  && BD.kinds.rows.every((r, i) => r.href === `#${DELIVERABLES[i]}`),
+  `the display rows are the four deliverables, in the order the page renders them`);
+
+/* 9g. THE FELLOWSHIP IS NAMED THE GREEN FELLOWSHIP AND IS NOT DESCRIBED AS THE
+       SCHOOLS' NEXT STAGE. This is the correction that prompted the rebuild: the
+       ten were selected nationally by open call and were never school
+       participants, and no source describes any pathway between the two. The
+       page may say the word "Influence" once, because Swechha runs the
+       fellowship under that name and the closing door reconciles the two names
+       with it; what it may not do is imply continuity. */
+gate(/\bGreen Fellowship\b/.test(TEXT), 'the page calls it the Green Fellowship');
+const continuity = [
+  /students?\s+(?:who\s+)?(?:then\s+)?(?:went|returned|go)\s+(?:back\s+)?(?:home|to their)/i,
+  /graduat\w+\s+(?:in)?to\s+(?:the\s+)?fellow/i,
+  /from (?:the )?(?:school|classroom)s? (?:in)?to (?:the )?fellow/i,
+  /fellows?\s+(?:were|was)\s+(?:chosen|selected|drawn)\s+from\s+(?:the\s+)?(?:school|student)/i,
+];
+const implied = continuity.filter(re => re.test(TEXT));
+gate(implied.length === 0,
+  'nothing implies the fellows came out of the partner schools — two strands under one grant, not two stages'
+  + `${implied.length ? `; MATCHED: ${implied.map(r => r.source).join(' | ')}` : ''}`);
+const influences = (TEXT.match(/\bInfluence\b/g) || []).length;
+gate(influences <= 1,
+  `the operational name appears at most once (found ${influences}) — the page's own name for it is Green Fellowship`);
 
 /* 10. THE COUNTED/MODELLED LEGEND IS PRESENT IF AND ONLY IF SOMETHING IS
        MODELLED. An unexplained dotted rule is worse than no rule; a legend for
@@ -1237,7 +1772,7 @@ for (const f of FELLOWS) {
     f.period].join(' &middot; ')}</p>`,
     ],
   })}
-    <div class="pic-body hc-rail">${dark(railBlock)}</div>`;
+    <div class="pic-body hc-rail-body">${dark(railBlock)}</div>`;
 
   /* ── BAND 2. THE WORK: WHAT IT SET OUT TO DO, THEN WHAT WAS DONE.
         The aims are a heading over a sentence each, which is exactly the ruled

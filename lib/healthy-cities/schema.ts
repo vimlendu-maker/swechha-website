@@ -25,16 +25,35 @@ export const WITHHELD = [
    nothing under it. The generator dies on a missing key too — this is the same
    assertion made in the test suite, so it fails on a commit nobody rebuilt.
    Adding a band to the hub means adding its id here in the same change. */
+/* 2026-09-07 RESTRUCTURE. `schools` and `green` are gone: the programme is now
+   cut into the four things it delivered — `workshops`, `cityscapes`, `actions`
+   and the Green Fellowship (`fellows`) — and the two old bands' content moved
+   into the first and third of those. `kinds` is the display-row band that names
+   all four. The tier rows for `schools`, `green` and the struck `gaps` band were
+   removed from work-shell's TIER in the same change, so a band id re-added here
+   without a tier throws rather than defaulting. */
 export const REQUIRED_BAND_KEYS = [
-  'top', 'what', 'fellows', 'statement', 'schools', 'green',
-  'voices', 'watch', 'with', 'onward',
+  'top', 'what', 'kinds', 'workshops', 'cityscapes', 'statement', 'actions',
+  'fellows', 'voices', 'watch', 'with', 'onward',
 ] as const
 
+/* ★ `planned` IS A THIRD BASIS AND IT IS NOT A ROUNDING OF `counted`.
+   The owner ruled (2026-09-07) that the page publishes the proposal's 100
+   classroom workshops and its five curriculum modules, because no report gives
+   an achieved count for either. Those are TARGETS out of a funding proposal,
+   and calling a target `counted` asserts an observation nobody made — the
+   figure would then be indistinguishable in the data from the 3,000+ saplings
+   somebody actually counted. `basis` is not rendered on the page (AD-28 struck
+   the basis rule and the legend that decoded it), so this changes no pixel; it
+   changes what the data claims, which is the thing a later session reads.
+   A gate in build-healthy-cities.mjs refuses a `planned` figure on the masthead
+   rail — the rail is what the year achieved, and a target does not belong on
+   it. */
 export const figureSchema = z.strictObject({
   value: z.string().min(1),
   label: z.string().min(1),
   period: z.string().min(1),
-  basis: z.enum(['counted', 'modelled']),
+  basis: z.enum(['counted', 'modelled', 'planned']),
   source: z.string().min(1),
   note: z.string().optional(),
 })
