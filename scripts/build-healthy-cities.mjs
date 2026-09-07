@@ -1,5 +1,9 @@
 // /healthy-cities — the hub for Bridge the Gap's 2025-26 Healthy Cities
-// chapter, funded by the Bupa Foundation and Niva Bupa Health Insurance.
+// chapter, funded by the Bupa Foundation and Niva Bupa Health Insurance, AND
+// the ten fellow pages under /healthy-cities/fellows/<slug> that its register
+// band links to. ELEVEN PAGES, ONE GENERATOR, deliberately: the hub's rows and
+// a fellow's own masthead read the same two loaders, so a fellow's name, place,
+// project or figure cannot differ between the register and the page it opens.
 //
 // ★ IT IS AN INTERIOR PAGE WHOSE MASTHEAD DOES THE LANDING-PAGE WORK.
 // The obvious brief for a page a partner is handed by link is "make it look
@@ -35,7 +39,7 @@
 //     sit, and again in its own band in the same grammar bridge-the-gap uses.
 //   · NO CUMULATIVE FIGURE. Gate 1 computes the sum the rail is tempted by and
 //     asserts its absence from the rendered page in every format it could take.
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import * as W from './lib/work-shell.mjs';
@@ -701,4 +705,405 @@ if (fail) {
   console.error(`\n${fail} gate(s) failed. The file is written — fix the generator and rebuild.`);
   process.exit(1);
 }
-console.log(`\n${OUT.length.toLocaleString('en-IN')} bytes. All gates pass.`);
+console.log(`\n${OUT.length.toLocaleString('en-IN')} bytes. All hub gates pass.`);
+
+/* ═══ THE TEN FELLOW PAGES ═══════════════════════════════════════════════
+   One page per file in data/healthy-cities/fellows/, five bands each, and the
+   spine stays five because most fellows have five things: who they are and what
+   they counted, what they did, who spoke, what the report does not settle, and
+   the way on to the other nine.
+
+   ★ EACH PAGE BUILDS ITS OWN INDEX. The hub's five chips are #top, #schools,
+   #fellows, #voices and #gaps; three of those bands do not exist here. An
+   in-page href to a missing id is `FAIL:no-such-id` to the WORK section's link
+   census, and the frozen section strip silently drops the chip — so the visible
+   result of borrowing the hub's index is a control strip where three of five
+   controls do nothing. The chips are derived from the bands this page actually
+   rendered, and a gate below asserts every one of them resolves.
+
+   ★ AND EACH PAGE BUILDS ITS OWN BAND CHAIN, because `gaps` is conditional:
+   a fellow whose report settles everything gets no named-hole band rather than
+   a heading over nothing. bandChain re-derives the whole ground rhythm from
+   whatever is on, which is why no chain is written down here either.
+
+   ★ WHAT IS DELIBERATELY NOT HERE is what is not on the hub, for the same
+   reasons and checked by the same gates: no state chip, no `.readout`, no
+   second `@keyframes`, no borrowed logo. Ruling 6's own words — a corner badge
+   reading PERIODIC over an editor-entered figure would be the worst thing on
+   the site — apply harder here, because these ten pages are a person's name
+   over their own report. */
+mkdirSync(join(S.V3, 'healthy-cities', 'fellows'), { recursive: true });
+
+/* THE HEADINGS ARE PAGE FURNITURE, NOT DATA, and this is the one place these
+   pages differ from the hub. The hub reads every heading out of
+   programme.json's `bands` because those headings ARE that page's content, and
+   an editor renaming "The ten" should not need a generator. A fellow page's
+   four headings are identical on all ten pages — they are the template, the way
+   onwardBand's own "Get involved" is — and moving them into programme.json
+   would put them inside `bands`, where the hub's OMITTED line reads every key
+   the hub did not render and would start reporting them as bands it dropped. */
+const F_HEAD = {
+  did: 'The work',
+  voices: 'What people said',
+  gaps: 'What we cannot say yet',
+  onward: 'The rest of the cohort',
+};
+/* The section strip's own words. Shorter than the heads where the head is long:
+   the strip is a horizontally scrolling control at 940 and below, and it is the
+   one place on the page where a label is competing for width. */
+const F_CHIP = {
+  top: 'The fellow', did: 'The work', voices: 'What people said',
+  gaps: 'What we cannot say yet', onward: 'The cohort',
+};
+
+/* NO TESTIMONIAL, SAID AS A SENTENCE. Three of the ten reports carry no direct
+   speech at all — miyawaki-forests records what was planted and where,
+   swapnil-chaurasiya puts two fathers' account in the report's own words rather
+   than theirs, and tawheed-zubair's three Hindi testimonials survive only as
+   broken text. So this band would be a heading over nothing on three pages, and
+   `hole()` is the site's device for exactly that: a named absence in the SOURCE
+   RECORD, set as a real sentence rather than a dash or a zero. It is one
+   sentence for all three because it is the one thing true of all three; each
+   file's own `holes` then says which of the three cases it is, in its own
+   words, one band down. */
+const NO_VOICE = 'The report on this project sets down nothing in anybody&rsquo;s own words.';
+
+/* ── THE NAMED LIST, one group per column, `--n` from the membership.
+      This is the component AD-17's band 5 built for "schools, partners and
+      funders BY NAME" — the register's own hairline used across instead of
+      down — and it is what the hub's own funder credit is set in. Two things
+      about the call below are deliberate:
+        · NO `wk-names-1`. That class flows a single group's list into three
+          columns, and the frozen note says why: at --n:1 a list of NAMES would
+          each take a 1,148px ruled row for fifteen characters of ink. What was
+          done is a sentence, not a name — 40 to 100 characters — so the
+          full-width ruled row is the right shape for it and the three-column
+          remedy would break sentences across column boundaries.
+        · THE ITEMS GO IN RAW, not through esc(). The `did` lines are authored
+          prose carrying HTML entities ("planted 3,000 native saplings &mdash;
+          arjuna, simolu and elephant apple"), exactly as the prose the hub
+          hands doRows does; esc() would ship the literal text "&mdash;" and
+          gate 3 below is what proves it did not. */
+const namedList = (groups) => `      <div class="wk-names" style="--n:${groups.length}">
+${groups.map(g => `        <div><span class="lbl">${g.label}</span><ul>${
+  g.items.map(i => `<li>${i}</li>`).join('')}</ul></div>`).join('\n')}
+      </div>`;
+
+/* A fellow's frames are a contact sheet where order is the only thing that
+   matters, so `slot` is optional on them (schema note on frameSchema). Read the
+   same way the hub reads its own, so the photography pass has one convention. */
+const fellowFrame = (f, slot) => (f.frames || []).find(x => x.slot === slot) || null;
+
+/* The hub's applyCanvas passes `onward` through untouched because onwardBand
+   carries its own .wrap. A fellow page's closing band does not use that
+   component — it is an opener, a register and one link out — so only `top` is
+   exempt here. Everything else takes the canvas its own declared ground asks
+   for, which is what puts .wk-dark round the paper-frozen components on the
+   two dark bands. */
+function applyFellowCanvas(bands, body) {
+  const out = {};
+  for (const [id, , hex] of bands) {
+    const v = body[id];
+    if (id === 'top') { out[id] = v; continue; }
+    if (!Array.isArray(v)) { out[id] = canvasFor(hex)(v); continue; }
+    const rest = v.slice(1).filter(Boolean).join('\n');
+    out[id] = rest ? `${v[0]}\n${canvasFor(hex)(rest)}` : v[0];
+  }
+  return out;
+}
+
+/* ── THE PAGE CSS THESE TEN NEED AND THE HUB DOES NOT. One rule, and it is the
+      same correction the hub states for its own register: a row carrying a
+      pre-line has THREE items in its content column and the frozen rule spans
+      the ordinal over two. Kept out of PAGE_CSS so the hub's stylesheet is
+      byte-identical to what it shipped. */
+const FELLOW_CSS = `
+#onward .w7-pj-rows .w7-pj-n{grid-row:1/span 3}
+`;
+
+const fellowPages = [];
+let fbad = 0;
+
+console.log('\nFELLOW PAGES');
+for (const f of FELLOWS) {
+  const route = `/healthy-cities/fellows/${f.slug}`;
+  const REGF = seo(route);
+  /* THE REGISTER AND THE DATA MUST AGREE, AND IT IS CHECKED RATHER THAN HOPED.
+     `desc` is passed from the fellow's own file so the page's description is a
+     fact about the fellow and not a second copy of one; verify-seo.mjs then
+     asserts the SHIPPED head matches data/seo/pages.json exactly. Two writable
+     places, one string — so the drift is caught here, at the build that made
+     it, instead of by a verifier two commands later. */
+  if (REGF.description !== f.description) {
+    dataFail(`data/seo/pages.json's description for ${route} is not ${f.slug}.json's own. `
+      + 'The page ships the fellow file\'s, so verify:seo would fail on the register.');
+  }
+
+  const figs = (f.figures || []).map(x => ({ ...x, label: plain(x.label), period: plain(x.period) }));
+  /* ★ A SINGLE FIGURE DOES NOT GET A RAIL — one tile in a four-column grid is
+     the documented mistake, and figureRail returns '' below FIGURE_RAIL_MIN, so
+     the natural call would silently print NOTHING rather than the figure. Every
+     fellow has three or more today; this is coded because "today" is not a
+     guarantee, and the reading pair is the component that renders one honestly.
+     ★ AND THE RAIL TAKES FOUR. Two fellows publish five figures and figureRail
+     slices the rest away in silence — the same trap the hub's data gate 3
+     refuses for the programme. The four land on the first screen and the
+     remainder is set as reading pairs with the record of the work in `did`,
+     rather than being lost to a slice; the gate below asserts every published
+     figure reaches the page. */
+  const rail = figs.slice(0, W.FIGURE_RAIL_MAX);
+  const spill = figs.slice(W.FIGURE_RAIL_MAX);
+  const railBlock = rail.length >= W.FIGURE_RAIL_MIN ? W.figureRail(rail) : W.figures(rail);
+
+  const fb = {};
+
+  /* ── BAND 1. WHO, WHERE, WHEN — AND WHAT THEY COUNTED.
+        The h1 is the person. Under it, in the order a reader needs them: the
+        crumb back to the register row this page was opened from, the project's
+        own title, where and when, then the fellow's own deck. Display type may
+        sit on a photograph and nothing else may, so every one of those lines
+        lands in .pic-body on solid ground and only the h1 goes over the frame.
+        THE RAIL SITS IN A SECOND .pic-body, as the hub's does and as /impact's
+        does, and .wk-dark IS THE CALLER'S JOB: .ip-ovl-s is the PAPER caption
+        ink, so the natural <div class="wrap"> ships about 2.7:1 on the period
+        captions under the headline numbers and nothing but a rendered contrast
+        check would ever see it. */
+  fb.top = () => `${W.masthead({
+    h1: f.name,
+    deck: f.deck,
+    frame: fellowFrame(f, 'top'),
+    ancestor: W.anc(plain(PROG.title), '/healthy-cities#fellows'),
+    lines: [
+      `<p class="lbl hc-credit">${f.project}</p>`,
+      /* Delhi is its own state, so the naive place-then-state line reads
+         "Delhi &middot; Delhi" on one of the ten — the same case the hub's
+         register pre-line has. A place that IS its state is named once. */
+      `<p class="lbl hc-eye">${[f.place === f.state ? f.state : `${f.place} &middot; ${f.state}`,
+    f.period].join(' &middot; ')}</p>`,
+    ],
+  })}
+    <div class="pic-body hc-rail">${dark(railBlock)}</div>`;
+
+  /* ── BAND 2. THE WORK: WHAT IT SET OUT TO DO, THEN WHAT WAS DONE.
+        The aims are a heading over a sentence each, which is exactly the ruled
+        prose row's shape and the same component the hub's own `what` band uses.
+        s-vineeth-kumar HAS EXACTLY ONE AIM — two of his three objectives were
+        left blank in the report — so nothing here may assume a pair: doRows
+        renders one row as one row, and the schema's `.min(1)` plus the hub's
+        data gate are what guarantee there is at least that. */
+  fb.did = [
+    W.openBand('did', F_HEAD.did),
+    W.doRows(f.aims.map(a => ({ h: a.h, p: a.p }))),
+    namedList([
+      { label: 'What was done', items: f.did },
+      ...(f.partners.length ? [{ label: 'Partners', items: f.partners.map(esc) }] : []),
+    ]),
+    spill.length ? W.figures(spill) : '',
+    /* A fellow's own links out. NONE of the ten carries one today, so this
+       renders on no page — written because the schema offers the field and a
+       page that silently drops data is the failure this whole file is arranged
+       against, not because a link is expected. */
+    (f.links || []).length
+      ? `      <p style="margin:var(--gap-row) 0 0;display:flex;flex-wrap:wrap;gap:clamp(14px,1.6vw,24px)">${
+        (f.links || []).map(l => `<a class="act" href="${esc(l.href)}" rel="noopener" target="_blank">${esc(l.label)} ${ARROW}</a>`).join('')}</p>`
+      : '',
+  ];
+
+  /* ── BAND 3. THE VOICES, out of this fellow's own file and nowhere else.
+        The hub POINTS at these quotes rather than copying them, so the two
+        pages structurally cannot show different words for one speaker. The text
+        is a verbatim transcription and doubles as the hub's lookup key: it is
+        set with raw glyphs, never entity-encoded, and not one character of it
+        is altered here. The hub's caption names the fellow because ten
+        projects' quotes sit in one band there; on this page that would be the
+        page's own h1 repeated under every panel, so it is dropped. */
+  fb.voices = [
+    W.openBand('voices', F_HEAD.voices),
+    (f.quotes || []).length
+      ? `      <div class="hc-voices">\n${f.quotes.map(q => `        ${W.panel({
+        name: q.speaker,
+        p: `&ldquo;${q.text}&rdquo;`,
+        cap: [q.role, q.place].filter(Boolean).join(' &middot; '),
+        frame: q.frame || null,
+      })}`).join('\n')}\n      </div>`
+      : hole(plain(NO_VOICE)),
+  ];
+
+  /* ── BAND 4. WHAT THE REPORT DOES NOT SETTLE. Named holes in the SOURCE
+        RECORD — a headcount that does not settle, a plantation with four dates
+        and no year, testimonials that survive only as broken encoding — which
+        is the story rather than an apology about this page. The band is omitted
+        where a file has none, rather than opening a heading over nothing. */
+  fb.gaps = [
+    W.openBand('gaps', F_HEAD.gaps),
+    (f.holes || []).map(h => hole(plain(h))).join('\n'),
+  ];
+
+  /* ── BAND 5. THE WAY ON. The other nine, in the register the hub uses, each
+        row carrying the pre-line that tells nine rows of a person's name apart,
+        and one link back to the page this one was opened from. No ask: the
+        cohort is what a reader of one fellow's page wants next, and the
+        programme's own three doors and its single ask are one click up on the
+        hub rather than restated ten times. */
+  const others = FELLOWS.filter(x => x.slug !== f.slug);
+  fb.onward = [
+    W.openBand('onward', F_HEAD.onward),
+    W.regRows(others.map(x => ({
+      anchor: x.slug,
+      href: `/healthy-cities/fellows/${x.slug}`,
+      pre: x.place === x.state ? x.state : `${x.place} &middot; ${x.state}`,
+      name: x.name,
+      line: x.project,
+    }))),
+    `      <p style="margin:var(--gap-row) 0 0"><a class="act" href="/healthy-cities">${
+      plain(PROG.title)} ${ARROW}</a></p>`,
+  ];
+
+  const F_IDS = ['top', 'did', 'voices',
+    ...((f.holes || []).length ? ['gaps'] : []),
+    'onward'];
+  const F_BANDS = W.bandChain(F_IDS)
+    .map(([id, cls, hex, tier]) => [id, [cls, tier].filter(Boolean).join(' '), hex, tier]);
+  for (const [id, cls, hex] of F_BANDS) {
+    const real = W.compositedHex(cls);
+    if (real === null) dataFail(`${f.slug}: band ${id} declares two ground classes ("${cls}")`);
+    else if (real !== hex) dataFail(`${f.slug}: band ${id} declares ${hex} but "${cls}" composites to ${real}`);
+  }
+  const F_INDEX = F_IDS.map(id => [F_CHIP[id], `#${id}`]);
+  const FBODY = applyFellowCanvas(F_BANDS, fb);
+
+  if (bad) { console.error(`\nREFUSING TO WRITE: ${bad} check(s) failed.`); process.exit(1); }
+
+  const FOUT = await S.assemble({
+    file: `healthy-cities/fellows/${f.slug}.html`,
+    route,
+    title: REGF.title,
+    desc: f.description,
+    bands: F_BANDS, index: F_INDEX, sh, clashes: S.groundChain(F_BANDS),
+    pageCss: [sh.COMPONENT_CSS, W.WORK_CSS, PAGE_CSS, FELLOW_CSS].join('\n'),
+    sectionFor: (id) => {
+      const v = FBODY[id];
+      return typeof v === 'function' ? v() : (v ?? '    <div class="wrap"><p class="lead">&mdash;</p></div>');
+    },
+    note: `${F_BANDS.length} bands + footer. ${figs.length} figures`
+      + `${spill.length ? ` (${rail.length} on the rail, ${spill.length} with the work)` : ''}, `
+      + `${f.aims.length} aim(s), ${f.did.length} done, ${(f.quotes || []).length} quote(s), `
+      + `${(f.holes || []).length} hole(s), ${f.partners.length} partner(s), ${others.length} onward.`,
+  });
+  fellowPages.push({ slug: f.slug, bytes: FOUT.length });
+  fbad += fellowGates({ f, OUT: FOUT, ids: F_IDS, index: F_INDEX, figs, others });
+}
+
+/* ═══ THE FELLOW PAGES' GATES ════════════════════════════════════════════
+   The hub's, minus the four that are about the programme's own rail and its
+   resolved-pointer voices band, plus the five that are about a person's page:
+   every figure they published reaches it, every quote is verbatim, every named
+   hole is stated, a page with no quote states that instead of nothing, and the
+   crumb back to the register row this page was opened from is present.
+   Declared as a function below the loop and hoisted, so the loop above reads as
+   the page and not as the checking. */
+function fellowGates({ f, OUT: HTML, ids, index, figs, others }) {
+  let n = 0;
+  const bad2 = [];
+  const g = (ok, msg) => { if (!ok) { bad2.push(msg); } n++; };
+
+  const RENDERED2 = HTML
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ');
+  const TEXT2 = RENDERED2.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  const OWN2 = HTML.split('<footer')[0].split('<main')[1] || '';
+
+  /* 1. THE RAIL IS INSIDE A STILL-OPEN .wk-dark. The one defect on this page
+        that only a rendered contrast check can see. */
+  const rails2 = [...HTML.matchAll(/<div class="ip-ovl"/g)];
+  const inDark = rails2.filter((m) => {
+    const before = HTML.slice(0, m.index);
+    const open = before.lastIndexOf('wk-dark');
+    return open !== -1 && !before.slice(open).includes('</div>');
+  });
+  g(rails2.length > 0 && inDark.length === rails2.length,
+    `figure rail(s) inside .wk-dark: ${inDark.length} of ${rails2.length}`);
+
+  /* 2. NO DOUBLE-ESCAPED ENTITY. This page is made almost entirely of the three
+        components that esc() their arguments, over data authored with entities. */
+  const dbl2 = [...new Set([...HTML.matchAll(/&amp;(?:mdash|ndash|rsquo|lsquo|ldquo|rdquo|nbsp|middot|hellip);/g)].map(m => m[0]))];
+  g(dbl2.length === 0, `double-escaped entity: ${dbl2.join(', ')}`);
+
+  /* 3. NO STATE CHIP, NO .readout ELEMENT, NO BORROWED LOGO, NO /design/ PATH,
+        NO UNEXPANDED TEMPLATE HOLE. Tested as elements and paths rather than as
+        strings: --t-readout and the .readout rules arrive in the inherited
+        stylesheet on every page built through this shell. */
+  g(!/\b(LIVE|PERIODIC|OUT OF SEASON|NO SEASON)\b/.test(RENDERED2), 'a source-cadence state word is in the rendered page');
+  const ro = [...HTML.matchAll(/class="[^"]*\breadout\b[^"]*"/g)].map(m => m[0]);
+  g(ro.length === 0, `.readout element: ${ro.join(', ')}`);
+  const brand2 = [...new Set([...OWN2.matchAll(/\/brand\/[^"']+/g)].map(m => m[0]))];
+  g(brand2.length === 0, `logo file in this page's own bands: ${brand2.join(', ')}`);
+  const dz = [...new Set([...OWN2.matchAll(/href="(\/design\/[^"]*)"/g)].map(m => m[1]))];
+  g(dz.length === 0, `/design/ href: ${dz.join(', ')}`);
+  g(!/\$\{/.test(HTML), 'unexpanded template hole in the output');
+  g(!/undefined|\[object Object\]/.test(TEXT2), 'undefined or stringified object in the rendered text');
+
+  /* 4. EVERY BAND HAS A HEADING AND EVERY CHIP RESOLVES TO A BAND ON THIS PAGE.
+        The whole reason these pages build their own index. */
+  const headless2 = ids.filter(id => id !== 'top' && !HTML.includes(`id="${id}-h"`));
+  g(headless2.length === 0, `band(s) with no heading: ${headless2.join(', ')}`);
+  const deadChip = index.filter(([, href]) => !HTML.includes(`id="${href.slice(1)}"`));
+  g(deadChip.length === 0, `index chip(s) resolving to nothing: ${deadChip.map(c => c[1]).join(', ')}`);
+  const NAV_WORDS2 = new Set(S.NAV.map(([t]) => t.toLowerCase()));
+  const collide2 = ids.filter(id => NAV_WORDS2.has(id));
+  g(collide2.length === 0, `band id(s) colliding with a nav word: ${collide2.join(', ')}`);
+
+  /* 5. EVERY FIGURE THIS FELLOW PUBLISHED REACHES THE PAGE. figureRail takes
+        four and slices the rest in silence, so a fifth figure would be authored
+        and never shown — the failure this asserts against by value rather than
+        by count, which also catches a figure typed into the generator. */
+  const lost = figs.filter(x => !HTML.includes(plain(x.value).replace(/\+$/, '<sup>+</sup>')));
+  g(lost.length === 0, `published figure(s) that do not render: ${lost.map(x => x.value).join(', ')}`);
+
+  /* 6. EVERY QUOTE IS VERBATIM AND EVERY HOLE IS STATED — and a page with no
+        quote states THAT, in a sentence, rather than opening an empty band. */
+  const unsaid = (f.quotes || []).filter(q => !HTML.includes(q.text));
+  g(unsaid.length === 0, `quote(s) not rendered verbatim: ${unsaid.map(q => q.speaker).join(', ')}`);
+  const voicesBand = (HTML.split('id="voices"')[1] || '').split('</section>')[0];
+  g((f.quotes || []).length
+    ? /class="wk-panel"/.test(voicesBand)
+    : /class="p-hole"/.test(voicesBand) && voicesBand.includes(plain(NO_VOICE)),
+  (f.quotes || []).length ? 'the voices band renders no panel' : 'the voices band is empty where it should state a named hole');
+  const unheld = (f.holes || []).filter(h => !HTML.includes(esc(plain(h))));
+  g(unheld.length === 0, `named hole(s) that do not render: ${unheld.length}`);
+
+  /* 7. EVERY AIM RENDERS. s-vineeth-kumar has exactly one, so a block that
+        assumed a pair would drop his only one or print an empty slot beside it. */
+  const noAim = f.aims.filter(a => !HTML.includes(a.h));
+  g(noAim.length === 0, `aim(s) that do not render: ${noAim.map(a => a.h).join(' | ')}`);
+  g(!/<p class="lbl"><\/p>|<li><\/li>/.test(HTML), 'an empty label or list slot was rendered');
+
+  /* 8. THE PAGE IS REACHABLE BOTH WAYS: the crumb back to the register row this
+        page was opened from, and a row for each of the other nine. */
+  g(HTML.includes('href="/healthy-cities#fellows"'), 'no crumb back to the register');
+  const missingSib = others.filter(x => !HTML.includes(`<li id="${x.slug}"><a href="/healthy-cities/fellows/${x.slug}">`));
+  g(missingSib.length === 0, `sibling(s) missing from the onward register: ${missingSib.map(x => x.slug).join(', ')}`);
+  g(!HTML.includes(`href="/healthy-cities/fellows/${f.slug}"`), 'the page links to itself');
+
+  /* 9. THE MASTHEAD OWNS THE SHARE CARD. With no frame yet the page takes the
+        neutral publisher card; once Task 6 lands, the first photograph in
+        document order must be the masthead's and not a quote panel's. */
+  const first2 = /<img[^>]*src="\/images\/[^"]*"[^>]*>/.exec(OWN2);
+  g(!first2 || /fetchpriority="high"/.test(first2[0]),
+    'the first photograph in document order is not the masthead frame');
+
+  if (bad2.length) {
+    console.error(`  FAIL ${f.slug}: ${bad2.length} of ${n}`);
+    for (const m of bad2) console.error(`       ${m}`);
+  } else {
+    console.log(`  ok   ${f.slug} — all ${n} checks pass`);
+  }
+  return bad2.length;
+}
+
+if (fbad) {
+  console.error(`\n${fbad} fellow-page gate(s) failed. The files are written — fix the generator and rebuild.`);
+  process.exit(1);
+}
+const total = OUT.length + fellowPages.reduce((a, p) => a + p.bytes, 0);
+console.log(`\n${1 + fellowPages.length} pages, ${total.toLocaleString('en-IN')} bytes. All gates pass.`);

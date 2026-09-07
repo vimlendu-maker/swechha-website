@@ -216,9 +216,9 @@ export const TIER = {
      (`sheet`) correctly takes — a contact sheet of frames that back up an
      argument made in type. Here the type backs up the sheets. */
   posters: 't2',
-  /* ── /healthy-cities. Six new ids, declared here rather than defaulted for the
-        reason the throw below states: a band's weight is the same wherever the
-        band appears, so it belongs in this table and not in one generator.
+  /* ── /healthy-cities. Seven new ids, declared here rather than defaulted for
+        the reason the throw below states: a band's weight is the same wherever
+        the band appears, so it belongs in this table and not in one generator.
         `fellows` is t2 because it is the band that page exists for — the ten
         named projects — and t2 is the weight `record` and `kinds` already carry
         for a full-membership register. `schools` is t2 for the same reason
@@ -226,7 +226,17 @@ export const TIER = {
         beside a frame. `green`, `voices` and `watch` are t3, the supporting
         weight `sheet` and `who` take — they back the argument up with what was
         built, who said what, and what was filmed. `gaps` is t2 because a stated
-        hole in the source record is content on this page, not a footnote. */
+        hole in the source record is content on this page, not a footnote.
+        `did` is the fellow pages' second band — what one fellow set out to do
+        and what they did — at t2 for the reason `what` and `schools` are: it is
+        the band its page exists for, argued in ruled prose. IT IS NOT NAMED
+        `work`, which is what it carries and would read better as an anchor,
+        because a band id may not be a nav word: `Work` is one of the six, and
+        both this section's generators gate on that collision — the frozen
+        active-section strip resolves chips against band ids and a page that
+        declares one named after a nav destination is a page whose own strip and
+        whose primary nav disagree about what is current. */
+  did: 't2',
   fellows: 't2', schools: 't2', green: 't3', voices: 't3', watch: 't3', gaps: 't2',
   onward: 't3',
 };

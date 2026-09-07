@@ -187,6 +187,14 @@ const GROUPS = [
      which told a reader that five pieces written by the team were somewhere
      other than this site. */
   { name: 'Stories and films', test: (r) => r === '/stories' || r.startsWith('/stories/') },
+  /* The microsite and its ten fellows, for the reason the essays got their own
+     line above: matching only the hub route filed ten funded projects under
+     "Elsewhere", which tells a reader they are somewhere other than this site.
+     It is a group of its own rather than part of "Work" because the route is
+     top-level — a microsite's whole purpose is a short link somebody hands a
+     partner — and eleven rows under a nav word they do not sit beneath would be
+     the same misfiling in the other direction. */
+  { name: 'Healthy Cities', test: (r) => r === '/healthy-cities' || r.startsWith('/healthy-cities/') },
   { name: 'Publications', test: (r) => r === '/publications' },
   { name: 'Impact', test: (r) => r === '/impact' },
   { name: 'Farm', test: (r) => r === '/farm' },
