@@ -986,7 +986,8 @@ for (const f of FELLOWS) {
       return typeof v === 'function' ? v() : (v ?? '    <div class="wrap"><p class="lead">&mdash;</p></div>');
     },
     note: `${F_BANDS.length} bands + footer. ${figs.length} figures`
-      + `${spill.length ? ` (${rail.length} on the rail, ${spill.length} with the work)` : ''}, `
+      + `${spill.length ? ` (${rail.length} on the rail, ${spill.length} with the work: `
+        + `${spill.map(x => `"${x.label}"`).join(', ')})` : ''}, `
       + `${f.aims.length} aim(s), ${f.did.length} done, ${(f.quotes || []).length} quote(s), `
       + `${(f.holes || []).length} hole(s), ${f.partners.length} partner(s), ${others.length} onward.`,
   });
@@ -1049,8 +1050,15 @@ function fellowGates({ f, OUT: HTML, ids, index, figs, others }) {
   g(headless2.length === 0, `band(s) with no heading: ${headless2.join(', ')}`);
   const deadChip = index.filter(([, href]) => !HTML.includes(`id="${href.slice(1)}"`));
   g(deadChip.length === 0, `index chip(s) resolving to nothing: ${deadChip.map(c => c[1]).join(', ')}`);
+  /* KEEP IN STEP WITH THE HUB'S OWN GATE 12 (~line 681-684): both halves,
+     NAV_IDS (fragment ids parsed out of S.NAV's hrefs) and NAV_WORDS (the nav
+     labels), or a band id that collides with a nav href's #fragment reaches
+     this page silently while the hub would have caught it. It is inert today
+     — no S.NAV href carries a #fragment, so NAV_IDS is empty — but it must
+     not stay a weaker copy of the hub's check. */
+  const NAV_IDS2 = new Set(S.NAV.map(([, h]) => (h.match(/#([\w-]+)$/) || [])[1]).filter(Boolean));
   const NAV_WORDS2 = new Set(S.NAV.map(([t]) => t.toLowerCase()));
-  const collide2 = ids.filter(id => NAV_WORDS2.has(id));
+  const collide2 = ids.filter(id => NAV_IDS2.has(id) || NAV_WORDS2.has(id));
   g(collide2.length === 0, `band id(s) colliding with a nav word: ${collide2.join(', ')}`);
 
   /* 5. EVERY FIGURE THIS FELLOW PUBLISHED REACHES THE PAGE. figureRail takes
