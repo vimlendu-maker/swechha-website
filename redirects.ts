@@ -98,4 +98,40 @@ export const movedRedirects: Redirect[] = [
     destination: '/work/campaigns',
     permanent: true,
   },
+  /* ★ RULING 27. `/healthy-cities/fellows` IS AN INTERMEDIATE SEGMENT WITH NO
+     PAGE, AND THE STRUCTURED DATA NAMES IT ANYWAY.
+     `assemble()` in `scripts/lib/situation-shell.mjs` derives every page's
+     `BreadcrumbList` from its own canonical URL's segments, so all ten fellow
+     pages emit `Swechha -> Bridge the Gap - Healthy Cities -> fellows -> <name>`
+     and the middle item's `item` URL is `https://swechha.in/healthy-cities/fellows`.
+     Nothing on this site LINKS there — the link census is clean and no href
+     anywhere points at it — so this is crawler-facing only. It is still a
+     defect: a crawler that follows a breadcrumb item to a 404 has been told by
+     our own markup that a page exists.
+
+     IT RESOLVES TO THE REGISTER, IT DOES NOT BECOME A PAGE. The spec gave the
+     hub the fellows register instead of a separate fellows index deliberately —
+     a section index that is only a union of registers already published one
+     level down fails this site's own ruling — so the parent of the ten is the
+     hub's `#fellows` band, and this redirect says so rather than minting the
+     page the ruling refused.
+
+     THE FRAGMENT IS IN THE DESTINATION BECAUSE IT SURVIVES. Verified against a
+     production build rather than assumed: this source answers 308 with
+     `location: /healthy-cities#fellows`. Next.js keeps a hash in a
+     `redirects()` destination and puts it in the Location header; had it been
+     stripped, the honest destination was the bare `/healthy-cities` and this
+     note would say so.
+
+     NO `:slug` VARIANT, deliberately. `/healthy-cities/fellows/<slug>` is a
+     REAL route for all ten fellows (`fellowRoutes()` in `design-routes.ts`
+     derives it from the built files), and a `/healthy-cities/fellows/:slug`
+     redirect placed here would match first and swallow every one of them —
+     which is the exact trap the `/campaigns/:slug`-before-`/campaigns` ordering
+     note above exists to record. An eleventh fellow needs no edit here. */
+  {
+    source: '/healthy-cities/fellows',
+    destination: '/healthy-cities#fellows',
+    permanent: true,
+  },
 ]
