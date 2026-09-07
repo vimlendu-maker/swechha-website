@@ -40,7 +40,6 @@ import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import * as W from './lib/work-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
-import { REQUIRED_BAND_KEYS } from '../lib/healthy-cities/schema.ts';
 
 const { esc, hole, ARROW } = S;
 
@@ -209,7 +208,7 @@ const IDS = ['top', 'what', 'fellows',
    not just `statement` by name — is a gap the omission note must keep naming.
    If a second band ever becomes frame-conditional, this line does not need
    editing to keep reporting it. */
-const OMITTED = REQUIRED_BAND_KEYS.filter(id => !IDS.includes(id));
+const OMITTED = Object.keys(BD).filter(id => !IDS.includes(id));
 
 const BANDS = W.bandChain(IDS).map(([id, cls, hex, tier]) => [id, [cls, tier].filter(Boolean).join(' '), hex, tier]);
 const clashes = S.groundChain(BANDS);
