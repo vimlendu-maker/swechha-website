@@ -24,10 +24,21 @@ does, because the footer is extracted into all sixty built pages.
 
 The consequence is not untidiness, and this is the part worth understanding:
 
-**A conflicted pull request has no `refs/pull/N/merge`. `pull_request`
-workflows run against that ref. So `.github/workflows/generated-current.yml`
-physically cannot run — silently.** No failed run, no skipped run, nothing in
-`gh run list`, no check on the pull request.
+**`pull_request` workflows run against `refs/pull/N/merge`, and GitHub only
+keeps that ref current while the pull request merges cleanly. When it does not,
+`.github/workflows/generated-current.yml` physically cannot run — silently.**
+No failed run, no skipped run, nothing in `gh run list`, no check on the pull
+request.
+
+⚠ **A correction to a claim this document first made.** The original wording
+said a conflicted pull request "has no `refs/pull/N/merge`". That is not
+reliably true, and the difference matters if you are ever debugging this:
+**the ref often still exists and is simply STALE** — PR #58's ref resolves to a
+merge commit dated 29 August, built on a base that stopped being `main`'s tip
+ten days earlier. So `git ls-remote origin refs/pull/N/merge` is *not* ground
+truth for "can the gate run"; ref *presence* proves nothing, and only its
+freshness does (does its first parent equal the base tip now?). Use the API's
+`mergeable` field, with the caveat below.
 
 Observed on 7 September 2026: PR #73 went unchecked for forty minutes with no
 visible signal, while PR #74 — opened *later* — got its check normally, because
@@ -136,11 +147,24 @@ points at the setup script. The `prepare` hook is guarded so it cannot break an
 install — it exits 0 with no `.git`, in a bare repo, with `git` absent from
 `PATH`, with a read-only or corrupt config, and with a dangling worktree link.
 
-## What this does not fix
+## What this does not fix, and what now covers it
 
-It removes the most frequent *cause* of unmergeable pull requests. **It does not
-fix the blindness itself:** a conflict in any other file still silently disables
-`generated-current.yml`. The missing signal is a check that fails loudly when a
-pull request has no merge ref — and because such a check cannot itself be
-triggered by `pull_request` without being blinded by the same condition, it has
-to run on a schedule and publish its verdict onto the pull request.
+This driver removes the most frequent *cause* of unmergeable pull requests. It
+does not fix the blindness itself — a conflict in any other file still disables
+`generated-current.yml`.
+
+That gap is now covered by **`.github/workflows/merge-ref-check.yml`**, which
+publishes a `merge-ref / can the gate run` status onto every open pull request.
+It runs on a schedule rather than on `pull_request`, because a check triggered
+by `pull_request` would be blinded by the very condition it exists to detect —
+and because no `pull_request*` trigger fires when `main` moves, which is the
+dominant way pull requests conflict here.
+
+**One caveat that cost real debugging time.** The API's `mergeable` field can
+stay `null` indefinitely in this repository, not merely on a first query: every
+push to `main` restarts GitHub's background merge computation, and `main` moves
+hourly. One pull request returned `false`, then `null` through every retry
+26 seconds later, for exactly that reason. So a caller must retry, treat unknown
+as unknown — never as a conflict — and fall back to a local `git merge-tree` to
+break the tie. Reporting a healthy pull request as conflicting is worse than
+having no check at all, because it teaches people to ignore the check.
