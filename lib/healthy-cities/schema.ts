@@ -42,6 +42,25 @@ export const figureSchema = z.strictObject({
 export const frameSchema = z.strictObject({
   src: z.string().startsWith('/images/photos/'),
   alt: z.string().min(1),
+  /* THE MONOCHROME RAMP THE FRAME IS MEANT TO CARRY — DECLARED INTENT, NOT WHAT
+     SHIPS. Required, so no frame can be added without somebody deciding; but
+     NOTHING IN THE RENDER PATH READS IT (`grep '\.ramp' scripts/`), and that is
+     why every value here reads `duo`.
+
+     `masthead()` in scripts/lib/work-shell.mjs derives its own ramp instead —
+     `duo-dim` only when a frame is a placeholder, `duo` otherwise — and the
+     statement/split/panel components hardcode `duo`. Ruling 33 (2026-09-07)
+     settled it in the render's favour rather than the data's: about.html, the
+     page this generator is patterned on, runs its masthead at `duo` behind
+     `.pic-over`'s rgba(11,11,9,.92) scrim, which is already doing the contrast
+     work, and dimming these mastheads would make them the only dark ones on the
+     site. So the values were brought down to `duo` to stop the data claiming a
+     treatment nobody renders.
+
+     If a future session wires `ramp` up (one line at work-shell.mjs:1749), the
+     values here are the place to re-decide, not the place to read history off:
+     three of these frames carry type over the photograph and would be the
+     candidates for `duo-dim`. */
   ramp: z.enum(['duo', 'duo-dim']),
   op: z.string().optional(),
   /* WHICH BAND THE FRAME BELONGS TO, on the programme's own `frames` array.
