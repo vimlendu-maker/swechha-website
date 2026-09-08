@@ -219,6 +219,19 @@ export const NEGATIVE_TERMS = [
 /** Lowercased haystack for a news item: title plus publisher. */
 export const hay = (item) => `${item.title || ''} ${item.publisher || ''}`.toLowerCase();
 
+/* ★ PLACE IS READ FROM THE TITLE ONLY, AND THE PUBLISHER IS EXCLUDED BY NAME.
+   `hay()` folds the publisher into the text so a hazard word in a masthead
+   still counts. For PLACE that is a defect, and it published eight false
+   events. Greater Kashmir — a Srinagar newspaper — carried "Chinese experts
+   link deadly Tibet-Nepal flood to climate change", and because "kashmir" is
+   in the masthead the detector created a Kashmir flood. The same mechanism
+   produced an Odisha landslide and an Assam flood out of Nepal coverage.
+
+   A publisher's masthead is not a fact about the story. The regional
+   inference it was presumably included for — a local paper implying a local
+   event — is speculative; the failure is demonstrated. */
+export const hayPlace = (item) => `${item.title || ''}`.toLowerCase();
+
 /* ── COORDINATES, FOR THE LIVE WEATHER READING ────────────────────────────
    Only the places this detector can actually name. A coordinate here is a
    representative point for the region, NOT the location of any event — it is

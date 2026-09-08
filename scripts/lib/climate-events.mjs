@@ -229,8 +229,17 @@ export function validateEvent(file, e) {
      marker on the dossier so the page can say the standing context for this
      hazard has not been compiled rather than implying none exists. */
   const contextMissing = !hasContext(e.hazard);
-  if (!['draft', 'published'].includes(e.publish_state)) {
-    throw new EventError(file, `publish_state must be draft or published, got "${e.publish_state}"`);
+  /* `withdrawn` is a THIRD state and a human one: an event a person judged
+     wrong and took down permanently. It is not `draft` — a draft is something
+     the detector has not published yet and may — and the distinction has to
+     survive in the data, because publishStateFor() refuses to overturn only
+     the former. A withdrawn event must say why. */
+  if (!['draft', 'published', 'withdrawn'].includes(e.publish_state)) {
+    throw new EventError(file, `publish_state must be draft, published or withdrawn, got "${e.publish_state}"`);
+  }
+  if (e.publish_state === 'withdrawn' && !String(e.withdrawn_why || '').trim()) {
+    throw new EventError(file, 'a withdrawn event must carry withdrawn_why — taking a published page '
+      + 'down is a judgement, and an unexplained one cannot be reviewed later');
   }
   if (!RELEVANCE[e.india_relevance]) {
     throw new EventError(file, `india_relevance "${e.india_relevance}" is not one of: ${Object.keys(RELEVANCE).join(', ')}`);

@@ -156,18 +156,47 @@ const PAGE_CSS = `
 .jr-door{display:grid;gap:5px;align-content:start;min-width:0;text-decoration:none;color:inherit;
   border-top:2px solid currentColor;padding-top:12px}
 .jr-door-h{font-family:var(--display);font-size:clamp(19px,2.2vw,24px);line-height:1.14}
-.jr-door:hover .jr-door-h{text-decoration:underline;text-underline-offset:3px}
 .jr-list{display:grid;gap:clamp(24px,3.4vw,40px);margin:clamp(20px,3vw,32px) 0 0}
 .jr-i{display:grid;gap:7px;border-top:2px solid currentColor;padding-top:15px;max-width:74ch}
 .jr-i-h{margin:0;font-family:var(--display);font-size:clamp(24px,3.2vw,34px);line-height:1.08}
 .jr-i-h a{color:inherit;text-decoration:none}
-.jr-i-h a:hover{text-decoration:underline;text-underline-offset:3px}
 .jr-i-s{margin:0;max-width:60ch}
 .jr-kinds{display:grid;gap:clamp(16px,2.4vw,24px);margin:clamp(20px,3vw,32px) 0 0;
   grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
 .jr-k{border-top:1px solid currentColor;padding-top:12px;min-width:0}
 .jr-k h3{margin:0 0 4px}
 .jr-k p{margin:0;max-width:40ch}
+/* ── AD-50. THE AFFORDANCE IS TYPOGRAPHIC, NOT AN ICON. ──────────────────
+   Every card, door and row in this section carried the shell's ARROW glyph.
+   ARROW is a bare <svg viewBox="0 0 24 24"> with NO width or height of its
+   own, and AD-40 had already recorded what that does — "as the third flex
+   item in a stretch column the arrow took the card's full width and its 1:1
+   viewBox made it that tall as well: measured 314x314 at 390px". This build
+   read that note and then reproduced the bug in four new generators: thirty-
+   two unsized arrows, and two of the generators had no sizing rule at all.
+
+   Sizing them was the small fix. The owner asked for the arrow to stop being
+   the device, and the site already has a better one: the footer's directory
+   treatment, whose own note argues for it — "the underline is drawn in the
+   HAIRLINE colour rather than the text colour ... so the column still reads
+   as a directory rather than as twenty-four emphasised phrases; hover and
+   focus take it to mustard along with the ink."
+
+   So the cue is a hairline underline at rest, mustard on hover and focus. It
+   satisfies AD-38's refusal of zero-cue blocks without an icon, it costs no
+   vertical space — which is the space the cards get back as air — and it is
+   already the language of the bottom of every page on this site.
+
+   GROUND-AWARE, because --hair is rgba(251,248,240,.20): a light hairline
+   for a dark ground, and invisible on paper. Paper takes --rule-2, the same
+   split build-act-page.mjs makes for its own five classes. */
+.jr-door-h,.jr-i-h a{text-decoration:underline;text-decoration-thickness:1px;
+  text-underline-offset:5px;text-decoration-color:var(--hair);
+  transition:text-decoration-color .14s ease}
+.paper .jr-door-h,.paper-2 .jr-door-h,.paper .jr-i-h a,.paper-2 .jr-i-h a{text-decoration-color:var(--rule-2)}
+.jr-door:hover .jr-door-h,.jr-door:focus-visible .jr-door-h,.jr-i-h a:hover,.jr-i-h a:focus-visible{text-decoration-color:var(--mustard)}
+@media (prefers-reduced-motion:reduce){.jr-door-h,.jr-i-h a{transition:none}}
+
 `;
 
 const BANDS = [
@@ -236,7 +265,7 @@ ${bullets(a.uncertain)}
       'Everything above is traceable to one of these.')}
     <div class="wrap">
       <ul class="jr-src">
-${a.sources.map((s) => `        <li><a class="lk" href="${esc(s.url)}" rel="noopener">${esc(s.name)}${ARROW}</a>
+${a.sources.map((s) => `        <li><a class="lk" href="${esc(s.url)}" rel="noopener">${esc(s.name)}</a>
           <span class="cap">${esc(s.publisher)}${s.note ? ` &middot; ${esc(s.note)}` : ''}</span></li>`).join('\n')}
       </ul>
       <div class="jr-split">
@@ -252,9 +281,9 @@ ${bullets(a.watch)}
     onward: () => `${opener('onward', 'Next', 'The explanation behind it, the live reading, and the archive.')}
     <div class="wrap">
       <div class="jr-doors">
-${(a.related?.learn || []).map((l) => `        <a class="jr-door" href="/learn/${l}"><span class="lbl">Learn</span><span class="jr-door-h">${esc(LEARN_TITLE(l))}</span><span class="cap">The concept behind the figures above.</span>${ARROW}</a>`).join('\n')}
-${(a.related?.now || []).map((d) => `        <a class="jr-door" href="${esc(d.href)}"><span class="lbl">Live</span><span class="jr-door-h">${esc(d.label)}</span><span class="cap">${esc(d.note)}</span>${ARROW}</a>`).join('\n')}
-${(a.related?.record || []).map((d) => `        <a class="jr-door" href="${esc(d.href)}"><span class="lbl">Record</span><span class="jr-door-h">${esc(d.label)}</span><span class="cap">${esc(d.note)}</span>${ARROW}</a>`).join('\n')}
+${(a.related?.learn || []).map((l) => `        <a class="jr-door" href="/learn/${l}"><span class="lbl">Learn</span><span class="jr-door-h">${esc(LEARN_TITLE(l))}</span><span class="cap">The concept behind the figures above.</span></a>`).join('\n')}
+${(a.related?.now || []).map((d) => `        <a class="jr-door" href="${esc(d.href)}"><span class="lbl">Live</span><span class="jr-door-h">${esc(d.label)}</span><span class="cap">${esc(d.note)}</span></a>`).join('\n')}
+${(a.related?.record || []).map((d) => `        <a class="jr-door" href="${esc(d.href)}"><span class="lbl">Record</span><span class="jr-door-h">${esc(d.label)}</span><span class="cap">${esc(d.note)}</span></a>`).join('\n')}
       </div>
 ${a.act ? `      <p style="margin:clamp(20px,3vw,28px) 0 0"><a class="b b-1" href="${esc(a.act.href)}">${esc(a.act.label)}${ARROW}</a></p>` : ''}
     </div>`,
@@ -355,9 +384,9 @@ ${Object.values(TYPES).map((t) => `        <div class="jr-k">
   onward: () => `${opener('onward', 'Next', 'The readings these are written against.')}
     <div class="wrap">
       <div class="jr-doors">
-        <a class="jr-door" href="/now"><span class="lbl">Live</span><span class="jr-door-h">Every situation</span><span class="cap">Six readings, each against its published limit.</span>${ARROW}</a>
-        <a class="jr-door" href="/learn"><span class="lbl">Learn</span><span class="jr-door-h">What the numbers mean</span><span class="cap">Twenty explainers behind the readings.</span>${ARROW}</a>
-        <a class="jr-door" href="/record"><span class="lbl">Record</span><span class="jr-door-h">The archive</span><span class="cap">Every reading kept at its own address.</span>${ARROW}</a>
+        <a class="jr-door" href="/now"><span class="lbl">Live</span><span class="jr-door-h">Every situation</span><span class="cap">Six readings, each against its published limit.</span></a>
+        <a class="jr-door" href="/learn"><span class="lbl">Learn</span><span class="jr-door-h">What the numbers mean</span><span class="cap">Twenty explainers behind the readings.</span></a>
+        <a class="jr-door" href="/record"><span class="lbl">Record</span><span class="jr-door-h">The archive</span><span class="cap">Every reading kept at its own address.</span></a>
       </div>
     </div>`,
 };

@@ -128,7 +128,7 @@ ${ROWS.map((r) => `        <article class="sc-p">
           <p class="lbl sc-k">${r.it.duration
     ? `${esc(r.it.duration.value)} ${esc(r.it.duration.unit)}`
     : 'By arrangement'}${r.it.geography ? ` &middot; ${esc(r.it.geography.split(' · ').length > 2 ? 'Several destinations' : r.it.geography)}` : ''}</p>
-          <h3 class="d2 sc-h"><a href="${href(r)}">${esc(r.it.name)}${ARROW}</a></h3>
+          <h3 class="d2 sc-h"><a href="${href(r)}">${esc(r.it.name)}</a></h3>
           <p class="sc-l">${esc(r.it.line)}</p>
           <p class="cap sc-f">${esc(r.for)}</p>
 ${(r.learn || []).length ? `          <p class="cap sc-rd">Read first: ${r.learn.map((l) => `<a class="lk" href="/learn/${l}">${LEARN.get(l).h1}</a>`).join(' &middot; ')}</p>` : ''}
@@ -143,7 +143,7 @@ B.outcomes = () => `${opener('outcomes', D.outcomes.head, D.outcomes.lead)}
 ${D.outcomes.rows.map((o) => `        <div class="sc-o">
           <h3 class="d2 sc-o-h">${o.h}</h3>
           <p class="sc-o-p">${o.p}</p>
-          <p><a class="act" href="/learn/${o.learn}">${LEARN.get(o.learn).h1}${ARROW}</a></p>
+          <p><a class="act" href="/learn/${o.learn}">${LEARN.get(o.learn).h1}</a></p>
         </div>`).join('\n')}
       </div>
     </div>`;
@@ -174,7 +174,7 @@ ${D.logistics.rows.map((r) => `        <div class="sc-pl">
 B.enquiry = () => `${opener('enquiry', D.ask.head, D.ask.lead)}
     <div class="wrap">
 ${ask({ audience: 'school', label: D.ask.label, page: 'Schools', path: '/schools' })}
-      <p class="sc-second"><a class="act" href="${esc(D.ask.second.href)}">${esc(D.ask.second.label)}${ARROW}</a></p>
+      <p class="sc-second"><a class="act" href="${esc(D.ask.second.href)}">${esc(D.ask.second.label)}</a></p>
       <p class="cap sc-note">${esc(D.ask.note)}</p>
     </div>`;
 
@@ -187,8 +187,6 @@ const PAGE_CSS = `
 .sc-k{margin:0}
 .sc-h{margin:0}
 .sc-h a{color:inherit;text-decoration:none;display:inline}
-.sc-h a:hover{text-decoration:underline;text-underline-offset:3px}
-.sc-h svg{width:20px;height:20px;vertical-align:-3px;margin-left:4px}
 .sc-l{margin:0;max-width:46ch}
 .sc-f{margin:0;max-width:46ch}
 .sc-rd{margin:4px 0 0;max-width:46ch}
@@ -205,7 +203,6 @@ const PAGE_CSS = `
   font-variant-numeric:tabular-nums;display:inline-block;padding-bottom:3px}
 .sc-fig-l{}
 .sc-fig-s{}
-.sc-fig:hover .sc-fig-l{text-decoration:underline;text-underline-offset:3px}
 .sc-p{margin:0 0 clamp(12px,1.6vw,18px);max-width:64ch}
 .sc-plan{display:grid;gap:clamp(20px,3vw,30px);margin:clamp(20px,3vw,32px) 0 0;
   grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
@@ -215,6 +212,37 @@ const PAGE_CSS = `
 .sc-pl-p{margin:0;max-width:46ch}
 .sc-second{margin:clamp(18px,2.6vw,26px) 0 0}
 .sc-note{margin:8px 0 0;max-width:58ch}
+/* ── AD-50. THE AFFORDANCE IS TYPOGRAPHIC, NOT AN ICON. ──────────────────
+   Every card, door and row in this section carried the shell's ARROW glyph.
+   ARROW is a bare <svg viewBox="0 0 24 24"> with NO width or height of its
+   own, and AD-40 had already recorded what that does — "as the third flex
+   item in a stretch column the arrow took the card's full width and its 1:1
+   viewBox made it that tall as well: measured 314x314 at 390px". This build
+   read that note and then reproduced the bug in four new generators: thirty-
+   two unsized arrows, and two of the generators had no sizing rule at all.
+
+   Sizing them was the small fix. The owner asked for the arrow to stop being
+   the device, and the site already has a better one: the footer's directory
+   treatment, whose own note argues for it — "the underline is drawn in the
+   HAIRLINE colour rather than the text colour ... so the column still reads
+   as a directory rather than as twenty-four emphasised phrases; hover and
+   focus take it to mustard along with the ink."
+
+   So the cue is a hairline underline at rest, mustard on hover and focus. It
+   satisfies AD-38's refusal of zero-cue blocks without an icon, it costs no
+   vertical space — which is the space the cards get back as air — and it is
+   already the language of the bottom of every page on this site.
+
+   GROUND-AWARE, because --hair is rgba(251,248,240,.20): a light hairline
+   for a dark ground, and invisible on paper. Paper takes --rule-2, the same
+   split build-act-page.mjs makes for its own five classes. */
+.sc-h a,.sc-fig-l{text-decoration:underline;text-decoration-thickness:1px;
+  text-underline-offset:5px;text-decoration-color:var(--hair);
+  transition:text-decoration-color .14s ease}
+.paper .sc-h a,.paper-2 .sc-h a,.paper .sc-fig-l,.paper-2 .sc-fig-l{text-decoration-color:var(--rule-2)}
+.sc-h a:hover,.sc-h a:focus-visible,.sc-fig:hover .sc-fig-l,.sc-fig:focus-visible .sc-fig-l{text-decoration-color:var(--mustard)}
+@media (prefers-reduced-motion:reduce){.sc-h a,.sc-fig-l{transition:none}}
+
 `;
 
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */

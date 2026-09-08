@@ -41,7 +41,7 @@
    reads data/climate-events/active/ and routes exactly the published ones, so
    a page cannot be built and left unrouted.
    ═══════════════════════════════════════════════════════════════════════════ */
-import { mkdirSync, readFileSync, existsSync } from 'node:fs';
+import { mkdirSync, readFileSync, existsSync, readdirSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import { loadEvents, isCurrent, loadContext, istStamp } from './lib/climate-events.mjs';
@@ -66,36 +66,61 @@ const J = (p) => (existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : null);
  *  the event's own facts and trimmed on a word boundary. Unchanged in method
  *  from the version this replaces; it now leads on the event's NAME rather
  *  than its hazard noun, because that is what the page's own heading says. */
+/* ★ REWRITTEN 9 SEPTEMBER 2026, ON MEASURED EVIDENCE.
+   The previous title was "<Place> <hazard> — active situation — Swechha" and
+   the description was "A flood at Bihar, tracked from published reporting and
+   official alert feeds. What is claimed, who claims it, and what is still
+   unknown." Search Console's first baseline put these pages at 6,421
+   impressions and 35 clicks — a CTR of 0.55% at position 7 to 9. They rank and
+   nobody chooses them, and reading the snippet says why:
+
+     · "active situation" is internal vocabulary. Nobody searches it and it
+       tells a searcher nothing about the event.
+     · the description describes OUR METHOD, not what happened. A reader who
+       searched a disaster wants to know about the disaster.
+     · it is the same sentence on every page with the hazard and place swapped,
+       so it carries no information at all.
+     · "A flood at Bihar" is not English. It is "in".
+
+   ★ AND STILL NO FIGURE IN EITHER. A death toll is the thing people search and
+   it is the one thing that must not go in here: Google caches a description
+   for days, the toll on an active event moves hourly, and a stale toll in a
+   search result is exactly the failure this site refuses everywhere else. The
+   hook is what the page HAS — every figure with its source, the readings that
+   disagree, and what is not established — which is both stable and the actual
+   difference between this page and a news report. */
 function description(e) {
   const hazard = (HAZARD_LABEL[e.hazard] || e.hazard).toLowerCase();
+  /* "in Bihar", and "in Nepal" too. The old text said "at", which is wrong for
+     both and was the first thing a reader saw. */
   const where = e.location.text;
-  const clauses = [
-    `A ${hazard} at ${where}, tracked from published reporting and official alert feeds.`,
-    'What is claimed, who claims it, and what is still unknown.',
-    'Every figure carries its source.',
+
+  /* ★ COMPLETE SENTENCES, PICKED BY LENGTH — NOT CLAUSES PACKED UNTIL THEY
+     STOP FITTING. The previous version appended clauses while they fit and
+     then padded with single words from a filler string, which on three of the
+     four live events produced a description ending mid-clause: "...the
+     readings that disagree, Updated". Every variant below is a whole sentence,
+     and the first that lands inside assemble()'s 140-158 window is used. A
+     hazard name ranges from "flood" to "glacial lake outburst flood", so the
+     ladder has to span about forty characters. */
+  const VARIANTS = [
+    `The ${hazard} in ${where}: every figure with the source that published it, the readings that disagree with each other, and the questions still open.`,
+    `The ${hazard} in ${where}: every figure with the source that published it, the readings that disagree, and the questions still open.`,
+    `The ${hazard} in ${where}: what is established, what the sources disagree about, and what nobody has answered yet. Every figure names its source.`,
+    `The ${hazard} in ${where}, with every figure carrying the source that published it, and a standing list of what nobody has established yet.`,
+    `The ${hazard} in ${where}: every figure with its source, and the questions that are still open.`,
   ];
-  let d = '';
-  for (const c of clauses) {
-    if (d.length && d.length + 1 + c.length > 158) break;
-    d = d ? `${d} ${c}` : c;
-  }
-  if (d.length > 158) {
-    d = d.slice(0, 158);
-    d = d.slice(0, d.lastIndexOf(' ')).replace(/[ ,;:–—-]+$/, '') + '.';
-  }
-  const filler = 'Updated as the reporting is, and dated on this page.'.split(' ');
-  let i = 0;
-  while (d.length < 140 && i < filler.length) {
-    const next = `${d} ${filler[i]}`;
-    if (next.length > 158) break;
-    d = next; i++;
-  }
-  if (d.length < 140 || d.length > 158) {
-    d = `A ${hazard} tracked from published reporting and official alert feeds: `
-      + 'what is claimed, who claims it, and what is not yet established.';
-    if (d.length > 158) d = d.slice(0, 155).replace(/\s+\S*$/, '') + '.';
-  }
-  return d;
+  for (const d of VARIANTS) if (d.length >= 140 && d.length <= 158) return d;
+
+  /* Nothing fitting is a build failure, not a truncation. A description
+     trimmed to length mid-sentence is what this rewrite exists to remove, and
+     silently producing another one would be the same defect wearing the new
+     copy. Add a variant to the ladder for whatever hazard and place did not
+     fit — the message names both. */
+  const lens = VARIANTS.map((d) => d.length).join(', ');
+  console.error(`REFUSING TO WRITE: no description variant fits 140-158 for "${hazard} in ${where}" `
+    + `(lengths: ${lens}). Add one to VARIANTS in scripts/build-climate-disaster-pages.mjs.`);
+  process.exit(1);
 }
 
 /* ═══ PAGE CSS ═══════════════════════════════════════════════════════════ */
@@ -107,12 +132,34 @@ const DZ_CSS = `
 
 const published = loadEvents().filter((e) => e.publish_state === 'published');
 
+const OUT_DIR = join(S.ROOT, 'public', '_pages', 'v3', 'climate-event');
+mkdirSync(OUT_DIR, { recursive: true });
+
+/* ★ A PAGE WHOSE EVENT IS NO LONGER PUBLISHED IS DELETED, NOT LEFT.
+   This generator only ever WROTE, so an event that went from published to
+   draft or withdrawn left its HTML behind. design-routes.ts stops routing it,
+   so it is not reachable at its canonical URL — but the file is still in
+   public/, still served at its /_pages/ path, and still read by the two things
+   that walk this directory: verify-seo.mjs and build-search-page.mjs, which
+   would keep an unreachable page in the site's own search index.
+   Found on 9 September 2026 when eight false events were withdrawn and all
+   eight pages stayed on disk. Deleting here rather than in the withdrawal is
+   deliberate: the generator owns this directory, so it is the thing that
+   should be able to say what does not belong in it. */
+{
+  const live = new Set(published.map((e) => `${e.slug}.html`));
+  const stale = readdirSync(OUT_DIR).filter((f) => f.endsWith('.html') && !live.has(f));
+  for (const f of stale) {
+    unlinkSync(join(OUT_DIR, f));
+    console.log(`  removed ${f} — its event is no longer published`);
+  }
+  if (stale.length) console.log(`  ${stale.length} stale page(s) deleted.`);
+}
+
 if (!published.length) {
   console.log('No published events. No situation pages to build — this is a normal quiet state.');
   process.exit(0);
 }
-
-mkdirSync(join(S.ROOT, 'public', '_pages', 'v3', 'climate-event'), { recursive: true });
 
 let built = 0;
 for (const e of published) {
@@ -275,7 +322,11 @@ ${S.newsletter('climate')}
        version this replaces sliced the detector's chosen headline to 60
        characters, which on this event produced the browser tab
        "Nepal floods: 6 ways to help victims of the glacial collapse". */
-    title: `${eventName(e)} — ${TYPE_LABEL.toLowerCase()} — Swechha`,
+    /* NOT `${TYPE_LABEL.toLowerCase()}` — "active situation" is this build's
+       own vocabulary and it spent the most valuable words in the result on
+       nothing. What replaces it is the page's actual offer, and it is what no
+       news result on the same query says. */
+    title: `${eventName(e)} — what is known, and what is not — Swechha`,
     route,
     desc: description(e),
     bands: BANDS.map(([id, cls]) => [id, cls]),

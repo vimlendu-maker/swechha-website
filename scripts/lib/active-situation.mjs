@@ -164,7 +164,23 @@ const FADE_GRACE_HOURS = 24;
    properly means deciding what its URL answers afterwards — a redirect, or a
    tombstone, never a bare 404. Nobody has needed that yet; when they do it is
    its own change, not a special case here. */
+/* ★ `withdrawn` OUTRANKS EVERYTHING, AND IT IS THE ONLY STATE A PERSON SETS.
+   Publication is otherwise sticky — an event that ever cleared the bar stays
+   published, deliberately, so a dip in hourly coverage cannot close a live
+   disaster. That stickiness has no way to express "a human looked at this and
+   it is wrong", and on 9 September 2026 eight published events needed exactly
+   that: places taken from a publisher's masthead, one flood filed as a
+   landslide, and two stories that were an explainer and an opinion piece.
+   Setting them back to `draft` would not have held, because the next run that
+   found them publishable would publish them again.
+
+   So `withdrawn` is permanent and the detector may not overturn it. It is not
+   deletion: the dossier, its sources and its score all remain, and
+   `withdrawn_why` records who decided and on what grounds. Restoring one is a
+   person editing the file back, which is the correct amount of friction for
+   undoing a human judgement. */
 export function publishStateFor({ existing, publishableNow }) {
+  if (existing?.publish_state === 'withdrawn') return 'withdrawn';
   if (existing?.publish_state === 'published') return 'published';
   return publishableNow ? 'published' : 'draft';
 }
