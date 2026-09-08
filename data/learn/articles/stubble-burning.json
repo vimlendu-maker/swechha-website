@@ -1,0 +1,71 @@
+{
+  "slug": "stubble-burning",
+  "category": "fire",
+  "h1": "What does stubble burning actually add?",
+  "card": "The seasonal fires north-west of Delhi, counted honestly — and the sensor gap that decides the number.",
+  "frame": {
+    "src": "/images/photos/monsoon-flooded-fields.jpg",
+    "alt": "Flooded fields under monsoon cloud"
+  },
+  "answer": "After the paddy harvest in Punjab and Haryana, farmers have a matter of weeks to clear residue before sowing wheat, and burning is the fastest way to do it. Satellites count the fires. What they count is detections, not fires, and the number depends heavily on which satellite is asked: over the same five days at peak season, VIIRS detected 2,222 and MODIS detected 1,170.",
+  "explainHead": "A three-week window, and a harvest that has to be cleared",
+  "explainLead": "The timing is agronomic, not cultural, and it is the reason the problem is seasonal.",
+  "explain": [
+    "Combine harvesting leaves standing paddy stubble that has to be removed before the wheat crop goes in. The gap between the two is short, mechanical removal costs money and time, and burning costs neither. The window is roughly the second half of October into November, which is exactly when Delhi's air is least able to disperse anything.",
+    "That coincidence is what makes the contribution so contested. Emissions arrive on north-westerly winds into a basin whose <a class=\"lk\" href=\"/learn/delhi-air-pollution\">mixing layer has already collapsed for the season</a>, so the same tonnage produces a far larger concentration than it would in July. The share attributed to stubble varies enormously day to day, and a figure quoted from a peak week is not an annual figure.",
+    "None of this is measured directly. What exists is a count of thermal anomalies seen from orbit &mdash; which is a different quantity, and the rest of this page is about how different."
+  ],
+  "defs": [
+    { "term": "Detection", "d": "One hot pixel on one satellite pass. The unit of every published fire count, including these." },
+    { "term": "Overpass", "d": "One satellite transit. A fire burning between passes, or under cloud, is not counted at all." },
+    { "term": "Pixel size", "d": "MODIS resolves at 1 km, VIIRS at 375 m. The smaller pixel sees smaller fires, which is most of the gap between them." }
+  ],
+  "standard": {
+    "chip": "The counts",
+    "head": "Seven Novembers, one fixed window, one sensor",
+    "lead": "Five days from 5 November each year over Punjab, Haryana and Delhi-NCR, read from the same instrument throughout so the years are comparable.",
+    "rows": [
+      { "name": "Region counted", "ref": { "file": "fires-nw-india.json", "path": "region" }, "authority": "NASA FIRMS, bounding box 73.5,27.5–78.5,32.5" },
+      { "name": "2019 detections", "ref": { "file": "fires-nw-india.json", "path": "year_on_year.series.0.count" }, "unit": "detections", "authority": "NASA FIRMS, MODIS, 5 days from 5 November" },
+      { "name": "2021 detections — the peak of this series", "ref": { "file": "fires-nw-india.json", "path": "year_on_year.series.2.count" }, "unit": "detections", "authority": "NASA FIRMS, MODIS, 5 days from 5 November" },
+      { "name": "2024 detections", "ref": { "file": "fires-nw-india.json", "path": "year_on_year.series.5.count" }, "unit": "detections", "authority": "NASA FIRMS, MODIS, 5 days from 5 November" },
+      { "name": "2025 detections", "ref": { "file": "fires-nw-india.json", "path": "year_on_year.series.6.count" }, "unit": "detections", "authority": "NASA FIRMS, MODIS, 5 days from 5 November" },
+      { "name": "Same five days, same region, seen by VIIRS instead", "ref": { "file": "fires-nw-india.json", "path": "sensor_gap.peak_season.viirs" }, "unit": "detections", "authority": "NASA FIRMS, VIIRS S-NPP, 375 m pixel" },
+      { "name": "Legal limit on fire detections", "ref": { "file": "forest-fire-india.json", "path": "limit.label" }, "authority": "No statute publishes one" }
+    ],
+    "after": [
+      "The last two rows are the same fires over the same five days. One instrument saw 1,170 and the other saw 2,222 &mdash; a ratio of about 1.9 &mdash; and neither is wrong. VIIRS has a 375-metre pixel and MODIS a kilometre, so VIIRS detects small fires that MODIS cannot resolve at all. The gap between them is a measure of fire size, not of disagreement.",
+      "Off season the gap is total: in one five-day sample outside the burning window MODIS detected nothing and VIIRS detected 24. A count is only comparable with another count from the same sensor, and any series that switches instruments has a step in it that is instrumental rather than real."
+    ]
+  },
+  "readHead": "How to read a stubble-fire number",
+  "readLead": "Four checks, and most quoted figures fail at least one.",
+  "measure": [
+    "<b>Which sensor?</b> MODIS and VIIRS counts are not interchangeable and must never be added. VIIRS S-NPP and VIIRS NOAA-20 see the same fires at different overpass times, so those two must not be added either.",
+    "<b>Which window?</b> A fixed five-day sample is comparable across years by construction and can miss a peak, because burning dates shift with monsoon withdrawal and harvest timing. A season total and a fixed sample are different quantities.",
+    "<b>Detections or area?</b> Burnt-area products measure how much land burned. A detection count measures how many hot pixels were seen, and only the first scales with the size of the fire.",
+    "<b>Near-real-time or science quality?</b> FIRMS publishes an immediate feed and a corrected archive months later. The two differ, and a November headline is always built on the first."
+  ],
+  "cannot": [
+    "It cannot confirm that a detection was a crop fire. A brick kiln, a rubbish heap and an industrial flare all register.",
+    "It cannot give a share of Delhi's PM2.5. Attribution is modelled and contested — see <a class=\"lk\" href=\"/learn/source-apportionment\">source apportionment</a>.",
+    "It cannot see fires under cloud, fires between overpasses, or fires too cool for the detection threshold.",
+    "It cannot support a claim about the whole season from a fixed window, and this series does not try to."
+  ],
+  "live": {
+    "href": "/now/forest-fire",
+    "label": "Fire detections",
+    "note": "The national series, one sensor, one fixed window, fourteen years."
+  },
+  "sources": [
+    { "name": "FIRMS — Fire Information for Resource Management System", "publisher": "NASA", "url": "https://firms.modaps.eosdis.nasa.gov/", "note": "Every detection count above, MODIS and VIIRS" },
+    { "name": "National Air Quality Index", "publisher": "Central Pollution Control Board", "url": "https://cpcb.nic.in/National-Air-Quality-Index/", "note": "The air readings the burning season is judged by" }
+  ],
+  "related": ["forest-fires-india", "delhi-air-pollution", "source-apportionment"],
+  "programme": {
+    "href": "/work/journeys/gram-anubhav",
+    "label": "Gram Anubhav",
+    "why": "Four days in a village is where the economics of clearing a field before sowing stop being abstract."
+  },
+  "act": { "href": "/act", "label": "Work with us" }
+}

@@ -89,6 +89,15 @@ const VOLATILE = {
   'air-delhi.json': ['city_reading', 'city_mean', 'worst_station', 'spread',
     'stations', 'observed', 'fetched', 'time', 'observation_age_hours',
     'check', 'crosscheck', 'state_label', 'excluded'],
+  /* THE CROSS-CHECK FILES REFRESH WITH THE AIR. `source.scale` and
+     `source.name` are properties of the upstream project and hold still; the
+     station list, the observation, the comparison and every verdict number
+     move on the hourly job. An explainer may cite WHICH SCALE another
+     publisher uses and may not cite how many stations it happened to list at
+     4pm. Added when /learn/air-quality-apps-disagree was written, before it
+     could reach for one. */
+  'air-crosscheck.json': ['observed', 'coverage', 'stations', 'comparison', 'forecast', 'fetched', 'state_label'],
+  'air-crosscheck-verdicts.json': ['ran', 'tier1', 'tier2'],
 };
 
 /** Resolve one ref to a printable string, or null with a recorded failure. */
