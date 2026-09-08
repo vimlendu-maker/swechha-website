@@ -160,6 +160,26 @@ const RULED_ROWS = new Set([
   'campaigns/this-girl-can', 'campaigns/sustainable-shopping',
   'campaigns/park-restoration', 'campaigns/no-more-waste-hills',
   'events/yamunotsav', 'events/cyclothon', 'events/greenathon', 'events/yamuna-shramdaan',
+  /* HEALTHY CITIES IS A ROW FOR A REASON NO OTHER ROW HAS. Owner ruling,
+     8 September 2026: "add the section there under projects".
+     The other two project rows — she-leads-change, food-systems — are rows for
+     want of evidence, and W-10 / AD-42 are the standing recipe for what happens
+     when the evidence turns up: the row becomes a page. THAT RECIPE DOES NOT
+     APPLY HERE. This item is not short of evidence; it has more than most pages
+     in this section. Its page ALREADY EXISTS and it is finished — it is just
+     not in this section. It is /healthy-cities, an eleven-band microsite with
+     ten fellow pages under it, built by scripts/build-healthy-cities.mjs out of
+     data/healthy-cities/**, carrying a third-party mark and gates of its own.
+     So the register row's job here is to REACH that page, which it does through
+     the `href` override in dest() below — not to stand in for a page that has
+     yet to be earned.
+     DO NOT "PROMOTE" THIS. page:true would build a second, thinner Healthy
+     Cities at /work/projects/healthy-cities out of this one file, and the site
+     would then hold two pages for one chapter with two URLs, two share cards
+     and two sets of figures. If the chapter ever should live inside the
+     section, that is a move of the whole microsite and a redirect, argued
+     first — not a boolean flipped here. */
+  'projects/healthy-cities',
 ]);
 const SITUATIONS = new Set(['air', 'yamuna', 'forest-loss']);
 /* AD-17 §4 clause 3 — the ONLY claims permitted, plus schema addendum §7 which
@@ -726,6 +746,19 @@ for (const it of items) {
       + 'has no photograph. Where there is no photograph, the page shows none and says nothing — delete the key.');
   }
   if (it.act && (!it.act.href || !it.act.label)) rej(key, '"act" needs both a label and an href');
+  /* The `href` destination override — see dest(). Two ways to get it wrong and
+     both are refused: a destination that is not a site-root path, and an item
+     that already has a page in this section, whose URL is itemPath()'s to
+     derive and not a data file's to state. */
+  if (it.href != null) {
+    if (typeof it.href !== 'string' || !it.href.startsWith('/')) {
+      rej(key, `"href" is ${JSON.stringify(it.href)} — the destination override must be a site-root path`);
+    }
+    if (it.page === true) {
+      rej(key, '"href" with page:true. An item with its own page in this section is reached at itemPath()\'s URL; ' +
+        'the override exists only for a row whose page lives outside the section.');
+    }
+  }
   /* ── AD-27.19. THE `ask` SIBLING, AND WHY IT IS A SIBLING.
      `/act`'s ENTIRE architecture is derived: build-act-page.mjs reads every
      every data/work item file, takes every one whose act.href is /act, groups them
@@ -1324,8 +1357,20 @@ function registerAnchors(url, bands, extra = []) {
    An item's destination is a PAGE URL where it has a page, and its own
    /work/<kind>#<anchor> where AD-17 §3 ruled it a row. A row's link is still
    specific: five rows sharing one destination is what makes homepage band 6
-   feel broken today.                                                        */
-const dest = (it) => it.page ? itemPath(it).url : `${PATHS[it.kind].url}#${it.anchor}`;
+   feel broken today.
+
+   AND ONE ITEM OVERRIDES BOTH, BECAUSE ITS PAGE IS OFF-SECTION. `href` exists
+   for an item ruled a row here whose page nevertheless exists somewhere else on
+   the site — today that is `projects/healthy-cities` and its /healthy-cities
+   microsite, and NO OTHER ITEM CARRIES `href` (all fifteen others fall straight
+   through to the two rules below, unchanged). Without it the register would
+   send a reader from the row to the one-line summary of a page they could have
+   been given. It is not a way to move an item's destination for taste: an item
+   with a page IN this section may not carry one, and the validation pass
+   rejects `href` alongside page:true. The destination is checked against
+   onward.json's route map by the same link gate as every other href, so an
+   override cannot point at a page that does not exist.                       */
+const dest = (it) => it.href || (it.page ? itemPath(it).url : `${PATHS[it.kind].url}#${it.anchor}`);
 const byKind = (k) => items.filter(i => i.kind === k).sort((a, b) => orderKey(a) - orderKey(b) || a.slug.localeCompare(b.slug));
 const kindDef = (k) => KINDS.find(x => x.slug === k) || { slug: k, name: k, line: '', frame_line: '', act: null };
 
