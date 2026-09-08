@@ -402,7 +402,59 @@ const ACT_ANCHOR = {
    that do not, it is repointed rather than dropped, because otherwise those two
    pages would have no route to the partnering content at all. */
 const PARTNER_SECOND = { label: 'Partner with us', href: '/act#partner' };
-const SOURCE_FORMS = [/^SOURCE-FACTS §\d+[\d\-–,. ]*$/, /^owner \d{4}-\d{2}-\d{2}$/, /^DECISIONS D-\d+\.\d+$/];
+/* ═══ THE FOURTH ACCEPTED SOURCE FORM — A NAMED DOCUMENT ═══════════════════
+   The three forms below this comment were the whole contract: a line in the
+   repository's own facts file, an assertion by the owner on a date, or a
+   numbered decision. Everything else was refused, and the refusal is the point
+   — it is what stops a figure whose provenance is "a pre-freeze prototype"
+   from being published as if somebody had counted it.
+
+   WHY A FOURTH ONE EXISTS. The Healthy Cities chapter arrived with figures
+   whose provenance is a real document — an impact synopsis, a project
+   proposal, a set of fellowship final reports — and the facts file has no
+   entry for any of them. Under three forms the only way to ship those figures
+   was to restamp each one as "owner <date>", which would have replaced a
+   traceable document with an undated-in-substance assertion. That is a
+   DOWNGRADE of true provenance, and it inverts what this contract is for: a
+   named document is more traceable than "owner plus a date", not less. The
+   owner ruled on 8 September 2026 that the forms widen rather than the
+   documents be relabelled.
+
+   WHAT THE SHAPE IS, AND WHY IT IS NOT "any string". A citation has to look
+   like a document somebody could ask for by name, so it must be all three of:
+     · NAMED — it opens on two or more capitalised words. "Healthy Cities",
+       "Influence India Fellowship". One capital is a sentence that happens to
+       start a line ("Our own report", "Internal estimate report"); two is a
+       title. This clause does most of the refusing.
+     · QUALIFIED — then up to four plain lowercase or numeric words, which is
+       where "impact", "project", "selection", "final" live.
+     · A KIND OF DOCUMENT — it ends on one word from the closed list below.
+       "Programme records" is not a document; a synopsis, a proposal, a deck,
+       a set of reports are. The list is closed on purpose: extending it is a
+       deliberate edit somebody has to justify, which is the whole difference
+       between a contract and a suggestion.
+   Three to ten words, letters, digits and an internal hyphen. No commas, no
+   parentheses, no page numbers, no URLs, no leading article — a citation that
+   needs punctuation is a sentence about a document rather than its name, and
+   the form refuses it so the next author writes the name instead.
+
+   WHAT IT STILL REFUSES, and this is the part that matters: an empty source, a
+   bare word, a lowercase description, a one-capital sentence, a name with no
+   document attached to it, a person, a URL, and every free-text date form
+   including "owner, 8 September 2026" — that one converts to the second form
+   and is not given a back door here.
+
+   It is ADDITIVE and provably inert: no source already in data/work/** matches
+   this pattern, so nothing that validated before validates differently now. */
+const DOC_KINDS = ['agenda', 'brief', 'criteria', 'deck', 'dossier', 'evaluation', 'memo',
+  'minutes', 'note', 'notes', 'plan', 'presentation', 'proposal', 'report', 'reports',
+  'review', 'statement', 'summary', 'synopsis'];
+const DOC_CITATION = new RegExp(
+  '^[A-Z][a-z]+(?:-[A-Z][a-z]+)?'          // a name: first capitalised word
+  + '(?: [A-Z][a-z]+(?:-[A-Z][a-z]+)?)+'   // and at least one more
+  + '(?: [a-z0-9]+){0,4}'                  // up to four qualifying words
+  + ` (?:${DOC_KINDS.flatMap(w => [w, w[0].toUpperCase() + w.slice(1)]).join('|')})$`);
+const SOURCE_FORMS = [/^SOURCE-FACTS §\d+[\d\-–,. ]*$/, /^owner \d{4}-\d{2}-\d{2}$/, /^DECISIONS D-\d+\.\d+$/, DOC_CITATION];
 
 /* ═══ FAILURES AND HOLES ══════════════════════════════════════════════════ */
 const REJECT = [];
@@ -487,10 +539,10 @@ function checkFigure(key, f, i) {
   //    an ABSENCE is fine and renders short; a missing one is not.
   if (!f.period) rej(at, 'NO PERIOD. A figure with no period is a build error, not a warning (data schema §5.1)');
   if (f.basis !== 'counted' && f.basis !== 'modelled') rej(at, `"basis" is ${JSON.stringify(f.basis)} — it must be "counted" or "modelled"; it drives the solid/dotted rule under the label`);
-  // ── REJECTION 1b. A SOURCE OUTSIDE THE THREE ACCEPTED FORMS. A figure whose
+  // ── REJECTION 1b. A SOURCE OUTSIDE THE FOUR ACCEPTED FORMS. A figure whose
   //    source is a pre-freeze prototype does not exist.
   if (!f.source || !SOURCE_FORMS.some(re => re.test(f.source))) {
-    rej(at, `"source" is ${JSON.stringify(f.source)} — accepted forms are "SOURCE-FACTS §NN", "owner YYYY-MM-DD" and "DECISIONS D-NN.N". No other value is accepted.`);
+    rej(at, `"source" is ${JSON.stringify(f.source)} — accepted forms are "SOURCE-FACTS §NN", "owner YYYY-MM-DD", "DECISIONS D-NN.N" and a named document ("Healthy Cities impact synopsis"). No other value is accepted.`);
   }
 }
 
