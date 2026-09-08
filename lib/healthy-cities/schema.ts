@@ -41,7 +41,7 @@ export const withheldRe = (s: string) =>
    Adding a band to the hub means adding its id here in the same change. */
 /* 2026-09-07 RESTRUCTURE. `schools` and `green` are gone: the programme is now
    cut into the four things it delivered — `workshops`, `cityscapes`, `actions`
-   and the Green Fellowship (`fellows`) — and the two old bands' content moved
+   and the fellowship (`fellows`) — and the two old bands' content moved
    into the first and third of those. `kinds` is the display-row band that names
    all four. The tier rows for `schools`, `green` and the struck `gaps` band were
    removed from work-shell's TIER in the same change, so a band id re-added here
@@ -55,9 +55,19 @@ export const withheldRe = (s: string) =>
    generator refuses a group that mixes `modelled` with any other basis.
    `horizon` carries NO figures at all: it is an argument about time, and a
    projected count for it would have to be invented. */
+/* 2026-09-08. `staff` is the Niva Bupa employee-engagement day at MCD Pratibha
+   Vidyalaya, Hari Nagar, given by the owner on 8 September 2026. It is NOT a
+   fifth row in `kinds`: the four display rows there are the programme's four
+   deliverables, each running the length of a school year, and setting one
+   afternoon beside them at 104px would say the two are the same size of thing.
+   It gets a band, after `actions`, because it IS a green action project — three
+   gardens on school ground — built by the people who fund the year. Its two
+   hundred saplings are counted in that band ALONE and are not folded into the
+   programme's 3,000+, which is the schools' own year; nothing we hold says
+   whether the one is inside the other, and adding them would decide it. */
 export const REQUIRED_BAND_KEYS = [
   'top', 'what', 'kinds', 'workshops', 'cityscapes', 'statement', 'actions',
-  'fellows', 'reach', 'horizon', 'voices', 'watch', 'with', 'onward',
+  'staff', 'fellows', 'reach', 'horizon', 'voices', 'watch', 'with', 'onward',
 ] as const
 
 /* ★ `planned` IS A THIRD BASIS AND IT IS NOT A ROUNDING OF `counted`.
@@ -120,7 +130,22 @@ export const quoteSchema = z.strictObject({
   speaker: z.string().min(1),
   role: z.string().optional(),
   place: z.string().optional(),
+  /* THE LANGUAGE OF THE TEXT THAT IS SHOWN, not of the mouth it came out of.
+     The two Uttarkashi quotes are set in the Hindi they were said in, so they
+     are `hi`; a translation we publish in English is `en`, and what it was
+     translated FROM goes in the field below. */
   language: z.enum(['en', 'hi']).default('en'),
+  /* ★ WHAT THE READER IS ACTUALLY LOOKING AT, WHERE IT IS NOT A TRANSCRIPTION
+     (2026-09-08). Tawheed Zubair's three Youth Ambassadors — Zaid, Ansh and
+     Somya — spoke Hindi, and what the programme supplied on 8 September 2026 is
+     an English translation of it, not the words they said. Publishing that in
+     the same treatment as Manisha Payeng's own English sentence would tell a
+     reader these are somebody's exact words when they are somebody else's
+     rendering of them. So the fact travels with the quote and the renderer
+     prints it in the panel's caption; a gate in build-healthy-cities.mjs
+     asserts every quote carrying this field says so on the page. Optional,
+     because a quote in the language it was said in needs no such note. */
+  translated_from: z.string().min(1).optional(),
 })
 
 export const fellowSchema = z.strictObject({

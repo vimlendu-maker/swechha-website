@@ -141,7 +141,7 @@ const dataFail = (m) => { console.error(`DATA IS WRONG: ${m}`); bad++; };
    as in the test suite — the test catches a commit nobody rebuilt, this catches
    the build that is running. */
 const BAND_PROSE = ['top', 'what', 'kinds', 'workshops', 'cityscapes', 'statement',
-  'actions', 'fellows', 'reach', 'horizon', 'voices', 'watch', 'with', 'onward'];
+  'actions', 'staff', 'fellows', 'reach', 'horizon', 'voices', 'watch', 'with', 'onward'];
 /* THE FOUR DELIVERABLES, IN THE ORDER THEY APPEAR, and the list is what the
    `kinds` band's display rows, the four bands themselves and the figure-group
    gates below all read. Naming them once means the display row that opens a
@@ -184,9 +184,13 @@ for (const f of ALL_FIG) {
 /* ★ NO TARGET ON THE MASTHEAD RAIL. The rail is four numerals on the first
    screen of a page a funder is handed by link, with a label and a span and no
    room to qualify itself; what belongs there is what the year achieved. The two
-   `planned` figures the owner asked for — the proposal's 100 classroom
-   workshops and its five curriculum modules — sit in the `workshops` band with
-   the prose that says what a module is. */
+   one remaining `planned` figure — the proposal's five curriculum modules —
+   sits in the `workshops` band with the prose that says what a module is.
+   ★ THE HUNDRED CLASSROOM WORKSHOPS ARE NO LONGER ONE OF THEM (owner, 8
+   September 2026): "you can put this number as 100+ as we covered more than 20
+   schools for workshops". So it is `counted`, sourced to him, and it stays in
+   the `workshops` band rather than moving to the rail, which is authored at
+   four cells. */
 for (const f of PROG.figures) {
   if (f.basis === 'planned') {
     dataFail(`rail figure "${f.label}" is basis "planned". The rail publishes what the year achieved; `
@@ -438,7 +442,27 @@ const IDS = ['top', 'what', 'kinds', 'workshops', 'cityscapes',
      the fellows' communities — so it cannot come before the schools and the
      fellowship have both been read. `horizon` says the same thing about time
      rather than about people, and it carries no figure at all. */
-  'actions', 'fellows', 'reach', 'horizon', 'voices', 'watch', 'with', 'onward'];
+  'actions',
+  /* ★ `staff` IS THE FUNDER'S OWN EMPLOYEES ON SCHOOL GROUND (owner, 8
+     September 2026), and it sits HERE — immediately after `actions` — because
+     it is a green action project: about forty Niva Bupa staff and fifty
+     students at MCD Pratibha Vidyalaya, Hari Nagar, built a container food
+     garden, a butterfly garden out of old tyres and a vertical garden of
+     air-purifying plants in one afternoon. It follows the band that says what
+     a green action project is, so a reader meets the argument before the
+     instance of it.
+     ★ IT IS NOT A FIFTH ROW IN `kinds`, AND THAT WAS THE JUDGEMENT CALL.
+     `displayRows` sets each deliverable at 43.2 -> 104px, and the four it
+     carries are each a school YEAR of something. Putting one afternoon on that
+     ladder would say the two are the same size of thing, on the loudest type on
+     the page — and gate 9f, which asserts the display rows ARE the four
+     deliverables in render order, is the mechanical form of the same rule.
+     ★ ITS TWO HUNDRED SAPLINGS ARE NOT ADDED TO THE PROGRAMME'S 3,000+. The
+     band's own prose says so in words: nothing we hold states whether the
+     day's planting is inside the schools' year-long count or beside it, and
+     summing them would decide that question by arithmetic. Gate 1 is the
+     mechanical half — it now computes this group's sum too. */
+  'staff', 'fellows', 'reach', 'horizon', 'voices', 'watch', 'with', 'onward'];
 /* Derived rather than hardcoded: any required band this build did not render —
    not just `statement` by name — is a gap the omission note must keep naming.
    If a second band ever becomes frame-conditional, this line does not need
@@ -747,6 +771,14 @@ const deliverable = (id, flip) => {
 body.workshops = deliverable('workshops', false);
 body.cityscapes = deliverable('cityscapes', true);
 body.actions = deliverable('actions', false);
+/* THE FUNDER'S STAFF DAY, COMPOSED BY THE SAME FUNCTION AS THE DELIVERABLES AND
+   NOT LISTED AS ONE. `deliverable()` is the composition — opener, prose,
+   split with a frame, figure group — and reusing it is what makes this band
+   read as part of the same page rather than as a bolt-on. What it is NOT is a
+   member of DELIVERABLES, which is the list `kinds`'s four display rows and
+   gate 9f both read; see the note on IDS above. Flipped, so it does not repeat
+   the composition of `actions` immediately above it. */
+body.staff = deliverable('staff', true);
 
 /* ── BAND 8. THE GREEN FELLOWSHIP, FRAMED CORRECTLY. ─────────────────────
    ★ THIS IS THE CORRECTION THAT PROMPTED THE REBUILD, IN THE OWNER'S OWN
@@ -758,7 +790,7 @@ body.actions = deliverable('actions', false);
    applications against a target of fifty, eligibility 18 to 35, open to
    students, early-career professionals, community leaders, social entrepreneurs
    and grassroots innovators; a grant, mentorship, implementation support and
-   certification as a Green Fellow; five selection criteria at twenty per cent
+   certification as a fellow; five selection criteria at twenty per cent
    each. NO pathway, referral, pipeline or eligibility link between a school
    participant and a fellow exists in any source, and not one fellow worked in a
    Delhi partner school — the ten projects are in Moradabad, Majuli, Delhi,
@@ -769,16 +801,20 @@ body.actions = deliverable('actions', false);
    criteria say only that applications "will be evaluated" — so no jury, panel or
    committee is named here. Inventing one would be the easiest sentence on the
    page to write and there is nothing behind it.
-   ★ AND IT IS THE "GREEN FELLOWSHIP" (owner's ruling, 7 September 2026,
-   reversing an earlier call). That is the name in the grant documents the funder
-   signed, and it is what the proposal, the criteria and the synopsis all call
-   it. The operational Drive artefacts for the same cohort are branded "Influence
-   India Fellowship", which is why the figure sources below still name those
-   reports — a source citation names the document that exists, not the name we
-   publish. The page's own name for the programme is Green Fellowship
-   everywhere, and the closing door reconciles the two by saying Swechha runs it
-   as Influence, which is a fact about the programme rather than about our
-   filing.
+   ★ AND IT IS THE "INFLUENCE FELLOWSHIP", AND ITS TEN ARE "INFLUENCE FELLOWS"
+   (owner's ruling, 8 September 2026, REVERSING the ruling of 7 September that
+   had settled on "Green Fellowship"). The reversal came from the Chief of
+   Operations in one sentence — "fellows have been referred to as Influence
+   Fellows" — and it is the name the ten are called by the people who ran the
+   cohort. It is also the only name consistent with /work/projects/influence,
+   which is the page this microsite's own closing door opens; under the old name
+   the door had to carry a sentence reconciling the two, and that sentence is
+   gone because there is nothing left to reconcile.
+   The figure sources below still name "Influence India Fellowship" documents
+   because that is how those artefacts are branded — a source citation names the
+   document that exists, not the name we publish. Gate 9g asserts both halves:
+   the page calls it the Influence Fellowship, and the struck name appears
+   nowhere on it.
 
    Ten rows, one per fellow, each carrying `id="<slug>"` so an inbound link
    lands on itself, and each linking to that fellow's own page. The one licensed
@@ -906,12 +942,23 @@ body.horizon = [
       band cannot quote somebody the fellow page does not. The panel is the
       component the frame will land in: above 900 it sets a photograph beside
       the words, which is what the photography pass fills. */
+/* ── AND A TRANSLATION SAYS SO UNDER THE WORDS, WHICH IS THE 8 SEPTEMBER
+      ADDITION. Three of Tawheed Zubair's Youth Ambassadors spoke Hindi and what
+      the programme supplied is an English rendering of it. Set in the same
+      treatment as Manisha Payeng's own English sentence with nothing to
+      separate them, those three would read as verbatim speech; they are not.
+      So the note rides in the caption slot the panel already has for a role and
+      a place — no new component, no new class — and it is derived from the
+      quote's own `translated_from` rather than typed, so the day a fourth
+      translated quote arrives it carries the note by existing. Gate 17 asserts
+      every quote that has the field says so on the page. */
+const transNote = (q) => (q.translated_from ? `Translated from ${esc(q.translated_from)}` : null);
 body.voices = [
   W.openBand('voices', BD.voices.head, BD.voices.lead),
   `      <div class="hc-voices">\n${VOICES.map(q => `        ${W.panel({
     name: q.speaker,
     p: `&ldquo;${q.text}&rdquo;`,
-    cap: [q.role, q.place, q.fellow.name].filter(Boolean).join(' &middot; '),
+    cap: [q.role, q.place, q.fellow.name, transNote(q)].filter(Boolean).join(' &middot; '),
     frame: q.frame || null,
   })}`).join('\n')}\n      </div>`,
 ];
@@ -933,14 +980,25 @@ body.voices = [
       name, what is in it, and the link. If the controller prefers the embed,
       the honest move is to EXPORT `player()` out of build-stories-page.mjs and
       widen it to playlists, so the site has one video component and not two. */
-/* ★ AND THE BAND NOW CLOSES ON THE TWO DIGITAL FIGURES, which is where they
-      belong: this is the only band on the page about what the programme
-      published rather than about what it did in a school. One of them is what
-      the year achieved and the other is what the proposal asked for, and the
-      second says so on its own numeral — see BASIS_MARK. Twenty-five thousand a
-      month is carried by both the impact deck and the synopsis; the knowledge
-      hub's two thousand users is a proposal KPI no report has claimed, exactly
-      like the hundred classroom workshops in `bands.workshops`. */
+/* ★ AND THE BAND CLOSES ON THE TWO DIGITAL FIGURES, which is where they belong:
+      this is the only band on the page about what the programme PUBLISHED
+      rather than about what it did in a school. Both are counted.
+      ★ THE KNOWLEDGE-HUB FIGURE IS DELETED (owner, 8 September 2026): "there is
+      no dedicated knowledge hub as such". It was 2,000+ users, basis `planned`,
+      sourced to the proposal — a target for a thing that does not exist, which
+      is worse than an unmet target, and it is not replaced by an estimate of
+      something else. What took its place in the group is a fact the page can
+      check on itself: the four video and podcast series linked in these very
+      rows. A group is two or more (FIGURE_RAIL_MIN), so the deletion could not
+      simply leave 25,000+ standing alone.
+      ★ AND THE ENGAGEMENT FIGURE NOW CARRIES ITS REAL PROVENANCE. It was
+      sourced to the impact synopsis over the whole "2025-26 project period";
+      the owner's own answer is Instagram and LinkedIn platform analytics from
+      November 2025 to April or May 2026, mostly Instagram. The period says
+      "November 2025 to April-May 2026" and stops there — he gave a month with
+      an "or" in it, and inventing the precise end would be tidying a fact. The
+      lead names the two channels, because `source` is not rendered and a reader
+      is owed the answer to "engagement where?" in the copy. */
 body.watch = [
   W.openBand('watch', BD.watch.head, BD.watch.lead),
   W.doRows(PROG.videos.map(v => ({
@@ -1232,7 +1290,7 @@ const HUB_CSS = `
       the ten fellow pages, in the spill group beside the record of the work,
       where it must keep the spacing that composition was measured at. ── */
 #workshops .w7-pj-nums,#cityscapes .w7-pj-nums,#actions .w7-pj-nums,#fellows .w7-pj-nums,
-#reach .w7-pj-nums,#watch .w7-pj-nums{
+#reach .w7-pj-nums,#watch .w7-pj-nums,#staff .w7-pj-nums{
   margin-top:var(--gap-row);padding-top:var(--gap-row);border-top:1px solid var(--hair)}
 /* ★ AND THE PAPER STATEMENT IS QUALIFIED BY THE SAME IDS, because the comment
    that used to sit here was WRONG and a measurement caught it. It said the
@@ -1258,7 +1316,8 @@ const HUB_CSS = `
 #actions.paper .w7-pj-nums,#actions.paper-2 .w7-pj-nums,
 #fellows.paper .w7-pj-nums,#fellows.paper-2 .w7-pj-nums,
 #reach.paper .w7-pj-nums,#reach.paper-2 .w7-pj-nums,
-#watch.paper .w7-pj-nums,#watch.paper-2 .w7-pj-nums{border-top-color:var(--rule)}
+#watch.paper .w7-pj-nums,#watch.paper-2 .w7-pj-nums,
+#staff.paper .w7-pj-nums,#staff.paper-2 .w7-pj-nums{border-top-color:var(--rule)}
 
 /* ── THE FUNDER'S MARK, AND THE PANEL IS LOAD-BEARING. The asset is an opaque
       white PNG and this band is #0D0D0B, so the panel is what makes the mark
@@ -1330,8 +1389,14 @@ const HUB_CSS = `
       is: the chain is derived, so which of the two lands on paper changes the
       moment a band is added or omitted. #reach is paper and #watch is dark
       today; neither line assumes it. ── */
-#reach .w7-pj-num.rl::after,#watch .w7-pj-num.rl::after{--rl-w:2px;--rl-c:var(--ink-2)}
-#reach .wk-dark .w7-pj-num.rl::after,#watch .wk-dark .w7-pj-num.rl::after{--rl-c:var(--fg-3)}
+/* #staff IS THE THIRD ID IN THIS BLOCK AND FOR THE SAME REASON: WORK_CSS's
+   promotion list names the four deliverables and not this band, so its figure
+   group would take the 1px light default — which resolves to var(--hair), white
+   on white on a paper band (1.03:1 measured), and gate 16 refuses that. ── */
+#reach .w7-pj-num.rl::after,#watch .w7-pj-num.rl::after,
+#staff .w7-pj-num.rl::after{--rl-w:2px;--rl-c:var(--ink-2)}
+#reach .wk-dark .w7-pj-num.rl::after,#watch .wk-dark .w7-pj-num.rl::after,
+#staff .wk-dark .w7-pj-num.rl::after{--rl-c:var(--fg-3)}
 `;
 
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */
@@ -1674,15 +1739,22 @@ gate(lostFig.length === 0,
        schema, and two of the best paragraphs on the page never shipped. The
        composition was changed (see `deliverable()`), and this is what stops it
        silently reverting. Checked per band, by the sentence. */
+/* ★ DERIVED FROM THE BANDS, NOT FROM DELIVERABLES, since 2026-09-08. Four bands
+   carried prose then and the two lists were the same list; `staff` carries a
+   paragraph now, and a prose-bearing band that was not a deliverable would have
+   slipped this check in silence — which is precisely the failure the gate was
+   written after. Read off `bands`, so a sixth is covered the day it is
+   authored. */
+const PROSE_BANDS = IDS.filter(id => ((BD[id] && BD[id].prose) || []).length);
 const lostProse = [];
-for (const id of DELIVERABLES) {
+for (const id of PROSE_BANDS) {
   const prose = (BD[id] && BD[id].prose) || [];
   const start = OUT.indexOf(`id="${id}"`);
   const bandHtml = start === -1 ? '' : OUT.slice(start, OUT.indexOf('</section>', start));
   for (const p of prose) if (!bandHtml.includes(p)) lostProse.push(`${id}: ${p.slice(0, 48)}...`);
 }
 gate(lostProse.length === 0,
-  `every authored prose paragraph renders in its own band`
+  `every authored prose paragraph renders in its own band (${PROSE_BANDS.join(', ')})`
   + `${lostProse.length ? `; DROPPED: ${lostProse.join(' | ')}` : ''}`);
 
 /* 9d. THE TYPE LADDER HAS NO HOLE IN THE MIDDLE OF IT, AND THAT IS THE WHOLE
@@ -1743,14 +1815,32 @@ gate(BD.kinds.rows.length === DELIVERABLES.length
   && BD.kinds.rows.every((r, i) => r.href === `#${DELIVERABLES[i]}`),
   `the display rows are the four deliverables, in the order the page renders them`);
 
-/* 9g. THE FELLOWSHIP IS NAMED THE GREEN FELLOWSHIP AND IS NOT DESCRIBED AS THE
-       SCHOOLS' NEXT STAGE. This is the correction that prompted the rebuild: the
-       ten were selected nationally by open call and were never school
-       participants, and no source describes any pathway between the two. The
-       page may say the word "Influence" once, because Swechha runs the
-       fellowship under that name and the closing door reconciles the two names
-       with it; what it may not do is imply continuity. */
-gate(/\bGreen Fellowship\b/.test(TEXT), 'the page calls it the Green Fellowship');
+/* 9g. THE FELLOWSHIP IS NAMED THE INFLUENCE FELLOWSHIP AND IS NOT DESCRIBED AS
+       THE SCHOOLS' NEXT STAGE.
+       ★ THE NAME IS THE OWNER'S, GIVEN 8 SEPTEMBER 2026, AND IT REVERSES THE
+       RULING OF 7 SEPTEMBER. That earlier call was "Green Fellowship", on the
+       grounds that it is the name in the grant documents the funder signed. The
+       Chief of Operations settled it the other way in one sentence — "fellows
+       have been referred to as Influence Fellows" — and the owner took it as
+       the most honest to the ten people themselves and the one consistent with
+       /work/projects/influence, which is the page this microsite's own closing
+       door points at. So the two assertions here are INVERTED from what they
+       were: the page must call it the Influence Fellowship, and the old name may
+       not appear anywhere on it. The source citations still name the documents
+       that exist — "Influence India Fellowship final reports" and that set's own
+       selection criteria — because a citation names the artefact and not the
+       name we publish, and those artefacts are branded that way.
+       ★ AND THE CAP ON THE WORD "Influence" IS GONE, WHICH WAS THE OTHER HALF
+       OF THE OLD RULING. It read "the operational name appears at most once",
+       because under the old name a second mention would have been the page
+       arguing with itself about what the thing is called. Under this name every
+       mention IS the name, so a cap would be a gate against the ruling it was
+       written to serve. What remains checked is the thing the cap was really
+       protecting: that nothing implies the ten came out of the partner schools. */
+gate(/\bInfluence Fellowship\b/.test(TEXT), 'the page calls it the Influence Fellowship');
+const oldName = /\bGreen Fellow(?:s|ship)?\b/.exec(TEXT);
+gate(!oldName, `the struck name "Green Fellowship" appears nowhere in the rendered page`
+  + `${oldName ? `; FOUND: ${oldName[0]}` : ''}`);
 const continuity = [
   /students?\s+(?:who\s+)?(?:then\s+)?(?:went|returned|go)\s+(?:back\s+)?(?:home|to their)/i,
   /graduat\w+\s+(?:in)?to\s+(?:the\s+)?fellow/i,
@@ -1762,8 +1852,8 @@ gate(implied.length === 0,
   'nothing implies the fellows came out of the partner schools — two strands under one grant, not two stages'
   + `${implied.length ? `; MATCHED: ${implied.map(r => r.source).join(' | ')}` : ''}`);
 const influences = (TEXT.match(/\bInfluence\b/g) || []).length;
-gate(influences <= 1,
-  `the operational name appears at most once (found ${influences}) — the page's own name for it is Green Fellowship`);
+gate(influences >= 1,
+  `the page names the fellowship Influence (found ${influences} mention(s)) — the owner's ruling of 8 September 2026`);
 
 /* 10. THE PAGE HAS MODELLED FIGURES AND STILL HAS NO DOTTED-RULE LEGEND, AND
        THAT IS NOW A DECISION RATHER THAN A CONSEQUENCE.
@@ -1880,6 +1970,34 @@ const hzDigits = [...new Set((HZ.replace(/<[^>]+>/g, ' ').match(/\d[\d,.]*/g) ||
 gate(!/w7-pj-num|class="num/.test(HZ) && hzDigits.length === 0,
   'the long-term band publishes no numeral — a projection here would be invented, not modelled'
   + (hzDigits.length ? `; DIGITS: ${hzDigits.join(', ')}` : ''));
+
+/* 17. A TRANSLATION SAYS SO ON THE PAGE, UNDER THE WORDS IT IS A TRANSLATION
+       OF. Three of Tawheed Zubair's Youth Ambassadors spoke Hindi; what we hold
+       is an English rendering the programme supplied on 8 September 2026, and
+       publishing it in the same treatment as somebody's own English sentence
+       would tell a reader it is verbatim speech. The note is derived from the
+       quote's `translated_from`, so the failure this catches is the renderer
+       dropping it — a caption slot reordered, a `.filter(Boolean)` removed, a
+       fourth translated quote arriving through a different call. Asserted per
+       quote and by position: the note has to be inside the panel that carries
+       that quote, not merely somewhere on the page. */
+const PANELS = OUT.split('<div class="wk-panel">').slice(1);
+const transBad = [];
+for (const q of VOICES) {
+  const p = PANELS.find(x => x.includes(q.text));
+  const said = p ? p.includes(`Translated from ${q.translated_from}`) : false;
+  if (!p) { transBad.push(`${q.fellow.slug}/${q.speaker}: no panel carries the words`); continue; }
+  /* BOTH DIRECTIONS. A note on a quote that was NOT translated is the same
+     misstatement the other way round, and it is the one a copy-paste makes. */
+  if (Boolean(q.translated_from) !== said) {
+    transBad.push(`${q.fellow.slug}/${q.speaker}: translated_from is `
+      + `${JSON.stringify(q.translated_from ?? null)} and the panel ${said ? 'says so' : 'says nothing'}`);
+  }
+}
+gate(transBad.length === 0,
+  `every translated quote on the hub says what it was translated from, in its own panel `
+  + `(${VOICES.filter(x => x.translated_from).length} of ${VOICES.length})`
+  + (transBad.length ? `; MISSING: ${transBad.join(', ')}` : ''));
 
 /* 11. THE MASTHEAD OWNS THE SHARE CARD. The card is derived from the first
        candidate carrying fetchpriority="high", and masthead() writes that onto
@@ -2421,7 +2539,9 @@ for (const f of FELLOWS) {
     `      <div class="hc-voices">\n${f.quotes.map(q => `        ${W.panel({
       name: q.speaker,
       p: `&ldquo;${q.text}&rdquo;`,
-      cap: [q.role, q.place].filter(Boolean).join(' &middot; '),
+      /* The translation note, same as the hub's — see transNote above. The
+         fellow's own name is dropped here because it is this page's h1. */
+      cap: [q.role, q.place, transNote(q)].filter(Boolean).join(' &middot; '),
       frame: q.frame || null,
     })}`).join('\n')}\n      </div>`,
   ] : null;
@@ -2584,6 +2704,18 @@ function fellowGates({ f, OUT: HTML, ids, index, figs, others }) {
   if (hasVoices) {
     const voicesBand = (HTML.split('id="voices"')[1] || '').split('</section>')[0];
     g(/class="wk-panel"/.test(voicesBand), 'the voices band renders no panel');
+    /* AND A TRANSLATION SAYS SO, IN BOTH DIRECTIONS — the hub's gate 17 for a
+       fellow's own page. Tawheed Zubair's three Youth Ambassadors spoke Hindi
+       and what is published is an English rendering; a reader must not be told
+       it is verbatim, and a quote in the language it was said in must not be
+       marked as though it were a translation. */
+    const panes = voicesBand.split('<div class="wk-panel">').slice(1);
+    const wrong = (f.quotes || []).filter((q) => {
+      const p = panes.find(x => x.includes(q.text));
+      return !p || Boolean(q.translated_from) !== p.includes(`Translated from ${q.translated_from}`);
+    });
+    g(wrong.length === 0,
+      `quote(s) whose translation note does not match the data: ${wrong.map(q => q.speaker).join(', ')}`);
   }
   /* 6b. NO GAP BAND, NO NAMED HOLE, NO CONFESSION — AND THIS IS THE INVERSE OF
          WHAT USED TO BE CHECKED HERE. The old assertion was that every string
