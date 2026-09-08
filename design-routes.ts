@@ -226,6 +226,24 @@ function recordRoutes(): Record<string, string> {
   return out
 }
 
+/* THE JOURNAL'S PUBLISHED ARTICLES, DERIVED FROM THE BUILT FILES. The
+   generator writes a page only for an article marked published with a named
+   approver, so a held draft has no file here and therefore no route — which is
+   the same property `disasterRoutes` relies on for an event below its
+   publication bar. Unlike the record's month pages these are NOT exempt from
+   the SEO register: an article is a deliberate editorial act and its title and
+   description are written with it, so a new one needs a register entry and
+   `lib/seo/register.test.ts` says so. */
+function journalRoutes(): Record<string, string> {
+  const dir = join(PUBLIC, '_pages/v3/journal')
+  if (!existsSync(dir)) return {}
+  const out: Record<string, string> = {}
+  for (const f of readdirSync(dir).filter((n) => n.endsWith('.html')).sort()) {
+    out[`/journal/${f.slice(0, -'.html'.length)}`] = `journal/${f}`
+  }
+  return out
+}
+
 export function designRoutes(): Array<{ source: string; destination: string }> {
   const map: Record<string, string> = {
     '/': 'home.html',
@@ -288,6 +306,13 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
        restating it. Two descriptions of one programme at two URLs is the
        duplicate-content failure this map exists to avoid. */
     '/schools': 'schools.html',
+    /* `/journal` — the dated section. Its articles are derived just below from
+       the built files, because the generator writes one only for an article a
+       person has approved: an unapproved draft has no page, so it can have no
+       route, and the approval gate is enforced by the filesystem rather than by
+       anybody remembering to edit this map. */
+    '/journal': 'journal.html',
+    ...journalRoutes(),
     /* `/record` and `/record/air` — the archive. The month pages under them are
        derived from the built files just below, because a month appears on its
        own as soon as the hourly store rolls over and a route that has to be

@@ -252,14 +252,17 @@ ${D.map((d) => `            <tr>
       </div>
     </div>`,
 
-    revised: () => `${opener('revised', 'What the source changed afterwards',
-      moved.length
-        ? `${revised} published observation${revised === 1 ? ' was' : 's were'} revised by CPCB after this site first read them. ${moved.length} of those revisions moved the city's headline reading.`
-        : `${revised} published observation${revised === 1 ? ' was' : 's were'} revised by CPCB after this site first read them. None of those revisions moved the city's headline reading.`)}
+    revised: () => `${opener('revised', 'When the source served it again',
+      `The feed was re-served for ${revised} observation time${revised === 1 ? '' : 's'} this month. `
+      + (moved.length
+        ? `${moved.length} of those changed the city&rsquo;s headline reading.`
+        : 'None of them changed the city&rsquo;s headline reading.'))}
     <div class="wrap">
-      <p class="rc-p">A reading is read hourly and re-read on later passes. When the value at an observation
-        time changes, the earlier one is kept alongside the new one rather than overwritten — so a figure
-        cited from this record can still be found at the address it was cited from.</p>
+      <p class="rc-p">Each observation time is read when it appears and re-read on later passes. Where a
+        later pass returns something different for a time already stored, the earlier snapshot is kept beside
+        the new one rather than overwritten &mdash; so a figure cited from this record can still be found at
+        the address it was cited from. What differs is usually further down than the headline: a station
+        reporting late, or one dropping out of the set.</p>
 ${moved.length ? `      <ul class="rc-rev">
 ${moved.slice(0, 40).map((r) => `        <li>${esc(r.hour)} &mdash; ${r.from} &rarr; ${r.to}</li>`).join('\n')}
       </ul>` : ''}
@@ -340,8 +343,8 @@ https://swechha.in${route}</code>
     </div>
     <div class="pic-body"><div class="wrap">
       <p class="lead">${S.n0(TOTAL_OBS)} hourly observations from ${dayLabel(FIRST)}, each one kept at its own
-        address with the monitor that produced it. ${S.n0(TOTAL_REVISED)} of them were later revised by CPCB,
-        and both versions are still here.</p>
+        address with the monitor that produced it. ${S.n0(TOTAL_REVISED)} of those observation times were
+        later served again, and both snapshots are still here.</p>
     </div></div>`,
 
     months: () => `${opener('months', 'Every month kept', 'One page per month, each a complete day table.')}
@@ -350,7 +353,7 @@ https://swechha.in${route}</code>
 ${monthPages.slice().reverse().map((p) => `        <a class="rc-m" href="${p.route}">
           <span class="rc-m-h">${monthLabel(p.m.y, p.m.mo)}</span>
           <span class="cap">${p.days.length} days &middot; ${S.n0(p.m.rows.length)} observations</span>
-          <span class="cap">${p.revised} revised by the source</span>${ARROW}
+          <span class="cap">${p.revised} re-served by the source</span>${ARROW}
         </a>`).join('\n')}
       </div>
     </div>`,
@@ -487,10 +490,10 @@ ${KEPT.map((k) => `        <div class="rc-k">
     <div class="wrap">
       <p class="rc-p"><b>A gap is a gap.</b> A missing hour, a station that stopped reporting, a year the
         survey was not run &mdash; all of them are absent, and none of them is a zero.</p>
-      <p class="rc-p"><b>A revision is kept beside the original.</b> When a source changes a published figure,
-        both are held. ${S.n0(TOTAL_REVISED)} readings in the Delhi air record have been revised since this
-        archive opened.</p>
-      <p class="rc-p"><b>A reading travels with its limit.</b> The number on its own is a description; the
+      <p class="rc-p"><b>A re-read is kept beside the original.</b> When a source serves something
+        different for an observation time already stored, both snapshots are held.
+        ${S.n0(TOTAL_REVISED)} observation times in the Delhi air record have been served again since
+        the archive opened, and ${S.n0(TOTAL_MOVED)} of those changed the headline reading.</p>
         number against the notified standard is a finding. Where there is no published limit &mdash; rainfall,
         fire detections &mdash; the record says so rather than inventing a benchmark.</p>
       <p class="rc-p"><b>Counted and modelled are marked differently.</b> A satellite reanalysis and a station
