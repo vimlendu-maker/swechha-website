@@ -335,30 +335,65 @@ jobs:
           # The group is worth keeping; it is not a guarantee, so the push has
           # to be able to lose and recover on its own.
           #
-          # ★ A CONFLICT STILL FAILS LOUDLY, and deliberately. Most of this
-          # commit is generated HTML that several jobs rewrite in full, so
-          # "ours" and "theirs" are both whole files and picking one silently
-          # reverts somebody's figures. The only cases this wins are the ones
-          # that never needed resolving — a push that touched data, source or a
-          # page this run did not rebuild. Same reasoning, same shape, as
-          # data-refresh.yml's loop.
+          # ★ IT RE-DERIVES; IT DOES NOT RESOLVE. Most of this commit is
+          # generated HTML that several jobs rewrite in full, so "ours" and
+          # "theirs" are both whole files and picking one silently reverts
+          # somebody's figures. A rebase is the same coin flip wearing a
+          # different hat — it replays those same whole files onto a branch that
+          # has moved, and the logs of the version this replaced show it
+          # conflicting every single time main had advanced.
+          #
+          # So a lost push takes the new main wholesale and rebuilds on top of
+          # it. That is what air-hourly.yml does, and it is why Air is the one
+          # publisher that has never lost a reading to this race.
+          #
+          # ★ THE EVIDENCE SURVIVES THE RESET, THE PAGES ARE MADE AGAIN.
+          # data/climate-events/ is carried across because this workflow is its
+          # only writer: no other job runs the detector, so no other job can be
+          # holding a newer dossier to lose. The pages are a pure function of
+          # those dossiers, so they are rebuilt rather than merged — and both
+          # builds run, not just the situations one. `build:hero` patches
+          # design/home.html in place and that path is staged below, so
+          # rebuilding only the situation pages would quietly drop the homepage
+          # from the retry. verify:final still gates the result: if the rebuild
+          # on the new base is not sound, nothing is published.
           for attempt in 1 2 3; do
             if git push; then
+              echo "::notice::Published on attempt ${attempt}."
               exit 0
             fi
-            echo "::notice::Push rejected on attempt ${attempt}. Fetching and replaying on top of main."
-            git fetch origin main
-            if ! git rebase origin/main; then
-              git rebase --abort || true
-              echo "::error::Rebase onto main conflicted, so this run's dossiers were NOT published. \
-          The conflict is in files that more than one publisher rewrites in full; resolving it \
-          automatically would silently discard one side's figures. Re-run this workflow — a fresh \
-          fetch on top of the current main will produce a clean commit."
+
+            if [ "$attempt" = "3" ]; then
+              echo "::error::Could not publish after 3 attempts; main is moving faster than this job can re-derive. The evidence is not lost — the next scheduled run re-reads the same feeds from a clean base."
               exit 1
             fi
+
+            echo "::warning::Push rejected on attempt ${attempt} — main moved under us. Re-deriving on top of it."
+            rm -rf /tmp/ce-evidence
+            cp -R data/climate-events /tmp/ce-evidence            || { echo "::error::Could not set the dossiers aside."; exit 1; }
+            git fetch --quiet origin main                         || { echo "::error::git fetch failed."; exit 1; }
+            git reset --hard --quiet origin/main                  || { echo "::error::git reset failed."; exit 1; }
+            cp -R /tmp/ce-evidence/. data/climate-events/         || { echo "::error::Could not restore the dossiers."; exit 1; }
+
+            npm run build:situations || { echo "::error::Rebuild of the situation pages on the new base failed; nothing published."; exit 1; }
+            npm run build:hero       || { echo "::error::Rebuild of the homepage on the new base failed; nothing published."; exit 1; }
+            npm run verify:final     || { echo "::error::verify:final refused the rebuild on the new base; nothing published."; exit 1; }
+
+            git add -A data public/images public/_pages design docs/design/FINAL.md
+
+            # NOTHING STAGED MEANS THE NEW MAIN ALREADY SAYS THIS. Another run
+            # landed the same dossiers while this one was working, so there is
+            # nothing left to publish and this is a success, not a failure. The
+            # step runs under `bash -e`, so an unguarded `git commit` would abort
+            # here with "nothing to commit" and turn a no-op into a red run.
+            if git diff --cached --quiet; then
+              echo "::notice::The new main already carries this run's result; nothing left to publish."
+              exit 0
+            fi
+
+            git commit --quiet -m "data(climate-event): ${summary}" \
+              -m "Re-derived on attempt ${attempt} after main moved under this run. Automated by .github/workflows/climate-events.yml. The dossiers are this run's; the pages were rebuilt on the new base and verify:final passed there."
           done
-          echo "::error::Could not publish after 3 attempts; main is moving faster than this job can rebase."
-          exit 1
 
 
       # ── TELL THE SEARCH ENGINES, AFTER THE PUSH ─────────────────────────
