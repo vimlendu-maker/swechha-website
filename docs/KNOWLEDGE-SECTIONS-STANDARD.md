@@ -15,8 +15,16 @@ generator-enforced; a page that breaks one does not get written.
 | Schools | `/schools` | `scripts/build-schools.mjs` | `data/schools.json` + `data/work/**` |
 
 Article, month and Journal routes are **derived from the built files** in
-`design-routes.ts`, so a new one needs no edit there. Everything else in
-[[swechha-two-lane-architecture]]'s four-registry rule still applies.
+`design-routes.ts`, so a new one needs no edit there.
+
+**`data/work/onward.json` has a generated shadow: `data/work-links.json`.** It
+is written by `build:work`, which reads onward.json and records every route the
+WORK pages are allowed to link to. Editing onward.json and *not* re-running
+`build:work` leaves the manifest five entries stale — the local build stays
+green, every gate passes, and CI's `generated-current` fails on the diff. It
+caught exactly that on PR #88. **After touching onward.json, run the whole CI
+loop, not just your own generator**, and run it twice: the second pass must
+change nothing.
 
 ## The one rule that separates Learn from Journal
 

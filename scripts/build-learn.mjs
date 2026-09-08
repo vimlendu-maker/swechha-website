@@ -157,6 +157,43 @@ for (const a of ARTICLES) {
   }
   if (a.frame && !a.frame.alt) dataFail(`${w}: the lead photograph has no alt text.`);
 }
+/* ── AN HTML ENTITY MAY NOT REACH A FIELD THIS GENERATOR ESCAPES. ────────
+   `esc()` turns `&` into `&amp;`, so `&deg;C` written in a row's unit ships to
+   the reader as the literal text "&deg;C". It is invisible in the JSON, it is
+   invisible in a diff, and it is invisible in every gate that reads the
+   rendered text — because the rendered text is exactly what is wrong. Five
+   articles shipped it before a figure rail was read by eye.
+
+   The fields below are the ones passed through `esc()`; everything else on an
+   article (the answer, the explanation, the after-notes, a definition's body)
+   is rendered raw and may use entities freely, which is why this is a list
+   rather than a sweep. Write the literal character: — ° ’ · … */
+const ESCAPED_FIELDS = (a) => [
+  ['card', a.card],
+  ['frame.alt', a.frame?.alt],
+  ['standard.chip', a.standard?.chip],
+  ...(a.standard?.rows || []).flatMap((r, i) => [
+    [`standard.rows[${i}].name`, r.name], [`standard.rows[${i}].authority`, r.authority],
+    [`standard.rows[${i}].unit`, r.unit], [`standard.rows[${i}].value`, r.value],
+  ]),
+  ...(a.defs || []).map((d, i) => [`defs[${i}].term`, d.term]),
+  ...(a.sources || []).flatMap((x, i) => [
+    [`sources[${i}].name`, x.name], [`sources[${i}].publisher`, x.publisher], [`sources[${i}].note`, x.note],
+  ]),
+  ['live.label', a.live?.label], ['live.note', a.live?.note],
+  ['programme.label', a.programme?.label], ['programme.why', a.programme?.why],
+  ['act.label', a.act?.label],
+];
+for (const a of ARTICLES) {
+  for (const [field, value] of ESCAPED_FIELDS(a)) {
+    const m = typeof value === 'string' && /&[a-z]+;|&#\d+;/.exec(value);
+    if (m) {
+      dataFail(`learn/${a.slug}: ${field} contains ${JSON.stringify(m[0])}. `
+        + 'That field is escaped, so the entity reaches the reader as literal text. Write the character itself.');
+    }
+  }
+}
+
 /* Every category must hold at least one article, or the index prints an empty
    column that reads as a section still being written. */
 for (const c of CATS) {

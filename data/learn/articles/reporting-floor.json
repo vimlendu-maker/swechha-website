@@ -1,0 +1,147 @@
+{
+  "slug": "reporting-floor",
+  "category": "data",
+  "h1": "What is a reporting floor?",
+  "card": "When an instrument returns its own lowest value, that is not a measurement of nothing.",
+  "frame": {
+    "src": "/images/photos/cityscapes-yamuna-walk-dry-riverbed-legacy.jpg",
+    "alt": "A line of students walking across a dry, cracked stretch of Yamuna riverbed towards a road bridge"
+  },
+  "answer": "A reporting floor is the lowest value a measurement method will return. Below it the method cannot distinguish one quantity from another, so it reports the floor. A reading at the floor therefore means <b>at or below</b> that value &mdash; never exactly it, and never zero. The same applies at the other end: a scale that saturates stops separating bad from far worse.",
+  "explainHead": "The instrument's edge, not the world's",
+  "explainLead": "Every measurement has a range. Outside it the number stops being a measurement and becomes a boundary.",
+  "explain": [
+    "Below its detection limit an instrument still returns something &mdash; but what it returns is the limit, not the quantity. Four consecutive stations on the Delhi Yamuna report a dissolved-oxygen minimum of 0.3 mg/L, which is the floor CPCB's method reports. The true value at those stations is at or below 0.3, and it may be zero. Nothing in the data distinguishes the two.",
+    "Printing that as “0.3 mg/L” implies a precision the method does not have. Printing it as “0.0” invents a measurement nobody made. This site prints <b>at or below</b>, which is the only one of the three that is true.",
+    "Ceilings behave the same way in reverse. India's Air Quality Index runs to 500, a figure chosen when concentrations above it were not expected to be routine. Delhi has reached it. When a station's sub-index saturates, the index has stopped distinguishing a bad evening from a far worse one, and the underlying concentration is the only thing that still can."
+  ],
+  "defs": [
+    {
+      "term": "Detection limit",
+      "d": "The lowest concentration a method can reliably find at all."
+    },
+    {
+      "term": "Reporting floor",
+      "d": "The lowest value the method will actually publish. Often above the detection limit, and it is the one that appears in a dataset."
+    },
+    {
+      "term": "Censored value",
+      "d": "The statistician's name for a reading known only to be above or below a bound. It cannot be averaged as though it were a point."
+    },
+    {
+      "term": "Saturation",
+      "d": "The ceiling. Above it, differences stop being visible."
+    }
+  ],
+  "standard": {
+    "chip": "The edges",
+    "head": "Two floors and one ceiling, in this site's own data",
+    "lead": "Each of these is a property of a method, not of the environment it was pointed at.",
+    "rows": [
+      {
+        "name": "Dissolved oxygen — CPCB reporting floor",
+        "ref": {
+          "file": "yamuna-cpcb-2025.json",
+          "path": "reporting_floor.do"
+        },
+        "unit": "mg/L",
+        "authority": "CPCB, National Water Quality Monitoring Programme"
+      },
+      {
+        "name": "Nizamuddin — reported minimum",
+        "ref": {
+          "file": "yamuna-cpcb-2025.json",
+          "path": "stations.17.do.min"
+        },
+        "unit": "mg/L",
+        "authority": "CPCB NWMP 2025 — at or below"
+      },
+      {
+        "name": "Okhla, after the Shahdara drain — reported minimum",
+        "ref": {
+          "file": "yamuna-cpcb-2025.json",
+          "path": "stations.19.do.min"
+        },
+        "unit": "mg/L",
+        "authority": "CPCB NWMP 2025 — at or below"
+      },
+      {
+        "name": "For contrast — Yamunotri, well inside the range",
+        "ref": {
+          "file": "yamuna-cpcb-2025.json",
+          "path": "stations.0.do.min"
+        },
+        "unit": "mg/L",
+        "authority": "CPCB NWMP 2025 — a real measurement"
+      },
+      {
+        "name": "Air Quality Index — top of the scale",
+        "ref": {
+          "file": "air-delhi.json",
+          "path": "bands.5.idx.1"
+        },
+        "unit": "AQI",
+        "authority": "CPCB National Air Quality Index, 2014"
+      },
+      {
+        "name": "— and where the top band begins",
+        "ref": {
+          "file": "air-delhi.json",
+          "path": "bands.5.idx.0"
+        },
+        "unit": "AQI",
+        "authority": "CPCB National Air Quality Index, 2014"
+      }
+    ],
+    "after": [
+      "None of these is a limit anything can break. They are the edges of the instruments, and confusing an instrument's edge with a finding about the world is one of the commonest ways a dataset is misread &mdash; usually in the direction of making things look better than they are."
+    ]
+  },
+  "readHead": "What to do with a censored value",
+  "readLead": "Four rules, and the first one rules out most of what is usually done.",
+  "measure": [
+    "<b>Do not average it.</b> A set containing floor readings has no honest mean, because the values below the floor are unknown. Substituting zero, the floor, or half the floor are all common and all produce a different answer.",
+    "<b>Do not plot it as a point.</b> On a chart a floor reading is a bound; drawing it as an observation asserts a precision the method refused.",
+    "<b>Do not read a run of floor readings as stability.</b> Four stations at 0.3 mg/L look identical and may not be. The method has stopped resolving them.",
+    "<b>Do say which it is.</b> A dataset that publishes a floor is being honest with you; one that publishes zeros is not, and the difference is invisible unless somebody states it."
+  ],
+  "cannot": [
+    "A floor reading cannot be converted into a real value. No amount of processing recovers information the method did not capture.",
+    "It cannot be compared with a reading from a method with a different floor. Two datasets can disagree entirely because of where their instruments stop.",
+    "A saturated ceiling cannot be extrapolated past. An index at its maximum is not a measurement of how far past the maximum the air went.",
+    "None of this is detectable from the number alone. It requires the method's documentation, which is why every reading on this site names its source."
+  ],
+  "live": {
+    "href": "/now/yamuna",
+    "label": "The Yamuna, station by station",
+    "note": "Where the floor readings are, marked as at-or-below rather than as values."
+  },
+  "sources": [
+    {
+      "name": "Water quality data of river Yamuna, 2025",
+      "publisher": "Central Pollution Control Board, National Water Quality Monitoring Programme",
+      "url": "https://cpcb.gov.in/wqm/2025/WQuality_River-Data-2025.pdf",
+      "note": "The station minima and the 0.3 mg/L floor"
+    },
+    {
+      "name": "National Air Quality Index",
+      "publisher": "Central Pollution Control Board",
+      "url": "https://cpcb.nic.in/National-Air-Quality-Index/",
+      "note": "The 0–500 scale and its top band"
+    }
+  ],
+  "related": [
+    "measured-vs-modelled",
+    "yamuna-dissolved-oxygen",
+    "how-to-read-environmental-data"
+  ],
+  "programme": {
+    "href": "/work/projects/eco-action",
+    "label": "Eco Action",
+    "why": "An instrument that stops reading is the most teachable moment a real dataset offers."
+  },
+  "act": {
+    "href": "/act",
+    "label": "Use our data"
+  }
+}
