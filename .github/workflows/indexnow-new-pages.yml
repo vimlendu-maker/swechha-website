@@ -1,0 +1,130 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# SUBMIT NEWLY ADDED PAGES TO INDEXNOW, ON PUSH TO main.
+# ───────────────────────────────────────────────────────────────────────────
+# THE GAP THIS CLOSES. IndexNow was wired into content-rebuild.yml and
+# climate-events.yml, and each submits only the pages IT changed. A page added
+# by a human in a pull request — the whole of /learn, /schools, /record and
+# /journal, forty URLs — arrives already built and already committed, so on
+# merge content-rebuild rebuilt nothing, found nothing changed, and reported
+# "No page files changed — nothing to submit." Forty new URLs were published
+# and no search engine was told. Measured on the merges of PRs #87, #88 and
+# #89 before this file existed.
+#
+# ★ IT SUBMITS ONLY FILES THAT WERE **ADDED**, AND THAT IS THE WHOLE DESIGN.
+# scripts/ping-indexnow.mjs states the rule this follows: "The event and
+# content workflows are where a NEW url appears, which is what a push
+# notification is for." It also records, deliberately, that the hourly air job
+# is NOT wired to IndexNow — /now/air genuinely changes a few dozen times a
+# day, and submitting one URL that often is the behaviour the protocol asks you
+# not to exhibit.
+#
+# A trigger on "any changed page" would reverse that decision by the back door,
+# because the hourly job pushes rebuilt situation pages to main. Filtering to
+# git status A — added, not modified — keeps the author's rule exactly: a new
+# URL is news, a republished one is not. It also picks up the cases that
+# genuinely are new and previously had no route to a notification: a new
+# /record/air/<YYYY>/<MM> when the archive rolls into a month, and a new Learn
+# or Journal article.
+#
+# ★ IT STANDS DOWN FOR THE BOTS. The automated workflows that already submit
+# their own pages author their commits as actions@github.com. Running here as
+# well would submit those URLs twice within a minute of each other, which is
+# the pattern the protocol reads as abuse rather than diligence. So a push
+# authored by the automation is skipped and says so.
+#
+# ★ IT NEVER FAILS A DEPLOY. The pages are already published and correct;
+# this is a notification, and a rejected notification is not a broken site.
+# ═══════════════════════════════════════════════════════════════════════════
+name: Tell the search engines about a new page
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/_pages/v3/**'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'List the URLs without sending them'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: indexnow-new-pages
+  cancel-in-progress: false
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Two commits is enough for a normal push and for a merge commit,
+          # but `github.event.before` can point further back when several
+          # pushes land together. Fetch enough history for the diff below to
+          # resolve, rather than guessing a depth.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Was this push the automation's own?
+        id: who
+        run: |
+          AUTHOR="$(git log -1 --format='%ae' ${{ github.sha }})"
+          echo "author=$AUTHOR" >> "$GITHUB_OUTPUT"
+          if [ "$AUTHOR" = "actions@github.com" ]; then
+            echo "bot=true" >> "$GITHUB_OUTPUT"
+            echo "Pushed by $AUTHOR — the workflow that made this commit submits its own pages."
+            echo "Standing down so the same URL is not submitted twice." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "bot=false" >> "$GITHUB_OUTPUT"
+            echo "Pushed by $AUTHOR — a human change, which is the case this workflow exists for."
+          fi
+
+      - name: Which page files were ADDED
+        id: added
+        if: steps.who.outputs.bot != 'true'
+        run: |
+          BEFORE='${{ github.event.before }}'
+          # A first push to a branch reports an all-zero `before`; there is no
+          # range to diff and nothing to infer, so the run says so rather than
+          # submitting the whole tree.
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            echo "No usable previous commit for this push — nothing to compare against."
+            echo "files=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          FILES="$(git diff --name-status --diff-filter=A "$BEFORE" '${{ github.sha }}' -- 'public/_pages/v3/**/*.html' \
+                    | cut -f2 | tr '\n' ' ')"
+          echo "Added page files: ${FILES:-none}"
+          echo "files=$FILES" >> "$GITHUB_OUTPUT"
+
+      - name: Submit them
+        if: steps.who.outputs.bot != 'true'
+        continue-on-error: true
+        env:
+          FILES: ${{ steps.added.outputs.files }}
+          DRY: ${{ github.event.inputs.dry_run }}
+        run: |
+          if [ -z "${FILES// /}" ]; then
+            echo "No page was added in this push — nothing to submit."
+            echo "This is the normal quiet state: a page that changed is not news to a crawler." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [ "$DRY" = "true" ]; then
+            node scripts/ping-indexnow.mjs --changed "$FILES" --dry-run
+          else
+            node scripts/ping-indexnow.mjs --changed "$FILES" | tee /tmp/indexnow.log
+            {
+              echo "### Submitted to IndexNow"
+              echo ''
+              echo '```'
+              cat /tmp/indexnow.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
