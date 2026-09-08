@@ -449,7 +449,10 @@ for (const a of ARTICLES) {
     }),
     bands: ARTICLE_BANDS, index: INDEX, sh, clashes,
     pageCss: PAGE_CSS,
-    navMark: { current: null, url: null },
+    /* THE SEVENTH NAV WORD IS THIS SECTION'S, so these pages mark it. An
+       article gets aria-current="true" (under Learn, not at it) and the index
+       gets "page", which is what navCurrent() derives from href === url. */
+    navMark: { current: 'Learn', url: route },
     sectionFor: (id) => B[id](),
     note: `learn/${a.slug} — ${a.sources.length} source(s), ${(a.related || []).length} related.`,
   });
@@ -554,7 +557,7 @@ const IX = await S.assemble({
   ],
   sh, clashes: S.groundChain(INDEX_BANDS),
   pageCss: PAGE_CSS,
-  navMark: { current: null, url: null },
+  navMark: { current: 'Learn', url: '/learn' },
   sectionFor: (id) => IB[id](),
   note: `${ARTICLES.length} articles in ${CATS.length} categories.`,
 });
