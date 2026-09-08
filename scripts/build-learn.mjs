@@ -388,6 +388,19 @@ for (const a of ARTICLES) {
     file: `learn/${a.slug}.html`,
     route,
     title: seo(route).title,
+    /* AN EXPLAINER IS AN ARTICLE AND CARRIES NO DATE. Every other field here is
+       something the page can stand behind; a `datePublished` on an evergreen
+       page would be a date invented to chase a rich result, so there is none.
+       `about` names the subject in the reader's own words, which is what makes
+       the markup worth emitting at all. */
+    headExtra: S.articleJsonLd({
+      headline: a.h1.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
+      description: seo(route).description,
+      url: route,
+      image: a.frame.src,
+      section: catOf(a).name,
+      about: [catOf(a).name, ...(a.defs || []).slice(0, 3).map((d) => d.term)],
+    }),
     bands: ARTICLE_BANDS, index: INDEX, sh, clashes,
     pageCss: PAGE_CSS,
     navMark: { current: null, url: null },

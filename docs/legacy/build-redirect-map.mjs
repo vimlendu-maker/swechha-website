@@ -206,6 +206,24 @@ const POST_OVERRIDES = {
     ['/work/projects/eco-action', 'air-detox installations in schools — the Eco Action schools strand', 'parent'],
   '/learning-to-grow-with-swechha/':
     ['/act', 'a recruitment piece aimed at 18-25s joining social enterprises (owner, 2026-08-23)', 'parent'],
+
+  /* ── RE-POINTED WHEN /learn WAS BUILT. ────────────────────────────────────
+     Both of these were sent to a section INDEX because, at the time the map was
+     made, nothing on this site answered the question the post's own title asks.
+     /learn does now, and the header of redirects.ts says exactly this in
+     advance: the 97 `parent` rows are "a re-point list for when the missing
+     pages get built".
+
+     They become `exact` rather than staying `parent`, because the destination
+     is no longer a plausible parent of the old page — it is the same question,
+     answered. A reader arriving from a 2019 search for what Delhi is doing
+     about its air now lands on the page that says what the air is, what the
+     limit is and where the argument actually stands, rather than on an index of
+     stories none of which is the one they clicked. */
+  '/what-is-the-government-doing-for-air-pollution-in-delhi/':
+    ['/learn/delhi-air-pollution', 'the post asked why Delhi\'s air is what it is; this is that question answered, and it is a closer match than the stories index', 'exact'],
+  '/air-pollution-in-india-santosh-harish-in-conversation-with-vimlendu-jha/':
+    ['/learn/source-apportionment', 'a conversation about where India\'s air pollution comes from; the apportionment explainer is the standing answer, and the video index no longer carries the episode', 'exact'],
 }
 const POST_RULES = [
   [/monsoon.?wooding/i,  '/work/campaigns/monsoon-wooding', 'a dated instance of the Monsoon Wooding campaign', 'exact'],
@@ -233,7 +251,18 @@ const POST_RULES = [
   [/urban gardening|grow your own food|wind chime|butterfly garden|vermicompost/i,
                          '/farm', 'a growing or composting workshop; the farm is the true parent', 'parent'],
   [/nursery/i,           '/farm', 'the community native nursery is farm work', 'parent'],
-  [/eco.?walk|exposure|azaad|flash mob|spotted|swm training|community impact|winter camp|survey mapping|school program/i,
+  /* SCHOOL-FACING ACTIVITY GOES TO /schools, AND IT IS AHEAD OF THE CATCH-ALL
+     BELOW ON PURPOSE. The generic rule sent anything titled "school program" to
+     /work — the umbrella for projects, campaigns, journeys and events — which
+     is where the organisation's work lives and not where a teacher's search
+     ends. /schools is the page that compares the six programmes a school can
+     actually book, and a 2016 post about a school programme is closer to that
+     than to the section index above it. Ordered first because POST_RULES is a
+     `.find()`: the catch-all would otherwise match these strings before this
+     rule ever ran. */
+  [/school program|school workshop|schools programme|environmental education/i,
+                         '/schools', 'a school-facing activity; /schools is where a school can act on it', 'parent'],
+  [/eco.?walk|exposure|azaad|flash mob|spotted|swm training|community impact|winter camp|survey mapping/i,
                          '/work', 'a programme activity with no specific new page', 'parent'],
 ]
 

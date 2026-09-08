@@ -222,6 +222,16 @@ const OUT = await S.assemble({
   file: 'schools.html',
   route: '/schools',
   title: seo('/schools').title,
+  /* `Course` WAS CONSIDERED AND REFUSED — see itemListJsonLd's own note. Two of
+     the six are multi-day journeys and one is a farm visit; Course wants a
+     courseCode, a provider and dated instances, none of which exists, and
+     filling them to earn a rich result is the fabrication the brief forbids.
+     An ItemList claims only what is true: these six, in this order, each at
+     its own URL. */
+  headExtra: S.itemListJsonLd({
+    name: 'Swechha school programmes',
+    items: ROWS.map((r) => ({ name: r.it.name, url: href(r), description: r.it.line })),
+  }),
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
   navMark: { current: null, url: null },

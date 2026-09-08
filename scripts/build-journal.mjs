@@ -264,6 +264,22 @@ ${a.act ? `      <p style="margin:clamp(20px,3vw,28px) 0 0"><a class="b b-1" hre
     file: `journal/${a.slug}.html`,
     route,
     title: seo(route).title,
+    /* THE DATE IS REAL HERE, which is the whole difference from /learn's
+       markup: a Journal piece was published on a day and says so in its own
+       masthead, so datePublished states the same fact the reader is shown.
+       `dateModified` is the approval date rather than a build timestamp — the
+       page is regenerated on every run and a modified date that moved with the
+       build would claim an edit that never happened. */
+    headExtra: S.articleJsonLd({
+      headline: a.h1.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
+      description: seo(route).description,
+      url: route,
+      image: a.frame.src,
+      datePublished: a.date,
+      dateModified: a.approved_at,
+      section: TYPES[a.type].label,
+      about: (a.related?.learn || []).map((l) => LEARN_TITLE(l)),
+    }),
     bands: BANDS,
     index: [['What happened', '#account'], ['The data', '#data'], ['Known and uncertain', '#ours'], ['Sources', '#sources'], ['Next', '#onward']],
     sh, clashes: S.groundChain(BANDS),

@@ -309,6 +309,22 @@ https://swechha.in${route}</code>
   const OUT = await S.assemble({
     file: `record/air/${m.y}/${m.mo}.html`,
     route,
+    /* A MONTH PAGE IS A DATASET AND CAN SAY SO PRECISELY. It knows its own
+       temporal coverage — first day to last, from the store rather than from
+       the calendar — which is the one thing a live page can never state. No
+       `distribution`: there is no download yet, and asserting a file that does
+       not exist is how markup gets a site distrusted rather than indexed. */
+    headExtra: S.recordDatasetJsonLd({
+      name: `Delhi air quality record, ${monthLabel(m.y, m.mo)}`,
+      description: `Day-by-day peak and lowest AQI at Delhi's worst reporting monitor for `
+        + `${monthLabel(m.y, m.mo)}, with the monitor named, the count of stations over the limit `
+        + 'and the hours observed, from CPCB network readings.',
+      url: route,
+      temporalCoverage: D.length ? `${D[0].date}/${D[D.length - 1].date}` : null,
+      spatialCoverage: 'Delhi, India',
+      measurementTechnique: 'Continuous ambient air quality monitoring; CPCB National Air Quality Index sub-indices',
+      variables: ['Air Quality Index', 'Governing pollutant', 'Monitoring stations above the limit', 'Hours observed'],
+    }),
     title: `Delhi air quality record, ${monthLabel(m.y, m.mo)} — Swechha`,
     desc: fitDesc(`Day-by-day Delhi air quality for ${monthLabel(m.y, m.mo)}: peak AQI, the monitor that `
       + 'produced it, stations over the limit and hours observed.'),
@@ -410,6 +426,15 @@ https://swechha.in/record/air</code>
   var AIR_PAGE = await S.assemble({
     file: 'record/air.html',
     route: '/record/air',
+    headExtra: S.recordDatasetJsonLd({
+      name: 'Delhi air quality record',
+      description: seo('/record/air').description,
+      url: '/record/air',
+      temporalCoverage: FIRST && LAST ? `${FIRST}/${LAST}` : null,
+      spatialCoverage: 'Delhi, India',
+      measurementTechnique: 'Continuous ambient air quality monitoring; CPCB National Air Quality Index sub-indices, stored hourly with every later re-read',
+      variables: ['Air Quality Index', 'Governing pollutant', 'Worst reporting monitor', 'Station mean', 'Stations above the limit'],
+    }),
     title: seo('/record/air').title,
     bands: BANDS,
     index: [['Every month', '#months'], ['What a row is', '#what'], ['What is missing', '#holes'], ['Cite', '#cite'], ['Next', '#onward']],
