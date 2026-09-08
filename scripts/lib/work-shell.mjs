@@ -248,6 +248,15 @@ export const TIER = {
         disagree about what is current. */
   did: 't2',
   fellows: 't2', workshops: 't2', cityscapes: 't2', actions: 't2',
+  /* ★ `staff` IS THE FUNDER'S OWN EMPLOYEES ON SCHOOL GROUND (2026-09-08) — a
+     day about forty Niva Bupa staff and fifty students spent building three
+     gardens at one Delhi school. It is t3, the supporting weight `voices` and
+     `watch` take, and NOT t2 with the four deliverables: each of those is a
+     school year of something and this is one afternoon, so it backs the
+     `actions` band above it up with an instance rather than standing beside it
+     as a fifth strand. The same judgement keeps it out of the `kinds` display
+     rows, where it would have been set at 104px. */
+  staff: 't3',
   /* ★ `horizon` IS THE SHORT-TERM/LONG-TERM FRAME (2026-09-08), and it is t3
      rather than t2 on purpose: it makes no claim of its own and publishes no
      figure — it says how to read the four deliverables above it, which is the
