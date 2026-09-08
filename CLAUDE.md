@@ -169,6 +169,11 @@ for the App Router routes. Two rules are easy to break and both are gated:
   measured performance/Lighthouse baseline for this build.
 - `docs/ACTIVE-SITUATION-STANDARD.md` — the content wireframe and standard for
   active-situation event pages, with the per-band data contract.
+- `docs/SEARCH-CONSOLE-API.md` — what the Search Console API can and cannot do
+  (there is no API for "Request Indexing", URL Inspection is read-only, and the
+  Indexing API is restricted to `JobPosting`/`BroadcastEvent` — all three
+  verified against Google's docs), the three sanctioned calls that are wired,
+  and the six setup steps, four of which need a Google account.
 - `docs/KNOWLEDGE-SECTIONS-STANDARD.md` — the standard for `/learn`, `/record`,
   `/journal` and `/schools`: where each lives, the one rule that separates a
   Learn figure (a REFERENCE into the live dataset) from a Journal figure (a

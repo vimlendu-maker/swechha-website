@@ -1,0 +1,116 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# SEARCH CONSOLE — resubmit the sitemap, and keep the performance baseline.
+# ───────────────────────────────────────────────────────────────────────────
+# WHAT THIS CAN AND CANNOT DO, because the difference is usually assumed wrong.
+# There is NO API for the "Request Indexing" button. The URL Inspection API is
+# read-only, and the Indexing API is restricted by Google to JobPosting and
+# BroadcastEvent pages — both verified against Google's own documentation on
+# 8 September 2026 and recorded in scripts/search-console.mjs. So this
+# workflow does the three sanctioned things and claims nothing more.
+#
+# ★ THE WEEKLY PULL IS THE POINT. The baseline nobody had recorded is the
+# thing this repository could not obtain any other way — Search Console is the
+# only source of impressions, CTR and position, and it keeps only sixteen
+# months. Every week that runs without it is a week that can never be
+# recovered. The snapshot APPENDS: Google revises its own figures for days
+# afterwards, exactly as CPCB re-serves an observation, and this site keeps
+# both versions of one of those.
+#
+# ★ IT DEGRADES HONESTLY. Without the secret the job says so and stops. It
+# does not fail the repository's other work and it does not pretend to have
+# run.
+# ═══════════════════════════════════════════════════════════════════════════
+name: Search Console — sitemap and the performance baseline
+
+on:
+  schedule:
+    # Mondays, 05:40 UTC (11:10 IST). Search Console data lags two to three
+    # days, so a weekly pull asks for a window that has settled rather than one
+    # still being filled in.
+    - cron: '40 5 * * 1'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'What to run'
+        type: choice
+        default: analytics
+        options: [check, analytics, sitemap, both]
+      dry_run:
+        description: 'Show what would happen without sending or writing'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: search-console
+  cancel-in-progress: false
+
+jobs:
+  gsc:
+    runs-on: ubuntu-latest
+    env:
+      GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+      GSC_PROPERTY: ${{ vars.GSC_PROPERTY }}
+      SITE_ORIGIN: https://swechha.in
+    steps:
+      - name: Is the credential present?
+        id: cfg
+        run: |
+          if [ -z "$GSC_SERVICE_ACCOUNT_JSON" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            {
+              echo '### Search Console is not wired yet'
+              echo ''
+              echo 'The secret `GSC_SERVICE_ACCOUNT_JSON` is not set, so this job did nothing.'
+              echo 'Four of the six setup steps need a Google account —'
+              echo 'see `docs/SEARCH-CONSOLE-API.md`.'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "Not configured. Nothing was sent and nothing was written."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.cfg.outputs.ready == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.cfg.outputs.ready == 'true'
+        with:
+          node-version-file: .nvmrc
+
+      - name: Can the service account see the property?
+        if: steps.cfg.outputs.ready == 'true'
+        run: node scripts/search-console.mjs --check
+
+      - name: Resubmit the sitemap
+        if: steps.cfg.outputs.ready == 'true' && (github.event.inputs.action == 'sitemap' || github.event.inputs.action == 'both')
+        run: node scripts/search-console.mjs --sitemap ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
+
+      - name: Pull the performance snapshot
+        if: steps.cfg.outputs.ready == 'true' && github.event.inputs.action != 'check' && github.event.inputs.action != 'sitemap'
+        run: |
+          node scripts/search-console.mjs --analytics --days 28 ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }} | tee /tmp/gsc.log
+          {
+            echo '### Search performance'
+            echo ''
+            echo '```'
+            cat /tmp/gsc.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit the snapshot
+        if: steps.cfg.outputs.ready == 'true' && github.event.inputs.dry_run != 'true' && github.event.inputs.action != 'check' && github.event.inputs.action != 'sitemap'
+        run: |
+          if git diff --quiet -- data/seo/search-performance.json; then
+            echo "No change to commit."
+            exit 0
+          fi
+          git config user.name  'swechha-search-console[bot]'
+          git config user.email 'actions@github.com'
+          git add data/seo/search-performance.json
+          # The snapshot count is the honest headline: this file only ever
+          # grows, so "nth snapshot" says more than a date does.
+          N=$(node -p "require('./data/seo/search-performance.json').snapshots.length")
+          git commit -m "data(seo): search performance snapshot ${N}"
+          git push
