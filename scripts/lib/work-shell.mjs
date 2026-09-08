@@ -783,11 +783,37 @@ export const WORK_CSS = `
 @media (max-width:759px){.wk-way .b{width:100%;justify-content:center}}
 @media (max-width:759px){.wk-kinds-all .b{width:100%;justify-content:center;
   padding-top:16px;padding-bottom:16px}}
-/* THE READING PAIR'S 2px RULE IS SCOPED BY BAND ID, so a band that renders
-   figures() and is not named here silently gets the 1px light default instead
-   of the kissing rule the component was designed with. The four /healthy-cities
-   deliverable bands were added when that page was recut into its four
-   deliverables (2026-09-07) and each one closes on a figures() group. */
+/* THE READING PAIR'S 2px RULE IS SCOPED BY BAND ID. A band that renders
+   figures() and is not named here gets the 1px light default instead. The four
+   /healthy-cities deliverable bands were added when that page was recut into its
+   four deliverables (2026-09-07) and each one closes on a figures() group.
+
+   ★ THIS LIST IS A DELIBERATE SUBSET, NOT AN OVERSIGHT — do not "complete" it,
+   and do not raise the unpromoted bands as a contrast defect. That has now been
+   raised twice against an earlier wording here, which called the 1px default a
+   silent fallback and implied every figures() band was meant to be promoted. The
+   measurements are recorded so there is not a third time:
+
+     #projects   home.html, paper-2    1.46:1   <- THE FROZEN HOMEPAGE
+     #reach      work/index, paper-2   1.46:1   identical token, ground and value
+     #did        a fellow page, paper  1.56:1
+     promoted bands, on paper                   8.23:1
+     any dark band                              6.14:1, and automatically:
+                                                canvasFor() wraps a #0D0D0B or
+                                                #151512 band in .wk-dark, so the
+                                                dark statement below always wins
+
+   The frozen homepage ships its own reading pair at the 1px default. So that
+   default is a state the authority itself occupies, not a band that got missed.
+   The mark is a hairline kissing a numeral — decoration, carrying nothing the
+   numeral and its label do not already carry, and the non-text contrast rule
+   exempts decoration. Promoting /work/index would also make its register HEAVIER
+   than the homepage's, inverting a hierarchy the frozen page defines.
+
+   Promoting a band is therefore a decision about weight, argued against the
+   homepage — not a contrast repair, and 3:1 is the wrong instrument for a
+   hairline. Contrast is only genuinely in question where a PAPER token reaches a
+   DARK ground, which is what canvasFor() and the dark statement below prevent. */
 #what .w7-pj-num.rl::after,#weight .w7-pj-num.rl::after,
 #done .w7-pj-num.rl::after,#list .w7-pj-num.rl::after,
 #workshops .w7-pj-num.rl::after,#cityscapes .w7-pj-num.rl::after,
