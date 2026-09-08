@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readdirSync } from 'node:fs'
-import { loadFellows, loadProgramme, figureSchema, FELLOW_DIR, WITHHELD, REQUIRED_BAND_KEYS } from './schema'
+import { loadFellows, loadProgramme, figureSchema, FELLOW_DIR, WITHHELD, REQUIRED_BAND_KEYS, withheldRe } from './schema'
 
 /* THE FOUR DELIVERABLE BANDS EACH CLOSE ON A figures() GROUP, and those figures
    live inside `bands`, which is a z.record of unknown — so nothing in
@@ -78,8 +78,19 @@ describe('healthy-cities data', () => {
   it('publishes no withheld figure', () => {
     const hay = JSON.stringify([loadProgramme(), loadFellows()])
     for (const banned of WITHHELD) {
-      expect(hay, `${banned} is withheld by the spec`).not.toContain(banned)
+      expect(hay, `${banned} is withheld by the spec`).not.toMatch(withheldRe(banned))
     }
+  })
+
+  /* The anchoring is itself asserted, in both directions, because a check that
+     silently stopped matching would be worse than the false positive it was
+     written to fix: '5,000+ community members reached' is the claim that stays
+     withheld, and '25,000+' is a publishable figure that merely ends in it. */
+  it('anchors a withheld figure so a longer number does not collide with it', () => {
+    expect('"value":"5,000+"').toMatch(withheldRe('5,000+'))
+    expect('5,000+ community members reached').toMatch(withheldRe('5,000+'))
+    expect('"value":"25,000+"').not.toMatch(withheldRe('5,000+'))
+    expect('"value":"50,000+"').not.toMatch(withheldRe('5,000+'))
   })
 
   it('carries no internal ledger reference in any string', () => {

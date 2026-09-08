@@ -141,7 +141,7 @@ const dataFail = (m) => { console.error(`DATA IS WRONG: ${m}`); bad++; };
    as in the test suite — the test catches a commit nobody rebuilt, this catches
    the build that is running. */
 const BAND_PROSE = ['top', 'what', 'kinds', 'workshops', 'cityscapes', 'statement',
-  'actions', 'fellows', 'voices', 'watch', 'with', 'onward'];
+  'actions', 'fellows', 'reach', 'horizon', 'voices', 'watch', 'with', 'onward'];
 /* THE FOUR DELIVERABLES, IN THE ORDER THEY APPEAR, and the list is what the
    `kinds` band's display rows, the four bands themselves and the figure-group
    gates below all read. Naming them once means the display row that opens a
@@ -154,12 +154,20 @@ for (const k of BAND_PROSE) {
 }
 
 /* ★ EVERY FIGURE ON THIS PAGE GOES THROUGH ONE CHECK, wherever it is authored.
-   The rail is `programme.figures`; each of the four deliverable bands closes on
-   its own `figures` array inside `bands`, and `bands` is a z.record of unknown
-   in the schema, so nothing there validates them. Collected once, checked once,
-   and used again by the sum gates after the write. */
-const BAND_FIG = DELIVERABLES.flatMap(id => ((BD[id] && BD[id].figures) || [])
-  .map(f => ({ ...f, where: `bands.${id}` })));
+   The rail is `programme.figures`; a band closes on its own `figures` array
+   inside `bands`, and `bands` is a z.record of unknown in the schema, so nothing
+   there validates them. Collected once, checked once, and used again by the sum
+   gates after the write.
+   ★ AND THE COLLECTION IS DERIVED FROM THE BANDS RATHER THAN FROM DELIVERABLES,
+   which it was until 2026-09-08. Four bands carried figures then and the two
+   lists were the same list; `watch` and `reach` now carry them too, and a
+   figure-bearing band that was not a deliverable would have slipped every check
+   below — the basis enum, the source, the sum gate, the per-band render gate —
+   in silence. `where` is read off `bands` so a sixth group is covered the day
+   somebody authors it, without editing this line. */
+const FIG_BANDS = Object.keys(BD).filter(id => Array.isArray(BD[id] && BD[id].figures)
+  && BD[id].figures.length);
+const BAND_FIG = FIG_BANDS.flatMap(id => BD[id].figures.map(f => ({ ...f, where: `bands.${id}` })));
 const ALL_FIG = [...PROG.figures.map(f => ({ ...f, where: 'the masthead rail' })), ...BAND_FIG];
 for (const f of ALL_FIG) {
   if (!f.period) dataFail(`${f.where}: figure "${f.label}" has no period. A figure without a span is not a reading.`);
@@ -198,10 +206,29 @@ if (PROG.figures.length !== W.FIGURE_RAIL_MAX) {
 /* Every band that carries figures carries at least two of them. ONE FIGURE IS
    NOT A GROUP: `figures()` renders a single reading pair in a flex row, which
    at 46px beside a two-line label reads as an orphan rather than as a set. */
-for (const id of DELIVERABLES) {
-  const n = ((BD[id] && BD[id].figures) || []).length;
+for (const id of FIG_BANDS) {
+  const n = BD[id].figures.length;
   if (n && n < W.FIGURE_RAIL_MIN) {
     dataFail(`bands.${id} has ${n} figure. A group is two or more — one numeral beside a heading reads as an orphan.`);
+  }
+}
+/* ★ NO GROUP MIXES A MODELLED FIGURE WITH ANY OTHER KIND, AND THIS IS THE ONE
+   CHECK THAT MAKES THE INDIRECT FIGURES PUBLISHABLE AT ALL.
+   `basis` is not rendered (AD-28 struck the dotted rule and the legend that
+   decoded it), so a reader cannot see it — which means the only thing keeping
+   26,000-52,000 modelled students distinguishable from 3,000 counted saplings
+   is WHERE each one sits and WHAT IS WRITTEN ROUND IT. The two modelled figures
+   therefore have a band of their own, whose heading, lead and three rows are
+   nothing but the derivation and its multipliers; nothing counted is allowed
+   into that group, and no modelled figure is allowed into anybody else's.
+   The marker each non-counted numeral carries (see BASIS_MARK below) is the
+   second half of the same rule, and gate 10b proves it reached the page. */
+for (const id of FIG_BANDS) {
+  const bases = [...new Set(BD[id].figures.map(f => f.basis))];
+  if (bases.includes('modelled') && bases.length > 1) {
+    dataFail(`bands.${id} puts a modelled figure in the same group as a ${bases.filter(b => b !== 'modelled').join('/')} `
+      + 'one. A derivation standing beside a count with nothing between them reads as a count. '
+      + 'Give the modelled figures their own band, with the multiplier written out under them.');
   }
 }
 /* THE HUB'S SHARE DESCRIPTION IS WRITTEN IN TWO PLACES AND HAS TO BE ONE
@@ -404,7 +431,14 @@ const IDS = ['top', 'what', 'kinds', 'workshops', 'cityscapes',
      section's own mechanism — bandChain re-derives the whole ground chain from
      whatever is on, which is why no chain is written down anywhere. */
   ...(PROG.frames && PROG.frames.find(f => f.slot === 'statement') ? ['statement'] : []),
-  'actions', 'fellows', 'voices', 'watch', 'with', 'onward'];
+  /* ★ `reach` AND `horizon` CLOSE THE ARGUMENT THE FOUR DELIVERABLES OPEN, and
+     they sit AFTER all four rather than beside any one of them because each is
+     about the whole programme. `reach` says the counted figures are a floor and
+     publishes the two derivations that say by how much — the schools' rolls and
+     the fellows' communities — so it cannot come before the schools and the
+     fellowship have both been read. `horizon` says the same thing about time
+     rather than about people, and it carries no figure at all. */
+  'actions', 'fellows', 'reach', 'horizon', 'voices', 'watch', 'with', 'onward'];
 /* Derived rather than hardcoded: any required band this build did not render —
    not just `statement` by name — is a gap the omission note must keep naming.
    If a second band ever becomes frame-conditional, this line does not need
@@ -460,6 +494,81 @@ function applyCanvas(bands, body) {
   }
   return out;
 }
+
+/* ── EVERY FIGURE GROUP ON THE PAGE IS BUILT HERE, AND A FIGURE THAT WAS NOT
+      COUNTED SAYS SO IN WORDS ABOVE ITS OWN NUMERAL.
+      ★ THE PROBLEM THIS SOLVES. `basis` is data and not pixels — AD-28 struck
+      the dotted rule under the label and the legend that decoded it, on the
+      grounds that an unexplained dotted rule tells a reader nothing. That was
+      right while every figure on the page was `counted`. It stops being right
+      the moment 26,000-52,000 modelled students appear on the same page as
+      3,000 counted saplings: the reader is then shown two numerals in the same
+      treatment, one of which somebody counted and one of which we multiplied.
+      ★ SO THE DISTINCTION IS CARRIED IN LANGUAGE, IN THREE PLACES AT ONCE, none
+      of which needs a legend to decode:
+        · the modelled figures have a BAND OF THEIR OWN (`reach`), whose head,
+          lead and rows are the derivation and its multipliers, and a data gate
+          above refuses any group that mixes a modelled figure with another kind;
+        · each non-counted numeral carries the pre-line below, in the slot
+          work-shell's `figure()` already has for one — `.lbl wk-fig-o`, micro
+          caps directly above the numeral, which the WORK pages use to name the
+          project a figure belongs to. Nothing new is invented and nothing is
+          restyled: it states its own ink for both grounds already;
+        · and the source line in the data names a person and a date rather than
+          a report, which is what a derivation is sourced to.
+      `counted` gets NO marker. Marking the ordinary case would make the page
+      four-fifths apparatus, and the unmarked numeral is the one that means what
+      it says.
+      ★ `value` GOES THROUGH plain() HERE TOO, and that is a real fix rather than
+      tidying: `figure()` does not esc() its value, so the schools range — the
+      first value on this page authored with an entity — would ship the literal
+      text "&ndash;" between its two ends, and gate 9b compares the rendered page
+      against plain(value) and would have failed on the same string. */
+const BASIS_MARK = { modelled: 'Derived, not counted', planned: 'Planned, not counted' };
+
+/* ── AND THE RULE UNDER THE LABEL IS SWITCHED TO THE DOTTED ONE FOR A MODELLED
+      FIGURE, WHICH IS A CORRECTION AND NOT AN ADDITION.
+      `figure()` hardcodes `class="p-kd p-kd-c"` on every label it renders, and
+      AD-28's note above it explains why: it struck the counted-versus-modelled
+      rule from the ORGANISATIONAL pages along with the legend that decoded it,
+      so "every label takes the plain one". That was unarguable while every
+      figure on those pages was counted. It stops being unarguable the moment a
+      modelled one appears, because THE VOCABULARY IS STILL LIVE ELSEWHERE ON
+      THIS SITE: `grep -rl 'Counted or measured' public/_pages/v3/` returns
+      SEVEN pages — /impact and all six situation pages — each of which prints
+      the legend "Counted or measured / Modelled" over a solid rule and a dotted
+      one. A reader who has been on /impact has been taught that a solid 2px
+      rule under a figure's label means somebody counted it. Shipping
+      26,000-52,000 under that rule would tell that reader something false, in
+      the site's own published words, on the one figure that most needs not to.
+      So `p-kd-c` becomes `p-kd-m` on a modelled figure and nothing else
+      changes: `.p-kd-m` is already in the inherited stylesheet and already
+      states itself for both grounds (dotted, --fg-3 on dark, --ink-3 on paper),
+      so no CSS is added here and no other page moves.
+      DONE PER FIGURE rather than per group, even though the data gate above
+      makes a group provably all-modelled-or-none — a swap that is right only
+      because of a gate somewhere else is one somebody will break.
+      `planned` KEEPS THE PLAIN RULE, because the vocabulary has two words and a
+      target is neither of them; what says a target is a target is the marker
+      above its numeral. That is the pre-existing treatment of the two proposal
+      figures in `bands.workshops` and this change does not disturb it. */
+const KIND_C = 'class="p-kd p-kd-c"';
+const KIND_M = 'class="p-kd p-kd-m"';
+const FIG_SPLIT = '\n        <span>\n';
+const figGroup = (list) => {
+  const items = (list || []).map(f => ({
+    ...f,
+    value: plain(f.value),
+    label: plain(f.label),
+    period: plain(f.period),
+    owner: BASIS_MARK[f.basis],
+  }));
+  const html = W.figures(items);
+  if (!items.some(f => f.basis === 'modelled')) return html;
+  const parts = html.split(FIG_SPLIT);
+  return parts.map((p, i) => (i > 0 && items[i - 1].basis === 'modelled'
+    ? p.replace(KIND_C, KIND_M) : p)).join(FIG_SPLIT);
+};
 
 const body = {};
 
@@ -632,9 +741,7 @@ const deliverable = (id, flip) => {
       right: frame ? '' : prose.join('\n        '),
       flip,
     }),
-    (b.figures || []).length ? W.figures(b.figures.map(f => ({
-      ...f, label: plain(f.label), period: plain(f.period),
-    }))) : '',
+    figGroup(b.figures),
   ];
 };
 body.workshops = deliverable('workshops', false);
@@ -708,9 +815,7 @@ body.fellows = [
      it per fellow; the TOTAL is not, because no document states that total and
      ten times a published number is arithmetic somebody did, not a figure
      anybody reported. */
-  W.figures(BD.fellows.figures.map(f => ({
-    ...f, label: plain(f.label), period: plain(f.period),
-  }))),
+  figGroup(BD.fellows.figures),
 ];
 
 /* ── THE STATEMENT. One display line over a frame, and no figure: a figure
@@ -744,6 +849,59 @@ body.statement = () => W.statementBand({
       re-adding either id throws rather than silently defaulting to a weight
       nobody chose. */
 
+/* ── WHO ELSE IT REACHED. THE TWO MODELLED FIGURES, AND THE ONLY BAND ON THE
+      PAGE THAT CARRIES ONE.
+      ★ THE OWNER'S ARGUMENT, IN HIS OWN TERMS (8 September 2026): about a
+      hundred students in a school sat the workshops and went on the trips, but
+      a garden, an AQI corridor or a campaign is seen, used and inherited by the
+      whole school, and each of the twenty-six has between one and two thousand
+      children on its roll. The fellowships are the same shape one level up: the
+      ten were embedded in communities rather than visiting them, and the
+      smallest of those communities holds more than five thousand people.
+      ★ IT IS PUBLISHED AS A RANGE AND NOT AS A PICKED END. Twenty-six times a
+      thousand and twenty-six times two thousand are both the same arithmetic on
+      the same assumption; choosing fifty-two thousand because it is bigger, or
+      twenty-six because it is safer, would be a decision dressed up as a count.
+      The span is the honest object, which is the same call `bands.fellows.range`
+      already makes about engagement per project one band up.
+      ★ AND THE METHOD IS IN THE COPY RATHER THAN IN A FOOTNOTE. The precedent is
+      bridge-the-gap's own 3M+, whose entry says the figure "carries the method
+      instead of a source document"; the three rows here are that method, stated
+      so a reader who thinks the multiplier is wrong can argue with the
+      multiplier. Gate 10c asserts both multipliers are actually written out.
+      ★ NO SUM, ANYWHERE. Gate 1 already computes this group's own total and the
+      grand total of every group on the page and refuses to write if either
+      appears. That matters more here than it did before the derivations existed:
+      these two numerals are an order of magnitude above the counted ones, and a
+      "total reach" line would be both false and a build failure. */
+body.reach = [
+  W.openBand('reach', BD.reach.head, BD.reach.lead),
+  W.doRows(BD.reach.rows),
+  figGroup(BD.reach.figures),
+];
+
+/* ── SHORT TERM, LONG TERM. AN ARGUMENT ABOUT TIME, WITH NO NUMBER IN IT.
+      The owner's second instruction, and his own example is the model: a garden
+      counts saplings planted in the short term, and in the long term it is
+      trees, then the local environment, then a permanent piece of natural
+      infrastructure the school or the city keeps.
+      ★ THE BAND PUBLISHES NO FIGURE AND MUST NOT. A long-term count would have
+      to be a projection, and a projection here would be neither counted nor
+      derived from anything published — it would be invented, which is a
+      different and worse thing than modelled. Gate 10d asserts the band stays
+      empty of numerals.
+      ★ AND THE FRAME IS APPLIED ONLY WHERE IT IS TRUE. Three of the four
+      deliverables have a long term that follows from what they are: a sapling
+      becomes a tree, a bed becomes a rota the school runs, a student becomes
+      the adult the programme's own theory of change is about. CityScapes has
+      none that anybody could stand behind — a half-day out in the city compounds
+      into nothing this page can name — so it gets no row, rather than a row
+      reaching for one. */
+body.horizon = [
+  W.openBand('horizon', BD.horizon.head, BD.horizon.lead),
+  W.doRows(BD.horizon.rows),
+];
+
 /* ── THE VOICES. Every quote is RESOLVED out of the fellow's own file, so this
       band cannot quote somebody the fellow page does not. The panel is the
       component the frame will land in: above 900 it sets a photograph beside
@@ -775,6 +933,14 @@ body.voices = [
       name, what is in it, and the link. If the controller prefers the embed,
       the honest move is to EXPORT `player()` out of build-stories-page.mjs and
       widen it to playlists, so the site has one video component and not two. */
+/* ★ AND THE BAND NOW CLOSES ON THE TWO DIGITAL FIGURES, which is where they
+      belong: this is the only band on the page about what the programme
+      published rather than about what it did in a school. One of them is what
+      the year achieved and the other is what the proposal asked for, and the
+      second says so on its own numeral — see BASIS_MARK. Twenty-five thousand a
+      month is carried by both the impact deck and the synopsis; the knowledge
+      hub's two thousand users is a proposal KPI no report has claimed, exactly
+      like the hundred classroom workshops in `bands.workshops`. */
 body.watch = [
   W.openBand('watch', BD.watch.head, BD.watch.lead),
   W.doRows(PROG.videos.map(v => ({
@@ -782,6 +948,7 @@ body.watch = [
     p: v.blurb,
     cap: `<a class="act" href="${v.href}" rel="noopener" target="_blank">Watch on YouTube ${ARROW}</a>`,
   }))),
+  figGroup(BD.watch.figures),
 ];
 
 /* ── THERE IS NO `gaps` BAND, AND THE TWO FACTS IT HELD ARE NOW CONTENT.
@@ -1064,7 +1231,8 @@ const HUB_CSS = `
       Scoped by band id and not written on the class: .w7-pj-nums also appears on
       the ten fellow pages, in the spill group beside the record of the work,
       where it must keep the spacing that composition was measured at. ── */
-#workshops .w7-pj-nums,#cityscapes .w7-pj-nums,#actions .w7-pj-nums,#fellows .w7-pj-nums{
+#workshops .w7-pj-nums,#cityscapes .w7-pj-nums,#actions .w7-pj-nums,#fellows .w7-pj-nums,
+#reach .w7-pj-nums,#watch .w7-pj-nums{
   margin-top:var(--gap-row);padding-top:var(--gap-row);border-top:1px solid var(--hair)}
 /* ★ AND THE PAPER STATEMENT IS QUALIFIED BY THE SAME IDS, because the comment
    that used to sit here was WRONG and a measurement caught it. It said the
@@ -1088,7 +1256,9 @@ const HUB_CSS = `
 #workshops.paper .w7-pj-nums,#workshops.paper-2 .w7-pj-nums,
 #cityscapes.paper .w7-pj-nums,#cityscapes.paper-2 .w7-pj-nums,
 #actions.paper .w7-pj-nums,#actions.paper-2 .w7-pj-nums,
-#fellows.paper .w7-pj-nums,#fellows.paper-2 .w7-pj-nums{border-top-color:var(--rule)}
+#fellows.paper .w7-pj-nums,#fellows.paper-2 .w7-pj-nums,
+#reach.paper .w7-pj-nums,#reach.paper-2 .w7-pj-nums,
+#watch.paper .w7-pj-nums,#watch.paper-2 .w7-pj-nums{border-top-color:var(--rule)}
 
 /* ── THE FUNDER'S MARK, AND THE PANEL IS LOAD-BEARING. The asset is an opaque
       white PNG and this band is #0D0D0B, so the panel is what makes the mark
@@ -1143,6 +1313,25 @@ const HUB_CSS = `
 #what .wk-dark .w7-pj-num.rl::after,#workshops .wk-dark .w7-pj-num.rl::after,
 #cityscapes .wk-dark .w7-pj-num.rl::after,#actions .wk-dark .w7-pj-num.rl::after,
 #fellows .wk-dark .w7-pj-num.rl::after{--rl-c:var(--fg-3)}
+
+/* ── THE TWO NEW FIGURE GROUPS TAKE THE SAME 2px RULE AS THE OTHER FOUR, AND
+      THE PROMOTION IS STATED HERE RATHER THAN IN WORK_CSS.
+      WORK_CSS's promotion list is a DELIBERATE SUBSET — read the long note above
+      it before touching it — and the 1px light default it leaves the unlisted
+      bands on is a state the frozen homepage itself occupies, not a band that
+      got missed. So that list is not "completed" here. What is true instead is a
+      fact about THIS page: all four of its existing figure groups are promoted,
+      so a fifth and sixth left at 1px would read as lesser groups of the same
+      object rather than as a different decision. And gate 16 measures every .rl
+      on this page at 3:1 against its own ground — the unpromoted default
+      resolves to var(--hair), which on a paper band is white on white (1.03:1),
+      so an unpromoted group here is a build failure and not a style.
+      Written for BOTH ids on BOTH grounds for the reason every other pair here
+      is: the chain is derived, so which of the two lands on paper changes the
+      moment a band is added or omitted. #reach is paper and #watch is dark
+      today; neither line assumes it. ── */
+#reach .w7-pj-num.rl::after,#watch .w7-pj-num.rl::after{--rl-w:2px;--rl-c:var(--ink-2)}
+#reach .wk-dark .w7-pj-num.rl::after,#watch .wk-dark .w7-pj-num.rl::after{--rl-c:var(--fg-3)}
 `;
 
 /* ═══ WRITE ══════════════════════════════════════════════════════════════ */
@@ -1164,7 +1353,14 @@ const OUT = await S.assemble({
   note: `${BANDS.length} bands + footer. ${DELIVERABLES.length} deliverables `
       + `(${DELIVERABLES.map(id => `${id}: ${((BD[id] && BD[id].figures) || []).length} fig`).join(', ')}), `
       + `${FELLOWS.length} fellows in ${STATES.length} states, `
-      + `${PROG.figures.length} rail figures at 34-69px, ${BAND_FIG.length} band figures at 32-46px, `
+      + `${PROG.figures.length} rail figures at 34-69px, ${BAND_FIG.length} band figures at 32-46px `
+      + `in ${FIG_BANDS.length} group(s) (${FIG_BANDS.map(id => `${id}: ${BD[id].figures.length}`).join(', ')}), `
+      /* WHAT EACH FIGURE CLAIMS, IN THE BUILD NOTE, because `basis` is stripped
+         from the page and a person reading the source has nowhere else to see
+         the split. A modelled figure is a multiplier over a count, not a
+         reading; the marker above its numeral is what says so to a reader. */
+      + `by basis: ${['counted', 'modelled', 'planned']
+        .map(b => `${ALL_FIG.filter(f => f.basis === b).length} ${b}`).join(', ')}. `
       + `${VOICES.length} resolved voices, ${PROG.videos.length} video series, `
       + `${(PROG.frames || []).length} frames (${(PROG.frames || []).map(f => f.slot).join(', ')}).`
       + (OMITTED.length ? ` OMITTED (no frame yet): ${OMITTED.join(', ')}.` : '')
@@ -1217,10 +1413,16 @@ const fmts = (n) => [...new Set([
    So the gate runs over every group this page renders plus the grand total of
    all of them, and it is DERIVED from the groups rather than listing them, so a
    fifth group is covered the day it is authored. */
+/* ★ AND `reach` MAKES THIS GATE MATTER MORE THAN IT DID. Its two modelled
+   figures are an order of magnitude above every counted one on the page, so
+   "young people reached: 78,000" is now an arithmetically available sentence
+   that would be false twice over — it adds a derivation to a count, and it adds
+   two derivations that overlap nobody. The group list is read off FIG_BANDS
+   rather than off DELIVERABLES, so `watch` and `reach` are covered and so is
+   the seventh group the day somebody authors it. */
 const GROUPS = [
   ['the masthead rail', PROG.figures],
-  ...DELIVERABLES.filter(id => ((BD[id] && BD[id].figures) || []).length)
-    .map(id => [`the ${id} band`, BD[id].figures]),
+  ...FIG_BANDS.map(id => [`the ${id} band`, BD[id].figures]),
 ];
 const SUMS = [
   ...GROUPS.map(([where, figs]) => [where, figs.reduce((a, f) => a + (magnitude(f.value) || 0), 0)]),
@@ -1447,15 +1649,14 @@ gate(unquoted.length === 0,
 gate(OUT.includes(plain(LOW.value)) && OUT.includes(plain(HIGH.value)),
   `the engagement range prints its two published endpoints (${LOW.value} from ${LOW.fellow.slug}, ${HIGH.value} from ${HIGH.fellow.slug})`);
 
-/* 9b. EVERY DELIVERABLE BAND'S OWN FIGURES REACH THE PAGE, IN THE BAND THAT
+/* 9b. EVERY FIGURE-BEARING BAND'S OWN FIGURES REACH THE PAGE, IN THE BAND THAT
        AUTHORED THEM. Asserted by position and not just by presence: a figure
        group emitted into the wrong band would still be "on the page", and the
        whole reason these exist is that the numeral recurs beside the argument it
        belongs to. */
 const lostFig = [];
-for (const id of DELIVERABLES) {
-  const figs = (BD[id] && BD[id].figures) || [];
-  if (!figs.length) continue;
+for (const id of FIG_BANDS) {
+  const figs = BD[id].figures;
   const start = OUT.indexOf(`id="${id}"`);
   const bandHtml = start === -1 ? '' : OUT.slice(start, OUT.indexOf('</section>', start));
   for (const f of figs) {
@@ -1463,7 +1664,7 @@ for (const id of DELIVERABLES) {
   }
 }
 gate(lostFig.length === 0,
-  `all ${BAND_FIG.length} deliverable-band figures render in their own band`
+  `all ${BAND_FIG.length} band figures render in their own band (${FIG_BANDS.join(', ')})`
   + `${lostFig.length ? `; MISSING: ${lostFig.join(', ')}` : ''}`);
 
 /* 9c. EVERY AUTHORED SENTENCE OF PROSE RENDERS — AND THIS GATE EXISTS BECAUSE
@@ -1564,12 +1765,121 @@ const influences = (TEXT.match(/\bInfluence\b/g) || []).length;
 gate(influences <= 1,
   `the operational name appears at most once (found ${influences}) — the page's own name for it is Green Fellowship`);
 
-/* 10. THE COUNTED/MODELLED LEGEND IS PRESENT IF AND ONLY IF SOMETHING IS
-       MODELLED. An unexplained dotted rule is worse than no rule; a legend for
-       a distinction the page never draws spends a band's height on nothing. */
-const nMod = PROG.figures.filter(f => f.basis === 'modelled').length;
-gate(nMod === 0 ? !OUT.includes('Counted or measured') : OUT.includes('Counted or measured'),
-  `the counted/modelled legend matches the data (${nMod} modelled figure(s))`);
+/* 10. THE PAGE HAS MODELLED FIGURES AND STILL HAS NO DOTTED-RULE LEGEND, AND
+       THAT IS NOW A DECISION RATHER THAN A CONSEQUENCE.
+       This gate used to read: the legend is present if and only if the RAIL
+       carries a modelled figure. The rail still carries none — it publishes
+       what the year counted — but the page now does, in `reach`, and the old
+       wording would have passed on an empty set while the real distinction went
+       unchecked. So the assertion is inverted and widened. The legend
+       ("Counted or measured" / "Modelled" over a solid and a dotted rule) stays
+       REFUSED, because AD-28's reasoning against it has not changed: an
+       unexplained rule under a label tells a reader nothing, and a legend that
+       explains one costs a band's height to decode a mark. What replaced it is
+       language — a band of their own and a marker in words on each numeral —
+       and gates 10b and 10c are what prove that language reached the page. */
+const nMod = ALL_FIG.filter(f => f.basis === 'modelled').length;
+gate(nMod > 0 && !OUT.includes('Counted or measured'),
+  `${nMod} modelled figure(s) on the page and no legend band — the distinction is carried in words`);
+/* AND THE RULE UNDER THE LABEL IS THE RIGHT ONE, COUNTED BOTH WAYS. Solid means
+   "counted or measured" wherever this site prints the legend, so exactly the
+   modelled labels take the dotted rule and no others — a `p-kd-m` on a counted
+   figure is the same lie in the opposite direction. See the note on figGroup. */
+const nDotted = (OWN.match(/class="p-kd p-kd-m"/g) || []).length;
+const nSolid = (OWN.match(/class="p-kd p-kd-c"/g) || []).length;
+gate(nDotted === nMod && nSolid === ALL_FIG.length - PROG.figures.length - nMod,
+  `the rule under a label matches what the figure is — ${nDotted} dotted (modelled) and ${nSolid} solid `
+  + `of ${BAND_FIG.length} band labels; the rail states no rule at all`);
+
+/* 10b. EVERY FIGURE THAT WAS NOT COUNTED SAYS SO ABOVE ITS OWN NUMERAL, AND
+       EVERY FIGURE THAT WAS COUNTED SAYS NOTHING.
+       ★ WHY THIS IS THE LOAD-BEARING GATE OF THE 8 September CHANGE. `basis` is
+       stripped from the rendered page by design, so the ONLY thing a reader has
+       to tell 26,000-52,000 modelled students from 3,000 counted saplings is the
+       marker and the band round it. A future edit that drops the marker — by
+       renaming a basis, by calling W.figures() directly instead of figGroup(),
+       or by adding a seventh group and forgetting — would leave the page
+       publishing a derivation in the exact treatment of a count, which is the
+       one outcome this whole approach exists to avoid, and nothing else on the
+       page would say a word about it.
+       Checked per figure and BY POSITION, not by presence: `figure()` emits one
+       `<span>` per reading, so the group splits cleanly on its own indentation
+       and each chunk is asserted against the basis the data gave that figure. */
+const markBad = [];
+let marked = 0, unmarked = 0;
+for (const id of FIG_BANDS) {
+  const s = OUT.indexOf(`id="${id}"`);
+  const bandHtml = s === -1 ? '' : OUT.slice(s, OUT.indexOf('</section>', s));
+  const g = bandHtml.indexOf('class="w7-pj-nums"');
+  const chunks = (g === -1 ? '' : bandHtml.slice(g)).split('\n        <span>\n').slice(1);
+  if (chunks.length !== BD[id].figures.length) {
+    markBad.push(`bands.${id}: ${chunks.length} rendered reading(s) for ${BD[id].figures.length} authored figure(s)`);
+    continue;
+  }
+  BD[id].figures.forEach((f, i) => {
+    /* ★ `counted` IS THE ONLY UNMARKED BASIS, AND THAT IS ASSERTED FROM THE
+       BASIS RATHER THAN READ OUT OF BASIS_MARK. The first draft of this gate
+       took its expectation from the same table the renderer takes it from,
+       which made it a tautology: deleting `modelled` from BASIS_MARK stopped
+       the marker rendering AND stopped the gate expecting it, and the build
+       went green with two derivations dressed as counts. Tested by doing
+       exactly that. The basis enum is the authority instead, so a fourth basis
+       added tomorrow fails here until somebody writes its marker. */
+    if (f.basis !== 'counted' && !BASIS_MARK[f.basis]) {
+      markBad.push(`bands.${id}/"${f.label}" is basis "${f.basis}", which has no entry in BASIS_MARK. `
+        + 'Every basis but "counted" says what it is above its own numeral.');
+      return;
+    }
+    const want = f.basis === 'counted' ? null : BASIS_MARK[f.basis];
+    const has = /<span class="lbl wk-fig-o">([^<]*)<\/span>/.exec(chunks[i]);
+    if (want && (!has || has[1] !== want)) {
+      markBad.push(`bands.${id}/"${f.label}" is basis "${f.basis}" and renders ${has ? `"${has[1]}"` : 'no marker'} — it must read "${want}"`);
+    } else if (!want && has) {
+      markBad.push(`bands.${id}/"${f.label}" is counted and renders the marker "${has[1]}". `
+        + 'Marking the ordinary case makes the unmarked numeral meaningless.');
+    }
+    if (want) marked++; else unmarked++;
+  });
+}
+gate(marked > 0 && markBad.length === 0,
+  `${marked} figure(s) that were not counted carry the marker above the numeral and ${unmarked} counted `
+  + `figure(s) carry none (${Object.entries(BASIS_MARK).map(([b, m]) => `${b}: "${m}"`).join(', ')})`
+  + (markBad.length ? `\n       WRONG -> ${markBad.join('\n                ')}` : ''));
+
+/* 10c. THE MULTIPLIER IS ON THE PAGE, IN WORDS, IN THE BAND THAT USES IT.
+       A modelled figure whose method is not published is indistinguishable to a
+       reader from a figure somebody made up, and the site already has the
+       pattern it should follow: bridge-the-gap publishes 3M+ as modelled and
+       says in so many words that it is "a derivation, not a register" carrying
+       "the method instead of a source document". So the two multipliers behind
+       26,000-52,000 and 50,000+ have to be findable in the prose of the band
+       those numerals sit in — not in a note, not in a caption, and not only in
+       this comment. Both are written out as words, which is also what keeps
+       them out of the sum gate's way. */
+const REACH_BAND = OUT.slice(OUT.indexOf('id="reach"'), OUT.indexOf('</section>', OUT.indexOf('id="reach"')));
+const REACH_TEXT = REACH_BAND.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+const METHOD = [
+  ['the schools multiplier', /twenty-six schools/i, /thousand to two thousand|one and two thousand/i],
+  ['the communities multiplier', /ten (?:communities|fellows)/i, /five thousand/i],
+];
+const unstated = METHOD.filter(([, a, b]) => !(a.test(REACH_TEXT) && b.test(REACH_TEXT))).map(x => x[0]);
+gate(unstated.length === 0,
+  'both derivations state their multiplier in the band\'s own prose, so a reader can disagree with the '
+  + 'multiplier rather than with the number'
+  + (unstated.length ? `; NOT STATED: ${unstated.join(', ')}` : ''));
+
+/* 10d. THE LONG TERM CARRIES NO NUMBER. `horizon` is the owner's short-term /
+       long-term frame and it is an argument about time, not a second set of
+       readings: what a garden becomes in ten years is not a thing anybody has
+       counted, and a figure for it would be neither counted nor derived from
+       anything published — it would be invented. So the band renders no
+       reading pair and no numeral of any kind, and the only digits allowed
+       anywhere in it are none. */
+const HZ = OUT.slice(OUT.indexOf('id="horizon"'), OUT.indexOf('</section>', OUT.indexOf('id="horizon"')));
+const hzDigits = [...new Set((HZ.replace(/<[^>]+>/g, ' ').match(/\d[\d,.]*/g) || []))];
+gate(!/w7-pj-num|class="num/.test(HZ) && hzDigits.length === 0,
+  'the long-term band publishes no numeral — a projection here would be invented, not modelled'
+  + (hzDigits.length ? `; DIGITS: ${hzDigits.join(', ')}` : ''));
 
 /* 11. THE MASTHEAD OWNS THE SHARE CARD. The card is derived from the first
        candidate carrying fetchpriority="high", and masthead() writes that onto
