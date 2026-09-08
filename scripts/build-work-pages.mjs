@@ -2714,6 +2714,93 @@ if (links.failures.length) {
   problems += links.failures.length;
 }
 
+/* ═══ THE BASIS OF EVERY RENDERED FIGURE ══════════════════════════════════
+   WHY THIS GATE EXISTS, stated plainly because the answer is embarrassing:
+   Bridge the Gap's 3M+ is MODELLED, and it shipped on /work, /work/projects and
+   its own project page drawn as a count — under the solid rule that /impact and
+   the six situation pages teach every reader to read as "somebody counted this"
+   — from the day those pages were built until 8 September 2026. Nothing caught
+   it. /healthy-cities carries an equivalent gate and was scrupulous; these
+   pages carried none, and that is the whole of the difference.
+
+   TWO DIRECTIONS, because only checking one is how the first version of a gate
+   like this passes while the page is still wrong:
+     - a figure that was NOT counted must never render the counted rule, and
+       must say in words which it is;
+     - a figure that WAS counted must never render the dotted rule or a word.
+       Marking the ordinary case makes an unmarked numeral meaningless.
+
+   THE EXPECTATION IS WRITTEN HERE, NOT IMPORTED. `basisWord()` lives in
+   work-shell and this table deliberately restates it: importing the renderer's
+   own table would make the gate a tautology — delete a basis from it and both
+   the marker and the expectation vanish together, green build, page lying. Two
+   independent statements of the same fact is the point. Reword one and this
+   fails until somebody agrees to the rewording.
+
+   MATCHED BY LABEL, and a label that two items share with DIFFERENT bases is
+   reported rather than skipped silently — an unassertable figure is a hole in
+   the gate and must be visible as one. */
+const BASIS_SAYS = { modelled: 'Derived, not counted', planned: 'Planned, not counted' };
+const basisOf = new Map();
+for (const it of items) {
+  for (const f of (it.figures || [])) {
+    const k = esc(f.label);
+    if (!basisOf.has(k)) basisOf.set(k, new Set());
+    basisOf.get(k).add(f.basis || 'counted');
+  }
+}
+/* One rendered reading, either shape the shell emits: `figure()`'s <span> and
+   `figureRail()`'s tile. Both are collected, because the tile is where the
+   fellow pages' modelled reach was wrong and the <span> is where the project
+   pages' was.
+   SPLIT ON THE EMITTED BOUNDARY, NOT MATCHED WITH A NESTED-TAG REGEX. The first
+   version of this gate used one, and its lazy quantifier closed the reading at
+   the numeral's own `</span></span>` — so the label never entered the match,
+   RULE found nothing, and the readings on /work and /work/projects were skipped
+   in silence. The gate reported "25 checked" and caught ONE of the four wrong
+   figures when the renderer was deliberately broken to test it. Both shapes are
+   emitted at a known indentation by components in this repository, so the
+   boundary is a fact about the output and not a guess about HTML. */
+const chunk = (html, open, close) => html.split(open).slice(1)
+  .map(s => (s.indexOf(close) === -1 ? s : s.slice(0, s.indexOf(close))));
+const readings = (html) => [
+  ...chunk(html, '\n        <span>\n', '\n        </span>').filter(s => s.includes('w7-pj-num')),
+  ...chunk(html, '<div class="ip-ovl-c">', '\n        </div>'),
+];
+const RULE = /<span class="(?:unit )?p-kd (p-kd-[cm])">([\s\S]*?)<\/span>/;
+const basisBad = [];
+let basisChecked = 0, basisAmbiguous = 0;
+for (const b of built) {
+  for (const block of readings(b.html)) {
+    const m = RULE.exec(block);
+    if (!m) continue;
+    const [, cls, label] = m;
+    const seen = basisOf.get(label);
+    if (!seen) continue;                       /* a label this generator did not author */
+    if (seen.size > 1) { basisAmbiguous++; continue; }
+    const basis = [...seen][0];
+    const word = BASIS_SAYS[basis] || '';
+    const wantRule = basis === 'modelled' ? 'p-kd-m' : 'p-kd-c';
+    const says = Object.values(BASIS_SAYS).filter(w => block.includes(w));
+    if (cls !== wantRule) {
+      basisBad.push(`${b.url} "${label}" is ${basis} and renders ${cls} — it must render ${wantRule}`);
+    } else if (word && !says.includes(word)) {
+      basisBad.push(`${b.url} "${label}" is ${basis} and says ${says.length ? `"${says[0]}"` : 'nothing'} — it must say "${word}" above the numeral or in its caption`);
+    } else if (!word && says.length) {
+      basisBad.push(`${b.url} "${label}" is counted and says "${says[0]}". Marking the ordinary case makes the unmarked numeral meaningless.`);
+    }
+    basisChecked++;
+  }
+}
+console.log('\nBASIS OF EVERY RENDERED FIGURE');
+console.log(`  ${basisChecked} reading(s) checked against the basis their data gives them`
+  + (basisAmbiguous ? `, ${basisAmbiguous} unassertable (one label, two bases)` : ''));
+if (basisBad.length) {
+  console.error(`\nREFUSING TO WRITE: ${basisBad.length} figure(s) drawn as something they are not.`);
+  for (const f of basisBad) console.error(`  ✗ ${f}`);
+  problems += basisBad.length;
+}
+
 if (sh.bad > 0) {
   console.error(`\nREFUSING TO WRITE: ${sh.bad} extraction assertion(s) failed. The ranges moved — re-find them, do not delete the assertion.`);
   problems += sh.bad;
