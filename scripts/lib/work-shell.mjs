@@ -541,8 +541,29 @@ export function workShell() {
    36px clear of the search control, and neither the bar nor the document
    overflows. It is one list for both shells, so this word appears in the
    desktop bar AND the phone's menu panel rather than the two drifting apart. */
+  /* AD-49. THE SEVENTH WORD, AND THE ARITHMETIC THAT LICENSED IT.
+     The nav was closed at six on the grounds that a seventh would not fit a
+     375px bar. MEASURED ON THE LIVE SITE, 8 September 2026, and the premise
+     does not hold: `.navlinks` is `display:none !important` below 941px, so at
+     375px the words are not rendered at all and the Menu button carries the
+     bar. 375 never constrained the word count.
+     At 941px — the narrowest width the words DO render — "Learn" measures 46px
+     and the row goes 389px to 456px inside a 941px bar; height unchanged at
+     62px, one row, nothing spilling, no page overflow. Binary search with the
+     breakpoint overridden puts the true geometric limit at 629px for seven
+     words against 562px for six, so there is 312px of headroom below the point
+     where words appear at all. An eighth would still clear it.
+     SIX REMAINS A DISCIPLINE, NOT A LIMIT. Learn earns the slot on evidence
+     rather than taste: thirty articles, the largest body of writing on the
+     site, and Search Console's first baseline (snapshot 1) shows /now taking
+     9,139 impressions at 0.72% CTR — informational queries landing on a
+     dashboard. Learn is the answer to those queries and was reachable only
+     from the footer.
+     PLACED SECOND, BESIDE `Now`, because the pair is the argument: the reading,
+     then what it means. */
 export const NAV = [
   ['Now', '/now'],
+  ['Learn', '/learn'],
   ['Work', '/work'],
   ['Journeys', '/work/journeys'],
   ['Impact', '/impact'],
