@@ -102,13 +102,22 @@ jobs:
       - name: Commit the snapshot
         if: steps.cfg.outputs.ready == 'true' && github.event.inputs.dry_run != 'true' && github.event.inputs.action != 'check' && github.event.inputs.action != 'sitemap'
         run: |
-          if git diff --quiet -- data/seo/search-performance.json; then
-            echo "No change to commit."
-            exit 0
-          fi
           git config user.name  'swechha-search-console[bot]'
           git config user.email 'actions@github.com'
+          # STAGE FIRST, THEN ASK. `git diff --quiet -- <path>` does not see an
+          # UNTRACKED file, so on the very first run — when the snapshot file is
+          # brand new — it reported no change, exited 0, and the baseline was
+          # written to the runner's disk and destroyed with it. The job passed
+          # while losing the one thing it exists to collect. Measured on run
+          # 34273460926: "1 snapshot(s) in data/seo/search-performance.json"
+          # immediately followed by "No change to commit."
+          # `git diff --cached` after `git add` sees a new file and a changed
+          # one alike, which is the only form that is correct for both.
           git add data/seo/search-performance.json
+          if git diff --cached --quiet -- data/seo/search-performance.json; then
+            echo "Nothing staged — the snapshot did not change. Nothing to commit."
+            exit 0
+          fi
           # The snapshot count is the honest headline: this file only ever
           # grows, so "nth snapshot" says more than a date does.
           N=$(node -p "require('./data/seo/search-performance.json').snapshots.length")
