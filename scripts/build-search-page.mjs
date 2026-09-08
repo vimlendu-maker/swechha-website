@@ -149,7 +149,14 @@ for (const abs of files) {
      own <h1> and <title>, which build-climate-disaster-pages.mjs wrote from
      the dossier — so the index stays complete without the register having to
      predict what will happen. */
-  const isDerivedEvent = /^\/now\/climate-event\/.+/.test(route);
+  /* THE RECORD'S MONTH PAGES ARE DERIVED THE SAME WAY, and they are absent
+     from the register for the same reason: `/record/air/<YYYY>/<MM>` gains a
+     page the moment the hourly store rolls into a new month. Their <h1> is the
+     month and their <title> was written by build-record.mjs with the same
+     140-158 gate applied, so reading the page is strictly better than
+     predicting it. */
+  const isDerivedEvent = /^\/now\/climate-event\/.+/.test(route)
+    || /^\/record\/air\/\d{4}\/\d{2}$/.test(route);
   const indexName = isDerivedEvent
     ? text(h1 || pageTitleTag.replace(/\s*—\s*Swechha\s*$/, ''))
     : text(seo(route).indexName);

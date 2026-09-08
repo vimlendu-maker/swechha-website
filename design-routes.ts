@@ -206,6 +206,26 @@ function learnRoutes(): Record<string, string> {
   return out
 }
 
+/* THE RECORD'S MONTH PAGES, DERIVED FROM THE BUILT FILES for the reason
+   `learnRoutes` and `fellowRoutes` are. `scripts/build-record.mjs` writes one
+   page per month present in `data/air-history/`, so the set grows by itself
+   every month and a thirteenth needs no edit here. `/record` and `/record/air`
+   are routed explicitly below: they are the index and the subject page, not
+   members of the derived set. */
+function recordRoutes(): Record<string, string> {
+  const root = join(PUBLIC, '_pages/v3/record/air')
+  if (!existsSync(root)) return {}
+  const out: Record<string, string> = {}
+  for (const y of readdirSync(root).sort()) {
+    const dir = join(root, y)
+    if (!existsSync(dir) || !readdirSync(dir).length) continue
+    for (const f of readdirSync(dir).filter((n) => n.endsWith('.html')).sort()) {
+      out[`/record/air/${y}/${f.slice(0, -'.html'.length)}`] = `record/air/${y}/${f}`
+    }
+  }
+  return out
+}
+
 export function designRoutes(): Array<{ source: string; destination: string }> {
   const map: Record<string, string> = {
     '/': 'home.html',
@@ -261,6 +281,24 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
        third is a defect. It is NOT a seventh nav word — the nav is closed at
        six plus the Give chip — and the twenty article pages below it are
        derived from the built files rather than typed. */
+    /* `/schools` — the school-facing page, and deliberately NOT a seventh
+       programme page. The six programmes already have finished pages under
+       `/work/**`; this one compares them and carries the part a coordinator
+       needs, and every row on it links the item's own page rather than
+       restating it. Two descriptions of one programme at two URLs is the
+       duplicate-content failure this map exists to avoid. */
+    '/schools': 'schools.html',
+    /* `/record` and `/record/air` — the archive. The month pages under them are
+       derived from the built files just below, because a month appears on its
+       own as soon as the hourly store rolls over and a route that has to be
+       typed monthly is a route that will one day not be. */
+    '/record': 'record.html',
+    '/record/air': 'record/air.html',
+    ...recordRoutes(),
+    /* `/use-the-data` — the licence, the citation formats and what each source
+       does not cover. It is what makes the archive above citeable by somebody
+       who is not us, which is the whole point of keeping it. */
+    '/use-the-data': 'use-the-data.html',
     '/learn': 'learn.html',
     ...learnRoutes(),
     '/about': 'about.html',
