@@ -50,6 +50,7 @@ import { tmpdir } from 'node:os';
 import { seo } from './seo-register.mjs';
 import { stampLastmod } from './lastmod.mjs';
 import { imageSize } from './image-size.mjs';
+import { DEAD_FRAGMENT_JS } from '../../lib/dead-fragment.mjs';
 /* THE SHARE CARD'S IMAGE, DERIVED FROM THE FINISHED PAGE. See that file's
    header for why this is read off the rendered markup rather than declared by
    each of the twenty generators, and for the cycle note. */
@@ -428,6 +429,13 @@ export const TRACKER = (() => {
   const a = J('analytics.json');
   return `<script defer src="${a.scriptPath}" data-website-id="${a.websiteId}"></script>`;
 })();
+
+/* THE DEAD FRAGMENT STRIPPER, wrapped for the built pages. The script itself
+   and the whole of the reasoning behind it live in `lib/dead-fragment.mjs`,
+   which `app/layout.tsx` imports too — read that file before changing this.
+   It is emitted next to TRACKER in every head, and `scripts/verify-seo.mjs`
+   asserts the exact string on every built page. */
+export const HASH_STRIP = `<script>${DEAD_FRAGMENT_JS}</script>`;
 
 /* ═══ THE EXTRACTOR ══════════════════════════════════════════════════════ */
 
@@ -2410,6 +2418,7 @@ export async function assemble({ file, title, desc = null, bands, sectionFor, in
 ${headTags(title, description, canonical, ogType)}
 ${headExtra ? `${headExtra}\n` : ''}${sh.HEAD_FONTS}
 ${TRACKER}
+${HASH_STRIP}
 <style>
 ${stripCssComments([sh.CSS, sh.SITUATION_CSS, SHARED_PAGE_CSS, pageCss].join('\n'))}</style>
 </head>
