@@ -173,7 +173,7 @@ jobs:
           # tree out of step. It sits after `situations` for the reason
           # air-hourly.yml gives: build-hero.mjs cross-checks its air figure
           # against situation-air.html and refuses to write if they disagree.
-          for t in situations hero work about impact farm act stories publications posters record search essays; do
+          for t in situations hero work about impact farm act stories publications posters data record search essays; do
             echo "::group::npm run build:$t"
             if npm run "build:$t"; then
               echo "::endgroup::"
@@ -195,7 +195,15 @@ jobs:
         run: |
           git config user.name  'swechha-data-refresh[bot]'
           git config user.email 'actions@github.com'
-          git add -A data public/_pages design docs/design/FINAL.md
+          # ★ `public/data` IS NAMED HERE BECAUSE THIS LOOP NOW BUILDS IT.
+          # `npm run build:data` writes the CSV/JSON exports under
+          # public/data/, which is NOT inside public/_pages. The trees on this
+          # line are named individually, so an export regenerated in this run
+          # and left unstaged would be committed by nobody — and the very next
+          # pull request would fail generated-current.yml on a diff nothing in
+          # that PR caused. That is the same class of failure the note above
+          # records for data/air-history/, arriving by the opposite route.
+          git add -A data public/_pages public/data design docs/design/FINAL.md
           if git diff --cached --quiet; then
             echo "Nothing staged after the rebuild — no commit."
             exit 0

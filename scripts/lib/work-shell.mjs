@@ -1358,6 +1358,15 @@ ${POSTER_CSS}
 .wk-invite-n{margin:clamp(12px,1.4vw,18px) 0 0;color:var(--ink-2);
   font-size:15px;line-height:1.5;max-width:62ch;flex:1 0 100%}
 .wk-dark .wk-invite-n{color:var(--fg-2)}
+/* THE READ-FIRST LINE. flex:1 0 100% puts it on its own row rather than
+   letting it wrap alongside the buttons, and it sits ABOVE the note because the
+   note is the closing clause of the band and nothing should follow it. Same
+   colours as the note, one step quieter than the links beside it: preparation
+   is an offer, not the ask. */
+.wk-invite-r{margin:clamp(10px,1.2vw,14px) 0 0;color:var(--ink-2);
+  line-height:1.55;max-width:68ch;flex:1 0 100%;order:1}
+.wk-invite-n{order:2}
+.wk-dark .wk-invite-r{color:var(--fg-2)}
 @media (max-width:519px){.wk-invite .b-1{width:100%;justify-content:center;padding:16px 20px}}
 /* THE INVITE'S THIRD ROUTE IS AN INLINE LINK AND IT NEEDS A HIT BOX.
    Measured at every width from 320 to 1920: the mailto draws at 111.2 x 17.0px,
@@ -2268,17 +2277,67 @@ ${rows.map(r => {
  * architecture is derived from it and its gate 1 is total. Where a still-
  * navigating primary needs a deeper landing it is deepened at RENDER time.
  */
-export const inviteRow = ({ act, second, note, asks }) => {
+/**
+ * `back` IS THE RECIPROCAL LINK, AND IT IS A SEPARATE SLOT FROM `second` ON
+ * PURPOSE.
+ *
+ * `/schools` compares six programmes and links every one of them; until this
+ * slot existed, not one of the six linked back. The only route from a
+ * programme page to the page that compares it was the footer index — which is
+ * on all 93 pages and is therefore no signal at all, to a reader or to a
+ * crawler. So a coordinator who arrived on `/work/journeys/naturescapes` from
+ * search had no way to discover that five other programmes exist, and the hub
+ * accumulated no reciprocal link equity from the pages it feeds.
+ *
+ * IT IS NOT FOLDED INTO `second` because `second` is already spent on two of
+ * the six with links that are genuinely better than this one — farm-school's
+ * "The farm itself" and bridge-the-gap's "Healthy Cities, 2025-26" — and
+ * AD-27.29 removed the `/about` link from that slot precisely for going
+ * somewhere wrong. Overloading it would mean choosing, per item, between the
+ * reciprocal link and a real destination. Two slots, no choice.
+ *
+ * The CALLER decides which items get it, from `data/schools.json`'s own rows,
+ * so it cannot be attached to a programme the hub does not list. See
+ * build-work-pages.mjs's SCHOOL_LISTED and gate on it.
+ */
+/**
+ * `read` IS THE OTHER HALF OF THE STUDENT PATH, and it is the direction that
+ * was missing rather than the one that was wrong.
+ *
+ * Every one of the twenty-six Learn explainers already opens a programme — a
+ * reader who has just understood what PM2.5 is gets offered the walk where they
+ * would stand in it. The reverse did not exist. A teacher or a student who
+ * arrived on `/work/journeys/yamuna-yatra` from search had no route to the
+ * explanation of dissolved oxygen and BOD that makes the journey legible before
+ * they go, which left a programme page reading as a booking page rather than as
+ * the field half of a knowledge system.
+ *
+ * The slugs are NOT chosen here. `data/schools.json`'s programme rows already
+ * declare, per programme, which explainers a cohort should read first — the
+ * hub renders them as "Read first: …" — so this renders the SAME declaration on
+ * the programme's own page. One editorial decision, two places it shows.
+ *
+ * A `.cap` line rather than a fourth door: a door is a destination and these
+ * are preparation, and three or four of them in a card grid would outweigh the
+ * one thing the band is for.
+ */
+export const inviteRow = ({ act, second, note, asks, back, read }) => {
+  const onward = [
+    second ? `        <a class="act" href="${second.href}">${second.label} ${ARROW}</a>` : '',
+    back ? `        <a class="act" href="${back.href}">${back.label} ${ARROW}</a>` : '',
+  ].filter(Boolean).join('\n');
+  const first = read && read.length
+    ? `\n        <p class="cap wk-invite-r">Read first: ${read
+      .map((r) => `<a class="lk" href="${r.href}">${r.label}</a>`).join(' &middot; ')}</p>`
+    : '';
   if (asks && asks.length) {
     return `      <div class="wk-invite wk-invite-ask">
-${asks.join('\n')}${second ? `
-        <a class="act" href="${second.href}">${second.label} ${ARROW}</a>` : ''}
+${asks.join('\n')}${onward ? `\n${onward}` : ''}${first}
         <p class="wk-invite-n">${note}</p>
       </div>`;
   }
   return `      <div class="wk-invite">
-        <a class="b b-1" href="${act.href}">${act.label} ${ARROW}</a>${second ? `
-        <a class="act" href="${second.href}">${second.label} ${ARROW}</a>` : ''}
+        <a class="b b-1" href="${act.href}">${act.label} ${ARROW}</a>${onward ? `\n${onward}` : ''}${first}
         <p class="wk-invite-n">${note}</p>
       </div>`;
 };

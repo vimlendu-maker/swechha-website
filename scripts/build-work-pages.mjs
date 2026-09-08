@@ -1857,8 +1857,56 @@ const period = (p) => {
    person. The address is read out of the frozen footer rather than typed. */
 const CONTACT = (homeHtml.match(/mailto:([^"]+)/) || [])[1] || '';
 if (!CONTACT) rej('home.html', 'no mailto: address in the frozen footer — the invite band has no third route to offer');
-const invite = ({ act, second, note, asks }) => inviteRow({
-  act, second, asks,
+/* ═══ THE SIX /schools LISTS, READ OUT OF /schools' OWN DATA ══════════════
+   Not a list typed here. `data/schools.json`'s `programmes.rows` is where the
+   set is decided — the hub renders those six, the enquiry form's `<select>`
+   offers those six, `lib/school-enquiry.ts` accepts those six — and this is the
+   fourth reader of the same rows. A seventh programme added there gains its
+   reciprocal link with no edit in this file, and a programme removed from there
+   loses it, which is the property that makes the gate below meaningful rather
+   than a restatement.
+
+   `/schools` is already in `onward.json`'s route map, so the link passes the
+   link gate like any other href. */
+/* `ROOT`, not `DATA_DIR`: that constant is overridable with `--data` for a
+   fixture run, and the schools hub's data is not part of the fixture set. */
+const SCHOOL_ROWS = readJson(join(ROOT, 'data/schools.json')).programmes?.rows || [];
+const SCHOOL_LISTED = new Map(SCHOOL_ROWS.map((r) => [`${r.kind}/${r.slug}`, r]));
+const schoolsBack = (it) => (SCHOOL_LISTED.has(`${it.kind}/${it.slug}`)
+  ? { label: 'Everything a school can book', href: '/schools' }
+  : null);
+
+/* ═══ THE READ-FIRST RAIL, THE OTHER HALF OF THE STUDENT PATH ═════════════
+   `data/schools.json` already declares, per programme, which Learn explainers a
+   cohort should read before it goes — the hub renders them as "Read first: …".
+   This renders that SAME declaration on the programme's own page, so a teacher
+   or a student who arrived from search rather than from the hub gets the
+   preparation too. One editorial decision, two places it appears; nothing is
+   chosen here.
+
+   The heading text comes from the article's own `h1`, read out of
+   `data/learn/articles/<slug>.json`, so a renamed explainer cannot leave a
+   stale label behind on a programme page. A slug with no article file is a
+   REFUSAL rather than a dropped link: /schools already dies on the same
+   condition, and the two pages must not disagree about which explainers exist. */
+const LEARN_DIR = join(ROOT, 'data/learn/articles');
+const learnLink = (slug, where) => {
+  const f = join(LEARN_DIR, `${slug}.json`);
+  if (!existsSync(f)) {
+    rej(where, `points at /learn/${slug} via data/schools.json, and there is no such article. `
+      + 'A programme page may not offer preparation that does not exist.');
+    return null;
+  }
+  return { href: `/learn/${slug}`, label: readJson(f).h1 };
+};
+const readFirst = (it) => {
+  const row = SCHOOL_LISTED.get(`${it.kind}/${it.slug}`);
+  if (!row || !(row.learn || []).length) return null;
+  return row.learn.map((sl) => learnLink(sl, `${it.__key} (read-first)`)).filter(Boolean);
+};
+
+const invite = ({ act, second, note, asks, back, read }) => inviteRow({
+  act, second, asks, back, read,
   /* THE NOTE IS ONE CLAUSE, and the length is a budget decision with its
      arithmetic in WORK_CSS: the first version ran to five lines and 112.5px at
      375, on a band that was 78px over its cap. The clause that had to survive is
@@ -2433,6 +2481,16 @@ function pageItem(it) {
       second: askBlocks(it).length
         ? (secondSurvives(it) ? it.invite.second : null)
         : ((it.invite && it.invite.second) || { label: 'Partner with us', href: '/about' }),
+      /* THE RECIPROCAL LINK TO /schools, on exactly the six that hub lists and
+         derived from its own rows. See inviteRow's `back` note for why it is
+         not folded into `second`, and gate SCHOOLS-RECIPROCAL below for the
+         assertion that keeps the two directions in step. */
+      back: schoolsBack(it),
+      /* THE PREPARATION, from data/schools.json's own per-programme `learn`
+         rows. See readFirst above: this is the reverse of the link every Learn
+         article already carries, and it is what stops a programme page reading
+         as a booking page. */
+      read: readFirst(it),
       asks: askBlocks(it),
       note: (it.invite && it.invite.note) || 'One thing to do about this, and it is the only slot on the page that asks you for anything.',
     }),
@@ -2799,6 +2857,57 @@ if (basisBad.length) {
   console.error(`\nREFUSING TO WRITE: ${basisBad.length} figure(s) drawn as something they are not.`);
   for (const f of basisBad) console.error(`  ✗ ${f}`);
   problems += basisBad.length;
+}
+
+/* ═══ SCHOOLS-RECIPROCAL · BOTH DIRECTIONS OF ONE LINK ════════════════════
+   `/schools` links all six programmes it compares and asserts it does (that
+   generator's gate 1). Until the `back` slot existed, not one of the six linked
+   the hub: the only route from a programme page to the page comparing it was
+   the footer index, which appears on every page on this site and is therefore
+   no signal to a reader or a crawler.
+
+   THE GATE IS TWO-DIRECTIONAL BECAUSE A ONE-DIRECTIONAL VERSION PASSES WHILE
+   THE SITE IS STILL WRONG — the same argument as the basis gate above. It
+   checks that every item the hub lists links back, AND that no item the hub
+   does NOT list carries the link. The second half is the one that matters over
+   time: a programme dropped from `data/schools.json` would otherwise keep a
+   link to a page that no longer mentions it, which is exactly the drift the
+   derivation was built to prevent. */
+const wantBack = built.filter(b => {
+  const seg = b.url.replace(/^\/work\//, '');
+  return SCHOOL_LISTED.has(seg);
+});
+/* SCOPED TO THE INVITE ROW, not to the page. The frozen footer's directory
+   links `/schools` on all 93 pages of this site, so the first version of this
+   check reported four unlisted items as carrying the reciprocal link when what
+   they carried was the footer — which is exactly the reason the `back` slot had
+   to be added in the first place. */
+/* SLICED BETWEEN TWO CLASS NAMES THE COMPONENT ITSELF EMITS, not matched with a
+   nested-tag regex — the same lesson the basis gate above records in its own
+   note. `<div class="wk-invite wk-invite-ask">` contains the Ask's `<details>`,
+   which contains `</div>`, so a lazy `[\s\S]*?</div>` closes inside the Ask and
+   never reaches the onward links. `.wk-invite-n` is the note, and inviteRow
+   always emits it LAST, so everything the row contains is between them. */
+const inviteBlock = (html) => {
+  const a = html.indexOf('class="wk-invite');
+  const b = html.indexOf('wk-invite-n', a + 1);
+  return a === -1 || b === -1 ? '' : html.slice(a, b);
+};
+const hasBack = (b) => inviteBlock(b.html).includes('href="/schools"');
+const missingBack = wantBack.filter(b => !hasBack(b));
+/* The landings and the index legitimately do not carry it — they are not
+   programmes. Only an ITEM page that the hub does not list would be wrong. */
+const strayBack = built.filter(b => b.url.split('/').length === 4
+  && !SCHOOL_LISTED.has(b.url.replace(/^\/work\//, '')) && hasBack(b));
+console.log('\nSCHOOLS-RECIPROCAL');
+console.log(`  ${wantBack.length} of the ${SCHOOL_LISTED.size} programmes data/schools.json lists are pages in this section`);
+if (missingBack.length || strayBack.length) {
+  console.error('\nREFUSING TO WRITE: the /schools link and data/schools.json disagree.');
+  for (const b of missingBack) console.error(`  ✗ ${b.url} is listed on /schools and does not link back`);
+  for (const b of strayBack) console.error(`  ✗ ${b.url} links /schools and is not listed there`);
+  problems += missingBack.length + strayBack.length;
+} else {
+  console.log(`  every one links back, and no item that is not listed does`);
 }
 
 if (sh.bad > 0) {

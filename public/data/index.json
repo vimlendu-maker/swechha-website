@@ -1,0 +1,85 @@
+{
+ "name": "Swechha environmental data",
+ "about": "https://swechha.in/use-the-data",
+ "licence": "CC BY 4.0",
+ "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+ "attribution": "Swechha, https://swechha.in",
+ "citation": "Swechha. Delhi air quality record. Readings from the Central Pollution Control Board network. https://swechha.in/record/air",
+ "generated_by": "scripts/build-data-exports.mjs",
+ "files": {
+  "note": "STATIC FILES, regenerated when the store changes. Not an API — see `live` below for the one endpoint that is.",
+  "hourly": {
+   "description": "One row per hourly observation of Delhi air quality: the worst reporting monitor named, the station mean beside it, and how many times CPCB later revised that reading.",
+   "formats": [
+    "text/csv",
+    "application/json"
+   ],
+   "note": "The CSV states how many times a reading was revised; the JSON states what each revision said and what the reading was before it. Per-station readings are in the stations files below.",
+   "months": [
+    {
+     "month": "2026-08",
+     "csv": "/data/air/delhi-2026-08.csv",
+     "json": "/data/air/delhi-2026-08.json",
+     "rows": 85
+    },
+    {
+     "month": "2026-09",
+     "csv": "/data/air/delhi-2026-09.csv",
+     "json": "/data/air/delhi-2026-09.json",
+     "rows": 139
+    }
+   ]
+  },
+  "stations": {
+   "description": "One row per reporting monitor per hour: every station in the Delhi network at that observation, with the band it was in and whether it was over the published limit.",
+   "note": "Long format, one row per station-hour, because the reporting set changes from hour to hour. This is the file a per-neighbourhood analysis needs; the hourly file above carries only the worst monitor and the mean.",
+   "formats": [
+    "text/csv"
+   ],
+   "months": [
+    {
+     "month": "2026-08",
+     "csv": "/data/air/delhi-2026-08-stations.csv"
+    },
+    {
+     "month": "2026-09",
+     "csv": "/data/air/delhi-2026-09-stations.csv"
+    }
+   ]
+  },
+  "daily": {
+   "description": "One row per day: the day's peak observation, how many hours were actually observed, and how many of them were over the published limit.",
+   "csv": "/data/air/delhi-daily.csv",
+   "rows": 16
+  }
+ },
+ "live": {
+  "note": "The one request-time endpoint on this site. Everything above is a file.",
+  "endpoint": "/api/air",
+  "description": "Delhi, the current hour, fetched from CPCB at request time. Returns { ok: false } with a reason and no reading on any failure — never a zero.",
+  "method": "GET",
+  "format": "application/json"
+ },
+ "coverage": {
+  "subject": "Delhi air quality",
+  "spatial": "Delhi, India",
+  "temporal": "2026-08-25/2026-09-09",
+  "cadence": "hourly",
+  "source": "Central Pollution Control Board (CPCB) continuous ambient monitoring network",
+  "measured_or_modelled": "measured"
+ },
+ "not_published": [
+  {
+   "subject": "India air quality, all reporting cities, hourly",
+   "kept": "data/air-history/india-YYYY-MM.ndjson",
+   "published_as": "https://swechha.in/now/air/india",
+   "reason": "Kept the same way as Delhi and not yet published as files. Around 268 rows an hour comes to roughly 12 MB of CSV a month at the cadence this store is filled at, in a repository whose generated artefacts are regenerated and diffed on every push. Ask if you need it."
+  }
+ ],
+ "limitations": [
+  "Nothing is interpolated and no gap is filled. An hour with no observation is absent; a day with four hours in it is four hours of record.",
+  "The reading is the worst reporting monitor, named — not a population-weighted city average. CPCB publishes one of those as well and the two answer different questions.",
+  "A station reading describes a point, not a neighbourhood, and an index cannot be converted back into a concentration.",
+  "The grant covers this compilation. CPCB keeps its own terms over the underlying readings."
+ ]
+}

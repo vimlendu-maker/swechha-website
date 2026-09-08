@@ -550,6 +550,27 @@ const TITLE = seo('/now').title;
 await S.assemble({
   file: 'intelligence.html',
   title: TITLE,
+  /* ★ `ItemList` OF THE SIX, IN THE ORDER THE PAGE SHOWS THEM.
+     `assemble()` derives `Dataset` markup for each of the six situation PAGES
+     from its FAMILY entry; this index is not one of them and correctly gets no
+     Dataset of its own — an index publishes no reading. What it does publish is
+     the SET, and until now nothing said so: the entry point to every
+     environmental reading on this site carried breadcrumbs and nothing else,
+     so the relationship between the six was legible only from the visual cards.
+
+     NAME AND SUBJECT FROM THE CARD'S OWN DATA, never typed here, so the list
+     and the cards cannot disagree about what the six are or where they point.
+     No `value` in the description: a reading in structured data is a dated
+     claim in a cached artefact, and each situation page states its own with the
+     observation stamp attached. */
+  headExtra: S.itemListJsonLd({
+    name: 'Environmental readings Swechha keeps',
+    items: SITUATIONS.map((x) => ({
+      name: `${x.name}${x.where ? ` — ${x.where}` : ''}`,
+      url: x.href,
+      description: `Read in ${x.unit}, against a published limit.`,
+    })),
+  }),
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
   /* CE_TIME_JS RIDES WITH THE LIST, because the list is what it is for: it

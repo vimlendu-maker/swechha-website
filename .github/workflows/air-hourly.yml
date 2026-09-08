@@ -332,7 +332,7 @@ jobs:
             # page that has not been rebuilt yet, fails, and stops the run.
             # (generated-current.yml runs hero-first for the opposite and
             # equally correct reason: it starts from a tree already in step.)
-            for t in situations hero work about impact farm act stories publications posters record search essays; do
+            for t in situations hero work about impact farm act stories publications posters data record search essays; do
               npm run "build:$t" || { echo "::error::build:$t refused to write. A generator gate failed; nothing is published."; exit 1; }
             done
             npm run verify:final || { echo "::error::verify:final refused."; exit 1; }
@@ -344,7 +344,15 @@ jobs:
             # data/air-history/. Under `set -e` that `git add` exits 128, so
             # the publisher was one gate-fix away from failing on every run
             # instead. Naming trees, not files, cannot rot that way.
-            git add -A data public/_pages design
+            # ★ `public/data` IS NAMED HERE BECAUSE THIS LOOP NOW BUILDS IT.
+            # `npm run build:data` writes the CSV/JSON exports under
+            # public/data/, which is NOT inside public/_pages. The trees on this
+            # line are named individually, so an export regenerated in this run
+            # and left unstaged would be committed by nobody — and the very next
+            # pull request would fail generated-current.yml on a diff nothing in
+            # that PR caused. That is the same class of failure the note above
+            # records for data/air-history/, arriving by the opposite route.
+            git add -A data public/_pages public/data design
 
             if git diff --cached --quiet; then
               echo "::error::A successful Delhi check ($status) staged nothing. Every successful check must at least move time.swechha_checked_utc — see the AD-47 note in scripts/fetch-air.mjs."
