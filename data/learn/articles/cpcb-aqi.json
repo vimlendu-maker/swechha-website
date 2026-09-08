@@ -1,0 +1,135 @@
+{
+  "slug": "cpcb-aqi",
+  "category": "air",
+  "h1": "What does the CPCB AQI actually measure?",
+  "card": "Eight pollutants, sub-indices, a minimum-three rule — and what the published city figure is an average of.",
+  "frame": {
+    "src": "/images/photos/youth-site-visit.jpg",
+    "alt": "Young people on a site visit, listening to a facilitator"
+  },
+  "answer": "It measures the concentration of up to eight pollutants at a monitoring station, converts each to a 0–500 sub-index using CPCB's published breakpoints, and reports the highest of them. It does not measure air quality as a single physical quantity — there is no such quantity. Everything downstream of that, including the city figure quoted in the news, is arithmetic on station values.",
+  "explainHead": "What the index is built from",
+  "explainLead": "The eight pollutants, the averaging periods, and the rule that decides whether a station gets a number at all.",
+  "explain": [
+    "The National Air Quality Index was launched by CPCB in 2014. It covers PM2.5, PM10, nitrogen dioxide, sulphur dioxide, carbon monoxide, ozone, ammonia and lead. Each has its own breakpoint table mapping concentration to sub-index, because the same mass of two different pollutants does not do the same harm.",
+    "The averaging periods differ by pollutant: 24 hours for PM2.5, PM10, NO₂, SO₂, NH₃ and lead; eight hours for CO and ozone. So a single AQI value is assembled from windows of different lengths ending at the same moment.",
+    "A station's AQI is only computed when at least three pollutants have valid data, and PM2.5 or PM10 must be one of them. A station short of that reports nothing rather than a partial index — which is why the count of reporting stations in a city moves through the day."
+  ],
+  "defs": [
+    {
+      "term": "Breakpoint",
+      "d": "The concentration at which a pollutant's sub-index crosses a band boundary. Published per pollutant by CPCB."
+    },
+    {
+      "term": "Minimum-three rule",
+      "d": "No AQI without three valid pollutants including a particulate. It is why stations drop in and out of the count."
+    },
+    {
+      "term": "City AQI",
+      "d": "CPCB's published figure for a city: an average across stations, weighted by a two-kilometre population grid."
+    }
+  ],
+  "standard": {
+    "chip": "Bands and limits",
+    "head": "The bands, and the standard underneath them",
+    "lead": "The index bands describe. The NAAQS limit is the thing with legal force.",
+    "rows": [
+      {
+        "name": "Top of the ‘Satisfactory’ band",
+        "ref": {
+          "file": "air-delhi.json",
+          "path": "aqiLimit"
+        },
+        "unit": "AQI",
+        "authority": "CPCB National Air Quality Index, 2014"
+      },
+      {
+        "name": "Bottom of ‘Severe’",
+        "ref": {
+          "file": "air-delhi.json",
+          "path": "bands.5.idx.0"
+        },
+        "unit": "AQI",
+        "authority": "CPCB National Air Quality Index, 2014"
+      },
+      {
+        "name": "PM2.5, 24-hour mean",
+        "ref": {
+          "file": "air-delhi.json",
+          "path": [
+            "limits",
+            "PM2.5",
+            "h24"
+          ]
+        },
+        "unit": "µg/m³",
+        "authority": "CPCB, NAAQS 2009"
+      },
+      {
+        "name": "PM10, 24-hour mean",
+        "ref": {
+          "file": "air-delhi.json",
+          "path": "limits.PM10.h24"
+        },
+        "unit": "µg/m³",
+        "authority": "CPCB, NAAQS 2009"
+      }
+    ],
+    "after": [
+      "An AQI of 100 is where CPCB's own bands stop calling the air satisfactory, and it corresponds to the 24-hour standard for the governing pollutant. Above that, the index is describing air that is over a notified limit."
+    ]
+  },
+  "readHead": "Which number you are being shown",
+  "readLead": "Three different figures circulate as \"Delhi's AQI\" and they are not the same number.",
+  "measure": [
+    "<b>The station value.</b> One monitor, worst sub-index. This is the only figure that is a direct reading of anything.",
+    "<b>CPCB's city figure.</b> A population-weighted average across the city's reporting stations. It is the official number and it is designed to describe the city as a whole.",
+    "<b>The worst monitor, named.</b> What this site publishes, with the unweighted station mean printed beside it as a cross-check. It answers a different question: not how the city is doing, but what the worst-off part of it is breathing.",
+    "None of the three is wrong. Quoting one and citing another is."
+  ],
+  "cannot": [
+    "It cannot be compared with an AQI from another country. The United States, China and the European Union use different breakpoints and different pollutant sets — a US AQI of 150 is not an Indian AQI of 150.",
+    "It cannot be interpolated between stations. An AQI is defined at a monitor, and the space between two monitors has no published value.",
+    "It cannot distinguish a genuinely clean hour from a sensor that stopped reporting. A missing station is missing, not zero.",
+    "It saturates. At the top of the scale it stops separating bad from far worse."
+  ],
+  "live": {
+    "href": "/now/air",
+    "label": "Delhi's air, now",
+    "note": "Worst monitor named, city mean beside it, station count stated."
+  },
+  "sources": [
+    {
+      "name": "National Air Quality Index",
+      "publisher": "Central Pollution Control Board",
+      "url": "https://cpcb.nic.in/National-Air-Quality-Index/",
+      "note": "The index, the eight pollutants and the band boundaries"
+    },
+    {
+      "name": "CPCB CAAQMS live dashboard",
+      "publisher": "Central Pollution Control Board",
+      "url": "https://airquality.cpcb.gov.in/",
+      "note": "The station-level source"
+    },
+    {
+      "name": "Real-time Air Quality Index from various locations",
+      "publisher": "data.gov.in, mirroring CPCB",
+      "url": "https://api.data.gov.in/resource/3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69",
+      "note": "The open mirror this site falls back to"
+    }
+  ],
+  "related": [
+    "delhi-aqi",
+    "pm25",
+    "how-to-read-environmental-data"
+  ],
+  "programme": {
+    "href": "/work/projects/eco-action",
+    "label": "Eco Action",
+    "why": "Reading a public dataset properly is a teachable skill, and this is the dataset to learn it on."
+  },
+  "act": {
+    "href": "/act",
+    "label": "Adopt a ward's air reading"
+  }
+}

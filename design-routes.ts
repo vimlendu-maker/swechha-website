@@ -185,6 +185,27 @@ function fellowRoutes(): Record<string, string> {
   return out
 }
 
+/* THE LEARN LIBRARY, DERIVED FROM THE BUILT FILES for the reason
+   `fellowRoutes` is: a typed list of twenty paths is twenty chances to route a
+   page that was never built or to build one that is never routed, and both
+   failures look like a working commit. `scripts/build-learn.mjs` writes one
+   file per entry in `data/learn/articles/` and refuses to write any of them
+   unless every figure reference resolves, so an article exists at its route if
+   and only if the generator was satisfied with it. A twenty-first article
+   needs no edit here.
+
+   The index at `/learn` is routed explicitly below rather than derived, because
+   it is `learn.html` and not a child of the directory. */
+function learnRoutes(): Record<string, string> {
+  const dir = join(PUBLIC, '_pages/v3/learn')
+  if (!existsSync(dir)) return {}
+  const out: Record<string, string> = {}
+  for (const f of readdirSync(dir).filter((n) => n.endsWith('.html')).sort()) {
+    out[`/learn/${f.slice(0, -'.html'.length)}`] = `learn/${f}`
+  }
+  return out
+}
+
 export function designRoutes(): Array<{ source: string; destination: string }> {
   const map: Record<string, string> = {
     '/': 'home.html',
@@ -233,6 +254,15 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
        short link somebody hands a partner. */
     '/healthy-cities': 'healthy-cities.html',
     ...fellowRoutes(),
+    /* `/learn` — the knowledge library behind the readings. It joins the map
+       in the same commit that builds it and that links it from the footer
+       index, for the reason the paragraphs above give: a built page, a routed
+       page and a linked page are one change, and any two of them without the
+       third is a defect. It is NOT a seventh nav word — the nav is closed at
+       six plus the Give chip — and the twenty article pages below it are
+       derived from the built files rather than typed. */
+    '/learn': 'learn.html',
+    ...learnRoutes(),
     '/about': 'about.html',
     '/impact': 'impact.html',
     '/farm': 'farm.html',
