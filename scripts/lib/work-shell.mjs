@@ -1887,20 +1887,58 @@ export const period = (p) => {
  * them cannot spend 136px on line breaks and stay inside the 900px band cap.
  * Nothing is lost — both facts are still on the page, beside each other.
  */
-/* AD-28. THE SOURCE LINE IS GONE, and so is the counted-versus-modelled rule
-   under the label. These are organisational pages: the figure stands on its
-   own, and a figure Swechha cannot stand behind is not published rather than
-   published with an apparatus round it. The basis rule went with the legend
-   that decoded it — an unexplained dotted rule tells a reader nothing — so
-   every label takes the plain one. The caption line is OMITTED, not emptied,
-   where there is no span to state. */
+/* AD-28. THE SOURCE LINE IS GONE. The basis of a figure is NOT the source line
+   and does not go with it: a source says who counted, a basis says whether
+   anybody counted at all, and only the first of those is the apparatus AD-28
+   struck. That ruling was written when every figure on these pages was
+   counted, so "every label takes the plain one" cost nothing and was never
+   tested against a figure that was not.
+
+   IT IS TESTED NOW, and it fails. `p-kd-c` has NO CSS DEFINITION ANYWHERE —
+   the solid 2px rule comes from `.p-kd` itself — so the class is semantic
+   only, and the semantics were wrong: /impact and all six situation pages
+   print the legend "Counted or measured / Modelled" over a solid rule and a
+   dotted one, which teaches every reader of this site that a solid rule under
+   a label means somebody counted it. Bridge the Gap's 3M+ is MODELLED and was
+   shipping under that rule on three pages.
+
+   THE BASIS WORD TAKES THE HIGHEST FREE SLOT, which is one rule and not a
+   branch to get wrong:
+     - the marker above the numeral, where nothing else claims it — a project
+       page, a fellow page, /healthy-cities;
+     - the caption line otherwise, beside the span — /work and /work/projects
+       put the PROJECT NAME in that marker, and the name is the thing the
+       reader needs first in a list that mixes projects together.
+   Neither placement adds a line: the marker and the caption are both already
+   rendered on the figures that have them, and a figure with no span prints the
+   word alone rather than an empty caption. The dotted rule follows the word
+   for `modelled` in either placement, so the site-wide vocabulary reads the
+   same here as on /impact.
+
+   `planned` KEEPS THE PLAIN RULE and takes only the word. The published
+   vocabulary has two terms and a target is neither of them; drawing a target
+   as "modelled" would be a second false statement in place of the first.
+   The caption line is OMITTED, not emptied, where there is nothing to state. */
+const BASIS_WORD = { modelled: 'Derived, not counted', planned: 'Planned, not counted' };
+export const basisWord = (f) => BASIS_WORD[f && f.basis] || '';
+export const basisRule = (f) => `p-kd ${f && f.basis === 'modelled' ? 'p-kd-m' : 'p-kd-c'}`;
+/* The caption a figure carries once its basis has been placed: the word joined
+   to the span where the marker above was already taken, the span alone where
+   it was not, and '' where there is neither — which callers must read as
+   "render no caption line". */
+const basisCap = (f, span, markerTaken) => {
+  const w = markerTaken ? esc(basisWord(f)) : '';
+  return w && span ? `${w} &middot; ${span}` : (w || span);
+};
 export const figure = (f) => {
   const span = period(f.period);
+  const mark = f.owner || esc(basisWord(f));
+  const cap = basisCap(f, span, Boolean(f.owner));
   return `        <span>
-          ${f.owner ? `<span class="lbl wk-fig-o">${f.owner}</span>` : ''}
+          ${mark ? `<span class="lbl wk-fig-o">${mark}</span>` : ''}
           <span class="w7-pj-num rl"><span class="num">${f.value.replace(/\+$/, '<sup>+</sup>')}</span></span>
-          <span class="lbl w7-pj-nl"><span class="p-kd p-kd-c">${esc(f.label)}</span></span>${span
-    ? `\n          <span class="cap wk-fig-m">${span}</span>` : ''}
+          <span class="lbl w7-pj-nl"><span class="${basisRule(f)}">${esc(f.label)}</span></span>${cap
+    ? `\n          <span class="cap wk-fig-m">${cap}</span>` : ''}
         </span>`;
 };
 
@@ -2115,15 +2153,19 @@ export const FIGURE_RAIL_MIN = 2;
 export const figureRail = (figs) => {
   const list = (figs || []).slice(0, FIGURE_RAIL_MAX);
   if (list.length < FIGURE_RAIL_MIN) return '';
-  /* AD-28. The tile is the numeral, its label and its span. No source line and
-     no basis rule — same reasoning as `figure()`. The span line is omitted
-     where the data has no span to state. */
+  /* AD-28. The tile is the numeral, its label and its span. No source line —
+     same reasoning as `figure()`, and the same correction: the BASIS is not the
+     source and travels with the figure. A tile has no marker slot above the
+     numeral, so the word always goes to the caption line beside the span, and
+     the rule under the label follows it. The caption line is omitted where
+     there is neither a word nor a span to state. */
   const tile = (f) => {
     const span = period(f.period);
+    const cap = basisCap(f, span, true);
     return `        <div class="ip-ovl-c">
           <p class="num ip-ovl-v">${f.value.replace(/\+$/, '<sup>+</sup>')}</p>
-          <p class="lbl ip-ovl-l"><span class="unit p-kd p-kd-c">${esc(f.label)}</span></p>${span
-    ? `\n          <p class="cap ip-ovl-s">${span}</p>` : ''}
+          <p class="lbl ip-ovl-l"><span class="unit ${basisRule(f)}">${esc(f.label)}</span></p>${cap
+    ? `\n          <p class="cap ip-ovl-s">${cap}</p>` : ''}
         </div>`;
   };
   /* NO LEGEND ON THE RAIL, and that is the reference's own choice rather than a

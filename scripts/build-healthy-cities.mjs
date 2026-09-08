@@ -550,49 +550,29 @@ function applyCanvas(bands, body) {
       against plain(value) and would have failed on the same string. */
 const BASIS_MARK = { modelled: 'Derived, not counted', planned: 'Planned, not counted' };
 
-/* ── AND THE RULE UNDER THE LABEL IS SWITCHED TO THE DOTTED ONE FOR A MODELLED
-      FIGURE, WHICH IS A CORRECTION AND NOT AN ADDITION.
-      `figure()` hardcodes `class="p-kd p-kd-c"` on every label it renders, and
-      AD-28's note above it explains why: it struck the counted-versus-modelled
-      rule from the ORGANISATIONAL pages along with the legend that decoded it,
-      so "every label takes the plain one". That was unarguable while every
-      figure on those pages was counted. It stops being unarguable the moment a
-      modelled one appears, because THE VOCABULARY IS STILL LIVE ELSEWHERE ON
-      THIS SITE: `grep -rl 'Counted or measured' public/_pages/v3/` returns
-      SEVEN pages — /impact and all six situation pages — each of which prints
-      the legend "Counted or measured / Modelled" over a solid rule and a dotted
-      one. A reader who has been on /impact has been taught that a solid 2px
-      rule under a figure's label means somebody counted it. Shipping
-      26,000-52,000 under that rule would tell that reader something false, in
-      the site's own published words, on the one figure that most needs not to.
-      So `p-kd-c` becomes `p-kd-m` on a modelled figure and nothing else
-      changes: `.p-kd-m` is already in the inherited stylesheet and already
-      states itself for both grounds (dotted, --fg-3 on dark, --ink-3 on paper),
-      so no CSS is added here and no other page moves.
-      DONE PER FIGURE rather than per group, even though the data gate above
-      makes a group provably all-modelled-or-none — a swap that is right only
-      because of a gate somewhere else is one somebody will break.
-      `planned` KEEPS THE PLAIN RULE, because the vocabulary has two words and a
-      target is neither of them; what says a target is a target is the marker
-      above its numeral. That is the pre-existing treatment of the two proposal
-      figures in `bands.workshops` and this change does not disturb it. */
-const KIND_C = 'class="p-kd p-kd-c"';
-const KIND_M = 'class="p-kd p-kd-m"';
-const FIG_SPLIT = '\n        <span>\n';
-const figGroup = (list) => {
-  const items = (list || []).map(f => ({
-    ...f,
-    value: plain(f.value),
-    label: plain(f.label),
-    period: plain(f.period),
-    owner: BASIS_MARK[f.basis],
-  }));
-  const html = W.figures(items);
-  if (!items.some(f => f.basis === 'modelled')) return html;
-  const parts = html.split(FIG_SPLIT);
-  return parts.map((p, i) => (i > 0 && items[i - 1].basis === 'modelled'
-    ? p.replace(KIND_C, KIND_M) : p)).join(FIG_SPLIT);
-};
+/* ── THE MARKER AND THE DOTTED RULE ARE NO LONGER APPLIED HERE. Both were, from
+      8 September, and the way they were applied was a string replacement over
+      HTML this file had just asked `W.figures()` to generate — right on this
+      page and nowhere else, which is exactly how Bridge the Gap's modelled 3M+
+      went on carrying a counted rule on /work, /work/projects and its own
+      project page while this page was scrupulous.
+      IT IS THE SHARED COMPONENT'S JOB and it now does it: `figure()` and
+      `figureRail()` in work-shell read `basis` themselves, so every page that
+      renders a figure gets the same treatment and a new one cannot be built
+      without it. The rendered output of THIS page does not move — the marker
+      strings are identical and the rule was already dotted here — but the
+      mechanism producing it is now one place instead of a local override.
+      WHAT STAYS IS BASIS_MARK, and only as the GATES' expectation. It is now
+      written independently of the renderer's own table rather than shared with
+      it, which strengthens gate 10b instead of weakening it: reword the marker
+      in work-shell and this page fails until somebody agrees to the rewording.
+      That is the opposite of the tautology the gate's own note warns about. */
+const figGroup = (list) => W.figures((list || []).map(f => ({
+  ...f,
+  value: plain(f.value),
+  label: plain(f.label),
+  period: plain(f.period),
+})));
 
 const body = {};
 
@@ -2740,6 +2720,31 @@ function fellowGates({ f, OUT: HTML, ids, index, figs, others }) {
   const missingSib = others.filter(x => !HTML.includes(`<li id="${x.slug}"><a href="/healthy-cities/fellows/${x.slug}">`));
   g(missingSib.length === 0, `sibling(s) missing from the onward register: ${missingSib.map(x => x.slug).join(', ')}`);
   g(!HTML.includes(`href="/healthy-cities/fellows/${f.slug}"`), 'the page links to itself');
+
+  /* 8b. EVERY READING ON THIS PAGE IS DRAWN AS WHAT IT IS. The hub has carried
+         this check since it was built (gates 10 and 10b) and a fellow page
+         carried none, which is why miyawaki-forests published a MODELLED 6,000
+         people reached under the counted rule, on the rail, for as long as the
+         page existed. The hub was scrupulous and its own fellows were not.
+         The rail is the only shape a fellow page renders figures in, and the
+         expectation is restated here rather than imported from the renderer —
+         same reasoning as the hub's gate 10b: a gate that reads the table the
+         renderer writes from cannot see that table being wrong. */
+  const SAYS = { modelled: 'Derived, not counted', planned: 'Planned, not counted' };
+  const railBad = [];
+  for (const tile of OWN2.split('<div class="ip-ovl-c">').slice(1)) {
+    const m = /<span class="unit p-kd (p-kd-[cm])">([\s\S]*?)<\/span>/.exec(tile);
+    if (!m) continue;
+    const [, cls, label] = m;
+    const src = (f.figures || []).find(x => plain(x.label) === label);
+    if (!src) continue;
+    const word = SAYS[src.basis] || '';
+    const want = src.basis === 'modelled' ? 'p-kd-m' : 'p-kd-c';
+    const said = Object.values(SAYS).find(w => tile.includes(w)) || '';
+    if (cls !== want) railBad.push(`"${label}" is ${src.basis} and renders ${cls}, not ${want}`);
+    else if (word !== said) railBad.push(`"${label}" is ${src.basis} and says ${said ? `"${said}"` : 'nothing'}, not ${word ? `"${word}"` : 'nothing'}`);
+  }
+  g(railBad.length === 0, `reading(s) drawn as something they are not: ${railBad.join(' · ')}`);
 
   /* 9. THE MASTHEAD OWNS THE SHARE CARD. With no frame yet the page takes the
         neutral publisher card; once Task 6 lands, the first photograph in
