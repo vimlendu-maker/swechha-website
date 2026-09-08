@@ -248,6 +248,15 @@ export const TIER = {
         disagree about what is current. */
   did: 't2',
   fellows: 't2', workshops: 't2', cityscapes: 't2', actions: 't2',
+  /* ★ `horizon` IS THE SHORT-TERM/LONG-TERM FRAME (2026-09-08), and it is t3
+     rather than t2 on purpose: it makes no claim of its own and publishes no
+     figure — it says how to read the four deliverables above it, which is the
+     supporting weight `voices` and `watch` already take. `reach`, the band that
+     carries the two MODELLED indirect figures, needs no row here: it is already
+     declared t2 above for /work's own reach band, and t2 is right for it too —
+     it carries numerals and an argument, at the same weight as the deliverables
+     whose counts it says are a floor. */
+  horizon: 't3',
   voices: 't3', watch: 't3',
   onward: 't3',
 };

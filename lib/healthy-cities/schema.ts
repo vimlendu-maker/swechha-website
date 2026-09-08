@@ -13,11 +13,25 @@ export const FELLOW_DIR = join(DATA_DIR, 'fellows')
    authored, so asserting their absence proved nothing. The real defect they
    were meant to guard against — one fellow's file inheriting another's
    location — is covered instead by two positive assertions in
-   schema.test.ts. */
+   schema.test.ts.
+
+   ★ A WITHHELD FIGURE IS WITHHELD AS A FIGURE, NOT AS A RUN OF CHARACTERS
+   (2026-09-08). The test matched these as plain substrings of the serialised
+   data, and '5,000+' is a substring of '25,000+' — so the synopsis's own
+   twenty-five thousand monthly digital engagements, which IS publishable and
+   IS carried by two documents, failed a check written about a completely
+   different claim. The match is anchored below so a longer numeral cannot
+   collide with a shorter withheld one; '5,000+ community members reached'
+   still fails, which is the whole point of the entry. */
 export const WITHHELD = [
   '5,000+',
   'Swachha Foundation',
 ] as const
+
+/** Where a withheld string may not appear: as its own token, never as the tail
+    or head of a longer number or word. */
+export const withheldRe = (s: string) =>
+  new RegExp(`(?<![\\d,\\w])${s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\d\\w])`)
 
 /* THE BANDS THE HUB'S PROSE IS READ OUT OF, listed because `bands` is a
    `z.record` and a record requires no key: `bands: {}` validates forever, and a
@@ -32,9 +46,18 @@ export const WITHHELD = [
    all four. The tier rows for `schools`, `green` and the struck `gaps` band were
    removed from work-shell's TIER in the same change, so a band id re-added here
    without a tier throws rather than defaulting. */
+/* 2026-09-08. `reach` and `horizon` are the owner's two additions to the way
+   the year is read: the indirect beneficiaries the counted figures do not
+   carry, and the short-term-versus-long-term frame. `reach` is the only band
+   on the page whose figures are `modelled`, and it is deliberately the ONLY
+   one — a modelled number beside a counted one, with nothing marking the
+   difference, is the defect the whole basis field exists to prevent, so the
+   generator refuses a group that mixes `modelled` with any other basis.
+   `horizon` carries NO figures at all: it is an argument about time, and a
+   projected count for it would have to be invented. */
 export const REQUIRED_BAND_KEYS = [
   'top', 'what', 'kinds', 'workshops', 'cityscapes', 'statement', 'actions',
-  'fellows', 'voices', 'watch', 'with', 'onward',
+  'fellows', 'reach', 'horizon', 'voices', 'watch', 'with', 'onward',
 ] as const
 
 /* ★ `planned` IS A THIRD BASIS AND IT IS NOT A ROUNDING OF `counted`.
