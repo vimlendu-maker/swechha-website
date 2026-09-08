@@ -65,7 +65,7 @@ import {
   ask, stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, abs,
   breadcrumbJsonLd, imgDim,
   posterSheet, POSTER_CSS,
-  TRACKER,
+  TRACKER, HASH_STRIP,
 } from './situation-shell.mjs';
 import { withSocialImage } from './social-image.mjs';
 import { stampLastmod } from './lastmod.mjs';
@@ -2555,6 +2555,7 @@ ${HEAD_ICONS}
 ${headSocial(title, desc, url, ogType)}
 ${sh.HEAD_FONTS}
 ${TRACKER}
+${HASH_STRIP}
 <style>
 ${stripCssComments([sh.CSS, sh.SITUATION_CSS, SHARED_PAGE_CSS, sh.COMPONENT_CSS, WORK_CSS, pageCss].join('\n'))}</style>
 </head>

@@ -1200,11 +1200,15 @@ for (const [re, what] of [
    the several `<body>` mentions inside the page's own JS comments cannot be
    hit; `String.replace` with a string pattern takes the first match, and the
    real tag is the first line-initial one. */
-const shipped = ship.replace('\n<body>', `\n${S.TRACKER}\n<body>`);
+/* HASH_STRIP RIDES THE SAME INSERTION for the same reason: it is a
+   `<script>`, so it has to land after the tag-count guard too, and this
+   page's head is the one no shared shell writes. */
+const shipped = ship.replace('\n<body>', `\n${S.TRACKER}\n${S.HASH_STRIP}\n<body>`);
 if (shipped === ship) {
   console.error('\nREFUSING TO WRITE: no line-initial <body> found in the shipped homepage, '
-    + 'so the analytics tag could not be inserted. The page would ship uncounted '
-    + 'while every other page reported, and verify:seo would fail on / alone. '
+    + 'so neither the analytics tag nor the fragment stripper could be inserted. The '
+    + 'page would ship uncounted while every other page reported, and verify:seo '
+    + 'would fail on / twice over. '
     + 'Check what shipDocument() did to the document head.');
   process.exit(1);
 }

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Script from 'next/script'
 import { Archivo, Fraunces, Instrument_Sans } from 'next/font/google'
 import { ANALYTICS } from '@/lib/analytics'
+import { DEAD_FRAGMENT_JS } from '@/lib/dead-fragment.mjs'
 import './globals.css'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
@@ -96,6 +97,20 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           data-website-id={ANALYTICS.websiteId}
           strategy="afterInteractive"
         />
+        {/* THE DEAD FRAGMENT STRIPPER, for the routes that actually run this
+            layout. The 61 routes design-routes.ts shadows get it from the
+            generators instead, because this layout never executes for them —
+            the same both-places arrangement as the tracker above, and for the
+            same reason. Unlike the tracker there is no second copy: both lanes
+            import the one string from lib/dead-fragment.mjs, which is where
+            the reasoning and the three load-bearing details are written down.
+
+            `afterInteractive` is correct here rather than merely cheap: it
+            runs after hydration, so the DOM the script measures is the one the
+            reader has. */}
+        <Script id="dead-fragment" strategy="afterInteractive">
+          {DEAD_FRAGMENT_JS}
+        </Script>
         <PhotoFilters />
         <SiteHeader />
         <div className="flex-1">{children}</div>

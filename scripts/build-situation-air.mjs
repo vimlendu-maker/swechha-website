@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os';
 import { crumb, siblings, FAMILY_CSS, NAV_SEARCH_CSS, NAV as SHELL_NAV, HOME_HREF, GIVE_HREF, INDEX_PAGE,
   stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, cadence, STATES,
   closing, citeBlock, CLOSING_CSS, abs, imgDim, responsiveImages,
-  LICENCE_URL, datasetJsonLd, FAMILY, stateRollup, TRACKER } from './lib/situation-shell.mjs';
+  LICENCE_URL, datasetJsonLd, FAMILY, stateRollup, TRACKER, HASH_STRIP } from './lib/situation-shell.mjs';
 import { withSocialImage } from './lib/social-image.mjs';
 import { seo } from './lib/seo-register.mjs';
 import { stampLastmod } from './lib/lastmod.mjs';
@@ -2200,6 +2200,7 @@ const OUT = stripHtmlComments(`<!doctype html>
 ${OG}
 ${HEAD_FONTS}
 ${TRACKER}
+${HASH_STRIP}
 <style>
 ${stripCssComments([CSS, PAGE_CSS, AIR_ONLY_CSS, NAV_SEARCH_CSS, FAMILY_CSS, CLOSING_CSS].join('\n'))}</style>
 </head>
