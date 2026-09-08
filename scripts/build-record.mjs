@@ -158,16 +158,16 @@ const PAGE_CSS = `
 .rc-k-h a{color:inherit;text-decoration:none}
 .rc-k-h a:hover{text-decoration:underline;text-underline-offset:3px}
 .rc-k-p{margin:0;max-width:44ch}
-.rc-k-m{margin:0;opacity:.72}
+.rc-k-m{margin:0}
 .rc-tw{overflow-x:auto;margin:clamp(20px,3vw,32px) 0 0;-webkit-overflow-scrolling:touch}
 .rc-t{border-collapse:collapse;width:100%;min-width:640px;font-variant-numeric:tabular-nums}
-.rc-t caption{text-align:left;padding:0 0 10px;opacity:.78}
+.rc-t caption{text-align:left;padding:0 0 10px}
 .rc-t th,.rc-t td{text-align:left;padding:9px 14px 9px 0;border-bottom:1px solid currentColor;
   vertical-align:baseline;white-space:nowrap}
 .rc-t th{font-weight:600;border-bottom-width:2px}
 .rc-t td.rc-wide{white-space:normal;min-width:190px}
 .rc-over{font-weight:600}
-.rc-none{opacity:.6}
+.rc-none{}
 .rc-months{display:grid;gap:clamp(14px,2vw,20px);margin:clamp(20px,3vw,32px) 0 0;
   grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
 .rc-m{display:grid;gap:4px;align-content:start;text-decoration:none;color:inherit;min-width:0;
@@ -177,7 +177,7 @@ const PAGE_CSS = `
 .rc-cite{margin:clamp(18px,2.6vw,26px) 0 0;max-width:70ch}
 .rc-defs{margin:clamp(18px,2.6vw,26px) 0 0;display:grid;gap:14px;max-width:66ch}
 .rc-defs dt{font-weight:600;margin:0}
-.rc-defs dd{margin:4px 0 0;opacity:.88}
+.rc-defs dd{margin:4px 0 0}
 .rc-cite code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;
   display:block;padding:12px 14px;border:1px solid currentColor;margin:10px 0 0;white-space:pre-wrap;
   overflow-wrap:anywhere}

@@ -277,7 +277,7 @@ const PAGE_CSS = `
 .lr-defs{margin:clamp(20px,3vw,30px) 0 0;display:grid;gap:14px;max-width:64ch}
 .lr-defs dt{font-weight:600;margin:0}
 .lr-defs dd{margin:4px 0 0;color:var(--ink-2)}
-.dark-2 .lr-defs dd,.lr-defs dd{color:inherit;opacity:.86}
+.dark-2 .lr-defs dd,.lr-defs dd{color:inherit}
 .paper .lr-defs dd,.paper-2 .lr-defs dd{opacity:1;color:var(--ink-2)}
 .lr-st{display:grid;gap:0;margin:clamp(18px,2.6vw,26px) 0 clamp(20px,3vw,30px);
   grid-template-columns:minmax(0,1fr)}
@@ -286,14 +286,14 @@ const PAGE_CSS = `
 .lr-st-r:last-child{border-bottom:1px solid currentColor}
 .lr-st-n{margin:0}
 .lr-st-v{margin:0;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
-.lr-st-a{margin:0;opacity:.72}
+.lr-st-a{margin:0}
 .lr-cta{margin:clamp(18px,2.6vw,26px) 0 0}
 .lr-cannot{margin:clamp(22px,3vw,32px) 0 0;border-top:2px solid currentColor;padding-top:14px;max-width:64ch}
 .lr-ul{margin:10px 0 0;padding-left:1.1em;display:grid;gap:8px}
 .lr-ul li{max-width:60ch}
 .lr-src{list-style:none;margin:clamp(16px,2.4vw,24px) 0 0;padding:0;display:grid;gap:14px;max-width:70ch}
 .lr-src li{display:grid;gap:3px;border-top:1px solid currentColor;padding-top:12px}
-.lr-lic{margin:clamp(20px,3vw,28px) 0 0;max-width:70ch;opacity:.82}
+.lr-lic{margin:clamp(20px,3vw,28px) 0 0;max-width:70ch}
 .lr-doors{display:grid;gap:clamp(14px,2vw,20px);margin:clamp(18px,2.6vw,26px) 0 0;
   grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
 .lr-door{display:grid;gap:5px;align-content:start;min-width:0;text-decoration:none;color:inherit;
@@ -312,12 +312,12 @@ const PAGE_CSS = `
   grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
 .lx-c{min-width:0}
 .lx-c-h{margin:0 0 4px}
-.lx-c-l{margin:0 0 12px;opacity:.82;max-width:44ch}
+.lx-c-l{margin:0 0 12px;max-width:44ch}
 .lx-l{list-style:none;margin:0;padding:0;display:grid;gap:9px}
 .lx-l li{border-top:1px solid currentColor;padding-top:9px}
 .lx-l a{text-decoration:none;color:inherit;display:grid;gap:2px}
 .lx-l a:hover span:first-child{text-decoration:underline;text-underline-offset:3px}
-.lx-l .cap{opacity:.74}
+.lx-l .cap{}
 .lx-live{display:grid;gap:clamp(14px,2vw,20px);margin:clamp(20px,3vw,32px) 0 0;
   grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
 @media (max-width:720px){

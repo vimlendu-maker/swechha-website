@@ -142,7 +142,7 @@ const PAGE_CSS = `
   font-variant-numeric:tabular-nums;display:inline-block;padding-bottom:3px}
 .jr-fig-u{font-size:.5em;letter-spacing:.01em}
 .jr-fig-l{margin:0}
-.jr-fig-s{margin:2px 0 0;opacity:.66}
+.jr-fig-s{margin:2px 0 0}
 .jr-split{display:grid;gap:clamp(22px,3.2vw,38px);margin:clamp(22px,3vw,32px) 0 0;
   grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
 .jr-col{min-width:0;border-top:2px solid currentColor;padding-top:13px}
