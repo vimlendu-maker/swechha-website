@@ -156,7 +156,6 @@ const PAGE_CSS = `
   border-top:2px solid currentColor;padding-top:13px}
 .rc-k-h{margin:0}
 .rc-k-h a{color:inherit;text-decoration:none}
-.rc-k-h a:hover{text-decoration:underline;text-underline-offset:3px}
 .rc-k-p{margin:0;max-width:44ch}
 .rc-k-m{margin:0}
 .rc-tw{overflow-x:auto;margin:clamp(20px,3vw,32px) 0 0;-webkit-overflow-scrolling:touch}
@@ -173,7 +172,6 @@ const PAGE_CSS = `
 .rc-m{display:grid;gap:4px;align-content:start;text-decoration:none;color:inherit;min-width:0;
   border-top:2px solid currentColor;padding-top:13px}
 .rc-m-h{font-family:var(--display);font-size:clamp(21px,2.6vw,28px);line-height:1.1}
-.rc-m:hover .rc-m-h{text-decoration:underline;text-underline-offset:3px}
 .rc-cite{margin:clamp(18px,2.6vw,26px) 0 0;max-width:70ch}
 .rc-defs{margin:clamp(18px,2.6vw,26px) 0 0;display:grid;gap:14px;max-width:66ch}
 .rc-defs dt{font-weight:600;margin:0}
@@ -186,9 +184,39 @@ const PAGE_CSS = `
 .rc-door{display:grid;gap:5px;align-content:start;min-width:0;text-decoration:none;color:inherit;
   border-top:2px solid currentColor;padding-top:12px}
 .rc-door-h{font-family:var(--display);font-size:clamp(19px,2.2vw,24px);line-height:1.14}
-.rc-door:hover .rc-door-h{text-decoration:underline;text-underline-offset:3px}
 .rc-rev{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:7px;max-width:60ch}
 .rc-rev li{border-top:1px solid currentColor;padding-top:7px;font-variant-numeric:tabular-nums}
+/* ── AD-50. THE AFFORDANCE IS TYPOGRAPHIC, NOT AN ICON. ──────────────────
+   Every card, door and row in this section carried the shell's ARROW glyph.
+   ARROW is a bare <svg viewBox="0 0 24 24"> with NO width or height of its
+   own, and AD-40 had already recorded what that does — "as the third flex
+   item in a stretch column the arrow took the card's full width and its 1:1
+   viewBox made it that tall as well: measured 314x314 at 390px". This build
+   read that note and then reproduced the bug in four new generators: thirty-
+   two unsized arrows, and two of the generators had no sizing rule at all.
+
+   Sizing them was the small fix. The owner asked for the arrow to stop being
+   the device, and the site already has a better one: the footer's directory
+   treatment, whose own note argues for it — "the underline is drawn in the
+   HAIRLINE colour rather than the text colour ... so the column still reads
+   as a directory rather than as twenty-four emphasised phrases; hover and
+   focus take it to mustard along with the ink."
+
+   So the cue is a hairline underline at rest, mustard on hover and focus. It
+   satisfies AD-38's refusal of zero-cue blocks without an icon, it costs no
+   vertical space — which is the space the cards get back as air — and it is
+   already the language of the bottom of every page on this site.
+
+   GROUND-AWARE, because --hair is rgba(251,248,240,.20): a light hairline
+   for a dark ground, and invisible on paper. Paper takes --rule-2, the same
+   split build-act-page.mjs makes for its own five classes. */
+.rc-m-h,.rc-door-h,.rc-k-h a{text-decoration:underline;text-decoration-thickness:1px;
+  text-underline-offset:5px;text-decoration-color:var(--hair);
+  transition:text-decoration-color .14s ease}
+.paper .rc-m-h,.paper-2 .rc-m-h,.paper .rc-door-h,.paper-2 .rc-door-h,.paper .rc-k-h a,.paper-2 .rc-k-h a{text-decoration-color:var(--rule-2)}
+.rc-m:hover .rc-m-h,.rc-m:focus-visible .rc-m-h,.rc-door:hover .rc-door-h,.rc-door:focus-visible .rc-door-h,.rc-k-h a:hover,.rc-k-h a:focus-visible{text-decoration-color:var(--mustard)}
+@media (prefers-reduced-motion:reduce){.rc-m-h,.rc-door-h,.rc-k-h a{transition:none}}
+
 `;
 
 const BANDS_6 = (ids) => ids;
@@ -299,9 +327,9 @@ https://swechha.in${route}</code>
     onward: () => `${opener('onward', 'Next', 'The live reading, the rest of the record, and what the numbers mean.')}
     <div class="wrap">
       <div class="rc-doors">
-        <a class="rc-door" href="/now/air"><span class="lbl">Live</span><span class="rc-door-h">Delhi&rsquo;s air, now</span><span class="cap">Every reporting monitor, the worst named.</span>${ARROW}</a>
-        <a class="rc-door" href="/record/air"><span class="lbl">Record</span><span class="rc-door-h">Every month kept</span><span class="cap">The Delhi air archive, month by month.</span>${ARROW}</a>
-        <a class="rc-door" href="/learn/delhi-aqi"><span class="lbl">Learn</span><span class="rc-door-h">What is Delhi&rsquo;s AQI?</span><span class="cap">The six bands, and the standard underneath them.</span>${ARROW}</a>
+        <a class="rc-door" href="/now/air"><span class="lbl">Live</span><span class="rc-door-h">Delhi&rsquo;s air, now</span><span class="cap">Every reporting monitor, the worst named.</span></a>
+        <a class="rc-door" href="/record/air"><span class="lbl">Record</span><span class="rc-door-h">Every month kept</span><span class="cap">The Delhi air archive, month by month.</span></a>
+        <a class="rc-door" href="/learn/delhi-aqi"><span class="lbl">Learn</span><span class="rc-door-h">What is Delhi&rsquo;s AQI?</span><span class="cap">The six bands, and the standard underneath them.</span></a>
       </div>
     </div>`,
   };
@@ -369,7 +397,7 @@ https://swechha.in${route}</code>
 ${monthPages.slice().reverse().map((p) => `        <a class="rc-m" href="${p.route}">
           <span class="rc-m-h">${monthLabel(p.m.y, p.m.mo)}</span>
           <span class="cap">${p.days.length} days &middot; ${S.n0(p.m.rows.length)} observations</span>
-          <span class="cap">${p.revised} re-served by the source</span>${ARROW}
+          <span class="cap">${p.revised} re-served by the source</span>
         </a>`).join('\n')}
       </div>
     </div>`,
@@ -416,9 +444,9 @@ https://swechha.in/record/air</code>
     onward: () => `${opener('onward', 'Next', 'The live page, the rest of the archive, and the explanation.')}
     <div class="wrap">
       <div class="rc-doors">
-        <a class="rc-door" href="/now/air"><span class="lbl">Live</span><span class="rc-door-h">Delhi&rsquo;s air, now</span><span class="cap">The current hour, against the standard.</span>${ARROW}</a>
-        <a class="rc-door" href="/record"><span class="lbl">Record</span><span class="rc-door-h">Everything kept</span><span class="cap">What is archived across all six situations.</span>${ARROW}</a>
-        <a class="rc-door" href="/learn/pm25"><span class="lbl">Learn</span><span class="rc-door-h">What is PM2.5?</span><span class="cap">The pollutant that governs most of these readings.</span>${ARROW}</a>
+        <a class="rc-door" href="/now/air"><span class="lbl">Live</span><span class="rc-door-h">Delhi&rsquo;s air, now</span><span class="cap">The current hour, against the standard.</span></a>
+        <a class="rc-door" href="/record"><span class="lbl">Record</span><span class="rc-door-h">Everything kept</span><span class="cap">What is archived across all six situations.</span></a>
+        <a class="rc-door" href="/learn/pm25"><span class="lbl">Learn</span><span class="rc-door-h">What is PM2.5?</span><span class="cap">The pollutant that governs most of these readings.</span></a>
       </div>
     </div>`,
   };
@@ -501,7 +529,7 @@ const KEPT = [
     <div class="wrap">
       <div class="rc-kept">
 ${KEPT.map((k) => `        <div class="rc-k">
-          <h3 class="d2 rc-k-h">${k.href ? `<a href="${k.href}">${esc(k.subject)}${ARROW}</a>` : esc(k.subject)}</h3>
+          <h3 class="d2 rc-k-h">${k.href ? `<a href="${k.href}">${esc(k.subject)}</a>` : esc(k.subject)}</h3>
           <p class="cap rc-k-m">${esc(k.cadence)} &middot; ${esc(k.source)}</p>
           <p class="rc-k-p">${esc(k.note)}</p>
           <p class="cap rc-k-m">Judged against: ${esc(k.limit)}</p>
@@ -534,7 +562,7 @@ ${KEPT.map((k) => `        <div class="rc-k">
       <div class="rc-months">
 ${monthPages.slice().reverse().slice(0, 6).map((p) => `        <a class="rc-m" href="${p.route}">
           <span class="rc-m-h">${monthLabel(p.m.y, p.m.mo)}</span>
-          <span class="cap">${p.days.length} days &middot; ${S.n0(p.m.rows.length)} observations</span>${ARROW}
+          <span class="cap">${p.days.length} days &middot; ${S.n0(p.m.rows.length)} observations</span>
         </a>`).join('\n')}
       </div>
       <p class="rc-p" style="margin-top:22px"><a class="b b-1" href="/record/air">The whole Delhi air record${ARROW}</a></p>
@@ -555,9 +583,9 @@ https://swechha.in/record</code>
     onward: () => `${opener('onward', 'Next', 'The live readings, the explanations, and the way in.')}
     <div class="wrap">
       <div class="rc-doors">
-        <a class="rc-door" href="/now"><span class="lbl">Live</span><span class="rc-door-h">Every situation</span><span class="cap">Six readings, each against its published limit.</span>${ARROW}</a>
-        <a class="rc-door" href="/learn"><span class="lbl">Learn</span><span class="rc-door-h">What the numbers mean</span><span class="cap">Twenty explainers behind these readings.</span>${ARROW}</a>
-        <a class="rc-door" href="/use-the-data"><span class="lbl">Reuse</span><span class="rc-door-h">Use this data</span><span class="cap">Licence, attribution, method and limits.</span>${ARROW}</a>
+        <a class="rc-door" href="/now"><span class="lbl">Live</span><span class="rc-door-h">Every situation</span><span class="cap">Six readings, each against its published limit.</span></a>
+        <a class="rc-door" href="/learn"><span class="lbl">Learn</span><span class="rc-door-h">What the numbers mean</span><span class="cap">Twenty explainers behind these readings.</span></a>
+        <a class="rc-door" href="/use-the-data"><span class="lbl">Reuse</span><span class="rc-door-h">Use this data</span><span class="cap">Licence, attribution, method and limits.</span></a>
       </div>
     </div>`,
   };
@@ -691,9 +719,9 @@ ${LIMITS.map(([h, p]) => `        <dt>${esc(h)}</dt>\n        <dd>${esc(p)}</dd>
     onward: () => `${opener('onward', 'Next', 'The archive, the explanations, and a person to ask.')}
     <div class="wrap">
       <div class="rc-doors">
-        <a class="rc-door" href="/record"><span class="lbl">Record</span><span class="rc-door-h">The archive</span><span class="cap">Every reading kept at its own address.</span>${ARROW}</a>
-        <a class="rc-door" href="/learn"><span class="lbl">Learn</span><span class="rc-door-h">What the numbers mean</span><span class="cap">Twenty explainers, each with its sources.</span>${ARROW}</a>
-        <a class="rc-door" href="/now"><span class="lbl">Live</span><span class="rc-door-h">Every situation</span><span class="cap">Six readings, each against its published limit.</span>${ARROW}</a>
+        <a class="rc-door" href="/record"><span class="lbl">Record</span><span class="rc-door-h">The archive</span><span class="cap">Every reading kept at its own address.</span></a>
+        <a class="rc-door" href="/learn"><span class="lbl">Learn</span><span class="rc-door-h">What the numbers mean</span><span class="cap">Twenty explainers, each with its sources.</span></a>
+        <a class="rc-door" href="/now"><span class="lbl">Live</span><span class="rc-door-h">Every situation</span><span class="cap">Six readings, each against its published limit.</span></a>
       </div>
 ${S.ask({ audience: 'media', label: 'Ask about the data', page: 'Use the data', path: '/use-the-data' })}
     </div>`,

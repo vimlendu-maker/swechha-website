@@ -280,7 +280,7 @@ const sourcesBand = (a) => `${opener('sources', 'Where this comes from', a.sourc
   || 'Every figure above is read out of one of these, at the address printed beside it.')}
     <div class="wrap">
       <ul class="lr-src">
-${a.sources.map((s) => `        <li><a class="lk" href="${esc(s.url)}" rel="noopener">${esc(s.name)}${ARROW}</a>
+${a.sources.map((s) => `        <li><a class="lk" href="${esc(s.url)}" rel="noopener">${esc(s.name)}</a>
           <span class="cap">${esc(s.publisher)}${s.note ? ` &middot; ${esc(s.note)}` : ''}</span></li>`).join('\n')}
       </ul>
       <p class="cap lr-lic">Reuse freely &mdash; <a class="lk" href="${S.LICENCE_URL}" rel="license noopener">${S.LICENCE_NAME}</a>.
@@ -297,17 +297,17 @@ const onwardBand = (a) => {
 ${a.live ? `        <a class="lr-door" href="${esc(a.live.href)}">
           <span class="lbl">Live reading</span>
           <span class="lr-door-h">${esc(a.live.label)}</span>
-          <span class="cap">${esc(a.live.note)}</span>${ARROW}
+          <span class="cap">${esc(a.live.note)}</span>
         </a>` : ''}
 ${rel.map((r) => `        <a class="lr-door" href="${artHref(r.slug)}">
           <span class="lbl">${esc(catOf(r).name)}</span>
           <span class="lr-door-h">${r.h1}</span>
-          <span class="cap">${esc(r.card)}</span>${ARROW}
+          <span class="cap">${esc(r.card)}</span>
         </a>`).join('\n')}
 ${a.programme ? `        <a class="lr-door" href="${esc(a.programme.href)}">
           <span class="lbl">Stand in it</span>
           <span class="lr-door-h">${esc(a.programme.label)}</span>
-          <span class="cap">${esc(a.programme.why)}</span>${ARROW}
+          <span class="cap">${esc(a.programme.why)}</span>
         </a>` : ''}
       </div>
 ${a.act ? `      <p class="lr-cta"><a class="b b-1" href="${esc(a.act.href)}">${esc(a.act.label)}${ARROW}</a></p>` : ''}
@@ -345,15 +345,12 @@ const PAGE_CSS = `
 .lr-door{display:grid;gap:5px;align-content:start;min-width:0;text-decoration:none;color:inherit;
   border-top:2px solid currentColor;padding-top:12px}
 .lr-door-h{font-family:var(--display);font-size:clamp(19px,2.2vw,24px);line-height:1.14}
-.lr-door svg{width:20px;height:20px;margin-top:4px}
-.lr-door:hover .lr-door-h{text-decoration:underline;text-underline-offset:3px}
 /* ── THE INDEX ────────────────────────────────────────────────────────── */
 .lx-start{display:grid;gap:clamp(20px,3vw,34px);margin:clamp(20px,3vw,32px) 0 0;
   grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
 .lx-s{display:grid;gap:7px;align-content:start;min-width:0;text-decoration:none;color:inherit;
   border-top:2px solid currentColor;padding-top:14px}
 .lx-s-h{font-family:var(--display);font-size:clamp(21px,2.6vw,28px);line-height:1.12}
-.lx-s:hover .lx-s-h{text-decoration:underline;text-underline-offset:3px}
 .lx-cats{display:grid;gap:clamp(26px,4vw,44px);margin:clamp(20px,3vw,32px) 0 0;
   grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
 .lx-c{min-width:0}
@@ -362,7 +359,6 @@ const PAGE_CSS = `
 .lx-l{list-style:none;margin:0;padding:0;display:grid;gap:9px}
 .lx-l li{border-top:1px solid currentColor;padding-top:9px}
 .lx-l a{text-decoration:none;color:inherit;display:grid;gap:2px}
-.lx-l a:hover span:first-child{text-decoration:underline;text-underline-offset:3px}
 .lx-l .cap{}
 .lx-live{display:grid;gap:clamp(14px,2vw,20px);margin:clamp(20px,3vw,32px) 0 0;
   grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
@@ -370,6 +366,37 @@ const PAGE_CSS = `
   .lr-st-r{grid-template-columns:minmax(0,1fr);gap:2px}
   .lr-st-v{font-size:1.15em}
 }
+/* ── AD-50. THE AFFORDANCE IS TYPOGRAPHIC, NOT AN ICON. ──────────────────
+   Every card, door and row in this section carried the shell's ARROW glyph.
+   ARROW is a bare <svg viewBox="0 0 24 24"> with NO width or height of its
+   own, and AD-40 had already recorded what that does — "as the third flex
+   item in a stretch column the arrow took the card's full width and its 1:1
+   viewBox made it that tall as well: measured 314x314 at 390px". This build
+   read that note and then reproduced the bug in four new generators: thirty-
+   two unsized arrows, and two of the generators had no sizing rule at all.
+
+   Sizing them was the small fix. The owner asked for the arrow to stop being
+   the device, and the site already has a better one: the footer's directory
+   treatment, whose own note argues for it — "the underline is drawn in the
+   HAIRLINE colour rather than the text colour ... so the column still reads
+   as a directory rather than as twenty-four emphasised phrases; hover and
+   focus take it to mustard along with the ink."
+
+   So the cue is a hairline underline at rest, mustard on hover and focus. It
+   satisfies AD-38's refusal of zero-cue blocks without an icon, it costs no
+   vertical space — which is the space the cards get back as air — and it is
+   already the language of the bottom of every page on this site.
+
+   GROUND-AWARE, because --hair is rgba(251,248,240,.20): a light hairline
+   for a dark ground, and invisible on paper. Paper takes --rule-2, the same
+   split build-act-page.mjs makes for its own five classes. */
+.lr-door-h,.lx-s-h,.lx-l a span:first-child{text-decoration:underline;text-decoration-thickness:1px;
+  text-underline-offset:5px;text-decoration-color:var(--hair);
+  transition:text-decoration-color .14s ease}
+.paper .lr-door-h,.paper-2 .lr-door-h,.paper .lx-s-h,.paper-2 .lx-s-h,.paper .lx-l a span:first-child,.paper-2 .lx-l a span:first-child{text-decoration-color:var(--rule-2)}
+.lr-door:hover .lr-door-h,.lr-door:focus-visible .lr-door-h,.lx-s:hover .lx-s-h,.lx-s:focus-visible .lx-s-h,.lx-l a:hover span:first-child,.lx-l a:focus-visible span:first-child{text-decoration-color:var(--mustard)}
+@media (prefers-reduced-motion:reduce){.lr-door-h,.lx-s-h,.lx-l a span:first-child{transition:none}}
+
 `;
 
 /* ═══ BANDS — one fixed chain, so the ground rhythm cannot drift ═════════
@@ -484,7 +511,7 @@ const IB = {
 ${start.map((s) => `        <a class="lx-s" href="${artHref(s.slug)}">
           <span class="lbl">${esc(catOf(s).name)}</span>
           <span class="lx-s-h">${s.h1}</span>
-          <span class="cap">${esc(s.card)}</span>${ARROW}
+          <span class="cap">${esc(s.card)}</span>
         </a>`).join('\n')}
       </div>
     </div>`,
@@ -508,7 +535,7 @@ ${ARTICLES.filter((a) => a.category === c.id).map((a) => `            <li><a hre
 ${INDEX_DATA.live.doors.map((d) => `        <a class="lr-door" href="${esc(d.href)}">
           <span class="lbl">Live</span>
           <span class="lr-door-h">${esc(d.label)}</span>
-          <span class="cap">${esc(d.note)}</span>${ARROW}
+          <span class="cap">${esc(d.note)}</span>
         </a>`).join('\n')}
       </div>
     </div>`,
@@ -526,7 +553,7 @@ ${INDEX_DATA.made.body.map((p) => `      <p class="lr-p">${p}</p>`).join('\n')}
 ${INDEX_DATA.onward.doors.map((d) => `        <a class="lr-door" href="${esc(d.href)}">
           <span class="lbl">${esc(d.kicker)}</span>
           <span class="lr-door-h">${esc(d.label)}</span>
-          <span class="cap">${esc(d.note)}</span>${ARROW}
+          <span class="cap">${esc(d.note)}</span>
         </a>`).join('\n')}
       </div>
     </div>`,

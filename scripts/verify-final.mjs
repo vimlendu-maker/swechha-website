@@ -216,6 +216,35 @@ export const NOT_FINAL = [
   { file: 'work/', why: 'FINISHED — 16 pages from scripts/build-work-pages.mjs, merged in PR #5 and serving under /work. It was in progress in a concurrent session when this line first read that way. It carries its own acceptance gate, the LINKS.json manifest, which fails the build on any unlisted or dead href.' },
 ];
 
+/* ═══ NO BACKTICK INSIDE ANY GENERATOR'S PAGE_CSS ════════════════════════
+   The check below has guarded SHARED_PAGE_CSS since three builds were broken
+   by a backtick inside one of its comments. On 9 September 2026 it happened a
+   FOURTH time, in a place that check does not look: four `const PAGE_CSS = `
+   literals in scripts/build-*.mjs, all four broken in one edit by writing
+   --hair and --rule-2 inside backticks in the prose of a CSS comment. The
+   symptom is baffling — "Invalid left-hand side expression in postfix
+   operation" on the line that OPENS the literal, because `--` after the
+   accidental close is parsed as a decrement.
+   `node --check` catches it, but only when someone runs that generator. This
+   catches it for every generator at once, and says what it actually is. */
+{
+  for (const f of readdirSync(join(ROOT, 'scripts')).filter((n) => /^build-.*\.mjs$/.test(n))) {
+    const src = readFileSync(join(ROOT, 'scripts', f), 'utf8');
+    const open_ = src.indexOf('const PAGE_CSS = `');
+    if (open_ < 0) continue;
+    const body = src.slice(open_ + 'const PAGE_CSS = `'.length);
+    const end = body.indexOf('`');
+    const after = body.slice(end + 1, end + 40).trim();
+    if (!after.startsWith(';')) {
+      console.error(`  FAIL ${f}'s PAGE_CSS closes early — a backtick inside it, probably in a `
+        + `comment. Text after the closing backtick: ${JSON.stringify(after.slice(0, 34))}`);
+      fail++;
+    } else {
+      console.log(`  ok   ${f} PAGE_CSS contains no stray backtick`);
+    }
+  }
+}
+
 /* ═══ NO BACKTICK INSIDE SHARED_PAGE_CSS ════════════════════════════════
    SHARED_PAGE_CSS is one template literal and a backtick anywhere inside it —
    including inside a comment — terminates it and every generator in the repo

@@ -42,7 +42,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 import { writeFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve, join } from 'node:path';
-import { HAZARD_TERMS, TIER1, TIER2, SEVERITY_TERMS, NEGATIVE_TERMS, hay, ownedElsewhere, coordsFor, regionOf } from './lib/event-terms.mjs';
+import { HAZARD_TERMS, TIER1, TIER2, SEVERITY_TERMS, NEGATIVE_TERMS, hay, hayPlace, ownedElsewhere, coordsFor, regionOf } from './lib/event-terms.mjs';
 import { consolidate } from './lib/event-figures.mjs';
 import { dedupeFeedItems, anchorPublished, lastUpdatedFrom, feedCollapse } from './lib/event-feed.mjs';
 import { HAZARDS, hasContext } from './lib/climate-events.mjs';
@@ -259,17 +259,32 @@ function classifyHazard(h) {
   return null;
 }
 
-/** Where is it, and does that place reach India? */
+/** Where is it, and does that place reach India?
+ *
+ *  ★ THE TEXT IS THE TITLE, NEVER hay(). See hayPlace()'s note: the publisher
+ *    is folded into hay(), and matching a place against a masthead published
+ *    eight events that did not happen.
+ *
+ *  ★ A TITLE NAMING BOTH AN INDIAN AND A FOREIGN PLACE DOES NOT MINT AN
+ *    INDIAN EVENT. "Tamil Nadu: 23 give blood samples to identify Nepal flood
+ *    victims" names Tamil Nadu and names a flood, and there is no Tamil Nadu
+ *    flood in it — the state is where the mourners are, not where the water
+ *    was. Word matching cannot tell a subject from a mention, so where both
+ *    are present the item is treated as being about the FOREIGN event: it
+ *    still corroborates that one, and it no longer invents a domestic one.
+ *    This is deliberately asymmetric. Missing a real Indian event because a
+ *    foreign place was also named costs a page that other items will still
+ *    create; inventing one costs a false claim on a site whose whole argument
+ *    is that its claims are checkable. */
 function classifyPlace(h) {
   const t1 = TIER1.filter((p) => h.includes(p));
-  if (t1.length) {
+  const t2zone = TIER2.find((z) => z.match.some((p) => h.includes(p)));
+  if (t1.length && !t2zone) {
     return { tier: 1, place: title(t1.sort((a, b) => b.length - a.length)[0]), relevance: 'direct', why: null };
   }
-  for (const z of TIER2) {
-    const hit = z.match.filter((p) => h.includes(p));
-    if (hit.length) {
-      return { tier: 2, place: title(hit.sort((a, b) => b.length - a.length)[0]), relevance: z.relevance, why: z.why };
-    }
+  if (t2zone) {
+    const hit = t2zone.match.filter((p) => h.includes(p));
+    return { tier: 2, place: title(hit.sort((a, b) => b.length - a.length)[0]), relevance: t2zone.relevance, why: t2zone.why };
   }
   return null;
 }
@@ -309,7 +324,7 @@ function cluster(items) {
     if (other) { routed.push({ title: it.title, ...other }); continue; }
     const neg = negativeHits(h);
     const hz = classifyHazard(h);
-    const pl = classifyPlace(h);
+    const pl = classifyPlace(hayPlace(it));
     if (!hz || !pl) continue;
     /* Out of this page's scope is a skip. A missing context pack is NOT —
        the event is still detected and published, just without its standing
