@@ -38,6 +38,17 @@ const decode = (s: string) => s.replace(/&[a-z]+;/g, (m) => ENT[m] ?? m)
 const PAGES = [
   '/', '/about', '/work', '/farm', '/now/air', '/act', '/impact',
   '/publications', '/stories',
+  /* ADDED WHEN THE FOUR SECTIONS LANDED, and each one earns its row against
+     the "would a researcher need this" test above rather than because it is
+     new. /learn is where every published limit on this site is stated with its
+     authority; /record is the archive an answer engine should cite instead of
+     a live figure that has already moved; /use-the-data is the licence and the
+     per-source limitations, which is the one page that tells a retrieval tool
+     what it may do with the rest; /schools is what a teacher is actually
+     looking for; /journal is dated analysis with its figures snapshotted.
+     /now is added alongside /now/air because a model asked about the Yamuna,
+     heat or forests should reach the index rather than the air page. */
+  '/learn', '/now', '/record', '/use-the-data', '/schools', '/journal',
 ] as const
 
 const org = orgData.jsonld

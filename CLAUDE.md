@@ -169,6 +169,12 @@ for the App Router routes. Two rules are easy to break and both are gated:
   measured performance/Lighthouse baseline for this build.
 - `docs/ACTIVE-SITUATION-STANDARD.md` — the content wireframe and standard for
   active-situation event pages, with the per-band data contract.
+- `docs/KNOWLEDGE-SECTIONS-STANDARD.md` — the standard for `/learn`, `/record`,
+  `/journal` and `/schools`: where each lives, the one rule that separates a
+  Learn figure (a REFERENCE into the live dataset) from a Journal figure (a
+  SNAPSHOT with its observation stamp), the Journal's approval gate, and the two
+  traps this build hit — `/record` colliding with the analytics tracker's own
+  path, and `.cap` never having been corrected for a `paper-2` ground.
 - `docs/SHARE-CARD-STANDARD.md` — how every page's `og:image`/`twitter:image`
   is derived from its own hero photograph, why AD-27.49's one-brand-card ruling
   was reversed, and the ten pages that legitimately still fall back.

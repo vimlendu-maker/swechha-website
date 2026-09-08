@@ -124,7 +124,7 @@ h1,h2,h3{margin:0;font-weight:inherit}
 .lead{font-size:var(--t-lead);line-height:1.48;font-weight:300;max-width:46ch;margin:0}
 .body{max-width:62ch}
 .cap{font-size:var(--t-cap);line-height:1.45;color:var(--fg-3);margin:0}
-.on-paper .cap,.paper .cap{color:var(--ink-3)}
+.on-paper .cap,.paper .cap,.paper-2 .cap{color:var(--ink-3)} /* AD-48. `.paper-2` WAS MISSING AND IT WAS A CONTRAST BUG, not a style choice. `.cap` defaults to --fg-3, the dim ink for a DARK ground, and this rule is the only thing that corrects it for light paper -- but it named `.paper` and not `.paper-2`, so every muted caption on a paper-2 band shipped dark-ground ink on light paper. Measured on /schools before the fix: 2.5:1 at 13.5px, against a 4.5:1 requirement. The tree already carried the evidence and nobody read it as a bug: build-act-page.mjs patches its own five classes with `.paper .x,.paper-2 .x{color:var(--ink-3)}` one at a time, which is this rule rewritten locally five times. Fixed at source instead. Edited IN PLACE, no line added or removed, because the seven CSS ranges above line 3033 are extracted by absolute line number. */
 
 /* ── GROUND BANDS. Dark leads, paper is for long reading only. ───────*/
 /* overflow-x:clip, not hidden: it stops any band widening the document
@@ -4637,6 +4637,19 @@ main{display:block;margin:0;padding:0}
       </div>
       <div><h3 class="lbl">Dashboards</h3>
         <a href="/now">All six, nearly live</a>
+        <!-- ══ AD-48. FOUR NEW SECTIONS TAKE FOUR ROWS, NOT A SIXTH COLUMN. ══
+             /learn, /record, /schools and /journal are sections, not leaves, so
+             each takes a full row in the column it belongs to and none of them is
+             `.foot-d`. That costs four rows on a phone (10 to 14) and it is the
+             right cost: the withdrawal rule is that a hidden row must still be
+             listed on the parent it collapses to, and a top-level section has no
+             parent in this footer to collapse to. The grid stays five columns —
+             `1.3fr 1fr 1fr 1fr 1.05fr` — as the note above requires.
+             /use-the-data IS `.foot-d`, and legitimately: it collapses to
+             /record, which sits in the same column as a non-withdrawable row and
+             links it twice on the page. -->
+        <a href="/record">The record</a>
+        <a class="foot-d" href="/use-the-data">Use the data</a>
         <a class="foot-d" href="/now/air">Delhi air</a>
         <a class="foot-d" href="/now/yamuna">The Yamuna</a>
         <a class="foot-d" href="/now/heat">Heat</a>
@@ -4668,12 +4681,15 @@ main{display:block;margin:0;padding:0}
         <a class="foot-d" href="/work/events">Events</a></div>
       <div><h3 class="lbl">Go</h3>
         <a href="/farm">Swechha Farm</a>
+        <a href="/schools">For schools</a>
         <a class="foot-d" href="/work/journeys">All four journeys</a>
         <a class="foot-d" href="/work/journeys/yamuna-yatra">Yamuna Yatra</a>
         <a class="foot-d" href="/work/journeys/naturescapes">NatureScapes</a>
         <a class="foot-d" href="/work/journeys/cityscapes">CityScapes</a>
         <a class="foot-d" href="/work/journeys/gram-anubhav">Gram Anubhav</a></div>
       <div><h3 class="lbl">Read and reach</h3>
+        <a href="/learn">Learn</a>
+        <a href="/journal">The Journal</a>
         <a href="/stories">Stories and films</a>
         <a href="/publications">Publications</a>
         <a href="/posters">Posters</a>

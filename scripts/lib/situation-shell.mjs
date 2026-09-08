@@ -379,6 +379,92 @@ export const datasetJsonLd = (fam, description) => '<script type="application/ld
   }) + '</script>';
 
 /**
+ * schema.org `Article` for a page that is one — a Learn explainer or a Journal
+ * piece. Not emitted anywhere else.
+ *
+ * WHAT IS AND IS NOT CLAIMED. `datePublished` is passed only where a real
+ * publication date exists, which is the Journal; a Learn page is evergreen and
+ * asserting a date for it would be inventing one to chase a rich result. The
+ * author and publisher are the organisation, because that is who writes here —
+ * a `Person` byline would be fabrication on a page nobody signed. `license`
+ * and `isAccessibleForFree` are the same grant the reader is shown.
+ */
+export const articleJsonLd = ({ headline, description, url, image, datePublished = null,
+  dateModified = null, section = null, about = null }) => '<script type="application/ld+json">'
+  + JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline,
+    description,
+    url: abs(url),
+    mainEntityOfPage: { '@type': 'WebPage', '@id': abs(url) },
+    ...(image ? { image: [abs(image)] } : {}),
+    ...(datePublished ? { datePublished } : {}),
+    ...(dateModified ? { dateModified } : {}),
+    ...(section ? { articleSection: section } : {}),
+    ...(about?.length ? { about: about.map((n) => ({ '@type': 'Thing', name: n })) } : {}),
+    inLanguage: 'en-IN',
+    isAccessibleForFree: true,
+    license: LICENCE_URL,
+    author: { '@type': 'NGO', name: 'Swechha', url: abs('/') },
+    publisher: { '@type': 'NGO', name: 'Swechha', url: abs('/') },
+  }) + '</script>';
+
+/**
+ * schema.org `Dataset` for a page of the archive.
+ *
+ * Separate from `datasetJsonLd` above, which is derived from a FAMILY entry and
+ * describes a live situation page. This one describes a RECORD: it can state a
+ * temporal coverage, because the archive knows when it starts and ends, and a
+ * live page cannot. Still no `distribution` — there is no download to point at,
+ * and asserting a file that does not exist is how markup gets a site
+ * distrusted rather than indexed.
+ */
+export const recordDatasetJsonLd = ({ name, description, url, temporalCoverage = null,
+  spatialCoverage = null, measurementTechnique = null, variables = [] }) => '<script type="application/ld+json">'
+  + JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Dataset',
+    name,
+    description,
+    url: abs(url),
+    license: LICENCE_URL,
+    isAccessibleForFree: true,
+    ...(temporalCoverage ? { temporalCoverage } : {}),
+    ...(spatialCoverage ? { spatialCoverage: { '@type': 'Place', name: spatialCoverage } } : {}),
+    ...(measurementTechnique ? { measurementTechnique } : {}),
+    ...(variables.length ? { variableMeasured: variables } : {}),
+    creator: { '@type': 'NGO', name: 'Swechha', url: abs('/') },
+    publisher: { '@type': 'NGO', name: 'Swechha', url: abs('/') },
+  }) + '</script>';
+
+/**
+ * schema.org `ItemList` — used by /schools to name the six programmes in the
+ * order the page shows them, each pointing at its own page.
+ *
+ * `Course` was considered and refused. Two of the six are multi-day journeys
+ * and one is a farm visit; `Course` carries `courseCode`, `provider` and an
+ * `hasCourseInstance` with dates, none of which exists here, and filling them
+ * to earn a rich result would be exactly the fabrication the brief forbids.
+ * An ItemList claims only what is true: these are the items, in this order.
+ */
+export const itemListJsonLd = ({ name, items }) => '<script type="application/ld+json">'
+  + JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name,
+    numberOfItems: items.length,
+    itemListOrder: 'https://schema.org/ItemListOrderAscending',
+    itemListElement: items.map((it, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: it.name,
+      url: abs(it.url),
+      ...(it.description ? { description: it.description } : {}),
+    })),
+  }) + '</script>';
+
+/**
  * The reader-facing half of the same grant, shown at the foot of every
  * situation page. Was inline in build-situation-air.mjs; lifted here verbatim
  * so the other five carry the identical words rather than five paraphrases.
@@ -1249,6 +1335,48 @@ const workName = (slug) => {
 };
 const ESSAYS = JSON.parse(readFileSync(join(ROOT, 'content/essay/_index.json'), 'utf8'));
 
+/* ── THE OTHER DIRECTION OF THE FLYWHEEL. ────────────────────────────────
+   /learn hands a reader to /now on every page; before this, /now handed them
+   back nowhere. A reader who arrives on a dashboard from search is holding a
+   number and, very often, no way to know what it is — which is the single
+   commonest reason an environmental dashboard is looked at once.
+
+   Rendered inside `closing()` rather than as a new band, deliberately: that
+   component is already called by all six situation pages AND by every
+   published disaster page, so one edit reaches eighteen pages and no generator
+   has to remember. The titles are READ from the Learn article files rather
+   than restated here, and a slug with no file throws — so the rail cannot
+   outlive the page it points at. */
+const LEARN_FOR = {
+  air:      ['delhi-aqi', 'pm25', 'delhi-air-pollution'],
+  yamuna:   ['yamuna-pollution', 'yamuna-dissolved-oxygen', 'yamuna-bod'],
+  heatwave: ['india-heatwave', 'imd-heatwave-criteria', 'heatwave-vs-extreme-heat'],
+  fire:     ['forest-fires-india', 'measured-vs-modelled', 'how-to-read-environmental-data'],
+  loss:     ['forest-loss-india', 'forest-cover-vs-tree-cover', 'tree-cover-loss'],
+  climate:  ['extreme-rainfall', 'delhi-rainfall', 'measured-vs-modelled'],
+};
+
+export function learnRail(id) {
+  const slugs = LEARN_FOR[id] || [];
+  if (!slugs.length) return '';
+  const rows = slugs.map((slug) => {
+    const f = join(ROOT, 'data/learn/articles', `${slug}.json`);
+    if (!existsSync(f)) {
+      throw new Error(`learnRail: "${id}" cites /learn/${slug}, which has no article file. `
+        + 'A dashboard may not link an explanation that does not exist.');
+    }
+    const a = JSON.parse(readFileSync(f, 'utf8'));
+    return { href: `/learn/${slug}`, title: a.h1, card: a.card };
+  });
+  return `        <div class="cl-learn">
+          <p class="lbl cl-k">Understand the data</p>
+          <ul class="cl-learn-l">
+${rows.map((r) => `            <li><a href="${r.href}"><b>${esc(r.title)}</b><span class="cap">${esc(r.card)}</span></a></li>`).join('\n')}
+          </ul>
+          <p class="cap cl-learn-m"><a class="lk" href="/learn">The whole library</a> &middot; <a class="lk" href="/record">the record</a> &middot; <a class="lk" href="/use-the-data">reuse this data</a></p>
+        </div>`;
+}
+
 export const closing = (id) => {
   const c = (ONWARD.closing || {})[id];
   if (!c) {
@@ -1284,6 +1412,7 @@ export const closing = (id) => {
             <p class="cl-b">${c.limit}</p>
           </div>
         </div>
+${learnRail(id)}
         <!-- AD-40. THE THREE 314px ARROWS ARE GONE, and they were a rendering bug
              rather than a design decision. ARROW is a bare <svg viewBox="0 0 24 24">
              with no width or height of its own; every other place this design puts it
@@ -1444,6 +1573,19 @@ export const NEWSLETTER_CSS = `
 `;
 
 export const CLOSING_CSS = `
+/* THE LEARN RAIL. A ruled list, not cards: the band above it is already two
+   columns of prose and a third block of boxes would read as a second footer.
+   The grid collapses to one column under 700px like everything else here. */
+.cl-learn{margin-top:clamp(26px,3.6vw,40px);border-top:1px solid var(--hair);padding-top:clamp(16px,2.2vw,22px)}
+.cl-learn-l{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:clamp(12px,1.6vw,18px);
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.cl-learn-l li{min-width:0;border-top:1px solid var(--hair);padding-top:10px}
+.cl-learn-l a{display:grid;gap:3px;text-decoration:none;color:inherit}
+.cl-learn-l b{font-family:var(--display);font-weight:400;font-size:clamp(17px,1.9vw,20px);line-height:1.16}
+.cl-learn-l a:hover b{text-decoration:underline;text-underline-offset:3px}
+.cl-learn-m{margin:clamp(14px,1.8vw,20px) 0 0}
+@media (max-width:700px){.cl-learn-l{grid-template-columns:minmax(0,1fr)}}
+
 /* ── THE CLOSING BAND. Works on either ground; the dark one is the default. ── */
 .cl{margin:clamp(30px,3.6vw,52px) 0 0;border-top:1px solid var(--hair);
   padding-top:clamp(22px,2.4vw,34px)}

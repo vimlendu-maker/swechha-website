@@ -1,0 +1,67 @@
+{
+  "slug": "forest-fires-india",
+  "category": "fire",
+  "h1": "What do India's fire numbers count?",
+  "card": "Satellite detections — not fires, and not forest fires. The distinction changes the answer.",
+  "frame": {
+    "src": "/images/photos/uttarakhand-fire-scar-2016.jpg",
+    "alt": "A hillside scarred by fire in Uttarakhand"
+  },
+  "answer": "The widely quoted Indian fire figures are counts of <b>satellite detections</b>: pixels that registered hot enough to flag. One fire can produce several detections on one satellite pass and none on the next, and a detection can be a crop field, a brick kiln or a rubbish heap rather than a forest. It is a count of observations, not a count of fires.",
+  "explainHead": "What a detection is",
+  "explainLead": "A polar-orbiting instrument passes overhead a few times a day and records where the surface was radiating heat.",
+  "explain": [
+    "NASA's FIRMS service publishes active-fire detections from the VIIRS and MODIS instruments. VIIRS resolves at 375 metres. A detection means that pixel was hot at the moment of overpass — nothing more, and nothing about what was burning.",
+    "Detections are therefore not fires. A single large fire spans several pixels and produces several detections; a small fire that starts and ends between passes produces none; cloud cover hides fires entirely; and a fire burning at night is seen by a different pass than one burning at noon.",
+    "Nor are they forest fires. The instrument cannot tell forest from farmland. Across northern India in late autumn a large share of detections are crop-residue fires, and industrial heat sources register too. Calling the total \"forest fires\" attributes a land cover the data does not carry."
+  ],
+  "defs": [
+    { "term": "Detection", "d": "One hot pixel on one satellite pass. The unit of every published fire count." },
+    { "term": "FRP", "d": "Fire radiative power, in megawatts. A measure of how much energy the detection was radiating — closer to intensity than a count is." },
+    { "term": "Overpass", "d": "One satellite transit. A fire is only counted if it is burning, uncovered and hot enough when a pass happens." }
+  ],
+  "standard": {
+    "chip": "No limit",
+    "head": "There is no threshold to break",
+    "lead": "Every other reading on this site is judged against a published limit. This one cannot be, and says so rather than inventing a benchmark.",
+    "rows": [
+      { "name": "Legal limit on fire detections", "ref": { "file": "forest-fire-india.json", "path": "limit.label" }, "authority": "No statute publishes one" },
+      { "name": "Sensor resolution", "ref": { "file": "forest-fire-india.json", "path": "method.sample.sensor.pixel" }, "authority": "VIIRS S-NPP, science quality" },
+      { "name": "Comparable window sampled each year", "ref": { "file": "forest-fire-india.json", "path": "series.window.label" }, "authority": "This site's own sampling method" },
+      { "name": "Highest year in the sampled window", "refs": [{ "file": "forest-fire-india.json", "path": "series.peak.year" }, { "file": "forest-fire-india.json", "path": "series.peak.count" }], "join": " — ", "unit": "detections", "authority": "NASA FIRMS, VIIRS S-NPP" },
+      { "name": "Lowest year in the sampled window", "refs": [{ "file": "forest-fire-india.json", "path": "series.floor.year" }, { "file": "forest-fire-india.json", "path": "series.floor.count" }], "join": " — ", "unit": "detections", "authority": "NASA FIRMS, VIIRS S-NPP" }
+    ],
+    "after": [
+      "The ratio between the highest and lowest years in that fixed window is about 2.7. A window chosen to chase the peak would produce a different and less comparable series, which is why this one is fixed and stated."
+    ]
+  },
+  "readHead": "How to read a fire count",
+  "readLead": "The comparability of the series matters more than the size of any one year.",
+  "measure": [
+    "<b>Which sensor?</b> MODIS at 1 km and VIIRS at 375 m detect different numbers of fires from the same landscape. A series that switches sensors mid-way has a step in it that is instrumental, not real.",
+    "<b>Which window?</b> This site samples a fixed ten-day window in late March every year. FIRMS caps requests at five days, and a full season across fourteen years is several hundred requests. A fixed window is a sample rather than a season total — and it is comparable across years precisely because it does not chase the peak.",
+    "<b>Detections or area?</b> Burnt-area products measure how much land burned. Detection counts measure how many hot pixels were seen. They answer different questions and only one of them scales with the size of the fire."
+  ],
+  "cannot": [
+    "It cannot tell you how much land burned.",
+    "It cannot tell you what was burning — forest, stubble, waste or industry.",
+    "It cannot see fires under cloud, small fires between passes, or fires that never got hot enough for the threshold.",
+    "It cannot be compared with a count from a different sensor, a different confidence filter or a different time window."
+  ],
+  "live": {
+    "href": "/now/forest-fire",
+    "label": "Fire detections",
+    "note": "One fixed March window, one sensor, fourteen years — sampled the same way each time."
+  },
+  "sources": [
+    { "name": "FIRMS — Fire Information for Resource Management System", "publisher": "NASA", "url": "https://firms.modaps.eosdis.nasa.gov/", "note": "The detection archive and the VIIRS S-NPP product used here" },
+    { "name": "Forest fire chapter, India State of Forest Report 2023", "publisher": "Forest Survey of India", "url": "https://fsi.nic.in/forest-report-2023", "note": "India's own forest-fire assessment, which uses a different method" }
+  ],
+  "related": ["measured-vs-modelled", "forest-loss-india", "how-to-read-environmental-data"],
+  "programme": {
+    "href": "/work/journeys/naturescapes",
+    "label": "NatureScapes",
+    "why": "Fire scars are legible on the ground years afterwards, which is the check a pixel count cannot give you."
+  },
+  "act": { "href": "/act", "label": "Work with us" }
+}

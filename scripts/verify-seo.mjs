@@ -274,8 +274,16 @@ for (const file of files) {
 
      They are still CHECKED — the entry is reconstructed from the page's own
      markup, so every rule below still runs against it. What is skipped is
-     the register lookup, not the checks. */
-  const isDerivedEvent = /^\/now\/climate-event\/.+/.test(route);
+     the register lookup, not the checks.
+
+     THE RECORD'S MONTH PAGES ARE THE SAME CASE. `/record/air/<YYYY>/<MM>`
+     appears on its own the moment the hourly store rolls into a new month, so
+     a register with an entry per page would go red on the first of every
+     month. `scripts/build-record.mjs` passes their title and description to
+     assemble() with the same gate applied, and `fitDesc()` there picks a
+     closing clause that fits the window whatever the month's name costs. */
+  const isDerivedEvent = /^\/now\/climate-event\/.+/.test(route)
+    || /^\/record\/air\/\d{4}\/\d{2}$/.test(route);
   if (isDerivedEvent) {
     const t = /<title[^>]*>([\s\S]*?)<\/title>/.exec(html);
     const d = /<meta name="description" content="([^"]*)"/.exec(html);
