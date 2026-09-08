@@ -125,11 +125,21 @@ image exists on disk and clears 600 × 315.
 
 ## What is still true after this
 
-**Ten pages carry no photograph and keep the brand card**, which is the correct
-answer for a page with nothing to show, not a gap in the mechanism:
+**Eleven pages carry no photograph and keep the brand card**, which is the
+correct answer for a page with nothing to show, not a gap in the mechanism:
 
 `/now` · `/now/air/india` · `/act` · `/search` · `/work/journeys/gram-anubhav` ·
-and the five essays under `/stories/`.
+`/healthy-cities/fellows/shubham-panwar` · and the five essays under
+`/stories/`.
+
+The fellow page is the newest of them and the reason is resolution, not
+subject. His Drive subfolder holds four real photographs of the Uttarkashi
+mushroom units — the women holding straw substrate bags, the growing room, the
+spawn being bagged — and every one of them is 1280 × 960, under the 1600px
+floor on the longest edge. His own final report embeds the same frames smaller
+still (1139 × 726 at best). Nothing was upscaled to clear the bar, so the page
+ships frameless until a full-size copy turns up. The other nine fellow pages
+each carry their own masthead photograph.
 
 The five essays are the ones worth revisiting: they are the site's most
 shareable writing and `content/essay/_index.json` carries no image field at
