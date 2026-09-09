@@ -46,7 +46,7 @@ import { HAZARD_TERMS, TIER1, TIER2, SEVERITY_TERMS, NEGATIVE_TERMS, hay, hayPla
 import { consolidate } from './lib/event-figures.mjs';
 import { dedupeFeedItems, anchorPublished, lastUpdatedFrom, feedCollapse } from './lib/event-feed.mjs';
 import { HAZARDS, hasContext } from './lib/climate-events.mjs';
-import { publishStateFor } from './lib/active-situation.mjs';
+import { publishStateFor, keepEditorFields } from './lib/active-situation.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const DIR = join(ROOT, 'data', 'climate-events');
@@ -581,77 +581,18 @@ function pickLead(items, hazard) {
 }
 
 /* ── FIELDS THE DETECTOR MUST NEVER TOUCH ─────────────────────────────────
-   ★ THIS WAS A LIVE BUG AND IT HAD A THIRTY-MINUTE FUSE.
-   dossier() below rebuilds the object from a FIXED key set, so any field not
-   named in it is dropped on the next run. That silently discarded:
+   dossier() below rebuilds the event from a FIXED key set, so anything it does
+   not name is dropped on the next scheduled run — and that run happens on
+   every CI tick. keepEditorFields(), imported from lib/active-situation.mjs,
+   is what stops that eating a person's decision: the detector owns exactly the
+   keys this run produced and every other key on the previous file survives.
 
-     situation_status   the lifecycle. An editor demoting an event off the
-                        homepage would have had the decision reverted by the
-                        next scheduled detection, thirty minutes later, with
-                        the page quietly promoting itself again.
-     hero_days          read by isCurrent() in lib/climate-events.mjs. A slow
-                        event granted a longer window lost it the same way,
-                        and this one predates the lifecycle entirely.
-     cause_status       an editor raising a candidate cause from "under
-                        investigation" to "confirmed" once fieldwork lands.
-
-   AN ALLOWLIST, NOT A SPREAD OF `existing`. Spreading the previous file over
-   the new one would also freeze the score, the corroboration counts, the
-   sources and the timestamps — the things this script exists to update. The
-   division is the same one the whole file runs on: the detector owns the
-   EVIDENCE, a person owns the EDITORIAL JUDGEMENT, and neither may overwrite
-   the other. Adding a new human-set field means adding it here, and a comment
-   saying so sits on each of them at the point of use. */
-const EDITOR_OWNED = [
-  'situation_status',      // active | developing | stabilising | demoted | archived
-  'situation_status_why',  // printed beside it when a person set it
-  'hero_days',             // overrides the 14-day evidence window
-  'cause_status',          // { causeId: confirmed | likely | under_investigation | not_established }
-  'location_detail',       // a precise place the feeds do not carry
-  'coords', 'coords_note', // and its coordinates, which drive the map and the satellite frame
-  'downstream', 'downstream_note', // THIS event's river, not the hazard's generic chain
-  'mechanism_stated',
-  'occurred_detail',       // a precise onset the feeds do not carry
-  'owner_figures',         // figures supplied by an editor, with their own sources
-  'reported_imagery',      // higher-resolution before/after at its publisher, linked not reproduced
-  'owner_images',          // and the same imagery published HERE, where permission exists
-  'editor_note',
-  /* ── THE WITHDRAWAL, WHICH IS THE ONE OMISSION THAT STOPPED THE JOB ─────
-     ★ EVERY FIELD ABOVE FAILS QUIETLY. This pair does not.
-     publishStateFor() latches `withdrawn` off the previous file ON PURPOSE —
-     it is the only state a person sets and the detector may not overturn it —
-     while dossier() above emits no `withdrawn_why`, because there is nothing
-     the detector could honestly put there. So a re-detection of a withdrawn
-     event wrote back the STATE without the REASON, and validateEvent() in
-     lib/climate-events.mjs refuses exactly that combination:
-
-       active/assam-flood.json: a withdrawn event must carry withdrawn_why
-
-     That throw is inside the page rebuild, which runs BEFORE the commit — so
-     the failing run committed nothing, the reason survived on `main`
-     untouched, and the next run read it back and destroyed it again. Eight
-     events were withdrawn at 02:21 IST on 9 September 2026 and every
-     scheduled run from 23:30 UTC the night before was red, for the same
-     reason, until this line. Identical shape to the nepal-glof impact
-     deadlock documented in dossier(): a guaranteed-repeating failure whose
-     own failure is what prevents it healing.
-
-     `withdrawn_on` is not read by any renderer today and is here anyway: it
-     is when a person took the decision, and a judgement whose date the next
-     scheduled run erases cannot be reviewed later, which is the whole reason
-     `withdrawn_why` is mandatory in the first place. */
-  'withdrawn_why',         // why a person took a published page down
-  'withdrawn_on',          // and when they decided it
-];
-
-/** Carry every editor-owned field across untouched. */
-function keepEditorFields(next, existing) {
-  if (!existing) return next;
-  for (const k of EDITOR_OWNED) {
-    if (existing[k] !== undefined) next[k] = existing[k];
-  }
-  return next;
-}
+   ★ THERE IS DELIBERATELY NO LIST HERE ANY MORE. There was one, and it was
+   forgotten four times out of four — the last of them, `withdrawn_why`, held
+   this workflow red for eleven consecutive runs. Adding a human-set field now
+   costs nothing: write it in the file, and it is carried. The full account,
+   the measurement behind it and the one property that makes it safe are on
+   keepEditorFields() itself. */
 
 /** Build the dossier. Every figure it emits is a count this script performed
  *  itself; every sentence it emits is either quoted from a headline or is the
@@ -1025,8 +966,8 @@ console.log(`\n${clusters.length} candidate cluster(s), threshold ${THRESHOLD}:\
 let written = 0;
 for (const { c, s } of clusters) {
   const prior = existing.get(slugify(`${c.place}-${c.hazard}`));
-  /* keepEditorFields() carries the human-set fields across — see EDITOR_OWNED
-     above for why an allowlist and not a spread. */
+  /* keepEditorFields() carries a person's fields across: the detector keeps
+     the keys this run produced, the previous file keeps everything else. */
   const d = keepEditorFields(await dossier(c, s, prior), prior);
   const mark = publishable(s) ? 'PUBLISH' : 'draft  ';
   console.log(`  ${mark} ${String(s.total).padStart(3)}  ${c.hazard} @ ${c.place}`

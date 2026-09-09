@@ -185,6 +185,62 @@ export function publishStateFor({ existing, publishableNow }) {
   return publishableNow ? 'published' : 'draft';
 }
 
+/* ── WHAT A RE-DETECTION MAY NOT EAT ──────────────────────────────────────
+   ★ THE DIVISION, AND WHY IT IS NOW ARITHMETIC INSTEAD OF A LIST.
+   dossier() in detect-climate-events.mjs rebuilds each event from a fixed key
+   set, so any field it does not name is dropped on the next scheduled run.
+   The detector owns the EVIDENCE — the score, the corroboration counts, the
+   source register, the timestamps, all of which it exists to keep current. A
+   person owns the JUDGEMENT: the lifecycle, a precise place the feeds do not
+   carry, a cause raised to confirmed once fieldwork lands, the reason a page
+   was taken down.
+
+   THIS USED TO BE A HAND-WRITTEN ALLOWLIST OF THE SECOND SET, AND IT WAS
+   FORGOTTEN FOUR TIMES OUT OF FOUR. `situation_status` (an editor demoting an
+   event off the homepage, reverted by the next tick), `hero_days`,
+   `cause_status` — each lost silently. Then `withdrawn_why`, which did not
+   fail silently: publishStateFor() above latches `withdrawn` deliberately,
+   validateEvent() requires the reason whenever it is latched, and the
+   rebuilt-without-a-reason dossier was refused inside the page build — which
+   runs before the commit, so the failing run published nothing, the reason
+   survived untouched on main, and the next run read it back and destroyed it
+   again. Eleven consecutive red runs, and the failure was what prevented the
+   repair landing.
+
+   The allowlist was never information. Measured across all 65 dossiers:
+   dossier() emits 28 top-level keys, the list named 17, the files carry 42 —
+   disjoint, and together complete. It was the arithmetic complement of what
+   the detector emits, maintained by hand.
+
+   So it is computed. The detector owns exactly the keys the run produced;
+   every other key on the previous file survives. A new human-set field is
+   preserved by default, and there is no list to keep in step.
+
+   ★ THE KEYS OF `next`, NEVER ITS VALUES. `faded_since` and `published_on`
+   are emitted as keys whose value is `undefined` when they do not apply, and
+   for both the ABSENCE is the signal — a fade that clears the moment coverage
+   returns, a minting record a draft has not earned. Object.keys() counts
+   them, so they stay detector-owned and keep being cleared. Testing values
+   for undefined, or comparing against a JSON round-trip (which drops
+   undefined keys), would resurrect a stale fade from the previous file and
+   quietly demote a live event.
+
+   ★ AND IT IS NOT A SPREAD OF `existing` OVER `next`. It only fills keys the
+   run did not produce, so the evidence fields are still wholly the
+   detector's. The one thing it does that a list did not: a field REMOVED from
+   dossier() in some future change would start being carried forward out of
+   old files. That is visible in the dossier the next run writes, and the
+   remedy is to delete it from the files — a great deal cheaper than a
+   silently reverted human decision. */
+export function keepEditorFields(next, existing) {
+  if (!existing) return next;
+  const producedThisRun = new Set(Object.keys(next));
+  for (const [k, v] of Object.entries(existing)) {
+    if (!producedThisRun.has(k)) next[k] = v;
+  }
+  return next;
+}
+
 /** The status word for an event, and where it came from. Never throws on a
  *  missing field; throws on a status word this module does not know, because a
  *  typo silently downgrading a live disaster to nothing is the failure this
