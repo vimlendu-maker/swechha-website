@@ -98,12 +98,16 @@ describe('when the row is written but the confirmation cannot be sent', () => {
     expect(reason).toMatch(/again/i);
   });
 
-  /* db/002 sets a seven-day retention rule for pending rows and tells the
-     operator to run it "alongside the send job". For the digest there is no
-     send job and nothing prunes those rows, so a deletion date here would be a
-     guarantee no code keeps — which is the class of defect this whole file is
-     about, one level up. */
-  it('promises no deletion date, because nothing prunes the digest table', async () => {
+  /* WHY THIS ASSERTION SURVIVED ITS OWN REASON. When it was written, db/002's
+     seven-day rule was run by nothing, so a date here would have been a
+     guarantee no code kept — the exact defect this file is about, one level up.
+     `scripts/lib/retention.mjs` closed that gap and the claim would now be
+     true. The assertion stays because the DECISION stands on other ground: an
+     error path is where a reader is trying to get past a problem, and the
+     retention rule belongs somewhere they can act on it. If that judgement
+     changes, change this test with the copy — it is no longer load-bearing for
+     honesty. */
+  it('promises no deletion date, keeping the error message to what the reader must do', async () => {
     const { reason } = await (await post({ email: 'reader@example.org' })).json();
     expect(reason).not.toMatch(/seven days|7 days|delete/i);
   });
