@@ -616,6 +616,32 @@ const EDITOR_OWNED = [
   'reported_imagery',      // higher-resolution before/after at its publisher, linked not reproduced
   'owner_images',          // and the same imagery published HERE, where permission exists
   'editor_note',
+  /* ── THE WITHDRAWAL, WHICH IS THE ONE OMISSION THAT STOPPED THE JOB ─────
+     ★ EVERY FIELD ABOVE FAILS QUIETLY. This pair does not.
+     publishStateFor() latches `withdrawn` off the previous file ON PURPOSE —
+     it is the only state a person sets and the detector may not overturn it —
+     while dossier() above emits no `withdrawn_why`, because there is nothing
+     the detector could honestly put there. So a re-detection of a withdrawn
+     event wrote back the STATE without the REASON, and validateEvent() in
+     lib/climate-events.mjs refuses exactly that combination:
+
+       active/assam-flood.json: a withdrawn event must carry withdrawn_why
+
+     That throw is inside the page rebuild, which runs BEFORE the commit — so
+     the failing run committed nothing, the reason survived on `main`
+     untouched, and the next run read it back and destroyed it again. Eight
+     events were withdrawn at 02:21 IST on 9 September 2026 and every
+     scheduled run from 23:30 UTC the night before was red, for the same
+     reason, until this line. Identical shape to the nepal-glof impact
+     deadlock documented in dossier(): a guaranteed-repeating failure whose
+     own failure is what prevents it healing.
+
+     `withdrawn_on` is not read by any renderer today and is here anyway: it
+     is when a person took the decision, and a judgement whose date the next
+     scheduled run erases cannot be reviewed later, which is the whole reason
+     `withdrawn_why` is mandatory in the first place. */
+  'withdrawn_why',         // why a person took a published page down
+  'withdrawn_on',          // and when they decided it
 ];
 
 /** Carry every editor-owned field across untouched. */
