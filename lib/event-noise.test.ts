@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { ANALYSIS_MARKERS, NEGATIVE_TERMS, headlinePenalty } from '../scripts/lib/event-terms.mjs'
+import { readFileSync, readdirSync } from 'node:fs'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { ANALYSIS_MARKERS, NEGATIVE_TERMS, headlinePenalty, classifyPlace, classifyHazard } from '../scripts/lib/event-terms.mjs'
+import { registerNamesPlace, validateEvent } from '../scripts/lib/climate-events.mjs'
+import { placeVocabulary } from '../scripts/lib/event-terms.mjs'
+
+const ROOT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..')
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
@@ -168,5 +175,136 @@ describe('headlinePenalty, on the real function', () => {
     const personal = headlinePenalty('Nepal flash floods: Software engineer from A.P.\'s Kuppam \'missing\', family appeals for assistance', 'flood')
     const report = headlinePenalty('Bihar flood situation serious, 16.85 lakh people affected across 11 districts', 'flood')
     expect(report).toBeLessThan(personal)
+  })
+})
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * MISATTRIBUTION: A REAL STORY WEARING THE WRONG LABEL.
+ * ───────────────────────────────────────────────────────────────────────────
+ * Five of the eight pages withdrawn on 9 September 2026 were not about
+ * nothing. They were real events filed under the wrong place or the wrong
+ * hazard: "Nepal Flood Death Toll Crosses 900" as an Odisha landslide, "Tamil
+ * Nadu: 23 give blood samples to identify Nepal flood victims" as a Tamil
+ * Nadu flood, "Patna Flood: Ganga Swells" as a Bihar landslide.
+ *
+ * ★ ALL EIGHT CLEARED THE CORROBORATION BAR, 8 of 8. That bar asks how many
+ * independent outlets carried the story, and every one of those stories was
+ * TRUE — so breadth cannot catch this and raising it never will. Two things
+ * close it instead, and they work at different ends.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+describe('a place name is a word, not a substring', () => {
+  it('does not find a river inside a person’s surname', () => {
+    /* krishna-flood.json exists because a bare includes() found "krishna" in
+       RadhaKRISHNAn, and title() prefers the longest match — 7 beats the 6 of
+       "kerala" in "Keralam" — so the Vice-President's name won. */
+    const h = 'vice president radhakrishnan urges deepening of keralam rivers to prevent floods'
+    expect(classifyPlace(h)?.place).not.toBe('Krishna')
+    expect(classifyPlace(h)?.place).toBe('Kerala')
+  })
+
+  it('still matches a place inside a legitimate inflection', () => {
+    /* Anchored at the START only, deliberately: Keralam is Kerala. */
+    expect(classifyPlace('keralam rivers in spate')?.place).toBe('Kerala')
+  })
+
+  it('still matches a hazard word in every form it is written in', () => {
+    for (const h of ['heavy flooding in bihar', 'bihar floods worsen', 'patna flooded overnight']) {
+      expect(classifyHazard(h)?.hazard, `"${h}" no longer reads as a flood`).toBe('flood')
+    }
+  })
+
+  it('reads each of the five misfiled headlines as something other than its old label', () => {
+    const cases: [string, string, string][] = [
+      ['nepal floods: death toll rises to 1,400; over 5,800 missing', 'Kashmir', 'flood'],
+      ['at china–nepal frontier, once-busy gyirong crossing reduced to rubble by glacier flood', 'Odisha', 'flood'],
+      ['nepal flood death toll crosses 900', 'Odisha', 'landslide'],
+      ['tamil nadu: 23 give blood samples to identify nepal flood victims', 'Tamil Nadu', 'flood'],
+      ['patna flood: ganga swells, 11 bihar districts affected; homes, roads & crops submerged', 'Bihar', 'landslide'],
+    ]
+    for (const [h, wrongPlace, wrongHazard] of cases) {
+      const got = `${classifyHazard(h)?.hazard} @ ${classifyPlace(h)?.place}`
+      expect(got, `still reads as ${wrongHazard} @ ${wrongPlace}: "${h}"`)
+        .not.toBe(`${wrongHazard} @ ${wrongPlace}`)
+    }
+  })
+})
+
+describe('the register must name the place the page claims', () => {
+  const reg = (place: string, titles: string[]) =>
+    registerNamesPlace({ location: { text: place }, sources: titles.map((t, i) => ({ id: `n${i}`, title: t })) })
+
+  it('blocks a place no item in the register mentions', () => {
+    expect(reg('Kashmir', ['Nepal Floods: Death Toll Rises to 1,400; Over 5,800 Missing'])).toBe(false)
+    expect(reg('Krishna', ['Vice President Radhakrishnan urges deepening of Keralam rivers'])).toBe(false)
+  })
+
+  it('does NOT block a real event over a shortened place name', () => {
+    /* ★ THE LOAD-BEARING CASE. Indian outlets write "Himachal" for Himachal
+       Pradesh. A gate that failed this would block real disaster pages, which
+       is a far worse failure than letting an odd register through — so it asks
+       for ANY token of the place, not all of them. This is why it is weaker
+       than mentionsPlace(), which attributes a figure and is right to be
+       strict. */
+    expect(reg('Himachal Pradesh', ['Nepal floods raise alarm in Himachal: IIT Mandi flags 9 glacial lakes'])).toBe(true)
+    expect(reg('Bihar', ['19 lakh lives impacted as Ganga breaches flood mark in Patna',
+      'Bihar flood situation still grim; 2.24 million hit'])).toBe(true)
+  })
+
+  it('accepts the cities a state\'s flood is actually reported in', () => {
+    /* ★ THE CASE THAT CAUGHT THE FIRST VERSION OF THIS GATE, on live data,
+       within one run of it being written. uttar-pradesh-flood's register is
+       "Lucknow on Alert Today" and "flood-hit families in Kanpur"; REGION_OF
+       folds both cities into Uttar Pradesh and the CLUSTER KEY is
+       regionOf(place), so the dossier is correctly named and not one headline
+       says "Uttar Pradesh". A gate that asked only for the place string would
+       have blocked a real flood page — the exact failure that is worse than
+       the disease. It must ask with the clusterer's own vocabulary. */
+    expect(reg('Uttar Pradesh', ['Flash Flood Risk on Wednesday: Lucknow on Alert Today'])).toBe(true)
+    expect(reg('Uttar Pradesh', ['Expired syrup given to flood-hit families in Kanpur?'])).toBe(true)
+    expect(placeVocabulary('Uttar Pradesh')).toEqual(expect.arrayContaining(['lucknow', 'kanpur']))
+  })
+
+  it('accepts a tier-2 zone\'s own place names', () => {
+    /* Nepal's flood is reported as Rasuwa, Sindhupalchok and Bhote Koshi. */
+    expect(reg('Nepal', ['Rasuwa flood losses assessed by new panel'])).toBe(true)
+    expect(placeVocabulary('Nepal')).toEqual(expect.arrayContaining(['rasuwa', 'sindhupalchok']))
+  })
+
+  it('does not gate an official-only register, which is not its business', () => {
+    expect(registerNamesPlace({ location: { text: 'Assam' }, sources: [{ id: 'official-1', title: 'IMD red warning' }] })).toBe(true)
+  })
+
+  it('refuses to publish a dossier whose register contradicts its place', () => {
+    const base = {
+      slug: 'x-flood', headline: 'A headline', hazard: 'flood', india_relevance: 'direct', tier: 1,
+      origin: 'automated', location: { text: 'Kashmir', country: 'India' },
+      occurred: { epochMs: 1_788_000_000_000 }, last_updated: { epochMs: 1_788_000_000_000 },
+      publish_state: 'published', uncertain: ['not established'],
+      published_on: { epochMs: 1_788_000_000_000, independent_publishers: 12, official_alerts: 0 },
+      sources: [{ id: 'n0', tier: 'news', publisher: 'X', title: 'Nepal Floods: Death Toll Rises to 1,400' }],
+    }
+    expect(() => validateEvent('active/x.json', base)).toThrow(/names that place/)
+    /* …and the identical dossier is fine once its register is about Kashmir. */
+    const ok = { ...base, sources: [{ id: 'n0', tier: 'news', publisher: 'X', title: 'Kashmir floods: 12 dead as Jhelum breaches' }] }
+    expect(() => validateEvent('active/x.json', ok)).not.toThrow()
+  })
+
+  it('every page live on the site right now passes it', () => {
+    /* ★ THIS ONE READS THE LIVE FILES ON PURPOSE, unlike the headline fixtures
+       above. The property being asserted is about TODAY'S data, not a
+       historical string: if a published dossier's register ever stops naming
+       its own place, that is exactly the defect this gate exists for and the
+       suite should go red. Measured when written: 4/5, 15/17, 22/24 and 1/1. */
+    const dir = join(ROOT_DIR, 'data', 'climate-events', 'active')
+    const live = readdirSync(dir).filter((f) => f.endsWith('.json'))
+      .map((f) => JSON.parse(readFileSync(join(dir, f), 'utf8')))
+      .filter((d) => d.publish_state === 'published')
+    expect(live.length, 'no published dossiers found — has the path moved?').toBeGreaterThan(0)
+    for (const d of live) {
+      expect(registerNamesPlace(d), `${d.slug} is published as "${d.location.text}" and no item in its `
+        + 'register names it').toBe(true)
+    }
   })
 })

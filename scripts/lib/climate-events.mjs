@@ -53,6 +53,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { resolve, join } from 'node:path';
+import { placeVocabulary } from './event-terms.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..', '..');
 const DIR = join(ROOT, 'data', 'climate-events');
@@ -206,6 +207,52 @@ export const hasContext = (hazard) => existsSync(join(CONTEXT, `${hazard}.json`)
 
 /* ═══ EVENTS ══════════════════════════════════════════════════════════════ */
 
+/* ── DOES THIS DOSSIER'S OWN REGISTER MENTION ITS PLACE? ──────────────────
+   ★ THE GATE THE CORROBORATION BAR STRUCTURALLY CANNOT BE.
+   Eight published pages were withdrawn by hand on 9 September 2026 and FIVE of
+   them were real events wearing the wrong label: "Nepal Flood Death Toll
+   Crosses 900" filed as an Odisha landslide, "Tamil Nadu: 23 give blood
+   samples to identify Nepal flood victims" filed as a Tamil Nadu flood. All
+   eight cleared the breadth test, because that test asks how many outlets
+   carried the story and every one of those stories was TRUE. What was wrong
+   was the place the detector attached to it.
+
+   Breadth cannot catch that, and no amount of raising it will. This can: if
+   not one item in a dossier's own source register names the place the page
+   claims, the page has no business claiming it. It catches the failure
+   whatever produced it upstream — a masthead, a name hiding inside a longer
+   word, or a register left stale by a fix that landed after it was written.
+
+   ★ PERMISSIVE ON PURPOSE, AND THIS IS THE LOAD-BEARING CHOICE. It asks for
+   ANY token of the place name, not all of them, because Indian outlets write
+   "Himachal" for Himachal Pradesh and "Nepal floods raise alarm in Himachal"
+   must not be read as failing to mention Himachal Pradesh. A gate that blocks
+   a real disaster page over a shortened name is far worse than one that lets
+   an odd register through: this is a FLOOR, not a classifier. It is
+   deliberately weaker than mentionsPlace(), which requires every strong token
+   and is right to, because that one attributes a FIGURE to a source.
+
+   Anchored at the start of a word, which is the whole point — an unanchored
+   test is what let "krishna" out of "RadhaKRISHNAn" and minted a river flood
+   from a Vice-President's surname. */
+export function registerNamesPlace(e) {
+  /* ★ ASKED WITH THE CLUSTERER'S OWN VOCABULARY, NOT THE PLACE STRING. The
+     first version of this asked only for tokens of `location.text`, and
+     `uttar-pradesh-flood` failed it on live data within one run: its register
+     reads "Lucknow on Alert Today" and "flood-hit families in Kanpur", and
+     REGION_OF folds both cities into Uttar Pradesh, so the page is correctly
+     named and no headline says so. placeVocabulary() carries the place's own
+     words, its sub-places, and a tier-2 zone's aliases — see its note. */
+  const words = placeVocabulary(e?.location?.text);
+  if (!words.length) return true;                       // no usable name: nothing to check
+  const news = (e.sources || []).filter((s) => !String(s.id || '').startsWith('official'));
+  if (!news.length) return true;                        // official-only register: not this gate's business
+  return news.some((s) => {
+    const low = String(s.title || '').toLowerCase();
+    return words.some((w) => new RegExp(`\\b${w}`).test(low));
+  });
+}
+
 /** Validate one event dossier. Returns it with `sourceIndex` attached. */
 export function validateEvent(file, e) {
   const sources = indexSources(file, e.sources || []);
@@ -273,6 +320,16 @@ export function validateEvent(file, e) {
 
   if (e.publish_state === 'published') {
     if (!Object.keys(sources).length) throw new EventError(file, 'is published with an empty source register');
+
+    /* See registerNamesPlace() above for the five withdrawn pages this exists
+       for, and for why it is deliberately permissive. */
+    if (!registerNamesPlace(e)) {
+      throw new EventError(file, `is published as "${e.location?.text}" and not one item in its own `
+        + 'source register names that place. Five of the eight pages withdrawn on 9 September 2026 were '
+        + 'real events wearing the wrong label, and every one of them cleared the corroboration bar — '
+        + 'breadth counts outlets, not whether the story happened where the page says. Either the place '
+        + 'is wrong, or the register has gone stale and this run should have replaced it.');
+    }
 
     if (origin === 'editor') {
       for (const k of ['what_happened', 'why_it_matters']) {
