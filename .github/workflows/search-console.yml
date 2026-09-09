@@ -34,7 +34,11 @@ on:
         description: 'What to run'
         type: choice
         default: analytics
-        options: [check, analytics, sitemap, both]
+        options: [check, analytics, sitemap, inspect, both]
+      urls:
+        description: "inspect only — space-separated paths, or 'all' for every URL in the live sitemap"
+        type: string
+        default: '/learn /schools /record /journal /use-the-data'
       dry_run:
         description: 'Show what would happen without sending or writing'
         type: boolean
@@ -87,8 +91,47 @@ jobs:
         if: steps.cfg.outputs.ready == 'true' && (github.event.inputs.action == 'sitemap' || github.event.inputs.action == 'both')
         run: node scripts/search-console.mjs --sitemap ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
 
+      # ── ASK WHAT IS INDEXED. Read-only: the URL Inspection API returns index
+      # status and submits nothing, which is why it is one of the three calls
+      # docs/SEARCH-CONSOLE-API.md sanctions. There is NO API for the aggregate
+      # Pages report, so this reconstructs the same picture per URL — and it is
+      # the only way to answer "did any of that work land" without a person
+      # reading a dashboard.
+      #
+      # `all` READS THE LIVE SITEMAP rather than a list in this file. The
+      # sitemap is already derived from the router's own route map and gated on
+      # every built file existing, so it is the one authoritative list of what
+      # this site publishes; a second list here would drift from it within a
+      # week. It costs one HTTP request.
+      - name: Ask what is indexed
+        if: steps.cfg.outputs.ready == 'true' && github.event.inputs.action == 'inspect'
+        run: |
+          REQ='${{ github.event.inputs.urls }}'
+          if [ "$REQ" = "all" ]; then
+            REQ=$(curl -sS --max-time 30 "$SITE_ORIGIN/sitemap.xml" \
+              | grep -o '<loc>[^<]*</loc>' | sed 's|<[^>]*>||g' \
+              | sed "s|^$SITE_ORIGIN||" | sed 's|^$|/|')
+            echo "Inspecting every URL in the live sitemap: $(echo "$REQ" | wc -w | tr -d ' ')"
+          fi
+          # Unquoted on purpose: the script takes each path as its own argument.
+          node scripts/search-console.mjs --inspect $REQ \
+            ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }} | tee /tmp/gsc-inspect.log
+          {
+            echo '### What Google has indexed'
+            echo ''
+            echo '```'
+            cat /tmp/gsc-inspect.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # ★ THE TWO STEPS BELOW EXCLUDE `inspect` EXPLICITLY. Their conditions are
+      # written as NEGATIVES — "not check and not sitemap" — so every action
+      # added to the choice list above falls through into them by default.
+      # Adding `inspect` without this line would have made an inspection run
+      # also pull a performance snapshot and commit it, which is a silent write
+      # from a read-only request. Any future action must be added here too.
       - name: Pull the performance snapshot
-        if: steps.cfg.outputs.ready == 'true' && github.event.inputs.action != 'check' && github.event.inputs.action != 'sitemap'
+        if: steps.cfg.outputs.ready == 'true' && github.event.inputs.action != 'check' && github.event.inputs.action != 'sitemap' && github.event.inputs.action != 'inspect'
         run: |
           node scripts/search-console.mjs --analytics --days 28 ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }} | tee /tmp/gsc.log
           {
@@ -100,7 +143,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Commit the snapshot
-        if: steps.cfg.outputs.ready == 'true' && github.event.inputs.dry_run != 'true' && github.event.inputs.action != 'check' && github.event.inputs.action != 'sitemap'
+        if: steps.cfg.outputs.ready == 'true' && github.event.inputs.dry_run != 'true' && github.event.inputs.action != 'check' && github.event.inputs.action != 'sitemap' && github.event.inputs.action != 'inspect'
         run: |
           git config user.name  'swechha-search-console[bot]'
           git config user.email 'actions@github.com'
