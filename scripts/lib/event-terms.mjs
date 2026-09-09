@@ -406,6 +406,35 @@ export const regionOf = (place) => {
   return REGION_OF[k] || place;
 };
 
+/* ── EVERY NAME A HEADLINE MIGHT USE FOR THIS PLACE ───────────────────────
+   ★ THE CLUSTER KEY IS regionOf(place), SO A DOSSIER'S PLACE IS A CANONICAL
+   ONE AND ITS COVERAGE IS NOT. `uttar-pradesh-flood` is the case that proved
+   it: its register holds "Lucknow on Alert Today" and "flood-hit families in
+   Kanpur", and REGION_OF maps both cities to Uttar Pradesh, so the dossier is
+   correctly named and not one headline says "Uttar Pradesh".
+
+   Any check that asks "does the register mention the place" has to ask with
+   the same vocabulary the clusterer used, or it rejects real pages. The first
+   version of registerNamesPlace() did not, and this exact dossier failed it on
+   live data within one run of being written — which is the failure mode that
+   matters, because blocking a genuine flood page is far worse than tolerating
+   an odd register.
+
+   So: the place's own words, every sub-place REGION_OF folds into it, and —
+   for a tier-2 place — every alias in its zone, because "Rasuwa" and
+   "Sindhupalchok" are how Nepal's flood is actually reported. */
+export function placeVocabulary(place) {
+  const p = String(place || '').toLowerCase();
+  if (!p) return [];
+  const out = new Set(p.split(/[^a-z]+/).filter((w) => w.length >= 3));
+  for (const [sub, parent] of Object.entries(REGION_OF)) {
+    if (String(parent).toLowerCase() === p) out.add(sub);
+  }
+  const zone = TIER2.find((z) => z.match.some((m) => m === p));
+  if (zone) for (const m of zone.match) out.add(m);
+  return [...out];
+}
+
 /* ═══ LEAD SELECTION ══════════════════════════════════════════════════════
    Moved here from detect-climate-events.mjs so it can be TESTED. The defect
    these lists exist to prevent lived inside an unexported function in a
@@ -475,3 +504,73 @@ export function headlinePenalty(title, hazard) {
   if (n < 30) p += 2;
   return p;
 }
+
+
+/* ═══ WHAT A HEADLINE IS ABOUT ═════════════════════════════════════════════
+   ★ A PLACE NAME MUST BE A WORD, NOT A SUBSTRING. These classifiers used a
+   bare `includes()`, and data/climate-events/active/krishna-flood.json is what
+   that produced. Its whole register is one item:
+
+     "Vice President Radhakrishnan urges deepening of Keralam rivers to
+      prevent floods"
+
+   A bare match finds "kerala" inside "Keralam" — correct, Keralam is Kerala —
+   and ALSO "krishna" inside RadhaKRISHNAn. title() below then picks the
+   LONGEST match, seven characters beating six, so a Vice-President's surname
+   created a Krishna river flood. mentionsPlace() in event-figures.mjs has
+   always anchored with \b and rejects that headline; the classifier that
+   decides what the page is ABOUT did not, so the wrong answer got in upstream
+   of every check.
+
+   ANCHORED AT THE START ONLY, exactly as mentionsPlace() does, because that is
+   the behaviour wanted: "flood" must still match "floods", "flooding" and
+   "flooded", and "kerala" must still match "Keralam". What it stops is a name
+   hiding inside a longer word.
+
+   Moved here from detect-climate-events.mjs to be TESTABLE. That script reads
+   the news at module scope and cannot be imported, which is how a defect this
+   demonstrable sat in it unnoticed — the same reason headlinePenalty() moved. */
+const named = (h, needle) => new RegExp(`\\b${needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(h);
+/** Which hazard is this item about? First strong match wins — HAZARD_TERMS is
+ *  ordered specific-to-general precisely so "glacial lake outburst" beats
+ *  "flood" and pulls the right context pack. */
+export function classifyHazard(h) {
+  for (const t of HAZARD_TERMS) if (t.strong.some((w) => named(h, w))) return { hazard: t.hazard, strength: 'strong' };
+  for (const t of HAZARD_TERMS) {
+    const n = t.weak.filter((w) => named(h, w)).length;
+    if (n >= 2) return { hazard: t.hazard, strength: 'weak' };
+  }
+  return null;
+}
+
+/** Where is it, and does that place reach India?
+ *
+ *  ★ THE TEXT IS THE TITLE, NEVER hay(). See hayPlace()'s note: the publisher
+ *    is folded into hay(), and matching a place against a masthead published
+ *    eight events that did not happen.
+ *
+ *  ★ A TITLE NAMING BOTH AN INDIAN AND A FOREIGN PLACE DOES NOT MINT AN
+ *    INDIAN EVENT. "Tamil Nadu: 23 give blood samples to identify Nepal flood
+ *    victims" names Tamil Nadu and names a flood, and there is no Tamil Nadu
+ *    flood in it — the state is where the mourners are, not where the water
+ *    was. Word matching cannot tell a subject from a mention, so where both
+ *    are present the item is treated as being about the FOREIGN event: it
+ *    still corroborates that one, and it no longer invents a domestic one.
+ *    This is deliberately asymmetric. Missing a real Indian event because a
+ *    foreign place was also named costs a page that other items will still
+ *    create; inventing one costs a false claim on a site whose whole argument
+ *    is that its claims are checkable. */
+export function classifyPlace(h) {
+  const t1 = TIER1.filter((p) => named(h, p));
+  const t2zone = TIER2.find((z) => z.match.some((p) => named(h, p)));
+  if (t1.length && !t2zone) {
+    return { tier: 1, place: title(t1.sort((a, b) => b.length - a.length)[0]), relevance: 'direct', why: null };
+  }
+  if (t2zone) {
+    const hit = t2zone.match.filter((p) => named(h, p));
+    return { tier: 2, place: title(hit.sort((a, b) => b.length - a.length)[0]), relevance: t2zone.relevance, why: t2zone.why };
+  }
+  return null;
+}
+
+const title = (s) => s.replace(/\b[a-z]/g, (c) => c.toUpperCase());
