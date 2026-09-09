@@ -7,6 +7,7 @@ import { join } from 'node:path'
 import { figuresFromText, consolidate, eventName, mentionsPlace } from '../scripts/lib/event-figures.mjs'
 import { dedupeFeedItems, anchorPublished, lastUpdatedFrom, feedCollapse } from '../scripts/lib/event-feed.mjs'
 import { statusOf, homepageSlot, situationHref, publishStateFor, SITUATION_STATUS } from '../scripts/lib/active-situation.mjs'
+import { validateEvent } from '../scripts/lib/climate-events.mjs'
 
 /**
  * consolidate() keys its result by metric name at runtime, so the inferred type
@@ -323,16 +324,63 @@ describe('the lifecycle', () => {
 describe('the detector preserves what a person set', () => {
   const src = readFileSync(join(__dirname, '..', 'scripts', 'detect-climate-events.mjs'), 'utf8')
 
+  /* The smallest dossier validateEvent() accepts: a `withdrawn` event is not
+     held to the publication gates, so this is the identity fields plus the two
+     timestamps. Deliberately not a copy of a real file — the point is the
+     publish_state/withdrawn_why coupling and nothing else. */
+  const FIXTURE = {
+    slug: 'x-flood',
+    headline: 'A headline somebody else printed',
+    hazard: 'flood',
+    india_relevance: 'direct',
+    tier: 1,
+    origin: 'automated',
+    location: { text: 'Somewhere', country: 'India' },
+    occurred: { epochMs: 1_788_000_000_000 },
+    last_updated: { epochMs: 1_788_000_000_000 },
+    sources: [],
+  }
+
   it('carries every editor-owned field across a re-detection', () => {
     for (const field of [
       'situation_status',      // the lifecycle — read by lib/active-situation.mjs
       'situation_status_why',
       'hero_days',             // read by isCurrent() in lib/climate-events.mjs
       'cause_status',          // read by the cause band
+      /* ★ THE WITHDRAWAL PAIR, AND THIS ONE DID NOT FAIL SILENTLY — IT SHUT
+         THE PIPELINE. The other fields above are lost quietly: a decision is
+         reverted and the page goes on. `withdrawn_why` is REQUIRED by
+         validateEvent() whenever publish_state is `withdrawn`, and
+         publishStateFor() latches `withdrawn` from the previous file on
+         purpose, so a re-detection that drops the reason writes a dossier the
+         page build then refuses. The refusal is inside the rebuild step, which
+         runs BEFORE the commit — so the file on main keeps its reason, the
+         next run inherits exactly the same doomed state, and the workflow is
+         red for good. Measured 9 September 2026: eight events were withdrawn
+         at 02:21 IST and every scheduled run from 23:30 UTC onward failed at
+         `active/assam-flood.json: a withdrawn event must carry withdrawn_why`.
+         Same shape as the nepal-glof impact deadlock, one field over. */
+      'withdrawn_why',
+      'withdrawn_on',          // when the person decided; loses its record otherwise
     ]) {
       expect(src, `${field} is human-set and must be in EDITOR_OWNED, or the next `
         + 'scheduled detection silently discards it').toContain(`'${field}'`)
     }
+  })
+
+  /* And the consequence, stated against the validator itself rather than
+     against the detector's source, because this is the half that turned the
+     run red: the two fields are a PAIR, and carrying the state without the
+     reason is not a degraded dossier, it is a rejected one. */
+  it('a withdrawn dossier without its reason is refused, not merely thinner', () => {
+    const withdrawn = { ...FIXTURE, publish_state: 'withdrawn', withdrawn_why: 'Not an event.' }
+    expect(() => validateEvent('active/x.json', withdrawn)).not.toThrow()
+
+    /* What a re-detection wrote before the fix: the latched state, and no
+       reason, because dossier() had no key for one. */
+    const reasonLost: Record<string, unknown> = { ...withdrawn }
+    delete reasonLost.withdrawn_why
+    expect(() => validateEvent('active/x.json', reasonLost)).toThrow(/withdrawn_why/)
   })
 
   it('applies the allowlist to the dossier it is about to write', () => {
