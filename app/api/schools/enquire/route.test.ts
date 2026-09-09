@@ -92,9 +92,15 @@ describe('the happy path', () => {
 
   it('sends the notification to us and points its reply at the school', async () => {
     await post(good);
-    const m = send.mock.calls[0][0] as { to: string; replyTo: string };
+    const m = send.mock.calls[0][0] as { to: string[]; replyTo: string };
     expect(m.replyTo).toBe('coordinator@example.org');
-    expect(m.to).not.toBe('coordinator@example.org');
+    /* One send to every recipient, never to the enquirer. `to` is a list now —
+       derived from about-people.json — so this asserts membership rather than
+       identity, and that the school is not on it. */
+    expect(Array.isArray(m.to)).toBe(true);
+    expect(m.to.length).toBeGreaterThanOrEqual(2);
+    expect(m.to).not.toContain('coordinator@example.org');
+    for (const to of m.to) expect(to.endsWith('@swechha.in')).toBe(true);
   });
 });
 

@@ -18,6 +18,7 @@
 import { describe, it, expect } from 'vitest';
 import { parse, PROGRAMME_KEYS, FIELDS, notification, ENQUIRY_TO } from '@/lib/school-enquiry';
 import schools from '@/data/schools.json';
+import people from '@/data/about-people.json';
 import spec from '@/data/school-enquiry.json';
 
 const good = {
@@ -187,12 +188,48 @@ describe('what is NOT read out of the body', () => {
   });
 });
 
+describe('the recipients', () => {
+  /* THE POINT OF DERIVING THEM. If this ever has to be updated by hand, the
+     derivation has been replaced by a literal and a named member of staff is
+     back in application logic. */
+  it('is exactly the people about-people.json flags, and nobody else', () => {
+    const flagged = (people.team as Array<{ email?: string; school_enquiries?: boolean }>)
+      .filter((m) => m.school_enquiries && m.email)
+      .map((m) => m.email!.toLowerCase());
+    expect(ENQUIRY_TO).toEqual(flagged);
+    expect(ENQUIRY_TO.length).toBeGreaterThanOrEqual(2);
+  });
+
+  /* ★ THE BOUNDARY THAT MATTERS. An enquiry carries a named teacher's contact
+     details. A data edit must not be able to route it to somebody's personal
+     mailbox — about-people.json holds three board members' Gmail addresses,
+     deliberately unpublished, and a stray `school_enquiries: true` on one of
+     those rows must not become a mail rule. */
+  it('refuses any recipient that is not @swechha.in', () => {
+    for (const to of ENQUIRY_TO) expect(to.endsWith('@swechha.in')).toBe(true);
+  });
+
+  it('is never empty, so a send cannot silently reach nobody', () => {
+    expect(ENQUIRY_TO.length).toBeGreaterThan(0);
+  });
+});
+
 describe('the notification', () => {
   it('replies to the school, not to the machine', () => {
     const n = notification(ok(good), 7);
-    expect(n.to).toBe(ENQUIRY_TO);
+    expect(n.to).toEqual(ENQUIRY_TO);
+    expect(n.to).not.toContain('coordinator@example.org');
     expect(n.replyTo).toBe('coordinator@example.org');
     expect(n.text).toContain('Reply to this email and it goes to coordinator@example.org');
+  });
+
+  /* Two people get every enquiry and a reply goes to the school, not to each
+     other — so the message has to say who else is holding it, or both answer
+     the same teacher separately. */
+  it('names the other recipients, so two people do not answer the same school', () => {
+    const t = notification(ok(good), 7).text;
+    expect(t).toContain(`Sent to ${ENQUIRY_TO.length} of us`);
+    for (const to of ENQUIRY_TO) expect(t).toContain(to);
   });
 
   it('names the programme in the subject, and does not when there is none to name', () => {

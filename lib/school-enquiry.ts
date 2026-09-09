@@ -47,12 +47,54 @@
 import { sql, DB_URL, RESEND_KEY, SITE, normaliseEmail } from '@/lib/subscriptions';
 import spec from '@/data/school-enquiry.json';
 import schools from '@/data/schools.json';
+import people from '@/data/about-people.json';
 
-/** The one recipient. The same person the mailto Ask has always gone to —
-    `ASK_EMAIL` in scripts/lib/situation-shell.mjs. Kept as an env override so a
-    handover does not need a deploy, and defaulted so a missing variable cannot
-    send a school's enquiry nowhere. */
-export const ENQUIRY_TO = process.env.SCHOOL_ENQUIRY_TO?.trim() || 'vimlendu@swechha.in';
+/**
+ * WHO GETS A SCHOOL ENQUIRY — DERIVED FROM `data/about-people.json`, NOT TYPED.
+ *
+ * It began as one hardcoded address, the same person the mailto Ask has always
+ * reached. Two people need it: the Executive Director and the Director of
+ * Programs, whose own bio in that file records having "directly engaged with
+ * several hundreds of school-going students". Adding the second name to this
+ * line would have put a named member of staff into application logic, and staff
+ * turn over — so the recipients are marked in the file that already governs who
+ * this organisation's addresses belong to, with `"school_enquiries": true`, and
+ * this reads that mark.
+ *
+ * The consequence worth having: changing who receives school enquiries is a
+ * one-line data edit in a reviewed file, next to the role it belongs to, rather
+ * than a change to the endpoint.
+ *
+ * ★ EVERY RECIPIENT MUST BE @swechha.in. `about-people.json`'s own
+ * `email_policy` says only those are published, and three board members list
+ * personal Gmail addresses that are deliberately held back. A notification
+ * recipient is not a published address, but the same boundary applies for a
+ * stronger reason: an enquiry from a school carries a named teacher's contact
+ * details, and it may not be routed to somebody's personal mailbox by a data
+ * edit nobody reviewed as such.
+ *
+ * `SCHOOL_ENQUIRY_TO` still overrides, now comma-separated, for a handover that
+ * cannot wait for a deploy.
+ */
+const flaggedRecipients = (): string[] => (people.team as Array<{
+  slug: string; email?: string; school_enquiries?: boolean;
+}>)
+  .filter((m) => m.school_enquiries && m.email)
+  .map((m) => m.email!.trim().toLowerCase())
+  .filter((e) => e.endsWith('@swechha.in'));
+
+export const ENQUIRY_TO: string[] = (() => {
+  const override = process.env.SCHOOL_ENQUIRY_TO?.trim();
+  const list = override
+    ? override.split(/[,;]/).map((e) => e.trim().toLowerCase()).filter(Boolean)
+    : flaggedRecipients();
+  /* A LAST-RESORT FALLBACK, and it is not decoration. An empty list would make
+     `send()` post `to: []` to Resend, which fails — and the route treats a
+     failed send as a degradation rather than an error, so the enquiry would be
+     stored, answered `ok`, and reach nobody. One address that certainly exists
+     is better than a silent hole. */
+  return list.length ? list : ['vimlendu@swechha.in'];
+})();
 
 /** From-line for the notification. Distinct from the digest and the air alert
     for the reason lib/newsletter.ts gives: a reader filters on the From line,
@@ -285,6 +327,12 @@ export function notification(e: Enquiry, id: number) {
       e.message ? `What they said:\n${e.message}` : 'They wrote no message.',
       ``,
       `Reply to this email and it goes to ${e.email}.`,
+      /* WHO ELSE HAS THIS. Two people receive every school enquiry, and a
+         reply goes to the school rather than to each other — so without this
+         line both could answer the same teacher separately. */
+      ENQUIRY_TO.length > 1
+        ? `Sent to ${ENQUIRY_TO.length} of us: ${ENQUIRY_TO.join(', ')}. Say if you are taking it.`
+        : null,
       `Enquiry #${id} in school_enquiries. Deleted after twelve months.`,
     ].filter((l) => l !== null).join('\n'),
   };
@@ -297,6 +345,9 @@ export async function send(m: ReturnType<typeof notification>): Promise<void> {
     method: 'POST',
     headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      /* `to` IS AN ARRAY. Resend accepts up to 50 addresses in one send, and
+         one send to both recipients is what makes them see the same thread
+         rather than two unrelated copies. */
       from: ENQUIRY_FROM, to: m.to, reply_to: m.replyTo, subject: m.subject, text: m.text,
     }),
     signal: AbortSignal.timeout(15000),
