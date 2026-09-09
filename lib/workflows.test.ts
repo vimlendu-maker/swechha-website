@@ -133,8 +133,35 @@ const NOT_A_PAGE_BUILD = [
   'build:social-cards:check',
 ]
 
+/**
+ * ★ FOLLOW THE INDIRECTION, DO NOT LOWER THE BAR.
+ * The gate used to name all nineteen targets in a loop of its own and now runs
+ * `npm run build:all`, which is `sh scripts/build-all.sh` — the one ordered
+ * list the five cron publishers share. So "reachable from the gate" now means
+ * expanded through package.json's aggregates AND through that script's TARGETS.
+ * The property this describe block tests is unchanged and now covers more:
+ * a generator outside build:all is a generator no publisher runs either.
+ */
+function expandAggregates(names: Iterable<string>): Set<string> {
+  const out = new Set<string>()
+  const walk = (n: string) => {
+    if (out.has(n)) return
+    out.add(n)
+    const body = pkg[n]
+    if (!body) return
+    if (body.includes('scripts/build-all.sh')) {
+      const sh = readFileSync(join(__dirname, '..', 'scripts', 'build-all.sh'), 'utf8')
+      const list = sh.match(/TARGETS="\n([\s\S]*?)\n"/)?.[1] ?? ''
+      for (const t of list.split('\n').map((l) => l.trim()).filter(Boolean)) walk(`build:${t}`)
+    }
+    for (const m of body.matchAll(/npm run ([a-z0-9:-]+)/g)) walk(m[1])
+  }
+  for (const n of names) walk(n)
+  return out
+}
+
 describe('every page generator is inside the gate that checks it', () => {
-  const gate = invocations(read('generated-current.yml'))
+  const gate = expandAggregates(invocations(read('generated-current.yml')))
 
   it('generated-current.yml regenerates every build:* script', () => {
     const exempt = new Set([...COVERED_BY_SITUATIONS, ...NOT_A_PAGE_BUILD])

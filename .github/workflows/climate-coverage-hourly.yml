@@ -125,7 +125,20 @@ jobs:
       - name: Rebuild the page this feeds
         if: steps.changed.outputs.count != '0'
         run: |
-          npm run build:situation-climate-event
+          # ── ONE REBUILD, SHARED WITH EVERY OTHER PUBLISHER ──────────────
+          # ★ THIS STEP REBUILT ONE PAGE AND THE STEP BELOW STAGED FOUR TREES,
+          # which is the worst combination available: a data change this run
+          # brought in could be COMMITTED without the pages that render it ever
+          # being regenerated. The staleness then landed on the next pull
+          # request anyone opened, as a red generated-current.yml on files its
+          # author had not touched.
+          #
+          # The trade is honest and accepted: this job runs four times a day
+          # and now rebuilds every page rather than one, which costs it a
+          # minute or two. The gate's own full loop measures 1m13s in CI, so
+          # the cost of being correct here is small and the cost of being
+          # wrong was somebody else's afternoon.
+          npm run build:all
           npm run verify:final
 
       - name: Commit and push
@@ -133,10 +146,11 @@ jobs:
         run: |
           git config user.name  'swechha-coverage-hourly[bot]'
           git config user.email 'actions@github.com'
-          # design/ and docs/design/FINAL.md are build output too — see
-          # data-refresh.yml's commit step for why leaving either out breaks
-          # the "generated pages are current" gate on the next PR.
-          git add -A data public/_pages design docs/design/FINAL.md
+          # ── ONE STAGING LIST, SHARED WITH EVERY OTHER PUBLISHER ─────────
+          # design/ and docs/design/FINAL.md are build output too, and this
+          # list was additionally missing public/data and public/images. The
+          # trees are named once now, in the script, with the whole account.
+          ./scripts/stage-generated.sh
           if git diff --cached --quiet; then
             echo "Nothing staged after the rebuild — no commit."
             exit 0
