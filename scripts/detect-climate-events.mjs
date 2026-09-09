@@ -42,7 +42,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 import { writeFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve, join } from 'node:path';
-import { HAZARD_TERMS, TIER1, TIER2, SEVERITY_TERMS, NEGATIVE_TERMS, hay, hayPlace, ownedElsewhere, coordsFor, regionOf } from './lib/event-terms.mjs';
+import { HAZARD_TERMS, TIER1, TIER2, SEVERITY_TERMS, NEGATIVE_TERMS, hay, hayPlace, ownedElsewhere, coordsFor, regionOf, headlinePenalty } from './lib/event-terms.mjs';
 import { consolidate } from './lib/event-figures.mjs';
 import { dedupeFeedItems, anchorPublished, lastUpdatedFrom, feedCollapse } from './lib/event-feed.mjs';
 import { HAZARDS, hasContext } from './lib/climate-events.mjs';
@@ -504,12 +504,6 @@ const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-
       about the event itself is a better hero than an aggregator's digest of
       the day, so roundup markers are penalised and a clean, specific headline
       wins. */
-const ROUNDUP_MARKERS = [
-  'news today', 'live updates', 'live:', 'highlights', 'top news', 'morning digest',
-  'evening digest', 'what we know', 'explained', 'in pics', 'in photos', 'watch:',
-  'top 10', 'roundup', 'wrap', 'daily brief', 'newsletter', 'opinion', 'editorial',
-];
-
 function cleanHeadline(title, publisher) {
   let t = String(title || '').trim();
   if (publisher && t.endsWith(` - ${publisher}`)) t = t.slice(0, -(publisher.length + 3)).trim();
@@ -527,48 +521,6 @@ function cleanHeadline(title, publisher) {
     if (parts.length > 1) t = parts.reduce((a, b) => (b.length > a.length ? b : a));
   }
   return t;
-}
-
-/* Signals that a headline is about ONE PERSON rather than the event. The first
-   real run picked "Nepal flash floods: Software engineer from A.P.'s Kuppam
-   'missing', family appeals for assistance" as the lead for a disaster carried
-   by 123 publishers — a true story, and the wrong one to head a situation
-   board, because it describes an individual case rather than the event. */
-const PERSONAL_MARKERS = [
-  'family appeals', 'appeals for', 'my son', 'my husband', 'my father', 'my brother',
-  'engineer from', 'student from', 'native of', 'hails from', 'resident of',
-  'body found', 'last seen', 'speaks to', 'recalls', 'tells us', 'i was', 'we were',
-  'survivor', 'eyewitness', 'trapped for', 'rescued after', 'reunited',
-];
-/* Words that indicate the headline describes the event at scale. */
-const SCALE_MARKERS = [
-  'toll', 'dead', 'killed', 'missing', 'districts', 'villages', 'evacuated',
-  'displaced', 'swept', 'washed away', 'destroyed', 'submerged', 'stranded',
-  'alert', 'warning', 'rescue', 'relief', 'damage', 'bridge', 'highway',
-];
-
-/** Lower is better. Penalises roundups, single-person stories, questions, and
- *  titles that are too long or too short to work as a page heading; rewards
- *  headlines that name the hazard and describe it at scale. */
-function headlinePenalty(title, hazard) {
-  const t = String(title || '').toLowerCase();
-  let p = 0;
-  for (const m of ROUNDUP_MARKERS) if (t.includes(m)) p += 4;
-  for (const m of PERSONAL_MARKERS) if (t.includes(m)) p += 5;
-  if (/[‘’'"“”]/.test(title || '')) p += 2;        // a quoted word is usually one person speaking
-  if (t.includes('?')) p += 2;
-  if (t.split(':').length > 2) p += 2;
-  const scale = SCALE_MARKERS.filter((m) => t.includes(m)).length;
-  p -= Math.min(4, scale * 2);
-  const hazWords = { glof: ['glacial', 'glacier', 'outburst'], cloudburst: ['cloudburst'],
-    flood: ['flood'], landslide: ['landslide', 'landslip'], cyclone: ['cyclone'],
-    extreme_rain: ['rain', 'rainfall'] }[hazard] || [];
-  if (hazWords.some((w) => t.includes(w))) p -= 2;
-  if (/\d/.test(t)) p -= 1;                        // a number is usually a count
-  const n = t.length;
-  if (n > 110) p += 2;
-  if (n < 30) p += 2;
-  return p;
 }
 
 /** The headline that will lead the page: least penalised, then most recent. */
