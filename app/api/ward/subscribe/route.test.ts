@@ -6,12 +6,12 @@
  * the same shape — one try/catch over an INSERT and a send, answering "Nothing
  * was stored." to either.
  *
- * ONE THING GENUINELY DIFFERS AND IT IS WORTH RECORDING: this table's pending
- * rows ARE pruned. scripts/ward-alerts.mjs:221 runs db/001's seven-day delete
- * on a schedule, whereas nothing prunes the digest table at all. So a deletion
- * date would be TRUE here and false there — and the message still does not
- * state one, deliberately, because one sentence that is true of both beats two
- * that have to be kept in step with which jobs happen to exist.
+ * THE TWO TABLES USED TO DIFFER IN ONE WAY AND NO LONGER DO. This table's
+ * pending rows were pruned — db/001's seven-day delete, written out inline in
+ * scripts/ward-alerts.mjs — while nothing at all pruned the digest table, so a
+ * deletion date would have been true here and false there. Both are now swept
+ * by scripts/lib/retention.mjs on the same hourly schedule, so the asymmetry is
+ * gone. Neither message states a date, for the reason the case below gives.
  *
  * Not a test of subscribing. `lib/subscriptions.ts` and `lib/newsletter.ts`
  * cover the storage; what had no test at all was the WORDING, and the wording
@@ -126,10 +126,11 @@ describe('when the row is written but the confirmation cannot be sent', () => {
     expect(reason).toMatch(/again/i);
   });
 
-  /* Unlike the digest, this table IS pruned (see the header), so the claim
-     would be true. It is still not made: the two routes say the same sentence,
-     and a promise that depends on which cron exists is a promise that rots. */
-  it('promises no deletion date, keeping one sentence true of both routes', async () => {
+  /* Both tables are pruned now (see the header), so the claim would be true of
+     either. It is still not made: an error path is where a reader is trying to
+     get past a problem, and the retention rule belongs somewhere they can act
+     on it rather than in a failure message. */
+  it('promises no deletion date, keeping the error message to what the reader must do', async () => {
     const { reason } = await (await post({ email: 'reader@example.org', station: STATION })).json();
     expect(reason).not.toMatch(/seven days|7 days|delete/i);
   });

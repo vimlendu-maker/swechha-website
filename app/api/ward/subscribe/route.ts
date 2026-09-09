@@ -122,13 +122,16 @@ export async function POST(req: Request) {
     } catch (e) {
       console.error('[ward/subscribe] send', e instanceof Error ? e.message : e);
       /* ★ THE ROW EXISTS AND THE CONFIRMATION DID NOT GO, so this says so
-         rather than claiming an empty table. What it must NOT do is name a
-         deletion date: `db/002`'s retention rule — pending rows dropped after
-         seven days — tells the operator to run it "alongside the send job", and
-         for the digest THERE IS NO SEND JOB and nothing prunes those rows.
-         (`scripts/ward-alerts.mjs` does prune the ward table, so the claim
-         would be true there and false here; one honest sentence for both beats
-         two that have to be kept in step with which jobs exist.)
+         rather than claiming an empty table. It names NO DELETION DATE, and
+         the reason changed on 9 September 2026: when this was written, db/002's
+         seven-day rule was documented and run by nothing — it told the operator
+         to run it "alongside the send job" and there was no send job — so a date
+         here would have been a guarantee no code kept. `scripts/lib/retention.mjs`
+         now sweeps BOTH tables hourly, so the claim would be true. It is still
+         not made: this is an error path a reader is trying to get past, and the
+         retention rule belongs where they can act on it, not in a failure
+         message. Add it here if that judgement changes — it would now be
+         honest.
 
          It is still a 500. Double opt-in means an unsent confirmation is a
          subscription that can never begin, so answering ok would be the same
