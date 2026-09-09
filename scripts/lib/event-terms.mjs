@@ -206,6 +206,45 @@ export const SEVERITY_TERMS = {
    story ABOUT a hazard: a study, a memorial, a budget line, a film. These
    terms subtract, hard. "Flood of applications" is in here for the obvious
    reason, and it earns its place. */
+/* ★ AN EXPLAINER IS NOT AN EVENT, AND A PUBLISHED PAGE MUST NOT DECAY INTO
+   ONE. Three of the eight pages withdrawn by hand on 9 September 2026 were
+   leading on something that had never happened: an explainer about how floods
+   work ("From Nepal to Dikhow: Understanding the forces behind major floods"),
+   an op-ed about regional diplomacy ("Himalayan floods highlight urgent need
+   for regional disaster preparedness"), and a tunnel due to open in four days.
+
+   THE ROUTE IN WAS NOT THE PUBLICATION GATE. At withdrawal those three scored
+   6, −1 and 8 against THRESHOLD 14, on 1, 1 and 2 publishers against a bar of
+   8 (or 4 with an alert) — unpublishable today. They were live because
+   publishStateFor() latches, and they had cleared a lower bar long before.
+
+   What failed is LEAD SELECTION. `sources` is rebuilt every run from a rolling
+   two-day window and pickLead() takes the least-penalised survivor, so once
+   the real reporting ages out, commentary is what remains — and
+   headlinePenalty() REWARDED these, giving the first one −2 for containing the
+   word "flood" and penalising it for nothing at all.
+
+   So this list is used TWICE: appended to NEGATIVE_TERMS below, which drives
+   the proportional cluster penalty in the scorer (keeping the publication route
+   shut if THRESHOLD is ever lowered again — it has moved before), and in
+   headlinePenalty(), which is where the visible damage happened.
+
+   ★ EVERY MARKER IS TESTED AGAINST REAL REPORTING, NOT ONLY AGAINST THE THREE.
+   lib/event-noise.test.ts holds both halves: the three that must be rejected,
+   and 23 headlines from the four still-standing events' own source registers
+   that must come through untouched. Rejecting genuine disaster coverage is a
+   far worse failure than printing an op-ed, so nothing goes in here that the
+   positive corpus does not survive. That is also why there is no bare "why",
+   no "prone", and no "preparedness": each of them catches real reporting. */
+export const ANALYSIS_MARKERS = [
+  'understanding the', 'the forces behind', 'what causes',
+  'urgent need', 'highlights the need',
+  'explained', 'explainer', "here's why", "here's what", 'what you need to know',
+  'need to know', 'why it matters', 'in perspective', 'takeaways',
+  'opinion:', 'analysis:', 'op-ed', 'interview:', 'editorial:',
+  'prone zone', 'to be opened', 'to be inaugurated', 'set to open',
+];
+
 export const NEGATIVE_TERMS = [
   'anniversary', 'commemorat', 'memorial', 'years ago', 'decades ago', 'lessons from',
   'study finds', 'research shows', 'report says', 'according to a study', 'scientists say',
@@ -214,6 +253,7 @@ export const NEGATIVE_TERMS = [
   'budget', 'allocation', 'crore allocated', 'scheme launched', 'policy', 'bill passed',
   'flood of applications', 'flood of', 'wave of support', 'drought of ideas',
   'stock', 'shares', 'market', 'ipo', 'cricket', 'match', 'election',
+  ...ANALYSIS_MARKERS,
 ];
 
 /** Lowercased haystack for a news item: title plus publisher. */
@@ -365,3 +405,73 @@ export const regionOf = (place) => {
   const k = String(place || '').toLowerCase();
   return REGION_OF[k] || place;
 };
+
+/* ═══ LEAD SELECTION ══════════════════════════════════════════════════════
+   Moved here from detect-climate-events.mjs so it can be TESTED. The defect
+   these lists exist to prevent lived inside an unexported function in a
+   script that cannot be imported (it reads the news at module scope), so
+   nothing could assert on it and the explainer hole stayed open until a
+   person read eight live pages and withdrew them by hand. The vocabulary
+   and the scorer that uses it now sit together, and lib/event-noise.test.ts
+   calls the real function. cleanHeadline() stays in the detector: it is
+   about a feed's formatting, not about what a headline means. */
+export const ROUNDUP_MARKERS = [
+  'news today', 'live updates', 'live:', 'highlights', 'top news', 'morning digest',
+  'evening digest', 'what we know', 'explained', 'in pics', 'in photos', 'watch:',
+  'top 10', 'roundup', 'wrap', 'daily brief', 'newsletter', 'opinion', 'editorial',
+];
+
+/* Signals that a headline is about ONE PERSON rather than the event. The first
+   real run picked "Nepal flash floods: Software engineer from A.P.'s Kuppam
+   'missing', family appeals for assistance" as the lead for a disaster carried
+   by 123 publishers — a true story, and the wrong one to head a situation
+   board, because it describes an individual case rather than the event. */
+export const PERSONAL_MARKERS = [
+  'family appeals', 'appeals for', 'my son', 'my husband', 'my father', 'my brother',
+  'engineer from', 'student from', 'native of', 'hails from', 'resident of',
+  'body found', 'last seen', 'speaks to', 'recalls', 'tells us', 'i was', 'we were',
+  'survivor', 'eyewitness', 'trapped for', 'rescued after', 'reunited',
+];
+/* Words that indicate the headline describes the event at scale. */
+export const SCALE_MARKERS = [
+  'toll', 'dead', 'killed', 'missing', 'districts', 'villages', 'evacuated',
+  'displaced', 'swept', 'washed away', 'destroyed', 'submerged', 'stranded',
+  'alert', 'warning', 'rescue', 'relief', 'damage', 'bridge', 'highway',
+];
+
+/** Lower is better. Penalises roundups, single-person stories, questions, and
+ *  titles that are too long or too short to work as a page heading; rewards
+ *  headlines that name the hazard and describe it at scale. */
+export function headlinePenalty(title, hazard) {
+  const t = String(title || '').toLowerCase();
+  let p = 0;
+  for (const m of ROUNDUP_MARKERS) if (t.includes(m)) p += 4;
+  for (const m of PERSONAL_MARKERS) if (t.includes(m)) p += 5;
+  /* ★ COMMENTARY IS NEVER THE LEAD. +8 PER MARKER, AND THE NUMBER IS
+     DERIVED: the bonuses below can reach −7 (−2 hazard word, −1 a digit,
+     −4 for two scale markers), so anything smaller lets an explainer that
+     happens to name the hazard beat a plain report of the event. Three of
+     the eight pages withdrawn on 9 September 2026 were leading on
+     commentary that this function had actively REWARDED — "From Nepal to
+     Dikhow: Understanding the forces behind major floods" earned −2 for the
+     word "flood" and was penalised for nothing at all. ROUNDUP_MARKERS
+     already catches an aggregator's digest; it does not catch an op-ed.
+     Some markers appear in both lists ('explained', 'opinion', 'editorial')
+     and so score twice here, which is harmless and deliberate — the lead is
+     a ranking, not a gate. */
+  for (const m of ANALYSIS_MARKERS) if (t.includes(m)) p += 8;
+  if (/[‘’'"“”]/.test(title || '')) p += 2;        // a quoted word is usually one person speaking
+  if (t.includes('?')) p += 2;
+  if (t.split(':').length > 2) p += 2;
+  const scale = SCALE_MARKERS.filter((m) => t.includes(m)).length;
+  p -= Math.min(4, scale * 2);
+  const hazWords = { glof: ['glacial', 'glacier', 'outburst'], cloudburst: ['cloudburst'],
+    flood: ['flood'], landslide: ['landslide', 'landslip'], cyclone: ['cyclone'],
+    extreme_rain: ['rain', 'rainfall'] }[hazard] || [];
+  if (hazWords.some((w) => t.includes(w))) p -= 2;
+  if (/\d/.test(t)) p -= 1;                        // a number is usually a count
+  const n = t.length;
+  if (n > 110) p += 2;
+  if (n < 30) p += 2;
+  return p;
+}
