@@ -66,24 +66,74 @@ export async function POST(req: Request) {
        { 'Retry-After': String(limit.retryAfter) });
   }
 
+  /* ★ TWO FAILURE MODES, NOT ONE, BECAUSE THEY ARE NOT THE SAME CLAIM.
+     This used to be a single try/catch around both the INSERT and the send,
+     answering "Nothing was stored." to either. `subscribe()` writes a pending
+     row FIRST and the send happens after it, so a mail failure returned that
+     sentence while the reader's address sat in the table — a false statement to
+     somebody about their own address, which is the one kind of inaccuracy this
+     endpoint cannot afford.
+
+     It was unreachable until 9 September 2026 and is not any more: before then
+     `rate_limit_hits` did not exist in production, so every request failed
+     closed at the limiter above and never got as far as the INSERT. Applying
+     db/003 unblocked that path and made this branch live, which is how it was
+     found. Split, so each answer is true of what actually happened. */
+  let token: string | null;
   try {
-    const token = await subscribe(email);
-    // token === null means it was already confirmed. Send nothing, say the same
-    // thing either way, so the response cannot be used to probe the list.
-    if (token) {
+    token = await subscribe(email);
+  } catch (e) {
+    console.error('[newsletter/subscribe] store', e instanceof Error ? e.message : e);
+    /* Nothing reached the table, so this sentence is true. */
+    return json({ ok: false, reason: 'Could not complete that just now. Nothing was stored.' }, 500);
+  }
+
+  // token === null means it was already confirmed. Send nothing, say the same
+  // thing either way, so the response cannot be used to probe the list.
+  if (token) {
+    try {
       const m = confirmMail(token);
       await send(email, m.subject, m.text);
+    } catch (e) {
+      console.error('[newsletter/subscribe] send', e instanceof Error ? e.message : e);
+      /* ★ THE ROW EXISTS AND THE CONFIRMATION DID NOT GO, so this says so
+         rather than claiming an empty table. What it must NOT do is name a
+         deletion date: `db/002`'s retention rule — pending rows dropped after
+         seven days — tells the operator to run it "alongside the send job", and
+         for the digest THERE IS NO SEND JOB and nothing prunes those rows.
+         (`scripts/ward-alerts.mjs` does prune the ward table, so the claim
+         would be true there and false here; one honest sentence for both beats
+         two that have to be kept in step with which jobs exist.)
+
+         It is still a 500. Double opt-in means an unsent confirmation is a
+         subscription that can never begin, so answering ok would be the same
+         lie in the other direction. */
+      return json({
+        ok: false,
+        reason: 'Could not send the confirmation just now, so you are not subscribed — '
+          + 'a subscription only starts when you confirm. '
+          + 'Nothing can be sent to your address. Try again in a few minutes.',
+      }, 500);
     }
-  } catch (e) {
-    console.error('[newsletter/subscribe]', e instanceof Error ? e.message : e);
-    return json({ ok: false, reason: 'Could not complete that just now. Nothing was stored.' }, 500);
   }
 
   return json({
     ok: true,
     state: 'pending',
     // Identical for new, pending and already-confirmed. See the note above.
-    message: 'Check your email and confirm. Until you do, nothing is stored against your address '
-      + 'and nothing can be sent to it.',
+    /* ★ "NOTHING IS STORED AGAINST YOUR ADDRESS" WAS NOT TRUE, and unlike the
+       500 above, every single subscriber saw it. `subscribe()` writes a row
+       carrying the address the moment this endpoint accepts it; what is true is
+       that the row confers NOTHING — it is not on any list and nothing can be
+       delivered to it until the address is confirmed. That is the reassurance
+       the sentence was reaching for, and it is available without the falsehood.
+
+       NO DELETION DATE IS PROMISED HERE. db/002 sets one — pending rows dropped
+       after seven days — and tells the operator to run it "alongside the send
+       job"; for the digest that job does not exist and nothing prunes those
+       rows. Stating a guarantee no code keeps would put this line straight back
+       where it started. */
+    message: 'Check your email and confirm. Until you do you are not on the list, and nothing '
+      + 'can be sent to your address — it is held only as an unconfirmed request.',
   });
 }
