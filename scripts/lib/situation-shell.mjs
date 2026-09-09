@@ -43,7 +43,7 @@
  * Air build (a concurrent edit shifted a range by ten lines and an extracted
  * IIFE began mid-function), which is why the assertions exist at all.
  */
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
@@ -260,7 +260,35 @@ export function responsiveImages(html) {
       .map((w) => `/_next/image?url=${enc}&amp;w=${w}&amp;q=${IMG_QUALITY} ${w}w`)
       .join(', ');
     const extra = /\sdecoding=/i.test(tag) ? '' : ' decoding="async"';
-    return tag.replace(/\s*\/?>$/, `${extra} sizes="${sizesFor(html, at)}" srcset="${srcset}">`);
+    /* ★ THE FOOTER WORDMARK IS THE LAST IMAGE ON EVERY PAGE AND WAS LOADED
+       EAGERLY ON ALL 81 OF THEM. Measured 9 September 2026: of 287
+       below-the-fold images across the built set, 84 were eager, and 81 of
+       those were this one file — one optimizer request per page, fetched before
+       anything on screen needed it.
+
+       ★ SCOPED TO THE FOOTER, NOT TO "BELOW THE FOLD". A positional rule like
+       "every image after the second" would also catch the three photographs in
+       the HOMEPAGE HERO DECK, and those are eager on purpose: the deck promotes
+       a slide by removing a `hidden` attribute, so a lazy image would begin
+       loading at the moment it was meant to be shown. `<footer` is an
+       unambiguous boundary in every page this shell writes and nothing above it
+       is affected.
+
+       ★ DONE HERE RATHER THAN IN design/home.html, deliberately. The footer is
+       extracted VERBATIM from that file into all 93 pages, so the attribute
+       could have been added at the source — but that file's CSS ranges are
+       extracted by absolute line number and it is the one file in this
+       repository where an edit has to be argued for. A derived rule in the
+       image pass costs nothing there and applies to any page this shell writes,
+       including ones that do not exist yet.
+
+       An author's own `loading` attribute always wins: this only fills in a
+       tag that does not state one. */
+    const footAt = html.indexOf('<footer');
+    const inFooter = footAt !== -1 && at > footAt;
+    const lazy = inFooter && !/\sloading=/i.test(tag) && !/\sfetchpriority=/i.test(tag)
+      ? ' loading="lazy"' : '';
+    return tag.replace(/\s*\/?>$/, `${extra}${lazy} sizes="${sizesFor(html, at)}" srcset="${srcset}">`);
   });
 }
 
@@ -416,12 +444,39 @@ export const articleJsonLd = ({ headline, description, url, image, datePublished
  * Separate from `datasetJsonLd` above, which is derived from a FAMILY entry and
  * describes a live situation page. This one describes a RECORD: it can state a
  * temporal coverage, because the archive knows when it starts and ends, and a
- * live page cannot. Still no `distribution` — there is no download to point at,
- * and asserting a file that does not exist is how markup gets a site
- * distrusted rather than indexed.
+ * live page cannot.
+ *
+ * ★ `distribution` EXISTS NOW, AND THE NOTE THAT SAID IT COULD NOT IS BELOW.
+ * It read: "Still no `distribution` — there is no download to point at, and
+ * asserting a file that does not exist is how markup gets a site distrusted
+ * rather than indexed." Both halves were true and only the first has changed:
+ * `scripts/build-data-exports.mjs` writes the files, and a caller passes the
+ * ones that describe ITS page. The second half is now enforced instead of
+ * merely respected — `dist` entries are dropped unless the file is on disk, so
+ * this function cannot assert a download that was never written even if a
+ * caller names one.
+ *
+ * WITHOUT `distribution` A `Dataset` IS NOT A DATASET TO A MACHINE. Google
+ * Dataset Search treats the download as the thing that makes the record
+ * actionable; a Dataset with a `url` and no distribution is a page about data.
+ * That is what these five pages were before the exports existed, and it is the
+ * single largest reason this section was citable by a person and not by a tool.
  */
 export const recordDatasetJsonLd = ({ name, description, url, temporalCoverage = null,
-  spatialCoverage = null, measurementTechnique = null, variables = [] }) => '<script type="application/ld+json">'
+  spatialCoverage = null, measurementTechnique = null, variables = [], dist = [] }) => {
+  /* THE ONE THING THE OLD NOTE WARNED ABOUT, AS A CHECK RATHER THAN A RULE.
+     A `contentUrl` pointing at a 404 is worse than no distribution: a crawler
+     that follows it learns the markup is unreliable, and nothing on the page
+     shows the reader anything is wrong. So the file is looked for on disk, and
+     one that is not there is left out with a line on stdout rather than
+     published as a claim. */
+  const have = dist.filter((d) => {
+    if (existsSync(join(ROOT, 'public', d.path))) return true;
+    console.log(`  note  Dataset for ${url} names ${d.path}, which is not in public/ — `
+      + 'left out of `distribution` rather than published as a claim. Run `npm run build:data`.');
+    return false;
+  });
+  return '<script type="application/ld+json">'
   + JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'Dataset',
@@ -434,9 +489,68 @@ export const recordDatasetJsonLd = ({ name, description, url, temporalCoverage =
     ...(spatialCoverage ? { spatialCoverage: { '@type': 'Place', name: spatialCoverage } } : {}),
     ...(measurementTechnique ? { measurementTechnique } : {}),
     ...(variables.length ? { variableMeasured: variables } : {}),
+    ...(have.length ? {
+      distribution: have.map((d) => ({
+        '@type': 'DataDownload',
+        encodingFormat: d.format,
+        contentUrl: abs(d.path),
+        ...(d.name ? { name: d.name } : {}),
+        ...(d.description ? { description: d.description } : {}),
+      })),
+    } : {}),
     creator: { '@type': 'NGO', name: 'Swechha', url: abs('/') },
     publisher: { '@type': 'NGO', name: 'Swechha', url: abs('/') },
   }) + '</script>';
+};
+
+/**
+ * schema.org `DataCatalog` — for /use-the-data, and for nothing else.
+ *
+ * A catalogue is a page that says what datasets exist and under what terms.
+ * That is precisely and only what /use-the-data is: the licence, the citation
+ * formats, the per-subject method register and the per-subject limitations. It
+ * publishes no reading of its own, so `Dataset` would be the wrong type for it
+ * and `Article` wronger still.
+ *
+ * `dataset` entries are REFERENCES to the pages that hold each one, by URL, not
+ * copies of their descriptions. Two descriptions of one dataset at two URLs is
+ * the same duplicate-content failure `design-routes.ts` refuses for pages, and
+ * it would drift in a fortnight.
+ */
+export const dataCatalogJsonLd = ({ name, description, url, datasets, dist = [] }) => {
+  const have = dist.filter((d) => existsSync(join(ROOT, 'public', d.path)));
+  return '<script type="application/ld+json">'
+  + JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'DataCatalog',
+    name,
+    description,
+    url: abs(url),
+    license: LICENCE_URL,
+    isAccessibleForFree: true,
+    publisher: { '@type': 'NGO', name: 'Swechha', url: abs('/') },
+    dataset: datasets.map((d) => ({
+      '@type': 'Dataset',
+      name: d.name,
+      description: d.description,
+      url: abs(d.url),
+      license: LICENCE_URL,
+      isAccessibleForFree: true,
+      ...(d.temporalCoverage ? { temporalCoverage: d.temporalCoverage } : {}),
+      ...(d.spatialCoverage ? { spatialCoverage: { '@type': 'Place', name: d.spatialCoverage } } : {}),
+      ...(d.measurementTechnique ? { measurementTechnique: d.measurementTechnique } : {}),
+      creator: { '@type': 'NGO', name: 'Swechha', url: abs('/') },
+    })),
+    ...(have.length ? {
+      distribution: have.map((d) => ({
+        '@type': 'DataDownload',
+        encodingFormat: d.format,
+        contentUrl: abs(d.path),
+        ...(d.name ? { name: d.name } : {}),
+      })),
+    } : {}),
+  }) + '</script>';
+};
 
 /**
  * schema.org `ItemList` — used by /schools to name the six programmes in the
@@ -461,6 +575,39 @@ export const itemListJsonLd = ({ name, items }) => '<script type="application/ld
       name: it.name,
       url: abs(it.url),
       ...(it.description ? { description: it.description } : {}),
+    })),
+  }) + '</script>';
+
+/**
+ * schema.org `FAQPage` — and this is the ONE schema on this site with a rule
+ * attached to using it at all, because it is the one most often faked.
+ *
+ * ★ IT MAY ONLY DESCRIBE A BAND THAT IS ALREADY A QUESTION AND AN ANSWER TO A
+ * READER. Not a set of statements re-headed as questions to earn a rich result,
+ * and never a question this site invented in order to have somewhere to put a
+ * keyword. `/schools`'s planning band qualifies on the narrowest possible
+ * reading: every answer in it was published as prose first and the question was
+ * added over the top of the answer it already had, unchanged — see the `_` note
+ * in `data/schools.json`'s `logistics`.
+ *
+ * ★ THE ANSWER TEXT IS THE RENDERED ANSWER, PASSED IN, NEVER A SUMMARY OF IT.
+ * A FAQPage whose `acceptedAnswer` differs from what the page shows is cloaking,
+ * whatever the intent. Callers pass the same strings they render, and the
+ * generator's own gate asserts each one appears in the page's visible text.
+ *
+ * Google has narrowed FAQ rich results to authoritative government and health
+ * sites, so this is not expected to draw one. It is emitted because it
+ * correctly describes the band — for the other engines and the answer machines
+ * that read it — and for no other reason. If that stops being true, delete it.
+ */
+export const faqJsonLd = (pairs) => '<script type="application/ld+json">'
+  + JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: pairs.map(({ q, a }) => ({
+      '@type': 'Question',
+      name: q,
+      acceptedAnswer: { '@type': 'Answer', text: a },
     })),
   }) + '</script>';
 
@@ -1398,6 +1545,94 @@ ${rows.map((r) => `            <li><a href="${r.href}"><b>${esc(r.title)}</b><sp
         </div>`;
 }
 
+/* ═══ THE JOURNAL, READ BACKWARDS ═════════════════════════════════════════
+   WHAT WAS WRONG. A link census over all 93 built pages, 9 September 2026,
+   found `/journal` reachable in the body of exactly three of them: its own two
+   articles and `/search`. Not the homepage, not `/now`, not one of the six
+   situation pages, not one of the twenty-six Learn articles, not `/record`.
+   Every other route into it was the footer directory, which is on all 93 pages
+   and is therefore no signal at all — to a reader scanning a page or to a
+   crawler weighing one. So the section that carries this site's only dated,
+   bylined analysis was, in link terms, the least connected thing on it.
+
+   ★ THE EDGE IS DERIVED FROM THE ARTICLE'S OWN CLAIM, NEVER TYPED HERE.
+   Each article already declares `related.now`, `related.learn` and
+   `related.record` — the pages it was written against. This inverts that
+   declaration. So a Journal link appears on a situation page if and only if an
+   article says it is about that situation, which means:
+
+     - no link is added for SEO. An article that does not claim the relationship
+       produces no edge, and there is no second list anybody can pad;
+     - the reverse links cannot go stale. Retract the claim in the article and
+       the backlink disappears on the next build;
+     - THE APPROVAL GATE PROPAGATES. `published()` filters on the same
+       `publish_state`/`approved_by` pair build-journal.mjs builds pages from,
+       so an unapproved draft — which has no page and no route — cannot be
+       linked from anywhere either. That is the property that matters most: a
+       reverse index built from the directory would happily link a draft.
+
+   Read fresh on each call rather than cached at module load: the generators run
+   as separate processes and each one wants the state of the files as they are. */
+export function journalArticles() {
+  const dir = join(ROOT, 'data/journal/articles');
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir).filter((f) => f.endsWith('.json'))
+    .map((f) => JSON.parse(readFileSync(join(dir, f), 'utf8')))
+    .filter((a) => a.publish_state === 'published' && a.approved_by)
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+}
+
+/** Articles that name `route` in `related.now` — or in `related.record`, which
+    is how a month page and `/record` itself are reached. One function for both,
+    because the shape of the claim is identical and only the key differs.
+
+    `route` may be a STRING for an exact href or a PREDICATE, and the predicate
+    form is not a convenience: an article cites the month it read
+    (`/record/air/2026/09`), and `/record/air` is the page that month belongs
+    to. Requiring an exact match would leave the subject page with no rail while
+    its own child had one, and the alternative — asking articles to declare both
+    — is two claims where there is one fact. */
+export function journalFor(route, key = 'now') {
+  const hit = typeof route === 'function' ? route : (h) => h === route;
+  return journalArticles().filter((a) => ((a.related || {})[key] || [])
+    .some((r) => hit(r.href)));
+}
+
+/** Articles whose `related.learn` names this Learn slug. */
+export function journalForLearn(slug) {
+  return journalArticles().filter((a) => ((a.related || {}).learn || []).includes(slug));
+}
+
+const jDate = (iso) => {
+  const [y, m, d] = String(iso).split('-').map(Number);
+  return `${d} ${MON[m - 1]} ${y}`;
+};
+
+/**
+ * The rail. Renders NOTHING when no article claims this page, which is the
+ * normal case for four of the six situations today — an empty "In the Journal"
+ * heading over no rows is worse than no band, and a placeholder row would be
+ * the invented link this whole mechanism exists to refuse.
+ *
+ * `standfirst` is the article's own opening, truncated at a sentence rather than
+ * at a character count, so a row never ends mid-clause with an ellipsis.
+ */
+export const journalRail = (route, key = 'now') => {
+  const arts = journalFor(route, key);
+  if (!arts.length) return '';
+  return `        <div class="cl-learn cl-jr">
+          <p class="lbl cl-k">In the Journal</p>
+          <ul class="cl-learn-l">
+${arts.map((a) => {
+    const first = String(a.standfirst || '').split(/(?<=\.)\s/)[0];
+    return `            <li><a href="/journal/${a.slug}"><b>${a.h1.replace(/<br>/g, ' ')}</b>`
+      + `<span class="cap">${jDate(a.date)} &middot; ${esc(first)}</span></a></li>`;
+  }).join('\n')}
+          </ul>
+          <p class="cap cl-learn-m"><a class="lk" href="/journal">Every dated piece</a> &mdash; each figure snapshotted with the moment it was observed, so a published page never moves.</p>
+        </div>`;
+};
+
 export const closing = (id) => {
   const c = (ONWARD.closing || {})[id];
   if (!c) {
@@ -1434,6 +1669,12 @@ export const closing = (id) => {
           </div>
         </div>
 ${learnRail(id)}
+${/* THE JOURNAL RAIL, AFTER THE LEARN RAIL AND BEFORE THE DOORS. Learn is
+     the evergreen explanation of the reading above it; the Journal is what
+     happened on a date, judged against that reading. That is the reader's
+     order — understand the number, then read the argument somebody made
+     with it — and it is the order the flywheel is drawn in. Renders nothing
+     when no approved article claims this situation: see journalRail. */''}${journalRail(FAMILY.find(f => f.id === id)?.route ?? '')}
         <!-- AD-40. THE THREE 314px ARROWS ARE GONE, and they were a rendering bug
              rather than a design decision. ARROW is a bare <svg viewBox="0 0 24 24">
              with no width or height of its own; every other place this design puts it
@@ -1598,6 +1839,12 @@ export const CLOSING_CSS = `
    columns of prose and a third block of boxes would read as a second footer.
    The grid collapses to one column under 700px like everything else here. */
 .cl-learn{margin-top:clamp(26px,3.6vw,40px);border-top:1px solid var(--hair);padding-top:clamp(16px,2.2vw,22px)}
+/* THE JOURNAL RAIL IS THE SAME COMPONENT AT A TIGHTER TOP MARGIN, because it
+   follows the Learn rail rather than a two-column prose band — two full
+   clamp(26px,3.6vw,40px) gaps in a row read as two separate sections when they
+   are one pair. No other override: the two rails are deliberately identical in
+   treatment, since the only difference between them is what the rows are. */
+.cl-jr{margin-top:clamp(18px,2.4vw,26px)}
 .cl-learn-l{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:clamp(12px,1.6vw,18px);
   grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
 .cl-learn-l li{min-width:0;border-top:1px solid var(--hair);padding-top:10px}

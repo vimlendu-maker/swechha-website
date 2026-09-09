@@ -41,6 +41,13 @@ import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
 const { esc, opener, ARROW, disclose } = S;
+/* The Journal's own date format, the same one journalRail renders in the shell.
+   Kept here rather than exported because a Learn door shows one date and the
+   rail shows a list; two callers, one format, no third copy. */
+const jDate = (iso) => {
+  const [y, m, d] = String(iso).split('-').map(Number);
+  return `${d} ${S.MON[m - 1]} ${y}`;
+};
 
 const sh = S.shell();
 const LEARN = join(S.ROOT, 'data/learn');
@@ -283,6 +290,38 @@ const sourcesBand = (a) => `${opener('sources', 'Where this comes from', a.sourc
 ${a.sources.map((s) => `        <li><a class="lk" href="${esc(s.url)}" rel="noopener">${esc(s.name)}</a>
           <span class="cap">${esc(s.publisher)}${s.note ? ` &middot; ${esc(s.note)}` : ''}</span></li>`).join('\n')}
       </ul>
+${/* ★ THE SUGGESTED CITATION, AND IT DELIBERATELY CARRIES NO DATE.
+      A Learn page is evergreen: it addresses the LIVE dataset by reference and
+      is rebuilt when its prose changes, never when the air changes. That is the
+      one rule separating this section from the Journal — a Journal figure is a
+      snapshot with an observation stamp on it and must never move; a Learn
+      figure is a reference and must never go stale. Putting a date on this
+      citation would invite somebody to cite a version of the page, which is
+      exactly what an evergreen explainer is not.
+
+      /use-the-data publishes this shape as its third citation form —
+      `Swechha. "What is PM2.5?" https://swechha.in/learn/pm25` — and it was
+      one navigation away from every page it applies to. This is that form,
+      filled in, on the page.
+
+      THE PROVENANCE SENTENCE NAMES THE FIRST SOURCE, not all of them: the list
+      is directly above it and repeating it would be a second copy of the same
+      register. The claim it makes is the one a citation needs and the one an
+      explainer is most likely to be quoted wrongly on — that the standards and
+      figures here are somebody else's, and the explanation is ours. */''}
+      <div class="lr-cite">
+        <p class="lbl">Suggested citation</p>
+        <code>Swechha. &ldquo;${esc(a.h1.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())}&rdquo;
+https://swechha.in/learn/${a.slug}</code>
+        <p class="cap lr-lic" style="margin-top:12px"><b>No date, on purpose.</b> This page explains a
+          standard rather than reporting a reading: the figures in it are read out of the live dataset at
+          each build, so it does not go stale and there is no version of it to cite. If you need a figure
+          fixed to a moment, take it from <a class="lk" href="/record">the record</a> or from a
+          <a class="lk" href="/journal">Journal</a> piece, both of which carry an observation stamp.
+          The limits and the figures above are ${esc(a.sources[0].publisher)}'s and the other sources
+          named beside them; the explanation is Swechha's. The
+          <a class="lk" href="/use-the-data#how">four layers</a> are set out on the terms page.</p>
+      </div>
       <p class="cap lr-lic">Reuse freely &mdash; <a class="lk" href="${S.LICENCE_URL}" rel="license noopener">${S.LICENCE_NAME}</a>.
         The grant covers this page. Each source above keeps its own terms, which is why every one of them is named.</p>
     </div>`;
@@ -309,6 +348,34 @@ ${a.programme ? `        <a class="lr-door" href="${esc(a.programme.href)}">
           <span class="lr-door-h">${esc(a.programme.label)}</span>
           <span class="cap">${esc(a.programme.why)}</span>
         </a>` : ''}
+${/* ── THE JOURNAL DOOR, AND IT IS NOT A DOOR THIS FILE CHOOSES. ────────────
+      Every article already carried the live reading, its sibling explainers,
+      a programme and an ask. What it never carried was the dated writing that
+      USED it: a link census on 9 September 2026 found /journal in the body of
+      three of 93 pages, and none of the twenty-six explainers was one of them.
+
+      The edge is inverted out of the ARTICLE's own `related.learn`, so it
+      exists only where a Journal piece has said in its own file that it was
+      written against this explanation — and only where a named person has
+      approved that piece, because journalForLearn() filters on the same
+      publish gate the Journal generator builds pages from. Nothing here can
+      add a link, and retracting the claim in the article removes it.
+
+      ONE DOOR, NOT ONE PER ARTICLE. The door leads to the newest piece and the
+      caption counts the rest, because `.lr-doors` is a three-to-four card grid
+      and an explainer that six pieces happen to cite would otherwise push the
+      live reading and the programme off the first row of it. */''}
+${(() => {
+    const arts = S.journalForLearn(a.slug);
+    if (!arts.length) return '';
+    const [first] = arts;
+    const more = arts.length - 1;
+    return `        <a class="lr-door" href="/journal/${first.slug}">
+          <span class="lbl">In the Journal</span>
+          <span class="lr-door-h">${first.h1.replace(/<br>/g, ' ')}</span>
+          <span class="cap">${esc(jDate(first.date))}${more ? ` &middot; and ${more} more dated piece${more > 1 ? 's' : ''} written against this` : ' &middot; dated, with every figure snapshotted'}</span>
+        </a>`;
+  })()}
       </div>
 ${a.act ? `      <p class="lr-cta"><a class="b b-1" href="${esc(a.act.href)}">${esc(a.act.label)}${ARROW}</a></p>` : ''}
     </div>`;
@@ -338,6 +405,16 @@ const PAGE_CSS = `
 .lr-ul{margin:10px 0 0;padding-left:1.1em;display:grid;gap:8px}
 .lr-ul li{max-width:60ch}
 .lr-src{list-style:none;margin:clamp(16px,2.4vw,24px) 0 0;padding:0;display:grid;gap:14px;max-width:70ch}
+/* THE SUGGESTED CITATION. Same treatment as the one on a Journal piece and on
+   the record pages: a ruled block, the citation in mono, the provenance note
+   under it. Written here rather than shared because each generator emits its
+   own PAGE_CSS and nothing on this site ships one stylesheet across sections.
+   pre-wrap keeps the citation's line breaks; overflow-wrap stops a long URL
+   widening the band. */
+.lr-cite{margin:clamp(20px,3vw,28px) 0 0;max-width:70ch;border-top:1px solid currentColor;padding-top:14px}
+.lr-cite code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;
+  display:block;padding:12px 14px;border:1px solid currentColor;margin:10px 0 0;
+  white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
 .lr-src li{display:grid;gap:3px;border-top:1px solid currentColor;padding-top:12px}
 .lr-lic{margin:clamp(20px,3vw,28px) 0 0;max-width:70ch}
 .lr-doors{display:grid;gap:clamp(14px,2vw,20px);margin:clamp(18px,2.6vw,26px) 0 0;
@@ -577,6 +654,24 @@ const IX = await S.assemble({
   file: 'learn.html',
   route: '/learn',
   title: seo('/learn').title,
+  /* ★ AN INDEX IS AN `ItemList`, NOT AN `Article` AND NOT A `Dataset`. This
+     page publishes no explanation of its own and no reading of its own — it
+     names every explainer and orders them by category. `ItemList` claims
+     exactly that and nothing more.
+
+     THE LIST IS THE RENDERED LIST, in the rendered order, derived from the same
+     CATS/ARTICLES walk the library band renders — so the markup and the page
+     cannot name different sets. An index whose structured data lists articles
+     it does not link is the one failure this type can have. */
+  headExtra: S.itemListJsonLd({
+    name: 'Swechha environmental knowledge library',
+    items: CATS.flatMap((c) => ARTICLES.filter((a) => a.category === c.id)
+      .map((a) => ({
+        name: a.h1.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
+        url: artHref(a.slug),
+        description: a.card,
+      }))),
+  }),
   bands: INDEX_BANDS,
   index: [
     ['Start here', '#start'], ['The library', '#library'],

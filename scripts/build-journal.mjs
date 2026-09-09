@@ -150,6 +150,17 @@ const PAGE_CSS = `
 .jr-ul{margin:0;padding-left:1.1em;display:grid;gap:8px}
 .jr-ul li{max-width:52ch}
 .jr-src{list-style:none;margin:clamp(16px,2.4vw,24px) 0 0;padding:0;display:grid;gap:13px;max-width:70ch}
+/* THE SUGGESTED CITATION. A ruled block on the sources band, deliberately the
+   same treatment /record and /use-the-data give theirs (.rc-cite there) rather
+   than a second look for the same object — but written here rather than shared,
+   because those pages carry their own PAGE_CSS and nothing on this site emits
+   one stylesheet for both. pre-wrap keeps the citation's own line breaks, which
+   are how a citation is read; overflow-wrap stops a long URL pushing the block
+   wider than the band. */
+.jr-cite{margin:clamp(20px,3vw,28px) 0 0;max-width:70ch;border-top:1px solid currentColor;padding-top:14px}
+.jr-cite code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;
+  display:block;padding:12px 14px;border:1px solid currentColor;margin:10px 0 0;
+  white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
 .jr-src li{display:grid;gap:3px;border-top:1px solid currentColor;padding-top:11px}
 .jr-doors{display:grid;gap:clamp(14px,2vw,20px);margin:clamp(18px,2.6vw,26px) 0 0;
   grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
@@ -273,6 +284,40 @@ ${a.sources.map((s) => `        <li><a class="lk" href="${esc(s.url)}" rel="noop
           <h3 class="d2">What to watch</h3>
 ${bullets(a.watch)}
         </div>
+      </div>
+${/* ★ THE SUGGESTED CITATION, ON THE PAGE, WITH THE FOUR LAYERS NAMED.
+      /use-the-data publishes the three citation shapes this site uses and the
+      four-way distinction between source data, our processing, our analysis and
+      our interpretation. Neither was on the page a journalist is actually
+      standing on when they need to quote it, so both were one navigation away
+      from every use — and the commonest way an honest number becomes a false
+      claim is being cited as a measurement when it is a calculation.
+
+      EVERY FIELD IS DERIVED FROM THE ARTICLE'S OWN DATA. The title, the date,
+      the URL and the primary source come out of the file; `type` decides which
+      of the four layers the piece IS, from the same TYPES register the chip
+      above is drawn from. Nothing is typed here, so a piece cannot be described
+      one way in its chip and another in its citation.
+
+      THE PRIMARY SOURCE IS THE FIRST ONE LISTED, which is the convention the
+      data already follows: `sources[0]` on both published articles is the feed
+      the figures came from and the rest are the standards they were judged
+      against. Stated in the markup so it is not an accident of ordering. */''}
+      <div class="jr-cite">
+        <p class="lbl">Suggested citation</p>
+        <code>Swechha (${String(a.date).slice(0, 4)}). &ldquo;${esc(a.h1.replace(/<br>/g, ' ').replace(/\s+/g, ' '))}&rdquo;
+The Swechha Journal, ${esc(dateLabel(a.date))}. Based on ${esc(a.sources[0].publisher)}.
+https://swechha.in${route}</code>
+        <p class="cap jr-p" style="margin-top:12px"><b>What you are citing.</b> The readings above were
+          measured and published by ${esc(a.sources[0].publisher)} &mdash; not by Swechha. We did not
+          measure them and do not claim to. This piece is
+          <b>${esc(TYPES[a.type].label.toLowerCase())}</b>: ${esc(
+    TYPES[a.type].note.replace(/\.$/, '').replace(/^([A-Z])/, (c) => c.toLowerCase()))}.
+          Every figure in it is snapshotted with the moment it was observed, so this page does not move
+          when the live reading does. The
+          <a class="lk" href="/use-the-data#how">four layers</a> &mdash; source data, our processing, our
+          analysis and our interpretation &mdash; are set out on the terms page, and what this piece cannot
+          tell you is stated above rather than left out.</p>
       </div>
       <p class="cap jr-p" style="margin-top:22px">Reuse freely &mdash; <a class="lk" href="${S.LICENCE_URL}" rel="license noopener">${S.LICENCE_NAME}</a>.
         <a class="lk" href="/use-the-data">Terms, method and limitations</a>.</p>
@@ -408,6 +453,25 @@ const IX = await S.assemble({
   file: 'journal.html',
   route: '/journal',
   title: seo('/journal').title,
+  /* ★ `ItemList` OF THE PUBLISHED ARTICLES, newest first, which is the order
+     the page renders them in. It is derived from ARTICLES — the set that has
+     already passed the approval gate at the top of this file — so a held draft
+     cannot appear in the markup any more than it can appear on the page or at a
+     URL. That is the same property the reverse-link index in situation-shell
+     relies on, stated here as a consequence rather than a rule: the gate is the
+     filesystem, and everything downstream inherits it.
+
+     `articleSection` is on each ARTICLE's own page as part of its `Article`
+     data. It is not repeated here: an ItemList entry claims a name, a position
+     and a URL, and the page it points at is where the piece describes itself. */
+  headExtra: S.itemListJsonLd({
+    name: 'The Swechha Journal',
+    items: ARTICLES.map((a) => ({
+      name: a.h1.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
+      url: `/journal/${a.slug}`,
+      description: String(a.standfirst || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
+    })),
+  }),
   bands: IX_BANDS,
   index: [['Latest', '#latest'], ['Five kinds', '#kinds'], ['How a piece gets here', '#how'], ['Next', '#onward']],
   sh, clashes: S.groundChain(IX_BANDS),

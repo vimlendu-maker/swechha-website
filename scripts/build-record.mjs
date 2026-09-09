@@ -28,7 +28,7 @@
    the hours-observed column is on every row so a partial day cannot be read as
    a complete one.
    ═══════════════════════════════════════════════════════════════════════════ */
-import { readFileSync, readdirSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
@@ -173,6 +173,25 @@ const PAGE_CSS = `
   border-top:2px solid currentColor;padding-top:13px}
 .rc-m-h{font-family:var(--display);font-size:clamp(21px,2.6vw,28px);line-height:1.1}
 .rc-cite{margin:clamp(18px,2.6vw,26px) 0 0;max-width:70ch}
+/* THE DOWNLOAD ROWS. A ruled list of files, deliberately not cards: a card
+   implies a page behind it and these are files. Each row is the name, then the
+   format and the measured size on a second line, so the reader knows what they
+   are about to fetch before they fetch it. Ground-aware on the hairline only
+   (the type inherits), because dlRows renders on dark-2 on all three pages
+   today and a paper ground is one band move away. */
+.rc-dl{list-style:none;margin:clamp(16px,2.2vw,22px) 0 0;padding:0;
+  display:grid;gap:0;max-width:64ch}
+.rc-dl li{display:grid;gap:2px;padding:12px 0;border-top:1px solid var(--hair)}
+.rc-dl li:last-child{border-bottom:1px solid var(--hair)}
+.paper .rc-dl li,.paper-2 .rc-dl li{border-top-color:var(--rule-2)}
+.paper .rc-dl li:last-child,.paper-2 .rc-dl li:last-child{border-bottom-color:var(--rule-2)}
+.rc-dl-m{margin:0;font-variant-numeric:tabular-nums}
+/* An endpoint or a JSON literal inside a sentence. The .rc-cite code rule
+   above is a BLOCK for a whole citation; this is the inline sibling and must
+   not inherit that display or padding. */
+.rc-inline{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;
+  padding:1px 5px;border:1px solid var(--hair);white-space:nowrap}
+.paper .rc-inline,.paper-2 .rc-inline{border-color:var(--rule-2)}
 .rc-defs{margin:clamp(18px,2.6vw,26px) 0 0;display:grid;gap:14px;max-width:66ch}
 .rc-defs dt{font-weight:600;margin:0}
 .rc-defs dd{margin:4px 0 0}
@@ -218,6 +237,62 @@ const PAGE_CSS = `
 @media (prefers-reduced-motion:reduce){.rc-m-h,.rc-door-h,.rc-k-h a{transition:none}}
 
 `;
+
+/* ═══ THE JOURNAL DOOR ════════════════════════════════════════════════════
+   THE DEFECT THIS CLOSES. A link census over all 93 built pages on 9 September
+   2026 found `/journal` in the body of three of them — its own two articles and
+   `/search`. The archive was one of the pages with no route into it, which is
+   backwards: an article that reads a month of this record is the single best
+   demonstration that keeping it was worth doing.
+
+   ★ RENDERED AS THIS PAGE'S OWN `.rc-door`, NOT AS THE SITUATION SHELL'S RAIL.
+   `journalRail()` is styled by CLOSING_CSS, which only the six situation
+   generators emit; a rail here would arrive unstyled. The doors band is already
+   on all three of these pages and `auto-fit` takes a fourth card, so the door
+   is the component that costs nothing.
+
+   ★ THE MATCH DIFFERS PER PAGE AND THAT IS THE POINT. A month page shows only
+   the articles that cite THAT month. `/record/air` shows any article citing any
+   month of the air record, because a month belongs to its subject page. See
+   journalFor's predicate note. */
+const journalDoors = (match) => S.journalFor(match, 'record').map((a) => {
+  const [y, mo, d] = String(a.date).split('-').map(Number);
+  return `        <a class="rc-door" href="/journal/${a.slug}"><span class="lbl">Journal</span>`
+    + `<span class="rc-door-h">${a.h1.replace(/<br>/g, ' ')}</span>`
+    + `<span class="cap">${d} ${S.MON[mo - 1]} ${y} &mdash; written against this record.</span></a>`;
+}).join('\n');
+
+/* ═══ THE DOWNLOADS ═══════════════════════════════════════════════════════
+   WRITTEN BY scripts/build-data-exports.mjs, NAMED HERE, and existence-checked
+   by recordDatasetJsonLd before any of it is published as a `distribution`.
+   Nothing in this file writes a byte of data; it links what that generator
+   wrote, and if that generator has not run the link band renders the files it
+   can find and the Dataset markup drops the rest. The build is not failed for
+   it: `npm run build:record` predates `npm run build:data` and making the
+   archive pages refuse to build without the exports would take the record
+   offline over a missing download. The CI loops run both. */
+const dl = (rel) => `/data/${rel}`;
+const haveFile = (rel) => existsSync(join(S.ROOT, 'public', dl(rel)));
+const kb = (rel) => {
+  const p = join(S.ROOT, 'public', dl(rel));
+  if (!existsSync(p)) return '';
+  const n = statSync(p).size;
+  return n >= 1024 * 1024 ? `${(n / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(n / 1024)} KB`;
+};
+
+/* ── THE VISIBLE DOWNLOAD ROWS. `download` on the anchor rather than a plain
+      link, because a browser shown text/csv may render it as a wall of text in
+      a tab instead of saving it, and the reader asked for a file. The size is
+      read off the file rather than typed: an advertised size that is wrong is
+      the same class of defect as an advertised file that is missing. */
+const dlRows = (rows) => {
+  const have = rows.filter((r) => haveFile(r.rel));
+  if (!have.length) return '';
+  return `      <ul class="rc-dl">
+${have.map((r) => `        <li><a class="lk" href="${dl(r.rel)}" download>${esc(r.label)}</a>
+          <span class="cap rc-dl-m">${esc(r.format)} &middot; ${kb(r.rel)}${r.note ? ` &middot; ${esc(r.note)}` : ''}</span></li>`).join('\n')}
+      </ul>`;
+};
 
 const BANDS_6 = (ids) => ids;
 const gateAll = [];
@@ -322,6 +397,15 @@ https://swechha.in${route}</code>
         <p class="cap rc-p" style="margin-top:12px">Licensed <a class="lk" href="${S.LICENCE_URL}" rel="license noopener">${S.LICENCE_NAME}</a>.
           <a class="lk" href="/use-the-data">Full terms, method and limitations</a>.</p>
       </div>
+${/* ★ THE CITATION AND THE FILE BELONG TOGETHER. Whoever is copying the
+      citation is the one person on this page who wants the data as a file, and
+      until these rows existed the only way to get this month was to scrape the
+      table above it out of HTML. */''}
+${dlRows([
+    { rel: `air/delhi-${m.y}-${m.mo}.csv`, label: `${monthLabel(m.y, m.mo)}, hour by hour`, format: 'CSV', note: `${m.rows.length} observations` },
+    { rel: `air/delhi-${m.y}-${m.mo}-stations.csv`, label: `${monthLabel(m.y, m.mo)}, every station`, format: 'CSV', note: 'one row per monitor per hour' },
+    { rel: `air/delhi-${m.y}-${m.mo}.json`, label: `${monthLabel(m.y, m.mo)}, with every revision`, format: 'JSON', note: 'what each reading said before it changed' },
+  ])}
     </div>`,
 
     onward: () => `${opener('onward', 'Next', 'The live reading, the rest of the record, and what the numbers mean.')}
@@ -330,6 +414,7 @@ https://swechha.in${route}</code>
         <a class="rc-door" href="/now/air"><span class="lbl">Live</span><span class="rc-door-h">Delhi&rsquo;s air, now</span><span class="cap">Every reporting monitor, the worst named.</span></a>
         <a class="rc-door" href="/record/air"><span class="lbl">Record</span><span class="rc-door-h">Every month kept</span><span class="cap">The Delhi air archive, month by month.</span></a>
         <a class="rc-door" href="/learn/delhi-aqi"><span class="lbl">Learn</span><span class="rc-door-h">What is Delhi&rsquo;s AQI?</span><span class="cap">The six bands, and the standard underneath them.</span></a>
+${journalDoors(route)}
       </div>
     </div>`,
   };
@@ -339,9 +424,16 @@ https://swechha.in${route}</code>
     route,
     /* A MONTH PAGE IS A DATASET AND CAN SAY SO PRECISELY. It knows its own
        temporal coverage — first day to last, from the store rather than from
-       the calendar — which is the one thing a live page can never state. No
+       the calendar — which is the one thing a live page can never state.
+
+       ★ AND IT NOW HAS A `distribution`. This note used to read: "No
        `distribution`: there is no download yet, and asserting a file that does
-       not exist is how markup gets a site distrusted rather than indexed. */
+       not exist is how markup gets a site distrusted rather than indexed."
+       `npm run build:data` writes the three files named below, and
+       recordDatasetJsonLd checks each is on disk before publishing the claim —
+       so the second half of that note is enforced now rather than merely
+       obeyed. Without a distribution a Dataset is, to a machine, a page ABOUT
+       data; with one it is the data. */
     headExtra: S.recordDatasetJsonLd({
       name: `Delhi air quality record, ${monthLabel(m.y, m.mo)}`,
       description: `Day-by-day peak and lowest AQI at Delhi's worst reporting monitor for `
@@ -352,6 +444,17 @@ https://swechha.in${route}</code>
       spatialCoverage: 'Delhi, India',
       measurementTechnique: 'Continuous ambient air quality monitoring; CPCB National Air Quality Index sub-indices',
       variables: ['Air Quality Index', 'Governing pollutant', 'Monitoring stations above the limit', 'Hours observed'],
+      dist: [
+        { path: dl(`air/delhi-${m.y}-${m.mo}.csv`), format: 'text/csv',
+          name: `Delhi air quality, ${monthLabel(m.y, m.mo)}, hourly (CSV)`,
+          description: 'One row per hourly observation: the worst reporting monitor named, the station mean beside it, and how many times the source later revised that reading.' },
+        { path: dl(`air/delhi-${m.y}-${m.mo}.json`), format: 'application/json',
+          name: `Delhi air quality, ${monthLabel(m.y, m.mo)}, hourly with revision history (JSON)`,
+          description: 'The same observations, with what each revision said and the reading it replaced — which a CSV cell cannot hold.' },
+        { path: dl(`air/delhi-${m.y}-${m.mo}-stations.csv`), format: 'text/csv',
+          name: `Delhi air quality, ${monthLabel(m.y, m.mo)}, every station (CSV)`,
+          description: 'Long format, one row per reporting monitor per hour, with the band it was in and whether it was over the published limit.' },
+      ],
     }),
     title: `Delhi air quality record, ${monthLabel(m.y, m.mo)} — Swechha`,
     desc: fitDesc(`Day-by-day Delhi air quality for ${monthLabel(m.y, m.mo)}: peak AQI, the monitor that `
@@ -439,6 +542,13 @@ https://swechha.in/record/air</code>
         <p class="cap rc-p" style="margin-top:12px">Licensed <a class="lk" href="${S.LICENCE_URL}" rel="license noopener">${S.LICENCE_NAME}</a>.
           <a class="lk" href="/use-the-data">Full terms, method and limitations</a>.</p>
       </div>
+${dlRows([
+    { rel: 'air/delhi-daily.csv', label: 'Every day of the record', format: 'CSV', note: 'peak, hours observed, hours over the limit' },
+    { rel: 'index.json', label: 'What is published, and where', format: 'JSON', note: 'the manifest a script reads instead of this page' },
+  ])}
+      <p class="cap rc-p" style="margin-top:14px">Each month page below carries that month hour
+        by hour, every reporting station in it, and what each reading said before the source
+        changed it.</p>
     </div>`,
 
     onward: () => `${opener('onward', 'Next', 'The live page, the rest of the archive, and the explanation.')}
@@ -447,6 +557,7 @@ https://swechha.in/record/air</code>
         <a class="rc-door" href="/now/air"><span class="lbl">Live</span><span class="rc-door-h">Delhi&rsquo;s air, now</span><span class="cap">The current hour, against the standard.</span></a>
         <a class="rc-door" href="/record"><span class="lbl">Record</span><span class="rc-door-h">Everything kept</span><span class="cap">What is archived across all six situations.</span></a>
         <a class="rc-door" href="/learn/pm25"><span class="lbl">Learn</span><span class="rc-door-h">What is PM2.5?</span><span class="cap">The pollutant that governs most of these readings.</span></a>
+${journalDoors((h) => h.startsWith('/record/air'))}
       </div>
     </div>`,
   };
@@ -462,6 +573,20 @@ https://swechha.in/record/air</code>
       spatialCoverage: 'Delhi, India',
       measurementTechnique: 'Continuous ambient air quality monitoring; CPCB National Air Quality Index sub-indices, stored hourly with every later re-read',
       variables: ['Air Quality Index', 'Governing pollutant', 'Worst reporting monitor', 'Station mean', 'Stations above the limit'],
+      /* THE SUBJECT PAGE'S DISTRIBUTION IS THE WHOLE-ARCHIVE FILES, not a
+         repeat of every month's. The daily roll-up is the one file that spans
+         the record, and the manifest is how a script finds the rest without
+         parsing this page — which is the point of publishing a manifest at
+         all. Each month's own three files are the distribution of that month's
+         own Dataset, one level down, where they describe exactly their page. */
+      dist: [
+        { path: dl('air/delhi-daily.csv'), format: 'text/csv',
+          name: 'Delhi air quality, day by day (CSV)',
+          description: "One row per day across the whole record: the day's peak observation, the monitor that produced it, how many hours were actually observed and how many were over the published limit." },
+        { path: dl('index.json'), format: 'application/json',
+          name: 'Manifest of every published file',
+          description: 'What exists, at what URL, covering what span, under what terms — machine readable, so a script does not have to read this page to find the files.' },
+      ],
     }),
     title: seo('/record/air').title,
     bands: BANDS,
@@ -586,6 +711,10 @@ https://swechha.in/record</code>
         <a class="rc-door" href="/now"><span class="lbl">Live</span><span class="rc-door-h">Every situation</span><span class="cap">Six readings, each against its published limit.</span></a>
         <a class="rc-door" href="/learn"><span class="lbl">Learn</span><span class="rc-door-h">What the numbers mean</span><span class="cap">Twenty explainers behind these readings.</span></a>
         <a class="rc-door" href="/use-the-data"><span class="lbl">Reuse</span><span class="rc-door-h">Use this data</span><span class="cap">Licence, attribution, method and limits.</span></a>
+${/* THE INDEX TAKES ANY ARTICLE THAT CITES ANY PART OF THE RECORD, because
+     this is the page that argues the archive is worth keeping and a piece
+     written out of it is the argument. */''}
+${journalDoors((h) => h.startsWith('/record'))}
       </div>
     </div>`,
   };
@@ -594,6 +723,24 @@ https://swechha.in/record</code>
     file: 'record.html',
     route: '/record',
     title: seo('/record').title,
+    /* ★ `ItemList`, NOT `Dataset`. The subject pages and the month pages under
+       them ARE Datasets and say so; this page is the register naming which
+       subjects are kept and where each one lives. Marking an index as a Dataset
+       would put a licence and a coverage on a page that publishes no reading —
+       and it is the DataCatalog on /use-the-data, not this page, that describes
+       the collection as a collection. Two pages, two jobs, neither claiming the
+       other's type.
+
+       The entries are `KEPT`, which is the same register the band above renders
+       and the same one /use-the-data's catalogue reads. */
+    headExtra: S.itemListJsonLd({
+      name: 'What Swechha keeps a record of',
+      items: KEPT.map((k) => ({
+        name: k.subject === 'Air' ? 'Delhi air quality' : `${k.subject}, India`,
+        url: k.href || k.live,
+        description: `${k.source}. Read ${k.cadence.toLowerCase()}, judged against ${k.limit}.`,
+      })),
+    }),
     bands: BANDS,
     index: [['What is kept', '#kept'], ['The rule', '#rule'], ['Day by day', '#air'], ['Cite it', '#cite'], ['Next', '#onward']],
     sh, clashes: S.groundChain(BANDS),
@@ -614,6 +761,25 @@ https://swechha.in/record</code>
   const BANDS = [
     ['top',     't1',          '#0D0D0B'],
     ['licence', 'paper t2',    '#F3F2F0'],
+    /* ★ `files` GOES SECOND, NOT LAST, and the order is the argument. This page
+       had the licence, the citation formats, the method and the limits, and no
+       data — so a researcher who accepted every one of those terms still had to
+       scrape month pages out of HTML. Putting the download below the method
+       register would say the terms matter more than the files. It comes after
+       the licence because the licence is what makes taking them legitimate, and
+       before the method because a file you cannot get is not worth a method.
+
+       ★ AND IT IS `dark-2`, WHICH IS ARITHMETIC RATHER THAN TASTE. Two things
+       had to hold. Every band that already existed keeps the exact ground it
+       shipped on, because their CSS is written per ground and re-tinting one to
+       make room for a new band is how a light rule ends up on a dark seam.
+       And `groundChain` requires each hex to differ from its neighbour: seven
+       content bands opening on a dark masthead cannot strictly alternate into a
+       dark footer, so the new band's ground is the one free variable. #151512
+       after #F3F2F0 and before #0D0D0B satisfies both — and it is the same
+       ground the `cite` band carries on the month pages and on /record/air,
+       which is where `dlRows` also renders. One treatment, three pages. */
+    ['files',   'dark-2 t2',   '#151512'],
     ['how',     't2',          '#0D0D0B'],
     ['method',  'paper-2 t2',  '#ECEBE8'],
     ['limits',  'dark-2 t2',   '#151512'],
@@ -655,6 +821,63 @@ https://swechha.in/record</code>
         are not part of this grant.</p>
     </div>`,
 
+    /* ═══ THE FILES ═══════════════════════════════════════════════════════
+       THE BAND THIS PAGE WAS MISSING. Every clause above it was already true
+       and none of it was actionable: a journalist on a deadline, a student
+       writing a project, a teacher building a lesson and a researcher checking
+       a claim all arrived at a page that told them the terms of data they
+       could not download.
+
+       ★ IT SAYS WHO IT IS FOR, BY NAMING THE FILE EACH ONE ACTUALLY WANTS.
+       Not an audience list — a list of audiences is a marketing device and
+       tells nobody which file to click. The daily roll-up is the one a
+       newsroom or a classroom wants; the hourly and the per-station files are
+       for somebody testing a claim about a neighbourhood; the manifest is for
+       a script. Three sentences, three files, no personas.
+
+       ★ THE WORD "API" APPEARS EXACTLY ONCE ON THIS PAGE AND IT NAMES THE ONE
+       ENDPOINT THAT IS ONE. `/api/air` is real, request-time, one city, the
+       current hour. Everything else here is a static file, and this band says
+       so in the same breath rather than leaving the reader to assume a
+       directory of CSVs is a service with an uptime. */
+    files: () => `${opener('files', 'Take the files',
+      'The record as CSV and JSON, under the licence above. No key, no sign-up, no rate limit. '
+      + 'Written for whoever has to check something: a journalist on a deadline, a teacher building '
+      + 'a lesson, a student testing a claim, a researcher who needs one neighbourhood.')}
+    <div class="wrap">
+      <p class="rc-p"><b>Start with the day-by-day file.</b> One row per day across the whole record:
+        the peak reading, the monitor that produced it, how many hours were actually observed and how
+        many of them were over the published limit. It is the one most people want and the smallest.</p>
+${dlRows([
+    { rel: 'air/delhi-daily.csv', label: 'Delhi air, day by day', format: 'CSV', note: 'the whole record so far' },
+  ])}
+      <p class="rc-p" style="margin-top:22px"><b>Go to a month for the hours.</b> Each
+        <a class="lk" href="/record/air">month page</a> carries that month hour by hour, every
+        reporting station in it, and &mdash; the part that makes this an archive rather than a
+        snapshot &mdash; what each reading said before the source changed it. Those three files are
+        linked from the month itself, so the citation and the download sit together.</p>
+${dlRows(MONTHS.slice().reverse().flatMap((m) => [
+    { rel: `air/delhi-${m.y}-${m.mo}.csv`, label: `${monthLabel(m.y, m.mo)}, hour by hour`, format: 'CSV', note: `${m.rows.length} observations` },
+    { rel: `air/delhi-${m.y}-${m.mo}-stations.csv`, label: `${monthLabel(m.y, m.mo)}, every station`, format: 'CSV', note: 'one row per monitor per hour' },
+  ]))}
+      <p class="rc-p" style="margin-top:22px"><b>If you are writing a script, read the manifest.</b>
+        It lists every file, its URL, the span it covers and the terms, so nothing has to parse this
+        page to find them.</p>
+${dlRows([
+    { rel: 'index.json', label: 'The manifest', format: 'JSON', note: 'every file, its span and its terms' },
+  ])}
+      <p class="rc-p" style="margin-top:22px"><b>One endpoint is live; the rest are files.</b>
+        <code class="rc-inline">GET /api/air</code> fetches Delhi's current hour from CPCB at request
+        time and returns <code class="rc-inline">{ ok: false }</code> with a reason and no reading
+        when the source does not answer &mdash; never a zero. Everything above is a static file
+        regenerated when the record changes, which is what makes it quotable: the file you cite today
+        is the file that was there.</p>
+      <p class="cap rc-p">The national store behind
+        <a class="lk" href="/now/air/india">every city in the feed</a> is kept the same way and is not
+        published as files yet &mdash; around 268 rows an hour is roughly twelve megabytes of CSV a
+        month. Ask if you need it.</p>
+    </div>`,
+
     how: () => `${opener('how', 'How to cite it',
       'Three shapes, depending on what you are quoting.')}
     <div class="wrap">
@@ -679,6 +902,43 @@ https://swechha.in/record/air/2026/09</code>
         <a class="lk" href="/learn/measured-vs-modelled">the difference</a> is on the page it came from.</p>
       <p class="rc-p"><b>Quote the observation time, not the time you read it.</b> Every reading here carries
         the source's own stamp for when the air, the water or the imagery was actually observed.</p>
+${/* ★ FOUR THINGS ON THIS SITE, AND ONLY ONE OF THEM IS SWECHHA'S DATA.
+      Nothing here is new information — the licence band above already says the
+      grant "does not and cannot cover the upstream sources", every figure on
+      every page already names its source, and the counted/modelled rule is
+      already printed beside each numeral. What was missing was the DISTINCTION
+      stated once, in the place somebody writes a citation, so that a person
+      quoting this site knows which of the four they are quoting and whose name
+      goes on it.
+
+      It is written as a register rather than a paragraph because it is a
+      lookup: a reader arrives with one figure and needs to know which row it
+      is in. Nothing in it may be a claim the pages do not already support —
+      each row names where on this site that kind of thing lives, and every one
+      of those places is real. */''}
+      <dl class="rc-defs" style="margin-top:26px">
+        <dt>Source data &mdash; not ours</dt>
+        <dd>Every reading originates with somebody else: CPCB for air and the river, IMD for heat and
+          rainfall, the Forest Survey of India and Global Forest Watch for forest, NASA FIRMS for fire
+          detections. We did not measure any of it and never say we did. Cite the source alongside us,
+          and go to its own terms if you are republishing at scale.</dd>
+        <dt>Swechha processing &mdash; ours, and reproducible</dt>
+        <dd>What we do to those readings: taking the worst reporting monitor rather than a city
+          average, printing the unweighted station mean beside it as a cross-check, looking each index
+          up in CPCB's own band table, sampling forest fire detections in a fixed ten-day window every
+          year, and keeping every reading the source later revised. All of it is visible in the files
+          above &mdash; the point of publishing them is that you can redo it and disagree.</dd>
+        <dt>Swechha analysis &mdash; ours, and arguable</dt>
+        <dd>A finding derived from the above: a <a class="lk" href="/journal">Journal</a> piece, a
+          figure on <a class="lk" href="/impact">/impact</a>. Each one shows its derivation and
+          snapshots the figures it was true at, so it can be checked against the record rather than
+          taken on trust.</dd>
+        <dt>Editorial interpretation &mdash; ours, and not a finding</dt>
+        <dd>The writing around the numbers: which reading leads a page, what we say is not enough,
+          what we ask you to do about it. Quotable as Swechha's position. Not quotable as a result.</dd>
+      </dl>
+      <p class="cap rc-p" style="margin-top:18px">If you only take one rule from this: the numbers are
+        somebody else's measurements, the method is ours, and the two need separate attribution.</p>
     </div>`,
 
     method: () => `${opener('method', 'Where each number comes from',
@@ -731,8 +991,37 @@ ${S.ask({ audience: 'media', label: 'Ask about the data', page: 'Use the data', 
     file: 'use-the-data.html',
     route: '/use-the-data',
     title: seo('/use-the-data').title,
+    /* ★ `DataCatalog`, NOT `Dataset` AND NOT `Article`. This page publishes no
+       reading of its own — it states what datasets exist, under what terms,
+       from what source and with what limits, and each entry points at the page
+       that holds it. That is the definition of a catalogue. Calling it a
+       Dataset would claim it IS the data; calling it an Article would put the
+       licence terms of six subjects into a byline.
+
+       THE ENTRIES ARE THE `KEPT` REGISTER, which the /record index renders as
+       its own table, so the catalogue and the page cannot describe a different
+       set of subjects. `live: true` marks the six that have a live page;
+       `href` marks the ones with an archive behind them, and only those get a
+       temporal coverage, because a live page cannot state one. */
+    headExtra: S.dataCatalogJsonLd({
+      name: 'Swechha environmental data',
+      description: seo('/use-the-data').description,
+      url: '/use-the-data',
+      datasets: KEPT.map((k) => ({
+        name: k.subject === 'Air' ? 'Delhi air quality' : `${k.subject} readings, India`,
+        description: `${k.source}. Read ${k.cadence.toLowerCase()}, judged against ${k.limit}.`,
+        url: k.href || k.live,
+        spatialCoverage: k.subject === 'Air' ? 'Delhi, India' : 'India',
+        measurementTechnique: k.source,
+        ...(k.href === '/record/air' && FIRST && LAST ? { temporalCoverage: `${FIRST}/${LAST}` } : {}),
+      })),
+      dist: [
+        { path: dl('air/delhi-daily.csv'), format: 'text/csv', name: 'Delhi air quality, day by day (CSV)' },
+        { path: dl('index.json'), format: 'application/json', name: 'Manifest of every published file' },
+      ],
+    }),
     bands: BANDS,
-    index: [['Licence', '#licence'], ['How to cite', '#how'], ['Sources', '#method'], ['What it misses', '#limits'], ['Next', '#onward']],
+    index: [['Licence', '#licence'], ['The files', '#files'], ['How to cite', '#how'], ['Sources', '#method'], ['What it misses', '#limits'], ['Next', '#onward']],
     sh, clashes: S.groundChain(BANDS),
     pageCss: PAGE_CSS,
     navMark: { current: null, url: null },

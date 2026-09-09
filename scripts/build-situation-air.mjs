@@ -702,14 +702,18 @@ B.measured = () => {
         <p class="cap">WAQI publishes index values only, never concentrations, so <b>the two cannot be told
           apart from outside</b> &mdash; and neither number tells you which you are looking at.</p></div>` : '';
   const pMethod = `<div class="p-method">
-        <table class="p-tbl"><thead><tr><th>Figure</th><th>Kind</th><th>Source</th><th>Cadence</th></tr></thead><tbody>
-          <tr><td>AQI, ${rd.aqi}</td><td>Read, then selected</td><td>CPCB’s published sub-indexes; worst of ${AIR.spread.stations} monitors (${esc(rd.station)}). CPCB’s own city mean is ${AIR.city_mean.aqi}.</td><td>Hourly</td></tr>
-          <tr><td>Station concentrations</td><td>Measured</td><td>CPCB, ${AIR.spread.stations} Delhi stations</td><td>Hourly</td></tr>
-          <tr><td>Published limit, ${AIR.aqiLimit}</td><td>Standard</td><td>${esc(limitAuthority)}</td><td>Fixed</td></tr>
-          <tr><td>Source split</td><td>Modelled</td><td>published apportionment study</td><td>Per study</td></tr>
-          <tr><td>Farm-fire counts</td><td>Measured</td><td>NASA FIRMS, per sensor</td><td>Daily</td></tr>
-          <tr><td>Attention</td><td>Measured</td><td>Wikipedia pageviews</td><td>Daily</td></tr>
-          <tr><td>Forecast</td><td>Modelled</td><td>WAQI&rsquo;s model, not CPCB&rsquo;s</td><td>Daily</td></tr>
+        <table class="p-tbl">
+          <caption class="sr">Every figure on this page, with whether it was measured, selected,
+            modelled or fixed by a standard, the source that produced it, and how often it is
+            re-read. Columns: figure, kind, source, cadence.</caption>
+          <thead><tr><th scope="col">Figure</th><th scope="col">Kind</th><th scope="col">Source</th><th scope="col">Cadence</th></tr></thead><tbody>
+          <tr><th scope="row">AQI, ${rd.aqi}</th><td>Read, then selected</td><td>CPCB’s published sub-indexes; worst of ${AIR.spread.stations} monitors (${esc(rd.station)}). CPCB’s own city mean is ${AIR.city_mean.aqi}.</td><td>Hourly</td></tr>
+          <tr><th scope="row">Station concentrations</th><td>Measured</td><td>CPCB, ${AIR.spread.stations} Delhi stations</td><td>Hourly</td></tr>
+          <tr><th scope="row">Published limit, ${AIR.aqiLimit}</th><td>Standard</td><td>${esc(limitAuthority)}</td><td>Fixed</td></tr>
+          <tr><th scope="row">Source split</th><td>Modelled</td><td>published apportionment study</td><td>Per study</td></tr>
+          <tr><th scope="row">Farm-fire counts</th><td>Measured</td><td>NASA FIRMS, per sensor</td><td>Daily</td></tr>
+          <tr><th scope="row">Attention</th><td>Measured</td><td>Wikipedia pageviews</td><td>Daily</td></tr>
+          <tr><th scope="row">Forecast</th><td>Modelled</td><td>WAQI&rsquo;s model, not CPCB&rsquo;s</td><td>Daily</td></tr>
         </tbody></table>
         <p class="cap"><b>Not CPCB&rsquo;s published AQI.</b> The feed returns concentrations and no index, so the
           number at the top of this page is computed here using CPCB&rsquo;s own breakpoint table.</p></div>`;
@@ -1473,10 +1477,22 @@ const PAGE_CSS = `
 .p-method{border-top:1px solid var(--rule);margin-top:var(--gap-block);padding-top:var(--gap-row)}
 .p-tbl{width:100%;border-collapse:collapse;margin:14px 0;font-size:var(--t-cap);
   font-family:Newsreader,Georgia,serif}
-.p-tbl th{text-align:left;font-family:Archivo,system-ui,sans-serif;
+/* ★ SCOPED TO thead, AND THAT IS THE FIX RATHER THAN A TIDY-UP.
+   This rule was written when every th in the table was a COLUMN header, so a
+   bare .p-tbl th described the truth. The first column is now a
+   th scope=row — the row header a screen reader announces with each cell,
+   which is what makes a seven-row provenance table navigable — and an unscoped
+   rule would have rendered "AQI, 210" as uppercase micro type in the label
+   colour. Same markup fix as the record tables, which have carried scoped
+   headers and a caption from the start. */
+.p-tbl thead th{text-align:left;font-family:Archivo,system-ui,sans-serif;
   font-variation-settings:'wdth' 88,'wght' 650;font-size:var(--t-micro);letter-spacing:.14em;
   text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--rule-2);padding:0 10px 8px 0}
 .p-tbl td{padding:9px 10px 9px 0;border-bottom:1px solid var(--rule);color:var(--ink-2);vertical-align:top}
+/* The row header reads as the td beside it, one weight up: it names the figure,
+   it is not a section label. */
+.p-tbl tbody th{text-align:left;font-weight:600;padding:9px 10px 9px 0;
+  border-bottom:1px solid var(--rule);color:var(--ink);vertical-align:top}
 .p-method .cap{color:var(--ink-3);max-width:62ch}
 
 /* THE APPORTIONMENT SPLIT. Registers and bars — width and ink only. Hue is
