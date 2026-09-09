@@ -6,7 +6,7 @@ import { join } from 'node:path'
 // types are inferred and no suppression is needed.
 import { figuresFromText, consolidate, eventName, mentionsPlace } from '../scripts/lib/event-figures.mjs'
 import { dedupeFeedItems, anchorPublished, lastUpdatedFrom, feedCollapse } from '../scripts/lib/event-feed.mjs'
-import { statusOf, homepageSlot, situationHref, publishStateFor, SITUATION_STATUS } from '../scripts/lib/active-situation.mjs'
+import { statusOf, homepageSlot, situationHref, publishStateFor, keepEditorFields, SITUATION_STATUS } from '../scripts/lib/active-situation.mjs'
 import { validateEvent } from '../scripts/lib/climate-events.mjs'
 
 /**
@@ -341,31 +341,69 @@ describe('the detector preserves what a person set', () => {
     sources: [],
   }
 
-  it('carries every editor-owned field across a re-detection', () => {
-    for (const field of [
-      'situation_status',      // the lifecycle — read by lib/active-situation.mjs
-      'situation_status_why',
-      'hero_days',             // read by isCurrent() in lib/climate-events.mjs
-      'cause_status',          // read by the cause band
-      /* ★ THE WITHDRAWAL PAIR, AND THIS ONE DID NOT FAIL SILENTLY — IT SHUT
-         THE PIPELINE. The other fields above are lost quietly: a decision is
-         reverted and the page goes on. `withdrawn_why` is REQUIRED by
-         validateEvent() whenever publish_state is `withdrawn`, and
-         publishStateFor() latches `withdrawn` from the previous file on
-         purpose, so a re-detection that drops the reason writes a dossier the
-         page build then refuses. The refusal is inside the rebuild step, which
-         runs BEFORE the commit — so the file on main keeps its reason, the
-         next run inherits exactly the same doomed state, and the workflow is
-         red for good. Measured 9 September 2026: eight events were withdrawn
-         at 02:21 IST and every scheduled run from 23:30 UTC onward failed at
-         `active/assam-flood.json: a withdrawn event must carry withdrawn_why`.
-         Same shape as the nepal-glof impact deadlock, one field over. */
-      'withdrawn_why',
-      'withdrawn_on',          // when the person decided; loses its record otherwise
-    ]) {
-      expect(src, `${field} is human-set and must be in EDITOR_OWNED, or the next `
-        + 'scheduled detection silently discards it').toContain(`'${field}'`)
-    }
+  /* ── THE GUARANTEE IS NOW A COMPLEMENT, NOT A LIST ────────────────────
+     ★ FOUR FOR FOUR. This was a hand-maintained allowlist of the fields a
+     person owns, and it was forgotten every single time one was added:
+     `situation_status`, `hero_days` and `cause_status` were each lost
+     silently, and `withdrawn_why` took the whole workflow down for eleven
+     consecutive runs on 9 September 2026 because validateEvent() requires it
+     whenever publishStateFor() latches `withdrawn`.
+
+     The list was never information. Measured across all 65 dossiers on disk:
+     dossier() emits 28 top-level keys, the allowlist named 17, the files carry
+     42 — the two sets DISJOINT and together COMPLETE, with nothing left over.
+     So the allowlist was the arithmetic complement of what the detector emits,
+     written out by hand and re-derived by a human every time.
+
+     keepEditorFields() now computes it: the detector owns exactly the keys
+     this run produced, and every other key on the previous file survives. A
+     new human-set field is carried by default and there is no list to forget.
+     These tests are the guarantee, and none of them names a field. */
+  it('carries a field it has never heard of across a re-detection', () => {
+    const kept = keepEditorFields(
+      { slug: 'x-flood', significance_score: 9 },
+      { slug: 'x-flood', significance_score: 2, some_future_editorial_field: 'a person wrote this' },
+    )
+    expect(kept.some_future_editorial_field).toBe('a person wrote this')
+  })
+
+  it('still lets the detector own the evidence it just recomputed', () => {
+    /* The other half, and the reason this is not a spread of the old file over
+       the new one: the score, the counts, the sources and the timestamps are
+       what the detector exists to update, and a preserved one is a frozen
+       page. */
+    const kept = keepEditorFields(
+      { significance_score: 9, corroboration: { independent_publishers: 11 } },
+      { significance_score: 2, corroboration: { independent_publishers: 1 } },
+    )
+    expect(kept.significance_score).toBe(9)
+    expect(kept.corroboration).toEqual({ independent_publishers: 11 })
+  })
+
+  it('treats a key the run emitted as owned even when its value is undefined', () => {
+    /* ★ THE ONE THING THAT MAKES THE COMPLEMENT SAFE. `faded_since` and
+       `published_on` are emitted as keys whose value is `undefined` when they
+       do not apply, and for both of them the ABSENCE is the signal — a fade
+       that clears the moment coverage returns, a minting record a draft has
+       never earned. Keying off the emitted object's keys keeps those detector-
+       owned and correctly cleared. Keying off its VALUES, or off a JSON
+       round-trip (which drops undefined), would resurrect a stale fade from
+       the previous file and quietly demote a live event. */
+    const kept = keepEditorFields(
+      { faded_since: undefined, published_on: undefined },
+      { faded_since: { epochMs: 1 }, published_on: { epochMs: 2 } },
+    )
+    expect(kept.faded_since).toBeUndefined()
+    expect(kept.published_on).toBeUndefined()
+  })
+
+  it('carries the withdrawal pair, which is the one loss that stopped the job', () => {
+    const rebuilt = keepEditorFields(
+      { ...FIXTURE, publish_state: publishStateFor({ existing: { publish_state: 'withdrawn' }, publishableNow: true }) },
+      { ...FIXTURE, publish_state: 'withdrawn', withdrawn_why: 'Not an event.', withdrawn_on: '2026-09-09' },
+    )
+    expect(rebuilt.publish_state).toBe('withdrawn')
+    expect(() => validateEvent('active/x.json', rebuilt)).not.toThrow()
   })
 
   /* And the consequence, stated against the validator itself rather than
