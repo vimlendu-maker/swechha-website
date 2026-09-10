@@ -33,7 +33,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
-const { esc, opener, hole, ARROW, posterSheet, POSTER_CSS } = S;
+const { esc, opener, ARROW, posterSheet, POSTER_CSS } = S;
 
 const sh = S.shell();
 
@@ -88,17 +88,14 @@ const SERIES_BANDS = SERIES.map((se, i) => [
 const ALL_BANDS = [
   ['top', 't1', '#0D0D0B'],
   ...SERIES_BANDS,
-  ['waiting', 'dark-2 t2', '#151512'],
   ['act', 't3', '#0D0D0B'],
 ];
-const LIVE = { waiting: D.waiting.claims.length > 0 };
-const BANDS = ALL_BANDS.filter(([id]) => LIVE[id] !== false);
+const BANDS = ALL_BANDS;
 const clashes = S.groundChain(BANDS);
 
 const INDEX_ALL = [
   ['The posters', '#top'],
   ...SERIES.map((se) => [se.head, `#s-${se.id}`]),
-  ['What is not here', '#waiting'],
   ['Put a set up', '#act'],
 ];
 const BAND_IDS = new Set(BANDS.map((b) => b[0]));
@@ -137,12 +134,6 @@ ${posterSheet({
 ${se.campaign ? `      <p class="pst-back"><a class="act" href="${esc(se.campaign)}">${esc(se.campaign_label || 'The campaign behind them')}${ARROW}</a></p>` : ''}
     </div>`;
 }
-
-/* ── WHAT IS NOT HERE. ────────────────────────────────────────────────────── */
-B.waiting = () => `${opener('waiting', D.waiting.head, D.waiting.lead)}
-    <div class="wrap">
-${D.waiting.claims.map((c) => hole(c)).join('\n')}
-    </div>`;
 
 /* ── ACT. ─────────────────────────────────────────────────────────────────── */
 B.act = () => `${opener('act', D.act.head, D.act.lead)}

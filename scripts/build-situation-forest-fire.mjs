@@ -149,9 +149,8 @@ B.people = () => `${opener('people', 'What it costs', `${n0(FIRE_DEATHS.deaths)}
         </div>
       </div>
 ${KIND_LEGEND}
-      <p class="f-note"><b>The two numbers are not in conflict, and the gap between them is the
-        point.</b> ${esc(DTH.the_mismatch.forest_fire_vs_burnt_area.reading)}</p>
-      <p class="cap f-cap"><b>The periods differ and the page says so.</b> NCRB counts a calendar
+      <p class="f-note">${esc(DTH.the_mismatch.forest_fire_vs_burnt_area.reading)}</p>
+      <p class="cap f-cap"><b>The periods differ.</b> NCRB counts a calendar
         year; FSI&rsquo;s fire season runs November to June. Any comparison between them is
         approximate, which is why it is drawn as a comparison of magnitudes and never as a rate.</p>
       <p class="lbl f-lbl">Where it burnt, ${esc(BURNT.season)}</p>
@@ -197,7 +196,7 @@ B.measured = () => {
           ${failed.length ? `<p class="cap f-cap">${failed.length} sensor(s) did not answer and are recorded as null rather than zero: ${failed.map(f => esc(f.label)).join(', ')}.</p>` : ''}
           <p class="cap f-cap">${FF.season.open
       ? 'The season is open, so these are in-season counts.'
-      : '<b>The season is shut.</b> A low count here is the calendar, not an absence of risk — and it is exactly the condition under which a failed request and a true zero look identical. That is why the header of every response is validated and a failure is stored as null.'}</p>
+      : '<b>The season is shut.</b> A low count here is the calendar, not an absence of risk.'}</p>
         </div>`],
     ['Detection is not fire', `<div class="f-panel">
           <p class="f-def-h">What FIRMS actually measures</p>
@@ -208,10 +207,9 @@ B.measured = () => {
             size of a football pitch is invisible to a 1&nbsp;km MODIS pixel and obvious to a
             375&nbsp;m VIIRS one. So a detection count is a measure of <b>what was visible to that
             instrument on those overpasses</b>, and nothing more.</p>
-          <p class="f-warn"><b>A detection is not a fire.</b> ${esc(FF.not)}</p>
+          <p class="f-warn">${esc(FF.not)}</p>
         </div>`],
     ['Burnt area is different', `<div class="f-panel">
-          <p class="f-def-h">And this is why it leads the page</p>
           <p>${esc(BURNT.why_it_outranks_a_detection_count)}</p>
           <p>So the hero figure on this page is an <b>area</b> from India&rsquo;s own Forest Survey,
             not a count from a satellite feed. The detections are kept for the one thing they are
@@ -221,8 +219,7 @@ B.measured = () => {
             <b>${esc(FIRE.alerts.sms_alerts_as_published)}</b> SMS alerts &mdash;
             ${n0(FIRE.alerts.sms_alerts_disseminated)} messages &mdash; to
             ${n0(FIRE.alerts.subscribers_2023_24)} subscribers, up from
-            ${n0(FIRE.alerts.subscribers_2020_21)} three seasons earlier.
-            ${esc(FIRE.alerts.note)}</p>
+            ${n0(FIRE.alerts.subscribers_2020_21)} three seasons earlier.</p>
         </div>`],
     ['How much can burn', `<div class="f-panel">
           <p class="f-def-h">${esc(PRONE.table)}</p>
@@ -335,7 +332,7 @@ B.cover = () => {
         official, both are honest, and they measure different things. That argument has its own
         page.</p>
       <p style="margin:0"><a class="act" href="/now/forest-loss">Forest loss, in full ${ARROW}</a></p>
-      <p class="cap f-cap"><b>Tree cover loss is not deforestation.</b> ${esc(GFW.caveats[0])}</p>
+      <p class="cap f-cap">${esc(GFW.caveats[0])}</p>
       <p class="cap"><b>Tree cover loss is not attributed to fire.</b> Loss is counted
         for any cause and the dataset does not say why. Separating fire-driven loss from felling,
         storm and harvest needs an attribution layer the dataset does not carry &mdash; so the two
@@ -357,10 +354,6 @@ B.said = () => `${opener('said', 'What is being said', 'The register &mdash; wha
             ${(NEWS.register.items || []).slice(0, 40).map(i => `<li class="p-news-r"><a class="p-news-o" href="${esc(i.link)}">${esc(i.title)}</a><span class="cap p-news-m">${esc(i.publisher || 'unattributed')}${i.published ? ` &middot; ${esc(shortDate(i.published))}` : ''}</span></li>`).join('\n            ')}
           </ol>
           <p class="cap f-pub"><b>Publishers in the sample:</b> ${Object.entries(NEWS.register.publishers || {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${esc(k)} (${v})`).join(' &middot; ')}</p>`)}
-      <p class="f-note"><b>There is no English Wikipedia article about forest fires in India with
-        enough traffic to plot.</b> The nearest candidate is the global
-        <i>Wildfire</i> article, whose peaks are Californian and Australian &mdash; a convincing
-        line about somebody else&rsquo;s fire season.</p>
       <p style="margin:0"><a class="act" href="#act">What you can do ${ARROW}</a></p>
     </div>`;
 

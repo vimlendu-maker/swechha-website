@@ -217,8 +217,7 @@ for (const e of published) {
       <p class="lbl dz-back-l">This is one event</p>
       <p class="dz-back-t">The standing picture &mdash; how much extreme rain India actually gets,
         what IMD counts as extreme, who the rain kills, and what is changing across twelve cities
-        &mdash; is on the situation page this belongs to. That page moves slowly on purpose. This one
-        moves every half hour.</p>
+        &mdash; is on the situation page this belongs to.</p>
       <p style="margin:0"><a class="act" href="/now/climate-event">India&rsquo;s extreme rain ${ARROW}</a></p>
     </div>`,
     act: () => `    <div class="wrap">

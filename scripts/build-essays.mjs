@@ -201,8 +201,12 @@ for (const e of ESSAYS) {
       <p class="lead es-by">By ${esc(e.byline)}</p>
       <p class="cap es-prov">${esc(D.masthead.provenance_prefix)} on <time datetime="${e.date}">${longDate(e.date)}</time>. `
       + `<a class="act" href="${esc(e.original)}" rel="noopener">The original${ARROW}</a></p>
-      <p class="cap es-note">${esc(D.masthead.figures_note)}</p>
     </div>`;
+  /* THE FIGURES NOTE IS GONE — 10 September 2026 copy pass. It printed
+     "Written at the time." under the pulled figure on all five essays, which
+     the byline and the "First published … on <date>" line above it already
+     say twice over. `masthead.figures_note` went from data/essays.json with
+     it; the slot is deleted rather than left to render an empty paragraph. */
 
   B.read = () => `    <div class="wrap es-body">
 ${e.blocks.map((b) => b.tag === 'li' ? null : `      <${b.tag}>${b.inner}</${b.tag}>`)

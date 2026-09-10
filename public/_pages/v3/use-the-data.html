@@ -939,9 +939,6 @@ button.b[disabled]{opacity:.55;cursor:default}
 .paper .rc-dl li,.paper-2 .rc-dl li{border-top-color:var(--rule-2)}
 .paper .rc-dl li:last-child,.paper-2 .rc-dl li:last-child{border-bottom-color:var(--rule-2)}
 .rc-dl-m{margin:0;font-variant-numeric:tabular-nums}
-.rc-inline{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;
-  padding:1px 5px;border:1px solid var(--hair);white-space:nowrap}
-.paper .rc-inline,.paper-2 .rc-inline{border-color:var(--rule-2)}
 .rc-defs{margin:clamp(18px,2.6vw,26px) 0 0;display:grid;gap:14px;max-width:66ch}
 .rc-defs dt{font-weight:600;margin:0}
 .rc-defs dd{margin:4px 0 0}
@@ -953,8 +950,6 @@ button.b[disabled]{opacity:.55;cursor:default}
 .rc-door{display:grid;gap:5px;align-content:start;min-width:0;text-decoration:none;color:inherit;
   border-top:2px solid currentColor;padding-top:12px}
 .rc-door-h{font-family:var(--display);font-size:clamp(19px,2.2vw,24px);line-height:1.14}
-.rc-rev{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:7px;max-width:60ch}
-.rc-rev li{border-top:1px solid currentColor;padding-top:7px;font-variant-numeric:tabular-nums}
 .rc-m-h,.rc-door-h,.rc-k-h a{text-decoration:underline;text-decoration-thickness:1px;
   text-underline-offset:5px;text-decoration-color:var(--hair);
   transition:text-decoration-color .14s ease}
@@ -1055,8 +1050,7 @@ pointer-events:none;transition:background .12s}
     </div>
     <div class="pic-body"><div class="wrap">
       <p class="lead">Everything Swechha publishes as a reading is open. Quote it, republish it, build on it,
-        argue with it. This page is the licence, the attribution, the method and the part most datasets leave
-        out &mdash; what each one does not cover.</p>
+        argue with it.</p>
     </div></div>
   </section>
   <section class="paper t2" id="licence" aria-labelledby="licence-h">
@@ -1079,7 +1073,7 @@ pointer-events:none;transition:background .12s}
   <section class="dark-2 t2" id="files" aria-labelledby="files-h">
     <div class="wrap"><div class="im-head">
         <h2 class="d1" id="files-h">Take the files</h2>
-        <p class="lead">The record as CSV and JSON, under the licence above. No key, no sign-up, no rate limit. Written for whoever has to check something: a journalist on a deadline, a teacher building a lesson, a student testing a claim, a researcher who needs one neighbourhood.</p>
+        <p class="lead">No key, no sign-up, no rate limit.</p>
       </div></div>
     <div class="wrap">
       <p class="rc-p"><b>Start with the day-by-day file.</b> One row per day across the whole record:
@@ -1090,10 +1084,8 @@ pointer-events:none;transition:background .12s}
           <span class="cap rc-dl-m">CSV &middot; 2 KB &middot; the whole record so far</span></li>
       </ul>
       <p class="rc-p" style="margin-top:22px"><b>Go to a month for the hours.</b> Each
-        <a class="lk" href="/record/air">month page</a> carries that month hour by hour, every
-        reporting station in it, and &mdash; the part that makes this an archive rather than a
-        snapshot &mdash; what each reading said before the source changed it. Those three files are
-        linked from the month itself, so the citation and the download sit together.</p>
+        <a class="lk" href="/record/air">month page</a> carries that month hour by hour and every
+        reporting station in it, with the files linked from the month itself.</p>
       <ul class="rc-dl">
         <li><a class="lk" href="/data/air/delhi-2026-09.csv" download>September 2026, hour by hour</a>
           <span class="cap rc-dl-m">CSV &middot; 26 KB &middot; 155 observations</span></li>
@@ -1104,23 +1096,12 @@ pointer-events:none;transition:background .12s}
         <li><a class="lk" href="/data/air/delhi-2026-08-stations.csv" download>August 2026, every station</a>
           <span class="cap rc-dl-m">CSV &middot; 396 KB &middot; one row per monitor per hour</span></li>
       </ul>
-      <p class="rc-p" style="margin-top:22px"><b>If you are writing a script, read the manifest.</b>
-        It lists every file, its URL, the span it covers and the terms, so nothing has to parse this
-        page to find them.</p>
       <ul class="rc-dl">
-        <li><a class="lk" href="/data/index.json" download>The manifest</a>
-          <span class="cap rc-dl-m">JSON &middot; 4 KB &middot; every file, its span and its terms</span></li>
+        <li><a class="lk" href="/data/index.json" download>Every file, listed</a>
+          <span class="cap rc-dl-m">JSON &middot; 4 KB &middot; each one with its span and its terms</span></li>
       </ul>
-      <p class="rc-p" style="margin-top:22px"><b>One endpoint is live; the rest are files.</b>
-        <code class="rc-inline">GET /api/air</code> fetches Delhi's current hour from CPCB at request
-        time and returns <code class="rc-inline">{ ok: false }</code> with a reason and no reading
-        when the source does not answer &mdash; never a zero. Everything above is a static file
-        regenerated when the record changes, which is what makes it quotable: the file you cite today
-        is the file that was there.</p>
-      <p class="cap rc-p">The national store behind
-        <a class="lk" href="/now/air/india">every city in the feed</a> is kept the same way and is not
-        published as files yet &mdash; around 268 rows an hour is roughly twelve megabytes of CSV a
-        month. Ask if you need it.</p>
+      <p class="cap rc-p" style="margin-top:22px">Need the
+        <a class="lk" href="/now/air/india">national file</a> rather than Delhi's? Ask.</p>
     </div>
   </section>
   <section class="t2" id="how" aria-labelledby="how-h">
@@ -1151,29 +1132,6 @@ https://swechha.in/record/air/2026/09</code>
       <p class="rc-p"><b>Quote the observation time, not the time you read it.</b> Every reading here carries
         the source's own stamp for when the air, the water or the imagery was actually observed.</p>
 
-      <dl class="rc-defs" style="margin-top:26px">
-        <dt>Source data &mdash; not ours</dt>
-        <dd>Every reading originates with somebody else: CPCB for air and the river, IMD for heat and
-          rainfall, the Forest Survey of India and Global Forest Watch for forest, NASA FIRMS for fire
-          detections. We did not measure any of it and never say we did. Cite the source alongside us,
-          and go to its own terms if you are republishing at scale.</dd>
-        <dt>Swechha processing &mdash; ours, and reproducible</dt>
-        <dd>What we do to those readings: taking the worst reporting monitor rather than a city
-          average, printing the unweighted station mean beside it as a cross-check, looking each index
-          up in CPCB's own band table, sampling forest fire detections in a fixed ten-day window every
-          year, and keeping every reading the source later revised. All of it is visible in the files
-          above &mdash; the point of publishing them is that you can redo it and disagree.</dd>
-        <dt>Swechha analysis &mdash; ours, and arguable</dt>
-        <dd>A finding derived from the above: a <a class="lk" href="/journal">Journal</a> piece, a
-          figure on <a class="lk" href="/impact">/impact</a>. Each one shows its derivation and
-          snapshots the figures it was true at, so it can be checked against the record rather than
-          taken on trust.</dd>
-        <dt>Editorial interpretation &mdash; ours, and not a finding</dt>
-        <dd>The writing around the numbers: which reading leads a page, what we say is not enough,
-          what we ask you to do about it. Quotable as Swechha's position. Not quotable as a result.</dd>
-      </dl>
-      <p class="cap rc-p" style="margin-top:18px">If you only take one rule from this: the numbers are
-        somebody else's measurements, the method is ours, and the two need separate attribution.</p>
     </div>
   </section>
   <section class="paper-2 t2" id="method" aria-labelledby="method-h">
@@ -1235,12 +1193,14 @@ https://swechha.in/record/air/2026/09</code>
           </tbody>
         </table>
       </div>
+      <p class="rc-p" style="margin-top:22px">What we do to these: take the worst reporting monitor rather
+        than a city average, print the unweighted station mean beside it as a cross-check, and sample fire
+        detections in the same ten-day window every year.</p>
     </div>
   </section>
   <section class="dark-2 t2" id="limits" aria-labelledby="limits-h">
     <div class="wrap"><div class="im-head">
         <h2 class="d1" id="limits-h">What it does not cover</h2>
-        <p class="lead">Stated per subject, because a dataset used past its edges produces a confident wrong answer.</p>
       </div></div>
     <div class="wrap">
       <dl class="rc-defs">
@@ -1257,10 +1217,7 @@ https://swechha.in/record/air/2026/09</code>
         <dt>Rain</dt>
         <dd>A 24-hour category is blind to intensity within the day, and there is no legal rainfall threshold for anything to be over.</dd>
       </dl>
-      <p class="rc-p" style="margin-top:24px">Nothing here is interpolated, and no gap is filled. An hour with
-        no observation is absent; a station that stopped reporting is missing, not clean; a year the survey was
-        not run has no figure. If you need a complete grid, this is the wrong dataset and that is a property of
-        the measurement, not of the archive.</p>
+      <p class="rc-p" style="margin-top:24px">Nothing here is interpolated, and no gap is filled.</p>
     </div>
   </section>
   <section class="paper t3" id="onward" aria-labelledby="onward-h">
@@ -1270,7 +1227,7 @@ https://swechha.in/record/air/2026/09</code>
       </div></div>
     <div class="wrap">
       <div class="rc-doors">
-        <a class="rc-door" href="/record"><span class="lbl">Record</span><span class="rc-door-h">The archive</span><span class="cap">Every reading kept at its own address.</span></a>
+        <a class="rc-door" href="/record"><span class="lbl">Record</span><span class="rc-door-h">The archive</span><span class="cap">Every reading, kept and dated.</span></a>
         <a class="rc-door" href="/learn"><span class="lbl">Learn</span><span class="rc-door-h">What the numbers mean</span><span class="cap">Twenty explainers, each with its sources.</span></a>
         <a class="rc-door" href="/now"><span class="lbl">Live</span><span class="rc-door-h">Every situation</span><span class="cap">Six readings, each against its published limit.</span></a>
       </div>
@@ -1281,7 +1238,7 @@ https://swechha.in/record/air/2026/09</code>
           <p class="body ask-l">This goes to Vimlendu Jha, Swechha&rsquo;s Executive Director.</p>
           <p><a class="b b-2 ask-go" href="mailto:vimlendu@swechha.in?subject=Media%20enquiry%20%E2%80%94%20Use%20the%20data&amp;body=Publication%20or%20programme%3A%0AYour%20name%3A%0AWhat%20you%20are%20working%20on%3A%0AYour%20deadline%3A%0A%0ASent%20from%20swechha.in%2Fuse-the-data">Open an email<svg class="ask-ar" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2"/></svg></a></p>
           <p class="cap ask-a">Or write to <a class="lk" href="mailto:vimlendu@swechha.in">vimlendu@swechha.in</a>.</p>
-          <p><a class="act ask-t" href="/impact">Every figure Swechha holds &rarr;</a></p>
+          <p><a class="act ask-t" href="/impact">The figures behind the work &rarr;</a></p>
         </div>
       </details>
     </div>
@@ -1298,11 +1255,11 @@ https://swechha.in/record/air/2026/09</code>
         <a href="/impact">What changed</a>
         <a href="/act">Get involved</a>
       </div>
-      <div><h3 class="lbl">Dashboards</h3>
-        <a href="/now">All six, nearly live</a>
+      <div><h3 class="lbl">The readings</h3>
+        <a href="/now">All six situations</a>
 
-        <a href="/record">The record</a>
-        <a class="foot-d" href="/use-the-data">Use the data</a>
+        <a href="/record">Past readings</a>
+        <a class="foot-d" href="/use-the-data">Download the data</a>
         <a class="foot-d" href="/now/air">Delhi air</a>
         <a class="foot-d" href="/now/yamuna">The Yamuna</a>
         <a class="foot-d" href="/now/heat">Heat</a>

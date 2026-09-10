@@ -261,9 +261,9 @@ B.cities = () => {
         ${rows}
       </div>
       <p class="cap h-cap"><b>${topRecordYear[1]} of ${ST.length} set their record in
-        ${topRecordYear[0]}.</b> ${NAT.stations_omitted?.length
-      ? `${NAT.stations_omitted.length} requested station(s) did not answer and are omitted, not backfilled.`
-      : 'All requested stations answered.'}</p>
+        ${topRecordYear[0]}.</b>${NAT.stations_omitted?.length
+      ? ` ${NAT.stations_omitted.length} requested station(s) did not answer and are omitted, not backfilled.`
+      : ''}</p>
       ${disclose('Last season, city by city',
     `<div class="h-tbl">
             <div class="h-tr is-head"><span class="lbl">City</span><span class="lbl">Days</span>
@@ -377,9 +377,8 @@ B.official = () => {
           <span class="h-cov-v">${n}</span><span class="h-cov-b"><i style="--h:${Math.round(n / maxY * 100)}%"></i></span>
           <span class="cap h-cov-y">${y}</span></div>`).join('\n        ')}
       </div>
-      <p class="cap h-cap"><b>${n0(cov.dates_count)} days, ${esc(cov.first)} to ${esc(cov.last)}.</b>
-        Read from the application&rsquo;s date index, not described &mdash; a portal that stopped
-        publishing and one that is current look identical from outside. This one is current.
+      <p class="cap h-cap"><b>${n0(cov.dates_count)} days, ${esc(cov.first)} to ${esc(cov.last)}
+        &mdash; the portal is current.</b>
         <b>It serves map images, so no reading on this page comes from it.</b></p>
       <p class="cap h-src-p"><b>Source.</b>
         <a class="lk" href="${esc(BHU.source.url)}">${esc(BHU.source.name)} &mdash; ${esc(BHU.source.application)}</a>.</p>

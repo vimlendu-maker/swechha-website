@@ -48,6 +48,7 @@ import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { seo } from './seo-register.mjs';
+import { LEDGER_PATTERNS, visibleOnly } from './ledger-patterns.mjs';
 import { stampLastmod } from './lastmod.mjs';
 import { imageSize } from './image-size.mjs';
 import { DEAD_FRAGMENT_JS } from '../../lib/dead-fragment.mjs';
@@ -626,19 +627,15 @@ export const citeBlock = (id) => {
   }
   return `      <div class="p-close">
         <div class="p-close-r">
-          <p class="lbl">Every reading, kept</p>
-          <p class="cap">Each reading keeps its own address, with the source that produced it, when it was
-            observed, and the limit it was judged against. Nothing is overwritten when it improves and
-            nothing is quietly restated when it gets worse. <b>An empty day stays empty</b>
-            &mdash; a gap in the record is a gap in the record, never a zero.</p>
+          <p class="lbl">A gap is a gap</p>
+          <p class="cap"><b>An empty day stays empty</b> &mdash; a gap in the record is a gap in the
+            record, never a zero.</p>
         </div>
         <div class="p-close-r">
           <p class="lbl">Cite this page</p>
           <p class="cap"><b>Reuse freely &mdash; ${LICENCE_NAME}.</b> Every figure carries its source and its
-            cadence in <a class="lk" href="#measured">how the number is made</a>, and every figure carries
-            whether it was counted or modelled on the rule beneath it. If you quote a number from here,
-            quote the kind with it. The grant covers this page; each upstream source keeps its own terms,
-            which is why every figure names one.</p>
+            cadence in <a class="lk" href="#measured">how the number is made</a>. If you quote a number
+            from here, quote the kind with it. Each upstream source keeps its own terms.</p>
         </div>
       </div>`;
 };
@@ -1629,7 +1626,7 @@ ${arts.map((a) => {
       + `<span class="cap">${jDate(a.date)} &middot; ${esc(first)}</span></a></li>`;
   }).join('\n')}
           </ul>
-          <p class="cap cl-learn-m"><a class="lk" href="/journal">Every dated piece</a> &mdash; each figure snapshotted with the moment it was observed, so a published page never moves.</p>
+          <p class="cap cl-learn-m"><a class="lk" href="/journal">Every dated piece</a>, written against the readings on this page.</p>
         </div>`;
 };
 
@@ -2307,7 +2304,7 @@ export const ASK_ONWARD = {
   school: ['/act#partner', 'How partnerships work'],
   funder: ['/act#partner', 'How partnerships work'],
   institution: ['/act#partner', 'How partnerships work'],
-  media: ['/impact', 'Every figure Swechha holds'],
+  media: ['/impact', 'The figures behind the work'],
 };
 export const ask = ({ audience, label, page, path, level = 1, tertiary }) => {
   const a = ASK_AUDIENCES[audience];
@@ -2897,16 +2894,15 @@ ${SCRIPT}</script>
      presence of the sentinel comment "AD-27.16 THE ASK" and went red the moment
      the strip landed. That gate now asserts the opposite. This is the same move
      made once, centrally, for every page built through this shell. */
-  const AD28 = [
-    [/SOURCE-FACTS/, 'a citation into a working file in this repository. A reader cannot follow one, cannot check one, and was never meant to see one.'],
-    [/§/, 'a section-mark citation into a repository ledger. The line numbers behind them drift the moment the ledger is edited.'],
-    [/\bAD-2\d/, 'an internal design-ruling id.'],
-    [/\bD-0\d/, 'an internal decision id.'],
-    [/\bW-1\d/, 'an internal WORK-pass ruling id.'],
-  ];
+  /* THE LIST ITSELF NOW LIVES IN ledger-patterns.mjs, because lib/provenance.test.ts
+     held a second copy of it and the two had to be edited in lockstep. Both import
+     it from there. The sixth pattern — a `scripts/<name>.mjs` path — was added by the
+     10 September 2026 copy pass, which found the site naming its own build scripts to
+     readers on /journal and on all four active-situation pages. */
   const struck = [];
-  for (const [re, why] of AD28) {
-    const m = re.exec(OUT);
+  const VISIBLE = visibleOnly(OUT);
+  for (const [, re, why, scope] of LEDGER_PATTERNS) {
+    const m = re.exec(scope === 'visible' ? VISIBLE : OUT);
     if (m) {
       struck.push(`  ${JSON.stringify(m[0])} — ${why}\n    Context: `
         + JSON.stringify(OUT.slice(Math.max(0, m.index - 80), m.index + 80).replace(/\s+/g, ' ')));

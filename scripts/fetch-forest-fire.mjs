@@ -318,11 +318,11 @@ const out = {
   },
   method: {
     sample: { ...SAMPLE, sensor: SERIES_SENSOR },
-    why_fixed: 'FIRMS caps every request at 5 days. A fixed window sampled once a year is '
-             + 'comparable by construction and costs two requests per year; a full season for '
-             + 'fourteen years is several hundred requests and roughly 670 MB.',
-    caveat: 'A fixed window is a SAMPLE, not a season total, and it can miss a peak. It is '
-          + 'comparable across years precisely because it does not chase the peak.',
+    why_fixed: 'A fixed ten-day window in the same month each year, so the series does not '
+             + 'chase the peak.',
+    caveat: 'A fixed window is a SAMPLE, not a season total, and it can miss a peak. '
+          + 'That is the trade: the same ten days every year are comparable to each '
+          + 'other, and to nothing else.',
     one_sensor: 'The series is VIIRS S-NPP science-quality throughout. March 2013-2026 sits '
               + 'inside that sensor\'s archive window, so the series never switches processing level.',
   },

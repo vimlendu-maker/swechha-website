@@ -548,7 +548,7 @@ function applyCanvas(bands, body) {
       first value on this page authored with an entity — would ship the literal
       text "&ndash;" between its two ends, and gate 9b compares the rendered page
       against plain(value) and would have failed on the same string. */
-const BASIS_MARK = { modelled: 'Derived, not counted', planned: 'Planned, not counted' };
+const BASIS_MARK = { modelled: 'Modelled' };
 
 /* ── THE MARKER AND THE DOTTED RULE ARE NO LONGER APPLIED HERE. Both were, from
       8 September, and the way they were applied was a string replacement over
@@ -1874,7 +1874,17 @@ gate(nDotted === nMod && nSolid === ALL_FIG.length - PROG.figures.length - nMod,
        page would say a word about it.
        Checked per figure and BY POSITION, not by presence: `figure()` emits one
        `<span>` per reading, so the group splits cleanly on its own indentation
-       and each chunk is asserted against the basis the data gave that figure. */
+       and each chunk is asserted against the basis the data gave that figure.
+
+       THE MARKER IS BACK FOR `modelled` AND ONLY FOR `modelled`, and the gate
+       is turned round again to match. The copy pass of 10 September took every
+       basis word off this page; the second sweep put "Modelled" back on the
+       two derivations in `reach`, which were the clearest case of an estimate
+       reading as a count. `planned` stays unmarked on purpose — the one figure
+       that carries it is a count of curriculum modules — so the gate requires
+       the word on modelled figures, refuses it everywhere else, and refuses
+       the retired long forms outright. */
+const RETIRED = ['Derived, not counted', 'Planned, not counted', 'Counted or measured'];
 const markBad = [];
 let marked = 0, unmarked = 0;
 for (const id of FIG_BANDS) {
@@ -1887,6 +1897,7 @@ for (const id of FIG_BANDS) {
     continue;
   }
   BD[id].figures.forEach((f, i) => {
+    const has = /<span class="lbl wk-fig-o">([^<]*)<\/span>/.exec(chunks[i]);
     /* ★ `counted` IS THE ONLY UNMARKED BASIS, AND THAT IS ASSERTED FROM THE
        BASIS RATHER THAN READ OUT OF BASIS_MARK. The first draft of this gate
        took its expectation from the same table the renderer takes it from,
@@ -1894,26 +1905,24 @@ for (const id of FIG_BANDS) {
        the marker rendering AND stopped the gate expecting it, and the build
        went green with two derivations dressed as counts. Tested by doing
        exactly that. The basis enum is the authority instead, so a fourth basis
-       added tomorrow fails here until somebody writes its marker. */
-    if (f.basis !== 'counted' && !BASIS_MARK[f.basis]) {
-      markBad.push(`bands.${id}/"${f.label}" is basis "${f.basis}", which has no entry in BASIS_MARK. `
-        + 'Every basis but "counted" says what it is above its own numeral.');
-      return;
-    }
-    const want = f.basis === 'counted' ? null : BASIS_MARK[f.basis];
-    const has = /<span class="lbl wk-fig-o">([^<]*)<\/span>/.exec(chunks[i]);
-    if (want && (!has || has[1] !== want)) {
+       added tomorrow fails here until somebody writes its marker.
+       NOTE: `modelled` is the only marked basis now, so the enum is read the
+       other way — anything that is not modelled must render no marker. */
+    const want = f.basis === 'modelled' ? BASIS_MARK.modelled : null;
+    if (has && RETIRED.includes(has[1])) {
+      markBad.push(`bands.${id}/"${f.label}" renders "${has[1]}" — that vocabulary is retired.`);
+    } else if (want && (!has || has[1] !== want)) {
       markBad.push(`bands.${id}/"${f.label}" is basis "${f.basis}" and renders ${has ? `"${has[1]}"` : 'no marker'} — it must read "${want}"`);
     } else if (!want && has) {
-      markBad.push(`bands.${id}/"${f.label}" is counted and renders the marker "${has[1]}". `
-        + 'Marking the ordinary case makes the unmarked numeral meaningless.');
+      markBad.push(`bands.${id}/"${f.label}" is basis "${f.basis}" and renders the marker "${has[1]}". `
+        + 'Only an estimate is marked; marking anything else makes the unmarked numeral meaningless.');
     }
     if (want) marked++; else unmarked++;
   });
 }
 gate(marked > 0 && markBad.length === 0,
-  `${marked} figure(s) that were not counted carry the marker above the numeral and ${unmarked} counted `
-  + `figure(s) carry none (${Object.entries(BASIS_MARK).map(([b, m]) => `${b}: "${m}"`).join(', ')})`
+  `${marked} modelled figure(s) say "${BASIS_MARK.modelled}" above the numeral and ${unmarked} other `
+  + 'figure(s) say nothing'
   + (markBad.length ? `\n       WRONG -> ${markBad.join('\n                ')}` : ''));
 
 /* 10c. THE MULTIPLIER IS ON THE PAGE, IN WORDS, IN THE BAND THAT USES IT.
@@ -2729,8 +2738,13 @@ function fellowGates({ f, OUT: HTML, ids, index, figs, others }) {
          The rail is the only shape a fellow page renders figures in, and the
          expectation is restated here rather than imported from the renderer —
          same reasoning as the hub's gate 10b: a gate that reads the table the
-         renderer writes from cannot see that table being wrong. */
-  const SAYS = { modelled: 'Derived, not counted', planned: 'Planned, not counted' };
+         renderer writes from cannot see that table being wrong.
+         THE WORD IS BACK FOR `modelled` ALONE — that same 6,000 was the fourth
+         estimate left reading as a count when the copy pass emptied the table,
+         so it is marked with the one word the hub and /impact now use. The
+         long forms are retired and refused outright. */
+  const SAYS = { modelled: 'Modelled' };
+  const GONE = ['Derived, not counted', 'Planned, not counted', 'Counted or measured'];
   const railBad = [];
   for (const tile of OWN2.split('<div class="ip-ovl-c">').slice(1)) {
     const m = /<span class="unit p-kd (p-kd-[cm])">([\s\S]*?)<\/span>/.exec(tile);
@@ -2738,10 +2752,12 @@ function fellowGates({ f, OUT: HTML, ids, index, figs, others }) {
     const [, cls, label] = m;
     const src = (f.figures || []).find(x => plain(x.label) === label);
     if (!src) continue;
-    const word = SAYS[src.basis] || '';
     const want = src.basis === 'modelled' ? 'p-kd-m' : 'p-kd-c';
+    const word = SAYS[src.basis] || '';
     const said = Object.values(SAYS).find(w => tile.includes(w)) || '';
+    const dead = GONE.find(w => tile.includes(w)) || '';
     if (cls !== want) railBad.push(`"${label}" is ${src.basis} and renders ${cls}, not ${want}`);
+    else if (dead) railBad.push(`"${label}" prints "${dead}" — that vocabulary is retired`);
     else if (word !== said) railBad.push(`"${label}" is ${src.basis} and says ${said ? `"${said}"` : 'nothing'}, not ${word ? `"${word}"` : 'nothing'}`);
   }
   g(railBad.length === 0, `reading(s) drawn as something they are not: ${railBad.join(' · ')}`);

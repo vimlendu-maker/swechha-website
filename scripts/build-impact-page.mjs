@@ -1,5 +1,12 @@
 // AD-22 — impact.html, the Impact page. SEVEN bands.
 //
+// ★ COPY PASS, 10 SEPTEMBER 2026 (F-1..F-7, F-31..F-33, F-46): THE `refuse`
+// BAND IS DELETED. Everything the next paragraphs argue is still TRUE and
+// still ENFORCED — gate 1 below computes the sum this page refuses to print
+// and asserts its absence — but the argument is no longer WRITTEN OUT to the
+// reader in a band of its own before they reach a single figure. The page
+// opens on the work. Do not restore the band to explain the gate.
+//
 // ★ THE CONCEPT: THIS IS THE ONE PAGE THAT REFUSES THE THING IT IS NAMED FOR.
 //
 // An impact page exists to print one big cumulative number. This one cannot,
@@ -48,7 +55,13 @@ import { imageSize } from './lib/jpeg-size.mjs';
 /* `hole` is deliberately NOT imported. AD-28 removed every named hole from
    this page and a build gate refuses to write one; importing the helper back is
    the first half of putting one on the page. */
-const { esc, opener, ARROW, kd, KIND_LEGEND } = S;
+/* `KIND_LEGEND` is deliberately NOT imported. The copy pass (F-5) removed the
+   per-figure Counted/Modelled badge and the legend that explained it from THIS
+   PAGE; the second sweep put back ONLY the "Modelled" tag, on the three
+   modelled figures, so there is nothing left for a two-word legend to explain.
+   `kd` is imported again for that one tag. An unmarked row reads as counted,
+   which is what it is: we mark the estimate, not every fact. */
+const { esc, opener, ARROW, kd } = S;
 
 const sh = S.shell();
 
@@ -107,7 +120,7 @@ const find = (ref, where) => {
   }
   return { ...f, item: it };
 };
-const OVERLAP = IMPACT.refuse.overlap.map((r, i) => find(r, `refuse.overlap[${i}]`)).filter(Boolean);
+/* The four overlapping figures went with the `refuse` band (copy pass, F-1). */
 const PAIR_A = find(IMPACT.pair.a, 'pair.a');
 const PAIR_B = find(IMPACT.pair.b, 'pair.b');
 
@@ -198,7 +211,6 @@ const magnitude = (v) => {
 };
 const PEOPLE = FIGS.filter(f => !NOT_PEOPLE.test(f.label) && magnitude(f.value) != null);
 const FORBIDDEN_SUM = PEOPLE.reduce((a, f) => a + magnitude(f.value), 0);
-const OVERLAP_SUM = OVERLAP.reduce((a, f) => a + (magnitude(f.value) || 0), 0);
 
 /* ═══ COMPONENTS ═════════════════════════════════════════════════════════ */
 const num = (v) => esc(v).replace(/\+$/, '<sup>+</sup>');
@@ -225,21 +237,26 @@ const span = (p) => {
     .trim().replace(/,$/, '');
   return t;
 };
-const basisWord = (b) => b === 'modelled' ? 'Modelled' : 'Counted';
+/** The one marker this page still prints. The copy pass (F-5) took off the
+    Counted word, the Modelled word and the legend together; the second sweep
+    puts back the Modelled word alone, because three estimates were left
+    sitting unmarked among counted figures. An unmarked row is a counted row.
+    Nothing else is tagged, and there is no legend: the asymmetry says what a
+    key would have had to. */
+const mark = (f) => f.basis === 'modelled' ? `<span ${kd('modelled')}>Modelled</span>` : '';
 
 /** A register row: label, the programme it belongs to and its span, the value,
-    the basis marker. NO SOURCE LINE — AD-28 §2.2: /impact is Swechha telling
-    the world what it has done, not a bibliography. */
+    and the Modelled tag if it is one. NO SOURCE LINE — AD-28 §2.2: /impact is
+    Swechha telling the world what it has done, not a bibliography. */
 const figRow = (f) => `        <div class="p-nr">
           <p class="p-nr-n">${esc(f.label)}<span class="cap ip-prov">${esc(f.item.name)}${span(f.period) ? ` &middot; ${esc(span(f.period))}` : ''}</span></p>
           <p class="p-nr-v">${num(f.value)}</p>
-          <p class="lbl ip-basis"><span ${kd(f.basis)}>${basisWord(f.basis)}</span></p>
-        </div>`;
+${f.basis === 'modelled' ? `          <p class="lbl ip-basis">${mark(f)}</p>\n` : ''}        </div>`;
 
-/** A big figure with its label under it, on the counted/modelled rule. */
+/** A big figure with its label under it, and the tag if it is an estimate. */
 const bigFig = (f) => `          <div class="ip-big">
             <p class="num ip-big-v">${num(f.value)}</p>
-            <p class="lbl ip-big-l"><span ${kd(f.basis)}>${esc(f.label)}</span></p>
+            <p class="lbl ip-big-l">${esc(f.label)}${f.basis === 'modelled' ? ` ${mark(f)}` : ''}</p>
             <p class="cap ip-big-s">${esc(f.item.name)}${span(f.period) ? ` &middot; ${esc(span(f.period))}` : ''}</p>
           </div>`;
 
@@ -248,7 +265,10 @@ const bigFig = (f) => `          <div class="ip-big">
    and the last does not share one with the footer (#151512). */
 const BANDS = [
   ['top',      't1',        '#0D0D0B'],
-  ['refuse',   'paper t2',  '#F3F2F0'],
+  /* `refuse` sat here — 'Why there is no total', deleted by the copy pass
+     (F-1..F-4, F-46). Its ground was #F3F2F0 between #0D0D0B and #151512;
+     removing it leaves #0D0D0B -> #151512, which still alternates, and
+     groundChain() below is what proves that rather than this comment. */
   ['pair',     't2',        '#151512'],
   ['register', 'paper-2 t3', '#ECEBE8'],
   /* `waiting` sat here — 'Four claims waiting on one number each', deleted by
@@ -261,7 +281,9 @@ const BANDS = [
 const clashes = S.groundChain(BANDS);
 
 const INDEX = [
-  ['No total', '#top'], ['Why not', '#refuse'], ['Two numbers', '#pair'],
+  /* 'No total' and 'Why not' both went with the `refuse` band (copy pass, F-1
+     and F-4). The first chip names the masthead as it now reads. */
+  ['Every figure', '#top'], ['Two numbers', '#pair'],
   ['The register', '#register'],
   ['The archive', '#sheet'],
   /* AD-39. "Hold us to it" is gone -- band and label together. See the note on
@@ -299,43 +321,32 @@ B.top = () => `    <div class="pic ht">
       <p class="lead ip-standfirst">${esc(M.lead)}</p>
     </div></div>`;
 
-/* ── BAND 2. WHY THERE IS NO TOTAL. ──────────────────────────────────────
-   The argument band, and the page's reason for existing. The four overlapping
-   figures are RESOLVED from the item data, so the band cannot describe an
-   overlap between numbers that have since changed. */
-B.refuse = () => `${opener('refuse', IMPACT.refuse.head, esc(IMPACT.refuse.lead))}
-    <div class="wrap">
-      <p class="body ip-intro">${esc(IMPACT.refuse.overlap_intro)}</p>
-      <div class="ip-ovl">
-${OVERLAP.map(f => `        <div class="ip-ovl-c">
-          <p class="num ip-ovl-v">${num(f.value)}</p>
-          <p class="lbl ip-ovl-l"><span ${kd(f.basis)}>${esc(f.label)}</span></p>
-          <p class="cap ip-ovl-s">${esc(f.item.name)}<br>${esc(span(f.period))}</p>
-        </div>`).join('\n')}
-      </div>
-      <div class="p-rows">
-${IMPACT.refuse.argument.map(r => `        <div class="p-row">
-          <p class="lbl">${esc(r.h)}</p>
-          <div><p class="body">${esc(r.p)}</p></div>
-        </div>`).join('\n')}
-      </div>
-      <div class="p-method"><p class="cap">${esc(IMPACT.refuse.rule)}</p></div>
-    </div>`;
+/* ── BAND 2 WAS "WHY THERE IS NO TOTAL" AND IT IS DELETED. ───────────────
+   Copy pass, F-1..F-4 and F-46. A heading, a lead, four overlapping figures,
+   a two-row argument about denominators and a closing rule — a methodology
+   essay standing between the reader and the first figure. The rule it argued
+   for is not softened: gate 1 still computes the sum and asserts its absence.
+   Where a page could mislead, it shows less; it does not open with a lecture
+   about how to read it. */
 
 /* ── BAND 3. TWO NUMBERS, ONE PROGRAMME. ─────────────────────────────────
    The worked example of the distinction the whole page rests on: reach against
    effect, and derived against counted. Both figures resolved, so the band
-   cannot argue about values the data no longer holds. */
-B.pair = () => `${opener('pair', IMPACT.pair.head, esc(IMPACT.pair.lead))}
+   cannot argue about values the data no longer holds.
+   NO LEAD, AND THE TWO ROWS HAVE NO LABELS — copy pass, F-6 and F-7. `opener`
+   always renders a lead paragraph, so this band builds its own head; and a
+   .p-row with no label would put its prose in the grid's auto column, so the
+   two label-less rows carry .ip-note, which collapses the row to one track. */
+B.pair = () => `    <div class="wrap"><div class="im-head">
+        <h2 class="d1" id="pair-h">${IMPACT.pair.head}</h2>
+      </div></div>
     <div class="wrap">
-${KIND_LEGEND}
       <div class="ip-pair">
 ${bigFig(PAIR_A)}
 ${bigFig(PAIR_B)}
       </div>
       <div class="p-rows">
-${IMPACT.pair.rows.map(r => `        <div class="p-row">
-          <p class="lbl">${esc(r.h)}</p>
+${IMPACT.pair.rows.map(r => `        <div class="p-row ip-note">
           <div><p class="body">${esc(r.p)}</p></div>
         </div>`).join('\n')}
       </div>
@@ -385,7 +396,6 @@ B.register = () => {
   });
   return `${opener('register', IMPACT.register.head, esc(IMPACT.register.lead))}
     <div class="wrap">
-${KIND_LEGEND}
 ${S.tabs('Figures by kind', panels)}
     </div>`;
 };
@@ -444,16 +454,6 @@ const PAGE_CSS = `
 /* ── the masthead's own register, under the photograph ── */
 .ip-standfirst{max-width:56ch}
 
-/* ── the four overlapping populations ── */
-.ip-intro{max-width:62ch}
-.ip-ovl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--gap-row) clamp(14px,2vw,30px);
-  margin-top:var(--gap-row)}
-.ip-ovl-c>*{margin:0;min-width:0}
-.ip-ovl-v{font-size:clamp(26px,3.4vw,42px);line-height:.98}
-.ip-ovl-l{margin-top:10px}
-.ip-ovl-s{color:var(--ink-3);margin-top:10px}
-@media (max-width:760px){.ip-ovl{grid-template-columns:repeat(2,minmax(0,1fr))}}
-
 /* ── the reach/effect pair ── */
 .ip-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gap-row) clamp(24px,4vw,64px);
   border-top:1px solid var(--hair);padding-top:var(--gap-row)}
@@ -462,6 +462,12 @@ const PAGE_CSS = `
 .ip-big-l{margin-top:14px}
 .ip-big-s{color:var(--fg-3);margin-top:12px}
 @media (max-width:640px){.ip-pair{grid-template-columns:minmax(0,1fr)}}
+
+/* A ruled prose row with no label. The shared .p-row is minmax(0,auto) beside
+   minmax(0,1fr), so a single child lands in the auto track and the prose is
+   squeezed against the left edge; one track fixes it. Same repair as
+   .fm-split .p-row in build-farm-page.mjs. */
+.ip-note{grid-template-columns:minmax(0,1fr)}
 
 /* ── the register ── */
 .ip-reg{margin-top:var(--gap-row)}
@@ -556,10 +562,13 @@ const fmts = (n) => [
   n.toLocaleString('en-IN'), n.toLocaleString('en-US'), String(n),
   `${(n / 1e6).toFixed(1)} million`, `${(n / 1e5).toFixed(1)} lakh`,
 ].filter(t => !REAL.has(t));
-const leaked = [...new Set([...fmts(FORBIDDEN_SUM), ...fmts(OVERLAP_SUM)])].filter(t => OUT.includes(t));
+/* The four-overlapping-figures sum went out of this gate with the `refuse`
+   band that named those four (copy pass, F-1). The people-total is the number
+   an impact page is tempted by, and it is still asserted absent. */
+const leaked = fmts(FORBIDDEN_SUM).filter(t => OUT.includes(t));
 gate(leaked.length === 0,
   `no total is printed — the ${PEOPLE.length} people-figures sum to ${FORBIDDEN_SUM.toLocaleString('en-IN')} `
-  + `and the four overlapping ones to ${OVERLAP_SUM.toLocaleString('en-IN')}; neither appears`
+  + `and it does not appear`
   + `${leaked.length ? `. LEAKED: ${leaked.join(', ')}` : ''}`);
 
 /* 2. EVERY FIGURE ON THE PAGE MATCHES THE ITEM IT CAME FROM. The page is
@@ -569,11 +578,31 @@ const unrendered = FIGS.filter(f => !OUT.includes(num(f.value)));
 gate(unrendered.length === 0,
   `all ${FIGS.length} figures render${unrendered.length ? `; MISSING: ${unrendered.map(f => f.value).join(', ')}` : ''}`);
 
-/* 3. THE BASIS MARKER IS ON EVERY FIGURE, AND THE LEGEND IS PRESENT BECAUSE A
-      MODELLED FIGURE EXISTS. An unexplained dotted rule is worse than none. */
+/* 3. THE MODELLED TAG IS ON THE ESTIMATES AND ON NOTHING ELSE. The copy pass
+      (F-5) took the Counted word, the Modelled word and the legend off this
+      page together, and inverted this gate to prove all three stayed off. Two
+      of the three should have. Three modelled figures were left sitting
+      unmarked among counted ones, which is the one misreading the copy
+      standard says a methodology note exists to stop, so the Modelled tag is
+      back — and only that. The gate now checks BOTH directions: every modelled
+      figure carries the tag, no counted figure carries anything, and the
+      two-word legend does not return. An unmarked row reads as counted. */
+/* MARKUP, NOT THE RAW FILE. The inherited stylesheet defines .p-kd and
+   .p-kd-m, so a gate reading OUT fires on the CSS as well as on the markup —
+   the same trap gate 5 documents below. */
+const MARKUP = OUT
+  .replace(/<style[\s\S]*?<\/style>/gi, '')
+  .replace(/<script[\s\S]*?<\/script>/gi, '')
+  .replace(/<!--[\s\S]*?-->/g, '');
 const nMod = FIGS.filter(f => f.basis === 'modelled').length;
-gate((OUT.match(/p-kd-m/g) || []).length >= nMod, `every modelled figure carries the dotted rule (${nMod})`);
-gate(nMod === 0 || OUT.includes('Counted or measured'), 'the counted/modelled legend is present');
+const nTag = (MARKUP.match(/>Modelled</g) || []).length;
+/* The three modelled figures are the pair's larger half and three register
+   rows — the larger half appears in both bands, so the tag count is the
+   register's modelled rows plus that one repeat. */
+const nWant = nMod + (PAIR_A.basis === 'modelled' ? 1 : 0) + (PAIR_B.basis === 'modelled' ? 1 : 0);
+gate(nTag === nWant, `the Modelled tag is on all ${nMod} modelled figure(s) and nowhere else (${nTag} of ${nWant})`);
+gate(!/class="[^"]*\bp-kd-c\b/.test(MARKUP), 'no Counted marker on the page');
+gate(!MARKUP.includes('Counted or measured'), 'no counted/modelled legend on the page');
 
 /* 4. NO DOTTED HOLE ANYWHERE ON THE PAGE — AD-28 §2.3.
       ★ THIS IS THE OLD GATE INVERTED, AND THE INVERSION IS THE POINT.

@@ -267,8 +267,7 @@ const out = {
     most_extreme_days_last_year: { name: mostExtreme.name, state: mostExtreme.state,
       days: mostExtreme.last_complete.extreme_days, year: mostExtreme.last_complete.year },
     total_extreme_days_last_year: stations.reduce((a, s) => a + s.last_complete.extreme_days, 0),
-    total_note: 'A sum of station-days, NOT a national count of extreme rainfall days. Different '
-              + 'quantities, and this site does not blur them.',
+    total_note: 'A sum of station-days, NOT a national count of extreme rainfall days.',
     consensus,
     consensus_note: 'How many of the reporting stations move each way between the first and second '
                   + 'halves of the record. Counted as stations, never averaged into a national trend.',

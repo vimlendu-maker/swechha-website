@@ -1945,11 +1945,19 @@ export const period = (p) => {
    for `modelled` in either placement, so the site-wide vocabulary reads the
    same here as on /impact.
 
-   `planned` KEEPS THE PLAIN RULE and takes only the word. The published
-   vocabulary has two terms and a target is neither of them; drawing a target
-   as "modelled" would be a second false statement in place of the first.
+   ONE TERM, AND IT IS THE ESTIMATE'S. The copy pass of 10 September emptied
+   this table; the second sweep put back `modelled` and nothing else, because
+   three estimates were left sitting unmarked among counted figures. An
+   unmarked numeral reads as counted, which is what every other figure here
+   is, so the word is spent where it stops a misreading and nowhere else.
+   "Modelled" is the word, matching the legend the situation pages print.
+
+   `planned` STAYS UNMARKED AND KEEPS THE PLAIN RULE. A target is neither
+   counted nor modelled, and drawing it as "modelled" would be a second false
+   statement in place of the first; the one figure that carries it is a count
+   of curriculum modules, where nobody is being invited to read a headcount.
    The caption line is OMITTED, not emptied, where there is nothing to state. */
-const BASIS_WORD = { modelled: 'Derived, not counted', planned: 'Planned, not counted' };
+const BASIS_WORD = { modelled: 'Modelled' };
 export const basisWord = (f) => BASIS_WORD[f && f.basis] || '';
 export const basisRule = (f) => `p-kd ${f && f.basis === 'modelled' ? 'p-kd-m' : 'p-kd-c'}`;
 /* The caption a figure carries once its basis has been placed: the word joined
@@ -2330,15 +2338,18 @@ export const inviteRow = ({ act, second, note, asks, back, read }) => {
     ? `\n        <p class="cap wk-invite-r">Read first: ${read
       .map((r) => `<a class="lk" href="${r.href}">${r.label}</a>`).join(' &middot; ')}</p>`
     : '';
+  /* THE NOTE IS OPTIONAL. /work/projects and /work/journeys carried "Reading
+     this page is not the point of it." — a page narrating itself — and cutting
+     it leaves the Ask and its links standing. An empty note renders no
+     paragraph rather than an empty one. */
+  const nt = note ? `\n        <p class="wk-invite-n">${note}</p>` : '';
   if (asks && asks.length) {
     return `      <div class="wk-invite wk-invite-ask">
-${asks.join('\n')}${onward ? `\n${onward}` : ''}${first}
-        <p class="wk-invite-n">${note}</p>
+${asks.join('\n')}${onward ? `\n${onward}` : ''}${first}${nt}
       </div>`;
   }
   return `      <div class="wk-invite">
-        <a class="b b-1" href="${act.href}">${act.label} ${ARROW}</a>${onward ? `\n${onward}` : ''}${first}
-        <p class="wk-invite-n">${note}</p>
+        <a class="b b-1" href="${act.href}">${act.label} ${ARROW}</a>${onward ? `\n${onward}` : ''}${first}${nt}
       </div>`;
 };
 

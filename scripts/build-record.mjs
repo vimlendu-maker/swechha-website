@@ -32,7 +32,7 @@ import { readFileSync, readdirSync, existsSync, mkdirSync, statSync } from 'node
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
-const { esc, opener, ARROW, disclose } = S;
+const { esc, opener, ARROW } = S;
 
 const sh = S.shell();
 const HIST = join(S.ROOT, 'data/air-history');
@@ -137,11 +137,25 @@ const dayLabel = (iso) => {
 };
 const monthRoute = (y, mo) => `/record/air/${y}/${mo}`;
 
-/* Totals across the whole store, for the index and the air page. */
+/* A BAND OPENER THAT CAN HAVE NO LEAD. The copy pass cut several band leads
+   outright; `opener()` always emits <p class="lead">, and an emptied one is
+   still a grid row, still a margin and still a thing a screen reader walks
+   into. Identical output to `opener()` when a lead is supplied. */
+const openerNL = (id, head, lead) => (lead
+  ? opener(id, head, lead)
+  : opener(id, head, '').replace(/\s*<p class="lead"><\/p>/, ''));
+
+/* Totals across the whole store, for the index and the air page.
+   THE TWO REVISION TOTALS WENT WITH THE COPY THAT PRINTED THEM — 10 September
+   2026. They counted how many observation times the source had served again
+   and how many of those moved the headline, and the pages carried both as
+   reader-facing sentences ("54 observation times … have been served again …
+   and 0 of those changed the headline reading"). That is a counter about our
+   own storage behaviour, and it was reporting zero. The revisions themselves
+   are still read, still stored and still in the published JSON; only the
+   commentary on them is gone. */
 const ALL_DAYS = [...MONTH_DAYS.values()].flat();
 const TOTAL_OBS = MONTHS.reduce((n, m) => n + m.rows.length, 0);
-const TOTAL_REVISED = ALL_DAYS.reduce((n, d) => n + d.revised, 0);
-const TOTAL_MOVED = ALL_DAYS.reduce((n, d) => n + d.revisions.length, 0);
 const FIRST = ALL_DAYS[0]?.date;
 const LAST = ALL_DAYS[ALL_DAYS.length - 1]?.date;
 const PEAK = ALL_DAYS.filter((d) => d.peak).reduce((a, b) => (b.peak.aqi > a.peak.aqi ? b : a), { peak: { aqi: -1 } });
@@ -186,12 +200,8 @@ const PAGE_CSS = `
 .paper .rc-dl li,.paper-2 .rc-dl li{border-top-color:var(--rule-2)}
 .paper .rc-dl li:last-child,.paper-2 .rc-dl li:last-child{border-bottom-color:var(--rule-2)}
 .rc-dl-m{margin:0;font-variant-numeric:tabular-nums}
-/* An endpoint or a JSON literal inside a sentence. The .rc-cite code rule
-   above is a BLOCK for a whole citation; this is the inline sibling and must
-   not inherit that display or padding. */
-.rc-inline{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;
-  padding:1px 5px;border:1px solid var(--hair);white-space:nowrap}
-.paper .rc-inline,.paper-2 .rc-inline{border-color:var(--rule-2)}
+/* NOTE: .rc-inline — the inline endpoint/JSON-literal treatment — was cut in
+   the copy pass along with the only sentence that used it. */
 .rc-defs{margin:clamp(18px,2.6vw,26px) 0 0;display:grid;gap:14px;max-width:66ch}
 .rc-defs dt{font-weight:600;margin:0}
 .rc-defs dd{margin:4px 0 0}
@@ -203,8 +213,8 @@ const PAGE_CSS = `
 .rc-door{display:grid;gap:5px;align-content:start;min-width:0;text-decoration:none;color:inherit;
   border-top:2px solid currentColor;padding-top:12px}
 .rc-door-h{font-family:var(--display);font-size:clamp(19px,2.2vw,24px);line-height:1.14}
-.rc-rev{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:7px;max-width:60ch}
-.rc-rev li{border-top:1px solid currentColor;padding-top:7px;font-variant-numeric:tabular-nums}
+/* NOTE: .rc-rev — the from/to revision list — was cut in the copy pass with
+   the "When the source served it again" band that was its only caller. */
 /* ── AD-50. THE AFFORDANCE IS TYPOGRAPHIC, NOT AN ICON. ──────────────────
    Every card, door and row in this section carried the shell's ARROW glyph.
    ARROW is a bare <svg viewBox="0 0 24 24"> with NO width or height of its
@@ -315,7 +325,6 @@ for (const m of MONTHS) {
   const BANDS = [
     ['top',      't1',          '#0D0D0B'],
     ['readings', 'paper t2',    '#F3F2F0'],
-    ['revised',  't2',          '#0D0D0B'],
     ['method',   'paper-2 t2',  '#ECEBE8'],
     ['cite',     'dark-2 t2',   '#151512'],
     ['onward',   'paper t3',    '#F3F2F0'],
@@ -355,22 +364,6 @@ ${D.map((d) => `            <tr>
       </div>
     </div>`,
 
-    revised: () => `${opener('revised', 'When the source served it again',
-      `The feed was re-served for ${revised} observation time${revised === 1 ? '' : 's'} this month. `
-      + (moved.length
-        ? `${moved.length} of those changed the city&rsquo;s headline reading.`
-        : 'None of them changed the city&rsquo;s headline reading.'))}
-    <div class="wrap">
-      <p class="rc-p">Each observation time is read when it appears and re-read on later passes. Where a
-        later pass returns something different for a time already stored, the earlier snapshot is kept beside
-        the new one rather than overwritten &mdash; so a figure cited from this record can still be found at
-        the address it was cited from. What differs is usually further down than the headline: a station
-        reporting late, or one dropping out of the set.</p>
-${moved.length ? `      <ul class="rc-rev">
-${moved.slice(0, 40).map((r) => `        <li>${esc(r.hour)} &mdash; ${r.from} &rarr; ${r.to}</li>`).join('\n')}
-      </ul>` : ''}
-    </div>`,
-
     method: () => `${opener('method', 'How to read this table',
       'Four things the columns are, and are not.')}
     <div class="wrap">
@@ -380,7 +373,7 @@ ${moved.slice(0, 40).map((r) => `        <li>${esc(r.hour)} &mdash; ${r.from} &r
       <p class="rc-p"><b>An AQI is already a rolling figure.</b> CPCB's sub-indices are computed over averaging
         periods set per pollutant &mdash; 24 hours for the particulates. So an hourly observation describes a
         window ending at that hour, not that minute, and the day's peak is the highest such window.</p>
-      <p class="rc-p"><b>Hours observed is the honesty column.</b> A day with four hours in it is four hours of
+      <p class="rc-p"><b>Hours observed</b> is exactly that: a day with four hours in it is four hours of
         record. Nothing here is interpolated and no missing hour is filled.</p>
       <p class="rc-p"><b>${AQI_LIMIT} is the top of CPCB's &lsquo;Satisfactory&rsquo; band</b>, which corresponds to the
         24-hour standard for the governing pollutant. It is the line this table marks, and
@@ -404,7 +397,6 @@ ${/* ★ THE CITATION AND THE FILE BELONG TOGETHER. Whoever is copying the
 ${dlRows([
     { rel: `air/delhi-${m.y}-${m.mo}.csv`, label: `${monthLabel(m.y, m.mo)}, hour by hour`, format: 'CSV', note: `${m.rows.length} observations` },
     { rel: `air/delhi-${m.y}-${m.mo}-stations.csv`, label: `${monthLabel(m.y, m.mo)}, every station`, format: 'CSV', note: 'one row per monitor per hour' },
-    { rel: `air/delhi-${m.y}-${m.mo}.json`, label: `${monthLabel(m.y, m.mo)}, with every revision`, format: 'JSON', note: 'what each reading said before it changed' },
   ])}
     </div>`,
 
@@ -460,7 +452,7 @@ ${journalDoors(route)}
     desc: fitDesc(`Day-by-day Delhi air quality for ${monthLabel(m.y, m.mo)}: peak AQI, the monitor that `
       + 'produced it, stations over the limit and hours observed.'),
     bands: BANDS_6(BANDS),
-    index: [['Day by day', '#readings'], ['Revisions', '#revised'], ['How to read it', '#method'], ['Cite', '#cite'], ['Next', '#onward']],
+    index: [['Day by day', '#readings'], ['How to read it', '#method'], ['Cite', '#cite'], ['Next', '#onward']],
     sh, clashes: S.groundChain(BANDS),
     pageCss: PAGE_CSS,
     navMark: { current: null, url: null },
@@ -475,7 +467,6 @@ ${journalDoors(route)}
   const BANDS = [
     ['top',     't1',          '#0D0D0B'],
     ['months',  'paper t2',    '#F3F2F0'],
-    ['what',    't2',          '#0D0D0B'],
     ['holes',   'paper-2 t2',  '#ECEBE8'],
     ['cite',    'dark-2 t2',   '#151512'],
     ['onward',  'paper t3',    '#F3F2F0'],
@@ -489,9 +480,8 @@ ${journalDoors(route)}
       </div></div>
     </div>
     <div class="pic-body"><div class="wrap">
-      <p class="lead">${S.n0(TOTAL_OBS)} hourly observations from ${dayLabel(FIRST)}, each one kept at its own
-        address with the monitor that produced it. ${S.n0(TOTAL_REVISED)} of those observation times were
-        later served again, and both snapshots are still here.</p>
+      <p class="lead">${S.n0(TOTAL_OBS)} hourly observations from ${dayLabel(FIRST)}, each with the monitor
+        that produced it.</p>
     </div></div>`,
 
     months: () => `${opener('months', 'Every month kept', 'One page per month, each a complete day table.')}
@@ -500,37 +490,21 @@ ${journalDoors(route)}
 ${monthPages.slice().reverse().map((p) => `        <a class="rc-m" href="${p.route}">
           <span class="rc-m-h">${monthLabel(p.m.y, p.m.mo)}</span>
           <span class="cap">${p.days.length} days &middot; ${S.n0(p.m.rows.length)} observations</span>
-          <span class="cap">${p.revised} re-served by the source</span>
         </a>`).join('\n')}
       </div>
-    </div>`,
-
-    what: () => `${opener('what', 'What a row of this record is',
-      'One observation time, one worst monitor, and everything the source said about it since.')}
-    <div class="wrap">
-      <p class="rc-p">Each stored observation carries CPCB's own observation stamp, the hour this site first
-        read it, every later re-read, the city's worst reporting monitor by name, the unweighted mean of all
-        reporting stations, how many were over ${AQI_LIMIT}, and the reading at each of them.</p>
-      <p class="rc-p">Across the whole record, ${S.n0(TOTAL_REVISED)} observations were revised after first
-        publication and ${S.n0(TOTAL_MOVED)} of those revisions changed the city's headline figure. That is a
-        fact about the source, not about this site, and it is the reason both versions are kept: a reading
-        that is quietly restated later means the number somebody cited is no longer the number at that
-        address.</p>
-      <p class="rc-p">The highest reading in the record so far is
+${/* THE PEAK LINE MOVED HERE. It used to close the `what` band, whose heading,
+      lead and two explanatory paragraphs were all cut in the copy pass; this
+      sentence was the only fact left in it, and a band cannot survive without
+      a heading — `assemble()` points every section's aria-labelledby at one. */''}
+      <p class="rc-p" style="margin-top:22px">The highest reading in the record so far is
         <b>${PEAK.peak.aqi > 0 ? PEAK.peak.aqi : '&mdash;'}</b>${PEAK.peak.aqi > 0 ? ` at ${esc(PEAK.peak.station || 'a named monitor')}, ${dayLabel(PEAK.date)}` : ''}.</p>
     </div>`,
 
     holes: () => `${opener('holes', 'What this record does not contain',
-      'Stated because a record is only useful if its edges are known.')}
+      `The record begins on ${dayLabel(FIRST)}. An hour with no observation is absent, not zero.`)}
     <div class="wrap">
-      <p class="rc-p">It begins on ${dayLabel(FIRST)}. There is no reconstruction of anything before that, and
-        there will not be one &mdash; a record assembled backwards from a source that has since revised itself
-        is not a record.</p>
-      <p class="rc-p">An hour with no observation is absent, not zero. Where CPCB's live feed did not answer,
-        the mirror on data.gov.in was read instead and the row says which.</p>
-      <p class="rc-p">It is Delhi. The national file behind
-        <a class="lk" href="/now/air/india">every city in the feed</a> is stored the same way and is not yet
-        published as day tables.</p>
+      <p class="rc-p">Where CPCB's live feed did not answer, the mirror on data.gov.in was read instead and
+        the row says which.</p>
     </div>`,
 
     cite: () => `${opener('cite', 'Cite the record', 'Reuse freely. Each month page carries its own citation.')}
@@ -544,11 +518,8 @@ https://swechha.in/record/air</code>
       </div>
 ${dlRows([
     { rel: 'air/delhi-daily.csv', label: 'Every day of the record', format: 'CSV', note: 'peak, hours observed, hours over the limit' },
-    { rel: 'index.json', label: 'What is published, and where', format: 'JSON', note: 'the manifest a script reads instead of this page' },
+    { rel: 'index.json', label: 'Every file, listed', format: 'JSON', note: 'each one with its span and its terms' },
   ])}
-      <p class="cap rc-p" style="margin-top:14px">Each month page below carries that month hour
-        by hour, every reporting station in it, and what each reading said before the source
-        changed it.</p>
     </div>`,
 
     onward: () => `${opener('onward', 'Next', 'The live page, the rest of the archive, and the explanation.')}
@@ -590,7 +561,7 @@ ${journalDoors((h) => h.startsWith('/record/air'))}
     }),
     title: seo('/record/air').title,
     bands: BANDS,
-    index: [['Every month', '#months'], ['What a row is', '#what'], ['What is missing', '#holes'], ['Cite', '#cite'], ['Next', '#onward']],
+    index: [['Every month', '#months'], ['What is missing', '#holes'], ['Cite', '#cite'], ['Next', '#onward']],
     sh, clashes: S.groundChain(BANDS),
     pageCss: PAGE_CSS,
     navMark: { current: null, url: null },
@@ -604,7 +575,7 @@ const KEPT = [
   { subject: 'Delhi air', href: '/record/air', live: '/now/air', learn: '/learn/delhi-aqi',
     cadence: 'Hourly', source: 'CPCB CAAQMS, mirrored on data.gov.in',
     limit: 'PM2.5 24-hour: 60 µg/m³ (NAAQS 2009)',
-    note: `${S.n0(TOTAL_OBS)} observations kept with every revision, from ${dayLabel(FIRST)}.` },
+    note: `${S.n0(TOTAL_OBS)} hourly observations, from ${dayLabel(FIRST)}.` },
   { subject: 'The Yamuna', href: null, live: '/now/yamuna', learn: '/learn/yamuna-bod',
     cadence: 'Annual', source: 'CPCB National Water Quality Monitoring Programme',
     limit: 'DO > 5.0 mg/L, BOD < 3.0 mg/L (PWQC 1986)',
@@ -612,11 +583,11 @@ const KEPT = [
   { subject: 'Heat', href: null, live: '/now/heat', learn: '/learn/imd-heatwave-criteria',
     cadence: 'Seasonal', source: 'ERA5 reanalysis, fourteen stations',
     limit: 'IMD heatwave criteria — a definition, not a standard',
-    note: 'Thirty-five years per station, held as one series rather than split by year.' },
+    note: 'Thirty-five years per station.' },
   { subject: 'Forest loss', href: null, live: '/now/forest-loss', learn: '/learn/forest-loss-india',
     cadence: 'Annual', source: 'FSI ISFR and Hansen / GFW',
     limit: 'No limit — two definitions that disagree',
-    note: 'Both sources kept side by side, because reconciling them into one number would be the error.' },
+    note: 'Both kept side by side. Reconciling them into one number would be the error.' },
   { subject: 'Fire', href: null, live: '/now/forest-fire', learn: '/learn/forest-fires-india',
     cadence: 'Annual sample', source: 'NASA FIRMS, VIIRS S-NPP',
     limit: 'No limit published anywhere',
@@ -631,7 +602,6 @@ const KEPT = [
   const BANDS = [
     ['top',     't1',          '#0D0D0B'],
     ['kept',    'paper t2',    '#F3F2F0'],
-    ['rule',    't2',          '#0D0D0B'],
     ['air',     'paper-2 t2',  '#ECEBE8'],
     ['cite',    'dark-2 t2',   '#151512'],
     ['onward',  'paper t3',    '#F3F2F0'],
@@ -645,9 +615,8 @@ const KEPT = [
       </div></div>
     </div>
     <div class="pic-body"><div class="wrap">
-      <p class="lead">Every reading this site publishes keeps its own address, with the source that produced
-        it, when it was observed and the limit it was judged against. Nothing is quietly restated when it
-        improves and nothing is quietly restated when it gets worse. An empty day stays empty.</p>
+      <p class="lead">Every reading we publish stays where we published it, with its source, its date and the
+        limit it was judged against.</p>
     </div></div>`,
 
     kept: () => `${opener('kept', 'What is kept', 'Six subjects, six cadences, six different kinds of source.')}
@@ -663,23 +632,7 @@ ${KEPT.map((k) => `        <div class="rc-k">
       </div>
     </div>`,
 
-    rule: () => `${opener('rule', 'The rule this archive follows',
-      'Four sentences, and every one of them is a thing an environmental record usually gets wrong.')}
-    <div class="wrap">
-      <p class="rc-p"><b>A gap is a gap.</b> A missing hour, a station that stopped reporting, a year the
-        survey was not run &mdash; all of them are absent, and none of them is a zero.</p>
-      <p class="rc-p"><b>A re-read is kept beside the original.</b> When a source serves something
-        different for an observation time already stored, both snapshots are held.
-        ${S.n0(TOTAL_REVISED)} observation times in the Delhi air record have been served again since
-        the archive opened, and ${S.n0(TOTAL_MOVED)} of those changed the headline reading.</p>
-        number against the notified standard is a finding. Where there is no published limit &mdash; rainfall,
-        fire detections &mdash; the record says so rather than inventing a benchmark.</p>
-      <p class="rc-p"><b>Counted and modelled are marked differently.</b> A satellite reanalysis and a station
-        instrument are both useful and they fail in different ways. <a class="lk" href="/learn/measured-vs-modelled">Which one you are holding</a> decides what it can be used for.</p>
-    </div>`,
-
-    air: () => `${opener('air', 'The one that is published day by day',
-      'Air is hourly, so it is the only subject with enough resolution to be worth a page per month.')}
+    air: () => `${opener('air', 'The one that is published day by day', 'Air is hourly &mdash; the only subject with enough resolution for a page per month.')}
     <div class="wrap">
       <p class="rc-p">${S.n0(TOTAL_OBS)} hourly observations of Delhi's air are kept, from ${dayLabel(FIRST)} to
         ${dayLabel(LAST)}, each with the worst reporting monitor named and the full state of the network at
@@ -693,7 +646,7 @@ ${monthPages.slice().reverse().slice(0, 6).map((p) => `        <a class="rc-m" h
       <p class="rc-p" style="margin-top:22px"><a class="b b-1" href="/record/air">The whole Delhi air record${ARROW}</a></p>
     </div>`,
 
-    cite: () => `${opener('cite', 'Cite it, reuse it', 'The archive exists to be used by somebody else.')}
+    cite: () => `${openerNL('cite', 'Cite it, reuse it')}
     <div class="wrap">
       <p class="rc-p">Everything here is published under <a class="lk" href="${S.LICENCE_URL}" rel="license noopener">${S.LICENCE_NAME}</a>.
         Quote a figure, republish a table, build something on it. If you quote a number, quote the kind with
@@ -742,7 +695,7 @@ ${journalDoors((h) => h.startsWith('/record'))}
       })),
     }),
     bands: BANDS,
-    index: [['What is kept', '#kept'], ['The rule', '#rule'], ['Day by day', '#air'], ['Cite it', '#cite'], ['Next', '#onward']],
+    index: [['What is kept', '#kept'], ['Day by day', '#air'], ['Cite it', '#cite'], ['Next', '#onward']],
     sh, clashes: S.groundChain(BANDS),
     pageCss: PAGE_CSS,
     navMark: { current: null, url: null },
@@ -803,8 +756,7 @@ ${journalDoors((h) => h.startsWith('/record'))}
     </div>
     <div class="pic-body"><div class="wrap">
       <p class="lead">Everything Swechha publishes as a reading is open. Quote it, republish it, build on it,
-        argue with it. This page is the licence, the attribution, the method and the part most datasets leave
-        out &mdash; what each one does not cover.</p>
+        argue with it.</p>
     </div></div>`,
 
     licence: () => `${opener('licence', 'The licence',
@@ -835,15 +787,11 @@ ${journalDoors((h) => h.startsWith('/record'))}
        for somebody testing a claim about a neighbourhood; the manifest is for
        a script. Three sentences, three files, no personas.
 
-       ★ THE WORD "API" APPEARS EXACTLY ONCE ON THIS PAGE AND IT NAMES THE ONE
-       ENDPOINT THAT IS ONE. `/api/air` is real, request-time, one city, the
-       current hour. Everything else here is a static file, and this band says
-       so in the same breath rather than leaving the reader to assume a
-       directory of CSVs is a service with an uptime. */
-    files: () => `${opener('files', 'Take the files',
-      'The record as CSV and JSON, under the licence above. No key, no sign-up, no rate limit. '
-      + 'Written for whoever has to check something: a journalist on a deadline, a teacher building '
-      + 'a lesson, a student testing a claim, a researcher who needs one neighbourhood.')}
+       ★ NOTE: the paragraph this note described — the one naming `/api/air` as
+       the page's single live endpoint and everything else as a static file —
+       was cut in the copy pass. The word "API" no longer appears on the page
+       at all. */
+    files: () => `${opener('files', 'Take the files', 'No key, no sign-up, no rate limit.')}
     <div class="wrap">
       <p class="rc-p"><b>Start with the day-by-day file.</b> One row per day across the whole record:
         the peak reading, the monitor that produced it, how many hours were actually observed and how
@@ -852,30 +800,17 @@ ${dlRows([
     { rel: 'air/delhi-daily.csv', label: 'Delhi air, day by day', format: 'CSV', note: 'the whole record so far' },
   ])}
       <p class="rc-p" style="margin-top:22px"><b>Go to a month for the hours.</b> Each
-        <a class="lk" href="/record/air">month page</a> carries that month hour by hour, every
-        reporting station in it, and &mdash; the part that makes this an archive rather than a
-        snapshot &mdash; what each reading said before the source changed it. Those three files are
-        linked from the month itself, so the citation and the download sit together.</p>
+        <a class="lk" href="/record/air">month page</a> carries that month hour by hour and every
+        reporting station in it, with the files linked from the month itself.</p>
 ${dlRows(MONTHS.slice().reverse().flatMap((m) => [
     { rel: `air/delhi-${m.y}-${m.mo}.csv`, label: `${monthLabel(m.y, m.mo)}, hour by hour`, format: 'CSV', note: `${m.rows.length} observations` },
     { rel: `air/delhi-${m.y}-${m.mo}-stations.csv`, label: `${monthLabel(m.y, m.mo)}, every station`, format: 'CSV', note: 'one row per monitor per hour' },
   ]))}
-      <p class="rc-p" style="margin-top:22px"><b>If you are writing a script, read the manifest.</b>
-        It lists every file, its URL, the span it covers and the terms, so nothing has to parse this
-        page to find them.</p>
 ${dlRows([
-    { rel: 'index.json', label: 'The manifest', format: 'JSON', note: 'every file, its span and its terms' },
+    { rel: 'index.json', label: 'Every file, listed', format: 'JSON', note: 'each one with its span and its terms' },
   ])}
-      <p class="rc-p" style="margin-top:22px"><b>One endpoint is live; the rest are files.</b>
-        <code class="rc-inline">GET /api/air</code> fetches Delhi's current hour from CPCB at request
-        time and returns <code class="rc-inline">{ ok: false }</code> with a reason and no reading
-        when the source does not answer &mdash; never a zero. Everything above is a static file
-        regenerated when the record changes, which is what makes it quotable: the file you cite today
-        is the file that was there.</p>
-      <p class="cap rc-p">The national store behind
-        <a class="lk" href="/now/air/india">every city in the feed</a> is kept the same way and is not
-        published as files yet &mdash; around 268 rows an hour is roughly twelve megabytes of CSV a
-        month. Ask if you need it.</p>
+      <p class="cap rc-p" style="margin-top:22px">Need the
+        <a class="lk" href="/now/air/india">national file</a> rather than Delhi's? Ask.</p>
     </div>`,
 
     how: () => `${opener('how', 'How to cite it',
@@ -902,43 +837,11 @@ https://swechha.in/record/air/2026/09</code>
         <a class="lk" href="/learn/measured-vs-modelled">the difference</a> is on the page it came from.</p>
       <p class="rc-p"><b>Quote the observation time, not the time you read it.</b> Every reading here carries
         the source's own stamp for when the air, the water or the imagery was actually observed.</p>
-${/* ★ FOUR THINGS ON THIS SITE, AND ONLY ONE OF THEM IS SWECHHA'S DATA.
-      Nothing here is new information — the licence band above already says the
-      grant "does not and cannot cover the upstream sources", every figure on
-      every page already names its source, and the counted/modelled rule is
-      already printed beside each numeral. What was missing was the DISTINCTION
-      stated once, in the place somebody writes a citation, so that a person
-      quoting this site knows which of the four they are quoting and whose name
-      goes on it.
-
-      It is written as a register rather than a paragraph because it is a
-      lookup: a reader arrives with one figure and needs to know which row it
-      is in. Nothing in it may be a claim the pages do not already support —
-      each row names where on this site that kind of thing lives, and every one
-      of those places is real. */''}
-      <dl class="rc-defs" style="margin-top:26px">
-        <dt>Source data &mdash; not ours</dt>
-        <dd>Every reading originates with somebody else: CPCB for air and the river, IMD for heat and
-          rainfall, the Forest Survey of India and Global Forest Watch for forest, NASA FIRMS for fire
-          detections. We did not measure any of it and never say we did. Cite the source alongside us,
-          and go to its own terms if you are republishing at scale.</dd>
-        <dt>Swechha processing &mdash; ours, and reproducible</dt>
-        <dd>What we do to those readings: taking the worst reporting monitor rather than a city
-          average, printing the unweighted station mean beside it as a cross-check, looking each index
-          up in CPCB's own band table, sampling forest fire detections in a fixed ten-day window every
-          year, and keeping every reading the source later revised. All of it is visible in the files
-          above &mdash; the point of publishing them is that you can redo it and disagree.</dd>
-        <dt>Swechha analysis &mdash; ours, and arguable</dt>
-        <dd>A finding derived from the above: a <a class="lk" href="/journal">Journal</a> piece, a
-          figure on <a class="lk" href="/impact">/impact</a>. Each one shows its derivation and
-          snapshots the figures it was true at, so it can be checked against the record rather than
-          taken on trust.</dd>
-        <dt>Editorial interpretation &mdash; ours, and not a finding</dt>
-        <dd>The writing around the numbers: which reading leads a page, what we say is not enough,
-          what we ask you to do about it. Quotable as Swechha's position. Not quotable as a result.</dd>
-      </dl>
-      <p class="cap rc-p" style="margin-top:18px">If you only take one rule from this: the numbers are
-        somebody else's measurements, the method is ours, and the two need separate attribution.</p>
+${/* NOTE: the four-layer register that used to close this band — source data,
+      Swechha processing, Swechha analysis, editorial interpretation — was cut
+      in the copy pass, and with it the "if you only take one rule" line. The
+      two rules above it, which are the ones a person writing a citation acts
+      on, stay. */''}
     </div>`,
 
     method: () => `${opener('method', 'Where each number comes from',
@@ -962,24 +865,23 @@ ${KEPT.map((k) => `            <tr>
           </tbody>
         </table>
       </div>
+      <p class="rc-p" style="margin-top:22px">What we do to these: take the worst reporting monitor rather
+        than a city average, print the unweighted station mean beside it as a cross-check, and sample fire
+        detections in the same ten-day window every year.</p>
     </div>`,
 
-    limits: () => `${opener('limits', 'What it does not cover',
-      'Stated per subject, because a dataset used past its edges produces a confident wrong answer.')}
+    limits: () => `${openerNL('limits', 'What it does not cover')}
     <div class="wrap">
       <dl class="rc-defs">
 ${LIMITS.map(([h, p]) => `        <dt>${esc(h)}</dt>\n        <dd>${esc(p)}</dd>`).join('\n')}
       </dl>
-      <p class="rc-p" style="margin-top:24px">Nothing here is interpolated, and no gap is filled. An hour with
-        no observation is absent; a station that stopped reporting is missing, not clean; a year the survey was
-        not run has no figure. If you need a complete grid, this is the wrong dataset and that is a property of
-        the measurement, not of the archive.</p>
+      <p class="rc-p" style="margin-top:24px">Nothing here is interpolated, and no gap is filled.</p>
     </div>`,
 
     onward: () => `${opener('onward', 'Next', 'The archive, the explanations, and a person to ask.')}
     <div class="wrap">
       <div class="rc-doors">
-        <a class="rc-door" href="/record"><span class="lbl">Record</span><span class="rc-door-h">The archive</span><span class="cap">Every reading kept at its own address.</span></a>
+        <a class="rc-door" href="/record"><span class="lbl">Record</span><span class="rc-door-h">The archive</span><span class="cap">Every reading, kept and dated.</span></a>
         <a class="rc-door" href="/learn"><span class="lbl">Learn</span><span class="rc-door-h">What the numbers mean</span><span class="cap">Twenty explainers, each with its sources.</span></a>
         <a class="rc-door" href="/now"><span class="lbl">Live</span><span class="rc-door-h">Every situation</span><span class="cap">Six readings, each against its published limit.</span></a>
       </div>

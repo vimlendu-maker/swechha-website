@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
+import { LEDGER_PATTERNS, visibleOnly } from '../scripts/lib/ledger-patterns.mjs'
 
 /**
  * AD-28 §7 — THE MECHANICAL ACCEPTANCE TEST, WIRED AS A GATE.
@@ -35,16 +36,18 @@ import { join, relative } from 'node:path'
 
 const V3 = join(process.cwd(), 'public', '_pages', 'v3')
 
-/* AD-28 §7's list, verbatim. `§` is here as a bare character because that is
-   how the ruling writes it — it only ever appeared on these pages as a citation
-   into a repository ledger, and no reader-facing copy on this site uses one. */
-const STRUCK: Array<[string, RegExp, string]> = [
-  ['SOURCE-FACTS', /SOURCE-FACTS/, 'a citation into a working file in this repository. A reader cannot follow one and was never meant to see one.'],
-  ['§', /§/, 'a section-mark citation into a repository ledger. The line numbers behind them drift the moment the ledger is edited.'],
-  ['AD-2', /AD-2/, 'an internal design-ruling id.'],
-  ['D-0', /D-0/, 'an internal decision id.'],
-  ['W-1', /W-1/, 'an internal WORK-pass ruling id.'],
-]
+/* AD-28 §7's list — NO LONGER COPIED HERE. It used to be, in parallel with the
+   identical array in scripts/lib/situation-shell.mjs's build-time gate, and a
+   hand-maintained list that has to move in lockstep is this repo's most repeated
+   defect. Both now derive from scripts/lib/ledger-patterns.mjs, so a pattern
+   added once is enforced in both places: at build time, naming the generator,
+   and here over every file on disk, catching a page nobody rebuilt.
+
+   A pattern may declare scope 'visible', which is scanned over the page with
+   inline script and style blanked out. See that file for why the sixth one does. */
+const STRUCK = LEDGER_PATTERNS as ReadonlyArray<
+  readonly [string, RegExp, string, ('file' | 'visible')?]
+>
 
 /* ── ONE EXEMPTION, AND IT IS A PROVEN FALSE POSITIVE ───────────────────────
    `unicode-range` values are blanked before scanning. On 24 August 2026 the two
@@ -89,8 +92,9 @@ describe('AD-28 §7 — no internal ledger reference reaches a built page', () =
     const name = relative(V3, page)
     it(`${name} carries no ledger reference`, () => {
       const html = scannable(readFileSync(page, 'utf8'))
-      for (const [label, re, why] of STRUCK) {
-        const m = re.exec(html)
+      const visible = visibleOnly(html)
+      for (const [label, re, why, scope] of STRUCK) {
+        const m = re.exec(scope === 'visible' ? visible : html)
         const context = m
           ? JSON.stringify(html.slice(Math.max(0, m.index - 90), m.index + 90).replace(/\s+/g, ' '))
           : ''

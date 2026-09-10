@@ -226,7 +226,7 @@ ${crumb('climate')}
         <p class="lbl p2-nat-h">A year&rsquo;s rain in an afternoon</p>
         <p class="c-plain">Across these ${ST.length} cities there is <b>more rain, and more days
           heavy enough to cross IMD&rsquo;s threshold</b>. What this data does <i>not</i> show is rain
-          getting more concentrated &mdash; that is on the page too.</p>
+          getting more concentrated.</p>
         <p class="c-plain">A flood is not a weather event. It is rainfall meeting a decision about
           where to build.</p>
         <p class="cap p-hole"><b>Annual rainfall rose at ${CONS.annual_mm.up} of these
@@ -376,7 +376,7 @@ B.cities = () => {
         ${NAT.total_extreme_days_last_year} station-days across ${ST.length} cities in ${L0.year}.
         ${NAT.stations_omitted?.length
       ? `${NAT.stations_omitted.length} requested station(s) did not answer and are omitted, not backfilled.`
-      : 'All requested stations answered.'}</p>
+      : ''}</p>
       ${disclose('Every city against its own normal',
     `<div class="c-tbl">
             <div class="c-tr is-head"><span class="lbl">City</span><span class="lbl">${L0.year}</span>
@@ -428,9 +428,8 @@ B.trend = () => {
       <p class="c-note"><b>Rainfall is up at ${CONS.annual_mm.up} of ${ST.length} cities and extreme
         days at ${CONS.extreme_days.up}.</b> But the share arriving in the five wettest days is
         <b>down</b> at ${CONS.top5_share_pct.down} of them &mdash; so this dataset shows more rain
-        and more extreme days without showing rain getting more concentrated. Both things are on the
-        page because both are what it measured.</p>
-      <p class="cap c-cap"><b>Counted as cities, never averaged.</b> ${esc(NAT.consensus_note)}
+        and more extreme days without showing rain getting more concentrated.</p>
+      <p class="cap c-cap">${esc(NAT.consensus_note)}
         And ${esc(CL.kind_reason)}</p>
       <p class="lbl c-lbl">And who is looking</p>
       ${(() => {
@@ -493,8 +492,7 @@ B.act = () => `${opener('act', 'What you can do', 'Rainfall is weather. A flood 
         </div>
       </div>
       <p class="cap c-close">Every figure here is public, dated and reproducible from the source
-        named beside it &mdash; and the three things that could not be counted are named where they
-        would have gone.</p>
+        named beside it.</p>
 ${S.citeBlock('climate')}
 ${S.closing('climate')}
 ${siblings('climate')}
