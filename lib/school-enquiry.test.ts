@@ -253,7 +253,7 @@ describe('the notification', () => {
 });
 
 describe('the field spec both sides read', () => {
-  it('declares eleven fields, three of them required', () => {
+  it('declares eleven fields, four of them required', () => {
     expect(FIELDS).toHaveLength(11);
     expect(FIELDS.filter((f) => f.required).map((f) => f.name))
       .toEqual(['school', 'contact_name', 'email', 'programme']);
