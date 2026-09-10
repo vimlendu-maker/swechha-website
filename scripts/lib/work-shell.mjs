@@ -1948,8 +1948,13 @@ export const period = (p) => {
    `planned` KEEPS THE PLAIN RULE and takes only the word. The published
    vocabulary has two terms and a target is neither of them; drawing a target
    as "modelled" would be a second false statement in place of the first.
-   The caption line is OMITTED, not emptied, where there is nothing to state. */
-const BASIS_WORD = { modelled: 'Derived, not counted', planned: 'Planned, not counted' };
+   The caption line is OMITTED, not emptied, where there is nothing to state.
+
+   THE WORD IS NO LONGER RENDERED on the pages this shell serves (/work and
+   /healthy-cities). `basis` stays in the data and still drives the rule under
+   the label; the placement rule above describes where the word went while it
+   was printed, and the table it read from is now empty. */
+const BASIS_WORD = {};
 export const basisWord = (f) => BASIS_WORD[f && f.basis] || '';
 export const basisRule = (f) => `p-kd ${f && f.basis === 'modelled' ? 'p-kd-m' : 'p-kd-c'}`;
 /* The caption a figure carries once its basis has been placed: the word joined

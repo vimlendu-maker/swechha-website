@@ -186,9 +186,15 @@ B.measured = () => `${opener('measured', 'What each one measures', 'A plantation
           <p>Canopy disappearing, whatever it was and for whatever reason &mdash; felling, fire,
             storm, disease, harvest. <b>It does not say why, and it is not net change:</b> gain is a
             separate measurement on a different method and the two are not subtracted here.</p>
-          <p class="l-warn"><b>The threshold changes the answer, so it is printed everywhere.</b>
-            Loss is counted above <b>${GFW.threshold.value}% canopy density in 2000</b>, which is
-            GFW&rsquo;s own headline choice. ${esc(GFW.threshold.why)}</p>
+          <!-- BOTH HALVES OF THE OLD LEAD-IN RESTATED THE DATA STRING PRINTED AFTER
+               THEM — 10 September 2026 copy pass. "The threshold changes the answer, so
+               it is printed everywhere" against threshold.why's "a different choice gives
+               a different answer, so it is printed wherever the number is"; "which is
+               GFW's own headline choice" against its "GFW's own headline figures use 30
+               per cent". The caveat itself is protected substance and stays whole — it is
+               the one that stops a reader comparing two thresholds as one series. -->
+          <p class="l-warn"><b>Loss is counted above ${GFW.threshold.value}% canopy density
+            in 2000.</b> ${esc(GFW.threshold.why)}</p>
           <div class="l-thr">
             ${(GFW.threshold.ladder || []).map(t => `<div class="l-thr-r${t.threshold === GFW.threshold.value ? ' is-used' : ''}">
               <span class="l-thr-n">${t.threshold}%</span>
@@ -252,7 +258,7 @@ B.years = () => {
         ${n0(G[1].mean_ha)}</b> &mdash; ${doubling} times as much. The worst single year is
         ${GFW.peak.year}, at ${n0(GFW.peak.loss_ha)} hectares; the lowest is ${GFW.floor.year}, at
         ${n0(GFW.floor.loss_ha)}.</p>` : ''}
-      <p class="cap l-cap"><b>Tree cover loss is not deforestation.</b> ${esc(GFW.caveats[0])} ${esc(GFW.caveats[1])}</p>
+      <p class="cap l-cap">${esc(GFW.caveats[0])} ${esc(GFW.caveats[1])}</p>
       ${disclose(`Every year, ${GFW.total.from} to ${GFW.total.to}`,
     `<div class="l-tbl">
             <div class="l-tr is-head"><span class="lbl">Year</span><span class="lbl">Tree cover lost</span>

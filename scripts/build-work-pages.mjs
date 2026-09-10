@@ -1358,7 +1358,7 @@ const LABEL = {
   top: 'Top', onward: 'Get involved', frame: 'What this is', list: 'The list',
   weight: 'The figures', against: 'What each pushes against',
   what: 'What we do', aim: 'What it sets out to do', how: 'Strategy and activities',
-  who: 'Who it is for', done: 'Impact', sheet: 'The photographs', with: 'Who it is with',
+  who: 'Who it is for', done: 'What it adds up to', sheet: 'The photographs', with: 'Who it is with',
   /* AD-42. "The posters", not "The material" or "Printed work": the band shows
      posters, the reader can see they are posters, and a category name where a
      plain one exists is the register AD-28 struck everywhere else. */
@@ -1493,7 +1493,7 @@ const EVIDENCE = {
      page, not a paragraph about it. A reader who clicks "the evidence" from a
      WORK page should land on the evidence, with a heading above it, not
      mid-scroll on the front page they may never have seen. */
-  '/now': { href: '/now', eyebrow: 'The evidence', head: 'The record', body: 'Every reading the situation pages are built on, in one place.', foot: 'Every situation, side by side' },
+  '/now': { href: '/now', eyebrow: 'The evidence', head: 'The record', body: 'What Delhi’s air, river and heat are doing right now.', foot: 'Every situation, side by side' },
   /* AD-24: was `/#farm`, the homepage teaser band. `/farm` is now a page, and
      this door's own copy ("the five acres this happens on") promises the place
      rather than a paragraph about it. An anchor here would land a reader who
@@ -1918,9 +1918,12 @@ const invite = ({ act, second, note, asks, back, read }) => inviteRow({
      /act; it is now false in both halves. The Ask IS the route, it goes to a
      named person at an @swechha.in address, and telling a reader who has just
      opened it that there is nothing here would be the page contradicting the
-     control directly above the sentence. */
+     control directly above the sentence.
+
+     THE OPENING CLAUSE IS GONE TOO. What is left is the address, which is the
+     only part of that sentence a reader could act on. */
   note: (asks && asks.length) ? note
-    : `${note} Nothing here is a form &mdash; write to <a class="lk" href="mailto:${esc(CONTACT)}">${esc(CONTACT)}</a>.`,
+    : `${note} Write to <a class="lk" href="mailto:${esc(CONTACT)}">${esc(CONTACT)}</a>.`,
 });
 
 /* ═══ AD-27.14 → AD-27.22 · THE ASK, INSTANTIATED ════════════════════════
@@ -1982,7 +1985,7 @@ const waysIn = (url) => {
   return [
     ['A school or a group', asks.join('\n')],
     ['Volunteer', WAY_PANEL('Clean-ups, garden builds and scanning days in Delhi. Turn up once or turn up every month.', '/act#hands', 'See the dates')],
-    ['Give', WAY_PANEL('From 500 rupees a month, recurring. It pays for journeys schools cannot fund, gardens still being planted, and an archive that will not scan itself.', '/act#give', 'Give monthly')],
+    ['Give', WAY_PANEL('From 500 rupees a month, recurring. It pays for journeys schools cannot fund, and gardens still being planted.', '/act#give', 'Give monthly')],
     ['Partner', WAY_PANEL('Schools, companies and researchers. Bring us a ward, a river stretch or a cohort.', '/act#partner', 'Work with us')],
   ];
 };
@@ -2116,7 +2119,7 @@ function pageIndex() {
     sheet: [
       opener('sheet', 'What it looks like'),
       gallery.length >= GALLERY_MIN ? gallerySheet({
-        label: 'The work, from the archive', frames: gallery,
+        label: 'The work', frames: gallery,
       }) : '',
     ],
   };
@@ -2129,8 +2132,9 @@ function pageIndex() {
     /* /work's slot 1 is not "the other three kinds" — every kind is already in
        band 2's register. The two doors are THE TWO MOST-LINKED DESTINATIONS IN
        THE SECTION, which is measured and not preferred: the frozen homepage
-       points 8 links at /work/projects and 6 at /work/journeys. */
-    doors: [kdoor('projects', 'The most-linked page in the section'), kdoor('journeys', 'Two hours to twelve days'), EVIDENCE['/now']],
+       points 8 links at /work/projects and 6 at /work/journeys. That measure
+       chooses the doors; it is not printed on them. */
+    doors: [kdoor('projects', 'Eight of them, running for years'), kdoor('journeys', 'Two hours to twelve days'), EVIDENCE['/now']],
     act, actNote: 'If you would rather start than read, the shortest way in is a walk that takes an afternoon.',
     /* AD-27.18-A. "Book a journey" resolves here. The secondary goes with it:
        the Ask's own tertiary link is /act#partner, which is the destination
@@ -2197,7 +2201,7 @@ function pageKind(k) {
     statement: hasStatement(def) ? statementFor(def) : '',
     sheet: [
       opener('sheet', 'What it looks like'),
-      (def.gallery || []).length >= GALLERY_MIN ? sheetBand(def, `${def.name}, from the archive`) : '',
+      (def.gallery || []).length >= GALLERY_MIN ? sheetBand(def, def.name) : '',
     ],
   };
   body.onward = onwardBand({
@@ -2268,7 +2272,7 @@ function pageCampaigns() {
     statement: hasStatement(def) ? statementFor(def) : '',
     sheet: [
       opener('sheet', 'What it looks like'),
-      (def.gallery || []).length >= GALLERY_MIN ? sheetBand(def, 'Campaigns, from the archive') : '',
+      (def.gallery || []).length >= GALLERY_MIN ? sheetBand(def, 'Campaigns') : '',
     ],
   };
   body.onward = onwardBand({
@@ -2431,7 +2435,7 @@ function pageItem(it) {
          delivered it and the ledger disclosure audited the figures. All three
          are gone. What is left is the band the client asked for: the figures,
          then what they mean, and nothing about our filing. */
-      opener('done', 'Impact'),
+      opener('done', 'What it adds up to'),
       figureRail(it.figures || []),
       proseRows(it.done || [], 'The rest of the record'),
     ],
@@ -2442,7 +2446,7 @@ function pageItem(it) {
       /* AD-28. `gallery_note` is no longer published either. Every value it
          carried in the data was a sentence about dates we do not have or frames
          we could not source. A contact sheet is looked at, not explained. */
-      (it.gallery || []).length >= GALLERY_MIN ? sheetBand(it, `${it.name}, from the archive`) : '',
+      (it.gallery || []).length >= GALLERY_MIN ? sheetBand(it, it.name) : '',
     ],
     with: [
       opener('with', 'Who it is with', namesHead(w)),
@@ -2565,7 +2569,7 @@ function pageEvents() {
     statement: hasStatement(def) ? statementFor(def) : '',
     sheet: [
       opener('sheet', 'What it looks like'),
-      (def.gallery || []).length >= GALLERY_MIN ? sheetBand(def, 'Events, from the archive') : '',
+      (def.gallery || []).length >= GALLERY_MIN ? sheetBand(def, 'Events') : '',
     ],
   };
   body.onward = onwardBand({
@@ -2575,7 +2579,7 @@ function pageEvents() {
        to join. Dates go out on the four accounts..." — two clauses of what this
        page does not have, then the one clause that tells a reader where to
        actually look. Subtract, do not rewrite: the useful clause stands alone. */
-    actNote: 'Dates go out on the four accounts at the foot of this page.',
+    actNote: 'Dates go out on Instagram.',
     /* AD-27.18-A. "Volunteer with us" is an individual action and not one of the
        four audiences (AD-27.56 forbids a fifth), so it keeps navigating — to
        /act#hands, which is where /act's own WAYS table files this exact label
@@ -2583,7 +2587,7 @@ function pageEvents() {
     invite: invite({
       act: deepen(PATHS.events.url, def.act || { label: 'Volunteer with us', href: '/act' }),
       second: PARTNER_SECOND,
-      note: 'Dates go out on the four accounts at the foot of this page.',
+      note: 'Dates go out on Instagram.',
     }),
   });
   return {
@@ -2797,7 +2801,12 @@ if (links.failures.length) {
 
    MATCHED BY LABEL, and a label that two items share with DIFFERENT bases is
    reported rather than skipped silently — an unassertable figure is a hole in
-   the gate and must be visible as one. */
+   the gate and must be visible as one.
+
+   THE WORD IS NO LONGER PRINTED on these pages, so the second direction above
+   is inverted: the rule under the label still has to match the basis, and NO
+   reading may carry the badge. BASIS_SAYS is now the vocabulary the gate looks
+   for and refuses, not the vocabulary it requires. */
 const BASIS_SAYS = { modelled: 'Derived, not counted', planned: 'Planned, not counted' };
 const basisOf = new Map();
 for (const it of items) {
@@ -2837,15 +2846,12 @@ for (const b of built) {
     if (!seen) continue;                       /* a label this generator did not author */
     if (seen.size > 1) { basisAmbiguous++; continue; }
     const basis = [...seen][0];
-    const word = BASIS_SAYS[basis] || '';
     const wantRule = basis === 'modelled' ? 'p-kd-m' : 'p-kd-c';
     const says = Object.values(BASIS_SAYS).filter(w => block.includes(w));
     if (cls !== wantRule) {
       basisBad.push(`${b.url} "${label}" is ${basis} and renders ${cls} — it must render ${wantRule}`);
-    } else if (word && !says.includes(word)) {
-      basisBad.push(`${b.url} "${label}" is ${basis} and says ${says.length ? `"${says[0]}"` : 'nothing'} — it must say "${word}" above the numeral or in its caption`);
-    } else if (!word && says.length) {
-      basisBad.push(`${b.url} "${label}" is counted and says "${says[0]}". Marking the ordinary case makes the unmarked numeral meaningless.`);
+    } else if (says.length) {
+      basisBad.push(`${b.url} "${label}" prints the badge "${says[0]}" — these pages do not print one.`);
     }
     basisChecked++;
   }

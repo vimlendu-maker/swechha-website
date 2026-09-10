@@ -775,11 +775,19 @@ async function dossier(c, s, existing) {
        evidence moved. The page labels it with its own fetch time either way. */
     live_conditions: unchanged && existing.live_conditions
       ? existing.live_conditions : await liveWeather(c.place),
+    /* THE DETECTOR BLOCK IS INTERNAL AND NO LONGER REACHES A READER. Until the
+       10 September 2026 copy pass the event page printed all three of these —
+       "assembled … by scripts/detect-climate-events.mjs, which scored this event
+       22 against a publication threshold of 14", and a note beginning "Every
+       figure is a count this script performed". Naming our own source file to a
+       reader was the client's first example of what the site must stop doing.
+       The fields stay: the score and the threshold are how a demotion is
+       reasoned about, and `script` records which detector wrote the dossier.
+       The prose note went, because nothing renders it and a string that exists
+       only to be printed is a page waiting to print it again. */
     detector: {
       script: 'scripts/detect-climate-events.mjs',
       threshold: THRESHOLD,
-      note: 'Assembled automatically from published headlines and official alert feeds. '
-          + 'Every figure is a count this script performed; no claim about the event is made in its own voice.',
     },
     fetched: { epochMs: NOW },
   };

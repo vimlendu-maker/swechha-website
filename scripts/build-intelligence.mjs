@@ -342,7 +342,7 @@ ${renderMore(EVENTS, {
     heading: 'And the single events, while they happen',
     intro: 'The six above are standing measurements that never stop. These are one-off '
       + 'disasters, each with a page of its own: what happened, what the satellite sees, and '
-      + 'every figure with the outlet it came from. A page keeps its address after it closes.',
+      + 'every figure with the outlet it came from.',
   })}`;
 };
 

@@ -336,8 +336,7 @@ const out = {
     },
     total_days_this_reading: stations.reduce((a, s) => a + readingOf(s).heatwave_days, 0),
     total_days_note: 'The sum of qualifying days across all 14 stations. It is a count of '
-                   + 'station-days, NOT a national number of heatwave days — those are different '
-                   + 'quantities and this site does not blur them.',
+                   + 'station-days, NOT a national number of heatwave days.',
     consensus,
     consensus_note: 'How many of the 14 stations move each way between the first and second halves '
                   + 'of the record. Published as a count of stations rather than a national average, '
@@ -353,8 +352,6 @@ const out = {
     what_it_does_not_mean: [
       'It is not evidence that heat is not intensifying. Three of the four things that make heat '
         + 'dangerous are not dry-bulb maximum: humidity, night-time recovery, and duration.',
-      'A reanalysis smooths local extremes hardest at exactly the tail this metric lives in, and '
-        + 'contains no urban heat island for cities that have doubled their built area.',
       'A grid point is not a city, and 14 grid points are not a country.',
       'IMD\'s own declarations are made on station data across subdivisions and are a different '
         + 'quantity from this one.',

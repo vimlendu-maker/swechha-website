@@ -274,7 +274,7 @@ const readBand = (a) => `${opener('reading', a.readHead, a.readLead)}
     <div class="wrap">
 ${(a.measure || []).map((p) => `      <p class="lr-p">${p}</p>`).join('\n')}
       <div class="lr-cannot">
-        <p class="lbl">What this number cannot tell you</p>
+        <p class="lbl">What it does not measure</p>
         <ul class="lr-ul">
 ${a.cannot.map((c) => `          <li>${c}</li>`).join('\n')}
         </ul>
@@ -284,13 +284,17 @@ ${a.history ? disclose(esc(a.history.summary), a.history.body.map((p) => `<p cla
 
 /** Primary sources, and the licence under which this page may be reused. */
 const sourcesBand = (a) => `${opener('sources', 'Where this comes from', a.sourcesLead
-  || 'Every figure above is read out of one of these, at the address printed beside it.')}
+  || 'Every figure above comes from one of these.')}
     <div class="wrap">
       <ul class="lr-src">
 ${a.sources.map((s) => `        <li><a class="lk" href="${esc(s.url)}" rel="noopener">${esc(s.name)}</a>
           <span class="cap">${esc(s.publisher)}${s.note ? ` &middot; ${esc(s.note)}` : ''}</span></li>`).join('\n')}
       </ul>
-${/* ★ THE SUGGESTED CITATION, AND IT DELIBERATELY CARRIES NO DATE.
+${/* ── HISTORICAL. The citation block and its provenance note below were cut in
+      the 2026-09-10 copy pass; nothing here renders any more. Kept as the
+      record of why the block read the way it did, should it ever come back.
+
+      ★ THE SUGGESTED CITATION, AND IT DELIBERATELY CARRIES NO DATE.
       A Learn page is evergreen: it addresses the LIVE dataset by reference and
       is rebuilt when its prose changes, never when the air changes. That is the
       one rule separating this section from the Journal — a Journal figure is a
@@ -309,28 +313,14 @@ ${/* ★ THE SUGGESTED CITATION, AND IT DELIBERATELY CARRIES NO DATE.
       register. The claim it makes is the one a citation needs and the one an
       explainer is most likely to be quoted wrongly on — that the standards and
       figures here are somebody else's, and the explanation is ours. */''}
-      <div class="lr-cite">
-        <p class="lbl">Suggested citation</p>
-        <code>Swechha. &ldquo;${esc(a.h1.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())}&rdquo;
-https://swechha.in/learn/${a.slug}</code>
-        <p class="cap lr-lic" style="margin-top:12px"><b>No date, on purpose.</b> This page explains a
-          standard rather than reporting a reading: the figures in it are read out of the live dataset at
-          each build, so it does not go stale and there is no version of it to cite. If you need a figure
-          fixed to a moment, take it from <a class="lk" href="/record">the record</a> or from a
-          <a class="lk" href="/journal">Journal</a> piece, both of which carry an observation stamp.
-          The limits and the figures above are ${esc(a.sources[0].publisher)}'s and the other sources
-          named beside them; the explanation is Swechha's. The
-          <a class="lk" href="/use-the-data#how">four layers</a> are set out on the terms page.</p>
-      </div>
       <p class="cap lr-lic">Reuse freely &mdash; <a class="lk" href="${S.LICENCE_URL}" rel="license noopener">${S.LICENCE_NAME}</a>.
-        The grant covers this page. Each source above keeps its own terms, which is why every one of them is named.</p>
+        Each source above keeps its own terms.</p>
     </div>`;
 
 /** Onward: the live page, the sibling explainers, the programme, the ask. */
 const onwardBand = (a) => {
   const rel = (a.related || []).map((r) => BY_SLUG.get(r));
-  return `${opener('onward', a.onwardHead || 'Next', a.onwardLead
-    || 'The reading this explains, the explanations next to it, and the one place to stand in it.')}
+  return `${opener('onward', a.onwardHead || 'Next', a.onwardLead || '')}
     <div class="wrap">
       <div class="lr-doors">
 ${a.live ? `        <a class="lr-door" href="${esc(a.live.href)}">
@@ -373,7 +363,7 @@ ${(() => {
     return `        <a class="lr-door" href="/journal/${first.slug}">
           <span class="lbl">In the Journal</span>
           <span class="lr-door-h">${first.h1.replace(/<br>/g, ' ')}</span>
-          <span class="cap">${esc(jDate(first.date))}${more ? ` &middot; and ${more} more dated piece${more > 1 ? 's' : ''} written against this` : ' &middot; dated, with every figure snapshotted'}</span>
+          <span class="cap">${esc(jDate(first.date))} &middot; ${more ? `${more} more written against this explanation.` : 'Written against this explanation.'}</span>
         </a>`;
   })()}
       </div>
@@ -405,16 +395,13 @@ const PAGE_CSS = `
 .lr-ul{margin:10px 0 0;padding-left:1.1em;display:grid;gap:8px}
 .lr-ul li{max-width:60ch}
 .lr-src{list-style:none;margin:clamp(16px,2.4vw,24px) 0 0;padding:0;display:grid;gap:14px;max-width:70ch}
-/* THE SUGGESTED CITATION. Same treatment as the one on a Journal piece and on
-   the record pages: a ruled block, the citation in mono, the provenance note
-   under it. Written here rather than shared because each generator emits its
-   own PAGE_CSS and nothing on this site ships one stylesheet across sections.
-   pre-wrap keeps the citation's line breaks; overflow-wrap stops a long URL
-   widening the band. */
-.lr-cite{margin:clamp(20px,3vw,28px) 0 0;max-width:70ch;border-top:1px solid currentColor;padding-top:14px}
-.lr-cite code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;
-  display:block;padding:12px 14px;border:1px solid currentColor;margin:10px 0 0;
-  white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+/* THE SUGGESTED CITATION BLOCK'S CSS WENT WITH THE BLOCK, 10 September 2026.
+   The rules styled a ruled box carrying a citation in mono and a provenance
+   note under it, on all thirty explainers. The owner's copy pass struck the
+   block: an explainer is not a dataset, the source list above it already names
+   what it is built from, and /use-the-data publishes the citation forms once
+   for the whole site. The rules are deleted rather than left dead — they were
+   shipping on thirty pages with nothing to select. */
 .lr-src li{display:grid;gap:3px;border-top:1px solid currentColor;padding-top:12px}
 .lr-lic{margin:clamp(20px,3vw,28px) 0 0;max-width:70ch}
 .lr-doors{display:grid;gap:clamp(14px,2vw,20px);margin:clamp(18px,2.6vw,26px) 0 0;
@@ -617,13 +604,6 @@ ${INDEX_DATA.live.doors.map((d) => `        <a class="lr-door" href="${esc(d.hre
       </div>
     </div>`,
 
-  made: () => `${opener('made', INDEX_DATA.made.head, INDEX_DATA.made.lead)}
-    <div class="wrap">
-${INDEX_DATA.made.body.map((p) => `      <p class="lr-p">${p}</p>`).join('\n')}
-      <p class="cap lr-lic">Reuse freely &mdash; <a class="lk" href="${S.LICENCE_URL}" rel="license noopener">${S.LICENCE_NAME}</a>.
-        Each source keeps its own terms, which is why every page names the ones it used.</p>
-    </div>`,
-
   onward: () => `${opener('onward', INDEX_DATA.onward.head, INDEX_DATA.onward.lead)}
     <div class="wrap">
       <div class="lr-doors">
@@ -641,7 +621,6 @@ const INDEX_BANDS = [
   ['start',   'paper t2',    '#F3F2F0'],
   ['library', 't2',          '#0D0D0B'],
   ['live',    'paper-2 t2',  '#ECEBE8'],
-  ['made',    'dark-2 t2',   '#151512'],
   ['onward',  'paper t3',    '#F3F2F0'],
 ];
 
@@ -675,7 +654,7 @@ const IX = await S.assemble({
   bands: INDEX_BANDS,
   index: [
     ['Start here', '#start'], ['The library', '#library'],
-    ['Live readings', '#live'], ['How these are made', '#made'], ['Next', '#onward'],
+    ['Live readings', '#live'], ['Next', '#onward'],
   ],
   sh, clashes: S.groundChain(INDEX_BANDS),
   pageCss: PAGE_CSS,

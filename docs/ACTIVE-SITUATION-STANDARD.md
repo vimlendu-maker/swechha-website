@@ -66,8 +66,8 @@ which bands survive is.
 │  both exist; everything else is a named watch, ungraded.
 └────────────────────────────┘
 ┌─ sources ────────── PAPER ─┐  DATA AND SOURCES
-│  Counted by kind, then listed behind a click. Detector, score,
-│  last checked, and what is still uncertain.
+│  Counted by kind, then listed behind a click. Last changed, and
+│  what is not established.
 └────────────────────────────┘
 ┌─ back ────────────── dark ─┐  THIS IS ONE EVENT → the standing situation page
 ├─ act ─────────────── dark ─┤  Cite · closing · siblings · newsletter   ← PINNED
@@ -82,6 +82,30 @@ still had the argument.
 `build-climate-disaster-pages.mjs:247`.
 
 ---
+
+
+### The detector does not appear on the page (10 September 2026)
+
+The sources band used to print the detector's own name, the score it gave the
+event and the publication threshold it was scored against — `assembled …
+by scripts/detect-climate-events.mjs, which scored this event 22 against a
+publication threshold of 14`. It no longer does, and must not again.
+
+The score and the threshold are still computed, still stored on the event, and
+still the basis on which an event is promoted or demoted. They are *how the page
+gets decided*, not *what the page says*. A reader cannot open the script, cannot
+check the score, and did not ask how the site works; publishing our own
+publication gate reads as a machine explaining itself rather than as an
+organisation reporting a flood.
+
+`What this page does not know` was renamed `What is not established` in the same
+pass, for the same reason: the uncertainty is a property of the evidence, not a
+confession about us. The items under it are unchanged and are required.
+
+This is enforced, not merely written down: `scripts/lib/ledger-patterns.mjs`
+carries a pattern that refuses to build any page whose reader-visible text names
+a `scripts/*.mjs` file, and `lib/provenance.test.ts` re-checks every built page
+on disk against the same list.
 
 ## 2. Rules that hold for every event
 

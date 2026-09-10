@@ -200,8 +200,7 @@ const out = {
     semantics: 'cumulative nested subsets — the 10% figure INCLUDES the 30% figure',
     verified_cumulative: cumulative,
     ladder: ladder.ok ? ladder.rows : null,
-    the_trap: 'Summing across thresholds double-counts and gives roughly eight times the real total. '
-            + 'This job asserts the ladder is monotonically decreasing before it writes.',
+    the_trap: 'Summing across thresholds double-counts and gives roughly eight times the real total.',
   },
 
   total: {

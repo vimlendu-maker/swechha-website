@@ -116,6 +116,13 @@ const dateLabel = (iso) => {
   return `${Number(d)} ${S.MON[Number(m) - 1]} ${y}`;
 };
 const artHref = (slug) => `/journal/${slug}`;
+/* A BAND OPENER THAT CAN HAVE NO LEAD. The copy pass cut several band leads
+   outright; `opener()` always emits <p class="lead">, and an emptied one is
+   still a grid row, still a margin and still a thing a screen reader walks
+   into. Identical output to `opener()` when a lead is supplied. */
+const openerNL = (id, head, lead) => (lead
+  ? opener(id, head, lead)
+  : opener(id, head, '').replace(/\s*<p class="lead"><\/p>/, ''));
 const paras = (list, cls = 'jr-p') => list.map((p) => `      <p class="${cls}">${p}</p>`).join('\n');
 const bullets = (list) => `        <ul class="jr-ul">\n${list.map((x) => `          <li>${x}</li>`).join('\n')}\n        </ul>`;
 
@@ -150,17 +157,8 @@ const PAGE_CSS = `
 .jr-ul{margin:0;padding-left:1.1em;display:grid;gap:8px}
 .jr-ul li{max-width:52ch}
 .jr-src{list-style:none;margin:clamp(16px,2.4vw,24px) 0 0;padding:0;display:grid;gap:13px;max-width:70ch}
-/* THE SUGGESTED CITATION. A ruled block on the sources band, deliberately the
-   same treatment /record and /use-the-data give theirs (.rc-cite there) rather
-   than a second look for the same object — but written here rather than shared,
-   because those pages carry their own PAGE_CSS and nothing on this site emits
-   one stylesheet for both. pre-wrap keeps the citation's own line breaks, which
-   are how a citation is read; overflow-wrap stops a long URL pushing the block
-   wider than the band. */
-.jr-cite{margin:clamp(20px,3vw,28px) 0 0;max-width:70ch;border-top:1px solid currentColor;padding-top:14px}
-.jr-cite code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;
-  display:block;padding:12px 14px;border:1px solid currentColor;margin:10px 0 0;
-  white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+/* NOTE: .jr-cite — the ruled "Suggested citation" block that used to sit on the
+   sources band — was cut in the copy pass, and its rules went with it. */
 .jr-src li{display:grid;gap:3px;border-top:1px solid currentColor;padding-top:11px}
 .jr-doors{display:grid;gap:clamp(14px,2vw,20px);margin:clamp(18px,2.6vw,26px) 0 0;
   grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
@@ -249,15 +247,13 @@ ${paras(a.happened)}
 ${paras(a.matters)}
     </div>`,
 
-    data: () => `${opener('data', a.headings?.data || 'What the data says',
-      a.leads?.data || 'Every figure below carries the moment it was observed and the source that published it. None of them moves after this date.')}
+    data: () => `${openerNL('data', a.headings?.data || 'What the data says', a.leads?.data)}
     <div class="wrap">
 ${figureRail(a.figures)}
 ${paras(a.data || [])}
     </div>`,
 
-    ours: () => `${opener('ours', a.headings?.ours || 'What is known, and what is not',
-      a.leads?.ours || 'Separated on purpose. The second list is content, not a disclaimer.')}
+    ours: () => `${openerNL('ours', a.headings?.ours || 'What is known, and what is not', a.leads?.ours)}
     <div class="wrap">
 ${paras(a.ours || [])}
       <div class="jr-split">
@@ -285,41 +281,18 @@ ${a.sources.map((s) => `        <li><a class="lk" href="${esc(s.url)}" rel="noop
 ${bullets(a.watch)}
         </div>
       </div>
-${/* ★ THE SUGGESTED CITATION, ON THE PAGE, WITH THE FOUR LAYERS NAMED.
-      /use-the-data publishes the three citation shapes this site uses and the
-      four-way distinction between source data, our processing, our analysis and
-      our interpretation. Neither was on the page a journalist is actually
-      standing on when they need to quote it, so both were one navigation away
-      from every use — and the commonest way an honest number becomes a false
-      claim is being cited as a measurement when it is a calculation.
-
-      EVERY FIELD IS DERIVED FROM THE ARTICLE'S OWN DATA. The title, the date,
-      the URL and the primary source come out of the file; `type` decides which
-      of the four layers the piece IS, from the same TYPES register the chip
-      above is drawn from. Nothing is typed here, so a piece cannot be described
-      one way in its chip and another in its citation.
+${/* ★ THE SOURCE LINE. NOTE: the "Suggested citation" box this comment used to
+      describe — the derived <code> block and the "What you are citing" /
+      four-layers paragraph — was cut in the copy pass. What survives is the one
+      thing it was for: the piece names the body that measured and published its
+      readings, and the licence to reuse them.
 
       THE PRIMARY SOURCE IS THE FIRST ONE LISTED, which is the convention the
       data already follows: `sources[0]` on both published articles is the feed
       the figures came from and the rest are the standards they were judged
       against. Stated in the markup so it is not an accident of ordering. */''}
-      <div class="jr-cite">
-        <p class="lbl">Suggested citation</p>
-        <code>Swechha (${String(a.date).slice(0, 4)}). &ldquo;${esc(a.h1.replace(/<br>/g, ' ').replace(/\s+/g, ' '))}&rdquo;
-The Swechha Journal, ${esc(dateLabel(a.date))}. Based on ${esc(a.sources[0].publisher)}.
-https://swechha.in${route}</code>
-        <p class="cap jr-p" style="margin-top:12px"><b>What you are citing.</b> The readings above were
-          measured and published by ${esc(a.sources[0].publisher)} &mdash; not by Swechha. We did not
-          measure them and do not claim to. This piece is
-          <b>${esc(TYPES[a.type].label.toLowerCase())}</b>: ${esc(
-    TYPES[a.type].note.replace(/\.$/, '').replace(/^([A-Z])/, (c) => c.toLowerCase()))}.
-          Every figure in it is snapshotted with the moment it was observed, so this page does not move
-          when the live reading does. The
-          <a class="lk" href="/use-the-data#how">four layers</a> &mdash; source data, our processing, our
-          analysis and our interpretation &mdash; are set out on the terms page, and what this piece cannot
-          tell you is stated above rather than left out.</p>
-      </div>
-      <p class="cap jr-p" style="margin-top:22px">Reuse freely &mdash; <a class="lk" href="${S.LICENCE_URL}" rel="license noopener">${S.LICENCE_NAME}</a>.
+      <p class="cap jr-p" style="margin-top:22px">Based on ${esc(a.sources[0].publisher)}.
+        Reuse freely &mdash; <a class="lk" href="${S.LICENCE_URL}" rel="license noopener">${S.LICENCE_NAME}</a>.
         <a class="lk" href="/use-the-data">Terms, method and limitations</a>.</p>
     </div>`,
 
@@ -380,14 +353,12 @@ const IB = {
       </div></div>
     </div>
     <div class="pic-body"><div class="wrap">
-      <p class="lead">Analysis and reporting on India&rsquo;s environment, written against the readings this site
-        already keeps. Every figure is snapshotted at the moment it was observed, so a piece published today
-        still says today what it said today.</p>
+      <p class="lead">Analysis and reporting on India&rsquo;s environment.</p>
     </div></div>`,
 
   latest: () => `${opener('latest', 'Latest', ARTICLES.length
-    ? 'Newest first. Each carries the kind of thing it is, because a mixed feed that will not say is the hardest kind to read.'
-    : 'Nothing published yet. Drafts exist and are held until a person has approved them; a held draft has no page and no URL.')}
+    ? 'Newest first.'
+    : 'Nothing here yet.')}
     <div class="wrap">
 ${ARTICLES.length ? `      <div class="jr-list">
 ${ARTICLES.map((a) => `        <article class="jr-i">
@@ -399,8 +370,7 @@ ${ARTICLES.map((a) => `        <article class="jr-i">
       </div>` : ''}
     </div>`,
 
-  kinds: () => `${opener('kinds', 'Five kinds, kept apart',
-    'What you are reading is declared on every piece, because reporting, analysis and explanation are not the same claim on your trust.')}
+  kinds: () => `${openerNL('kinds', 'Five kinds, kept apart')}
     <div class="wrap">
       <div class="jr-kinds">
 ${Object.values(TYPES).map((t) => `        <div class="jr-k">
@@ -410,43 +380,26 @@ ${Object.values(TYPES).map((t) => `        <div class="jr-k">
       </div>
     </div>`,
 
-  how: () => `${opener('how', 'How a piece gets here',
-    'A machine can notice. It does not get to publish.')}
-    <div class="wrap">
-      <p class="jr-p">Topics are proposed automatically. <code>scripts/propose-journal.mjs</code> reads the
-        datasets behind the live pages and writes a dossier whenever one crosses a threshold worth writing
-        about &mdash; a station past a notified limit, a season past its own record, a source that restated a
-        published figure. The dossier carries the numbers that fired it, the pages that already explain them,
-        and the sources to check. It contains no prose.</p>
-      <p class="jr-p">A person then writes it, or decides not to. An article file that is not marked published,
-        and does not name the person who approved it, gets no page, no route and no URL &mdash; the same rule
-        the disaster pages run on, where an event scored below its publication bar simply has nowhere to be
-        found.</p>
-      <p class="jr-p">Nothing on this site is composed under deadline by a machine. The analysis is written
-        calmly, in review, against sources gathered in advance.</p>
-    </div>`,
-
   onward: () => `${opener('onward', 'Next', 'The readings these are written against.')}
     <div class="wrap">
       <div class="jr-doors">
         <a class="jr-door" href="/now"><span class="lbl">Live</span><span class="jr-door-h">Every situation</span><span class="cap">Six readings, each against its published limit.</span></a>
         <a class="jr-door" href="/learn"><span class="lbl">Learn</span><span class="jr-door-h">What the numbers mean</span><span class="cap">Twenty explainers behind the readings.</span></a>
-        <a class="jr-door" href="/record"><span class="lbl">Record</span><span class="jr-door-h">The archive</span><span class="cap">Every reading kept at its own address.</span></a>
+        <a class="jr-door" href="/record"><span class="lbl">Record</span><span class="jr-door-h">The archive</span><span class="cap">Every reading, kept and dated.</span></a>
       </div>
     </div>`,
 };
 
-/* FIVE BANDS, AND THE CHAIN IS NOT THE ARTICLE'S. The first attempt closed on
-   dark-2 and the footer is dark-2, so the page ended in a seamless #151512
-   block — the adjacency gate refused it, correctly. Swapping `how` to dark-2
-   and closing on paper keeps the alternation: the one dark-to-dark step
-   (kinds -> how) is the step the frozen homepage takes freely; two papers
-   meeting is the one it never does. */
+/* THE CHAIN IS NOT THE ARTICLE'S. The first attempt closed on dark-2 and the
+   footer is dark-2, so the page ended in a seamless #151512 block — the
+   adjacency gate refused it, correctly. Closing on paper keeps the alternation;
+   two papers meeting is the step the frozen homepage never takes.
+   NOTE: the `how` band this comment used to describe (dark-2, between `kinds`
+   and `onward`) was cut in the copy pass, so there is no dark-to-dark step left. */
 const IX_BANDS = [
   ['top',     't1',          '#0D0D0B'],
   ['latest',  'paper t2',    '#F3F2F0'],
   ['kinds',   't2',          '#0D0D0B'],
-  ['how',     'dark-2 t2',   '#151512'],
   ['onward',  'paper t3',    '#F3F2F0'],
 ];
 const IX = await S.assemble({
@@ -473,7 +426,7 @@ const IX = await S.assemble({
     })),
   }),
   bands: IX_BANDS,
-  index: [['Latest', '#latest'], ['Five kinds', '#kinds'], ['How a piece gets here', '#how'], ['Next', '#onward']],
+  index: [['Latest', '#latest'], ['Five kinds', '#kinds'], ['Next', '#onward']],
   sh, clashes: S.groundChain(IX_BANDS),
   pageCss: PAGE_CSS,
   navMark: { current: null, url: null },

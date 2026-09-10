@@ -59,7 +59,7 @@ const DAY = 86400000;
 export const SITUATION_STATUS = {
   active: {
     rank: 3, hero: 2, label: 'Active', pill: 'red', dot: '●',
-    line: 'Being tracked now. Figures move while you are on this page.',
+    line: 'Being tracked now. The reported figures are still moving.',
   },
   developing: {
     rank: 2, hero: 2, label: 'Developing', pill: 'amber', dot: '●',
@@ -71,11 +71,11 @@ export const SITUATION_STATUS = {
   },
   demoted: {
     rank: 0, hero: 0, label: 'Closed', pill: null, dot: '○',
-    line: 'No longer a developing situation. This page is kept as the record.',
+    line: 'No longer a developing situation.',
   },
   archived: {
     rank: 0, hero: 0, label: 'Archived', pill: null, dot: '○',
-    line: 'Archived. Kept at this address so anything that cited it still resolves.',
+    line: 'Archived. Kept as the record of what happened.',
   },
 };
 

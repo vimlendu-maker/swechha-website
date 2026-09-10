@@ -579,7 +579,7 @@ ${crumb('air')}
         <p class="verdict bad" id="air-band">${rd.band}</p>
         <div class="bands bad" id="air-bands" role="img" aria-label="${rd.band}, band ${catIdx+1} of ${AIR.bands.length}">${bands}</div>
         <p class="limit" id="air-limit">CPCB safe limit ${AIR.aqiLimit}. <b>${rd.aqi > AIR.aqiLimit ? 'Limit broken.' : 'Within the limit.'}</b></p>
-        <p class="cap p2-src" id="air-src"><span id="air-src-w">This is the WORST of ${AIR.spread.stations} CPCB monitors across Delhi &mdash; ${esc(String(ws.station).split(',')[0].trim())}. Averaged across all ${AIR.spread.stations}, Delhi reads ${AIR.city_mean.aqi}, which is the figure CPCB itself publishes for the city. ${AIR_CADENCE_VIS} Observed ${OBS}${CHK ? ` &middot; last checked by Swechha ${CHK}` : ''}. The two times differ because CPCB stamps when the air was measured, and Swechha separately records when it last asked.</span>
+        <p class="cap p2-src" id="air-src"><span id="air-src-w">This is the WORST of ${AIR.spread.stations} CPCB monitors across Delhi &mdash; ${esc(String(ws.station).split(',')[0].trim())}. Averaged across all ${AIR.spread.stations}, Delhi reads ${AIR.city_mean.aqi}, which is the figure CPCB itself publishes for the city. ${AIR_CADENCE_VIS} Observed ${OBS}.</span>
           <a class="lk" href="#measured">How this number is made</a>.</p>
       </div>
       <div class="p2-nat">
@@ -639,7 +639,7 @@ const kd = (kind) => `class="unit p-kd ${kind === 'modelled' ? 'p-kd-m' : 'p-kd-
 const KIND_LEGEND = `      <p class="p-legend"><span class="lbl p-kd p-kd-c">Counted or measured</span><span class="lbl p-kd p-kd-m">Modelled</span></p>`;
 
 B.people = () => `    <div class="wrap">
-${opener('people','Who is in it?','The consequence comes before the measurement, because the measurement is not the point. Every figure here is measured against a limit India has not adopted.')}
+${opener('people','Who is in it?','Every figure here is measured against a limit India has not adopted.')}
 ${KIND_LEGEND}
       <div class="p-two">
         <div class="p-two-c"><p class="num rl">1.5</p><p ${kd('modelled')}>million deaths a year</p>
@@ -687,8 +687,7 @@ B.measured = () => {
         <p class="cap p-miss">Eight pollutants, ${shown.length} at this monitor. <b>Pb</b> is not reported here.
           The big numbers are CPCB&rsquo;s own sub-indexes, published as such; the small ones under them are the
           concentrations those sub-indexes imply, carrying a tilde because <b>this feed publishes no
-          concentration at all</b>. Until 25 August 2026 this page read the sub-indexes as µg/m³ and converted
-          them again, which roughly doubled every figure on it.</p>
+          concentration at all</b>.</p>
         <p class="body p-key"><b>AQI 100 is not a rule of thumb.</b> The boundary sits at PM2.5
           ${AIR.limits['PM2.5'].h24} µg/m³ and PM10 ${AIR.limits['PM10'].h24} µg/m³ &mdash; exactly the 24-hour
           standards India set for itself. <b>Above 100 is above the law.</b></p>`;
@@ -718,7 +717,7 @@ B.measured = () => {
         <p class="cap"><b>Not CPCB&rsquo;s published AQI.</b> The feed returns concentrations and no index, so the
           number at the top of this page is computed here using CPCB&rsquo;s own breakpoint table.</p></div>`;
   return `    <div class="wrap">
-${opener('measured','How the number is made','One number stands in for eight, and it is not their average &mdash; it is the worst of them. Measured and modelled are set differently, on purpose.')}
+${opener('measured','How the number is made','One number stands in for eight, and it is not their average &mdash; it is the worst of them.')}
 ${tabs('Method', [['What they are', pWhat], ['Today\'s eight', pEight], ['Two scales', pScales], ['Every figure', pMethod]].filter(x => x[1]))}
     </div>`;
 };
@@ -848,8 +847,7 @@ B.sources = () => {
             answer it &mdash; <a class="lk" href="${esc(AP.live_system.url)}" rel="noopener" target="_blank">${esc(AP.live_system.name)}</a>,
             run by the ${esc(AP.live_system.by.replace(/, Ministry of Earth Sciences$/, ''))}, which publishes
             a daily split across 29 sectors with the stubble share taken from the previous evening&rsquo;s
-            satellite fire counts. <b>It has no public API</b>, so it is named and linked rather than
-            restated.</p>
+            satellite fire counts. It is named and linked rather than restated.</p>
         </div>`;
   const pNow = `<div class="p-two">
           <div class="p-two-c"><p class="num rl">${n0(g.off_season.modis)}</p><p class="unit">MODIS &middot; 1 km</p>
@@ -884,7 +882,7 @@ B.trend = () => {
           <div class="p-grid" role="img" aria-label="Daily record, one square per day, beginning ${REC_FROM ?? 'when the job first ran'}">
             ${Array.from({length:365},(_,i)=>`<i class="${i===0?'p-g-on':''}"></i>`).join('')}
           </div>
-          <p class="cap"><b>One square.</b> The record begins ${REC_FROM ? `on ${REC_FROM}` : 'when the job first ran'} and fills as the job runs. It draws no
+          <p class="cap"><b>One square.</b> ${REC_FROM ? `The record begins on ${REC_FROM}. ` : ''}It draws no
             square it does not have &mdash; an empty cell is absence, not zero. There is no retrospective
             series: the CPCB feed publishes the latest hour only.</p></div>`;
   const pAttn = `<div class="p-attn">
@@ -904,10 +902,9 @@ B.trend = () => {
           <p class="body"><b>Somebody is forecasting this. Not us, and not the government.</b> The curve is
             <b>WAQI&rsquo;s own model</b>. India&rsquo;s official forecaster is
             <a class="lk" href="${esc(fc.official_indian_forecaster.url)}" rel="noopener" target="_blank">SAFAR</a>,
-            which publishes a 72-hour Delhi forecast with <b>no public API</b> &mdash; so it is named and linked,
-            never restated.</p></div>`;
+            which publishes a 72-hour Delhi forecast. It is named and linked, never restated.</p></div>`;
   return `    <div class="wrap">
-${opener('trend','Where it has been, and where it is going',`The record starts ${REC_FROM ? `on ${REC_FROM}` : 'when the job first runs'}; the forecast reaches seven days ahead. For now this page sees further forward than back &mdash; that inverts in a week.`)}
+${opener('trend','Where it has been, and where it is going',`The record starts ${REC_FROM ? `on ${REC_FROM}` : 'when the job first runs'}; the forecast reaches seven days ahead.`)}
 ${tabs('Time', [['The record', pRecord], ['Attention', pAttn], ['Forecast', pFc]])}
     </div>`;
 };
@@ -1181,16 +1178,14 @@ B.act = () => {
               the why; the campaign is the what.</p>
             <p><a class="b b-2" href="/work/campaigns#delhi-i-cant-see-you">Delhi I Can&rsquo;t See You ${ARROW}</a></p>
             <p class="lbl" style="margin-top:var(--gap-row)">Five more situations</p>
-            <p class="body p-sib-n">Yamuna &middot; Heatwave &middot; Forest fires &middot; Forest loss &middot; Climate event</p>
-            <p class="cap">Named, not linked, until their pages exist.</p>
+            <p class="body p-sib-n">${FAMILY.filter(f => f.id !== 'air').map(f => `<a class="lk" href="${f.route}">${esc(f.name)}</a>`).join(' &middot; ')}</p>
             <p><a class="act" href="${INDEX_PAGE.route}">All situations ${ARROW}</a></p>
           </div></div>`;
   const pNews = `<div class="p-news">
           ${order ? `<div class="p-news-o"><p class="lbl p-news-ol">Most recent order, as reported</p>
             <p class="body"><a class="lk" href="${esc(order.link)}" rel="noopener" target="_blank">${esc(order.title)}</a></p>
             <p class="cap">${esc(order.publisher)} &middot; ${esc(order.published).slice(0,16)}. <b>Reported, not
-              filed.</b> This page keeps no docket and attaches no judgement &mdash; it records that a court was
-              reported to have said something, and links whoever reported it.</p></div>` : ''}
+              filed.</b></p></div>` : ''}
           ${items.slice(0,6).map(i=>`<div class="p-news-r"><a class="lk" href="${esc(i.link)}" rel="noopener" target="_blank">${esc(i.title)}</a>
             <span class="cap p-news-m">${esc(i.publisher)} &middot; ${esc(i.published).slice(5,16)}</span></div>`).join('')}
           <p class="cap">${NEWS.register.count} items from ${Object.keys(NEWS.register.publishers||{}).length} publishers, via Google News.

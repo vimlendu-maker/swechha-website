@@ -177,8 +177,12 @@ ${D.outcomes.rows.map((o) => `        <div class="sc-o">
       </div>
     </div>`;
 
-/* ── THE RECORD. Every figure resolved from the programme it belongs to. ── */
-B.evidence = () => `${opener('evidence', D.record.head, D.record.lead)}
+/* ── THE RECORD. Every figure resolved from the programme it belongs to. ──
+   NO LEAD — copy pass, F-8. `opener` always renders a lead paragraph, so this
+   band builds its own head rather than shipping an empty one. */
+B.evidence = () => `    <div class="wrap"><div class="im-head">
+        <h2 class="d1" id="evidence-h">${D.record.head}</h2>
+      </div></div>
     <div class="wrap">
       <div class="sc-figs">
 ${FIGS.map((f) => `        <a class="sc-fig" href="${f.href}">
@@ -658,7 +662,17 @@ gate(faqBad.length === 0,
       A form that quietly drops that sentence is a different feature. */
 gate(RENDERED.includes('deleted after twelve months'),
   'the retention rule is printed where the form is');
-gate(RENDERED.includes('No IP address'), 'what is NOT collected is printed too');
+/* AND WHAT IS NOT COLLECTED, WHICH SURVIVED THE COPY PASS ON PURPOSE.
+   The 10 September 2026 pass shortened this line from four sentences of
+   data-handling narration to three short ones, and briefly dropped this half
+   with them. It was put back: a form that asks for a named person at a named
+   school is the one place on this site where telling the reader what is NOT
+   stored is a service to them rather than backstage detail about us. The rule
+   the pass applied — cut what the visitor does not need — is what keeps the
+   sentence, not what removes it. lib/school-enquiry.test.ts asserts the same
+   string against the spec, so the page and the definition cannot drift. */
+gate(RENDERED.includes('No IP address'),
+  'what is not collected is printed where the form is');
 
 console.log(`\n${OUT.length.toLocaleString('en-IN')} bytes. ${fail ? `${fail} gate(s) failed.` : 'All gates pass.'}`);
 if (fail) process.exit(1);

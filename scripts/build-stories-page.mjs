@@ -273,7 +273,7 @@ ${note}${also}
    a rendering fault. */
 const newsRow = (e) => `          <li class="st-nw-r">
             <a href="https://www.youtube.com/watch?v=${esc(e.id)}" rel="noopener" target="_blank">
-              <span class="lbl st-nw-o">${e.outlet ? esc(e.outlet) : '<i class="st-nw-u">Not recorded</i>'}</span>
+              <span class="lbl st-nw-o">${e.outlet ? esc(e.outlet) : ''}</span>
               <span class="st-nw-t">${esc(e.title)}${ARROW}</span>
 ${e.subject ? `              <span class="cap st-nw-s">${esc(e.subject)}</span>\n` : ''}            </a>
           </li>`;
@@ -591,10 +591,15 @@ gate(bogus.length === 0, `no outlet on the band that the data did not claim${bog
 
 /* P3. THE UNRECORDED EIGHT ARE VISIBLY UNRECORDED. If this ever renders as an
        empty cell the blanks read as a bug; if it renders as a dash they read as
-       a programme called "-". Both are worse than saying it. */
+       a programme called "-". Both are worse than saying it.
+       NOTE: the placeholder is gone and the gate is turned round. A row with no
+       outlet on its own recording now renders an empty cell deliberately, and
+       no word may stand in for one — a dash or a restored "Not recorded" fails
+       here. The band's own hole sentence is where the gap is explained. */
 const blanks = NEWS.filter((e) => !e.outlet).length;
-gate(blanks === 0 || (bandHtml.match(/Not recorded/g) || []).length === blanks,
-  `all ${blanks} unattributed segments say so in the open`);
+gate(!/Not recorded/.test(bandHtml)
+  && (bandHtml.match(/<span class="lbl st-nw-o"><\/span>/g) || []).length === blanks,
+  `all ${blanks} unattributed segments render an empty outlet cell`);
 
 /* P4. THE BAND STATES THE GAP ONCE. The count in the data's own hole sentence
        has to match the count the page actually renders, or the page is telling
