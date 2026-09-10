@@ -59,7 +59,7 @@ const DAY = 86400000;
 export const SITUATION_STATUS = {
   active: {
     rank: 3, hero: 2, label: 'Active', pill: 'red', dot: '●',
-    line: 'Being tracked now. The reported figures are still moving.',
+    line: 'Being tracked now. The figures are still moving.',
   },
   developing: {
     rank: 2, hero: 2, label: 'Developing', pill: 'amber', dot: '●',

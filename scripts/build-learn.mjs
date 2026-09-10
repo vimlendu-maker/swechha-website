@@ -602,6 +602,8 @@ ${INDEX_DATA.live.doors.map((d) => `        <a class="lr-door" href="${esc(d.hre
           <span class="cap">${esc(d.note)}</span>
         </a>`).join('\n')}
       </div>
+      <p class="cap lr-lic">Reuse freely &mdash; <a class="lk" href="${S.LICENCE_URL}" rel="license noopener">${S.LICENCE_NAME}</a>.
+        Each source keeps its own terms.</p>
     </div>`,
 
   onward: () => `${opener('onward', INDEX_DATA.onward.head, INDEX_DATA.onward.lead)}

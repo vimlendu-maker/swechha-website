@@ -373,7 +373,7 @@ ${D.map((d) => `            <tr>
       <p class="rc-p"><b>An AQI is already a rolling figure.</b> CPCB's sub-indices are computed over averaging
         periods set per pollutant &mdash; 24 hours for the particulates. So an hourly observation describes a
         window ending at that hour, not that minute, and the day's peak is the highest such window.</p>
-      <p class="rc-p">A day with four hours in it is four hours of
+      <p class="rc-p"><b>Hours observed</b> is exactly that: a day with four hours in it is four hours of
         record. Nothing here is interpolated and no missing hour is filled.</p>
       <p class="rc-p"><b>${AQI_LIMIT} is the top of CPCB's &lsquo;Satisfactory&rsquo; band</b>, which corresponds to the
         24-hour standard for the governing pollutant. It is the line this table marks, and
@@ -518,7 +518,7 @@ https://swechha.in/record/air</code>
       </div>
 ${dlRows([
     { rel: 'air/delhi-daily.csv', label: 'Every day of the record', format: 'CSV', note: 'peak, hours observed, hours over the limit' },
-    { rel: 'index.json', label: 'What is published, and where', format: 'JSON' },
+    { rel: 'index.json', label: 'Every file, listed', format: 'JSON', note: 'each one with its span and its terms' },
   ])}
     </div>`,
 
@@ -575,7 +575,7 @@ const KEPT = [
   { subject: 'Delhi air', href: '/record/air', live: '/now/air', learn: '/learn/delhi-aqi',
     cadence: 'Hourly', source: 'CPCB CAAQMS, mirrored on data.gov.in',
     limit: 'PM2.5 24-hour: 60 µg/m³ (NAAQS 2009)',
-    note: `${S.n0(TOTAL_OBS)} observations kept with every revision, from ${dayLabel(FIRST)}.` },
+    note: `${S.n0(TOTAL_OBS)} hourly observations, from ${dayLabel(FIRST)}.` },
   { subject: 'The Yamuna', href: null, live: '/now/yamuna', learn: '/learn/yamuna-bod',
     cadence: 'Annual', source: 'CPCB National Water Quality Monitoring Programme',
     limit: 'DO > 5.0 mg/L, BOD < 3.0 mg/L (PWQC 1986)',
@@ -587,7 +587,7 @@ const KEPT = [
   { subject: 'Forest loss', href: null, live: '/now/forest-loss', learn: '/learn/forest-loss-india',
     cadence: 'Annual', source: 'FSI ISFR and Hansen / GFW',
     limit: 'No limit — two definitions that disagree',
-    note: 'FSI and Hansen/GFW disagree by definition. Both are shown.' },
+    note: 'Both kept side by side. Reconciling them into one number would be the error.' },
   { subject: 'Fire', href: null, live: '/now/forest-fire', learn: '/learn/forest-fires-india',
     cadence: 'Annual sample', source: 'NASA FIRMS, VIIRS S-NPP',
     limit: 'No limit published anywhere',
@@ -632,7 +632,7 @@ ${KEPT.map((k) => `        <div class="rc-k">
       </div>
     </div>`,
 
-    air: () => `${opener('air', 'The one that is published day by day', 'Air is hourly.')}
+    air: () => `${opener('air', 'The one that is published day by day', 'Air is hourly &mdash; the only subject with enough resolution for a page per month.')}
     <div class="wrap">
       <p class="rc-p">${S.n0(TOTAL_OBS)} hourly observations of Delhi's air are kept, from ${dayLabel(FIRST)} to
         ${dayLabel(LAST)}, each with the worst reporting monitor named and the full state of the network at
@@ -865,6 +865,9 @@ ${KEPT.map((k) => `            <tr>
           </tbody>
         </table>
       </div>
+      <p class="rc-p" style="margin-top:22px">What we do to these: take the worst reporting monitor rather
+        than a city average, print the unweighted station mean beside it as a cross-check, and sample fire
+        detections in the same ten-day window every year.</p>
     </div>`,
 
     limits: () => `${openerNL('limits', 'What it does not cover')}

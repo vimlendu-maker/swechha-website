@@ -353,7 +353,7 @@ const IB = {
       </div></div>
     </div>
     <div class="pic-body"><div class="wrap">
-      <p class="lead">Analysis and reporting on India&rsquo;s environment.</p>
+      <p class="lead">Analysis and reporting on India&rsquo;s environment. Every figure carries the date it was observed.</p>
     </div></div>`,
 
   latest: () => `${opener('latest', 'Latest', ARTICLES.length

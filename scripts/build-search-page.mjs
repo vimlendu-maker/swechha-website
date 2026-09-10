@@ -243,7 +243,7 @@ const B = {};
 B.top = () => `    <div class="wrap sr-mast">
       <p class="lbl eyebrow">Search</p>
       <h1 class="d1">What are you<br>looking for?</h1>
-      <p class="lead">${entries.length} pages. Or read the whole list below.</p>
+      <p class="lead">${entries.length} pages. Type to filter, or read the whole list below.</p>
       <div class="sr-field">
         <label class="lbl sr-lbl" for="sr-q">Filter by word</label>
         <input id="sr-q" class="sr-in" type="search" autocomplete="off" spellcheck="false"

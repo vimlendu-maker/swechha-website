@@ -1389,12 +1389,17 @@ const LABEL = {
    It now throws at build time: a missing label is a defect, and a build that
    silently prints an internal identifier to a reader is worse than one that
    stops. Add the label — do not restore the fallback. */
-const sectionsFor = (bands) => bands.map(([id]) => {
+/* `heads` is the per-page override, and it exists because a band head that is
+   written per page has to reach the index too. No Plastic's `done` band holds
+   one card, a funder credit, so it is headed "Who was behind it" rather than
+   "What it adds up to" — and a chip that still said the latter would send a
+   reader to a heading they did not click. */
+const sectionsFor = (bands, heads = {}) => bands.map(([id]) => {
   if (!LABEL[id]) {
     rej('LABEL', `band "${id}" has no entry in LABEL, so the SECTIONS index would print the raw band id to a reader. Add a label.`);
     return [id, `#${id}`];
   }
-  return [LABEL[id], `#${id}`];
+  return [heads[id] || LABEL[id], `#${id}`];
 });
 
 function registerAnchors(url, bands, extra = []) {
@@ -1493,7 +1498,10 @@ const EVIDENCE = {
      page, not a paragraph about it. A reader who clicks "the evidence" from a
      WORK page should land on the evidence, with a heading above it, not
      mid-scroll on the front page they may never have seen. */
-  '/now': { href: '/now', eyebrow: 'The evidence', head: 'The record', body: 'What Delhi’s air, river and heat are doing right now.', foot: 'Every situation, side by side' },
+  /* "The readings", not "The record": /now is what the footer calls the
+     readings and /record is what it calls the past ones. One word pointing at
+     two destinations is the reader's problem, not ours to keep. */
+  '/now': { href: '/now', eyebrow: 'The evidence', head: 'The readings', body: 'What Delhi’s air, river and heat are doing right now.', foot: 'Every situation, side by side' },
   /* AD-24: was `/#farm`, the homepage teaser band. `/farm` is now a page, and
      this door's own copy ("the five acres this happens on") promises the place
      rather than a paragraph about it. An anchor here would land a reader who
@@ -1922,8 +1930,8 @@ const invite = ({ act, second, note, asks, back, read }) => inviteRow({
 
      THE OPENING CLAUSE IS GONE TOO. What is left is the address, which is the
      only part of that sentence a reader could act on. */
-  note: (asks && asks.length) ? note
-    : `${note} Write to <a class="lk" href="mailto:${esc(CONTACT)}">${esc(CONTACT)}</a>.`,
+  note: (asks && asks.length) ? (note || '')
+    : `${note ? `${note} ` : ''}Write to <a class="lk" href="mailto:${esc(CONTACT)}">${esc(CONTACT)}</a>.`,
 });
 
 /* ═══ AD-27.14 → AD-27.22 · THE ASK, INSTANTIATED ════════════════════════
@@ -2134,7 +2142,7 @@ function pageIndex() {
        THE SECTION, which is measured and not preferred: the frozen homepage
        points 8 links at /work/projects and 6 at /work/journeys. That measure
        chooses the doors; it is not printed on them. */
-    doors: [kdoor('projects', 'Eight of them, running for years'), kdoor('journeys', 'Two hours to twelve days'), EVIDENCE['/now']],
+    doors: [kdoor('projects', 'Eight of them'), kdoor('journeys', 'Two hours to twelve days'), EVIDENCE['/now']],
     act, actNote: 'If you would rather start than read, the shortest way in is a walk that takes an afternoon.',
     /* AD-27.18-A. "Book a journey" resolves here. The secondary goes with it:
        the Ask's own tertiary link is /act#partner, which is the destination
@@ -2211,7 +2219,6 @@ function pageKind(k) {
        situation links live on the items, where the claim is actually true. */
     doors: threeDoors({ siblings: otherKindDoors(k), situation: null, evidence: EVIDENCE['/now'] }),
     act: deepen(url, def.act || { label: 'Get involved', href: '/act' }),
-    actNote: 'Reading this page is not the point of it.',
     /* AD-27.18-A. /work/projects and /work/journeys resolve their ask in place;
        any future kind landing that has no Ask keeps a navigating primary and a
        secondary that points at the partnering content rather than at /about. */
@@ -2219,7 +2226,6 @@ function pageKind(k) {
       act: deepen(url, def.act || { label: 'Get involved', href: '/act' }),
       second: INDEX_ASK[url] ? null : PARTNER_SECOND,
       asks: indexAsk(url),
-      note: 'Reading this page is not the point of it.',
     }),
   });
   return {
@@ -2300,6 +2306,11 @@ function pageCampaigns() {
    activities · who it is for · impact · the photographs · who it is with · get
    involved. Every one of them is present only if the data supports it, and
    every absence is named in the build report.                                */
+/* The `done` band's head, per item. The default is the register's own name for
+   it; an item writes its own where the default would misdescribe what is in the
+   band. See the note on `sectionsFor`. */
+const doneHead = (it) => it.done_head || LABEL.done;
+
 function pageItem(it) {
   const def = kindDef(it.kind);
   const w = it.with || {};
@@ -2435,7 +2446,7 @@ function pageItem(it) {
          delivered it and the ledger disclosure audited the figures. All three
          are gone. What is left is the band the client asked for: the figures,
          then what they mean, and nothing about our filing. */
-      opener('done', 'What it adds up to'),
+      opener('done', doneHead(it)),
       figureRail(it.figures || []),
       proseRows(it.done || [], 'The rest of the record'),
     ],
@@ -2500,7 +2511,7 @@ function pageItem(it) {
     }),
   });
   return {
-    bands, body: applyCanvas(bands, body), sections: sectionsFor(bands),
+    bands, body: applyCanvas(bands, body), sections: sectionsFor(bands, { done: doneHead(it) }),
     current: it.kind === 'journeys' ? 'Journeys' : 'Work',
     crumbs: crumbsFor(it),
     title: seo(itemPath(it).url).title, desc: seo(itemPath(it).url).description,
@@ -2579,7 +2590,7 @@ function pageEvents() {
        to join. Dates go out on the four accounts..." — two clauses of what this
        page does not have, then the one clause that tells a reader where to
        actually look. Subtract, do not rewrite: the useful clause stands alone. */
-    actNote: 'Dates go out on Instagram.',
+    actNote: 'Dates go out on the four accounts below.',
     /* AD-27.18-A. "Volunteer with us" is an individual action and not one of the
        four audiences (AD-27.56 forbids a fifth), so it keeps navigating — to
        /act#hands, which is where /act's own WAYS table files this exact label
@@ -2587,7 +2598,7 @@ function pageEvents() {
     invite: invite({
       act: deepen(PATHS.events.url, def.act || { label: 'Volunteer with us', href: '/act' }),
       second: PARTNER_SECOND,
-      note: 'Dates go out on Instagram.',
+      note: 'Dates go out on the four accounts below.',
     }),
   });
   return {
@@ -2803,11 +2814,17 @@ if (links.failures.length) {
    reported rather than skipped silently — an unassertable figure is a hole in
    the gate and must be visible as one.
 
-   THE WORD IS NO LONGER PRINTED on these pages, so the second direction above
-   is inverted: the rule under the label still has to match the basis, and NO
-   reading may carry the badge. BASIS_SAYS is now the vocabulary the gate looks
-   for and refuses, not the vocabulary it requires. */
-const BASIS_SAYS = { modelled: 'Derived, not counted', planned: 'Planned, not counted' };
+   ONE TERM SURVIVES, AND THE GATE RUNS BOTH WAYS AGAIN. The copy pass took
+   every word off these pages; the second sweep put back "Modelled", on the
+   estimates only, because three of them were reading as counts. So: a
+   modelled reading must say "Modelled", and nothing else may say anything.
+   `planned` is deliberately absent from the table — it is unmarked on the
+   page, and a word it must not print is stated below rather than here. */
+const BASIS_SAYS = { modelled: 'Modelled' };
+/* Vocabulary that must NOT appear on any reading: the retired long forms, and
+   the Counted half of the pair. Marking the ordinary case makes the unmarked
+   numeral meaningless, which is the whole reason only one word came back. */
+const BASIS_NEVER = ['Derived, not counted', 'Planned, not counted', 'Counted or measured'];
 const basisOf = new Map();
 for (const it of items) {
   for (const f of (it.figures || [])) {
@@ -2847,11 +2864,17 @@ for (const b of built) {
     if (seen.size > 1) { basisAmbiguous++; continue; }
     const basis = [...seen][0];
     const wantRule = basis === 'modelled' ? 'p-kd-m' : 'p-kd-c';
+    const word = BASIS_SAYS[basis] || '';
     const says = Object.values(BASIS_SAYS).filter(w => block.includes(w));
+    const never = BASIS_NEVER.filter(w => block.includes(w));
     if (cls !== wantRule) {
       basisBad.push(`${b.url} "${label}" is ${basis} and renders ${cls} — it must render ${wantRule}`);
-    } else if (says.length) {
-      basisBad.push(`${b.url} "${label}" prints the badge "${says[0]}" — these pages do not print one.`);
+    } else if (never.length) {
+      basisBad.push(`${b.url} "${label}" prints "${never[0]}" — that vocabulary is retired.`);
+    } else if (word && !says.includes(word)) {
+      basisBad.push(`${b.url} "${label}" is ${basis} and says ${says.length ? `"${says[0]}"` : 'nothing'} — it must say "${word}" above the numeral or in its caption`);
+    } else if (!word && says.length) {
+      basisBad.push(`${b.url} "${label}" is ${basis} and says "${says[0]}". Only an estimate is marked; marking anything else makes the unmarked numeral meaningless.`);
     }
     basisChecked++;
   }

@@ -232,7 +232,8 @@ const RUNGS = [
   { year: '2016', head: 'City to countryside',
     text: 'From urban campaigns to land, water, livelihoods and the farm.' },
   { year: 'Now', head: 'Still showing up', green: true,
-    text: 'The journeys still run, and the schools still run.' },
+    text: 'The journeys still run, the schools still run, and six situations are '
+        + 'tracked every hour.' },
 ];
 
 /* ═══ THE CHECKABLE PART IS NOT A BAND ANY MORE — AD-27.41 ════════════════
@@ -427,7 +428,7 @@ B.says = () => `${opener('says', 'What we say<br>we are',
       </div>
 
       <div class="a-three">
-        <h3 class="lbl a-sub">Education, Environment, Enterprise</h3>
+        <h3 class="lbl a-sub">The three it works under</h3>
         <div class="a-three-g">
 ${PILLARS.map(([n, t]) => `          <div class="a-pil"><p class="a-pil-n">${n}</p><p class="cap a-pil-t">${t}</p></div>`).join('\n')}
         </div>
@@ -564,7 +565,7 @@ const boardRow = (p) => {
        simply better, inherits the frozen 44px expander for free, and matches
        every other band's one CTA. */
     ? `<p class="body a-b-also">Also <b>${esc(also.role)}</b> on the staff.</p>
-          <p class="a-b-go"><a class="act" href="#team">Read their profile ${ARROW}</a></p>`
+          <p class="a-b-go"><a class="act" href="#team">Their description, with the team ${ARROW}</a></p>`
     /* NO DESCRIPTION, AND NOTHING SAID ABOUT THERE BEING NO DESCRIPTION.
        He is a governing-body member with no bio on the live site's listing, so
        the row carries his name and his role and stops. This used to be a dotted
@@ -685,7 +686,7 @@ const NGO_LD = '      <script type="application/ld+json">'
   + JSON.stringify(NGO_JSON).replace(/</g, '\\u003c') + '</script>';
 
 const DOORS = [
-  ['/now', 'The readings', "Delhi's air, the Yamuna, heat, fire and rain."],
+  ['/now', 'The readings', 'All six: air, the Yamuna, heat, forest fire, forest loss, extreme rain.'],
   ['/impact', 'The record', 'What the work adds up to.'],
   /* AD-24: `/farm` is a page now, and this door already says "you can come to
      it" — which the homepage band could only promise and the page can answer. */

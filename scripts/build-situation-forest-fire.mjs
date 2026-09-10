@@ -151,7 +151,8 @@ B.people = () => `${opener('people', 'What it costs', `${n0(FIRE_DEATHS.deaths)}
 ${KIND_LEGEND}
       <p class="f-note">${esc(DTH.the_mismatch.forest_fire_vs_burnt_area.reading)}</p>
       <p class="cap f-cap"><b>The periods differ.</b> NCRB counts a calendar
-        year; FSI&rsquo;s fire season runs November to June.</p>
+        year; FSI&rsquo;s fire season runs November to June. Any comparison between them is
+        approximate, which is why it is drawn as a comparison of magnitudes and never as a rate.</p>
       <p class="lbl f-lbl">Where it burnt, ${esc(BURNT.season)}</p>
       ${measureHead(['State', 'Area burnt', 'km&sup2;', ''])}
       <div class="f-rows">

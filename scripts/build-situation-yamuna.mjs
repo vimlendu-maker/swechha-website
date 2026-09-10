@@ -385,7 +385,8 @@ B.measured = () => `${opener('measured', 'How the number is made', 'Four measure
         ['Acidity', `<div class="y-def">
           <p class="y-def-h">pH &middot; legal range ${L.ph.label}</p>
           <p>How acidic or alkaline the water is. It is the one parameter on this page that Delhi
-            mostly passes.</p>
+            mostly passes, and it is included for exactly that reason: a page that only shows the
+            failures is not an instrument, it is an argument.</p>
           <p>Every Delhi station in the ${YAM.year} table sits inside
             ${L.ph.label} or within a tenth of it. pH tells you almost nothing about whether a
             river is alive, which is why it is never the headline.</p>

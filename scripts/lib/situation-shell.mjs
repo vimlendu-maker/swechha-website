@@ -627,7 +627,7 @@ export const citeBlock = (id) => {
   }
   return `      <div class="p-close">
         <div class="p-close-r">
-          <p class="lbl">Every reading, kept</p>
+          <p class="lbl">A gap is a gap</p>
           <p class="cap"><b>An empty day stays empty</b> &mdash; a gap in the record is a gap in the
             record, never a zero.</p>
         </div>
@@ -1626,7 +1626,7 @@ ${arts.map((a) => {
       + `<span class="cap">${jDate(a.date)} &middot; ${esc(first)}</span></a></li>`;
   }).join('\n')}
           </ul>
-          <p class="cap cl-learn-m"><a class="lk" href="/journal">Every dated piece</a> &mdash; analysis and reporting on India&rsquo;s environment.</p>
+          <p class="cap cl-learn-m"><a class="lk" href="/journal">Every dated piece</a>, written against the readings on this page.</p>
         </div>`;
 };
 
@@ -2304,7 +2304,7 @@ export const ASK_ONWARD = {
   school: ['/act#partner', 'How partnerships work'],
   funder: ['/act#partner', 'How partnerships work'],
   institution: ['/act#partner', 'How partnerships work'],
-  media: ['/impact', 'What the work adds up to'],
+  media: ['/impact', 'The figures behind the work'],
 };
 export const ask = ({ audience, label, page, path, level = 1, tertiary }) => {
   const a = ASK_AUDIENCES[audience];

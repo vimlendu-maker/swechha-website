@@ -55,11 +55,13 @@ import { imageSize } from './lib/jpeg-size.mjs';
 /* `hole` is deliberately NOT imported. AD-28 removed every named hole from
    this page and a build gate refuses to write one; importing the helper back is
    the first half of putting one on the page. */
-/* `kd` and `KIND_LEGEND` are deliberately NOT imported. The copy pass (F-5)
-   removed the per-figure Counted/Modelled badge and the legend that explained
-   it from THIS PAGE; the `basis` values are untouched in the data and the
-   marker is unchanged everywhere else it is used. */
-const { esc, opener, ARROW } = S;
+/* `KIND_LEGEND` is deliberately NOT imported. The copy pass (F-5) removed the
+   per-figure Counted/Modelled badge and the legend that explained it from THIS
+   PAGE; the second sweep put back ONLY the "Modelled" tag, on the three
+   modelled figures, so there is nothing left for a two-word legend to explain.
+   `kd` is imported again for that one tag. An unmarked row reads as counted,
+   which is what it is: we mark the estimate, not every fact. */
+const { esc, opener, ARROW, kd } = S;
 
 const sh = S.shell();
 
@@ -235,23 +237,26 @@ const span = (p) => {
     .trim().replace(/,$/, '');
   return t;
 };
-/** A register row: label, the programme it belongs to and its span, the value.
-    NO SOURCE LINE — AD-28 §2.2: /impact is Swechha telling the world what it
-    has done, not a bibliography. NO BASIS BADGE either, since the copy pass
-    (F-5): the Counted/Modelled word on every row, and the legend above the
-    register that explained it, were the page grading its own homework in the
-    reader's margin. The `basis` values are untouched in data/work/**, the
-    data gate above still requires one, and the marker is unchanged on every
-    other page that uses it. */
+/** The one marker this page still prints. The copy pass (F-5) took off the
+    Counted word, the Modelled word and the legend together; the second sweep
+    puts back the Modelled word alone, because three estimates were left
+    sitting unmarked among counted figures. An unmarked row is a counted row.
+    Nothing else is tagged, and there is no legend: the asymmetry says what a
+    key would have had to. */
+const mark = (f) => f.basis === 'modelled' ? `<span ${kd('modelled')}>Modelled</span>` : '';
+
+/** A register row: label, the programme it belongs to and its span, the value,
+    and the Modelled tag if it is one. NO SOURCE LINE — AD-28 §2.2: /impact is
+    Swechha telling the world what it has done, not a bibliography. */
 const figRow = (f) => `        <div class="p-nr">
           <p class="p-nr-n">${esc(f.label)}<span class="cap ip-prov">${esc(f.item.name)}${span(f.period) ? ` &middot; ${esc(span(f.period))}` : ''}</span></p>
           <p class="p-nr-v">${num(f.value)}</p>
-        </div>`;
+${f.basis === 'modelled' ? `          <p class="lbl ip-basis">${mark(f)}</p>\n` : ''}        </div>`;
 
-/** A big figure with its label under it. */
+/** A big figure with its label under it, and the tag if it is an estimate. */
 const bigFig = (f) => `          <div class="ip-big">
             <p class="num ip-big-v">${num(f.value)}</p>
-            <p class="lbl ip-big-l">${esc(f.label)}</p>
+            <p class="lbl ip-big-l">${esc(f.label)}${f.basis === 'modelled' ? ` ${mark(f)}` : ''}</p>
             <p class="cap ip-big-s">${esc(f.item.name)}${span(f.period) ? ` &middot; ${esc(span(f.period))}` : ''}</p>
           </div>`;
 
@@ -276,10 +281,9 @@ const BANDS = [
 const clashes = S.groundChain(BANDS);
 
 const INDEX = [
-  /* 'No total' and 'Why not' both went with the `refuse` band and the old
-     masthead hook (copy pass, F-1 and F-4). The first chip names the
-     masthead as it now reads. */
-  ['Twenty-six years', '#top'], ['Two numbers', '#pair'],
+  /* 'No total' and 'Why not' both went with the `refuse` band (copy pass, F-1
+     and F-4). The first chip names the masthead as it now reads. */
+  ['Every figure', '#top'], ['Two numbers', '#pair'],
   ['The register', '#register'],
   ['The archive', '#sheet'],
   /* AD-39. "Hold us to it" is gone -- band and label together. See the note on
@@ -468,6 +472,7 @@ const PAGE_CSS = `
 /* ── the register ── */
 .ip-reg{margin-top:var(--gap-row)}
 .ip-prov{display:block;color:var(--ink-3);margin-top:5px}
+.ip-basis{white-space:nowrap}
 .ip-tab-n{font-variant-numeric:tabular-nums;opacity:.6;margin-left:6px}
 
 /* AD-28 — .ip-claim / .ip-unlock (the deleted "waiting" band) and .ip-ovl-n
@@ -573,22 +578,30 @@ const unrendered = FIGS.filter(f => !OUT.includes(num(f.value)));
 gate(unrendered.length === 0,
   `all ${FIGS.length} figures render${unrendered.length ? `; MISSING: ${unrendered.map(f => f.value).join(', ')}` : ''}`);
 
-/* 3. NO BASIS MARKER AND NO LEGEND — copy pass, F-5, AND THIS IS THE OLD GATE
-      INVERTED. It used to prove the dotted rule was on every modelled figure
-      and that the legend explaining it was present. Both are gone from this
-      page, so the gate now proves neither came back: a dotted rule with no
-      legend is an unexplained mark, and the legend is a key to a page that no
-      longer needs one. The `basis` values are still required in data/work/**
-      by the data gate at the top of this file, and the marker is untouched
-      wherever else the shell renders it. */
+/* 3. THE MODELLED TAG IS ON THE ESTIMATES AND ON NOTHING ELSE. The copy pass
+      (F-5) took the Counted word, the Modelled word and the legend off this
+      page together, and inverted this gate to prove all three stayed off. Two
+      of the three should have. Three modelled figures were left sitting
+      unmarked among counted ones, which is the one misreading the copy
+      standard says a methodology note exists to stop, so the Modelled tag is
+      back — and only that. The gate now checks BOTH directions: every modelled
+      figure carries the tag, no counted figure carries anything, and the
+      two-word legend does not return. An unmarked row reads as counted. */
 /* MARKUP, NOT THE RAW FILE. The inherited stylesheet defines .p-kd and
-   .p-kd-m, so a gate reading OUT fires on the CSS that styles a marker this
-   page no longer prints — the same trap gate 5 documents below. */
+   .p-kd-m, so a gate reading OUT fires on the CSS as well as on the markup —
+   the same trap gate 5 documents below. */
 const MARKUP = OUT
   .replace(/<style[\s\S]*?<\/style>/gi, '')
   .replace(/<script[\s\S]*?<\/script>/gi, '')
   .replace(/<!--[\s\S]*?-->/g, '');
-gate(!/class="[^"]*\bp-kd\b/.test(MARKUP), 'no counted/modelled marker on the page');
+const nMod = FIGS.filter(f => f.basis === 'modelled').length;
+const nTag = (MARKUP.match(/>Modelled</g) || []).length;
+/* The three modelled figures are the pair's larger half and three register
+   rows — the larger half appears in both bands, so the tag count is the
+   register's modelled rows plus that one repeat. */
+const nWant = nMod + (PAIR_A.basis === 'modelled' ? 1 : 0) + (PAIR_B.basis === 'modelled' ? 1 : 0);
+gate(nTag === nWant, `the Modelled tag is on all ${nMod} modelled figure(s) and nowhere else (${nTag} of ${nWant})`);
+gate(!/class="[^"]*\bp-kd-c\b/.test(MARKUP), 'no Counted marker on the page');
 gate(!MARKUP.includes('Counted or measured'), 'no counted/modelled legend on the page');
 
 /* 4. NO DOTTED HOLE ANYWHERE ON THE PAGE — AD-28 §2.3.
