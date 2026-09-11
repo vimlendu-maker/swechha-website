@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync, existsSync, readdirSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 
@@ -127,54 +127,12 @@ describe('inbox: urgency, and the sentinel it feeds', () => {
     expect(role).toMatch(/never satisfy a `?WATCH`? by checking the condition once/i)
   })
 
-  it('the sentinel orchestrates and does not itself check anything', () => {
-    const s = readSh('scripts/website-team/sentinel.sh')
-    // Probes are discovered, never listed — a hand-kept list beside a
-    // directory is this repo's most repeated defect.
-    expect(s).toMatch(/for probe in "\$PROBES"\/\*\.sh/)
-    // The orchestrator must stay short. If this trips, the check you just
-    // added belongs in sentinel/, not here.
-    const lines = s.split('\n').filter((l) => !/^\s*#/.test(l) && l.trim()).length
-    expect(lines, 'sentinel.sh is growing into the thing it must not become').toBeLessThan(70)
-    for (const forbidden of [/curl /, /gh run list/, /npm run air:status/]) {
-      expect(s, 'a probe leaked into the orchestrator').not.toMatch(forbidden)
-    }
-  })
-
-  it('no probe contains a model call — that is what makes monitoring free', () => {
-    const dir = join(ROOT, 'scripts/website-team/sentinel')
-    const probes = readdirSync(dir).filter((f) => f.endsWith('.sh'))
-    expect(probes.length).toBeGreaterThanOrEqual(5)
-    for (const p of probes) {
-      const src = readFileSync(join(dir, p), 'utf8')
-      // Comments legitimately NAME providers: fundraising-health.sh explains
-      // that Anthropic spend is precisely the thing it cannot see. Assert on
-      // the code, or an honest explanation fails the test.
-      const code = src.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n')
-      // Match an INVOCATION, not the word. The first version matched /\bclaude\b/
-      // anywhere, which made `.claude/settings.json` — a directory every probe
-      // may legitimately read — indistinguishable from spending money. A test
-      // that forbids a path name while claiming to forbid a model call sends the
-      // next person looking in the wrong place entirely.
-      expect(code, `${p} invokes the claude CLI`)
-        .not.toMatch(/(^|[;|&(]|\$\()\s*claude\s/m)
-      expect(code, `${p} calls an Anthropic endpoint`)
-        .not.toMatch(/api\.anthropic\.com|ANTHROPIC_API_KEY/)
-      // Every probe must document what its exit codes mean by using them.
-      expect(src, `${p} never exits non-zero, so it can only ever say "fine"`)
-        .toMatch(/exit [12]/)
-    }
-  })
-
-  it('an unmeasurable thing is UNKNOWN, never healthy', () => {
-    const dir = join(ROOT, 'scripts/website-team/sentinel')
-    // The two highest cost risks in the stack cannot be measured without
-    // credentials that do not exist. They must say so rather than pass.
-    for (const [probe, token] of [['neon-health.sh', 'NEON_API_KEY'], ['vercel-health.sh', 'VERCEL_TOKEN']]) {
-      const src = readFileSync(join(dir, probe), 'utf8')
-      expect(src).toContain(token)
-      expect(src).toMatch(/UNKNOWN/)
-      expect(src).toMatch(/exit 2/)
-    }
-  })
+  /* ★ THREE TESTS LEFT WITH THE INSTRUMENT, 2026-09-11. The sentinel, its
+     probes, the dashboard renderer and the service inventory moved to the
+     swechha-ai repository — it watches two departments and lived inside one of
+     them, and this repository is public while the fundraising pipeline it
+     monitors is not. The contract they asserted (no model call, a non-zero
+     exit, UNKNOWN never healthy, the orchestrator stays thin) is now enforced
+     by swechha-ai/tests/test_sentinel_contract.py, where the files can
+     actually be seen. A test kept here would guard an empty room. */
 })

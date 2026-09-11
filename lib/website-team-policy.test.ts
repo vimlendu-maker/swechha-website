@@ -54,11 +54,11 @@ describe('website team policy', () => {
        them, and this guard itself. A weakened guard merges, and then every
        later run is ungoverned.
 
-       The one exception is real and designed: a `WATCH:` inbox item means
-       "add a deterministic probe to scripts/website-team/sentinel/", and the
-       manager's role file says exactly that. Deny the directory, allow that
-       one path — so NEW machinery is forbidden by default rather than needing
-       to be remembered. */
+       The exception mechanism stays and the exception itself is gone: it held
+       scripts/website-team/sentinel/, because a `WATCH:` item meant "add a
+       probe there". The sentinel moved to swechha-ai on 2026-09-11, so that
+       path is now denied like the rest of the directory — a probe reappearing
+       here would mean something was put back in the wrong repository. */
     const repo = mkdtempSync(join(tmpdir(), 'guard-'))
     const git = (...args: string[]) =>
       execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8' })
@@ -101,13 +101,17 @@ describe('website team policy', () => {
       // A file that does not exist yet: new machinery must be denied by
       // default, or this rule decays the first time someone adds a script.
       'scripts/website-team/some-future-runner.sh',
+      // ★ ONCE THE ONE EXCEPTION, NOW DENIED LIKE THE REST. The sentinel moved
+      //   to the swechha-ai repository on 2026-09-11, so there is no probes
+      //   directory here to write into. If a probe reappears at this path,
+      //   something has been put back in the wrong repository.
+      'scripts/website-team/sentinel/delhi-heat-health.sh',
     ]) {
       expect(verdict(machinery), `${machinery} must be refused`).toBe('refused')
     }
 
-    // The designed exception, and ordinary work.
+    // Ordinary work.
     for (const permitted of [
-      'scripts/website-team/sentinel/delhi-heat-health.sh',
       'scripts/build-hero.mjs',
       'content/story/a-new-story.md',
     ]) {

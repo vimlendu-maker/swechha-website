@@ -70,7 +70,7 @@ read for each item in your report.**
 | `TODAY:` | must be finished in this run if it can be |
 | `THIS WEEK:` | take it when the more urgent things are done |
 | `BACKLOG:` | only when nothing is more pressing; leaving it is fine |
-| `WATCH:` | **not work to do now.** It is a request for a standing condition monitor. Brief `website-engineering` to add a deterministic probe to `scripts/website-team/sentinel/` — read that directory's README for the contract. Never satisfy a `WATCH` by checking the condition once yourself; the owner asked for a monitor, not an observation. |
+| `WATCH:` | **not work to do now.** It is a request for a standing condition monitor. ★ THE PROBES ARE NO LONGER YOURS TO ADD. They live in the `swechha-ai` repository, which no department has write access to — deliberately, because a probe runs unattended with shell access every thirty minutes. So: brief `website-engineering` to WRITE the probe against the contract in that repository's `sentinel/README.md`, put it in the decision record, and say plainly in your report that it is waiting for the owner to land it. Never satisfy a `WATCH` by checking the condition once yourself; the owner asked for a monitor, not an observation — and a monitor you drafted but nobody installed is still not a monitor, so do not report it as done. |
 | *(none)* | treat as `THIS WEEK` |
 
 A `NOW` item reached you because a file watcher woke you within seconds of the

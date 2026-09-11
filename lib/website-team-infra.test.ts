@@ -1,9 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs'
-import { execFileSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { mkdtempSync } from 'node:fs'
-import { tmpdir } from 'node:os'
 
 /**
  * The infrastructure watch exists to stop the site quietly starting to cost
@@ -20,73 +17,6 @@ const root = join(__dirname, '..')
 const read = (p: string) => readFileSync(join(root, p), 'utf8')
 
 describe('website team: infrastructure and free-tier watch', () => {
-  it('the checker is deterministic — no model call anywhere in it', () => {
-    const src = read('scripts/website-team/infra-status.py')
-    // An agent that generates its own infrastructure metrics can report
-    // whatever keeps it out of trouble.
-    expect(src).not.toMatch(/\bclaude\b/i)
-    expect(src).not.toMatch(/anthropic/i)
-  })
-
-  it('reports UNKNOWN rather than inventing a figure it cannot measure', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'infra-'))
-    // --offline with a cache path that cannot exist: nothing is measurable, so
-    // everything measurable-by-probe must come back UNKNOWN and nothing may
-    // come back GREEN on the strength of a guess.
-    const out = execFileSync('python3', [
-      join(root, 'scripts/website-team/infra-status.py'), '--offline', '--json',
-    ], { env: { ...process.env, WEBSITE_TEAM_PROBE_CACHE: join(dir, 'none.json') }, encoding: 'utf8' })
-    const parsed = JSON.parse(out) as {
-      services: { service: string; status: string; usage: string; probe: string }[]
-    }
-    expect(parsed.services.length).toBeGreaterThan(5)
-    // Offline with an empty cache: nothing can have been measured, so nothing
-    // may claim GREEN. UNKNOWN is the only honest answer for every row.
-    const green = parsed.services.filter((s) => s.status === 'GREEN')
-    expect(green.map((s) => s.service), 'claimed healthy with nothing measured').toEqual([])
-    // Every row must still carry a REASON rather than an empty cell.
-    for (const s of parsed.services) {
-      expect(s.usage.length, `${s.service} reports no reason for its state`).toBeGreaterThan(0)
-    }
-  })
-
-  it('the renderer measures nothing itself — the probes do', () => {
-    /* Two instruments computing one fact is this repo's most repeated defect,
-       and infra-status.py was the second instrument until 2026-09-11: it kept
-       its own Vercel, GitHub and rate-limit checks and drifted from the probes
-       within four hours. It is now a renderer. If a check appears here again,
-       the drift starts again. */
-    const src = read('scripts/website-team/infra-status.py')
-    for (const forbidden of [/\bgh run list\b/, /api\.vercel\.com/, /console\.neon\.tech/,
-                             /rate_limit/, /urllib\.request/]) {
-      expect(src, `a live check leaked back into the renderer: ${forbidden}`)
-        .not.toMatch(forbidden)
-    }
-    // It gets state by RUNNING the probes and reading only their contract.
-    expect(src).toMatch(/def run_probe\(/)
-    expect(src).toMatch(/STATUS_FROM_RC/)
-  })
-
-  it('a service with no probe is UNKNOWN, and says why', () => {
-    const inv = JSON.parse(read('docs/website-team/services.json')) as {
-      services: { name: string; probe: string | null; unmeasured?: string }[]
-    }
-    for (const s of inv.services) {
-      if (!s.probe) {
-        expect(s.unmeasured, `${s.name} has no probe and no reason given`).toBeTruthy()
-      }
-    }
-    // And every named probe must actually exist, or the table silently shows
-    // UNKNOWN for a service someone believes is covered.
-    const dir = join(root, 'scripts/website-team/sentinel')
-    for (const s of inv.services) {
-      if (s.probe) {
-        expect(existsSync(join(dir, `${s.probe}.sh`)), `${s.name} names a missing probe ${s.probe}`)
-          .toBe(true)
-      }
-    }
-  })
-
   it('the free-first rules are policy, not prose in a role file', () => {
     type Infra = {
       cost_safety_questions: string[]
@@ -120,7 +50,10 @@ describe('website team: infrastructure and free-tier watch', () => {
     expect(read('.claude/agents/website-manager.md')).toMatch(/npm run infra:status/)
     expect(read('scripts/website-team/run.sh')).toMatch(/Bash\(npm run infra:status\)/)
     const pkg = JSON.parse(read('package.json')) as { scripts: Record<string, string> }
-    expect(pkg.scripts['infra:status']).toBe('python3 scripts/website-team/infra-status.py')
+    // The instrument itself lives in swechha-ai now; what this repository must
+    // still guarantee is that the manager's documented command reaches it.
+    expect(pkg.scripts['infra:status']).toContain('swechha-ai')
+    expect(pkg.scripts['infra:status']).toContain('infra-status.py')
   })
 
   it('every npm command the allowlist grants also grants its `:*` form', () => {
@@ -158,27 +91,6 @@ describe('website team: infrastructure and free-tier watch', () => {
     }
   })
 
-
-  it('env.inc cannot be mistaken for a probe, and no probe prints a secret', () => {
-    const dir = join(root, 'scripts/website-team/sentinel')
-    // The orchestrator discovers `*.sh` and runs each executable one. A shared
-    // include must therefore not end in .sh AND not be executable — either
-    // alone would be a single rename away from being executed as a probe.
-    const inc = join(dir, 'env.inc')
-    expect(existsSync(inc), 'the shared env loader is missing').toBe(true)
-    expect(inc.endsWith('.sh')).toBe(false)
-    expect(statSync(inc).mode & 0o111, 'env.inc must not be executable').toBe(0)
-
-    // A probe may USE a credential; it may never echo one. Catch the shapes
-    // that would put a value on stdout.
-    for (const f of readdirSync(dir).filter((x) => x.endsWith('.sh'))) {
-      const src = readFileSync(join(dir, f), 'utf8')
-      for (const m of src.matchAll(/^\s*echo\s+.*$/gm)) {
-        expect(m[0], `${f} echoes a credential: ${m[0].trim().slice(0, 70)}`)
-          .not.toMatch(/\$\{?(VERCEL_TOKEN|NEON_API_KEY|WAQI_TOKEN|DATA_GOV_IN_KEY|FIRMS_MAP_KEY|AIR_RELAY_TOKEN)\b/)
-      }
-    }
-  })
 
   it('the inventory records provenance instead of asserting facts', () => {
     const doc = read('docs/website-team/infrastructure.md')

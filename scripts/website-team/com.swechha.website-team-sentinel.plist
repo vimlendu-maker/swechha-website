@@ -1,33 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  Every 30 minutes: check whether anything is broken, and wake the department
-  only if it is.
-
-  ★ THE CHECK ITSELF COSTS NOTHING — sentinel.sh contains no model call. That is
-  the whole design. Waking the manager every 30 minutes to ask "is anything
-  wrong?" would cost $38-225 a day to hear "no" almost every time. Cheap
-  deterministic eyes; expensive judgement only when they trip.
-
-  It wakes the department once per PROBLEM, not once per check, so a publisher
-  that breaks overnight bills one run and not sixteen.
-
-  This is the answer to "if code breaks, do they wait for tomorrow?". On
-  2026-09-10 a broken build script took every publisher down for about eighteen
-  hours before a human noticed. This is what would have caught it inside thirty
-  minutes.
--->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>Label</key>              <string>com.swechha.website-team-sentinel</string>
-  <key>ProgramArguments</key>
-  <array>
-    <string>/bin/bash</string>
-    <string>-lc</string>
-    <string>$HOME/swechha-website/scripts/website-team/sentinel.sh</string>
-  </array>
-  <key>StartInterval</key>      <integer>1800</integer>
-  <key>StandardOutPath</key>    <string>/tmp/swechha-website-team-sentinel.log</string>
-  <key>StandardErrorPath</key>  <string>/tmp/swechha-website-team-sentinel.err</string>
-  <key>RunAtLoad</key>          <false/>
+	<key>Label</key>
+	<string>com.swechha.website-team-sentinel</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>-lc</string>
+		<string>${SWECHHA_AI_REPO:-$HOME/swechha-ai}/sentinel.sh</string>
+	</array>
+	<key>StartInterval</key>
+	<integer>1800</integer>
+	<key>StandardOutPath</key>
+	<string>/tmp/swechha-website-team-sentinel.log</string>
+	<key>StandardErrorPath</key>
+	<string>/tmp/swechha-website-team-sentinel.err</string>
+	<key>RunAtLoad</key>
+	<false/>
 </dict>
 </plist>
