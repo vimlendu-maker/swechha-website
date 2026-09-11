@@ -253,6 +253,48 @@ ev pr_opened url="$PR_URL" branch="$BRANCH"
 echo "execute: opened $PR_URL"
 
 AUTO="$(python3 -c "import json;print(json.load(open('docs/website-team/policy.json'))['auto_merge']['enabled'])")"
+
+# ── THE APPROVAL GATE: THE AGENT DOES NOT DECIDE WHETHER IT NEEDS APPROVAL ───
+# policy.json declares fourteen `requires_approval` rules. Until 2026-09-12 all
+# fourteen were prose a manager was trusted to honour, which ADR-0004 is blunt
+# about: "an approval is an artefact, not a prompt. A prompt gets clicked
+# through at 23:50 on a deadline."
+#
+# ★ IT READS THE DIFF, NOT THE BRIEF. An earlier draft of this had the runner
+#   classify the brief before handing it over -- which is the agent's own
+#   account of what it is about to do. The gate reads what actually changed,
+#   after the fact, and that is the whole difference.
+#
+# ★ FAIL-CLOSED. Exit 0 clear, 1 approval required, 2 could not decide. Only 0
+#   permits an automatic merge; a missing gate, an unreadable policy or a
+#   crash all leave the pull request open for a human. A gate that approves
+#   when it cannot decide is not a gate.
+#
+#   Status letters are normalised to one character and renames take the NEW
+#   path (`R100 old new`), because the gate reads `A|M|D|R` and a four-character
+#   status would fall through to being treated as a path.
+APPROVAL="${SWECHHA_APPROVAL_GATE:-$HOME/.swechha-ai/approval-gate.py}"
+if [ -f "$APPROVAL" ]; then
+  CHANGED_NS="$(git diff --name-status "$BASE"...HEAD | awk '{print substr($1,1,1) ":" $NF}')"
+  set +e
+  # shellcheck disable=SC2086
+  python3 "$APPROVAL" --policy docs/website-team/policy.json --paths $CHANGED_NS \
+    | tee "$RUNLOG"/approval.log
+  approval_rc="${PIPESTATUS[0]}"
+  set -e
+else
+  echo "execute: approval gate not installed at $APPROVAL — treating as UNDECIDED" >&2
+  approval_rc=2
+fi
+if [ "$approval_rc" -ne 0 ]; then
+  case "$approval_rc" in
+    1) echo "execute: an approval rule tripped — this pull request waits for a human" ;;
+    *) echo "execute: the approval gate could not decide — this pull request waits for a human" ;;
+  esac
+  ev approval_required url="$PR_URL" rc="$approval_rc"
+  AUTO=Held
+fi
+
 if [ "$AUTO" = "True" ]; then
   # ★ CONDITION 4 IS ENFORCED HERE, BY THIS SCRIPT, NOT BY GITHUB.
   #
