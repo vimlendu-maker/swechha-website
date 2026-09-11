@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 /**
@@ -206,6 +206,33 @@ function learnRoutes(): Record<string, string> {
   return out
 }
 
+/* THE TEACH SECTION, DERIVED FROM THE BUILT FILES for the reason `learnRoutes`
+   is. `scripts/build-teach.mjs` writes one page per theme and one per session
+   from `data/teach/`, so 51 of the section's 54 routes are a walk rather than
+   51 typed lines — and a ninth theme or a forty-fourth session needs no edit
+   here. `/teach`, `/teach/before-you-start` and `/teach/a-to-z` are routed
+   explicitly below: they are the index and the two reference pages, not members
+   of the derived set, and `before-you-start.html` / `a-to-z.html` would
+   otherwise be walked in as if they were themes. */
+function teachRoutes(): Record<string, string> {
+  const root = join(PUBLIC, '_pages/v3/teach')
+  if (!existsSync(root)) return {}
+  const out: Record<string, string> = {}
+  const fixed = new Set(['before-you-start.html', 'a-to-z.html'])
+  for (const f of readdirSync(root).filter((n) => n.endsWith('.html')).sort()) {
+    if (fixed.has(f)) continue
+    out[`/teach/${f.slice(0, -'.html'.length)}`] = `teach/${f}`
+  }
+  for (const theme of readdirSync(root).sort()) {
+    const dir = join(root, theme)
+    if (!existsSync(dir) || !statSync(dir).isDirectory()) continue
+    for (const f of readdirSync(dir).filter((n) => n.endsWith('.html')).sort()) {
+      out[`/teach/${theme}/${f.slice(0, -'.html'.length)}`] = `teach/${theme}/${f}`
+    }
+  }
+  return out
+}
+
 /* THE RECORD'S MONTH PAGES, DERIVED FROM THE BUILT FILES for the reason
    `learnRoutes` and `fellowRoutes` are. `scripts/build-record.mjs` writes one
    page per month present in `data/air-history/`, so the set grows by itself
@@ -326,6 +353,14 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
     '/use-the-data': 'use-the-data.html',
     '/learn': 'learn.html',
     ...learnRoutes(),
+    /* `/teach` — Swechha's Bridge the Gap compendium, published as eight themes
+       rather than as the 321-page manual it arrived as. The index IS the
+       directory, the way `/learn` is; the two reference pages are named here
+       and the 51 theme and session pages are derived. See AD-51. */
+    '/teach': 'teach.html',
+    '/teach/before-you-start': 'teach/before-you-start.html',
+    '/teach/a-to-z': 'teach/a-to-z.html',
+    ...teachRoutes(),
     '/about': 'about.html',
     '/impact': 'impact.html',
     '/farm': 'farm.html',

@@ -67,6 +67,7 @@ publications
 posters
 healthy-cities
 learn
+teach
 schools
 data
 record

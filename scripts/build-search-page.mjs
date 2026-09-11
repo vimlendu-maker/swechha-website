@@ -197,6 +197,7 @@ const GROUPS = [
   { name: 'The record', test: (r) => r === '/record' || r.startsWith('/record/') },
   { name: 'Use the data', test: (r) => r === '/use-the-data' },
   { name: 'Learn', test: (r) => r === '/learn' || r.startsWith('/learn/') },
+  { name: 'Teach', test: (r) => r === '/teach' || r.startsWith('/teach/') },
   { name: 'The Journal', test: (r) => r === '/journal' || r.startsWith('/journal/') },
   { name: 'Work', test: (r) => r === '/work' || r.startsWith('/work/') },
   /* The five essay pages are AT /stories/<slug> and belong with the section
