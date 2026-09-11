@@ -23,9 +23,17 @@
 #   Its report comes back on stdout and THIS script writes it to the vault. An
 #   orchestrator with no hands cannot turn a synthesis error into a shipped
 #   change. Do not "simplify" by giving it Write.
+#
+# WHY THE SCRIPTS COME FROM $REPO BUT THE WORK HAPPENS IN $WORK:
+#   The department operates in its own git worktree (scripts/website-team/
+#   worktree.sh explains why). The helpers stay in the main checkout, because
+#   stage two checks out a branch in $WORK and a helper living there would be
+#   swapped out from under a running script -- that is not hypothetical, it is
+#   how the first stage-two run deleted its own parser mid-run.
 set -euo pipefail
 
 REPO="${WEBSITE_TEAM_REPO:-$HOME/swechha-website}"
+WT="$REPO/scripts/website-team/worktree.sh"
 VAULT="${WEBSITE_TEAM_VAULT:-$HOME/Desktop/swechha-vault}"
 RECORDS="$VAULT/swechha/website/decisions"
 STAMP="$(date +%Y-%m-%d)"
@@ -42,7 +50,6 @@ case "$MODE" in
 esac
 OUT="$RECORDS/$STAMP-website-team-$MODE.md"
 
-cd "$REPO"
 EV="$REPO/scripts/website-team/log-event.py"
 ev() { python3 "$EV" website manager "$@" 2>/dev/null || true; }
 
@@ -94,11 +101,12 @@ ALLOWED="$ALLOWED,Bash(git log:*),Bash(git status:*),Bash(gh run list:*)"
 ALLOWED="$ALLOWED,Bash(npm test),Bash(npm run lint),Bash(npm run air:status)"
 
 if [ "$DRY" = "--dry-run" ]; then
-  echo "repo:    $REPO"
-  echo "vault:   $VAULT"
-  echo "record:  $OUT"
-  echo "agent:   website-manager"
-  echo "tools:   $ALLOWED"
+  echo "repo:     $REPO   (scripts come from here)"
+  echo "worktree: $("$WT" path)   (the run happens here)"
+  echo "vault:    $VAULT"
+  echo "record:   $OUT"
+  echo "agent:    website-manager"
+  echo "tools:    $ALLOWED"
   echo
   echo "would run: claude -p --agent website-manager --permission-mode dontAsk \\"
   echo "             --allowedTools '$ALLOWED' --output-format json"
@@ -106,6 +114,16 @@ if [ "$DRY" = "--dry-run" ]; then
 fi
 
 mkdir -p "$RECORDS"
+
+# ── ONE RUN AT A TIME, IN THE DEPARTMENT'S OWN TREE ──────────────────────────
+# Both schedules fire at 09:00, so on Mondays `work` and `review` start
+# together. They share one worktree, so they must not overlap: the lock makes
+# the second wait rather than read a tree the first is mid-checkout of.
+"$WT" lock "$$"
+trap '"$WT" unlock' EXIT
+WORK="$("$WT" ensure)"
+cd "$WORK"
+
 ev run_started mode="$MODE"
 
 RESULT="$(claude -p "$PROMPT" \
@@ -153,7 +171,13 @@ if [ "$MODE" = "work" ]; then
         echo "stage two: skipped — $spec is read-only by policy; its findings are already in the record"
         continue
       fi
-      "$REPO/scripts/website-team/execute.sh" "$spec" "$path" ||         echo "stage two: $(basename "$path") did not ship — see output above"
+      # THREE ARGUMENTS, NOT TWO. execute.sh takes <specialist> <model> <brief>.
+      # This call passed <specialist> <brief> when model routing was added, so
+      # the brief path landed in $MODEL and every brief died on "unknown model"
+      # before a specialist ever started. Stage two has never shipped anything
+      # since; caught 2026-09-11 while moving the run into its own worktree.
+      "$REPO/scripts/website-team/execute.sh" "$spec" "$model" "$path" || \
+        echo "stage two: $(basename "$path") did not ship — see output above"
     done <<< "$MAPPING"
   fi
   rm -rf "$BRIEFS"

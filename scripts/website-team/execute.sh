@@ -7,7 +7,7 @@
 # has no file tools at all, so a synthesis error cannot become a commit. That
 # separation is the whole point and it is why there are two scripts.
 #
-# Usage: execute.sh <specialist> <brief-file> [--dry-run]
+# Usage: execute.sh <specialist> <model> <brief-file> [--dry-run]
 set -euo pipefail
 
 REPO="${WEBSITE_TEAM_REPO:-$HOME/swechha-website}"
@@ -26,7 +26,25 @@ case "$MODEL" in
 esac
 LOG="$REPO/scripts/website-team/log-event.py"
 ev() { python3 "$LOG" website "$SPECIALIST" "$@" 2>/dev/null || true; }
-cd "$REPO"
+
+# GATE OUTPUT GOES IN A PER-RUN DIRECTORY, not in fixed /tmp paths. The logs
+# used to be /tmp/wt-test.log and friends, which meant every run overwrote the
+# evidence of the last one -- and two runs starting together (both schedules
+# fire at 09:00) would interleave into the same files. These are the only record
+# of why a refused task was refused, so they are kept per run and not cleaned.
+RUNLOG="${WEBSITE_TEAM_LOGS:-$HOME/.swechha-ai/logs}/$(date +%Y%m%d-%H%M%S)-$SPECIALIST"
+mkdir -p "$RUNLOG"
+
+# ★ THIS RUNS IN THE DEPARTMENT'S OWN WORKTREE, NEVER IN THE MAIN CHECKOUT.
+#   Everything below checks out a branch, commits and pushes. Doing that in
+#   ~/swechha-website meant competing with whatever a person had checked out
+#   there, and on 2026-09-11 that cost a rebase of someone else's four commits.
+#   scripts/website-team/worktree.sh carries the full account.
+#
+#   run.sh has normally created and refreshed the tree already; ensure is
+#   idempotent, so calling execute.sh by hand works too.
+WORK="$("$REPO/scripts/website-team/worktree.sh" ensure)"
+cd "$WORK"
 
 case "$SPECIALIST" in
   website-engineering|website-design|website-content-seo) ;;
@@ -53,12 +71,13 @@ ALLOWED="$ALLOWED,Bash(git status:*),Bash(git diff:*),Bash(git log:*)"
 BRANCH="team/$(date +%Y%m%d)-$(basename "$BRIEF_FILE" .txt | tr -cd '[:alnum:]-' | cut -c1-40)"
 
 # ★ STAGE THE HELPERS OUTSIDE THE WORKING TREE BEFORE ANY CHECKOUT.
-#   This script checks out a branch from origin/main, and origin/main may not
-#   contain scripts/website-team/ -- it does not today, because the team itself
-#   is still on a branch. The first run of this script deleted its own helpers
-#   out from under itself at the checkout and then reported "no changes made",
-#   which is the worst kind of failure: quiet and plausible. The same would
-#   happen on any base branch that lacks them.
+#   This script checks out a branch from $BASE, which replaces the files in the
+#   tree it is running from. origin/main does carry scripts/website-team/ as of
+#   2026-09-11 -- but the first run of this script, from a base that did not,
+#   deleted its own parser out from under itself at the checkout and then
+#   reported "no changes made": quiet, plausible, and wrong. Any base without
+#   them does the same, so the helpers are copied out first regardless and every
+#   call below uses $STAGE, never the working tree's copy.
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 cp "$REPO/scripts/website-team/parse-result.py" \
@@ -112,12 +131,12 @@ throwaway script."
 
 ev task_started model="$MODEL" brief="$(basename "$BRIEF_FILE")" branch="$BRANCH"
 claude -p "$PROMPT" --agent "$SPECIALIST" --model "$MODEL" --permission-mode dontAsk \
-  --allowedTools "$ALLOWED" --output-format json < /dev/null > /tmp/wt-exec.json 2>/dev/null || true
-ev task_returned cost_usd="$(python3 "$STAGE/parse-result.py" < /tmp/wt-exec.json 2>/dev/null | head -1)"
-if ! python3 "$STAGE/parse-result.py" < /tmp/wt-exec.json | tail -n +2 > /tmp/wt-exec.txt; then
+  --allowedTools "$ALLOWED" --output-format json < /dev/null > "$RUNLOG"/exec.json 2>/dev/null || true
+ev task_returned cost_usd="$(python3 "$STAGE/parse-result.py" < "$RUNLOG"/exec.json 2>/dev/null | head -1)"
+if ! python3 "$STAGE/parse-result.py" < "$RUNLOG"/exec.json | tail -n +2 > "$RUNLOG"/exec.txt; then
   echo "execute: could not parse the specialist's output — refusing to continue" >&2
-  echo "execute: raw output is in /tmp/wt-exec.json" >&2
-  git checkout -q - ; git branch -qD "$BRANCH" 2>/dev/null || true
+  echo "execute: raw output is in "$RUNLOG"/exec.json" >&2
+  git checkout -q --detach "$BASE" ; git branch -qD "$BRANCH" 2>/dev/null || true
   exit 1
 fi
 
@@ -127,7 +146,7 @@ fi
 # commit by `git add -A`. Use porcelain, which sees untracked too.
 if [ -z "$(git status --porcelain)" ]; then
   echo "execute: no changes made — nothing to ship"
-  git checkout -q - ; git branch -qD "$BRANCH" 2>/dev/null || true
+  git checkout -q --detach "$BASE" ; git branch -qD "$BRANCH" 2>/dev/null || true
   exit 0
 fi
 
@@ -135,16 +154,16 @@ git add -A
 git commit -q -m "$(head -1 "$BRIEF_FILE" | cut -c1-70)
 
 Executed by $SPECIALIST from a website-team brief.
-$(sed 's/^/  /' /tmp/wt-exec.txt | head -20)"
+$(sed 's/^/  /' "$RUNLOG"/exec.txt | head -20)"
 
 # ── THE GATES, IN THE ORDER THAT FAILS CHEAPEST FIRST ────────────────────────
 FAILED=""
 # Pre-build: served HTML must not have been hand-edited.
 "$STAGE/guard-paths.sh" "$BASE" || FAILED="$FAILED guard"
-npm test  >/tmp/wt-test.log 2>&1 || FAILED="$FAILED tests"
-npm run lint >/tmp/wt-lint.log 2>&1 || FAILED="$FAILED lint"
-npm run build:all >/tmp/wt-build.log 2>&1 || FAILED="$FAILED build"
-npm run verify:seo >/tmp/wt-seo.log 2>&1 || FAILED="$FAILED verify:seo"
+npm test  >"$RUNLOG"/test.log 2>&1 || FAILED="$FAILED tests"
+npm run lint >"$RUNLOG"/lint.log 2>&1 || FAILED="$FAILED lint"
+npm run build:all >"$RUNLOG"/build.log 2>&1 || FAILED="$FAILED build"
+npm run verify:seo >"$RUNLOG"/seo.log 2>&1 || FAILED="$FAILED verify:seo"
 
 # ── THE FACT GATE ────────────────────────────────────────────────────────────
 # Any content this change adds must have its claims verified mechanically. A
@@ -160,7 +179,7 @@ if [ -n "$CONTENT_CHANGED" ]; then
 ' $CONTENT_CHANGED
   for f in $CONTENT_CHANGED; do
     [ -f "$f" ] || continue
-    python3 "$STAGE/verify-claims.py" < "$f" >>/tmp/wt-claims.log 2>&1 || FAILED="$FAILED fact-gate($f)"
+    python3 "$STAGE/verify-claims.py" < "$f" >>"$RUNLOG"/claims.log 2>&1 || FAILED="$FAILED fact-gate($f)"
   done
 else
   echo "execute: fact gate — no content changed, nothing asserted"
@@ -189,7 +208,7 @@ fi
 git push -q -u origin "$BRANCH"
 PR_URL="$(gh pr create --base "${BASE#origin/}" --head "$BRANCH" \
   --title "$(head -1 "$BRIEF_FILE" | cut -c1-70)" \
-  --body "$(printf 'Opened by the website team, stage two.\n\n## Brief\n\n%s\n\n## What the specialist reported\n\n%s\n\n## Gates\n\n- guard-paths: pass\n- npm test: pass\n- npm run lint: pass\n- npm run build:all: pass\n- npm run verify:seo: pass\n- fact gate (verify-claims.py): pass\n\nMerging is conditional on every `auto_merge` condition in `docs/website-team/policy.json`. If any failed, this PR waits for a human.\n' "$(cat "$BRIEF_FILE")" "$(cat /tmp/wt-exec.txt)")")"
+  --body "$(printf 'Opened by the website team, stage two.\n\n## Brief\n\n%s\n\n## What the specialist reported\n\n%s\n\n## Gates\n\n- guard-paths: pass\n- npm test: pass\n- npm run lint: pass\n- npm run build:all: pass\n- npm run verify:seo: pass\n- fact gate (verify-claims.py): pass\n\nMerging is conditional on every `auto_merge` condition in `docs/website-team/policy.json`. If any failed, this PR waits for a human.\n' "$(cat "$BRIEF_FILE")" "$(cat "$RUNLOG"/exec.txt)")")"
 ev pr_opened url="$PR_URL" branch="$BRANCH"
 echo "execute: opened $PR_URL"
 
