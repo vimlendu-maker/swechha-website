@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, copyFileSync } from 'node:fs'
+import { join, dirname } from 'node:path'
+import { tmpdir } from 'node:os'
+import { execFileSync } from 'node:child_process'
 
 /**
  * THE GUARD'S LIST AND THE POLICY'S LIST MUST AGREE.
@@ -42,6 +44,78 @@ describe('website team policy', () => {
     const fromGuard = [...block![1].matchAll(/'([^']+)'/g)].map((m) => m[1]).sort()
 
     expect(fromGuard).toEqual(fromPolicy)
+  })
+
+  it('the guard refuses the machinery and admits the probes — run, not read', () => {
+    /* ★ A BEHAVIOURAL TEST, because asserting on the source would pass for a
+       guard that reads beautifully and blocks nothing. This is the last line
+       of defence: the department's specialists have Edit, and until now they
+       could edit the runner that invokes them, the worktree that isolates
+       them, and this guard itself. A weakened guard merges, and then every
+       later run is ungoverned.
+
+       The one exception is real and designed: a `WATCH:` inbox item means
+       "add a deterministic probe to scripts/website-team/sentinel/", and the
+       manager's role file says exactly that. Deny the directory, allow that
+       one path — so NEW machinery is forbidden by default rather than needing
+       to be remembered. */
+    const repo = mkdtempSync(join(tmpdir(), 'guard-'))
+    const git = (...args: string[]) =>
+      execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8' })
+    const write = (rel: string) => {
+      mkdirSync(join(repo, dirname(rel)), { recursive: true })
+      writeFileSync(join(repo, rel), 'x\n')
+    }
+    git('init', '-q', '-b', 'main')
+    git('config', 'user.email', 'x@example.com')
+    git('config', 'user.name', 'x')
+    write('README.md')
+    git('add', '-A'); git('commit', '-qm', 'base')
+    const base = git('rev-parse', 'HEAD').trim()
+    // OUTSIDE the repository: `git add -A` below would otherwise commit the
+    // guard itself, and the next `checkout base` would then delete it.
+    const guard = join(mkdtempSync(join(tmpdir(), 'guardbin-')), 'guard.sh')
+    copyFileSync(join(ROOT, 'scripts/website-team/guard-paths.sh'), guard)
+
+    const verdict = (path: string) => {
+      git('checkout', '-q', base)
+      write(path)
+      git('add', '-A'); git('commit', '-qm', `touch ${path}`)
+      try {
+        execFileSync('bash', [guard, base], { cwd: repo, stdio: 'pipe' })
+        return 'allowed'
+      } catch {
+        return 'refused'
+      }
+    }
+
+    // The machinery that invokes, isolates and constrains the agents.
+    for (const machinery of [
+      'scripts/website-team/run.sh',
+      'scripts/website-team/execute.sh',
+      'scripts/website-team/guard-paths.sh',
+      'scripts/website-team/worktree.sh',
+      'scripts/website-team/log-event.py',
+      'scripts/website-team/sentinel.sh',
+      'scripts/website-team/com.swechha.website-team-work.plist',
+      // A file that does not exist yet: new machinery must be denied by
+      // default, or this rule decays the first time someone adds a script.
+      'scripts/website-team/some-future-runner.sh',
+    ]) {
+      expect(verdict(machinery), `${machinery} must be refused`).toBe('refused')
+    }
+
+    // The designed exception, and ordinary work.
+    for (const permitted of [
+      'scripts/website-team/sentinel/delhi-heat-health.sh',
+      'scripts/build-hero.mjs',
+      'content/story/a-new-story.md',
+    ]) {
+      expect(verdict(permitted), `${permitted} must be allowed`).toBe('allowed')
+    }
+
+    // And the pre-existing rules still bite.
+    expect(verdict('app/page.tsx')).toBe('refused')
   })
 
   it('keeps the gates that must not move with the autonomy dial', () => {

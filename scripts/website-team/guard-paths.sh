@@ -41,6 +41,24 @@ FORBIDDEN=(
   'docs/website-team/policy.json'
   'lib/seo/register.test.ts'
   'scripts/org/'
+  'scripts/website-team/'
+)
+
+# ★ CHECKED BEFORE FORBIDDEN, and the reason the rule above can be a whole
+#   directory rather than a hand-kept list of machinery files.
+#
+#   The department is DESIGNED to write here: a `WATCH:` inbox item means "add
+#   a deterministic probe to scripts/website-team/sentinel/", and the manager's
+#   role file says so in as many words. Blocking it would break a capability
+#   the owner asked for.
+#
+#   Deny-the-directory-allow-the-exception is deliberate over listing run.sh,
+#   execute.sh, worktree.sh and the rest by name. A list of machinery files is
+#   a list that must move in lockstep with the machinery — this repository's
+#   most repeated defect, four times over. New machinery is now forbidden by
+#   DEFAULT, and only this one directory is open.
+ALLOWED=(
+  'scripts/website-team/sentinel/'
 )
 
 # Hand-editing served HTML is forbidden; the build regenerating it is not.
@@ -54,6 +72,15 @@ if [ -z "$CHANGED" ]; then echo "guard: no changes against $BASE"; exit 0; fi
 VIOLATIONS=""
 while IFS= read -r f; do
   [ -z "$f" ] && continue
+  allowed=""
+  for ok in "${ALLOWED[@]}"; do
+    case "$f" in "$ok"*) allowed=1 ;; esac
+  done
+  # An `if` rather than `[ -n "$allowed" ] && continue`. Both are correct here
+  # — bash exempts a command in a `&&` list from `set -e` — but the `if` does
+  # not depend on knowing that exemption, and this file is the last line of
+  # defence. Prefer the form whose safety does not need a footnote.
+  if [ -n "$allowed" ]; then continue; fi
   for bad in "${FORBIDDEN[@]}"; do
     case "$f" in "$bad"*) VIOLATIONS="$VIOLATIONS  $f  (matches $bad)"$'\n' ;; esac
   done
