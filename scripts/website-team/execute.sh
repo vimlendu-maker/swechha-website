@@ -62,10 +62,21 @@ fi
 # An allow-list fails closed: a path nobody thought about is refused, not
 # permitted. `docs/**` does include policy.json, which must never be touched --
 # guard-paths.sh catches that, which is exactly the case it exists for.
+#
+# EVERY COMMAND GETS ITS `:*` FORM TOO. `Bash(npm run lint)` is exact-match: it
+# permits the bare command and refuses `npm run lint -- --fix`, which is
+# precisely what a specialist doing a lint pass would reach for. Measured on
+# 2026-09-11 against the Manager's allowlist, which had the same defect: the
+# argument form returned DENIED and ALLOWED once the `:*` form was added. The
+# specialist already holds Edit on these paths, so permitting arguments grants
+# no new capability -- it only stops a denial the agent then has to work around.
 ALLOWED='Read,Grep,Glob'
 ALLOWED="$ALLOWED,Edit(scripts/**),Edit(lib/**),Edit(components/**),Edit(docs/**)"
-ALLOWED="$ALLOWED,Bash(npm test),Bash(npm run lint),Bash(npm run build:all)"
-ALLOWED="$ALLOWED,Bash(npm run verify:seo),Bash(npm run verify:final)"
+ALLOWED="$ALLOWED,Bash(npm test),Bash(npm test:*)"
+ALLOWED="$ALLOWED,Bash(npm run lint),Bash(npm run lint:*)"
+ALLOWED="$ALLOWED,Bash(npm run build:all),Bash(npm run build:all:*)"
+ALLOWED="$ALLOWED,Bash(npm run verify:seo),Bash(npm run verify:seo:*)"
+ALLOWED="$ALLOWED,Bash(npm run verify:final),Bash(npm run verify:final:*)"
 ALLOWED="$ALLOWED,Bash(git status:*),Bash(git diff:*),Bash(git log:*)"
 
 BRANCH="team/$(date +%Y%m%d)-$(basename "$BRIEF_FILE" .txt | tr -cd '[:alnum:]-' | cut -c1-40)"

@@ -101,16 +101,21 @@ describe('website team: infrastructure and free-tier watch', () => {
     // which is why the Manager reported the infra instrument as denied on the
     // very day it shipped. Derived from the file rather than restated, because
     // a hand-kept parallel list is this repo's most repeated defect.
-    const run = read('scripts/website-team/run.sh')
-    // Script names contain colons (`air:status`), so only a TRAILING `:*` marks
-    // the prefix form — do not exclude colons generally.
-    const granted = [...run.matchAll(/Bash\((npm(?: run)? [^)]+?)\)/g)]
-      .map((m) => m[1].trim())
-      .filter((c) => !c.endsWith(':*'))
-    expect(granted.length).toBeGreaterThan(3)
-    for (const cmd of granted) {
-      expect(run, `${cmd} is granted exactly but not with arguments — add Bash(${cmd}:*)`)
-        .toContain(`Bash(${cmd}:*)`)
+    // BOTH runners: the manager's allowlist and the specialist's. execute.sh
+    // had the identical defect, and for a lint task the specialist reaches for
+    // `npm run lint -- --fix` — exactly the form an exact rule refuses.
+    for (const file of ['scripts/website-team/run.sh', 'scripts/website-team/execute.sh']) {
+      const src = read(file)
+      // Script names contain colons (`air:status`), so only a TRAILING `:*`
+      // marks the prefix form — do not exclude colons generally.
+      const granted = [...src.matchAll(/Bash\((npm(?: run)? [^)]+?)\)/g)]
+        .map((m) => m[1].trim())
+        .filter((c) => !c.endsWith(':*'))
+      expect(granted.length, `${file} grants no npm commands?`).toBeGreaterThan(3)
+      for (const cmd of granted) {
+        expect(src, `${file}: ${cmd} is granted exactly but not with arguments — add Bash(${cmd}:*)`)
+          .toContain(`Bash(${cmd}:*)`)
+      }
     }
   })
 
