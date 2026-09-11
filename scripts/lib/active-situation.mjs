@@ -163,7 +163,22 @@ const FADE_GRACE_HOURS = 24;
    page published in error should be withdrawn by a person, and withdrawing it
    properly means deciding what its URL answers afterwards — a redirect, or a
    tombstone, never a bare 404. Nobody has needed that yet; when they do it is
-   its own change, not a special case here. */
+   its own change, not a special case here.
+
+   ★ 11 SEPTEMBER 2026: SOMEBODY NEEDS IT. `nepal-flood` is a duplicate of
+   `nepal-glof` — the same disaster, forked into a second dossier when the
+   winning hazard word changed (see dossierSlug() below). Withdrawing the fork
+   is the right move and it retires an address that was published, routed,
+   listed in the sitemap and pushed to IndexNow, so by the rule above it needs
+   a 308 to the surviving dossier in `movedRedirects` (redirects.ts) in the
+   same change that withdraws it.
+
+   NEITHER IS IN THIS COMMIT, and that is a boundary rather than an oversight:
+   `data/climate-events/active/` belongs to the cron that writes it and to the
+   people who curate it, and the withdrawal pair plus the redirect is one
+   human change. dossierSlug() below is the half that stops it recurring, and
+   it is deliberately written so that WHEN the withdrawal lands, the region
+   resolves back to `nepal-glof` rather than into the tombstone. */
 /* ★ `withdrawn` OUTRANKS EVERYTHING, AND IT IS THE ONLY STATE A PERSON SETS.
    Publication is otherwise sticky — an event that ever cleared the bar stays
    published, deliberately, so a dip in hourly coverage cannot close a live
@@ -183,6 +198,115 @@ export function publishStateFor({ existing, publishableNow }) {
   if (existing?.publish_state === 'withdrawn') return 'withdrawn';
   if (existing?.publish_state === 'published') return 'published';
   return publishableNow ? 'published' : 'draft';
+}
+
+/* ── THE DOSSIER'S IDENTITY, AND WHY IT IS NOT THE HAZARD WORD ────────────
+   ONE DEFINITION OF slugify, SHARED. It was a private const in
+   detect-climate-events.mjs, which was fine while that script was the only
+   thing that minted a slug. dossierSlug() below has to mint the same string,
+   and two copies of this expression are two chances for a filename and the
+   lookup that finds it again to disagree — which is precisely the bug this
+   block exists to close. */
+export const slugify = (s) => String(s ?? '').toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+
+/* ★ THE FORK THIS EXISTS TO PREVENT, MEASURED ON THE LIVE SITE.
+   cluster() in detect-climate-events.mjs keys on the REGION alone, and its own
+   comment says why: one Himalayan disaster produces flood, glof and landslide
+   headlines from three districts at once, and keyed on (hazard, place) that
+   became six clusters each holding a sixth of the corroboration. But the
+   dossier's on-disk identity was still `slugify(place-hazard)`, and `hazard`
+   is the winning hazard word for THIS RUN's headlines — a value that moves as
+   press framing shifts, which is a legitimate thing for it to do.
+
+   On 11 September 2026 it moved. "Glacial lake outburst flood" faded out of
+   the Nepal coverage and "flood" took over, so the lookup for the prior
+   dossier asked for `nepal-flood`, missed `nepal-glof` entirely, `prior` came
+   back undefined and a second dossier was minted for the same disaster: same
+   region, same source register down to the individual articles, the same score
+   of 22. The fork carried the current toll (1,377) and the original kept the
+   homepage, because heroRank() breaks a score tie on HAZARD_WEIGHT and glof
+   (6) outranks flood (2). So the stale half led the front of the site while
+   the live half sat at a second URL — and every editor-set field existed only
+   on the stale one: the mechanism, the Rasuwa coordinates, the downstream
+   chain to the Gandak, three IFRC/UNICEF figures, the owner's supplied
+   imagery, all of it dated 28 August and reconstructible from nothing.
+
+   It had already been paid for once. `bihar-landslide` was withdrawn by hand
+   on 9 September — "Wrong hazard, and a duplicate ... the Bihar flood already
+   has its own page" — which is this same defect, cleaned up downstream of it.
+
+   ★ SO IDENTITY IS FIXED AT PUBLICATION, WHICH IS THE DOOR THAT IS ALREADY
+   ONE-WAY. publishStateFor() above refuses to withdraw an address because a
+   reader holding a link to it is lost. The same argument applies to the
+   address itself: once a region has a published, still-live dossier, that
+   dossier IS the region's event, and a later run writes into it whatever word
+   the wires have settled on. The `hazard` FIELD still tracks the framing — it
+   must, or the page renders against the wrong context pack — and the SLUG
+   stops tracking it.
+
+   ★ WHAT IT DELIBERATELY DOES NOT DO, in the order that matters:
+
+     IT NEVER RENAMES A FILE. Rule 1 returns exactly what the old expression
+     returned whenever that file exists and nobody has withdrawn it, so every
+     dossier on disk keeps its slug and no published URL moves. Measured, not
+     asserted: lib/active-situation.test.ts runs all 71 files in
+     data/climate-events/active/ through this and not one resolves elsewhere.
+
+     IT DOES NOT ADOPT A DRAFT. A draft has no URL, no sitemap entry and
+     nothing citing it, so a second one costs a reader nothing. Adopting one
+     would move a region's coverage into a file named `odisha-cyclone` and then
+     publish a flood at that address the day it cleared the bar.
+
+     IT DOES NOT ADOPT A WITHDRAWN DOSSIER — but it does refuse to let one
+     CAPTURE a region. With `nepal-flood` withdrawn, Nepal's next run resolves
+     to `nepal-glof` instead of writing into the tombstone, where the latch
+     would hold it invisible while the live page froze. That is the other half
+     of the same bug, and it is the half that would have bitten on the very
+     next scheduled run after the withdrawal landed.
+
+     AND IT DOES NOT UNDO A FORK THAT HAS ALREADY HAPPENED. While `nepal-flood`
+     and `nepal-glof` are BOTH published, rule 1 still sends Nepal to
+     `nepal-flood`, because that file exists and nobody has withdrawn it — this
+     function stops the next fork, it does not adjudicate an existing pair.
+     Choosing which of two published pages survives is an editorial judgement
+     and belongs to a person; this is only arranged not to fight that decision
+     once it is made.
+
+     IT DOES NOT ADOPT AN EVENT THAT IS NO LONGER LIVE. isCurrent() is the
+     bound, and it is the same fortnight the hero uses. Without it, November's
+     Bihar flood would be written over August's archive page underneath
+     August's editor fields — one page describing two disasters, which is worse
+     than a fork, not better. A genuinely new event in an old region mints its
+     own dossier, as it should.
+
+   `onDisk` is every dossier already on disk, parsed. `now` is injectable for
+   the tests and for nothing else. */
+export function dossierSlug({ place, hazard }, onDisk = [], now = Date.now()) {
+  const minted = slugify(`${place}-${hazard}`);
+  const key = String(place ?? '').trim().toLowerCase();
+  if (!key || !hazard) return minted;
+
+  /* 1. THE ANSWER THE OLD EXPRESSION GAVE, whenever that file is there and a
+        person has not taken it down. This is the clause that makes the change
+        a no-op for every dossier already committed. */
+  if (onDisk.some((e) => e?.slug === minted && e.publish_state !== 'withdrawn')) return minted;
+
+  /* 2. THE REGION'S LIVE PUBLISHED DOSSIER, if it has one. */
+  const live = onDisk.filter((e) => e?.slug
+    && e.publish_state === 'published'
+    && e.last_updated?.epochMs
+    && String(e.location?.text ?? '').trim().toLowerCase() === key
+    && isCurrent(e, now));
+  if (!live.length) return minted;
+
+  /* The oldest detection wins: that is the dossier holding the history and any
+     editor's work, which is the thing a fork strands. The slug comparison is a
+     tie-break only, so the answer cannot depend on readdir order. */
+  return live.slice().sort((a, b) => (
+    (a.first_detected?.epochMs ?? Infinity) - (b.first_detected?.epochMs ?? Infinity)
+    || (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0)
+  ))[0].slug;
 }
 
 /* ── WHAT A RE-DETECTION MAY NOT EAT ──────────────────────────────────────

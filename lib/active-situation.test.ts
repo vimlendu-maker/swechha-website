@@ -6,7 +6,7 @@ import { join } from 'node:path'
 // types are inferred and no suppression is needed.
 import { figuresFromText, consolidate, eventName, mentionsPlace } from '../scripts/lib/event-figures.mjs'
 import { dedupeFeedItems, anchorPublished, lastUpdatedFrom, feedCollapse } from '../scripts/lib/event-feed.mjs'
-import { statusOf, homepageSlot, situationHref, publishStateFor, keepEditorFields, SITUATION_STATUS } from '../scripts/lib/active-situation.mjs'
+import { statusOf, homepageSlot, situationHref, publishStateFor, keepEditorFields, dossierSlug, slugify, SITUATION_STATUS } from '../scripts/lib/active-situation.mjs'
 import { validateEvent } from '../scripts/lib/climate-events.mjs'
 
 /**
@@ -690,6 +690,175 @@ describe('publish_state: a URL that went public has to keep resolving', () => {
 
   it('treats a dossier with no publish_state as new rather than as published', () => {
     expect(publishStateFor({ existing: {}, publishableNow: false })).toBe('draft')
+  })
+})
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * A HAZARD-VOCABULARY SHIFT FORKED ONE DISASTER INTO TWO DOSSIERS.
+ * ───────────────────────────────────────────────────────────────────────────
+ * cluster() keys on the REGION alone — deliberately, and its own comment says
+ * why. The dossier's on-disk identity did not: it was
+ * `slugify(`${place}-${hazard}`)`, computed twice, once for the filename and
+ * once for the lookup that finds the previous file. `hazard` is the winning
+ * hazard word for one run's headlines, and on 11 September 2026 the Nepal
+ * coverage moved from "glacial lake outburst flood" to "flood". The lookup
+ * asked for `nepal-flood`, missed `nepal-glof`, and minted a second dossier
+ * for the same event: same region, same articles, the same score of 22. The
+ * stale half kept the homepage on HAZARD_WEIGHT alone (glof 6, flood 2) and
+ * the live half sat at a URL nothing linked to.
+ *
+ * The tests below are the two halves of that: the fork must not recur, and the
+ * fix must not move any slug already on disk. The second is asserted against
+ * the real corpus in data/climate-events/active/ rather than a fixture,
+ * because "no existing URL moves" is a claim about those files and nothing
+ * else.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+describe('a dossier\'s identity does not follow the hazard word', () => {
+  const NOW = Date.UTC(2026, 8, 11, 12, 0, 0)
+  const DAY = 86400000
+  type Dossier = Record<string, unknown>
+  const ev = (over: Dossier = {}): Dossier => ({
+    slug: 'nepal-glof',
+    hazard: 'glof',
+    publish_state: 'published',
+    location: { text: 'Nepal' },
+    first_detected: { epochMs: NOW - 14 * DAY },
+    last_updated: { epochMs: NOW - DAY },
+    ...over,
+  })
+
+  it('mints region-hazard for a region nothing has been filed under', () => {
+    expect(dossierSlug({ place: 'Nepal', hazard: 'glof' }, [], NOW)).toBe('nepal-glof')
+    expect(dossierSlug({ place: 'Uttar Pradesh', hazard: 'extreme_rain' }, [], NOW))
+      .toBe('uttar-pradesh-extreme-rain')
+  })
+
+  it('keeps the slug across two runs whose winning hazard word differs', () => {
+    /* RUN 1. Nothing on disk; the coverage says "glacial lake outburst". */
+    const first = dossierSlug({ place: 'Nepal', hazard: 'glof' }, [], NOW - DAY)
+    expect(first).toBe('nepal-glof')
+
+    /* RUN 2, a day later. Same disaster, same region, and "flood" has taken
+       over the headlines. The dossier run 1 published is on disk. */
+    const onDisk = [ev({ slug: first })]
+    expect(dossierSlug({ place: 'Nepal', hazard: 'flood' }, onDisk, NOW)).toBe('nepal-glof')
+
+    /* ★ AND THE SAME CALL WITH AN EMPTY DISK STILL FORKS, which is what makes
+       this test evidence rather than decoration: the inputs are identical and
+       the only thing standing between them and a second dossier is the file
+       the resolver found. This is the exact string that shipped. */
+    expect(dossierSlug({ place: 'Nepal', hazard: 'flood' }, [], NOW)).toBe('nepal-flood')
+  })
+
+  it('updates the hazard FIELD while the slug holds still', () => {
+    /* The division the fix rests on: framing is evidence and the detector owns
+       it; the address is identity and it is fixed at publication. This asserts
+       the resolver's half — the field is rebuilt from `c.hazard` by dossier(),
+       which is the behaviour that was already correct. */
+    const onDisk = [ev()]
+    expect(dossierSlug({ place: 'Nepal', hazard: 'flood' }, onDisk, NOW)).toBe('nepal-glof')
+    expect(dossierSlug({ place: 'Nepal', hazard: 'landslide' }, onDisk, NOW)).toBe('nepal-glof')
+    expect(dossierSlug({ place: 'Nepal', hazard: 'cloudburst' }, onDisk, NOW)).toBe('nepal-glof')
+  })
+
+  it('does not adopt a draft — a draft has no address to protect', () => {
+    // Adopting one would file a flood at /now/climate-event/odisha-cyclone the
+    // day it cleared the bar.
+    const onDisk = [ev({ slug: 'odisha-cyclone', hazard: 'cyclone', publish_state: 'draft', location: { text: 'Odisha' } })]
+    expect(dossierSlug({ place: 'Odisha', hazard: 'flood' }, onDisk, NOW)).toBe('odisha-flood')
+  })
+
+  it('does not let a withdrawn fork capture a region that still has a live page', () => {
+    /* The state this change leaves Nepal in. Writing into the tombstone is
+       what the unfixed code does, and the latch would then hold the region
+       invisible while the live page froze — the same bug, one step later. */
+    const onDisk = [
+      ev({ slug: 'nepal-glof', hazard: 'glof' }),
+      ev({ slug: 'nepal-flood', hazard: 'flood', publish_state: 'withdrawn' }),
+    ]
+    expect(dossierSlug({ place: 'Nepal', hazard: 'flood' }, onDisk, NOW)).toBe('nepal-glof')
+  })
+
+  it('still resolves a withdrawn dossier to ITSELF when its region has no live page', () => {
+    /* The withdrawal latch must keep working. `tamil-nadu-flood` was withdrawn
+       on 9 September and Tamil Nadu has no other dossier: the region's next
+       detection has to land back in that file, where publishStateFor() holds
+       it withdrawn. Resolving it somewhere else would quietly re-publish a
+       page a person took down. */
+    const onDisk = [ev({ slug: 'tamil-nadu-flood', hazard: 'flood', publish_state: 'withdrawn', location: { text: 'Tamil Nadu' } })]
+    expect(dossierSlug({ place: 'Tamil Nadu', hazard: 'flood' }, onDisk, NOW)).toBe('tamil-nadu-flood')
+  })
+
+  it('does not write a new event over an old region\'s archive page', () => {
+    // Nothing reported for a fortnight: isCurrent() is false, so November's
+    // flood is a new event and gets its own dossier rather than being merged
+    // into August's under August's editor fields.
+    const stale = [ev({ last_updated: { epochMs: NOW - 40 * DAY } })]
+    expect(dossierSlug({ place: 'Nepal', hazard: 'flood' }, stale, NOW)).toBe('nepal-flood')
+  })
+
+  it('prefers the oldest detection when a region has two live pages', () => {
+    // Deterministic, and it picks the dossier holding the history — which is
+    // the thing a fork strands.
+    const onDisk = [
+      ev({ slug: 'nepal-flood', hazard: 'flood', first_detected: { epochMs: NOW - DAY } }),
+      ev({ slug: 'nepal-glof', hazard: 'glof', first_detected: { epochMs: NOW - 14 * DAY } }),
+    ]
+    expect(dossierSlug({ place: 'Nepal', hazard: 'cloudburst' }, onDisk, NOW)).toBe('nepal-glof')
+    // And the answer cannot depend on readdir order.
+    expect(dossierSlug({ place: 'Nepal', hazard: 'cloudburst' }, [...onDisk].reverse(), NOW)).toBe('nepal-glof')
+  })
+
+  it('survives a dossier with fields missing, rather than throwing mid-run', () => {
+    // The detector writes every dossier in one loop. A malformed file must not
+    // take the whole run down with it.
+    const onDisk = [{}, { slug: 'x' }, { slug: 'y', publish_state: 'published' }, null]
+    expect(dossierSlug({ place: 'Nepal', hazard: 'flood' }, onDisk as Dossier[], NOW)).toBe('nepal-flood')
+    expect(dossierSlug({ place: '', hazard: 'flood' }, onDisk as Dossier[], NOW)).toBe('flood')
+  })
+
+  /* ── THE NO-REGRESSION HALF, AGAINST THE REAL FILES ─────────────────────
+     Every dossier on disk must resolve to its own slug, or this change has
+     moved a URL. The withdrawn ones are excluded and named separately below:
+     for them, moving is the point. */
+  it('moves no slug on any dossier already committed', () => {
+    const dir = join(process.cwd(), 'data/climate-events/active')
+    const onDisk = readdirSync(dir)
+      .filter((f) => f.endsWith('.json'))
+      .map((f) => JSON.parse(readFileSync(join(dir, f), 'utf8')))
+    expect(onDisk.length).toBeGreaterThan(20)
+
+    const moved = onDisk
+      .filter((e) => e.publish_state !== 'withdrawn')
+      .map((e) => ({ was: e.slug, now: dossierSlug({ place: e.location.text, hazard: e.hazard }, onDisk) }))
+      .filter((r) => r.was !== r.now)
+    expect(moved).toEqual([])
+  })
+
+  it('agrees with the filename each dossier is actually stored under', () => {
+    // The other direction: `slug` is what the detector writes the file as, so a
+    // dossier whose slug and filename disagree would be re-minted every run.
+    const dir = join(process.cwd(), 'data/climate-events/active')
+    const mismatched = readdirSync(dir)
+      .filter((f) => f.endsWith('.json'))
+      .map((f) => ({ file: f.replace(/\.json$/, ''), slug: JSON.parse(readFileSync(join(dir, f), 'utf8')).slug }))
+      .filter((r) => r.file !== r.slug)
+    expect(mismatched).toEqual([])
+  })
+
+  it('shares one slugify with the detector', () => {
+    // Two copies of this expression are two chances for a filename and the
+    // lookup for it to disagree, which is the class of bug above.
+    const src = readFileSync(join(__dirname, '..', 'scripts', 'detect-climate-events.mjs'), 'utf8')
+    expect(src).toMatch(/import \{[^}]*\bdossierSlug\b[^}]*\bslugify\b[^}]*\} from '\.\/lib\/active-situation\.mjs'/)
+    expect(src).not.toMatch(/const slugify =/)
+    expect(src).toMatch(/const slug = dossierSlug\(c, onDisk\)/)
+    expect(src).toMatch(/dossier\(c, s, prior, slug\)/)
+    // And nothing may go back to deriving identity from the hazard word.
+    expect(src).not.toMatch(/existing\.get\(slugify\(/)
+    expect(slugify('Nepal-glof')).toBe('nepal-glof')
   })
 })
 

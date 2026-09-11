@@ -46,7 +46,7 @@ import { HAZARD_TERMS, SEVERITY_TERMS, NEGATIVE_TERMS, hay, hayPlace, ownedElsew
 import { consolidate } from './lib/event-figures.mjs';
 import { dedupeFeedItems, anchorPublished, lastUpdatedFrom, feedCollapse } from './lib/event-feed.mjs';
 import { HAZARDS, hasContext } from './lib/climate-events.mjs';
-import { publishStateFor, keepEditorFields } from './lib/active-situation.mjs';
+import { publishStateFor, keepEditorFields, dossierSlug, slugify } from './lib/active-situation.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const DIR = join(ROOT, 'data', 'climate-events');
@@ -441,7 +441,11 @@ function score(c, alerts) {
 
 /* ═══ 5. WRITE ════════════════════════════════════════════════════════════ */
 
-const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+/* slugify and dossierSlug both come from lib/active-situation.mjs. slugify was
+   a const here until 11 September 2026; it moved so that the one expression
+   mints the filename, the source ids and the resolver's candidate alike. The
+   dossier's IDENTITY is dossierSlug()'s answer and no longer this one — read
+   its note before changing either. */
 
 /* ── HEADLINE HYGIENE ─────────────────────────────────────────────────────
    The headline is the largest text on the page when an event is live, so it
@@ -505,9 +509,13 @@ function pickLead(items, hazard) {
 
 /** Build the dossier. Every figure it emits is a count this script performed
  *  itself; every sentence it emits is either quoted from a headline or is the
- *  standing `why` string from the geography table. */
-async function dossier(c, s, existing) {
-  const slug = slugify(`${c.place}-${c.hazard}`);
+ *  standing `why` string from the geography table.
+ *
+ *  `slug` is passed IN, resolved once by dossierSlug() in the run loop. This
+ *  function used to derive it from `${c.place}-${c.hazard}` and the loop
+ *  derived it a second time for the lookup — two expressions for one identity,
+ *  which is how a hazard-word change minted a fork of a live dossier. */
+async function dossier(c, s, existing, slug) {
   const sources = [];
   const seen = new Set();
   for (const i of c.items.slice(0, 24)) {
@@ -857,6 +865,11 @@ const existing = new Map(existingFiles.map((f) => {
   const j = JSON.parse(readFileSync(join(ACTIVE, f), 'utf8'));
   return [j.slug, j];
 }));
+/* The same dossiers as a list, for dossierSlug(). It has to search ALL of them
+   for this region, which is what the Map cannot do: a Map keyed by slug can
+   only answer a slug you have already guessed, and guessing it from the hazard
+   word is the defect. */
+const onDisk = [...existing.values()];
 
 console.log(`Read ${news.length} news items and ${alerts.length} official alerts.`);
 if (unreachable.length) {
@@ -882,13 +895,25 @@ console.log(`\n${clusters.length} candidate cluster(s), threshold ${THRESHOLD}:\
 
 let written = 0;
 for (const { c, s } of clusters) {
-  const prior = existing.get(slugify(`${c.place}-${c.hazard}`));
+  /* ★ RESOLVED ONCE, FROM THE REGION, AND USED FOR BOTH THE LOOKUP AND THE
+     FILENAME. These were two separate `slugify(place-hazard)` expressions, and
+     the day the hazard word changed the lookup missed a dossier that existed
+     and the filename minted a fork of it. dossierSlug() carries the account. */
+  const slug = dossierSlug(c, onDisk);
+  const prior = existing.get(slug);
   /* keepEditorFields() carries a person's fields across: the detector keeps
      the keys this run produced, the previous file keeps everything else. */
-  const d = keepEditorFields(await dossier(c, s, prior), prior);
+  const d = keepEditorFields(await dossier(c, s, prior, slug), prior);
   const mark = publishable(s) ? 'PUBLISH' : 'draft  ';
   console.log(`  ${mark} ${String(s.total).padStart(3)}  ${c.hazard} @ ${c.place}`
     + `  (${s.publishers.length} publishers, ${s.matchedAlerts.length} alerts, ${c.items.length} items)`);
+  /* Say so when the region's dossier is not the one this run's hazard word
+     would have named. Silent adoption is how an operator loses track of which
+     file a region writes to. */
+  if (slug !== slugify(`${c.place}-${c.hazard}`)) {
+    console.log(`            -> ${slug}.json, this region's existing dossier. Its hazard field`
+      + ` becomes "${c.hazard}"; the slug does not follow the hazard word.`);
+  }
   for (const p of s.parts) console.log(`            ${p.points > 0 ? '+' : ''}${p.points}  ${p.signal}`);
   if (!DRY) {
     writeFileSync(join(ACTIVE, `${d.slug}.json`), JSON.stringify(d, null, 2) + '\n');
