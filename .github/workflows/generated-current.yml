@@ -62,7 +62,13 @@ jobs:
           # deployment: vitest transpiles without type-checking, eslint does
           # not type-check, and this gate did not either -- but `next build`
           # type-checks the WHOLE repository, test files included. Every gate
-          # was green while the site could not deploy at all. 1.2 seconds.
+          # was green while the site could not deploy at all.
+          #
+          # `npm run typecheck` runs `next typegen` first, and must: PageProps and
+          # LayoutProps are GENERATED into .next/types by the build, so bare tsc on a
+          # fresh clone fails with 'Cannot find name PageProps' — which is exactly how
+          # this step failed the first time it ran here. typegen takes 0.3s and makes
+          # the check work from a cold checkout, before any build has happened.
           npm run typecheck
           npm run lint
 

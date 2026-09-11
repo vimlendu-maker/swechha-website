@@ -9,11 +9,15 @@
 #   not a minor gap. It is reported as UNKNOWN every time precisely so it stays
 #   visible instead of looking green.
 set -euo pipefail
+
+ENV_FILE="${WEBSITE_TEAM_ENV:-$HOME/.swechha-ai/env}"
+# shellcheck disable=SC1090
+[ -r "$ENV_FILE" ] && . "$ENV_FILE"
 if [ -n "${NEON_API_KEY:-}" ]; then
   P="$(curl -sS --max-time 12 -H "Authorization: Bearer $NEON_API_KEY" \
         https://console.neon.tech/api/v2/projects 2>/dev/null)" || { echo "neon API unreachable"; exit 2; }
   printf '%s' "$P" | grep -q '"projects"' || { echo "neon API rejected the key"; exit 1; }
   exit 0
 fi
-echo "neon storage/compute/connections UNKNOWN — no NEON_API_KEY (highest unmeasured cost risk)"
+echo "neon storage/compute/connections UNKNOWN — no NEON_API_KEY in ~/.swechha-ai/env (highest unmeasured cost risk)"
 exit 2

@@ -138,6 +138,22 @@ Until they exist, the department can watch Vercel's *status* but not its
 *usage*, and nothing at all about Neon. Given Neon's storage grows on its own
 with site traffic, that is the most important blind spot in the inventory.
 
+**Where they go:** `~/.swechha-ai/env`, mode 600, outside both repositories so
+git cannot see it and a launchd job can read it. The probes source it; nothing
+ever prints a value from it. Fill a line in and the matching probe starts
+working on its next run; leave it blank and that probe keeps saying UNKNOWN,
+which is the honest answer.
+
+**Vercel, specifically:** create it at <https://vercel.com/account/tokens>,
+scoped to the **swechha-website project** — not Full Account, not the team.
+**Vercel has no read-only permission level**, so scope is the only control
+there is: a project-scoped token is denied every other project and every team-
+and user-level resource. Choose an expiry; it will stop working on that date,
+and `vercel-health.sh` reports a rejected token as a PROBLEM rather than as
+UNKNOWN, precisely because a dead token means the check has been blind.
+Project-scoped tokens need no `teamId`, and the value begins `vcp_` and is
+shown once.
+
 Neon's status page also did not return a machine-readable status document at
 the usual path, so Neon has no automated health check either.
 

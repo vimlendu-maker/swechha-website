@@ -35,6 +35,24 @@ import urllib.request
 from pathlib import Path
 
 HOME = Path(os.path.expanduser("~"))
+
+# Credentials live outside both repositories, in a file the launchd jobs can
+# read and git cannot see. Nothing here ever prints a value from it.
+def _load_env(path: Path) -> None:
+    try:
+        for line in path.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            v = v.strip().strip('"').strip("'")
+            if v and not os.environ.get(k.strip()):
+                os.environ[k.strip()] = v
+    except Exception:
+        pass  # an unreadable credentials file leaves every probe UNKNOWN, which is correct
+
+
+_load_env(Path(os.environ.get("WEBSITE_TEAM_ENV", HOME / ".swechha-ai" / "env")))
 CACHE = Path(os.environ.get("WEBSITE_TEAM_INFRA_CACHE", HOME / ".swechha-ai" / "infra-cache.json"))
 REPO = Path(os.environ.get("WEBSITE_TEAM_REPO", HOME / "swechha-website"))
 
