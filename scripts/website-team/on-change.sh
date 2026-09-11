@@ -115,6 +115,6 @@ fi
 
 echo "$CURRENT" > "$SEEN"
 echo "on-change: $URGENT urgent item(s) — running the department now"
-python3 "$REPO/scripts/website-team/log-event.py" "$DEPARTMENT" runner \
+python3 "${SWECHHA_LOG_EVENT:-$HOME/.swechha-ai/log-event.py}" "$DEPARTMENT" runner \
   run_triggered by=inbox-urgent urgent="$URGENT" jobs="$JOBS" 2>/dev/null || true
 exec "$REPO/scripts/website-team/run.sh" work
