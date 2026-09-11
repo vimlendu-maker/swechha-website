@@ -39,6 +39,19 @@
     "formatting and lint fixes",
     "anything reversible by a single git revert with no data change"
   ],
+  "requires_approval_paths": {
+    "$comment": "★ THE PATH-SHAPED HALF OF requires_approval, MADE MECHANICAL. Until 2026-09-11 that list was prose the manager was trusted to honour, with no artefact anywhere — and ADR-0004 is blunt about why that is not a gate: an approval is an artefact, not a prompt, because a prompt gets clicked through at 23:50 on a deadline. swechha-ai/approval-gate.py matches a change's paths against these globs and, when one trips, the shared merge gate requests an approval and leaves the pull request open. THE AGENT DOES NOT DECIDE WHETHER THE AGENT NEEDS APPROVAL: this reads the diff. ★ THE KEYS MUST MATCH requires_approval ENTRIES VERBATIM. Anything in that list without a key here is reported, every run, as NOT MECHANICALLY ENFORCED — derived by comparing the two lists, never hand-maintained, because a second list of 'the ones we cannot check' is the lockstep defect this repository keeps paying for.",
+    "the homepage above the fold": ["app/page.tsx", "scripts/build-hero.mjs", "public/_pages/index.html", "data/hero/**"],
+    "navigation changes": ["components/nav/**", "components/Nav*", "app/layout.tsx", "lib/seo/register.ts"],
+    "deleting a page or removing a route from a derived map": {"on": ["D", "R"], "globs": ["design-routes.ts", "app/**/page.tsx", "public/_pages/**"]},
+    "the rewrite layer (design-routes.ts, next.config.ts rewrites)": ["design-routes.ts", "next.config.ts"],
+    "the CSP or security headers": ["next.config.ts", "middleware.ts", "app/robots.ts"],
+    "generated-current.yml or any other gate": [".github/workflows/**", "scripts/verify-*.mjs", "scripts/check-*.mjs", "scripts/stage-generated.sh"],
+    "database migrations and anything touching Neon": ["db/**", "scripts/db-migrate.mjs", "lib/db/**", "drizzle/**"],
+    "adding or removing a third-party integration": ["package.json", "package-lock.json"],
+    "replacing a font or image": ["public/fonts/**", "public/images/**", "**/*.woff", "**/*.woff2", "**/*.png", "**/*.jpg", "**/*.webp", "**/*.avif"],
+    "promoting an agent, or adding a recruit to .claude/agents/": [".claude/agents/**", "docs/website-team/roster.json", "docs/website-team/roles/**"]
+  },
   "requires_approval": [
     "ANY new factual claim, figure, citation or statement about Swechha \u2014 this gate does not move with the autonomy dial",
     "the homepage above the fold",
