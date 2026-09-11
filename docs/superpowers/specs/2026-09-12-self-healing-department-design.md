@@ -68,36 +68,72 @@ surface where fluency is indistinguishable from truth.
 
 ## 3. Architecture
 
-Three tiers replace today's two, which is the whole structural change:
+### 3.1 Bands, in the organisation's own vocabulary
 
-```
-  never_touch    policy.json, the never-list, app/**        agent may not modify, ever
-  propose_only   .github/workflows/**, scripts/**            agent MAY edit on a branch;
-                                                          auto-merge is unconditionally OFF
-  free           lib/, components/, docs/, tests          agent edits, gates decide
-```
+ADR-0004 defines four responsibility bands **by the mechanism that enforces
+them**, and explicitly rejected a three-band model. This design uses those names,
+not its own:
 
-`propose_only` is the new tier and the answer to "why didn't it fix it". Today
-`never_touch` means **silence**. It should mean **a PR in your inbox with the
-one-line fix and the log quoted.** Same safety — you still click merge — with no
-dead end.
+| Band | Here | Enforced by |
+|---|---|---|
+| `AUTONOMOUS` | `lib/`, `components/`, `docs/`, tests | the nine `auto_merge` conditions |
+| `GATED` | `.github/workflows/**`, `scripts/**` | `approval-gate.py` — an artefact the agent cannot create |
+| `FORBIDDEN` | `policy.json`, the never-list, `app/**` | `guard-paths.sh`, no code path |
+| `RECOMMENDS` | Design, Content+SEO | read-only by construction; `execute.sh` refuses them |
 
-### The capability ledger
+An earlier draft of this spec invented a third tier called `propose_only`. It is
+deleted. The organisation already has the concept, already has the enforcing
+executable, and has it in a better shape — see below.
 
-The department may not edit its own machinery (`scripts/website-team/**` stays
-`propose_only`). But it must be able to *earn sight*. So the allowlists move out
-of the scripts into a data file:
+### 3.2 Approval is an artefact, not a tier
 
-- `docs/website-team/capabilities.json` — read-only command grants, ratchet-writable
+`swechha-ai/approval-gate.py` already exists, is department-agnostic, and its
+header states the contract: *"A third department inherits it by declaring
+`requires_approval_paths` and changing nothing else."*
+
+Website's `policy.json` **does not declare it.** It validates clean against
+`policy.schema.json` only because the block is optional — so all fourteen of its
+`requires_approval` rules are, today, prose a manager is trusted to honour. That
+is the actual reason the department had nothing between "free" and "forbidden".
+
+The fix is therefore not a new tier. It is:
+
+1. add `requires_approval_paths` to `policy.json`, mapping the path-shaped rules
+   to globs (keys matching `requires_approval` entries **verbatim** — the schema
+   derives "not mechanically enforced" by comparing the two lists);
+2. move `.github/workflows/**` out of `never_touch` and into a rule mapped there;
+3. call `approval-gate.py` from `execute.sh` against the diff.
+
+This is strictly better than what this spec first proposed, and the reason is
+worth recording: my version had `execute.sh` classify the *brief*. That is the
+agent deciding whether the agent needs approval. The gate reads the **diff**,
+after the fact, which is why its header says *"a gate an agent can talk itself
+past is a gate in name only."*
+
+Per ADR-0004, moving `.github/workflows/**` out of `FORBIDDEN` requires **a test
+that fails if the lock is removed**. §9 carries it.
+
+### 3.3 The tool-grant ledger
+
+The department may not edit its own machinery (`scripts/**` is `GATED`). But it
+must be able to *earn sight*. So the command allowlists move out of the scripts
+into a data file:
+
+- `docs/website-team/tool-grants.json` — read-only command grants, ratchet-writable
 - `run.sh` / `execute.sh` read it and concatenate onto their static `ALLOWED`
 - a **verb whitelist** in the reading script rejects anything not provably
   read-only (`gh run view`, `gh api` GET, `git show`, `npm run *:status`)
 
-So an agent can grant itself eyes and can never grant itself hands. The scripts
-stay outside the ratchet's reach — changing them needs your merge, like any
-other `propose_only` path; the grants are data, validated on read.
+**Not** `capabilities.json`: that name is taken at org level by
+`swechha/ai/capabilities.json`, the capability *catalogue* whose `implemented_by`
+paths `lib/skilltree.test.ts` asserts exist. Two files with one name meaning
+different things is the confusion this estate can least afford.
 
----
+New mechanisms built here are **registered** in that catalogue, with a real
+`implemented_by` path — a capability whose implementation cannot be found is a
+claim, not a capability.
+
+So an agent can grant itself eyes and can never grant itself hands.
 
 ## 4. Phase 1 — see, act, remember
 
@@ -123,7 +159,7 @@ failure class (vault: `swechha-parallel-list-failure-class`) this repo has hit
 four times.
 
 ### 1.3 Evidence-or-escalate
-- Grant `gh run view:*` and `gh run view --log-failed` via the capability ledger.
+- Grant `gh run view:*` and `gh run view --log-failed` via the tool-grant ledger.
 - **Structural rule:** if a run's activity log contains a tool denial, `run.sh`
   stamps the record `BLOCKED — diagnosis withheld` and opens an escalated spine
   task. A cause the agent could not verify may not become the report's headline.
@@ -132,10 +168,14 @@ This is complaint (1) fixed as a mechanism, not as advice. The Manager already
 said *"I could not confirm this from the actual log"* — the harness threw that
 signal away.
 
-### 1.4 `propose_only` escalation
-`execute.sh` gains a proposal mode: a brief touching a `propose_only` path runs
-normally, passes every gate, opens a PR labelled `needs-owner` with the brief and
-the evidence in the body, and **skips auto-merge unconditionally**.
+### 1.4 Declare and wire the approval gate
+Add `requires_approval_paths` to `policy.json` for every path-shaped rule in
+`requires_approval`; move `.github/workflows/**` from `never_touch` into it.
+`execute.sh` runs `approval-gate.py --policy … --paths $(git diff --name-only)`
+after the gates: exit 1 means the PR opens, stays open, and auto-merge is skipped.
+Semantic rules it cannot see are reported NOT MECHANICALLY ENFORCED by name, as
+the script already does — a gate covering ten of fourteen rules while reading as
+complete is worse than the prose it replaced.
 
 ### 1.5 Honest empty-diff reporting
 `execute.sh` exits `4` on an empty diff; `run.sh` maps it to
@@ -169,7 +209,14 @@ A deterministic reconciler reads `activity.jsonl`; a denial of the same verb in
 auto-applied under D2) or a `needs-owner` PR (anything else). No model in the
 learning path, so learning cannot hallucinate.
 
-### 2.4 Budget ceiling
+### 2.4 Registry honesty
+ADR-0005 makes `runs_when_mac_asleep` a **required and honest** registry field.
+Today `departments.json` records `website: false`. Splitting the department into
+two runtimes moves the property to the runtime, as ADR-0005 anticipates
+("fundraising already is"). `departments.json` is updated in the same change, or
+the registry lies.
+
+### 2.5 Budget ceiling
 Sum today's `cost_usd` from `activity.jsonl`. Above the ceiling, `run.sh`
 refuses to start and escalates. **Proposed: $15/day** — roughly 3 delegating
 runs. Adjust before implementation.
@@ -202,6 +249,27 @@ detection, assembly, build, publication, and repair when any of those break.
 | Budget ceiling hit mid-incident | Refuses and escalates loudly; a silent stop during an incident would be worse than the spend |
 
 ---
+
+## 7a. Conformance with the organisation's OS
+
+Verified 2026-09-12 against `Projects/ai-org/docs/` and
+`swechha-vault/swechha/ai/`:
+
+| Source | Bearing |
+|---|---|
+| `03-AI_OPERATING_SYSTEM.md:219` | *"each department's `lessons.md`, which the department may append and only a human may delete"* — §4.2 implements a **specified** behaviour the runtime never built. This is the instruction that was dropped. |
+| ADR-0005 | *"A department may be two runtimes."* §5 is the sanctioned pattern, not a novelty. |
+| ADR-0004 | Four bands by enforcement; three-band models rejected. §3.1 adopts the vocabulary; §9 carries the lock-removal test its consequences require. |
+| `policy.schema.json` → `requires_approval_paths` | §3.2. Already built, already department-agnostic. Not re-authored. |
+| ADR-0002 | Three levels, no orchestrator. The reconciler is a service called by a runner, not a layer above departments. |
+| ADR-0003 | Task state is runner-written and status is derived. §4.5 corrects a runner that wrote the wrong outcome; it adds no state. |
+| ADR-0006 | *"The spec travels; the executable does not."* This document is spec and lives in the repo; probes and gates stay in `vimlendu-maker/swechha-ai`. |
+| `swechha/ai/capabilities.json` | Name collision avoided (§3.3); new mechanisms register there with real `implemented_by` paths. |
+
+**No conflict found.** Three corrections were made *because* of this pass: the
+invented `propose_only` tier was deleted in favour of the existing approval gate,
+the band vocabulary was aligned to ADR-0004, and the grant file was renamed off a
+collision.
 
 ## 8. Non-goals
 
