@@ -133,47 +133,44 @@ describe('website team policy', () => {
 
   it('condition 4 is enforced in code, because nothing on GitHub enforces it', () => {
     /* `auto_merge` condition 4 says generated-current.yml passes on the PR.
-       The owner declined a required status check on main on 2026-09-11 (67 of
-       the last 100 commits there are direct bot pushes and a required check
-       would stop them), and `allow_auto_merge` is now on at the repository
-       level. So NOTHING blocks a fresh PR, and `gh pr merge --auto` on an
-       unblocked PR does not wait — it merges at once, before the workflow has
-       started. That would leave the department merging on its own say-so while
-       its policy claimed CI had passed. An asserted-but-unenforced condition is
-       worse than one never written down, so execute.sh waits itself. */
+       The owner declined a required status check on main on 2026-09-11 — 67 of
+       the last 100 commits there are direct bot pushes, and a required check
+       REJECTS direct pushes outright (measured: `Required status check "current"
+       is expected`, with all six data workflows blocked). So nothing on GitHub
+       blocks a fresh PR, and `gh pr merge --auto` on an unblocked PR does not
+       wait: it merges at once, before the workflow has started.
+
+       ★ THE GATE LEFT THIS REPOSITORY on 2026-09-11. It is shared with the
+       fundraising department and belonged to neither, so it lives in swechha-ai
+       and both reach it at a stable path. Its own properties — never --auto,
+       polls the check, merges only on SUCCESS — are tested where it lives, in
+       swechha-ai/tests/test_merge_gate.py. A test here would assert about a
+       file this repository cannot see.
+
+       What this repository still owns is that BOTH of its merge paths lead to
+       that one gate: the department's unattended merge, and a person typing a
+       command. If either stops delegating, this repo has grown a second gate —
+       the condition that let #115 and #116 merge 38 and 76 seconds before their
+       checks finished. */
     const policy = readPolicy()
     const four = policy.auto_merge.conditions.find((c: string) => c.includes('generated-current'))
     expect(four, 'the CI condition disappeared from policy').toBeTruthy()
 
-    /* The gate now lives in merge-when-green.sh, because a person merging by
-       hand needs exactly the same wait — PR #115 was merged 38 seconds before
-       `current` finished, and #116 by 76, both by someone typing --auto and
-       believing it meant "when green". So this test FOLLOWS THE DELEGATION
-       rather than naming a file: whichever script execute.sh hands the merge
-       to is the one that must hold the gate. Pinning the file name is how a
-       test ends up guarding an empty room. */
     const exec = readFileSync(join(ROOT, 'scripts/website-team/execute.sh'), 'utf8')
-    const delegate = exec.match(/scripts\/website-team\/([a-z-]+\.sh)" "\$PR_URL"/)
-    expect(delegate, 'execute.sh no longer delegates the merge to a script').toBeTruthy()
-    const gate = readFileSync(join(ROOT, `scripts/website-team/${delegate![1]}`), 'utf8')
-
-    const strip = (s: string) => s.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n')
-    // --auto is the trap: it is a no-op wait when nothing is required.
-    for (const [name, src] of [['execute.sh', exec], [delegate![1], gate]] as const) {
-      expect(strip(src), `${name}: --auto merges immediately when no check is required`)
-        .not.toMatch(/gh pr merge --auto/)
-    }
-    // And the delegate must poll the check and merge only on SUCCESS.
-    const code = strip(gate)
-    expect(code).toMatch(/gh pr checks/)
-    expect(code).toMatch(/\[ "\$state" != "SUCCESS" \]/)
-    expect(code).toMatch(/gh pr merge --squash/)
-    // The same gate a human reaches, or it is not the same gate.
+    const strip = (t: string) => t.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n')
     const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
-    expect(pkg.scripts['pr:merge'], 'npm run pr:merge must call the same script')
-      .toContain(delegate![1])
-  })
 
+    // Neither path may reach for --auto: with nothing required, it does not wait.
+    expect(strip(exec), 'execute.sh merges without waiting').not.toMatch(/gh pr merge --auto/)
+    expect(pkg.scripts['pr:merge'], 'the human path merges without waiting').not.toMatch(/--auto/)
+
+    // Both must name the SAME gate, and it must be the shared install.
+    const GATE = /\$\{SWECHHA_MERGE_GATE:-\$HOME\/\.swechha-ai\/merge-when-green\.sh\}/
+    expect(strip(exec), 'execute.sh no longer delegates to the shared gate').toMatch(GATE)
+    expect(pkg.scripts['pr:merge'], 'npm run pr:merge must use the same gate').toMatch(GATE)
+    expect(strip(exec), 'the gate must not have been copied back into this repository')
+      .not.toMatch(/scripts\/website-team\/merge-when-green/)
+  })
   it('never grants a recruit write access', () => {
     const policy = readPolicy()
     const roles = Object.values(policy.roles) as Array<Record<string, unknown>>
