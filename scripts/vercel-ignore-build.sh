@@ -31,8 +31,21 @@
 
 set -uo pipefail
 
-# 05:30 IST on 2026-09-12, the moment the daily deployment quota resets.
-FREEZE_UNTIL="2026-09-12T00:00:00Z"
+# LIFTED EARLY, 2026-09-12 ~01:40 IST, on the owner's instruction.
+#
+# The freeze was set to run to 05:30 IST so the department could work overnight
+# without burning the last of the day's 100 deployments. It did its job: three
+# pull requests merged tonight (#136, #137, #138) and none of them built.
+#
+# But it also meant the Teach section — 81,534 words rewritten for India across
+# nine copy passes — was sitting merged on main and NOT on swechha.in, with the
+# Vercel check reading "Canceled by Ignored Build Step". The owner asked for it
+# live rather than waiting for the automatic expiry a few hours away.
+#
+# This timestamp is now in the past, so the comparison below always fails and
+# every branch builds normally. The quota resets at 00:00 UTC regardless, which
+# is what makes lifting it early cheap: there are only a few hours left to spend.
+FREEZE_UNTIL="2026-09-11T00:00:00Z"
 
 NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
