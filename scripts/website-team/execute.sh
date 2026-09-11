@@ -54,7 +54,9 @@ BRANCH="team/$(date +%Y%m%d)-$(basename "$BRIEF_FILE" .txt | tr -cd '[:alnum:]-'
 #   happen on any base branch that lacks them.
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
-cp "$REPO/scripts/website-team/parse-result.py" "$REPO/scripts/website-team/guard-paths.sh" "$STAGE/"
+cp "$REPO/scripts/website-team/parse-result.py" \
+   "$REPO/scripts/website-team/guard-paths.sh" \
+   "$REPO/scripts/website-team/verify-claims.py" "$STAGE/"
 chmod +x "$STAGE/guard-paths.sh"
 
 if [ "$DRY" = "--dry-run" ]; then
@@ -134,6 +136,26 @@ npm run lint >/tmp/wt-lint.log 2>&1 || FAILED="$FAILED lint"
 npm run build:all >/tmp/wt-build.log 2>&1 || FAILED="$FAILED build"
 npm run verify:seo >/tmp/wt-seo.log 2>&1 || FAILED="$FAILED verify:seo"
 
+# ── THE FACT GATE ────────────────────────────────────────────────────────────
+# Any content this change adds must have its claims verified mechanically. A
+# test can prove the build works; no test can prove a figure is true, and a
+# research subagent on this repository has already produced fluent,
+# citation-dense fabrication and retracted it afterwards. So every changed
+# markdown or content file goes through verify-claims.py, which resolves DOIs
+# against Crossref, fetches source URLs, and checks quotes appear verbatim.
+# A source it cannot reach is NOT a pass.
+CONTENT_CHANGED="$(git diff --name-only "$BASE"...HEAD -- '*.md' 'content/**' 'data/**/*.json' | grep -v '^docs/website-team/' || true)"
+if [ -n "$CONTENT_CHANGED" ]; then
+  echo "execute: fact gate over:"; printf '  %s
+' $CONTENT_CHANGED
+  for f in $CONTENT_CHANGED; do
+    [ -f "$f" ] || continue
+    python3 "$STAGE/verify-claims.py" < "$f" >>/tmp/wt-claims.log 2>&1 || FAILED="$FAILED fact-gate($f)"
+  done
+else
+  echo "execute: fact gate — no content changed, nothing asserted"
+fi
+
 # A build may legitimately regenerate committed pages. That is a change to
 # public/_pages, which the guard forbids -- so re-run the guard AFTER the build
 # and refuse rather than quietly shipping regenerated artefacts.
@@ -153,7 +175,7 @@ fi
 git push -q -u origin "$BRANCH"
 PR_URL="$(gh pr create --base "${BASE#origin/}" --head "$BRANCH" \
   --title "$(head -1 "$BRIEF_FILE" | cut -c1-70)" \
-  --body "$(printf 'Opened by the website team, stage two.\n\n## Brief\n\n%s\n\n## What the specialist reported\n\n%s\n\n## Gates\n\n- guard-paths: pass\n- npm test: pass\n- npm run lint: pass\n- npm run build:all: pass\n- npm run verify:seo: pass\n\nMerging is conditional on every `auto_merge` condition in `docs/website-team/policy.json`. If any failed, this PR waits for a human.\n' "$(cat "$BRIEF_FILE")" "$(cat /tmp/wt-exec.txt)")")"
+  --body "$(printf 'Opened by the website team, stage two.\n\n## Brief\n\n%s\n\n## What the specialist reported\n\n%s\n\n## Gates\n\n- guard-paths: pass\n- npm test: pass\n- npm run lint: pass\n- npm run build:all: pass\n- npm run verify:seo: pass\n- fact gate (verify-claims.py): pass\n\nMerging is conditional on every `auto_merge` condition in `docs/website-team/policy.json`. If any failed, this PR waits for a human.\n' "$(cat "$BRIEF_FILE")" "$(cat /tmp/wt-exec.txt)")")"
 echo "execute: opened $PR_URL"
 
 AUTO="$(python3 -c "import json;print(json.load(open('docs/website-team/policy.json'))['auto_merge']['enabled'])")"

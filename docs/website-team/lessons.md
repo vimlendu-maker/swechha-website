@@ -114,3 +114,28 @@ not delete the file itself, because `dontAsk` denies `rm`.
 
 **Do:** use `git status --porcelain` to detect changes. And tell an agent that
 cannot delete files not to create them.
+
+## 2026-09-11 — Fact-checking is a script's job, not an agent's
+
+Content autonomy was blocked on one thing: no way to let an agent publish a
+figure without a human reading it. Requiring approval per article was the wrong
+answer — it makes the manager a bottleneck and does not scale.
+
+`scripts/website-team/verify-claims.py` resolves DOIs against Crossref, compares
+the returned record to what was claimed, fetches source URLs and confirms quotes
+appear verbatim. No model is involved, deliberately: an agent checking its own
+citations is the failure this repository has already had.
+
+Measured against four fabrication modes, all caught: a non-existent DOI (404), a
+real DOI attached to the wrong paper (metadata mismatch), a quote absent from its
+source, and a bare link offered as proof of a fact.
+
+**Do:** write claims in `claim` blocks and label the type honestly. Label
+analysis as analysis and the gate waves it through; dress analysis up as a
+verified fact and it stops you. **An unreachable source is not a pass** — re-run
+or drop the claim.
+
+**What the gate still cannot do**, and why the human approval list keeps these:
+it cannot judge whether a topic is appropriate for Swechha to write about, or
+whether a framing misrepresents a contested issue. Citations are checkable;
+editorial judgement is not.
