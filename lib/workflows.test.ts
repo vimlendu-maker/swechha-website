@@ -482,3 +482,71 @@ describe('no scheduled job runs during the Indian night', () => {
     })
   }
 })
+
+/**
+ * AN EXIT CODE A STEP CANNOT REACH.
+ *
+ * GitHub runs every `run:` block as `bash -e {0}`, so a non-zero exit kills the
+ * shell AT THAT LINE. A step that writes
+ *
+ *     npm run something
+ *     code=$?
+ *     if [ "$code" = "75" ]; then ... exit 0; fi
+ *
+ * therefore never reaches `code=$?` on the one path the branch exists to
+ * handle. The branch is dead code, and — this is the damaging part — the
+ * workflow's own comments go on describing behaviour that has never once
+ * occurred.
+ *
+ * Paid for on 2026-09-11. `air-hourly.yml` documented "EXIT 75 IS NOT A
+ * FAILURE -> stay green" at the top of the file and had no `set +e` anywhere in
+ * it, so both CPCB and the data.gov.in mirror timing out — the designed,
+ * do-nothing outcome — went red twice. The department's manager then read those
+ * comments, reasoned that a red run could not be upstream silence, and reported
+ * a push race that had not happened. A wrong diagnosis delivered with evidence
+ * it could not check, from documentation no test enforced.
+ *
+ * `climate-events.yml` and `ward-alerts.yml` already used the `set +e` guard
+ * correctly, four times between them. The idiom was house style; one file
+ * missed it twice. That is exactly the kind of drift a test holds and a comment
+ * does not.
+ */
+describe('exit codes a step can actually reach', () => {
+  /** Lines where `$?` is captured while errexit is still on. */
+  const unreachableCaptures = (yaml: string): string[] => {
+    const bad: string[] = []
+    let errexit = true // bash -e {0} is GitHub's default for `run:`
+    let prev = ''
+    for (const raw of yaml.split('\n')) {
+      const line = raw.trim()
+      if (line.startsWith('#')) continue
+      // A new step is a new shell, and a new shell has errexit on again.
+      if (/^-\s+(name|uses|run):/.test(line) || /^(name|uses):/.test(line)) errexit = true
+      if (/^set \+e\b/.test(line)) errexit = false
+      else if (/^set -e\b/.test(line)) errexit = true
+      else if (/^[A-Za-z_][A-Za-z0-9_]*=\$\?\s*$/.test(line)) {
+        // `cmd || fallback` is not fatal, so a capture after one is fine.
+        if (errexit && !prev.includes('||')) bad.push(`${prev}  ->  ${line}`)
+      }
+      if (line) prev = line
+    }
+    return bad
+  }
+
+  // The detector must actually detect. This is the pre-fix shape, verbatim.
+  it('flags the shape that shipped the 2026-09-11 wrong diagnosis', () => {
+    expect(
+      unreachableCaptures(['- name: air', '  run: |', '    npm run data:air:delhi', '    code=$?'].join('\n')),
+    ).toHaveLength(1)
+  })
+
+  it('accepts a capture guarded by set +e', () => {
+    expect(
+      unreachableCaptures(['- name: air', '  run: |', '    set +e', '    node x.mjs', '    code=$?', '    set -e'].join('\n')),
+    ).toHaveLength(0)
+  })
+
+  it.each(workflows)('%s reaches every exit code it inspects', (f) => {
+    expect(unreachableCaptures(read(f))).toEqual([])
+  })
+})

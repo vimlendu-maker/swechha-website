@@ -174,8 +174,18 @@ jobs:
             git reset --hard --quiet origin/main || { echo "::error::git reset failed."; exit 1; }
 
             # ── DELHI: the leg that matters ──────────────────────────────
+            # ★ `set +e` OR THE EXIT-75 BRANCH BELOW IS DEAD CODE. This step
+            #   runs under `bash -e {0}`, so a non-zero exit kills the shell at
+            #   THIS line and `code=$?` is never reached. From the day it was
+            #   written until 2026-09-12 every upstream outage was therefore
+            #   reported as `pipeline_failure` -- the exact opposite of the
+            #   state model at the top of this file -- and a manager reading
+            #   that model diagnosed a push race that had not happened.
+            #   climate-events.yml and ward-alerts.yml already guard correctly.
+            set +e
             npm run data:air:delhi
             code=$?
+            set -e
 
             if [ "$code" = "75" ]; then
               echo "state=upstream_unavailable" >> "$GITHUB_OUTPUT"
@@ -304,8 +314,13 @@ jobs:
               # non-fatally: a WAQI outage must not stop Delhi publishing.
               npm run data:air:crosscheck || echo "::warning::The WAQI comparison panel did not refresh. It keeps its committed reading, which carries its own observation stamp."
 
+              # Same guard, same reason: without it `-e` kills the step here
+              # and the cross-check's own error message and the `git checkout --`
+              # cleanup below never run.
+              set +e
               npm run verify:crosscheck
               xc=$?
+              set -e
               echo "::endgroup::"
               if [ "$xc" = "1" ]; then
                 echo "::error::CROSS-CHECK FAILED — our published figures disagree with CPCB's own bulletin beyond the 0.85-1.15 band. This is a parser fault here, not an upstream one. Nothing is published; the previously trusted reading stands and the reason is recorded in data/air-delhi.json's crosscheck block."
