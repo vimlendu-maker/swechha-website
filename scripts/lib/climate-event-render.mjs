@@ -184,7 +184,7 @@ export function renderMore(events, { exclude = null, now = Date.now(), heading =
   const head = heading || (exclude ? 'The other situations we have pages for'
     : 'Situations we have pages for');
   const blurb = intro || 'One page each: what happened, what the satellite sees, and every '
-    + 'figure with the outlet it came from. A page keeps its address after the event closes.';
+    + 'figure with the outlet it came from.';
 
   return `    <div class="wrap ce-more">
       <p class="lbl ce-more-h">${esc(head)}</p>

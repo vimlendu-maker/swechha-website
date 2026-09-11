@@ -244,27 +244,33 @@ jobs:
           # `uncertain` list. A dossier that would produce a page making an
           # unattributed claim fails THIS step, and the commit below never
           # runs. That is the whole reason the rebuild lives in this job.
-          # BOTH pages, in this order. build:situations includes the standing
-          # page AND build:climate-disasters, which emits one page per published
-          # event. The disaster pages must exist before next build runs, because
-          # design-routes.ts derives their routes from the same dossiers and
-          # refuses to route a file that is not on disk.
-          npm run build:situations
-          # ★ AND THE HOMEPAGE, WHICH IS FED BY THE SAME DOSSIERS.
-          # This step rebuilt the two situation pages and stopped, but the
-          # homepage reads the very same data through homepageSlot(): the hero
-          # situation slide, the climate ticker cell and the og:image all come
-          # out of it. So every run of this workflow that moved an event left
-          # home.html behind, main drifted out of step with its own data within
-          # the hour, and "Generated pages are current" was red on every pull
-          # request anyone opened — for a page none of them had touched.
+          # ── ONE REBUILD, SHARED WITH EVERY OTHER PUBLISHER ──────────────
+          # This step ran build:situations and build:hero, which is two of the
+          # nineteen targets the gate rebuilds, and BOTH of them are here
+          # because they were each added after the fact. The homepage went in
+          # as "fix(ci): the homepage is built from event data too, and two
+          # workflows forgot": the hero slide, the climate ticker cell and the
+          # og:image all read the same dossiers, so every run that moved an
+          # event used to leave home.html behind and turn the next pull
+          # request red for a page nobody had touched.
           #
-          # AFTER build:situations, NOT BEFORE, and the order is load-bearing
-          # for the same reason air-hourly.yml states: build-hero.mjs
-          # cross-checks the hero's air figure against the one already in
-          # situation-air.html and refuses to write when they differ. Hero
-          # first would compare against a page not yet rebuilt and stop the run.
-          npm run build:hero
+          # ★ AND THE SEARCH INDEX WAS THE SAME BUG, FOUND THE SAME WAY.
+          # search.html stores every page's headings and hook as its search
+          # text, and `build:search` was run by NO publisher — only by the
+          # gate. Adding the landslide context pack gave the two live landslide
+          # pages five new bands and left search.html advertising the three
+          # they used to have. That is the third instance in this one step, so
+          # the list is no longer kept here.
+          #
+          # build:all holds the order once, and it keeps both constraints this
+          # step had discovered by hand: build:climate-disasters (inside
+          # build:situations) must run before anything that routes those pages,
+          # because design-routes.ts derives their routes from the dossiers and
+          # refuses to route a file that is not on disk; and build:hero must
+          # run AFTER build:situations, because build-hero.mjs cross-checks the
+          # hero's air figure against the one already in situation-air.html and
+          # refuses to write when they differ.
+          npm run build:all
           npm run verify:final
 
       - name: Commit and push
@@ -272,19 +278,12 @@ jobs:
         run: |
           git config user.name  'swechha-climate-events[bot]'
           git config user.email 'actions@github.com'
-          # design/ and docs/design/FINAL.md are build output too — see
-          # data-refresh.yml's commit step for why omitting either breaks the
-          # "generated pages are current" gate on the next pull request.
-          #
-          # ★ AND public/images, WITHOUT WHICH THE SATELLITE BAND IS A ROW OF
-          # 404s. fetch-event-imagery.mjs downloads each frame to
-          # public/images/eo/<slug>/ and records it in data/climate-events/
-          # imagery/<slug>.json. The record was staged by `data` and the pages
-          # citing it by `public/_pages`; the JPEGs themselves were staged by
-          # nothing and died with the runner. 23 of the 25 frames the committed
-          # metadata referenced were absent from the repository — every event
-          # page's before/after comparison among them.
-          git add -A data public/images public/_pages design docs/design/FINAL.md
+          # ── ONE STAGING LIST, SHARED WITH EVERY OTHER PUBLISHER ─────────
+          # This was the only one of the five lists that named public/images,
+          # and it names it because of `fix(imagery)`: the satellite frames
+          # were downloaded, recorded, and thrown away. The script carries that
+          # account and the trees, once.
+          ./scripts/stage-generated.sh
           if git diff --cached --quiet; then
             echo "Nothing staged after the rebuild — no commit."
             exit 0
@@ -335,30 +334,67 @@ jobs:
           # The group is worth keeping; it is not a guarantee, so the push has
           # to be able to lose and recover on its own.
           #
-          # ★ A CONFLICT STILL FAILS LOUDLY, and deliberately. Most of this
-          # commit is generated HTML that several jobs rewrite in full, so
-          # "ours" and "theirs" are both whole files and picking one silently
-          # reverts somebody's figures. The only cases this wins are the ones
-          # that never needed resolving — a push that touched data, source or a
-          # page this run did not rebuild. Same reasoning, same shape, as
-          # data-refresh.yml's loop.
+          # ★ IT RE-DERIVES; IT DOES NOT RESOLVE. Most of this commit is
+          # generated HTML that several jobs rewrite in full, so "ours" and
+          # "theirs" are both whole files and picking one silently reverts
+          # somebody's figures. A rebase is the same coin flip wearing a
+          # different hat — it replays those same whole files onto a branch that
+          # has moved, and the logs of the version this replaced show it
+          # conflicting every single time main had advanced.
+          #
+          # So a lost push takes the new main wholesale and rebuilds on top of
+          # it. That is what air-hourly.yml does, and it is why Air is the one
+          # publisher that has never lost a reading to this race.
+          #
+          # ★ THE EVIDENCE SURVIVES THE RESET, THE PAGES ARE MADE AGAIN.
+          # data/climate-events/ is carried across because this workflow is its
+          # only writer: no other job runs the detector, so no other job can be
+          # holding a newer dossier to lose. The pages are a pure function of
+          # those dossiers, so they are rebuilt rather than merged — and the
+          # retry runs the SAME `build:all` as the first attempt, which is the
+          # point of there being one. This block used to name build:situations
+          # and build:hero itself, so it was a sixth copy of the list and it
+          # had already been corrected once: rebuilding only the situation
+          # pages quietly dropped the homepage from the retry, because
+          # `build:hero` patches design/home.html in place and that path is
+          # staged below. verify:final still gates the result: if the rebuild
+          # on the new base is not sound, nothing is published.
           for attempt in 1 2 3; do
             if git push; then
+              echo "::notice::Published on attempt ${attempt}."
               exit 0
             fi
-            echo "::notice::Push rejected on attempt ${attempt}. Fetching and replaying on top of main."
-            git fetch origin main
-            if ! git rebase origin/main; then
-              git rebase --abort || true
-              echo "::error::Rebase onto main conflicted, so this run's dossiers were NOT published. \
-          The conflict is in files that more than one publisher rewrites in full; resolving it \
-          automatically would silently discard one side's figures. Re-run this workflow — a fresh \
-          fetch on top of the current main will produce a clean commit."
+
+            if [ "$attempt" = "3" ]; then
+              echo "::error::Could not publish after 3 attempts; main is moving faster than this job can re-derive. The evidence is not lost — the next scheduled run re-reads the same feeds from a clean base."
               exit 1
             fi
+
+            echo "::warning::Push rejected on attempt ${attempt} — main moved under us. Re-deriving on top of it."
+            rm -rf /tmp/ce-evidence
+            cp -R data/climate-events /tmp/ce-evidence            || { echo "::error::Could not set the dossiers aside."; exit 1; }
+            git fetch --quiet origin main                         || { echo "::error::git fetch failed."; exit 1; }
+            git reset --hard --quiet origin/main                  || { echo "::error::git reset failed."; exit 1; }
+            cp -R /tmp/ce-evidence/. data/climate-events/         || { echo "::error::Could not restore the dossiers."; exit 1; }
+
+            npm run build:all    || { echo "::error::Rebuild on the new base failed; nothing published."; exit 1; }
+            npm run verify:final || { echo "::error::verify:final refused the rebuild on the new base; nothing published."; exit 1; }
+
+            ./scripts/stage-generated.sh
+
+            # NOTHING STAGED MEANS THE NEW MAIN ALREADY SAYS THIS. Another run
+            # landed the same dossiers while this one was working, so there is
+            # nothing left to publish and this is a success, not a failure. The
+            # step runs under `bash -e`, so an unguarded `git commit` would abort
+            # here with "nothing to commit" and turn a no-op into a red run.
+            if git diff --cached --quiet; then
+              echo "::notice::The new main already carries this run's result; nothing left to publish."
+              exit 0
+            fi
+
+            git commit --quiet -m "data(climate-event): ${summary}" \
+              -m "Re-derived on attempt ${attempt} after main moved under this run. Automated by .github/workflows/climate-events.yml. The dossiers are this run's; the pages were rebuilt on the new base and verify:final passed there."
           done
-          echo "::error::Could not publish after 3 attempts; main is moving faster than this job can rebase."
-          exit 1
 
 
       # ── TELL THE SEARCH ENGINES, AFTER THE PUSH ─────────────────────────

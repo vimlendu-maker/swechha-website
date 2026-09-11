@@ -59,23 +59,37 @@ jobs:
           npm test
           npm run lint
 
-      # Hero first: every other generator extracts the nav, footer and token
-      # block out of home.html and must not read it before the readings land.
+      # ── THE SAME REBUILD THE PUBLISHERS RUN, WHICH IS THE POINT ─────────
+      # ★ THIS LIST WAS THE AUTHORITATIVE ONE AND IT WAS STILL WRONG TWICE.
+      # A gate that rebuilds differently from the publishers is checking a tree
+      # nobody produces, and that is exactly how both mistakes survived:
+      #
+      #   HERO FIRST. The comment here read "every other generator extracts the
+      #   nav, footer and token block out of home.html and must not read it
+      #   before the readings land" — true, but those generators extract from
+      #   design/home.html, the hand-maintained SOURCE, and from seven pinned
+      #   line ranges of tokens and chrome that a reading never moves. What DOES
+      #   depend on order is the other direction: build-hero.mjs reads the air
+      #   figure out of the BUILT situation-air.html and refuses to write when
+      #   it disagrees with the dataset. Its own note records data-refresh going
+      #   red "on most days it had anything to report" for precisely this. The
+      #   gate got away with it because it starts from a tree already in step.
+      #
+      #   SEARCH BEFORE ESSAYS. build-search-page.mjs reads the built pages and
+      #   stores each one's headings and hook as its search text, so an essay
+      #   rebuilt after it was missing from the index until something else ran.
+      #
+      # Both are fixed in scripts/build-all.sh, once, for the gate and the five
+      # publishers together. The share cards stay last and before the verifiers
+      # for the reason that was always right: each generator derives its own
+      # page's og:image through scripts/lib/social-image.mjs, so on a healthy
+      # tree this writes nothing and the diff below stays green — it is there
+      # for the page that assembles its own <head> without going through a
+      # shell, which would otherwise ship the wordmark card to everyone who
+      # shared it with nothing saying so.
       - name: Regenerate every page
         run: |
-          npm run build:hero
-          for t in situations work about impact farm act stories publications posters search essays; do
-            npm run "build:$t"
-          done
-          # THE SHARE CARDS, AFTER EVERY GENERATOR AND BEFORE THE VERIFIERS.
-          # Each generator already derives its own page's og:image through
-          # scripts/lib/social-image.mjs, so on a healthy tree this writes
-          # nothing and the diff gate below stays green. It is here for the one
-          # case the per-generator hook cannot cover: a page built by something
-          # that assembles its own <head> without going through a shell. That
-          # page would otherwise ship the wordmark card to every reader who
-          # shared it, and nothing would say so.
-          npm run build:social-cards
+          npm run build:all
           npm run verify:final
           npm run verify:seo
 
@@ -88,7 +102,7 @@ jobs:
             git diff --name-only | sed 's/^/  /'
             echo ""
             echo "Fix: run the generators locally and commit the result —"
-            echo "  npm run build:hero && for t in situations work about impact farm act stories publications posters search essays; do npm run build:\$t; done && npm run build:social-cards"
+            echo "  npm run build:all"
             echo ""
             git --no-pager diff --stat
             echo ""

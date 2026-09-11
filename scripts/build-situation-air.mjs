@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os';
 import { crumb, siblings, FAMILY_CSS, NAV_SEARCH_CSS, NAV as SHELL_NAV, HOME_HREF, GIVE_HREF, INDEX_PAGE,
   stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, cadence, STATES,
   closing, citeBlock, CLOSING_CSS, abs, imgDim, responsiveImages,
-  LICENCE_URL, datasetJsonLd, FAMILY, stateRollup, TRACKER } from './lib/situation-shell.mjs';
+  LICENCE_URL, datasetJsonLd, FAMILY, stateRollup, TRACKER, HASH_STRIP } from './lib/situation-shell.mjs';
 import { withSocialImage } from './lib/social-image.mjs';
 import { seo } from './lib/seo-register.mjs';
 import { stampLastmod } from './lib/lastmod.mjs';
@@ -579,7 +579,7 @@ ${crumb('air')}
         <p class="verdict bad" id="air-band">${rd.band}</p>
         <div class="bands bad" id="air-bands" role="img" aria-label="${rd.band}, band ${catIdx+1} of ${AIR.bands.length}">${bands}</div>
         <p class="limit" id="air-limit">CPCB safe limit ${AIR.aqiLimit}. <b>${rd.aqi > AIR.aqiLimit ? 'Limit broken.' : 'Within the limit.'}</b></p>
-        <p class="cap p2-src" id="air-src"><span id="air-src-w">This is the WORST of ${AIR.spread.stations} CPCB monitors across Delhi &mdash; ${esc(String(ws.station).split(',')[0].trim())}. Averaged across all ${AIR.spread.stations}, Delhi reads ${AIR.city_mean.aqi}, which is the figure CPCB itself publishes for the city. ${AIR_CADENCE_VIS} Observed ${OBS}${CHK ? ` &middot; last checked by Swechha ${CHK}` : ''}. The two times differ because CPCB stamps when the air was measured, and Swechha separately records when it last asked.</span>
+        <p class="cap p2-src" id="air-src"><span id="air-src-w">This is the WORST of ${AIR.spread.stations} CPCB monitors across Delhi &mdash; ${esc(String(ws.station).split(',')[0].trim())}. Averaged across all ${AIR.spread.stations}, Delhi reads ${AIR.city_mean.aqi}, which is the figure CPCB itself publishes for the city. ${AIR_CADENCE_VIS} Observed ${OBS}.</span>
           <a class="lk" href="#measured">How this number is made</a>.</p>
       </div>
       <div class="p2-nat">
@@ -592,17 +592,14 @@ ${crumb('air')}
           India set for itself.</b> ${IND.totals.good} read &ldquo;Good&rdquo;.${ONE_ST
     ? ` ${esc(ONE_ST.city)} reports from one station and Delhi from ${dr ? dr.stations : AIR.spread.stations} &mdash;
           a city with one monitor is measured <b>less</b>, not better.` : ''}</p>
-        <p class="cap p-hole p2-nat-t"><b>These nine figures were read together, and none of them
-          moves while you are here.</b> The eight cities above and Delhi&rsquo;s row beside them come
-          from one national snapshot, taken at ${esc(NAT_OBS)}. That is what makes them comparable
-          with each other, and it is why the order is printed as a reading of one hour rather than
-          as a standing claim: by the time you read it, CPCB has published another.${NAT_SAME_HOUR
-    ? ' It is also the same hour as the reading at the top of this page.'
-    : ` The reading at the top of this page is a different fetch, from Delhi&rsquo;s own monitors at
-          ${esc(OBS)}, so Delhi&rsquo;s row here and the figure above it need not agree &mdash; they
-          are two hours, and each is labelled with its own. The national table is a much larger read
-          and runs on its own schedule; it is kept separate so that a slow national fetch can never
-          hold back Delhi&rsquo;s live figure.`}</p>
+        <p class="cap p-hole p2-nat-t"><b>One snapshot, one hour.</b> The eight cities above and
+          Delhi&rsquo;s row beside them come from one national reading taken at ${esc(NAT_OBS)},
+          which is what makes them comparable with each other &mdash; and why the order is an
+          hour&rsquo;s reading rather than a standing claim: by the time you read it, CPCB has
+          published another.${NAT_SAME_HOUR
+    ? ' It is the same hour as the reading at the top of this page.'
+    : ` The reading at the top of this page is Delhi&rsquo;s own monitors at ${esc(OBS)} &mdash;
+          two hours, each labelled with its own, and they need not agree.`}</p>
         <p style="margin:0"><a class="act" href="${INDIA_PAGE}">All ${n0(IND.totals.cities)} cities ${ARROW}</a></p>
       </div>
       </div>
@@ -642,7 +639,7 @@ const kd = (kind) => `class="unit p-kd ${kind === 'modelled' ? 'p-kd-m' : 'p-kd-
 const KIND_LEGEND = `      <p class="p-legend"><span class="lbl p-kd p-kd-c">Counted or measured</span><span class="lbl p-kd p-kd-m">Modelled</span></p>`;
 
 B.people = () => `    <div class="wrap">
-${opener('people','Who is in it?','The consequence comes before the measurement, because the measurement is not the point. Every figure here is measured against a limit India has not adopted.')}
+${opener('people','Who is in it?','Every figure here is measured against a limit India has not adopted.')}
 ${KIND_LEGEND}
       <div class="p-two">
         <div class="p-two-c"><p class="num rl">1.5</p><p ${kd('modelled')}>million deaths a year</p>
@@ -690,8 +687,7 @@ B.measured = () => {
         <p class="cap p-miss">Eight pollutants, ${shown.length} at this monitor. <b>Pb</b> is not reported here.
           The big numbers are CPCB&rsquo;s own sub-indexes, published as such; the small ones under them are the
           concentrations those sub-indexes imply, carrying a tilde because <b>this feed publishes no
-          concentration at all</b>. Until 25 August 2026 this page read the sub-indexes as µg/m³ and converted
-          them again, which roughly doubled every figure on it.</p>
+          concentration at all</b>.</p>
         <p class="body p-key"><b>AQI 100 is not a rule of thumb.</b> The boundary sits at PM2.5
           ${AIR.limits['PM2.5'].h24} µg/m³ and PM10 ${AIR.limits['PM10'].h24} µg/m³ &mdash; exactly the 24-hour
           standards India set for itself. <b>Above 100 is above the law.</b></p>`;
@@ -705,19 +701,23 @@ B.measured = () => {
         <p class="cap">WAQI publishes index values only, never concentrations, so <b>the two cannot be told
           apart from outside</b> &mdash; and neither number tells you which you are looking at.</p></div>` : '';
   const pMethod = `<div class="p-method">
-        <table class="p-tbl"><thead><tr><th>Figure</th><th>Kind</th><th>Source</th><th>Cadence</th></tr></thead><tbody>
-          <tr><td>AQI, ${rd.aqi}</td><td>Read, then selected</td><td>CPCB’s published sub-indexes; worst of ${AIR.spread.stations} monitors (${esc(rd.station)}). CPCB’s own city mean is ${AIR.city_mean.aqi}.</td><td>Hourly</td></tr>
-          <tr><td>Station concentrations</td><td>Measured</td><td>CPCB, ${AIR.spread.stations} Delhi stations</td><td>Hourly</td></tr>
-          <tr><td>Published limit, ${AIR.aqiLimit}</td><td>Standard</td><td>${esc(limitAuthority)}</td><td>Fixed</td></tr>
-          <tr><td>Source split</td><td>Modelled</td><td>published apportionment study</td><td>Per study</td></tr>
-          <tr><td>Farm-fire counts</td><td>Measured</td><td>NASA FIRMS, per sensor</td><td>Daily</td></tr>
-          <tr><td>Attention</td><td>Measured</td><td>Wikipedia pageviews</td><td>Daily</td></tr>
-          <tr><td>Forecast</td><td>Modelled</td><td>WAQI&rsquo;s model, not CPCB&rsquo;s</td><td>Daily</td></tr>
+        <table class="p-tbl">
+          <caption class="sr">Every figure on this page, with whether it was measured, selected,
+            modelled or fixed by a standard, the source that produced it, and how often it is
+            re-read.</caption>
+          <thead><tr><th scope="col">Figure</th><th scope="col">Kind</th><th scope="col">Source</th><th scope="col">Cadence</th></tr></thead><tbody>
+          <tr><th scope="row">AQI, ${rd.aqi}</th><td>Read, then selected</td><td>CPCB’s published sub-indexes; worst of ${AIR.spread.stations} monitors (${esc(rd.station)}). CPCB’s own city mean is ${AIR.city_mean.aqi}.</td><td>Hourly</td></tr>
+          <tr><th scope="row">Station concentrations</th><td>Measured</td><td>CPCB, ${AIR.spread.stations} Delhi stations</td><td>Hourly</td></tr>
+          <tr><th scope="row">Published limit, ${AIR.aqiLimit}</th><td>Standard</td><td>${esc(limitAuthority)}</td><td>Fixed</td></tr>
+          <tr><th scope="row">Source split</th><td>Modelled</td><td>published apportionment study</td><td>Per study</td></tr>
+          <tr><th scope="row">Farm-fire counts</th><td>Measured</td><td>NASA FIRMS, per sensor</td><td>Daily</td></tr>
+          <tr><th scope="row">Attention</th><td>Measured</td><td>Wikipedia pageviews</td><td>Daily</td></tr>
+          <tr><th scope="row">Forecast</th><td>Modelled</td><td>WAQI&rsquo;s model, not CPCB&rsquo;s</td><td>Daily</td></tr>
         </tbody></table>
         <p class="cap"><b>Not CPCB&rsquo;s published AQI.</b> The feed returns concentrations and no index, so the
           number at the top of this page is computed here using CPCB&rsquo;s own breakpoint table.</p></div>`;
   return `    <div class="wrap">
-${opener('measured','How the number is made','One number stands in for eight, and it is not their average &mdash; it is the worst of them. Measured and modelled are set differently, on purpose.')}
+${opener('measured','How the number is made','One number stands in for eight, and it is not their average &mdash; it is the worst of them.')}
 ${tabs('Method', [['What they are', pWhat], ['Today\'s eight', pEight], ['Two scales', pScales], ['Every figure', pMethod]].filter(x => x[1]))}
     </div>`;
 };
@@ -847,8 +847,7 @@ B.sources = () => {
             answer it &mdash; <a class="lk" href="${esc(AP.live_system.url)}" rel="noopener" target="_blank">${esc(AP.live_system.name)}</a>,
             run by the ${esc(AP.live_system.by.replace(/, Ministry of Earth Sciences$/, ''))}, which publishes
             a daily split across 29 sectors with the stubble share taken from the previous evening&rsquo;s
-            satellite fire counts. <b>It has no public API and its host was unreachable from the machine that
-            built this page</b>, so it is named and linked and never restated.</p>
+            satellite fire counts.</p>
         </div>`;
   const pNow = `<div class="p-two">
           <div class="p-two-c"><p class="num rl">${n0(g.off_season.modis)}</p><p class="unit">MODIS &middot; 1 km</p>
@@ -883,7 +882,7 @@ B.trend = () => {
           <div class="p-grid" role="img" aria-label="Daily record, one square per day, beginning ${REC_FROM ?? 'when the job first ran'}">
             ${Array.from({length:365},(_,i)=>`<i class="${i===0?'p-g-on':''}"></i>`).join('')}
           </div>
-          <p class="cap"><b>One square.</b> The record begins ${REC_FROM ? `on ${REC_FROM}` : 'when the job first ran'} and fills as the job runs. It draws no
+          <p class="cap"><b>One square.</b> ${REC_FROM ? `The record begins on ${REC_FROM}. ` : ''}It draws no
             square it does not have &mdash; an empty cell is absence, not zero. There is no retrospective
             series: the CPCB feed publishes the latest hour only.</p></div>`;
   const pAttn = `<div class="p-attn">
@@ -903,10 +902,9 @@ B.trend = () => {
           <p class="body"><b>Somebody is forecasting this. Not us, and not the government.</b> The curve is
             <b>WAQI&rsquo;s own model</b>. India&rsquo;s official forecaster is
             <a class="lk" href="${esc(fc.official_indian_forecaster.url)}" rel="noopener" target="_blank">SAFAR</a>,
-            which publishes a 72-hour Delhi forecast with <b>no public API</b> &mdash; so it is named and linked,
-            never restated.</p></div>`;
+            which publishes a 72-hour Delhi forecast.</p></div>`;
   return `    <div class="wrap">
-${opener('trend','Where it has been, and where it is going',`The record starts ${REC_FROM ? `on ${REC_FROM}` : 'when the job first runs'}; the forecast reaches seven days ahead. For now this page sees further forward than back &mdash; that inverts in a week.`)}
+${opener('trend','Where it has been, and where it is going',`The record starts ${REC_FROM ? `on ${REC_FROM}` : 'when the job first runs'}; the forecast reaches seven days ahead.`)}
 ${tabs('Time', [['The record', pRecord], ['Attention', pAttn], ['Forecast', pFc]])}
     </div>`;
 };
@@ -1126,12 +1124,12 @@ ${opener('money','The cost of inaction is more than the action','Allocated is th
       <p class="body p-key"><b>One year of damage costs about fifty times everything released for it since
         2019</b>, and about seventy times what has been spent. Both periods are stated because the comparison
         only holds if they are: the damage figure is annual, the spending figures are cumulative.</p>
-      <p class="cap p-hole"><b>What this is not.</b> It is not a cost-benefit study &mdash; nobody has
-        published a costed abatement plan for Delhi-NCR, so this page cannot tell you what fixing the air
-        would cost. It is the narrower claim, and the only one the figures support: <b>what the damage costs
-        each year, beside what has actually been released and spent against it.</b> Sources: PIB releases,
-        CPCB&rsquo;s PRANA funding guidelines, CREA&rsquo;s <i>Tracing the Hazy Air</i>, Dalberg with Clean
-        Air Fund and CII. No inference is drawn beyond the arithmetic.</p>
+      <p class="cap p-hole"><b>What this is not.</b> It is not a cost-benefit study: <b>nobody has
+        published a costed abatement plan for Delhi-NCR</b>, so what fixing the air would cost is not
+        a published figure. This is the narrower claim, and the only one the figures support &mdash;
+        <b>what the damage costs each year, beside what has actually been released and spent against
+        it.</b> Sources: PIB releases, CPCB&rsquo;s PRANA funding guidelines, CREA&rsquo;s
+        <i>Tracing the Hazy Air</i>, Dalberg with Clean Air Fund and CII.</p>
     </div>`;
 
 B.act = () => {
@@ -1171,8 +1169,7 @@ B.act = () => {
             <p class="cap p-hole"><b>Why it asks for a monitor and not a pin code.</b> India Post&rsquo;s own
               All India Pincode Directory publishes <b>562 post offices for Delhi and no latitude or longitude
               column at all</b>, so there is no official way to turn a Delhi pin code into a point on the
-              ground. The alternative was a third-party centroid file of unknown provenance &mdash; on this
-              page, of all pages. A monitor is the better question anyway: two of them
+              ground. A monitor is the better question anyway: two of them
               <a class="lk" href="#geography">${NEAR_KM.toFixed(1)} km apart</a> read ${Math.max(NEAR_A.aqi, NEAR_B.aqi)} and ${Math.min(NEAR_A.aqi, NEAR_B.aqi)}.</p>
           </div>
           <div class="p-act-c">
@@ -1181,16 +1178,13 @@ B.act = () => {
               the why; the campaign is the what.</p>
             <p><a class="b b-2" href="/work/campaigns#delhi-i-cant-see-you">Delhi I Can&rsquo;t See You ${ARROW}</a></p>
             <p class="lbl" style="margin-top:var(--gap-row)">Five more situations</p>
-            <p class="body p-sib-n">Yamuna &middot; Heatwave &middot; Forest fires &middot; Forest loss &middot; Climate event</p>
-            <p class="cap">Named, not linked, until their pages exist.</p>
+            <p class="body p-sib-n">${FAMILY.filter(f => f.id !== 'air').map(f => `<a class="lk" href="${f.route}">${esc(f.name)}</a>`).join(' &middot; ')}</p>
             <p><a class="act" href="${INDEX_PAGE.route}">All situations ${ARROW}</a></p>
           </div></div>`;
   const pNews = `<div class="p-news">
           ${order ? `<div class="p-news-o"><p class="lbl p-news-ol">Most recent order, as reported</p>
             <p class="body"><a class="lk" href="${esc(order.link)}" rel="noopener" target="_blank">${esc(order.title)}</a></p>
-            <p class="cap">${esc(order.publisher)} &middot; ${esc(order.published).slice(0,16)}. <b>Reported, not
-              filed.</b> This page keeps no docket and attaches no judgement &mdash; it records that a court was
-              reported to have said something, and links whoever reported it.</p></div>` : ''}
+            <p class="cap">${esc(order.publisher)} &middot; ${esc(order.published).slice(0,16)}.</p></div>` : ''}
           ${items.slice(0,6).map(i=>`<div class="p-news-r"><a class="lk" href="${esc(i.link)}" rel="noopener" target="_blank">${esc(i.title)}</a>
             <span class="cap p-news-m">${esc(i.publisher)} &middot; ${esc(i.published).slice(5,16)}</span></div>`).join('')}
           <p class="cap">${NEWS.register.count} items from ${Object.keys(NEWS.register.publishers||{}).length} publishers, via Google News.
@@ -1210,8 +1204,7 @@ B.act = () => {
             <p class="cap">Low-cost optical sensors read high in humidity and drift as their chamber
               fouls. To turn a reading into a measurement you <b>co-locate</b> it beside a reference
               station for a fortnight and fit your device against theirs. That is the whole difference
-              between the ${AIR.spread.stations} instruments on this page and a gadget on a windowsill,
-              and it is why this page will not accept a crowd-sourced reading as equivalent.</p>
+              between the ${AIR.spread.stations} instruments on this page and a gadget on a windowsill.</p>
           </div>
           <div class="p-do-r">
             <p class="lbl">File a complaint that lands somewhere</p>
@@ -1229,8 +1222,6 @@ B.act = () => {
             <p class="lbl">Read the objection window</p>
             <p class="body">Environmental clearances carry a public-consultation stage with a fixed
               window for written objections. Most close unopposed because nobody was watching.</p>
-            <p class="cap">This page does not yet track those windows for Delhi-NCR. It is named here
-              because it is the highest-leverage thing on the list, not because it is built.</p>
           </div></div>`;
   return `    <div class="wrap">
 ${opener('act','What you can do','Nobody visits a record every morning. This is the part that asks something of you.')}
@@ -1480,10 +1471,22 @@ const PAGE_CSS = `
 .p-method{border-top:1px solid var(--rule);margin-top:var(--gap-block);padding-top:var(--gap-row)}
 .p-tbl{width:100%;border-collapse:collapse;margin:14px 0;font-size:var(--t-cap);
   font-family:Newsreader,Georgia,serif}
-.p-tbl th{text-align:left;font-family:Archivo,system-ui,sans-serif;
+/* ★ SCOPED TO thead, AND THAT IS THE FIX RATHER THAN A TIDY-UP.
+   This rule was written when every th in the table was a COLUMN header, so a
+   bare .p-tbl th described the truth. The first column is now a
+   th scope=row — the row header a screen reader announces with each cell,
+   which is what makes a seven-row provenance table navigable — and an unscoped
+   rule would have rendered "AQI, 210" as uppercase micro type in the label
+   colour. Same markup fix as the record tables, which have carried scoped
+   headers and a caption from the start. */
+.p-tbl thead th{text-align:left;font-family:Archivo,system-ui,sans-serif;
   font-variation-settings:'wdth' 88,'wght' 650;font-size:var(--t-micro);letter-spacing:.14em;
   text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--rule-2);padding:0 10px 8px 0}
 .p-tbl td{padding:9px 10px 9px 0;border-bottom:1px solid var(--rule);color:var(--ink-2);vertical-align:top}
+/* The row header reads as the td beside it, one weight up: it names the figure,
+   it is not a section label. */
+.p-tbl tbody th{text-align:left;font-weight:600;padding:9px 10px 9px 0;
+  border-bottom:1px solid var(--rule);color:var(--ink);vertical-align:top}
 .p-method .cap{color:var(--ink-3);max-width:62ch}
 
 /* THE APPORTIONMENT SPLIT. Registers and bars — width and ink only. Hue is
@@ -2207,6 +2210,7 @@ const OUT = stripHtmlComments(`<!doctype html>
 ${OG}
 ${HEAD_FONTS}
 ${TRACKER}
+${HASH_STRIP}
 <style>
 ${stripCssComments([CSS, PAGE_CSS, AIR_ONLY_CSS, NAV_SEARCH_CSS, FAMILY_CSS, CLOSING_CSS].join('\n'))}</style>
 </head>

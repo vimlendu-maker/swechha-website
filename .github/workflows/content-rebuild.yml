@@ -144,24 +144,24 @@ jobs:
 
       - name: Rebuild the pages the content feeds
         run: |
-          # HERO FIRST — same constraint as data-refresh.yml: every other
-          # generator extracts the nav, the footer and the token block out of
-          # home.html, so the hero's readings must be written before anything
-          # reads that file.
+          # ── ONE REBUILD, SHARED WITH EVERY OTHER PUBLISHER ──────────────
+          # This was a loop of eleven targets, and it was missing seven that
+          # the gate rebuilds: healthy-cities, learn, schools, journal, data,
+          # record and the share cards. A content edit that touched any of
+          # those left them stale on main and the next pull request anyone
+          # opened failed generated-current.yml for a page its author had not
+          # been near. Five publishers each had a list; none of them agreed.
           #
-          # Its cross-check against situation-air.html is safe here in a way it
-          # is NOT in data-refresh: this workflow never touches the fetched
-          # datasets, so the hero recomputes the SAME air figure the committed
-          # situation page already shows, and the two agree. data-refresh is the
-          # run where that ordering bites.
-          echo "::group::npm run build:hero"
-          npm run build:hero
-          echo "::endgroup::"
-          for t in situations work about impact farm act stories publications posters search essays; do
-            echo "::group::npm run build:$t"
-            npm run "build:$t"
-            echo "::endgroup::"
-          done
+          # build:all holds the order once, including the constraint this
+          # comment used to state backwards. It is SITUATIONS BEFORE HERO, not
+          # hero first: build-hero.mjs reads the air figure out of the built
+          # situation-air.html and refuses to write when the two disagree. The
+          # old ordering was safe HERE — this workflow never touches the
+          # fetched datasets, so the hero recomputed the same figure the
+          # committed page already showed — but it was safe by luck of scope,
+          # and build-hero.mjs's own note records data-refresh going red on
+          # most days it had anything to report until that order was fixed.
+          npm run build:all
           npm run verify:final
 
       - name: Commit the rebuilt pages
@@ -169,15 +169,14 @@ jobs:
         run: |
           git config user.name  'swechha-content-rebuild[bot]'
           git config user.email 'actions@github.com'
-          # ★ design/ IS A BUILD OUTPUT TOO, AND LEAVING IT OUT BROKE EVERY PR.
-          # build-hero.mjs writes BOTH design/home.html (the source, comments
-          # intact) and public/_pages/v3/home.html (the shipped, stripped
-          # copy). Staging only the second left design/home.html stale after
-          # every automated run, so the "Generated pages are current" gate —
-          # which regenerates everything and fails if the tree moves — failed
-          # on the next pull request opened by anyone, for a change that
-          # touched none of it.
-          git add -A data public/_pages design
+          # ── ONE STAGING LIST, SHARED WITH EVERY OTHER PUBLISHER ─────────
+          # design/ is a build output too, and leaving it out once broke every
+          # PR: build-hero.mjs writes BOTH design/home.html (the source,
+          # comments intact) and public/_pages/v3/home.html (the shipped,
+          # stripped copy), and staging only the second left the source stale.
+          # This list also had no public/data and no public/images. The trees
+          # are named once now, in the script, with the whole account.
+          ./scripts/stage-generated.sh
           if git diff --cached --quiet; then
             echo "Nothing staged after the rebuild — the edit needed no page change."
             exit 0

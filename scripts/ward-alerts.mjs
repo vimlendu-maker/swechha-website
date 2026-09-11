@@ -30,6 +30,7 @@ import { neon } from '@neondatabase/serverless';
 import { randomBytes, createHash } from 'node:crypto';
 import { fetchUpstream } from './lib/fetch-cpcb.mjs';
 import { fetchCaaqms, assessCaaqms, SERVED_BY_CAAQMS, SERVED_BY_MIRROR } from './lib/fetch-caaqms.mjs';
+import { prunePending, pruneSummary } from './lib/retention.mjs';
 
 const DRY = process.argv.includes('--dry-run');
 const KEY = process.env.DATA_GOV_IN_KEY;
@@ -213,14 +214,28 @@ const alertText = (station, aqi, band, prev, observed, unsubToken) => [
 ].filter(l => l !== null).join('\n');
 
 /* ── MAIN ─────────────────────────────────────────────────────────────── */
-const now = await readings();
 const q = neon(DB);
 
-// Expire unconfirmed rows first. An address somebody typed and never confirmed
-// is not a lead, and keeping it is the thing double opt-in exists to prevent.
-const expired = await q`DELETE FROM ward_subscriptions
-  WHERE status = 'pending' AND created_at < now() - INTERVAL '7 days' RETURNING id`;
-if (expired.length) console.log(`expired ${expired.length} unconfirmed subscription(s)`);
+/* ★ RETENTION RUNS FIRST, BEFORE THE FEED IS FETCHED, and the order is the
+   point. This used to sit after `await readings()` — a call that spends up to
+   sixty seconds on CPCB and has its own fallback ladder. `readings()` catches
+   internally so it does not currently throw, and the sweep was therefore
+   reached; but "the unconfirmed addresses get deleted as long as an unrelated
+   government feed behaves" is not a property worth depending on. Deleting rows
+   this job already has a connection for needs nothing from the network.
+
+   ★ IT PRUNES BOTH SUBSCRIPTION TABLES NOW, NOT JUST THIS ONE. The delete that
+   was written out here covered ward_subscriptions only. db/002 states the
+   identical rule for the digest and told the operator to run it "alongside the
+   send job" — and there is no send job, so nothing had ever run it and every
+   unconfirmed digest address was kept indefinitely. scripts/lib/retention.mjs
+   holds both, with the coupling to this job's schedule written down where
+   somebody retiring this feature will see it. */
+const pruned = await prunePending(q);
+const prunedLine = pruneSummary(pruned);
+if (prunedLine) console.log(prunedLine);
+
+const now = await readings();
 
 const subs = await q`SELECT id, email, station, last_alert_band, unsub_token_hash
   FROM ward_subscriptions WHERE status = 'confirmed'`;

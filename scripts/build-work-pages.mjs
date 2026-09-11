@@ -160,6 +160,26 @@ const RULED_ROWS = new Set([
   'campaigns/this-girl-can', 'campaigns/sustainable-shopping',
   'campaigns/park-restoration', 'campaigns/no-more-waste-hills',
   'events/yamunotsav', 'events/cyclothon', 'events/greenathon', 'events/yamuna-shramdaan',
+  /* HEALTHY CITIES IS A ROW FOR A REASON NO OTHER ROW HAS. Owner ruling,
+     8 September 2026: "add the section there under projects".
+     The other two project rows — she-leads-change, food-systems — are rows for
+     want of evidence, and W-10 / AD-42 are the standing recipe for what happens
+     when the evidence turns up: the row becomes a page. THAT RECIPE DOES NOT
+     APPLY HERE. This item is not short of evidence; it has more than most pages
+     in this section. Its page ALREADY EXISTS and it is finished — it is just
+     not in this section. It is /healthy-cities, an eleven-band microsite with
+     ten fellow pages under it, built by scripts/build-healthy-cities.mjs out of
+     data/healthy-cities/**, carrying a third-party mark and gates of its own.
+     So the register row's job here is to REACH that page, which it does through
+     the `href` override in dest() below — not to stand in for a page that has
+     yet to be earned.
+     DO NOT "PROMOTE" THIS. page:true would build a second, thinner Healthy
+     Cities at /work/projects/healthy-cities out of this one file, and the site
+     would then hold two pages for one chapter with two URLs, two share cards
+     and two sets of figures. If the chapter ever should live inside the
+     section, that is a move of the whole microsite and a redirect, argued
+     first — not a boolean flipped here. */
+  'projects/healthy-cities',
 ]);
 const SITUATIONS = new Set(['air', 'yamuna', 'forest-loss']);
 /* AD-17 §4 clause 3 — the ONLY claims permitted, plus schema addendum §7 which
@@ -382,7 +402,59 @@ const ACT_ANCHOR = {
    that do not, it is repointed rather than dropped, because otherwise those two
    pages would have no route to the partnering content at all. */
 const PARTNER_SECOND = { label: 'Partner with us', href: '/act#partner' };
-const SOURCE_FORMS = [/^SOURCE-FACTS §\d+[\d\-–,. ]*$/, /^owner \d{4}-\d{2}-\d{2}$/, /^DECISIONS D-\d+\.\d+$/];
+/* ═══ THE FOURTH ACCEPTED SOURCE FORM — A NAMED DOCUMENT ═══════════════════
+   The three forms below this comment were the whole contract: a line in the
+   repository's own facts file, an assertion by the owner on a date, or a
+   numbered decision. Everything else was refused, and the refusal is the point
+   — it is what stops a figure whose provenance is "a pre-freeze prototype"
+   from being published as if somebody had counted it.
+
+   WHY A FOURTH ONE EXISTS. The Healthy Cities chapter arrived with figures
+   whose provenance is a real document — an impact synopsis, a project
+   proposal, a set of fellowship final reports — and the facts file has no
+   entry for any of them. Under three forms the only way to ship those figures
+   was to restamp each one as "owner <date>", which would have replaced a
+   traceable document with an undated-in-substance assertion. That is a
+   DOWNGRADE of true provenance, and it inverts what this contract is for: a
+   named document is more traceable than "owner plus a date", not less. The
+   owner ruled on 8 September 2026 that the forms widen rather than the
+   documents be relabelled.
+
+   WHAT THE SHAPE IS, AND WHY IT IS NOT "any string". A citation has to look
+   like a document somebody could ask for by name, so it must be all three of:
+     · NAMED — it opens on two or more capitalised words. "Healthy Cities",
+       "Influence India Fellowship". One capital is a sentence that happens to
+       start a line ("Our own report", "Internal estimate report"); two is a
+       title. This clause does most of the refusing.
+     · QUALIFIED — then up to four plain lowercase or numeric words, which is
+       where "impact", "project", "selection", "final" live.
+     · A KIND OF DOCUMENT — it ends on one word from the closed list below.
+       "Programme records" is not a document; a synopsis, a proposal, a deck,
+       a set of reports are. The list is closed on purpose: extending it is a
+       deliberate edit somebody has to justify, which is the whole difference
+       between a contract and a suggestion.
+   Three to ten words, letters, digits and an internal hyphen. No commas, no
+   parentheses, no page numbers, no URLs, no leading article — a citation that
+   needs punctuation is a sentence about a document rather than its name, and
+   the form refuses it so the next author writes the name instead.
+
+   WHAT IT STILL REFUSES, and this is the part that matters: an empty source, a
+   bare word, a lowercase description, a one-capital sentence, a name with no
+   document attached to it, a person, a URL, and every free-text date form
+   including "owner, 8 September 2026" — that one converts to the second form
+   and is not given a back door here.
+
+   It is ADDITIVE and provably inert: no source already in data/work/** matches
+   this pattern, so nothing that validated before validates differently now. */
+const DOC_KINDS = ['agenda', 'brief', 'criteria', 'deck', 'dossier', 'evaluation', 'memo',
+  'minutes', 'note', 'notes', 'plan', 'presentation', 'proposal', 'report', 'reports',
+  'review', 'statement', 'summary', 'synopsis'];
+const DOC_CITATION = new RegExp(
+  '^[A-Z][a-z]+(?:-[A-Z][a-z]+)?'          // a name: first capitalised word
+  + '(?: [A-Z][a-z]+(?:-[A-Z][a-z]+)?)+'   // and at least one more
+  + '(?: [a-z0-9]+){0,4}'                  // up to four qualifying words
+  + ` (?:${DOC_KINDS.flatMap(w => [w, w[0].toUpperCase() + w.slice(1)]).join('|')})$`);
+const SOURCE_FORMS = [/^SOURCE-FACTS §\d+[\d\-–,. ]*$/, /^owner \d{4}-\d{2}-\d{2}$/, /^DECISIONS D-\d+\.\d+$/, DOC_CITATION];
 
 /* ═══ FAILURES AND HOLES ══════════════════════════════════════════════════ */
 const REJECT = [];
@@ -467,10 +539,10 @@ function checkFigure(key, f, i) {
   //    an ABSENCE is fine and renders short; a missing one is not.
   if (!f.period) rej(at, 'NO PERIOD. A figure with no period is a build error, not a warning (data schema §5.1)');
   if (f.basis !== 'counted' && f.basis !== 'modelled') rej(at, `"basis" is ${JSON.stringify(f.basis)} — it must be "counted" or "modelled"; it drives the solid/dotted rule under the label`);
-  // ── REJECTION 1b. A SOURCE OUTSIDE THE THREE ACCEPTED FORMS. A figure whose
+  // ── REJECTION 1b. A SOURCE OUTSIDE THE FOUR ACCEPTED FORMS. A figure whose
   //    source is a pre-freeze prototype does not exist.
   if (!f.source || !SOURCE_FORMS.some(re => re.test(f.source))) {
-    rej(at, `"source" is ${JSON.stringify(f.source)} — accepted forms are "SOURCE-FACTS §NN", "owner YYYY-MM-DD" and "DECISIONS D-NN.N". No other value is accepted.`);
+    rej(at, `"source" is ${JSON.stringify(f.source)} — accepted forms are "SOURCE-FACTS §NN", "owner YYYY-MM-DD", "DECISIONS D-NN.N" and a named document ("Healthy Cities impact synopsis"). No other value is accepted.`);
   }
 }
 
@@ -726,6 +798,19 @@ for (const it of items) {
       + 'has no photograph. Where there is no photograph, the page shows none and says nothing — delete the key.');
   }
   if (it.act && (!it.act.href || !it.act.label)) rej(key, '"act" needs both a label and an href');
+  /* The `href` destination override — see dest(). Two ways to get it wrong and
+     both are refused: a destination that is not a site-root path, and an item
+     that already has a page in this section, whose URL is itemPath()'s to
+     derive and not a data file's to state. */
+  if (it.href != null) {
+    if (typeof it.href !== 'string' || !it.href.startsWith('/')) {
+      rej(key, `"href" is ${JSON.stringify(it.href)} — the destination override must be a site-root path`);
+    }
+    if (it.page === true) {
+      rej(key, '"href" with page:true. An item with its own page in this section is reached at itemPath()\'s URL; ' +
+        'the override exists only for a row whose page lives outside the section.');
+    }
+  }
   /* ── AD-27.19. THE `ask` SIBLING, AND WHY IT IS A SIBLING.
      `/act`'s ENTIRE architecture is derived: build-act-page.mjs reads every
      every data/work item file, takes every one whose act.href is /act, groups them
@@ -1273,7 +1358,7 @@ const LABEL = {
   top: 'Top', onward: 'Get involved', frame: 'What this is', list: 'The list',
   weight: 'The figures', against: 'What each pushes against',
   what: 'What we do', aim: 'What it sets out to do', how: 'Strategy and activities',
-  who: 'Who it is for', done: 'Impact', sheet: 'The photographs', with: 'Who it is with',
+  who: 'Who it is for', done: 'What it adds up to', sheet: 'The photographs', with: 'Who it is with',
   /* AD-42. "The posters", not "The material" or "Printed work": the band shows
      posters, the reader can see they are posters, and a category name where a
      plain one exists is the register AD-28 struck everywhere else. */
@@ -1304,12 +1389,17 @@ const LABEL = {
    It now throws at build time: a missing label is a defect, and a build that
    silently prints an internal identifier to a reader is worse than one that
    stops. Add the label — do not restore the fallback. */
-const sectionsFor = (bands) => bands.map(([id]) => {
+/* `heads` is the per-page override, and it exists because a band head that is
+   written per page has to reach the index too. No Plastic's `done` band holds
+   one card, a funder credit, so it is headed "Who was behind it" rather than
+   "What it adds up to" — and a chip that still said the latter would send a
+   reader to a heading they did not click. */
+const sectionsFor = (bands, heads = {}) => bands.map(([id]) => {
   if (!LABEL[id]) {
     rej('LABEL', `band "${id}" has no entry in LABEL, so the SECTIONS index would print the raw band id to a reader. Add a label.`);
     return [id, `#${id}`];
   }
-  return [LABEL[id], `#${id}`];
+  return [heads[id] || LABEL[id], `#${id}`];
 });
 
 function registerAnchors(url, bands, extra = []) {
@@ -1324,8 +1414,20 @@ function registerAnchors(url, bands, extra = []) {
    An item's destination is a PAGE URL where it has a page, and its own
    /work/<kind>#<anchor> where AD-17 §3 ruled it a row. A row's link is still
    specific: five rows sharing one destination is what makes homepage band 6
-   feel broken today.                                                        */
-const dest = (it) => it.page ? itemPath(it).url : `${PATHS[it.kind].url}#${it.anchor}`;
+   feel broken today.
+
+   AND ONE ITEM OVERRIDES BOTH, BECAUSE ITS PAGE IS OFF-SECTION. `href` exists
+   for an item ruled a row here whose page nevertheless exists somewhere else on
+   the site — today that is `projects/healthy-cities` and its /healthy-cities
+   microsite, and NO OTHER ITEM CARRIES `href` (all fifteen others fall straight
+   through to the two rules below, unchanged). Without it the register would
+   send a reader from the row to the one-line summary of a page they could have
+   been given. It is not a way to move an item's destination for taste: an item
+   with a page IN this section may not carry one, and the validation pass
+   rejects `href` alongside page:true. The destination is checked against
+   onward.json's route map by the same link gate as every other href, so an
+   override cannot point at a page that does not exist.                       */
+const dest = (it) => it.href || (it.page ? itemPath(it).url : `${PATHS[it.kind].url}#${it.anchor}`);
 const byKind = (k) => items.filter(i => i.kind === k).sort((a, b) => orderKey(a) - orderKey(b) || a.slug.localeCompare(b.slug));
 const kindDef = (k) => KINDS.find(x => x.slug === k) || { slug: k, name: k, line: '', frame_line: '', act: null };
 
@@ -1396,7 +1498,10 @@ const EVIDENCE = {
      page, not a paragraph about it. A reader who clicks "the evidence" from a
      WORK page should land on the evidence, with a heading above it, not
      mid-scroll on the front page they may never have seen. */
-  '/now': { href: '/now', eyebrow: 'The evidence', head: 'The record', body: 'Every reading the situation pages are built on, in one place.', foot: 'Every situation, side by side' },
+  /* "The readings", not "The record": /now is what the footer calls the
+     readings and /record is what it calls the past ones. One word pointing at
+     two destinations is the reader's problem, not ours to keep. */
+  '/now': { href: '/now', eyebrow: 'The evidence', head: 'The readings', body: 'What Delhi’s air, river and heat are doing right now.', foot: 'Every situation, side by side' },
   /* AD-24: was `/#farm`, the homepage teaser band. `/farm` is now a page, and
      this door's own copy ("the five acres this happens on") promises the place
      rather than a paragraph about it. An anchor here would land a reader who
@@ -1760,8 +1865,56 @@ const period = (p) => {
    person. The address is read out of the frozen footer rather than typed. */
 const CONTACT = (homeHtml.match(/mailto:([^"]+)/) || [])[1] || '';
 if (!CONTACT) rej('home.html', 'no mailto: address in the frozen footer — the invite band has no third route to offer');
-const invite = ({ act, second, note, asks }) => inviteRow({
-  act, second, asks,
+/* ═══ THE SIX /schools LISTS, READ OUT OF /schools' OWN DATA ══════════════
+   Not a list typed here. `data/schools.json`'s `programmes.rows` is where the
+   set is decided — the hub renders those six, the enquiry form's `<select>`
+   offers those six, `lib/school-enquiry.ts` accepts those six — and this is the
+   fourth reader of the same rows. A seventh programme added there gains its
+   reciprocal link with no edit in this file, and a programme removed from there
+   loses it, which is the property that makes the gate below meaningful rather
+   than a restatement.
+
+   `/schools` is already in `onward.json`'s route map, so the link passes the
+   link gate like any other href. */
+/* `ROOT`, not `DATA_DIR`: that constant is overridable with `--data` for a
+   fixture run, and the schools hub's data is not part of the fixture set. */
+const SCHOOL_ROWS = readJson(join(ROOT, 'data/schools.json')).programmes?.rows || [];
+const SCHOOL_LISTED = new Map(SCHOOL_ROWS.map((r) => [`${r.kind}/${r.slug}`, r]));
+const schoolsBack = (it) => (SCHOOL_LISTED.has(`${it.kind}/${it.slug}`)
+  ? { label: 'Everything a school can book', href: '/schools' }
+  : null);
+
+/* ═══ THE READ-FIRST RAIL, THE OTHER HALF OF THE STUDENT PATH ═════════════
+   `data/schools.json` already declares, per programme, which Learn explainers a
+   cohort should read before it goes — the hub renders them as "Read first: …".
+   This renders that SAME declaration on the programme's own page, so a teacher
+   or a student who arrived from search rather than from the hub gets the
+   preparation too. One editorial decision, two places it appears; nothing is
+   chosen here.
+
+   The heading text comes from the article's own `h1`, read out of
+   `data/learn/articles/<slug>.json`, so a renamed explainer cannot leave a
+   stale label behind on a programme page. A slug with no article file is a
+   REFUSAL rather than a dropped link: /schools already dies on the same
+   condition, and the two pages must not disagree about which explainers exist. */
+const LEARN_DIR = join(ROOT, 'data/learn/articles');
+const learnLink = (slug, where) => {
+  const f = join(LEARN_DIR, `${slug}.json`);
+  if (!existsSync(f)) {
+    rej(where, `points at /learn/${slug} via data/schools.json, and there is no such article. `
+      + 'A programme page may not offer preparation that does not exist.');
+    return null;
+  }
+  return { href: `/learn/${slug}`, label: readJson(f).h1 };
+};
+const readFirst = (it) => {
+  const row = SCHOOL_LISTED.get(`${it.kind}/${it.slug}`);
+  if (!row || !(row.learn || []).length) return null;
+  return row.learn.map((sl) => learnLink(sl, `${it.__key} (read-first)`)).filter(Boolean);
+};
+
+const invite = ({ act, second, note, asks, back, read }) => inviteRow({
+  act, second, asks, back, read,
   /* THE NOTE IS ONE CLAUSE, and the length is a budget decision with its
      arithmetic in WORK_CSS: the first version ran to five lines and 112.5px at
      375, on a band that was 78px over its cap. The clause that had to survive is
@@ -1773,9 +1926,12 @@ const invite = ({ act, second, note, asks }) => inviteRow({
      /act; it is now false in both halves. The Ask IS the route, it goes to a
      named person at an @swechha.in address, and telling a reader who has just
      opened it that there is nothing here would be the page contradicting the
-     control directly above the sentence. */
-  note: (asks && asks.length) ? note
-    : `${note} Nothing here is a form &mdash; write to <a class="lk" href="mailto:${esc(CONTACT)}">${esc(CONTACT)}</a>.`,
+     control directly above the sentence.
+
+     THE OPENING CLAUSE IS GONE TOO. What is left is the address, which is the
+     only part of that sentence a reader could act on. */
+  note: (asks && asks.length) ? (note || '')
+    : `${note ? `${note} ` : ''}Write to <a class="lk" href="mailto:${esc(CONTACT)}">${esc(CONTACT)}</a>.`,
 });
 
 /* ═══ AD-27.14 → AD-27.22 · THE ASK, INSTANTIATED ════════════════════════
@@ -1837,7 +1993,7 @@ const waysIn = (url) => {
   return [
     ['A school or a group', asks.join('\n')],
     ['Volunteer', WAY_PANEL('Clean-ups, garden builds and scanning days in Delhi. Turn up once or turn up every month.', '/act#hands', 'See the dates')],
-    ['Give', WAY_PANEL('From 500 rupees a month, recurring. It pays for journeys schools cannot fund, gardens still being planted, and an archive that will not scan itself.', '/act#give', 'Give monthly')],
+    ['Give', WAY_PANEL('From 500 rupees a month, recurring. It pays for journeys schools cannot fund, and gardens still being planted.', '/act#give', 'Give monthly')],
     ['Partner', WAY_PANEL('Schools, companies and researchers. Bring us a ward, a river stretch or a cohort.', '/act#partner', 'Work with us')],
   ];
 };
@@ -1971,7 +2127,7 @@ function pageIndex() {
     sheet: [
       opener('sheet', 'What it looks like'),
       gallery.length >= GALLERY_MIN ? gallerySheet({
-        label: 'The work, from the archive', frames: gallery,
+        label: 'The work', frames: gallery,
       }) : '',
     ],
   };
@@ -1984,8 +2140,9 @@ function pageIndex() {
     /* /work's slot 1 is not "the other three kinds" — every kind is already in
        band 2's register. The two doors are THE TWO MOST-LINKED DESTINATIONS IN
        THE SECTION, which is measured and not preferred: the frozen homepage
-       points 8 links at /work/projects and 6 at /work/journeys. */
-    doors: [kdoor('projects', 'The most-linked page in the section'), kdoor('journeys', 'Two hours to twelve days'), EVIDENCE['/now']],
+       points 8 links at /work/projects and 6 at /work/journeys. That measure
+       chooses the doors; it is not printed on them. */
+    doors: [kdoor('projects', 'Eight of them'), kdoor('journeys', 'Two hours to twelve days'), EVIDENCE['/now']],
     act, actNote: 'If you would rather start than read, the shortest way in is a walk that takes an afternoon.',
     /* AD-27.18-A. "Book a journey" resolves here. The secondary goes with it:
        the Ask's own tertiary link is /act#partner, which is the destination
@@ -2052,7 +2209,7 @@ function pageKind(k) {
     statement: hasStatement(def) ? statementFor(def) : '',
     sheet: [
       opener('sheet', 'What it looks like'),
-      (def.gallery || []).length >= GALLERY_MIN ? sheetBand(def, `${def.name}, from the archive`) : '',
+      (def.gallery || []).length >= GALLERY_MIN ? sheetBand(def, def.name) : '',
     ],
   };
   body.onward = onwardBand({
@@ -2062,7 +2219,6 @@ function pageKind(k) {
        situation links live on the items, where the claim is actually true. */
     doors: threeDoors({ siblings: otherKindDoors(k), situation: null, evidence: EVIDENCE['/now'] }),
     act: deepen(url, def.act || { label: 'Get involved', href: '/act' }),
-    actNote: 'Reading this page is not the point of it.',
     /* AD-27.18-A. /work/projects and /work/journeys resolve their ask in place;
        any future kind landing that has no Ask keeps a navigating primary and a
        secondary that points at the partnering content rather than at /about. */
@@ -2070,7 +2226,6 @@ function pageKind(k) {
       act: deepen(url, def.act || { label: 'Get involved', href: '/act' }),
       second: INDEX_ASK[url] ? null : PARTNER_SECOND,
       asks: indexAsk(url),
-      note: 'Reading this page is not the point of it.',
     }),
   });
   return {
@@ -2123,7 +2278,7 @@ function pageCampaigns() {
     statement: hasStatement(def) ? statementFor(def) : '',
     sheet: [
       opener('sheet', 'What it looks like'),
-      (def.gallery || []).length >= GALLERY_MIN ? sheetBand(def, 'Campaigns, from the archive') : '',
+      (def.gallery || []).length >= GALLERY_MIN ? sheetBand(def, 'Campaigns') : '',
     ],
   };
   body.onward = onwardBand({
@@ -2151,6 +2306,11 @@ function pageCampaigns() {
    activities · who it is for · impact · the photographs · who it is with · get
    involved. Every one of them is present only if the data supports it, and
    every absence is named in the build report.                                */
+/* The `done` band's head, per item. The default is the register's own name for
+   it; an item writes its own where the default would misdescribe what is in the
+   band. See the note on `sectionsFor`. */
+const doneHead = (it) => it.done_head || LABEL.done;
+
 function pageItem(it) {
   const def = kindDef(it.kind);
   const w = it.with || {};
@@ -2286,7 +2446,7 @@ function pageItem(it) {
          delivered it and the ledger disclosure audited the figures. All three
          are gone. What is left is the band the client asked for: the figures,
          then what they mean, and nothing about our filing. */
-      opener('done', 'Impact'),
+      opener('done', doneHead(it)),
       figureRail(it.figures || []),
       proseRows(it.done || [], 'The rest of the record'),
     ],
@@ -2297,7 +2457,7 @@ function pageItem(it) {
       /* AD-28. `gallery_note` is no longer published either. Every value it
          carried in the data was a sentence about dates we do not have or frames
          we could not source. A contact sheet is looked at, not explained. */
-      (it.gallery || []).length >= GALLERY_MIN ? sheetBand(it, `${it.name}, from the archive`) : '',
+      (it.gallery || []).length >= GALLERY_MIN ? sheetBand(it, it.name) : '',
     ],
     with: [
       opener('with', 'Who it is with', namesHead(w)),
@@ -2336,12 +2496,22 @@ function pageItem(it) {
       second: askBlocks(it).length
         ? (secondSurvives(it) ? it.invite.second : null)
         : ((it.invite && it.invite.second) || { label: 'Partner with us', href: '/about' }),
+      /* THE RECIPROCAL LINK TO /schools, on exactly the six that hub lists and
+         derived from its own rows. See inviteRow's `back` note for why it is
+         not folded into `second`, and gate SCHOOLS-RECIPROCAL below for the
+         assertion that keeps the two directions in step. */
+      back: schoolsBack(it),
+      /* THE PREPARATION, from data/schools.json's own per-programme `learn`
+         rows. See readFirst above: this is the reverse of the link every Learn
+         article already carries, and it is what stops a programme page reading
+         as a booking page. */
+      read: readFirst(it),
       asks: askBlocks(it),
       note: (it.invite && it.invite.note) || 'One thing to do about this, and it is the only slot on the page that asks you for anything.',
     }),
   });
   return {
-    bands, body: applyCanvas(bands, body), sections: sectionsFor(bands),
+    bands, body: applyCanvas(bands, body), sections: sectionsFor(bands, { done: doneHead(it) }),
     current: it.kind === 'journeys' ? 'Journeys' : 'Work',
     crumbs: crumbsFor(it),
     title: seo(itemPath(it).url).title, desc: seo(itemPath(it).url).description,
@@ -2410,7 +2580,7 @@ function pageEvents() {
     statement: hasStatement(def) ? statementFor(def) : '',
     sheet: [
       opener('sheet', 'What it looks like'),
-      (def.gallery || []).length >= GALLERY_MIN ? sheetBand(def, 'Events, from the archive') : '',
+      (def.gallery || []).length >= GALLERY_MIN ? sheetBand(def, 'Events') : '',
     ],
   };
   body.onward = onwardBand({
@@ -2420,7 +2590,7 @@ function pageEvents() {
        to join. Dates go out on the four accounts..." — two clauses of what this
        page does not have, then the one clause that tells a reader where to
        actually look. Subtract, do not rewrite: the useful clause stands alone. */
-    actNote: 'Dates go out on the four accounts at the foot of this page.',
+    actNote: 'Dates go out on the four accounts below.',
     /* AD-27.18-A. "Volunteer with us" is an individual action and not one of the
        four audiences (AD-27.56 forbids a fifth), so it keeps navigating — to
        /act#hands, which is where /act's own WAYS table files this exact label
@@ -2428,7 +2598,7 @@ function pageEvents() {
     invite: invite({
       act: deepen(PATHS.events.url, def.act || { label: 'Volunteer with us', href: '/act' }),
       second: PARTNER_SECOND,
-      note: 'Dates go out on the four accounts at the foot of this page.',
+      note: 'Dates go out on the four accounts below.',
     }),
   });
   return {
@@ -2615,6 +2785,158 @@ if (links.failures.length) {
   console.error(`\nREFUSING TO WRITE: ${links.failures.length} link failure(s).`);
   for (const f of links.failures.slice(0, 60)) console.error(`  ✗ ${f.page}  ${JSON.stringify(f.href)}  ${f.verdict}`);
   problems += links.failures.length;
+}
+
+/* ═══ THE BASIS OF EVERY RENDERED FIGURE ══════════════════════════════════
+   WHY THIS GATE EXISTS, stated plainly because the answer is embarrassing:
+   Bridge the Gap's 3M+ is MODELLED, and it shipped on /work, /work/projects and
+   its own project page drawn as a count — under the solid rule that /impact and
+   the six situation pages teach every reader to read as "somebody counted this"
+   — from the day those pages were built until 8 September 2026. Nothing caught
+   it. /healthy-cities carries an equivalent gate and was scrupulous; these
+   pages carried none, and that is the whole of the difference.
+
+   TWO DIRECTIONS, because only checking one is how the first version of a gate
+   like this passes while the page is still wrong:
+     - a figure that was NOT counted must never render the counted rule, and
+       must say in words which it is;
+     - a figure that WAS counted must never render the dotted rule or a word.
+       Marking the ordinary case makes an unmarked numeral meaningless.
+
+   THE EXPECTATION IS WRITTEN HERE, NOT IMPORTED. `basisWord()` lives in
+   work-shell and this table deliberately restates it: importing the renderer's
+   own table would make the gate a tautology — delete a basis from it and both
+   the marker and the expectation vanish together, green build, page lying. Two
+   independent statements of the same fact is the point. Reword one and this
+   fails until somebody agrees to the rewording.
+
+   MATCHED BY LABEL, and a label that two items share with DIFFERENT bases is
+   reported rather than skipped silently — an unassertable figure is a hole in
+   the gate and must be visible as one.
+
+   ONE TERM SURVIVES, AND THE GATE RUNS BOTH WAYS AGAIN. The copy pass took
+   every word off these pages; the second sweep put back "Modelled", on the
+   estimates only, because three of them were reading as counts. So: a
+   modelled reading must say "Modelled", and nothing else may say anything.
+   `planned` is deliberately absent from the table — it is unmarked on the
+   page, and a word it must not print is stated below rather than here. */
+const BASIS_SAYS = { modelled: 'Modelled' };
+/* Vocabulary that must NOT appear on any reading: the retired long forms, and
+   the Counted half of the pair. Marking the ordinary case makes the unmarked
+   numeral meaningless, which is the whole reason only one word came back. */
+const BASIS_NEVER = ['Derived, not counted', 'Planned, not counted', 'Counted or measured'];
+const basisOf = new Map();
+for (const it of items) {
+  for (const f of (it.figures || [])) {
+    const k = esc(f.label);
+    if (!basisOf.has(k)) basisOf.set(k, new Set());
+    basisOf.get(k).add(f.basis || 'counted');
+  }
+}
+/* One rendered reading, either shape the shell emits: `figure()`'s <span> and
+   `figureRail()`'s tile. Both are collected, because the tile is where the
+   fellow pages' modelled reach was wrong and the <span> is where the project
+   pages' was.
+   SPLIT ON THE EMITTED BOUNDARY, NOT MATCHED WITH A NESTED-TAG REGEX. The first
+   version of this gate used one, and its lazy quantifier closed the reading at
+   the numeral's own `</span></span>` — so the label never entered the match,
+   RULE found nothing, and the readings on /work and /work/projects were skipped
+   in silence. The gate reported "25 checked" and caught ONE of the four wrong
+   figures when the renderer was deliberately broken to test it. Both shapes are
+   emitted at a known indentation by components in this repository, so the
+   boundary is a fact about the output and not a guess about HTML. */
+const chunk = (html, open, close) => html.split(open).slice(1)
+  .map(s => (s.indexOf(close) === -1 ? s : s.slice(0, s.indexOf(close))));
+const readings = (html) => [
+  ...chunk(html, '\n        <span>\n', '\n        </span>').filter(s => s.includes('w7-pj-num')),
+  ...chunk(html, '<div class="ip-ovl-c">', '\n        </div>'),
+];
+const RULE = /<span class="(?:unit )?p-kd (p-kd-[cm])">([\s\S]*?)<\/span>/;
+const basisBad = [];
+let basisChecked = 0, basisAmbiguous = 0;
+for (const b of built) {
+  for (const block of readings(b.html)) {
+    const m = RULE.exec(block);
+    if (!m) continue;
+    const [, cls, label] = m;
+    const seen = basisOf.get(label);
+    if (!seen) continue;                       /* a label this generator did not author */
+    if (seen.size > 1) { basisAmbiguous++; continue; }
+    const basis = [...seen][0];
+    const wantRule = basis === 'modelled' ? 'p-kd-m' : 'p-kd-c';
+    const word = BASIS_SAYS[basis] || '';
+    const says = Object.values(BASIS_SAYS).filter(w => block.includes(w));
+    const never = BASIS_NEVER.filter(w => block.includes(w));
+    if (cls !== wantRule) {
+      basisBad.push(`${b.url} "${label}" is ${basis} and renders ${cls} — it must render ${wantRule}`);
+    } else if (never.length) {
+      basisBad.push(`${b.url} "${label}" prints "${never[0]}" — that vocabulary is retired.`);
+    } else if (word && !says.includes(word)) {
+      basisBad.push(`${b.url} "${label}" is ${basis} and says ${says.length ? `"${says[0]}"` : 'nothing'} — it must say "${word}" above the numeral or in its caption`);
+    } else if (!word && says.length) {
+      basisBad.push(`${b.url} "${label}" is ${basis} and says "${says[0]}". Only an estimate is marked; marking anything else makes the unmarked numeral meaningless.`);
+    }
+    basisChecked++;
+  }
+}
+console.log('\nBASIS OF EVERY RENDERED FIGURE');
+console.log(`  ${basisChecked} reading(s) checked against the basis their data gives them`
+  + (basisAmbiguous ? `, ${basisAmbiguous} unassertable (one label, two bases)` : ''));
+if (basisBad.length) {
+  console.error(`\nREFUSING TO WRITE: ${basisBad.length} figure(s) drawn as something they are not.`);
+  for (const f of basisBad) console.error(`  ✗ ${f}`);
+  problems += basisBad.length;
+}
+
+/* ═══ SCHOOLS-RECIPROCAL · BOTH DIRECTIONS OF ONE LINK ════════════════════
+   `/schools` links all six programmes it compares and asserts it does (that
+   generator's gate 1). Until the `back` slot existed, not one of the six linked
+   the hub: the only route from a programme page to the page comparing it was
+   the footer index, which appears on every page on this site and is therefore
+   no signal to a reader or a crawler.
+
+   THE GATE IS TWO-DIRECTIONAL BECAUSE A ONE-DIRECTIONAL VERSION PASSES WHILE
+   THE SITE IS STILL WRONG — the same argument as the basis gate above. It
+   checks that every item the hub lists links back, AND that no item the hub
+   does NOT list carries the link. The second half is the one that matters over
+   time: a programme dropped from `data/schools.json` would otherwise keep a
+   link to a page that no longer mentions it, which is exactly the drift the
+   derivation was built to prevent. */
+const wantBack = built.filter(b => {
+  const seg = b.url.replace(/^\/work\//, '');
+  return SCHOOL_LISTED.has(seg);
+});
+/* SCOPED TO THE INVITE ROW, not to the page. The frozen footer's directory
+   links `/schools` on all 93 pages of this site, so the first version of this
+   check reported four unlisted items as carrying the reciprocal link when what
+   they carried was the footer — which is exactly the reason the `back` slot had
+   to be added in the first place. */
+/* SLICED BETWEEN TWO CLASS NAMES THE COMPONENT ITSELF EMITS, not matched with a
+   nested-tag regex — the same lesson the basis gate above records in its own
+   note. `<div class="wk-invite wk-invite-ask">` contains the Ask's `<details>`,
+   which contains `</div>`, so a lazy `[\s\S]*?</div>` closes inside the Ask and
+   never reaches the onward links. `.wk-invite-n` is the note, and inviteRow
+   always emits it LAST, so everything the row contains is between them. */
+const inviteBlock = (html) => {
+  const a = html.indexOf('class="wk-invite');
+  const b = html.indexOf('wk-invite-n', a + 1);
+  return a === -1 || b === -1 ? '' : html.slice(a, b);
+};
+const hasBack = (b) => inviteBlock(b.html).includes('href="/schools"');
+const missingBack = wantBack.filter(b => !hasBack(b));
+/* The landings and the index legitimately do not carry it — they are not
+   programmes. Only an ITEM page that the hub does not list would be wrong. */
+const strayBack = built.filter(b => b.url.split('/').length === 4
+  && !SCHOOL_LISTED.has(b.url.replace(/^\/work\//, '')) && hasBack(b));
+console.log('\nSCHOOLS-RECIPROCAL');
+console.log(`  ${wantBack.length} of the ${SCHOOL_LISTED.size} programmes data/schools.json lists are pages in this section`);
+if (missingBack.length || strayBack.length) {
+  console.error('\nREFUSING TO WRITE: the /schools link and data/schools.json disagree.');
+  for (const b of missingBack) console.error(`  ✗ ${b.url} is listed on /schools and does not link back`);
+  for (const b of strayBack) console.error(`  ✗ ${b.url} links /schools and is not listed there`);
+  problems += missingBack.length + strayBack.length;
+} else {
+  console.log(`  every one links back, and no item that is not listed does`);
 }
 
 if (sh.bad > 0) {

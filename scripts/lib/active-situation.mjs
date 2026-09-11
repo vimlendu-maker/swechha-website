@@ -59,7 +59,7 @@ const DAY = 86400000;
 export const SITUATION_STATUS = {
   active: {
     rank: 3, hero: 2, label: 'Active', pill: 'red', dot: '●',
-    line: 'Being tracked now. Figures move while you are on this page.',
+    line: 'Being tracked now. The figures are still moving.',
   },
   developing: {
     rank: 2, hero: 2, label: 'Developing', pill: 'amber', dot: '●',
@@ -71,11 +71,11 @@ export const SITUATION_STATUS = {
   },
   demoted: {
     rank: 0, hero: 0, label: 'Closed', pill: null, dot: '○',
-    line: 'No longer a developing situation. This page is kept as the record.',
+    line: 'No longer a developing situation.',
   },
   archived: {
     rank: 0, hero: 0, label: 'Archived', pill: null, dot: '○',
-    line: 'Archived. Kept at this address so anything that cited it still resolves.',
+    line: 'Archived. Kept as the record of what happened.',
   },
 };
 
@@ -164,9 +164,81 @@ const FADE_GRACE_HOURS = 24;
    properly means deciding what its URL answers afterwards — a redirect, or a
    tombstone, never a bare 404. Nobody has needed that yet; when they do it is
    its own change, not a special case here. */
+/* ★ `withdrawn` OUTRANKS EVERYTHING, AND IT IS THE ONLY STATE A PERSON SETS.
+   Publication is otherwise sticky — an event that ever cleared the bar stays
+   published, deliberately, so a dip in hourly coverage cannot close a live
+   disaster. That stickiness has no way to express "a human looked at this and
+   it is wrong", and on 9 September 2026 eight published events needed exactly
+   that: places taken from a publisher's masthead, one flood filed as a
+   landslide, and two stories that were an explainer and an opinion piece.
+   Setting them back to `draft` would not have held, because the next run that
+   found them publishable would publish them again.
+
+   So `withdrawn` is permanent and the detector may not overturn it. It is not
+   deletion: the dossier, its sources and its score all remain, and
+   `withdrawn_why` records who decided and on what grounds. Restoring one is a
+   person editing the file back, which is the correct amount of friction for
+   undoing a human judgement. */
 export function publishStateFor({ existing, publishableNow }) {
+  if (existing?.publish_state === 'withdrawn') return 'withdrawn';
   if (existing?.publish_state === 'published') return 'published';
   return publishableNow ? 'published' : 'draft';
+}
+
+/* ── WHAT A RE-DETECTION MAY NOT EAT ──────────────────────────────────────
+   ★ THE DIVISION, AND WHY IT IS NOW ARITHMETIC INSTEAD OF A LIST.
+   dossier() in detect-climate-events.mjs rebuilds each event from a fixed key
+   set, so any field it does not name is dropped on the next scheduled run.
+   The detector owns the EVIDENCE — the score, the corroboration counts, the
+   source register, the timestamps, all of which it exists to keep current. A
+   person owns the JUDGEMENT: the lifecycle, a precise place the feeds do not
+   carry, a cause raised to confirmed once fieldwork lands, the reason a page
+   was taken down.
+
+   THIS USED TO BE A HAND-WRITTEN ALLOWLIST OF THE SECOND SET, AND IT WAS
+   FORGOTTEN FOUR TIMES OUT OF FOUR. `situation_status` (an editor demoting an
+   event off the homepage, reverted by the next tick), `hero_days`,
+   `cause_status` — each lost silently. Then `withdrawn_why`, which did not
+   fail silently: publishStateFor() above latches `withdrawn` deliberately,
+   validateEvent() requires the reason whenever it is latched, and the
+   rebuilt-without-a-reason dossier was refused inside the page build — which
+   runs before the commit, so the failing run published nothing, the reason
+   survived untouched on main, and the next run read it back and destroyed it
+   again. Eleven consecutive red runs, and the failure was what prevented the
+   repair landing.
+
+   The allowlist was never information. Measured across all 65 dossiers:
+   dossier() emits 28 top-level keys, the list named 17, the files carry 42 —
+   disjoint, and together complete. It was the arithmetic complement of what
+   the detector emits, maintained by hand.
+
+   So it is computed. The detector owns exactly the keys the run produced;
+   every other key on the previous file survives. A new human-set field is
+   preserved by default, and there is no list to keep in step.
+
+   ★ THE KEYS OF `next`, NEVER ITS VALUES. `faded_since` and `published_on`
+   are emitted as keys whose value is `undefined` when they do not apply, and
+   for both the ABSENCE is the signal — a fade that clears the moment coverage
+   returns, a minting record a draft has not earned. Object.keys() counts
+   them, so they stay detector-owned and keep being cleared. Testing values
+   for undefined, or comparing against a JSON round-trip (which drops
+   undefined keys), would resurrect a stale fade from the previous file and
+   quietly demote a live event.
+
+   ★ AND IT IS NOT A SPREAD OF `existing` OVER `next`. It only fills keys the
+   run did not produce, so the evidence fields are still wholly the
+   detector's. The one thing it does that a list did not: a field REMOVED from
+   dossier() in some future change would start being carried forward out of
+   old files. That is visible in the dossier the next run writes, and the
+   remedy is to delete it from the files — a great deal cheaper than a
+   silently reverted human decision. */
+export function keepEditorFields(next, existing) {
+  if (!existing) return next;
+  const producedThisRun = new Set(Object.keys(next));
+  for (const [k, v] of Object.entries(existing)) {
+    if (!producedThisRun.has(k)) next[k] = v;
+  }
+  return next;
 }
 
 /** The status word for an event, and where it came from. Never throws on a

@@ -158,8 +158,6 @@ ${KIND_LEGEND}
         input.</b> A and B move together because B is built from A. So the honest reading of this
         page is not &ldquo;two against one&rdquo; &mdash; it is <b>one administrative measurement and
         one independent one</b>, and they point in opposite directions.</p>
-      <p class="cap l-cap"><b>How source C was obtained, stated plainly.</b>
-        ${esc(GFW.source.obtained_via.why)} ${esc(GFW.source.obtained_via.honesty)}</p>
       <p style="margin:0"><a class="act" href="#measured">What each one measures ${ARROW}</a></p>
     </div>`;
 
@@ -188,9 +186,15 @@ B.measured = () => `${opener('measured', 'What each one measures', 'A plantation
           <p>Canopy disappearing, whatever it was and for whatever reason &mdash; felling, fire,
             storm, disease, harvest. <b>It does not say why, and it is not net change:</b> gain is a
             separate measurement on a different method and the two are not subtracted here.</p>
-          <p class="l-warn"><b>The threshold changes the answer, so it is printed everywhere.</b>
-            Loss is counted above <b>${GFW.threshold.value}% canopy density in 2000</b>, which is
-            GFW&rsquo;s own headline choice. ${esc(GFW.threshold.why)}</p>
+          <!-- BOTH HALVES OF THE OLD LEAD-IN RESTATED THE DATA STRING PRINTED AFTER
+               THEM — 10 September 2026 copy pass. "The threshold changes the answer, so
+               it is printed everywhere" against threshold.why's "a different choice gives
+               a different answer, so it is printed wherever the number is"; "which is
+               GFW's own headline choice" against its "GFW's own headline figures use 30
+               per cent". The caveat itself is protected substance and stays whole — it is
+               the one that stops a reader comparing two thresholds as one series. -->
+          <p class="l-warn"><b>Loss is counted above ${GFW.threshold.value}% canopy density
+            in 2000.</b> ${esc(GFW.threshold.why)}</p>
           <div class="l-thr">
             ${(GFW.threshold.ladder || []).map(t => `<div class="l-thr-r${t.threshold === GFW.threshold.value ? ' is-used' : ''}">
               <span class="l-thr-n">${t.threshold}%</span>
@@ -254,7 +258,7 @@ B.years = () => {
         ${n0(G[1].mean_ha)}</b> &mdash; ${doubling} times as much. The worst single year is
         ${GFW.peak.year}, at ${n0(GFW.peak.loss_ha)} hectares; the lowest is ${GFW.floor.year}, at
         ${n0(GFW.floor.loss_ha)}.</p>` : ''}
-      <p class="cap l-cap"><b>Tree cover loss is not deforestation.</b> ${esc(GFW.caveats[0])} ${esc(GFW.caveats[1])}</p>
+      <p class="cap l-cap">${esc(GFW.caveats[0])} ${esc(GFW.caveats[1])}</p>
       ${disclose(`Every year, ${GFW.total.from} to ${GFW.total.to}`,
     `<div class="l-tbl">
             <div class="l-tr is-head"><span class="lbl">Year</span><span class="lbl">Tree cover lost</span>
@@ -314,14 +318,9 @@ B.law = () => `${opener('law', 'What the law says', 'There is no legal maximum. 
       </div>
       <p class="l-note"><b>Every other situation on this site reads a number against a threshold
         somebody notified.</b> Air has an AQI limit. The Yamuna has a dissolved-oxygen minimum. Heat
-        has IMD&rsquo;s criteria. Forest has an approval process. So this page cannot say
-        &ldquo;the limit was exceeded&rdquo; &mdash; only how much was approved, by whom, and
-        whether the forest came back.</p>
+        has IMD&rsquo;s criteria. Forest has an approval process. What is on the record is how much
+        was approved, by whom, and whether the forest came back.</p>
 ${hole(LAW.hole)}
-      <p class="cap l-cap"><b>What cannot be computed, and is therefore not published.</b>
-        ${esc(FL.sources?.c_satellite?.how_to_close || '')} A single national figure for "forest lost
-        to legal diversion" would need the Ministry&rsquo;s own approval data, which this build did
-        not obtain.</p>
       <h3 class="d2 l-h3">And who is looking</h3>
       ${(() => {
     const mm = ATTN.months.filter(m => !m.partial);

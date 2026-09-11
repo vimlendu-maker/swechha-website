@@ -20,7 +20,24 @@ describe('the SEO register', () => {
      140-158 character description gate and refuses to write a page that
      misses it. See scripts/build-climate-disaster-pages.mjs. */
   const isDerivedEventPage = (r: string) => /^\/now\/climate-event\/.+/.test(r)
-  const routes = designRoutes().map((r) => r.source).filter((r) => !isDerivedEventPage(r))
+
+  /* THE RECORD'S MONTH PAGES ARE EXCLUDED FOR THE SAME REASON, and it is the
+     same reason twice rather than a precedent being stretched: the set is not
+     fixed. `/record/air/<YYYY>/<MM>` gains a page the moment the hourly store
+     rolls into a new month, with nobody editing anything, so a register that
+     needs an entry per page would fail on the first of every month.
+
+     They are not exempt from the RULES, only from the register. Each month
+     page passes its own title and description straight to assemble(), which
+     applies the identical 140-158 character gate and refuses to write a page
+     that misses it — and because the month's name is part of the description,
+     `fitDesc()` in scripts/build-record.mjs picks a closing clause that lands
+     inside the window rather than leaving one sentence to pass for August and
+     fail for September. */
+  const isRecordMonthPage = (r: string) => /^\/record\/air\/\d{4}\/\d{2}$/.test(r)
+
+  const routes = designRoutes().map((r) => r.source)
+    .filter((r) => !isDerivedEventPage(r) && !isRecordMonthPage(r))
 
   it('has exactly one entry per routed page', () => {
     expect([...Object.keys(SEO)].sort()).toEqual([...routes].sort())

@@ -164,25 +164,22 @@ jobs:
             fi
           }
 
-          # Air pages are rebuilt only by air-hourly.yml. The daily workflow
-          # rebuilds the remaining situations and the site-wide generated pages.
-          # `hero` is in this list because the homepage carries a reading from
-          # nearly every situation in its ticker — the Yamuna's dissolved
-          # oxygen, the burnt area, the tree-cover loss — so a daily refresh
-          # that rebuilt every page EXCEPT the one showing all of them left the
-          # tree out of step. It sits after `situations` for the reason
-          # air-hourly.yml gives: build-hero.mjs cross-checks its air figure
-          # against situation-air.html and refuses to write if they disagree.
-          for t in situations hero work about impact farm act stories publications posters search essays; do
-            echo "::group::npm run build:$t"
-            if npm run "build:$t"; then
-              echo "::endgroup::"
-            else
-              echo "::endgroup::"
-              echo "::error::npm run build:$t failed"
-              failed="$failed build:$t"
-            fi
-          done
+          # ── ONE REBUILD, SHARED WITH EVERY OTHER PUBLISHER ──────────────
+          # This loop of fourteen targets was the closest of the five to the
+          # gate's nineteen, and still missing healthy-cities, learn, schools,
+          # journal and the share cards. `hero` was in it because the homepage
+          # carries a reading from nearly every situation in its ticker — the
+          # Yamuna's dissolved oxygen, the burnt area, the tree-cover loss — so
+          # a refresh that rebuilt every page EXCEPT the one showing all of them
+          # left the tree out of step. Same reasoning, five different answers.
+          #
+          # ★ AND THIS WORKFLOW'S BEST HABIT IS NOW EVERYBODY'S. It was the only
+          # publisher that collected EVERY failed generator and printed them
+          # together instead of stopping at the first, so an operator learned
+          # about three broken gates in one run rather than one per day. That is
+          # why scripts/build-all.sh is a loop rather than an `&&` chain in
+          # package.json: it keeps the behaviour, for all five.
+          if ! npm run build:all; then failed="$failed build:all"; fi
           run_gate verify:final
 
           if [ -n "$failed" ]; then
@@ -195,7 +192,13 @@ jobs:
         run: |
           git config user.name  'swechha-data-refresh[bot]'
           git config user.email 'actions@github.com'
-          git add -A data public/_pages design docs/design/FINAL.md
+          # ── ONE STAGING LIST, SHARED WITH EVERY OTHER PUBLISHER ─────────
+          # `public/data` was named here because this run builds it: build:data
+          # writes the CSV/JSON exports outside public/_pages, and an export
+          # left unstaged is committed by nobody and fails generated-current.yml
+          # on a pull request that caused none of it. public/images was missing.
+          # The trees are named once now, in the script, with the whole account.
+          ./scripts/stage-generated.sh
           if git diff --cached --quiet; then
             echo "Nothing staged after the rebuild — no commit."
             exit 0

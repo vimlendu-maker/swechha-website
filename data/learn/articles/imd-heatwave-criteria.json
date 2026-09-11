@@ -1,0 +1,152 @@
+{
+  "slug": "imd-heatwave-criteria",
+  "category": "heat",
+  "h1": "How does India define a heatwave?",
+  "card": "The exact IMD rule, gate by gate, including the part that catches the coast out.",
+  "frame": {
+    "src": "/images/photos/india-gate-dusk.jpg",
+    "alt": "India Gate at dusk, its lamps lit under a hazy sky"
+  },
+  "answer": "A station qualifies if its maximum temperature reaches the floor for its zone — 40°C in the plains, 37°C on the coast, 30°C in the hills — and then either departs from its own normal by 4.5°C or more, or reaches 45°C outright. Severe is a departure of 6.5°C or more, or 47°C outright. IMD declares for a subdivision when the criteria are met at two or more stations.",
+  "explainHead": "The rule, gate by gate",
+  "explainLead": "Three gates in order. A station that fails the first never reaches the second.",
+  "explain": [
+    "<b>Gate one — the floor.</b> The station's maximum must reach the base for its zone. This is what stops a cool region qualifying for a heatwave at a temperature nobody there would notice, and it is why hill stations have their own much lower base.",
+    "<b>Gate two — the departure.</b> The maximum must run at least 4.5°C above that station's own normal for the date. A departure of 6.5°C or more is a severe heatwave. The normal is a long-period average, so the comparison is against the station's own climatology and not against any other place.",
+    "<b>Gate three — the absolute override.</b> Regardless of departure, a maximum of 45°C is a heatwave and 47°C is a severe heatwave. This exists because a station whose normal is already very high could otherwise reach a genuinely dangerous temperature without ever clearing the departure bar."
+  ],
+  "defs": [
+    {
+      "term": "Zone base",
+      "d": "40°C plains, 37°C coastal, 30°C hills. The first gate."
+    },
+    {
+      "term": "Long-period average",
+      "d": "The reference \"normal\" for a station and date, computed over a standard multi-decade window."
+    },
+    {
+      "term": "Absolute override",
+      "d": "45°C and 47°C. Qualifies regardless of how far from normal the day was."
+    }
+  ],
+  "standard": {
+    "chip": "The thresholds",
+    "head": "Every number in the rule",
+    "lead": "All seven, as IMD publishes them.",
+    "rows": [
+      {
+        "name": "Plains base",
+        "ref": {
+          "file": "heat-india.json",
+          "path": "criteria.zones.plains.base"
+        },
+        "unit": "°C",
+        "authority": "India Meteorological Department"
+      },
+      {
+        "name": "Coastal base",
+        "ref": {
+          "file": "heat-india.json",
+          "path": "criteria.zones.coastal.base"
+        },
+        "unit": "°C",
+        "authority": "India Meteorological Department"
+      },
+      {
+        "name": "Hills base",
+        "ref": {
+          "file": "heat-india.json",
+          "path": "criteria.zones.hills.base"
+        },
+        "unit": "°C",
+        "authority": "India Meteorological Department"
+      },
+      {
+        "name": "Heatwave departure",
+        "ref": {
+          "file": "heat-india.json",
+          "path": "criteria.departure_hw"
+        },
+        "unit": "°C",
+        "authority": "India Meteorological Department"
+      },
+      {
+        "name": "Severe heatwave departure",
+        "ref": {
+          "file": "heat-india.json",
+          "path": "criteria.departure_severe"
+        },
+        "unit": "°C",
+        "authority": "India Meteorological Department"
+      },
+      {
+        "name": "Heatwave, absolute",
+        "ref": {
+          "file": "heat-india.json",
+          "path": "criteria.absolute_hw"
+        },
+        "unit": "°C",
+        "authority": "India Meteorological Department"
+      },
+      {
+        "name": "Severe heatwave, absolute",
+        "ref": {
+          "file": "heat-india.json",
+          "path": "criteria.absolute_severe"
+        },
+        "unit": "°C",
+        "authority": "India Meteorological Department"
+      }
+    ],
+    "after": [
+      "The coastal base of 37°C is the one most often left out when the criteria are quoted, and leaving it out systematically undercounts heat events on the coast — where humidity already makes the same dry-bulb temperature more dangerous."
+    ]
+  },
+  "readHead": "Applying the rule to a dataset",
+  "readLead": "The criteria are precise. Applying them to gridded data introduces choices the criteria do not make for you.",
+  "measure": [
+    "IMD applies these to observing stations and declares for a subdivision on two or more of them. A dataset built on reanalysis grid points is applying station criteria to something that is not a station, and the honest description is \"days meeting the criteria at this location\".",
+    "The normal you compare against is a choice. A different baseline period gives a different departure for the same day, and therefore a different count of qualifying days. Any heatwave series should state its baseline.",
+    "Applied to fourteen stations over thirty-five years of reanalysis, the count is published per station. Summed, it would be station-days, not heatwave days."
+  ],
+  "cannot": [
+    "The criteria say nothing about duration. One qualifying day and a nine-day run are both \"a heatwave\" under this definition.",
+    "They say nothing about night temperature, which IMD handles under a separate warm-night criterion.",
+    "They cannot be applied to a region without stations in it.",
+    "They are not a health threshold. Nothing in the rule refers to who is harmed or at what point."
+  ],
+  "live": {
+    "href": "/now/heat",
+    "label": "Heat, thirty-five years",
+    "note": "The criteria above, applied station by station and published per station."
+  },
+  "sources": [
+    {
+      "name": "Heat wave criteria",
+      "publisher": "India Meteorological Department",
+      "url": "https://mausam.imd.gov.in/",
+      "note": "Every threshold in the table"
+    },
+    {
+      "name": "ERA5 reanalysis archive",
+      "publisher": "ECMWF, served by Open-Meteo",
+      "url": "https://archive-api.open-meteo.com/v1/archive",
+      "note": "The temperature series the criteria are applied to here"
+    }
+  ],
+  "related": [
+    "india-heatwave",
+    "heatwave-vs-extreme-heat",
+    "how-to-read-environmental-data",
+    "climate-normal"
+  ],
+  "programme": {
+    "href": "/work/projects/eco-action",
+    "label": "Eco Action",
+    "why": "A rule with three gates and two routes is a good thing for a class to apply to real data themselves."
+  },
+  "act": {
+    "href": "/act",
+    "label": "Work with us on heat"
+  }
+}

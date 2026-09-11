@@ -65,7 +65,7 @@ import {
   ask, stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, abs,
   breadcrumbJsonLd, imgDim,
   posterSheet, POSTER_CSS,
-  TRACKER,
+  TRACKER, HASH_STRIP,
 } from './situation-shell.mjs';
 import { withSocialImage } from './social-image.mjs';
 import { stampLastmod } from './lastmod.mjs';
@@ -216,6 +216,57 @@ export const TIER = {
      (`sheet`) correctly takes — a contact sheet of frames that back up an
      argument made in type. Here the type backs up the sheets. */
   posters: 't2',
+  /* ── /healthy-cities. Declared here rather than defaulted for the reason the
+        throw below states: a band's weight is the same wherever the band
+        appears, so it belongs in this table and not in one generator.
+
+        ★ THE FOUR DELIVERABLES ALL TAKE t2, AND THAT IS THE POINT. `workshops`,
+        `cityscapes`, `actions` and `fellows` are the programme cut into the four
+        things it delivered, and a reader has to read them as ONE SET rather than
+        as a strong band and three footnotes — so they carry the same weight,
+        the way `what` and `record` do on a WORK page. `fellows` was already t2
+        as the band that page exists for; the other three join it.
+        `voices` and `watch` are t3, the supporting weight `sheet` and `who`
+        take — they back the argument up with who said what and what was filmed.
+
+        ★ `schools`, `green` AND `gaps` ARE GONE. The first two were the old
+        two-band schools half, and their content moved into `workshops` and
+        `actions` when the programme was recut into its four deliverables
+        (2026-09-07 restructure). `gaps` was the "What we cannot say yet" band,
+        struck by the owner on 2026-09-07; three gates in
+        build-healthy-cities.mjs now assert its absence, and leaving its tier
+        row in this table reads as a licence to bring it back.
+
+        `did` is the fellow pages' second band — what one fellow set out to do
+        and what they did — at t2 for the reason `what` is: it is the band its
+        page exists for, argued in ruled prose. IT IS NOT NAMED `work`, which is
+        what it carries and would read better as an anchor, because a band id may
+        not be a nav word: `Work` is one of the six, and both this section's
+        generators gate on that collision — the frozen active-section strip
+        resolves chips against band ids and a page that declares one named after
+        a nav destination is a page whose own strip and whose primary nav
+        disagree about what is current. */
+  did: 't2',
+  fellows: 't2', workshops: 't2', cityscapes: 't2', actions: 't2',
+  /* ★ `staff` IS THE FUNDER'S OWN EMPLOYEES ON SCHOOL GROUND (2026-09-08) — a
+     day about forty Niva Bupa staff and fifty students spent building three
+     gardens at one Delhi school. It is t3, the supporting weight `voices` and
+     `watch` take, and NOT t2 with the four deliverables: each of those is a
+     school year of something and this is one afternoon, so it backs the
+     `actions` band above it up with an instance rather than standing beside it
+     as a fifth strand. The same judgement keeps it out of the `kinds` display
+     rows, where it would have been set at 104px. */
+  staff: 't3',
+  /* ★ `horizon` IS THE SHORT-TERM/LONG-TERM FRAME (2026-09-08), and it is t3
+     rather than t2 on purpose: it makes no claim of its own and publishes no
+     figure — it says how to read the four deliverables above it, which is the
+     supporting weight `voices` and `watch` already take. `reach`, the band that
+     carries the two MODELLED indirect figures, needs no row here: it is already
+     declared t2 above for /work's own reach band, and t2 is right for it too —
+     it carries numerals and an argument, at the same weight as the deliverables
+     whose counts it says are a floor. */
+  horizon: 't3',
+  voices: 't3', watch: 't3',
   onward: 't3',
 };
 
@@ -490,8 +541,29 @@ export function workShell() {
    36px clear of the search control, and neither the bar nor the document
    overflows. It is one list for both shells, so this word appears in the
    desktop bar AND the phone's menu panel rather than the two drifting apart. */
+  /* AD-49. THE SEVENTH WORD, AND THE ARITHMETIC THAT LICENSED IT.
+     The nav was closed at six on the grounds that a seventh would not fit a
+     375px bar. MEASURED ON THE LIVE SITE, 8 September 2026, and the premise
+     does not hold: `.navlinks` is `display:none !important` below 941px, so at
+     375px the words are not rendered at all and the Menu button carries the
+     bar. 375 never constrained the word count.
+     At 941px — the narrowest width the words DO render — "Learn" measures 46px
+     and the row goes 389px to 456px inside a 941px bar; height unchanged at
+     62px, one row, nothing spilling, no page overflow. Binary search with the
+     breakpoint overridden puts the true geometric limit at 629px for seven
+     words against 562px for six, so there is 312px of headroom below the point
+     where words appear at all. An eighth would still clear it.
+     SIX REMAINS A DISCIPLINE, NOT A LIMIT. Learn earns the slot on evidence
+     rather than taste: thirty articles, the largest body of writing on the
+     site, and Search Console's first baseline (snapshot 1) shows /now taking
+     9,139 impressions at 0.72% CTR — informational queries landing on a
+     dashboard. Learn is the answer to those queries and was reachable only
+     from the footer.
+     PLACED SECOND, BESIDE `Now`, because the pair is the argument: the reading,
+     then what it means. */
 export const NAV = [
   ['Now', '/now'],
+  ['Learn', '/learn'],
   ['Work', '/work'],
   ['Journeys', '/work/journeys'],
   ['Impact', '/impact'],
@@ -750,8 +822,41 @@ export const WORK_CSS = `
 @media (max-width:759px){.wk-way .b{width:100%;justify-content:center}}
 @media (max-width:759px){.wk-kinds-all .b{width:100%;justify-content:center;
   padding-top:16px;padding-bottom:16px}}
+/* THE READING PAIR'S 2px RULE IS SCOPED BY BAND ID. A band that renders
+   figures() and is not named here gets the 1px light default instead. The four
+   /healthy-cities deliverable bands were added when that page was recut into its
+   four deliverables (2026-09-07) and each one closes on a figures() group.
+
+   ★ THIS LIST IS A DELIBERATE SUBSET, NOT AN OVERSIGHT — do not "complete" it,
+   and do not raise the unpromoted bands as a contrast defect. That has now been
+   raised twice against an earlier wording here, which called the 1px default a
+   silent fallback and implied every figures() band was meant to be promoted. The
+   measurements are recorded so there is not a third time:
+
+     #projects   home.html, paper-2    1.46:1   <- THE FROZEN HOMEPAGE
+     #reach      work/index, paper-2   1.46:1   identical token, ground and value
+     #did        a fellow page, paper  1.56:1
+     promoted bands, on paper                   8.23:1
+     any dark band                              6.14:1, and automatically:
+                                                canvasFor() wraps a #0D0D0B or
+                                                #151512 band in .wk-dark, so the
+                                                dark statement below always wins
+
+   The frozen homepage ships its own reading pair at the 1px default. So that
+   default is a state the authority itself occupies, not a band that got missed.
+   The mark is a hairline kissing a numeral — decoration, carrying nothing the
+   numeral and its label do not already carry, and the non-text contrast rule
+   exempts decoration. Promoting /work/index would also make its register HEAVIER
+   than the homepage's, inverting a hierarchy the frozen page defines.
+
+   Promoting a band is therefore a decision about weight, argued against the
+   homepage — not a contrast repair, and 3:1 is the wrong instrument for a
+   hairline. Contrast is only genuinely in question where a PAPER token reaches a
+   DARK ground, which is what canvasFor() and the dark statement below prevent. */
 #what .w7-pj-num.rl::after,#weight .w7-pj-num.rl::after,
-#done .w7-pj-num.rl::after,#list .w7-pj-num.rl::after{--rl-w:2px;--rl-c:var(--ink-2)}
+#done .w7-pj-num.rl::after,#list .w7-pj-num.rl::after,
+#workshops .w7-pj-num.rl::after,#cityscapes .w7-pj-num.rl::after,
+#actions .w7-pj-num.rl::after,#fellows .w7-pj-num.rl::after{--rl-w:2px;--rl-c:var(--ink-2)}
 
 /* ── (b) THE SAME COMPONENTS, STATED FOR THE DARK GROUND.
       The register rows, the reading pair and the four-kinds rows are all frozen
@@ -1253,6 +1358,15 @@ ${POSTER_CSS}
 .wk-invite-n{margin:clamp(12px,1.4vw,18px) 0 0;color:var(--ink-2);
   font-size:15px;line-height:1.5;max-width:62ch;flex:1 0 100%}
 .wk-dark .wk-invite-n{color:var(--fg-2)}
+/* THE READ-FIRST LINE. flex:1 0 100% puts it on its own row rather than
+   letting it wrap alongside the buttons, and it sits ABOVE the note because the
+   note is the closing clause of the band and nothing should follow it. Same
+   colours as the note, one step quieter than the links beside it: preparation
+   is an offer, not the ask. */
+.wk-invite-r{margin:clamp(10px,1.2vw,14px) 0 0;color:var(--ink-2);
+  line-height:1.55;max-width:68ch;flex:1 0 100%;order:1}
+.wk-invite-n{order:2}
+.wk-dark .wk-invite-r{color:var(--fg-2)}
 @media (max-width:519px){.wk-invite .b-1{width:100%;justify-content:center;padding:16px 20px}}
 /* THE INVITE'S THIRD ROUTE IS AN INLINE LINK AND IT NEEDS A HIT BOX.
    Measured at every width from 320 to 1920: the mailto draws at 111.2 x 17.0px,
@@ -1599,6 +1713,36 @@ ${under ? `      <p class="lbl w7-say-ans">${under}</p>` : ''}
  * reading as five stacked rectangles.
  */
 export const splitBand = ({ left, frame, right, kick, title, say, nums, flip = false, href }) => {
+  /* ★ A FRAME AND A `right` TOGETHER IS A BUILD FAILURE, AND IT USED TO BE A
+     SILENT DELETION. The second column is either the photograph or the prose —
+     it cannot be both, because there is one column — and every branch from the
+     frame branch onward stops referencing `right` entirely. So a caller passing
+     both got valid markup, a passing schema and its authored prose dropped on
+     the floor with nothing anywhere saying so.
+     THAT IS NOT HYPOTHETICAL: /healthy-cities's `schools` and `green` bands
+     passed both from the day the page was built, and two of the best paragraphs
+     on it never shipped — found only when a later pass tried to add a sentence
+     to one of them and could not make it appear. The generator's own call was
+     then fixed (build-healthy-cities.mjs's `deliverable()` emits the prose ABOVE
+     the split where the band has a frame, and passes `right: ''` there), and
+     this is what stops the next caller re-learning it the same way.
+     `''` IS DELIBERATELY ALLOWED, which is what makes the guard usable: the
+     test is truthiness, so `right: frame ? '' : prose` — the shape a caller
+     wants when the composition is conditional — passes untouched.
+     CHECKED AGAINST THE OTHER CALLER BEFORE ADDING IT. build-work-pages.mjs
+     passes a conditional frame alongside `right: figureBlock(...)`, and its
+     frame resolves to `it.statement.frame && !hasStatement(it)` — i.e. non-null
+     only for an item with a statement FRAME but no statement LINE. Every one of
+     the thirteen items carrying a `statement` in data/work/** has both, so that
+     expression is null on all of them and this throw cannot fire today. If one
+     ever loses its line, the frame appears and the figures vanish — which is
+     precisely the failure this is here to make loud. */
+  if (frame && right) {
+    throw new Error('splitBand was given BOTH a frame and a `right` column. The band has one second '
+      + 'column and the frame takes it, so the `right` payload would be discarded in silence — put that '
+      + 'content somewhere that renders (the band lead, its rows, or prose emitted above the split) '
+      + 'rather than leaving it in the data unrendered.');
+  }
   if (!frame && right) {
     return `      <div class="w7-pj-split${flip ? ' wk-flip' : ''}">
         <div class="w7-pj-reg">${left}</div>
@@ -1657,12 +1801,27 @@ export const anc = (label, href) =>
    still accepted and deliberately ignored, so a caller that still passes one
    cannot resurrect it; the AD-28 gate in this file fails the build if a
    `.p-hole` reaches any WORK page by any route at all. */
-export function masthead({ h1, deck, frame, ancestor, chip, note }) {
+/* `lines` — MICRO-CAPS LINES BETWEEN THE ANCESTOR AND THE DECK, and they exist
+   because /healthy-cities is a page somebody FORWARDS. Two sentences have to be
+   on the first screen there and nowhere else on the site puts them in a
+   masthead: who Swechha is (that sentence exists on exactly one other page, the
+   homepage — it is not in the footer and not on /about, so a cold visitor
+   arriving from a funder's email has no answer to "who is this?"), and who the
+   chapter is funded by. The credit goes here rather than into a logo wall
+   because this design has refused every foreign trademark for the whole site,
+   and the highest place a non-display element may sit is the strongest credit
+   the language can give anyone.
+   Each entry is a whole element, so the caller owns its class and its copy;
+   default [] means every existing caller's output is byte-identical. Display
+   type may sit on a photograph and nothing else may, so these land in
+   .pic-body with the deck, never in .pic-over. */
+export function masthead({ h1, deck, frame, ancestor, chip, note, lines = [] }) {
   const head = `        <h1 class="d1" id="top-h">${h1}</h1>`;
   void note;
   const noteP = '';
   const under = [
     ancestor ? `        <p style="margin:0">${ancestor}</p>` : '',
+    ...lines.map(l => `        ${l}`),
     deck ? `        <p class="lead">${deck}</p>` : '',
     noteP ? `        ${noteP}` : '',
     chip ? `        <p style="margin:0">${chip}</p>` : '',
@@ -1675,7 +1834,7 @@ export function masthead({ h1, deck, frame, ancestor, chip, note }) {
        putting it under the h1 instead would set a 62ch paragraph beneath 104px
        display type and read as a second deck. Below 900 .im-head stacks and the
        note follows the deck, which is the reading order either way. */
-    const col2 = [deck ? `<p class="lead">${deck}</p>` : '', noteP].filter(Boolean).join('');
+    const col2 = [...lines, deck ? `<p class="lead">${deck}</p>` : '', noteP].filter(Boolean).join('');
     return `    <div class="wk-mast"><div class="wrap">
 ${ancestor ? `      <p style="margin:0 0 6px">${ancestor}</p>` : ''}
       <div class="im-head">
@@ -1758,20 +1917,66 @@ export const period = (p) => {
  * them cannot spend 136px on line breaks and stay inside the 900px band cap.
  * Nothing is lost — both facts are still on the page, beside each other.
  */
-/* AD-28. THE SOURCE LINE IS GONE, and so is the counted-versus-modelled rule
-   under the label. These are organisational pages: the figure stands on its
-   own, and a figure Swechha cannot stand behind is not published rather than
-   published with an apparatus round it. The basis rule went with the legend
-   that decoded it — an unexplained dotted rule tells a reader nothing — so
-   every label takes the plain one. The caption line is OMITTED, not emptied,
-   where there is no span to state. */
+/* AD-28. THE SOURCE LINE IS GONE. The basis of a figure is NOT the source line
+   and does not go with it: a source says who counted, a basis says whether
+   anybody counted at all, and only the first of those is the apparatus AD-28
+   struck. That ruling was written when every figure on these pages was
+   counted, so "every label takes the plain one" cost nothing and was never
+   tested against a figure that was not.
+
+   IT IS TESTED NOW, and it fails. `p-kd-c` has NO CSS DEFINITION ANYWHERE —
+   the solid 2px rule comes from `.p-kd` itself — so the class is semantic
+   only, and the semantics were wrong: /impact and all six situation pages
+   print the legend "Counted or measured / Modelled" over a solid rule and a
+   dotted one, which teaches every reader of this site that a solid rule under
+   a label means somebody counted it. Bridge the Gap's 3M+ is MODELLED and was
+   shipping under that rule on three pages.
+
+   THE BASIS WORD TAKES THE HIGHEST FREE SLOT, which is one rule and not a
+   branch to get wrong:
+     - the marker above the numeral, where nothing else claims it — a project
+       page, a fellow page, /healthy-cities;
+     - the caption line otherwise, beside the span — /work and /work/projects
+       put the PROJECT NAME in that marker, and the name is the thing the
+       reader needs first in a list that mixes projects together.
+   Neither placement adds a line: the marker and the caption are both already
+   rendered on the figures that have them, and a figure with no span prints the
+   word alone rather than an empty caption. The dotted rule follows the word
+   for `modelled` in either placement, so the site-wide vocabulary reads the
+   same here as on /impact.
+
+   ONE TERM, AND IT IS THE ESTIMATE'S. The copy pass of 10 September emptied
+   this table; the second sweep put back `modelled` and nothing else, because
+   three estimates were left sitting unmarked among counted figures. An
+   unmarked numeral reads as counted, which is what every other figure here
+   is, so the word is spent where it stops a misreading and nowhere else.
+   "Modelled" is the word, matching the legend the situation pages print.
+
+   `planned` STAYS UNMARKED AND KEEPS THE PLAIN RULE. A target is neither
+   counted nor modelled, and drawing it as "modelled" would be a second false
+   statement in place of the first; the one figure that carries it is a count
+   of curriculum modules, where nobody is being invited to read a headcount.
+   The caption line is OMITTED, not emptied, where there is nothing to state. */
+const BASIS_WORD = { modelled: 'Modelled' };
+export const basisWord = (f) => BASIS_WORD[f && f.basis] || '';
+export const basisRule = (f) => `p-kd ${f && f.basis === 'modelled' ? 'p-kd-m' : 'p-kd-c'}`;
+/* The caption a figure carries once its basis has been placed: the word joined
+   to the span where the marker above was already taken, the span alone where
+   it was not, and '' where there is neither — which callers must read as
+   "render no caption line". */
+const basisCap = (f, span, markerTaken) => {
+  const w = markerTaken ? esc(basisWord(f)) : '';
+  return w && span ? `${w} &middot; ${span}` : (w || span);
+};
 export const figure = (f) => {
   const span = period(f.period);
+  const mark = f.owner || esc(basisWord(f));
+  const cap = basisCap(f, span, Boolean(f.owner));
   return `        <span>
-          ${f.owner ? `<span class="lbl wk-fig-o">${f.owner}</span>` : ''}
+          ${mark ? `<span class="lbl wk-fig-o">${mark}</span>` : ''}
           <span class="w7-pj-num rl"><span class="num">${f.value.replace(/\+$/, '<sup>+</sup>')}</span></span>
-          <span class="lbl w7-pj-nl"><span class="p-kd p-kd-c">${esc(f.label)}</span></span>${span
-    ? `\n          <span class="cap wk-fig-m">${span}</span>` : ''}
+          <span class="lbl w7-pj-nl"><span class="${basisRule(f)}">${esc(f.label)}</span></span>${cap
+    ? `\n          <span class="cap wk-fig-m">${cap}</span>` : ''}
         </span>`;
 };
 
@@ -1795,8 +2000,17 @@ export const regRows = (items, { duration = false, start = 1 } = {}) => {
     const lead = duration && it.duration
       ? `<span class="w7-jr-dur w7-pj-n"><span class="num">${it.duration.value}</span><i>${esc(it.duration.unit)}</i></span>`
       : `<span class="lbl w7-pj-n" aria-hidden="true">${String(start + i).padStart(2, '0')}</span>`;
+    /* THE ONE LICENSED INLINE PRE-LINE, the same one displayRows already
+       carries: the `.lbl` hook above an item's name, as the frozen homepage's
+       band 7 has it. A row may carry ONE, and on /healthy-cities it names the
+       place and state a fellow worked in — which is the fact that distinguishes
+       ten rows of one person's name each. Omitted where absent, so every
+       existing register in this section renders exactly as before; a row with a
+       pre-line has three rows in its content column instead of two, which is
+       why the ordinal's span is re-stated per page rather than here. */
+    const pre = it.pre ? `\n          <p class="lbl w7-pj-pre">${it.pre}</p>` : '';
     return `        <li id="${esc(it.anchor)}"><a href="${it.href}">
-          ${lead}
+          ${lead}${pre}
           <h3 class="w7-pj-rt">${it.name}</h3>
           <p class="w7-pj-rf">${it.line}</p>
         </a></li>`;
@@ -1977,15 +2191,19 @@ export const FIGURE_RAIL_MIN = 2;
 export const figureRail = (figs) => {
   const list = (figs || []).slice(0, FIGURE_RAIL_MAX);
   if (list.length < FIGURE_RAIL_MIN) return '';
-  /* AD-28. The tile is the numeral, its label and its span. No source line and
-     no basis rule — same reasoning as `figure()`. The span line is omitted
-     where the data has no span to state. */
+  /* AD-28. The tile is the numeral, its label and its span. No source line —
+     same reasoning as `figure()`, and the same correction: the BASIS is not the
+     source and travels with the figure. A tile has no marker slot above the
+     numeral, so the word always goes to the caption line beside the span, and
+     the rule under the label follows it. The caption line is omitted where
+     there is neither a word nor a span to state. */
   const tile = (f) => {
     const span = period(f.period);
+    const cap = basisCap(f, span, true);
     return `        <div class="ip-ovl-c">
           <p class="num ip-ovl-v">${f.value.replace(/\+$/, '<sup>+</sup>')}</p>
-          <p class="lbl ip-ovl-l"><span class="unit p-kd p-kd-c">${esc(f.label)}</span></p>${span
-    ? `\n          <p class="cap ip-ovl-s">${span}</p>` : ''}
+          <p class="lbl ip-ovl-l"><span class="unit ${basisRule(f)}">${esc(f.label)}</span></p>${cap
+    ? `\n          <p class="cap ip-ovl-s">${cap}</p>` : ''}
         </div>`;
   };
   /* NO LEGEND ON THE RAIL, and that is the reference's own choice rather than a
@@ -2067,18 +2285,71 @@ ${rows.map(r => {
  * architecture is derived from it and its gate 1 is total. Where a still-
  * navigating primary needs a deeper landing it is deepened at RENDER time.
  */
-export const inviteRow = ({ act, second, note, asks }) => {
+/**
+ * `back` IS THE RECIPROCAL LINK, AND IT IS A SEPARATE SLOT FROM `second` ON
+ * PURPOSE.
+ *
+ * `/schools` compares six programmes and links every one of them; until this
+ * slot existed, not one of the six linked back. The only route from a
+ * programme page to the page that compares it was the footer index — which is
+ * on all 93 pages and is therefore no signal at all, to a reader or to a
+ * crawler. So a coordinator who arrived on `/work/journeys/naturescapes` from
+ * search had no way to discover that five other programmes exist, and the hub
+ * accumulated no reciprocal link equity from the pages it feeds.
+ *
+ * IT IS NOT FOLDED INTO `second` because `second` is already spent on two of
+ * the six with links that are genuinely better than this one — farm-school's
+ * "The farm itself" and bridge-the-gap's "Healthy Cities, 2025-26" — and
+ * AD-27.29 removed the `/about` link from that slot precisely for going
+ * somewhere wrong. Overloading it would mean choosing, per item, between the
+ * reciprocal link and a real destination. Two slots, no choice.
+ *
+ * The CALLER decides which items get it, from `data/schools.json`'s own rows,
+ * so it cannot be attached to a programme the hub does not list. See
+ * build-work-pages.mjs's SCHOOL_LISTED and gate on it.
+ */
+/**
+ * `read` IS THE OTHER HALF OF THE STUDENT PATH, and it is the direction that
+ * was missing rather than the one that was wrong.
+ *
+ * Every one of the twenty-six Learn explainers already opens a programme — a
+ * reader who has just understood what PM2.5 is gets offered the walk where they
+ * would stand in it. The reverse did not exist. A teacher or a student who
+ * arrived on `/work/journeys/yamuna-yatra` from search had no route to the
+ * explanation of dissolved oxygen and BOD that makes the journey legible before
+ * they go, which left a programme page reading as a booking page rather than as
+ * the field half of a knowledge system.
+ *
+ * The slugs are NOT chosen here. `data/schools.json`'s programme rows already
+ * declare, per programme, which explainers a cohort should read first — the
+ * hub renders them as "Read first: …" — so this renders the SAME declaration on
+ * the programme's own page. One editorial decision, two places it shows.
+ *
+ * A `.cap` line rather than a fourth door: a door is a destination and these
+ * are preparation, and three or four of them in a card grid would outweigh the
+ * one thing the band is for.
+ */
+export const inviteRow = ({ act, second, note, asks, back, read }) => {
+  const onward = [
+    second ? `        <a class="act" href="${second.href}">${second.label} ${ARROW}</a>` : '',
+    back ? `        <a class="act" href="${back.href}">${back.label} ${ARROW}</a>` : '',
+  ].filter(Boolean).join('\n');
+  const first = read && read.length
+    ? `\n        <p class="cap wk-invite-r">Read first: ${read
+      .map((r) => `<a class="lk" href="${r.href}">${r.label}</a>`).join(' &middot; ')}</p>`
+    : '';
+  /* THE NOTE IS OPTIONAL. /work/projects and /work/journeys carried "Reading
+     this page is not the point of it." — a page narrating itself — and cutting
+     it leaves the Ask and its links standing. An empty note renders no
+     paragraph rather than an empty one. */
+  const nt = note ? `\n        <p class="wk-invite-n">${note}</p>` : '';
   if (asks && asks.length) {
     return `      <div class="wk-invite wk-invite-ask">
-${asks.join('\n')}${second ? `
-        <a class="act" href="${second.href}">${second.label} ${ARROW}</a>` : ''}
-        <p class="wk-invite-n">${note}</p>
+${asks.join('\n')}${onward ? `\n${onward}` : ''}${first}${nt}
       </div>`;
   }
   return `      <div class="wk-invite">
-        <a class="b b-1" href="${act.href}">${act.label} ${ARROW}</a>${second ? `
-        <a class="act" href="${second.href}">${second.label} ${ARROW}</a>` : ''}
-        <p class="wk-invite-n">${note}</p>
+        <a class="b b-1" href="${act.href}">${act.label} ${ARROW}</a>${onward ? `\n${onward}` : ''}${first}${nt}
       </div>`;
 };
 
@@ -2375,6 +2646,7 @@ ${HEAD_ICONS}
 ${headSocial(title, desc, url, ogType)}
 ${sh.HEAD_FONTS}
 ${TRACKER}
+${HASH_STRIP}
 <style>
 ${stripCssComments([sh.CSS, sh.SITUATION_CSS, SHARED_PAGE_CSS, sh.COMPONENT_CSS, WORK_CSS, pageCss].join('\n'))}</style>
 </head>

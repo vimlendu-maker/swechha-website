@@ -42,11 +42,11 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 import { writeFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve, join } from 'node:path';
-import { HAZARD_TERMS, TIER1, TIER2, SEVERITY_TERMS, NEGATIVE_TERMS, hay, ownedElsewhere, coordsFor, regionOf } from './lib/event-terms.mjs';
+import { HAZARD_TERMS, SEVERITY_TERMS, NEGATIVE_TERMS, hay, hayPlace, ownedElsewhere, coordsFor, regionOf, headlinePenalty, classifyPlace, classifyHazard } from './lib/event-terms.mjs';
 import { consolidate } from './lib/event-figures.mjs';
 import { dedupeFeedItems, anchorPublished, lastUpdatedFrom, feedCollapse } from './lib/event-feed.mjs';
 import { HAZARDS, hasContext } from './lib/climate-events.mjs';
-import { publishStateFor } from './lib/active-situation.mjs';
+import { publishStateFor, keepEditorFields } from './lib/active-situation.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const DIR = join(ROOT, 'data', 'climate-events');
@@ -247,34 +247,6 @@ async function liveWeather(place) {
 
 /* ═══ 2. CLASSIFY ═════════════════════════════════════════════════════════ */
 
-/** Which hazard is this item about? First strong match wins — HAZARD_TERMS is
- *  ordered specific-to-general precisely so "glacial lake outburst" beats
- *  "flood" and pulls the right context pack. */
-function classifyHazard(h) {
-  for (const t of HAZARD_TERMS) if (t.strong.some((w) => h.includes(w))) return { hazard: t.hazard, strength: 'strong' };
-  for (const t of HAZARD_TERMS) {
-    const n = t.weak.filter((w) => h.includes(w)).length;
-    if (n >= 2) return { hazard: t.hazard, strength: 'weak' };
-  }
-  return null;
-}
-
-/** Where is it, and does that place reach India? */
-function classifyPlace(h) {
-  const t1 = TIER1.filter((p) => h.includes(p));
-  if (t1.length) {
-    return { tier: 1, place: title(t1.sort((a, b) => b.length - a.length)[0]), relevance: 'direct', why: null };
-  }
-  for (const z of TIER2) {
-    const hit = z.match.filter((p) => h.includes(p));
-    if (hit.length) {
-      return { tier: 2, place: title(hit.sort((a, b) => b.length - a.length)[0]), relevance: z.relevance, why: z.why };
-    }
-  }
-  return null;
-}
-
-const title = (s) => s.replace(/\b[a-z]/g, (c) => c.toUpperCase());
 
 function severityHits(h) {
   const out = {};
@@ -309,7 +281,7 @@ function cluster(items) {
     if (other) { routed.push({ title: it.title, ...other }); continue; }
     const neg = negativeHits(h);
     const hz = classifyHazard(h);
-    const pl = classifyPlace(h);
+    const pl = classifyPlace(hayPlace(it));
     if (!hz || !pl) continue;
     /* Out of this page's scope is a skip. A missing context pack is NOT —
        the event is still detected and published, just without its standing
@@ -489,12 +461,6 @@ const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-
       about the event itself is a better hero than an aggregator's digest of
       the day, so roundup markers are penalised and a clean, specific headline
       wins. */
-const ROUNDUP_MARKERS = [
-  'news today', 'live updates', 'live:', 'highlights', 'top news', 'morning digest',
-  'evening digest', 'what we know', 'explained', 'in pics', 'in photos', 'watch:',
-  'top 10', 'roundup', 'wrap', 'daily brief', 'newsletter', 'opinion', 'editorial',
-];
-
 function cleanHeadline(title, publisher) {
   let t = String(title || '').trim();
   if (publisher && t.endsWith(` - ${publisher}`)) t = t.slice(0, -(publisher.length + 3)).trim();
@@ -514,48 +480,6 @@ function cleanHeadline(title, publisher) {
   return t;
 }
 
-/* Signals that a headline is about ONE PERSON rather than the event. The first
-   real run picked "Nepal flash floods: Software engineer from A.P.'s Kuppam
-   'missing', family appeals for assistance" as the lead for a disaster carried
-   by 123 publishers — a true story, and the wrong one to head a situation
-   board, because it describes an individual case rather than the event. */
-const PERSONAL_MARKERS = [
-  'family appeals', 'appeals for', 'my son', 'my husband', 'my father', 'my brother',
-  'engineer from', 'student from', 'native of', 'hails from', 'resident of',
-  'body found', 'last seen', 'speaks to', 'recalls', 'tells us', 'i was', 'we were',
-  'survivor', 'eyewitness', 'trapped for', 'rescued after', 'reunited',
-];
-/* Words that indicate the headline describes the event at scale. */
-const SCALE_MARKERS = [
-  'toll', 'dead', 'killed', 'missing', 'districts', 'villages', 'evacuated',
-  'displaced', 'swept', 'washed away', 'destroyed', 'submerged', 'stranded',
-  'alert', 'warning', 'rescue', 'relief', 'damage', 'bridge', 'highway',
-];
-
-/** Lower is better. Penalises roundups, single-person stories, questions, and
- *  titles that are too long or too short to work as a page heading; rewards
- *  headlines that name the hazard and describe it at scale. */
-function headlinePenalty(title, hazard) {
-  const t = String(title || '').toLowerCase();
-  let p = 0;
-  for (const m of ROUNDUP_MARKERS) if (t.includes(m)) p += 4;
-  for (const m of PERSONAL_MARKERS) if (t.includes(m)) p += 5;
-  if (/[‘’'"“”]/.test(title || '')) p += 2;        // a quoted word is usually one person speaking
-  if (t.includes('?')) p += 2;
-  if (t.split(':').length > 2) p += 2;
-  const scale = SCALE_MARKERS.filter((m) => t.includes(m)).length;
-  p -= Math.min(4, scale * 2);
-  const hazWords = { glof: ['glacial', 'glacier', 'outburst'], cloudburst: ['cloudburst'],
-    flood: ['flood'], landslide: ['landslide', 'landslip'], cyclone: ['cyclone'],
-    extreme_rain: ['rain', 'rainfall'] }[hazard] || [];
-  if (hazWords.some((w) => t.includes(w))) p -= 2;
-  if (/\d/.test(t)) p -= 1;                        // a number is usually a count
-  const n = t.length;
-  if (n > 110) p += 2;
-  if (n < 30) p += 2;
-  return p;
-}
-
 /** The headline that will lead the page: least penalised, then most recent. */
 function pickLead(items, hazard) {
   return items.slice().sort((a, b) => {
@@ -566,51 +490,18 @@ function pickLead(items, hazard) {
 }
 
 /* ── FIELDS THE DETECTOR MUST NEVER TOUCH ─────────────────────────────────
-   ★ THIS WAS A LIVE BUG AND IT HAD A THIRTY-MINUTE FUSE.
-   dossier() below rebuilds the object from a FIXED key set, so any field not
-   named in it is dropped on the next run. That silently discarded:
+   dossier() below rebuilds the event from a FIXED key set, so anything it does
+   not name is dropped on the next scheduled run — and that run happens on
+   every CI tick. keepEditorFields(), imported from lib/active-situation.mjs,
+   is what stops that eating a person's decision: the detector owns exactly the
+   keys this run produced and every other key on the previous file survives.
 
-     situation_status   the lifecycle. An editor demoting an event off the
-                        homepage would have had the decision reverted by the
-                        next scheduled detection, thirty minutes later, with
-                        the page quietly promoting itself again.
-     hero_days          read by isCurrent() in lib/climate-events.mjs. A slow
-                        event granted a longer window lost it the same way,
-                        and this one predates the lifecycle entirely.
-     cause_status       an editor raising a candidate cause from "under
-                        investigation" to "confirmed" once fieldwork lands.
-
-   AN ALLOWLIST, NOT A SPREAD OF `existing`. Spreading the previous file over
-   the new one would also freeze the score, the corroboration counts, the
-   sources and the timestamps — the things this script exists to update. The
-   division is the same one the whole file runs on: the detector owns the
-   EVIDENCE, a person owns the EDITORIAL JUDGEMENT, and neither may overwrite
-   the other. Adding a new human-set field means adding it here, and a comment
-   saying so sits on each of them at the point of use. */
-const EDITOR_OWNED = [
-  'situation_status',      // active | developing | stabilising | demoted | archived
-  'situation_status_why',  // printed beside it when a person set it
-  'hero_days',             // overrides the 14-day evidence window
-  'cause_status',          // { causeId: confirmed | likely | under_investigation | not_established }
-  'location_detail',       // a precise place the feeds do not carry
-  'coords', 'coords_note', // and its coordinates, which drive the map and the satellite frame
-  'downstream', 'downstream_note', // THIS event's river, not the hazard's generic chain
-  'mechanism_stated',
-  'occurred_detail',       // a precise onset the feeds do not carry
-  'owner_figures',         // figures supplied by an editor, with their own sources
-  'reported_imagery',      // higher-resolution before/after at its publisher, linked not reproduced
-  'owner_images',          // and the same imagery published HERE, where permission exists
-  'editor_note',
-];
-
-/** Carry every editor-owned field across untouched. */
-function keepEditorFields(next, existing) {
-  if (!existing) return next;
-  for (const k of EDITOR_OWNED) {
-    if (existing[k] !== undefined) next[k] = existing[k];
-  }
-  return next;
-}
+   ★ THERE IS DELIBERATELY NO LIST HERE ANY MORE. There was one, and it was
+   forgotten four times out of four — the last of them, `withdrawn_why`, held
+   this workflow red for eleven consecutive runs. Adding a human-set field now
+   costs nothing: write it in the file, and it is carried. The full account,
+   the measurement behind it and the one property that makes it safe are on
+   keepEditorFields() itself. */
 
 /** Build the dossier. Every figure it emits is a count this script performed
  *  itself; every sentence it emits is either quoted from a headline or is the
@@ -884,11 +775,19 @@ async function dossier(c, s, existing) {
        evidence moved. The page labels it with its own fetch time either way. */
     live_conditions: unchanged && existing.live_conditions
       ? existing.live_conditions : await liveWeather(c.place),
+    /* THE DETECTOR BLOCK IS INTERNAL AND NO LONGER REACHES A READER. Until the
+       10 September 2026 copy pass the event page printed all three of these —
+       "assembled … by scripts/detect-climate-events.mjs, which scored this event
+       22 against a publication threshold of 14", and a note beginning "Every
+       figure is a count this script performed". Naming our own source file to a
+       reader was the client's first example of what the site must stop doing.
+       The fields stay: the score and the threshold are how a demotion is
+       reasoned about, and `script` records which detector wrote the dossier.
+       The prose note went, because nothing renders it and a string that exists
+       only to be printed is a page waiting to print it again. */
     detector: {
       script: 'scripts/detect-climate-events.mjs',
       threshold: THRESHOLD,
-      note: 'Assembled automatically from published headlines and official alert feeds. '
-          + 'Every figure is a count this script performed; no claim about the event is made in its own voice.',
     },
     fetched: { epochMs: NOW },
   };
@@ -984,8 +883,8 @@ console.log(`\n${clusters.length} candidate cluster(s), threshold ${THRESHOLD}:\
 let written = 0;
 for (const { c, s } of clusters) {
   const prior = existing.get(slugify(`${c.place}-${c.hazard}`));
-  /* keepEditorFields() carries the human-set fields across — see EDITOR_OWNED
-     above for why an allowlist and not a spread. */
+  /* keepEditorFields() carries a person's fields across: the detector keeps
+     the keys this run produced, the previous file keeps everything else. */
   const d = keepEditorFields(await dossier(c, s, prior), prior);
   const mark = publishable(s) ? 'PUBLISH' : 'draft  ';
   console.log(`  ${mark} ${String(s.total).padStart(3)}  ${c.hazard} @ ${c.place}`

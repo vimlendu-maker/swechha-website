@@ -22,8 +22,8 @@ const nextConfig: NextConfig = {
   async rewrites() {
     /* THE TWO ANALYTICS RULES COME FIRST and are exact paths, so no
        designRoutes() pattern can shadow them. They are what make the tracker
-       first-party: the browser asks THIS origin for `/record` and posts to
-       THIS origin at `/api/record`, and Vercel forwards both to the Umami
+       first-party: the browser asks THIS origin for `/ledger` and posts to
+       THIS origin at `/api/ledger`, and Vercel forwards both to the Umami
        deployment. That is why the CSP below needs no allow-list entry — see
        the inventory note in headers(). Remove this proxy and the policy has
        to change. */
@@ -104,7 +104,7 @@ const nextConfig: NextConfig = {
          APPEAR IN THIS LIST. That is not an oversight and not an exemption.
          The site runs its own Umami instance, and its tracker and collector
          are proxied through this origin by the first two rules in `rewrites()`
-         above — the browser only ever sees `/record` and `/api/record` on
+         above — the browser only ever sees `/ledger` and `/api/ledger` on
          swechha.in, so both are first-party fetches. `script-src 'self'` and
          `connect-src 'self'` therefore still describe the truth exactly, and
          no third-party host was granted anything.

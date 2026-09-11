@@ -1,0 +1,137 @@
+name: Can the generated-pages gate run?
+
+# WHY THIS EXISTS
+# A `pull_request` workflow runs against the pull request's MERGE REF,
+# `refs/pull/N/merge`. GitHub only creates that ref if the head merges cleanly
+# into the base. When a PR conflicts, the ref does not exist and every
+# `pull_request` workflow SILENTLY DOES NOT RUN — no failed run, no skipped
+# run, nothing in `gh run list`, and no check on the PR. An absent check
+# renders as no check at all, so the board looks clean.
+#
+# generated-current.yml is this repository's only quality gate and it is
+# `pull_request`-triggered. It regenerates all 60 built pages and fails if the
+# tree moves, which is the one thing that catches a stale committed artefact.
+# So a conflict switches that gate off, invisibly, and the PR merges unchecked.
+#
+# Observed 5 September 2026: PRs #69-#72 had merge refs and the `current` check
+# ran; #73 had no merge ref and carried NO check for forty minutes; #74, opened
+# after #73, ran normally. Nothing about the repository looked broken.
+#
+# ★ THIS IS DELIBERATELY NOT TRIGGERED ON `pull_request`, AND THAT IS THE
+# WHOLE DESIGN. A check for "did the checks run" that runs on `pull_request` is
+# blinded by exactly the condition it detects: a conflicting PR would produce
+# no run of THIS either. `pull_request_target` is no answer either — even
+# granting it fires for a conflicting PR, NO `pull_request*` TRIGGER FIRES WHEN
+# `main` MOVES, and a bot commit landing on main is how a PR becomes
+# conflicting here (main takes ~13 bot commits every six hours, each restamping
+# data/seo/lastmod.json). A PR that was mergeable when opened and conflicting
+# an hour later generates no PR event at all. Only a clock is independent of
+# mergeability. `schedule` is demonstrably reliable enough in this repository —
+# air-hourly, ward-alerts and climate-events all run on it.
+#
+# It publishes a COMMIT STATUS on each open PR's head SHA, because that is what
+# makes a signal appear on the PR itself. A scheduled job that merely fails in
+# the Actions tab rebuilds the original defect one level up: the defect is that
+# nobody looks there.
+#
+# ★ A CONFLICTING PR DOES NOT TURN THIS RUN RED. The PR carries the red. An
+# hourly red job would email the owner every hour about a PR they already know
+# about, which is how a check gets muted. This run fails only when it could not
+# do its job — a bad token, or the API refusing.
+#
+# The logic, the lazy-`mergeable` retry and the decision table are in
+# scripts/check-merge-refs.mjs, which explains each verdict.
+
+on:
+  schedule:
+    # ★ HOURLY AT :50, WHICH IS AFTER THE COMMITS THAT CAUSE THE CONFLICTS.
+    # air-hourly.yml polls at :34 and pushes a few minutes later, and that push
+    # to `main` is the single likeliest thing to make an open PR conflict. A
+    # check at :25 would keep measuring a state its own repository invalidates
+    # fifteen minutes later, and would report a PR clean for 45 minutes after
+    # it had stopped being gated.
+    #
+    # Hourly rather than every six hours because `main` moves hourly, so an
+    # open PR's answer has a useful life of about an hour; and hourly rather
+    # than every fifteen minutes because a reviewer's own latency is far longer
+    # than that, so the extra runs would buy nothing a reader could use.
+    #
+    # ★ THIS COSTS NO DEPLOYMENTS. It pushes nothing, and every commit to main
+    # is a Vercel deployment on a 100/day Hobby budget that has already been
+    # exhausted once (5 September). lib/workflows.test.ts totals the scheduled
+    # workflows that commit; this one is absent from that sum by construction,
+    # and must stay that way — add a push step here and it starts spending a
+    # budget it was never given.
+    #
+    # HOURS 0-17 UTC, NOT `*`. Nothing on this repository's schedule runs
+    # between midnight and 05:00 IST (owner's instruction, 5 September), cron
+    # is UTC, and IST is +5:30 — so the quiet window is UTC 18:30-23:30 and the
+    # permitted hours are not a tidy range. :50 in hour 18 UTC is 00:20 IST,
+    # inside it. lib/workflows.test.ts computes this per slot and will fail if
+    # anyone adds an hour by eye.
+    - cron: '50 0-17 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Work out every verdict and print it, but publish no statuses'
+        type: boolean
+        default: false
+      pr:
+        description: 'Only this PR number (blank = every open PR)'
+        type: string
+        default: ''
+      force_unknown:
+        description: 'Pretend `mergeable` never resolves, to exercise the lazy-computation path'
+        type: boolean
+        default: false
+
+concurrency:
+  # Two overlapping runs would race to publish a status on the same SHA, and
+  # the loser's verdict is the one that sticks.
+  group: merge-ref-check
+  cancel-in-progress: false
+
+permissions:
+  # THE MINIMUM, AND EACH LINE IS LOAD-BEARING. Every other workflow here
+  # declares `contents: read` alone, which is not enough for this one:
+  #   contents:      actions/checkout
+  #   pull-requests: list the open PRs and read each one's `mergeable`
+  #   statuses:      POST /repos/{repo}/statuses/{sha} — the whole point
+  # Without `statuses: write` the run goes green having published nothing,
+  # which is this workflow's own version of the failure it exists to catch.
+  contents: read
+  pull-requests: read
+  statuses: write
+
+jobs:
+  merge-refs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # SHALLOW ON PURPOSE — no `fetch-depth: 0`. The script needs a checkout
+      # only for itself; it reads GitHub over the API. Its one git-dependent
+      # path (the merge-tree tie-breaker, used only when the API will not say
+      # whether a PR is mergeable) deepens the clone ITSELF, on the rare run
+      # that reaches it. `fetch-depth: 0` here would clone 245MB of history
+      # every hour to serve maybe one run in twenty.
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      # NO `npm ci`. scripts/check-merge-refs.mjs has zero dependencies — it
+      # uses Node 22's global fetch — so an install would add a minute to a
+      # twenty-second job. Do not add a dependency to that script without
+      # adding the install here; it will fail on the import, which is at least
+      # loud.
+      - name: Publish a status on every open PR
+        env:
+          # The job's own token. It carries exactly the three permissions
+          # declared above, and a status it publishes is attributed to
+          # github-actions[bot].
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_REF_DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+          MERGE_REF_ONLY: ${{ inputs.pr }}
+          MERGE_REF_FORCE_UNKNOWN: ${{ inputs.force_unknown && '1' || '' }}
+        run: npm run check:merge-refs

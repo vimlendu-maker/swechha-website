@@ -1,0 +1,70 @@
+{
+  "slug": "air-quality-apps-disagree",
+  "category": "air",
+  "h1": "Why do two air apps<br>show different numbers?",
+  "card": "Four reasons two honest sources give you a different AQI for the same city at the same minute.",
+  "frame": {
+    "src": "/images/photos/india-gate-hero.jpg",
+    "alt": "India Gate through Delhi haze"
+  },
+  "answer": "Because AQI is not a physical quantity. It is a scale, and different publishers use different scales, different station sets, different averaging and different rules about which station represents the city. Two apps showing 180 and 320 for Delhi can both be correct. The single most common cause is that one is using India's CPCB scale and the other the US EPA scale, which convert the same concentration into different numbers.",
+  "explainHead": "Four places the answer can diverge",
+  "explainLead": "In order of how much difference each one makes.",
+  "explain": [
+    "<b>The scale.</b> An index converts a concentration into a number using breakpoints, and the breakpoints are a national policy choice. India's National Air Quality Index and the US EPA's 2016 AQI are built on different ones, so identical air produces two different index values. This is not a measurement disagreement at all &mdash; it is a units problem wearing the same name.",
+    "<b>Which station.</b> Delhi has more than forty continuous monitors and they disagree with each other more than any two publishers do. An app showing the nearest station, one showing a city average, and one showing the worst monitor are answering three different questions.",
+    "<b>Which stations exist.</b> Publishers do not carry the same network. Aggregators list a subset of the official stations and sometimes add low-cost sensors the official network does not include, so two \"city averages\" can be averages of different things.",
+    "<b>The averaging window.</b> Particulate sub-indices are computed over 24 hours, ozone and carbon monoxide over eight. An app showing a raw hourly concentration and one showing the rolling index will diverge most sharply exactly when conditions are changing fastest."
+  ],
+  "defs": [
+    { "term": "Breakpoint", "d": "The concentration at which an index crosses a band boundary. Set per pollutant, per country." },
+    { "term": "Aggregator", "d": "A publisher that republishes other networks' data, sometimes with sensors of its own added." },
+    { "term": "Low-cost sensor", "d": "A cheap optical particle counter. Useful in numbers, and not equivalent to a reference-grade monitor." }
+  ],
+  "standard": {
+    "chip": "The scales",
+    "head": "Same air, two indices",
+    "lead": "This site reads CPCB. It also reads a second publisher purely as a cross-check, and that publisher uses a different scale — which is stated rather than quietly reconciled.",
+    "rows": [
+      { "name": "The index this site publishes", "value": "CPCB National Air Quality Index", "authority": "Central Pollution Control Board, 2014" },
+      { "name": "The scale our cross-check source uses", "ref": { "file": "air-crosscheck.json", "path": "source.scale" }, "authority": "World Air Quality Index project" },
+      { "name": "Top of CPCB's ‘Satisfactory’ band", "ref": { "file": "air-delhi.json", "path": "aqiLimit" }, "unit": "AQI", "authority": "CPCB National Air Quality Index" },
+      { "name": "Bottom of CPCB's ‘Severe’ band", "ref": { "file": "air-delhi.json", "path": "bands.5.idx.0" }, "unit": "AQI", "authority": "CPCB National Air Quality Index" },
+      { "name": "PM2.5, 24-hour — the enforceable figure underneath any index", "ref": { "file": "air-delhi.json", "path": ["limits", "PM2.5", "h24"] }, "unit": "µg/m³", "authority": "CPCB, NAAQS 2009" }
+    ],
+    "after": [
+      "The last row is the one that settles arguments. An index is a communication device and its number is scale-dependent; a concentration in micrograms per cubic metre is a measurement, and it is the same number whoever publishes it. When two apps disagree, ask both for the concentration."
+    ]
+  },
+  "readHead": "Which number should you act on",
+  "readLead": "It depends on what you are deciding, which is why there is no single right app.",
+  "measure": [
+    "<b>Deciding whether to go outside where you are?</b> The nearest reporting station, and its governing pollutant. A city figure is not about your street.",
+    "<b>Comparing today with last week?</b> Anything, as long as it is the same source, same station and same scale each time. Consistency matters more than which one.",
+    "<b>Comparing Delhi with Beijing or London?</b> Use concentrations, never indices. Three countries, three sets of breakpoints.",
+    "<b>Quoting a figure publicly?</b> Name the source, the station and the observation time. <a class=\"lk\" href=\"/learn/cpcb-aqi\">Three different figures</a> circulate as “Delhi's AQI” and they are not the same number."
+  ],
+  "cannot": [
+    "No index can be converted back into a concentration. The mapping runs one way.",
+    "Two indices on different scales cannot be averaged, compared or reconciled into a third.",
+    "A disagreement between apps cannot tell you which is more accurate. It usually tells you they answered different questions.",
+    "None of them measures indoor air, which is where most of the exposure happens."
+  ],
+  "live": {
+    "href": "/now/air",
+    "label": "Delhi's air, now",
+    "note": "The worst reporting monitor, named, with the station mean beside it and the scale stated."
+  },
+  "sources": [
+    { "name": "National Air Quality Index", "publisher": "Central Pollution Control Board", "url": "https://cpcb.nic.in/National-Air-Quality-Index/", "note": "India's scale, its breakpoints and its six bands" },
+    { "name": "Air quality scales", "publisher": "World Air Quality Index project", "url": "https://aqicn.org/scale/", "note": "The US EPA scale used by the cross-check source, side by side with others" },
+    { "name": "National Ambient Air Quality Standards, 2009", "publisher": "Central Pollution Control Board", "url": "https://cpcb.nic.in/uploads/National_Ambient_Air_Quality_Standards.pdf", "note": "The concentrations underneath every index" }
+  ],
+  "related": ["cpcb-aqi", "delhi-aqi", "measured-vs-modelled"],
+  "programme": {
+    "href": "/work/projects/eco-action",
+    "label": "Eco Action",
+    "why": "Two apps disagreeing on a phone is the best available way into what an index actually is."
+  },
+  "act": { "href": "/act", "label": "Adopt a ward's air reading" }
+}

@@ -194,11 +194,11 @@ export function strip(e, ctx, imagery) {
 
   /* THE STANDING SCALE -> the band the whole page now leads on. */
   const scale = fig('scale', /Indian Himalayan river basins/) || fig('scale');
-  if (scale) cells.push([esc(String(scale.value)), 'Glacial lakes', 'mapped above India', '#climate', false]);
+  if (scale) cells.push([esc(String(scale.value)), scale.label, '', '#climate', false]);
 
   /* EXPOSURE INSIDE INDIA -> the alarm band. */
   const ind = fig('india', /Alaknanda/) || fig('india');
-  if (ind) cells.push([esc(String(ind.value)), 'Alaknanda', 'dangerous lakes above it', '#india', true]);
+  if (ind) cells.push([esc(String(ind.value)), ind.label, '', '#india', true]);
 
   const lc = e.live_conditions;
   if (lc && lc.rain_7d_mm != null) {
@@ -485,8 +485,8 @@ function mapSvg(e, ctx, imagery, coordsFor) {
           <p class="p-legend p-map-lg"><span class="lbl"><i class="as-sw as-sw-o"></i>Region named in the reporting</span><span class="lbl"><i class="p-sw as-sw-d"></i>Downstream, in the path</span>${frame ? '<span class="lbl"><i class="as-sw as-sw-b"></i>The satellite frame</span>' : ''}</p>
           <p class="cap">Frame ${n0(kmWide)} km wide.
             ${e.coords
-    ? `The marked point is ${esc(e.location_detail || e.location.text)}${e.coords_note ? ` &mdash; ${esc(e.coords_note.replace(/^[A-Z]/, (c) => c.toLowerCase()))}` : ''}`
-    : 'The ring is an AREA, not a point: this page knows the region the reporting names and not where inside it the event was'}.
+    ? `The marked point is ${esc(e.location_detail || e.location.text)}${e.coords_note ? ` &mdash; ${esc(e.coords_note)}` : ''}`
+    : 'The ring is an area, not a point: the reporting names the region, not a location inside it'}.
             ${e.downstream_note ? esc(e.downstream_note) : 'Positions of the downstream places are true.'}</p>`;
 }
 
@@ -525,7 +525,7 @@ export function whereBand(e, ctx, imagery, coordsFor) {
     <div class="wrap">
       <div class="p-map">
         <div class="p-map-f">
-          ${map || '<p class="p-hole">This page holds no coordinate for the place the reporting names, so no map is drawn. A map of somewhere nearby is not a map of this.</p>'}
+          ${map || '<p class="p-hole">The reporting does not name a place precise enough to put on a map. A map of somewhere nearby is not a map of this.</p>'}
         </div>
         <div class="p-map-t">
 ${chainDiagram(e, ctx)}
@@ -712,7 +712,7 @@ ${(img.frames || []).map((f) => `        ${suppliedFrame(f)}`).join('\n')}
 export function eoBand(e, imagery) {
   const supplied = suppliedBlock(imagery?.supplied);
   const head = opener('eo', 'What the satellite sees', supplied
-    ? 'Close views of the affected valley, published by permission, and beneath them the public NASA frames this site fetches for itself.'
+    ? 'Close views of the affected valley, published by permission, and beneath them the public NASA frames.'
     : 'Imagery published here, not linked to. The same public NASA layers a newsroom would use, over the region the reporting names, on the dates either side of the event.');
 
   if (!imagery || (!imagery.before && !imagery.after && !imagery.latest)) {
@@ -785,7 +785,7 @@ ${supplied}
   return `${head}
     <div class="wrap">
 ${supplied ? `${supplied}
-      <p class="lbl as-eo-sub">And the public frames this site fetches for itself</p>` : ''}
+      <p class="lbl as-eo-sub">The public NASA frames</p>` : ''}
 ${tabs('Satellite imagery', panels)}
       ${imagery.frame ? `<p class="cap as-eo-fr">Frame ${imagery.frame.south}&ndash;${imagery.frame.north}&deg;N,
         ${imagery.frame.west}&ndash;${imagery.frame.east}&deg;E. ${esc(imagery.frame.note)}</p>` : ''}
@@ -1079,10 +1079,7 @@ ${disclose(`All ${all.length} standing figures for this hazard, and their source
     `${ctx.summary ? `<p>${esc(ctx.summary)}</p>` : ''}
         ${all.map((f) => `<p><b>${esc(String(f.value))}${f.unit ? ` ${esc(f.unit)}` : ''} &mdash; ${esc(f.label)}.</b>
           ${esc(f.note || '')} <span class="cap">${srcNames(S, f.source, 4)}</span></p>`).join('\n        ')}
-        <p class="cap"><b>Some of these are named but not linked.</b> Where a figure came from
-          Swechha&rsquo;s own briefing, the originating publication is named and this site has not
-          opened the primary document &mdash; so no link is given and none is invented.</p>
-        ${(ctx.withheld || []).length ? `<p class="lbl as-how-h">Figures deliberately not published here</p>
+        ${(ctx.withheld || []).length ? `<p class="lbl as-how-h">Figures in circulation that do not hold up</p>
         <ul>${(ctx.withheld || []).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}`)}
     </div>`;
 }
@@ -1122,8 +1119,8 @@ ${confirmed.map(([k, c]) => {
               <span class="cap as-card-sp">${srcNames(S, c.source)}</span>
             </div>`;
   }).join('\n')}
-          </div>` : `          <p class="p-hole">No Indian casualty or evacuation figure has been reported
-            in a form this page can attribute.</p>`}
+          </div>` : `          <p class="p-hole">No named source has reported an Indian casualty or
+            evacuation figure.</p>`}
         </div>
         <div class="as-ind-half">
           <p class="lbl as-ind-h as-ind-h-w">What is already counted above India</p>
@@ -1194,14 +1191,9 @@ ${disclose(`View all ${all.length} sources`,
         <p class="cap"><b>A headline is evidence that something was said.</b> It is never evidence
           that it is true &mdash; which is why every figure at the top of this page carries the outlet
           that printed it and, where they disagree, all of them.</p>`)}
-${disclose('What this page does not know', `<ul class="as-unc">
+${disclose('What is not established', `<ul class="as-unc">
 ${(e.uncertain || []).map((u) => `          <li>${esc(u)}</li>`).join('\n')}
-        </ul>
-        <p class="cap">Method: assembled automatically from ${n0(e.corroboration.items_read || 0)} items
-          across ${n0(e.corroboration.independent_publishers)} publishers by
-          <code>${esc(e.detector?.script || 'the detector')}</code>, which scored this event
-          ${e.significance_score} against a publication threshold of ${e.detector?.threshold ?? '—'}.
-          ${esc(e.detector?.note || '')}</p>`)}
+        </ul>`)}
       ${/* ── THE STAMP SAYS WHAT THE STAMP CAN PROVE ──────────────────────
            ★ THIS LINE USED TO READ "Feeds last read <time>, and re-read every
            30 minutes" AND THE FIRST HALF COULD NEVER BE TRUE. `last_checked`
@@ -1225,10 +1217,13 @@ ${(e.uncertain || []).map((u) => `          <li>${esc(u)}</li>`).join('\n')}
            on the site at risk to make one timestamp twitch.
 
            So the page states both true things and names the trap between
-           them. */ ''}
-      <p class="cap as-stamp">Feeds re-read every hour. This page last changed
-        ${esc(istStamp(e.last_updated.epochMs))} &mdash; a re-read that finds nothing new
-        does not move that.</p>
+           them.
+
+           2026-09-10: the cadence half and the trap sentence were cut in the
+           copy pass. The stamp is now the changed-time alone, which is the
+           only thing it could ever prove; the reasoning above is why it is
+           labelled "last changed" and not "last read". */ ''}
+      <p class="cap as-stamp">Last changed ${esc(istStamp(e.last_updated.epochMs))}.</p>
     </div>`;
 }
 

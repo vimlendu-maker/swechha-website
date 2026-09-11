@@ -149,7 +149,14 @@ for (const abs of files) {
      own <h1> and <title>, which build-climate-disaster-pages.mjs wrote from
      the dossier — so the index stays complete without the register having to
      predict what will happen. */
-  const isDerivedEvent = /^\/now\/climate-event\/.+/.test(route);
+  /* THE RECORD'S MONTH PAGES ARE DERIVED THE SAME WAY, and they are absent
+     from the register for the same reason: `/record/air/<YYYY>/<MM>` gains a
+     page the moment the hourly store rolls into a new month. Their <h1> is the
+     month and their <title> was written by build-record.mjs with the same
+     140-158 gate applied, so reading the page is strictly better than
+     predicting it. */
+  const isDerivedEvent = /^\/now\/climate-event\/.+/.test(route)
+    || /^\/record\/air\/\d{4}\/\d{2}$/.test(route);
   const indexName = isDerivedEvent
     ? text(h1 || pageTitleTag.replace(/\s*—\s*Swechha\s*$/, ''))
     : text(seo(route).indexName);
@@ -179,14 +186,34 @@ if (bad) { console.error(`\nREFUSING TO WRITE: ${bad} data check(s) failed.`); p
 /* ── GROUPED THE WAY THE SITE IS, not alphabetically. A reader scanning an
       index is looking for a section, and the nav words are the sections. ──── */
 const GROUPS = [
-  { name: 'The record', test: (r) => r === '/' },
+  { name: 'Home', test: (r) => r === '/' },
   { name: 'Now', test: (r) => r === '/now' || r.startsWith('/now/') },
+  /* THE RECORD LANE, WHICH HAD NO GROUP AT ALL. `/record`, `/record/air` and
+     every derived month page under it, plus the terms page beside them, all
+     fell through to "Elsewhere" — the whole archive filed under the fallback
+     that exists to report a section nobody grouped. Learn, the Journal,
+     Schools and Posters were in the same state. Six lines, and the fallback
+     is empty again. */
+  { name: 'The record', test: (r) => r === '/record' || r.startsWith('/record/') },
+  { name: 'Use the data', test: (r) => r === '/use-the-data' },
+  { name: 'Learn', test: (r) => r === '/learn' || r.startsWith('/learn/') },
+  { name: 'The Journal', test: (r) => r === '/journal' || r.startsWith('/journal/') },
   { name: 'Work', test: (r) => r === '/work' || r.startsWith('/work/') },
   /* The five essay pages are AT /stories/<slug> and belong with the section
      they sit in. Matching only the index route filed them under "Elsewhere",
      which told a reader that five pieces written by the team were somewhere
      other than this site. */
   { name: 'Stories and films', test: (r) => r === '/stories' || r.startsWith('/stories/') },
+  /* The microsite and its ten fellows, for the reason the essays got their own
+     line above: matching only the hub route filed ten funded projects under
+     "Elsewhere", which tells a reader they are somewhere other than this site.
+     It is a group of its own rather than part of "Work" because the route is
+     top-level — a microsite's whole purpose is a short link somebody hands a
+     partner — and eleven rows under a nav word they do not sit beneath would be
+     the same misfiling in the other direction. */
+  { name: 'Healthy Cities', test: (r) => r === '/healthy-cities' || r.startsWith('/healthy-cities/') },
+  { name: 'Schools', test: (r) => r === '/schools' || r.startsWith('/schools/') },
+  { name: 'Posters', test: (r) => r === '/posters' || r.startsWith('/posters/') },
   { name: 'Publications', test: (r) => r === '/publications' },
   { name: 'Impact', test: (r) => r === '/impact' },
   { name: 'Farm', test: (r) => r === '/farm' },
@@ -216,7 +243,7 @@ const B = {};
 B.top = () => `    <div class="wrap sr-mast">
       <p class="lbl eyebrow">Search</p>
       <h1 class="d1">What are you<br>looking for?</h1>
-      <p class="lead">${entries.length} pages. Typing matches their titles, their section headings and their opening lines. Or read the whole list below.</p>
+      <p class="lead">${entries.length} pages. Type to filter, or read the whole list below.</p>
       <div class="sr-field">
         <label class="lbl sr-lbl" for="sr-q">Filter by word</label>
         <input id="sr-q" class="sr-in" type="search" autocomplete="off" spellcheck="false"

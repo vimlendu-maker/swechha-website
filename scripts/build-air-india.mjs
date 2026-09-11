@@ -66,7 +66,39 @@ if (dataBad) {
 const CITIES = [...IND.cities].sort((a, b) => a.rank - b.rank);
 const PRETTY = { 'PM2.5': 'PM2.5', PM10: 'PM10', NO2: 'NO&#8322;', SO2: 'SO&#8322;',
   CO: 'CO', OZONE: 'O&#8323;', NH3: 'NH&#8323;', PB: 'Pb' };
-const OBS = esc(String(IND.observed));
+/* ═══ THE OBSERVATION STAMP ════════════════════════════════════════════════
+   ★ IT USED TO PRINT "08-09-2026 22:00:00" AND SAY NOTHING ABOUT THE ZONE.
+   Four times on the page, including inside the two table captions a screen
+   reader hears and the sourcing line a citation is copied from — a wall-clock
+   time with no offset on a page whose whole claim is "one hour, all 508
+   stations together". CPCB publishes in IST and so does the rest of this site:
+   /now/air renders "22:00 IST, 8 September 2026" and this page rendered the
+   raw feed string.
+
+   THE FEED'S STAMP IS IST. Adding the label is a RELABELLING, not a
+   conversion, and there is deliberately no arithmetic here — the same rule
+   scripts/build-data-exports.mjs states at length, and the one this
+   repository's own history explains the cost of getting wrong.
+
+   TWO FORMS, AND BOTH ARE NEEDED:
+     OBS       the human one, in this site's own house format, matching /now/air
+               word for word so the two pages cannot appear to disagree about
+               the hour they are describing.
+     OBS_ISO   the machine one, +05:30 written out, for a <time datetime="">
+               wrapper. This page carries 265 readings and had no
+               machine-readable date at all, so the answer to "when was this
+               measured" was inferable only from the prose. */
+const OBS_PARTS = /^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2}):(\d{2})$/.exec(String(IND.observed));
+const OBS = OBS_PARTS
+  ? `${OBS_PARTS[4]}:${OBS_PARTS[5]} IST, ${Number(OBS_PARTS[1])} ${S.MON[Number(OBS_PARTS[2]) - 1]} ${OBS_PARTS[3]}`
+  : esc(String(IND.observed));
+const OBS_ISO = OBS_PARTS
+  ? `${OBS_PARTS[3]}-${OBS_PARTS[2]}-${OBS_PARTS[1]}T${OBS_PARTS[4]}:${OBS_PARTS[5]}:${OBS_PARTS[6]}+05:30`
+  : null;
+/* The <time> wrapper, for the two places the stamp is a sentence rather than a
+   table caption. A caption is read aloud in full and an element inside one buys
+   nothing; the prose is where a machine looks for the date. */
+const OBS_TIME = OBS_ISO ? `<time datetime="${OBS_ISO}">${OBS}</time>` : OBS;
 const OVER = CITIES.filter((c) => c.aqi > LIMIT);
 const ONE_STATION = CITIES.filter((c) => c.stations === 1);
 const SUSPECT = CITIES.filter((c) => c.suspect);
@@ -124,7 +156,7 @@ B.top = () => {
       <p class="lbl eyebrow">India, right now</p>
       <h1 class="d1">Every city CPCB measures</h1>
       <p class="lead">${n0(IND.totals.cities)} cities reported an air quality index at
-        <b>${OBS}</b>. ${n0(IND.totals.above_limit)} of them are above the limit India set for
+        <b>${OBS_TIME}</b>. ${n0(IND.totals.above_limit)} of them are above the limit India set for
         itself. This is all of them, read together in one hour, in the order they were read.</p>
       <p style="margin:0">${S.stateChip(IND.state_label === 'LIVE' ? 'LIVE' : IND.state_label)}</p>
       <div class="ci-figs">
@@ -221,7 +253,7 @@ const STATE_TABLE = `      <div class="ci-scroll">
         not states, and the unmeasured parts of a state are unmeasured, not clean.</p>`;
 
 B.cities = () => `${opener('cities', `All ${n0(CITIES.length)} cities, and where they sit`,
-  `Every figure below was read at <b>${OBS}</b> &mdash; one hour, all ${n0(IND.totals.stations)} `
+  `Every figure below was read at <b>${OBS_TIME}</b> &mdash; one hour, all ${n0(IND.totals.stations)} `
   + `stations together, which is what makes them comparable, and the same hour as the reading at the `
   + `top of <a class="lk" href="/now/air">Delhi&rsquo;s air</a>. The order is a reading of that hour, `
   + `not a standing claim: by the time you read it, CPCB has published another.`)}
@@ -272,11 +304,40 @@ ${SUSPECT.length ? `      <p class="cap ci-sus"><b>${n0(SUSPECT.length)} ${SUSPE
         right. ${SUSPECT.length === 1 ? 'It is' : 'They are'} ranked on particulates; the gas figure
         is published in the tooltip, not ranked. Hover or focus the mark to read it.</p>` : ''}
 ${hole(`These are the cities CPCB measures, not the cities of India. A place with no monitor produces no row, and an absent row is an absent instrument — never clean air. ${n0(IND.totals.cities)} cities is the whole of the national real-time network.`)}
-${hole('There is no state figure here and there will not be one. CPCB measures cities; averaging a state’s cities would invent a reading for the land between them.')}
-${hole('A failed fetch leaves the previous hour in place rather than writing a zero, so a stale hour is possible and is printed on the page. The hour above is the only claim about freshness this page makes.')}
+${hole('CPCB measures cities, not states. Averaging a state’s cities would invent a reading for the land between them, so there is no state figure.')}
       <p class="cap ci-src">Source: <a class="lk" href="${esc(IND.source.url)}">${esc(IND.source.name)}</a>,
         resource ${esc(IND.source.resource)}. Snapshot ${OBS}, ${n0(IND.totals.rows)} station-pollutant
         rows behind ${n0(IND.totals.stations)} stations.</p>
+${/* ═══ THE LICENCE AND THE CITATION ═══════════════════════════════════════
+      ★ THIS PAGE HAD NEITHER, AND IT IS THE ONE WITH THE MOST READINGS ON IT.
+      `assemble()` gives each of the six FAMILY pages a `citeBlock()` derived
+      from its register entry; /now/air/india is a CHILD of /now/air and not a
+      seventh situation, so — exactly as with the Dataset markup added in the
+      same pass — it fell through that derivation. 265 cities, 508 stations,
+      3,563 rows, no statement of the terms and no citation form.
+
+      A RETRIEVAL AUDIT IS WHAT FOUND IT, not a reading of the page: twenty-five
+      natural-language questions were checked against the page each one should
+      answer, for whether the answer, the source, the date and the citation are
+      in JavaScript-free HTML. Every other data page passed all four. This one
+      passed three.
+
+      SHORT, BECAUSE THE FULL TERMS HAVE A PAGE. /use-the-data carries the
+      licence, the three citation shapes and the four-layer provenance
+      distinction; repeating them here would be a second copy to keep true. What
+      belongs on the page is the citation for THIS page, filled in, and the
+      sentence that stops the commonest misuse of it. */''}
+      <div class="ci-cite">
+        <p class="lbl">Suggested citation</p>
+        <code>Swechha. Air quality index for every reporting city in India.
+Reading from the Central Pollution Control Board network, observed ${OBS}.
+https://swechha.in/now/air/india</code>
+        <p class="cap ci-cite-n"><b>Reuse freely &mdash; <a class="lk" href="${S.LICENCE_URL}" rel="license noopener">${S.LICENCE_NAME}</a>.</b>
+          The readings are CPCB's measurements, not Swechha's; the selection &mdash; each city's worst
+          reporting monitor, with the mean of its monitors beside it &mdash; is ours. Quote the
+          observation hour, not the hour you read it: this is one snapshot, and a city's rank moves
+          with the wind. <a class="lk" href="/use-the-data">Full terms, method and limitations</a>.</p>
+      </div>
     </div>`;
 
 /* ── BAND 4. ONWARD. ────────────────────────────────────────────────────── */
@@ -365,6 +426,15 @@ const PAGE_CSS = `
 .ci-rd .body{margin:0;max-width:46ch}
 .ci-sus{color:var(--ink-2);max-width:70ch;margin:clamp(24px,3vw,34px) 0 0}
 .ci-src{color:var(--ink-3);max-width:70ch;margin:clamp(20px,2.4vw,28px) 0 0}
+/* THE CITATION BLOCK. Same treatment as the one on a record page, a Learn
+   article and a Journal piece: a ruled block, the citation in mono, the
+   provenance note under it. pre-wrap keeps the citation's own line breaks;
+   overflow-wrap stops the URL widening the band. */
+.ci-cite{margin:clamp(20px,3vw,28px) 0 0;max-width:72ch;border-top:1px solid var(--rule);padding-top:14px}
+.ci-cite code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;
+  display:block;padding:12px 14px;border:1px solid var(--rule);margin:10px 0 0;
+  white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+.ci-cite-n{margin:12px 0 0;max-width:68ch;color:var(--ink-2)}
 
 /* ── 375px, WHICH IS THE MEASUREMENT THAT MATTERS. ─────────────────────
       The band column goes first: the AQI is already coloured against the limit
@@ -443,6 +513,34 @@ const OUT = await S.assemble({
   file: 'air-india.html',
   route: '/now/air/india',
   title: seo('/now/air/india').title,
+  /* ★ THIS IS A DATASET AND SAID SO NOWHERE. `assemble()` derives Dataset
+     markup automatically for the six FAMILY pages; this page is a CHILD of
+     `/now/air` and not a seventh situation, so it fell through that derivation
+     and shipped with breadcrumbs and nothing else — the single largest page on
+     this site by number of published readings, and the only national one,
+     invisible to anything that looks for data rather than for prose.
+
+     ★ NO `distribution`, AND THAT IS THE HONEST ANSWER TODAY. The national
+     store is kept exactly as Delhi's is and is deliberately not published as
+     files — see the weight arithmetic in scripts/build-data-exports.mjs and the
+     `not_published` entry in public/data/index.json, both of which name it and
+     say why. recordDatasetJsonLd would drop a `contentUrl` that is not on disk
+     anyway; not passing one is the same refusal made one step earlier.
+
+     `spatialCoverage` IS THE COUNTRY, not a city list. 265 named cities is the
+     page's content; India is its coverage, and a Place per city would be 265
+     assertions to maintain against a feed whose set changes every hour. */
+  headExtra: S.recordDatasetJsonLd({
+    name: 'Air quality index for every reporting city in India',
+    description: seo('/now/air/india').description,
+    url: '/now/air/india',
+    spatialCoverage: 'India',
+    measurementTechnique: `Continuous ambient air quality monitoring; CPCB National Air Quality Index `
+      + `sub-indices, read from ${IND.source.name}. Each city's figure is the worst reporting monitor `
+      + `in it, with the unweighted mean of its monitors printed beside it as a cross-check.`,
+    variables: ['Air Quality Index', 'Governing pollutant', 'Monitors reporting',
+      'Mean of reporting monitors', 'State or union territory'],
+  }),
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
   script: SCRIPT,

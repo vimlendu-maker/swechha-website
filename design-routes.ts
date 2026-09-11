@@ -163,6 +163,87 @@ function disasterRoutes(): Record<string, string> {
   return out
 }
 
+/* THE TEN FELLOW PAGES, DERIVED FROM THE BUILT FILES rather than typed, for the
+   reason `workRoutes` and `disasterRoutes` above are: a typed list of ten paths
+   is ten chances to route a page that was never built or to build one that is
+   never routed, and both failures look like a working commit. Reading the
+   directory makes the two impossible in the same move — a fellow page exists at
+   its route if and only if the generator wrote it — and an eleventh fellow needs
+   no edit here at all.
+
+   The hub's register band links to every one of these, and its own build gate
+   asserts it does, so an unrouted fellow page would show as ten live links to a
+   404 on the one page a partner is handed. */
+function fellowRoutes(): Record<string, string> {
+  const dir = join(PUBLIC, '_pages/v3/healthy-cities/fellows')
+  if (!existsSync(dir)) return {}
+  const out: Record<string, string> = {}
+  for (const f of readdirSync(dir).filter((n) => n.endsWith('.html')).sort()) {
+    out[`/healthy-cities/fellows/${f.slice(0, -'.html'.length)}`] =
+      `healthy-cities/fellows/${f}`
+  }
+  return out
+}
+
+/* THE LEARN LIBRARY, DERIVED FROM THE BUILT FILES for the reason
+   `fellowRoutes` is: a typed list of twenty paths is twenty chances to route a
+   page that was never built or to build one that is never routed, and both
+   failures look like a working commit. `scripts/build-learn.mjs` writes one
+   file per entry in `data/learn/articles/` and refuses to write any of them
+   unless every figure reference resolves, so an article exists at its route if
+   and only if the generator was satisfied with it. A twenty-first article
+   needs no edit here.
+
+   The index at `/learn` is routed explicitly below rather than derived, because
+   it is `learn.html` and not a child of the directory. */
+function learnRoutes(): Record<string, string> {
+  const dir = join(PUBLIC, '_pages/v3/learn')
+  if (!existsSync(dir)) return {}
+  const out: Record<string, string> = {}
+  for (const f of readdirSync(dir).filter((n) => n.endsWith('.html')).sort()) {
+    out[`/learn/${f.slice(0, -'.html'.length)}`] = `learn/${f}`
+  }
+  return out
+}
+
+/* THE RECORD'S MONTH PAGES, DERIVED FROM THE BUILT FILES for the reason
+   `learnRoutes` and `fellowRoutes` are. `scripts/build-record.mjs` writes one
+   page per month present in `data/air-history/`, so the set grows by itself
+   every month and a thirteenth needs no edit here. `/record` and `/record/air`
+   are routed explicitly below: they are the index and the subject page, not
+   members of the derived set. */
+function recordRoutes(): Record<string, string> {
+  const root = join(PUBLIC, '_pages/v3/record/air')
+  if (!existsSync(root)) return {}
+  const out: Record<string, string> = {}
+  for (const y of readdirSync(root).sort()) {
+    const dir = join(root, y)
+    if (!existsSync(dir) || !readdirSync(dir).length) continue
+    for (const f of readdirSync(dir).filter((n) => n.endsWith('.html')).sort()) {
+      out[`/record/air/${y}/${f.slice(0, -'.html'.length)}`] = `record/air/${y}/${f}`
+    }
+  }
+  return out
+}
+
+/* THE JOURNAL'S PUBLISHED ARTICLES, DERIVED FROM THE BUILT FILES. The
+   generator writes a page only for an article marked published with a named
+   approver, so a held draft has no file here and therefore no route — which is
+   the same property `disasterRoutes` relies on for an event below its
+   publication bar. Unlike the record's month pages these are NOT exempt from
+   the SEO register: an article is a deliberate editorial act and its title and
+   description are written with it, so a new one needs a register entry and
+   `lib/seo/register.test.ts` says so. */
+function journalRoutes(): Record<string, string> {
+  const dir = join(PUBLIC, '_pages/v3/journal')
+  if (!existsSync(dir)) return {}
+  const out: Record<string, string> = {}
+  for (const f of readdirSync(dir).filter((n) => n.endsWith('.html')).sort()) {
+    out[`/journal/${f.slice(0, -'.html'.length)}`] = `journal/${f}`
+  }
+  return out
+}
+
 export function designRoutes(): Array<{ source: string; destination: string }> {
   const map: Record<string, string> = {
     '/': 'home.html',
@@ -199,6 +280,52 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
        page, a routed page and a linked page are one change, and any two of them
        without the third is a defect. */
     '/posters': 'posters.html',
+    /* `/healthy-cities` — the 2025-26 Bridge the Gap chapter funded by the Bupa
+       Foundation and Niva Bupa. It is routed in the same commit that builds it,
+       for the reason the four paragraphs above give: a built page, a routed page
+       and a linked page are one change, and any two of them without the third is
+       a defect. The ten fellow pages the register band links to are routed just
+       below, from the built files; the footer row and the `bridge-the-gap`
+       cross-sell are the third part. It is NOT a seventh nav word — the
+       nav is closed at six plus the Give chip — and it is a top-level route
+       rather than a `/work/**` child because a microsite's whole purpose is a
+       short link somebody hands a partner. */
+    '/healthy-cities': 'healthy-cities.html',
+    ...fellowRoutes(),
+    /* `/learn` — the knowledge library behind the readings. It joins the map
+       in the same commit that builds it and that links it from the footer
+       index, for the reason the paragraphs above give: a built page, a routed
+       page and a linked page are one change, and any two of them without the
+       third is a defect. It is NOT a seventh nav word — the nav is closed at
+       six plus the Give chip — and the twenty article pages below it are
+       derived from the built files rather than typed. */
+    /* `/schools` — the school-facing page, and deliberately NOT a seventh
+       programme page. The six programmes already have finished pages under
+       `/work/**`; this one compares them and carries the part a coordinator
+       needs, and every row on it links the item's own page rather than
+       restating it. Two descriptions of one programme at two URLs is the
+       duplicate-content failure this map exists to avoid. */
+    '/schools': 'schools.html',
+    /* `/journal` — the dated section. Its articles are derived just below from
+       the built files, because the generator writes one only for an article a
+       person has approved: an unapproved draft has no page, so it can have no
+       route, and the approval gate is enforced by the filesystem rather than by
+       anybody remembering to edit this map. */
+    '/journal': 'journal.html',
+    ...journalRoutes(),
+    /* `/record` and `/record/air` — the archive. The month pages under them are
+       derived from the built files just below, because a month appears on its
+       own as soon as the hourly store rolls over and a route that has to be
+       typed monthly is a route that will one day not be. */
+    '/record': 'record.html',
+    '/record/air': 'record/air.html',
+    ...recordRoutes(),
+    /* `/use-the-data` — the licence, the citation formats and what each source
+       does not cover. It is what makes the archive above citeable by somebody
+       who is not us, which is the whole point of keeping it. */
+    '/use-the-data': 'use-the-data.html',
+    '/learn': 'learn.html',
+    ...learnRoutes(),
     '/about': 'about.html',
     '/impact': 'impact.html',
     '/farm': 'farm.html',

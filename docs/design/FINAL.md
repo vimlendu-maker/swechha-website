@@ -37,13 +37,13 @@ orphaned a page. Neither shows up in a diff, so both are checked.
 
 | page | route | bands | money | reading, from its own dataset | state |
 |---|---|---|---|---|---|
-| `intelligence.html` | `/now` | 3 | — | 387 · 0.3 · 2.43 · 34,562 | pass |
-| `situation-air.html` | `/now/air` | 9 | yes | 387 | pass |
+| `intelligence.html` | `/now` | 3 | — | 107 · 0.3 · 2.43 · 34,562 | pass |
+| `situation-air.html` | `/now/air` | 9 | yes | 107 | pass |
 | `situation-yamuna.html` | `/now/yamuna` | 10 | yes | 0.3 · 5.0 mg/L | pass |
 | `situation-heatwave.html` | `/now/heat` | 8 | — | 48.3 · 1,832 | pass |
 | `situation-forest-fire.html` | `/now/forest-fire` | 8 | — | 34,562 | pass |
 | `situation-forest-loss.html` | `/now/forest-loss` | 8 | — | 2.43 · 156.41 | pass |
-| `situation-climate-event.html` | `/now/climate-event` | 8 | — | 13 · 3,594 | pass |
+| `situation-climate-event.html` | `/now/climate-event` | 9 | — | 13 · 3,594 | pass |
 
 Every page is a **build artefact**. Editing the HTML is pointless — the change
 dies at the next build. Edit the generator.
@@ -61,7 +61,7 @@ dies at the next build. Edit the generator.
 ## 3. What each one is
 
 - **`intelligence.html`** — The situation index. Six cards, six units, six kinds of limit, and no total.
-- **`situation-air.html`** — AQI against CPCB’s own limit of 100, computed from station concentrations.
+- **`situation-air.html`** — AQI against CPCB’s own limit of 100, read from CPCB’s published sub-indexes.
 - **`situation-yamuna.html`** — Dissolved oxygen at or below the detection limit, against a notified minimum of 5.0 mg/L.
 - **`situation-heatwave.html`** — The hottest reading in the archive against IMD’s severe threshold, across 14 stations.
 - **`situation-forest-fire.html`** — Area burnt in one season. The one situation with no legal threshold.
@@ -92,15 +92,21 @@ keys. This runs in CI.
 
 ## 5. Not in the final set
 
-- **`home.html`** — THE FROZEN DESIGN SOURCE. Not a deliverable in this set — it is the language every page above extracts from. Hand-maintained, and D-24.5 records that making it a build artefact is a real architectural change nobody has taken.
-- **`situation-soon.html`** — SUPERSEDED AND DEAD. It was the "coming soon" stub for situations with no page. All six now have pages, so nothing links here. Safe to delete; left in place because deleting another session's prototype is not this work's call.
+- **`home.html`** — THE HOMEPAGE, and as of AD-28 §7 a BUILD ARTEFACT — `npm run build:hero` emits it from `design/home.html`, which is where the hand-maintained source now lives and where the seven pinned CSS line ranges point. The design is still written by hand; only the shipped copy is generated, with its comments stripped. Edit `design/home.html`, never this file.
 - **`about.html`** — FINISHED, and not a prototype — AD-21 built it and it serves at /about. It is outside THIS test because the twelve checks above are situation-specific (crumb, five siblings, the four-word state vocabulary); none of them describe an About page. Its own gates live in scripts/build-about-page.mjs.
 - **`impact.html`** — FINISHED (AD-22), serving at /impact. Outside this test for the same reason as about.html — and worth naming, because it is the page that refuses the number it is named for, so a "reading" check would assert the opposite of its design.
 - **`farm.html`** — FINISHED (AD-24), serving at /farm. Outside this test for the same reason as about.html.
 - **`act.html`** — FINISHED (AD-25), serving at /act. Outside this test for the same reason as about.html.
-- **`work/`** — FINISHED — 15 pages from scripts/build-work-pages.mjs, merged in PR #5 and serving under /work. It was in progress in a concurrent session when this line first read that way. It carries its own acceptance gate, the LINKS.json manifest, which fails the build on any unlisted or dead href.
-- **`system.html`** — Prototype, outside this work. Nothing in the finished set links to it except the footer's "The system sheet", which is the last /design/ path on the site and 404s at the port — an open item, and the owner's call because it is a visible footer change.
-- **`_mobile.html`** — Prototype, outside this work.
+- **`stories/`** — FINISHED — five essay pages from scripts/build-essays.mjs, one per bylined piece recovered from the legacy blog, serving at /stories/<slug>. Outside this test for the same reason as about.html. Their own gates live in that generator; the load-bearing ones are the word-count check that fails if the Brizy extraction silently drops prose, and the provenance check that refuses an essay without a byline, a date and a link to where it first appeared — which is what replaced the source requirement after the owner ruled on 22 August that unsourced data is allowed off the situation pages.
+- **`air-india.html`** — FINISHED (AD-43), serving at /now/air/india — every city in data/air-india.json, which is what the "All 268 cities" link on /now/air had been promising while pointing at an anchor on its own page. Outside THIS test because the twelve checks above are situation-specific (the fam-crumb’s "N of 6 situations", the five-sibling rail, the four-word state vocabulary) and this is a child of a situation, not a seventh one. Its own gates live in scripts/build-air-india.mjs; the load-bearing ones are that every city in the dataset reaches the page as a row, that the count of rows marked above the limit equals the dataset’s own above_limit, and that no row is born hidden — the table has to read complete with JavaScript off, because the filter is the only thing the script provides.
+- **`search.html`** — FINISHED, serving at /search. Outside this test for the same reason as about.html — the twelve checks above are situation-specific. Its own gates live in scripts/build-search-page.mjs; the load-bearing ones assert that every built page on disk is in the index, that all 29 rows render server-side so the page reads without JavaScript, and that it does not index itself.
+- **`stories.html`** — FINISHED (AD-26), serving at /stories. Outside this test for the same reason as about.html — the twelve checks above are situation-specific. Its own gates live in scripts/build-stories-page.mjs, including the two that matter: every YouTube id resolves against data/media/youtube-index.json, and the page may not claim six films when two of R-3's six have no source on the channel.
+- **`posters.html`** — FINISHED (AD-42), serving at /posters. Ten GIZ marine-plastic sheets as artefacts; the campaign that made them is at /work/campaigns/no-plastic, which shows the same set as its argument. Its own gates live in scripts/build-posters-page.mjs; the load-bearing ones are that no poster may sit in an .ht box or carry .duo (either would crop or duotone an A3 infographic), and that GIZ and the German federal environment ministry are named ONLY inside the credit quoted off the artwork.
+- **`publications.html`** — FINISHED (AD-26), serving at /publications. Its own gates live in scripts/build-publications-page.mjs; the load-bearing one reads every linked PDF's size off disk rather than trusting a typed figure, and refuses anything large enough to be a print master.
+- **`climate-event/`** — ONE PAGE PER PUBLISHED CLIMATE EVENT, from scripts/build-climate-disaster-pages.mjs, serving at /now/climate-event/<slug>. Outside this test because the SET IS NOT FIXED — it is whatever the detector currently has above its publication bar, which on a quiet week is nothing at all and after a regional disaster is one page. A register of fixed filenames is the wrong shape for it. Its gates live in lib/climate-events.mjs and run at build: a figure without a resolvable source, an automated event published on too little corroboration, or a published event with an empty `uncertain` list all fail the build rather than reaching a reader. Routes are derived from the same files by design-routes.ts, so a page cannot be built and left unrouted.
+- **`healthy-cities.html`** — FINISHED, serving at /healthy-cities — the hub for Bridge the Gap’s 2025-26 Healthy Cities chapter, funded by the Bupa Foundation and Niva Bupa. Outside THIS test for the same reason as about.html: the twelve checks above are situation-specific (the fam-crumb’s "N of 6 situations", the five-sibling rail, the four-word state vocabulary), and a partner-facing microsite has no feed and therefore no cadence to state — which is itself a ruling on it rather than an omission, because the state mark belongs to a reading against a published legal limit and there is none on a school garden. Its own gates live in scripts/build-healthy-cities.mjs; the load-bearing ones are that the four rail figures’ SUM is computed and asserted absent from the rendered page in every format it could take (a fifth tile that totals the other four is the one number this page may not publish), that every figure rail sits inside a .wk-dark wrapper (the rail’s caption ink is the paper token, so the natural markup ships about 2.7:1 on a dark masthead and nothing but a rendered contrast check sees it), that every quote resolves against the fellow file that holds it rather than being copied onto the hub, that all ten fellows render as rows linking to their own pages, and — since the owner asked for Niva Bupa’s logo, which makes this the ONLY page on the site bearing a third-party mark — that the mark partition holds in both directions: exactly one image on the page is not a photograph, it is the /images/partners/ path the data registers, it sits in the #with band rather than the masthead, it carries NO duo/duo-dim because a mark is not a photograph and renders in colour, both funders are STILL credited as type beside it, the trademark acknowledgement naming the licensee renders, and every photograph on the page still carries the monochrome ramp. The Bupa Foundation stays type-only: separate legal entity, no published asset.
+- **`healthy-cities/`** — FINISHED — ten fellow pages from scripts/build-healthy-cities.mjs, one per file in data/healthy-cities/fellows/, serving under /healthy-cities/fellows/<slug>. The same generator writes the hub above, deliberately: a fellow’s name, place, project or figure cannot differ between the register row and the page it opens, because both read the same two loaders. Outside THIS test for the reason the hub is — the twelve checks above are situation-specific and a person’s page has no feed and no cadence to state. Each page carries the hub’s own gates plus five that are about a person’s page: that every figure they published reaches it (figureRail takes four and slices the rest in silence, and two fellows publish five), that every quote renders verbatim because the hub POINTS at these quotes by their exact text rather than copying them, that every named hole in the report is stated, that the three fellows whose reports carry no direct speech render a named hole instead of an empty band, and that each page builds its own section index — three of the hub’s five chips name bands that do not exist here, and a borrowed index is a control strip where three of five controls do nothing.
+- **`work/`** — FINISHED — 16 pages from scripts/build-work-pages.mjs, merged in PR #5 and serving under /work. It was in progress in a concurrent session when this line first read that way. It carries its own acceptance gate, the LINKS.json manifest, which fails the build on any unlisted or dead href.
 
 ## 6. Open items on the finished set
 
@@ -114,6 +120,18 @@ keys. This runs in CI.
    `build-situation-air.mjs` as text. The intended end state is that the block
    moves into the shell and Air imports it; prove that migration with a
    byte-identical rebuild.
-3. **`situation-soon.html` is dead** and nothing links to it. Safe to delete.
-4. **`home.html` is hand-maintained**, which is why its ticker fallback figure
-   is typed rather than injected (D-24.5).
+3. **`situation-soon.html`, `system.html` and `_mobile.html` are not on this
+   register any more, because none of them is in `public/_pages/v3` any more** —
+   all three moved to `docs/prototypes/` when AD-17 §6.4 closed
+   `public/design/`, archived rather than destroyed (see design-routes.ts).
+   There is nothing left here to delete. The one live concern any of them
+   carried — `system.html`'s footer link ("The system sheet") 404ing at
+   `/design/v3/system.html` — closed when AD-27.10 pulled that link from the
+   footer: the footer today carries no "system sheet" text and no `/design/`
+   href.
+4. **`design/home.html`, the source, is hand-maintained; the `home.html` it
+   builds is not** — `npm run build:hero` emits the shipped copy from that
+   source, stripping comments and injecting the readings it can derive. Its
+   ticker fallback figure stays typed rather than injected because D-24.5
+   left it as an editorial judgement (see build-hero.mjs), not because the
+   shipped file is hand-edited.

@@ -124,7 +124,7 @@ h1,h2,h3{margin:0;font-weight:inherit}
 .lead{font-size:var(--t-lead);line-height:1.48;font-weight:300;max-width:46ch;margin:0}
 .body{max-width:62ch}
 .cap{font-size:var(--t-cap);line-height:1.45;color:var(--fg-3);margin:0}
-.on-paper .cap,.paper .cap{color:var(--ink-3)}
+.on-paper .cap,.paper .cap,.paper-2 .cap{color:var(--ink-3)} /* AD-48. `.paper-2` WAS MISSING AND IT WAS A CONTRAST BUG, not a style choice. `.cap` defaults to --fg-3, the dim ink for a DARK ground, and this rule is the only thing that corrects it for light paper -- but it named `.paper` and not `.paper-2`, so every muted caption on a paper-2 band shipped dark-ground ink on light paper. Measured on /schools before the fix: 2.5:1 at 13.5px, against a 4.5:1 requirement. The tree already carried the evidence and nobody read it as a bug: build-act-page.mjs patches its own five classes with `.paper .x,.paper-2 .x{color:var(--ink-3)}` one at a time, which is this rule rewritten locally five times. Fixed at source instead. Edited IN PLACE, no line added or removed, because the seven CSS ranges above line 3033 are extracted by absolute line number. */
 
 /* ── GROUND BANDS. Dark leads, paper is for long reading only. ───────*/
 /* overflow-x:clip, not hidden: it stops any band widening the document
@@ -3285,7 +3285,7 @@ main{display:block;margin:0;padding:0}
      tabindex="-1" so the focus actually lands rather than only moving
      the sequential-navigation start point. -->
 <a class="skip" href="#main">Skip to the content</a>
-<header class="nav"><div class="nav-in"><a class="mark" href="/" aria-current="page" aria-label="Swechha"><img width="2048" height="512" src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/about">About</a></nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button><!-- D-09.1. THE PHONE'S WAY OUT. The chip row above is non-sticky by
+<header class="nav"><div class="nav-in"><a class="mark" href="/" aria-current="page" aria-label="Swechha"><img width="2048" height="512" src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></a><nav class="navlinks" aria-label="Primary"><a class="nl" href="/now">Now</a><a class="nl" href="/learn">Learn</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/about">About</a></nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button><!-- D-09.1. THE PHONE'S WAY OUT. The chip row above is non-sticky by
      D-01.1 and stays that way, so between y=105.8 and the footer's link
      grid at y=9,518 a phone reader had navigation to exactly ONE
      destination — the GIVE chip — for 9,412px, or 91.9% of the document.
@@ -3310,7 +3310,7 @@ main{display:block;margin:0;padding:0}
      item, so `.nav-in`'s one-row 56px layout is untouched — verified,
      the bar's three items sit on the same pixels as before. -->
 
-<div class="navidx" id="navidx" hidden><nav aria-label="All sections"><a class="nl" href="/now">Now</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/about">About</a></nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="/act">Act</a></div></header>
+<div class="navidx" id="navidx" hidden><nav aria-label="All sections"><a class="nl" href="/now">Now</a><a class="nl" href="/learn">Learn</a><a class="nl" href="/work">Work</a><a class="nl" href="/work/journeys">Journeys</a><a class="nl" href="/impact">Impact</a><a class="nl" href="/farm">Farm</a><a class="nl" href="/about">About</a></nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="/act">Act</a></div></header>
 
 <!-- D-09.3. THE ONE LANDMARK THE PAGE WAS MISSING. Landmarks were
      header, three navs and footer — no main — so a screen-reader user
@@ -3356,30 +3356,30 @@ main{display:block;margin:0;padding:0}
              When no usable frame exists, build-hero removes the <figure>
              entirely rather than substituting anything. -->
         <div class="sit s-hero-sit" id="h-situation" data-id="situation" data-tab="Nepal" data-breach="true" role="tabpanel" aria-label="Nepal: glacial flood — active situation">
-          <figure class="s-hero-shot"><img fetchpriority="high" width="1400" height="1232" class="s-hero-eo" src="/images/eo/nepal-glof/after.jpg" alt="True colour satellite view of the region, 2026-09-07 — Terra, MODIS"></figure>
+          <figure class="s-hero-shot"><img fetchpriority="high" width="1400" height="1232" class="s-hero-eo" src="/images/eo/nepal-glof/after.jpg" alt="True colour, second satellite satellite view of the region, 2026-09-10 — NOAA-20, VIIRS"></figure>
           <div class="s-hero-stamp" aria-hidden="true"><div class="wrap"><p class="state live"><i></i>Live</p></div></div>
           <div class="s-hero-panel"><div class="wrap">
             <div class="s-hero-rail breach">
               <div class="s-hero-read">
-                <span class="s-hero-numwrap rl"><span class="readout" aria-hidden="true">1,355</span></span>
-                <span class="sr">Nepal: glacial flood. Active situation, active. 1355 confirmed dead, preliminary.</span>
+                <span class="s-hero-numwrap rl"><span class="readout" aria-hidden="true">1,365</span></span>
+                <span class="sr">Nepal: glacial flood. Active situation, active. 1365 confirmed dead, media report.</span>
                 <div class="s-hero-num-side">
                   <p class="lbl s-hero-id">Nepal / Glacial flood</p>
                   <span class="unit">reported dead</span>
-                  <p class="mult"><b>5,000</b> reported missing</p>
+                  <p class="mult"><b>&mdash;</b></p>
                 </div>
               </div>
               <div class="s-hero-acct">
                 <p class="lbl s-hero-id">Nepal / Glacial flood</p>
                 <p class="verdict bad">Active situation</p>
-                <p class="s-hero-why">Being tracked now. Figures move while you are on this page.</p>
+                <p class="s-hero-why">Being tracked now. The figures are still moving.</p>
                 <div class="s-hero-scale">
-                  <span class="limit">Outlets report 26&ndash;1,355. <b>Not settled.</b></span>
+                  <span class="limit">Outlets report 1,365&ndash;1,369. <b>Not settled.</b></span>
                 </div>
               </div>
             </div>
             <div class="s-hero-plate">
-              <p class="cap s-hero-src">Nepal &middot; glacial lake outburst flood. 116 independent publishers. Feeds re-read every hour.</p>
+              <p class="cap s-hero-src">Nepal &middot; glacial lake outburst flood.</p>
               <span class="tag tag-season">Active</span>
               <p class="s-hero-act"><a class="act" href="/now/climate-event/nepal-glof">View full situation <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
             </div>
@@ -3418,12 +3418,12 @@ main{display:block;margin:0;padding:0}
                      data/air-delhi.json, so they cannot drift, and the hourly
                      job keeps them current. If you find yourself adding a
                      textContent write below, read AD-27.6-A first. -->
-                <span class="s-hero-numwrap rl"><span class="readout" data-committed="153" aria-hidden="true">153</span></span>
-                <span class="sr">Delhi-NCR / Air quality index. 153 AQI, 24-hour rolling. Moderately Polluted.</span>
+                <span class="s-hero-numwrap rl"><span class="readout" data-committed="167" aria-hidden="true">167</span></span>
+                <span class="sr">Delhi-NCR / Air quality index. 167 AQI, 24-hour rolling. Moderately Polluted.</span>
                 <div class="s-hero-num-side">
                   <p class="lbl s-hero-id">Delhi-NCR / Air quality index</p>
                   <span class="unit">AQI, 24-hour rolling</span>
-                  <p class="mult"><b>1.5&#215;</b> the limit</p>
+                  <p class="mult"><b>1.7&#215;</b> the limit</p>
                 </div>
               </div>
               <div class="s-hero-acct">
@@ -3439,7 +3439,7 @@ main{display:block;margin:0;padding:0}
                      the bands) and in full on the situation page. Word for
                      word unchanged, and >=561 renders the whole paragraph
                      in its original order. -->
-                <p class="s-hero-why"><span class="s-hero-cut">1.5 times the limit the Central Pollution Control Board sets for a safe day.</span></p>
+                <p class="s-hero-why"><span class="s-hero-cut">1.7 times the limit the Central Pollution Control Board sets for a safe day.</span></p>
                 <div class="s-hero-scale">
                   <div class="bands bad" role="img" aria-label="Band 3 of 6, Moderately Polluted"><i class="on"></i><i class="on"></i><i class="on tip"></i><i></i><i></i><i></i></div>
                   <span class="limit">CPCB safe limit 100. <b>Limit broken.</b></span>
@@ -3482,9 +3482,9 @@ main{display:block;margin:0;padding:0}
                    the same register /now and /now/air read, because this deck
                    said Periodic while /now said LIVE about one reading until
                    23 August. The hour below is where freshness is stated. -->
-              <p class="cap s-hero-src">CPCB continuous monitors<span class="s-hero-loc">, worst of 44 CPCB monitors — Anand Vihar, DPCC</span>. <span class="s-hero-cad">Hourly. </span><span class="s-hero-prov">Observed 17:00 IST, 7 September 2026 &middot; last checked 18:16 IST.</span></p>
+              <p class="cap s-hero-src">CPCB continuous monitors<span class="s-hero-loc">, worst of 44 CPCB monitors — Wazirpur, DPCC</span>. <span class="s-hero-cad">Hourly. </span><span class="s-hero-prov">Observed 11:00 IST, 11 September 2026.</span></p>
               <span class="tag tag-season">Year round</span>
-              <p class="s-hero-act"><a class="act" href="/now/air">The full instrument <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+              <p class="s-hero-act"><a class="act" href="/now/air">See it in full <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
 
             </div>
           </div></div>
@@ -3516,7 +3516,7 @@ main{display:block;margin:0;padding:0}
             <div class="s-hero-plate">
               <p class="cap s-hero-src">DPCC monthly grab sample, Yamuna monitoring round. <span class="s-hero-cad">Monthly. </span>Last drawn 4 August 2026<time class="s-hero-age" data-at="2026-08-04T11:00"></time>.</p>
               <span class="tag tag-season">Year round</span>
-              <p class="s-hero-act"><a class="act" href="/now/yamuna">The full instrument <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+              <p class="s-hero-act"><a class="act" href="/now/yamuna">See it in full <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
             </div>
           </div></div>
         </div>
@@ -3584,7 +3584,7 @@ main{display:block;margin:0;padding:0}
                    more precise than its visible text. -->
               <p class="cap s-hero-src">India Meteorological Department, season accumulation. <span class="s-hero-cad">Daily. </span>Updated 19 August 2026<time class="s-hero-age" data-at="2026-08-19T05:30"></time>.</p>
               <span class="tag tag-season">In window</span>
-              <p class="s-hero-act"><a class="act" href="/now/climate-event">The full instrument <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+              <p class="s-hero-act"><a class="act" href="/now/climate-event">See it in full <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
             </div>
           </div></div>
         </div>
@@ -3625,9 +3625,9 @@ main{display:block;margin:0;padding:0}
               </div>
             </div>
             <div class="s-hero-plate">
-              <p class="cap s-hero-src">NASA FIRMS, VIIRS 375m active fire product. <span class="s-hero-cad">Twice daily. </span>Committed reading.</p>
+              <p class="cap s-hero-src">NASA FIRMS, VIIRS 375m active fire product. <span class="s-hero-cad">Twice daily.</span></p>
               <span class="tag tag-season">Year round</span>
-              <p class="s-hero-act"><a class="act" href="/now/forest-fire">The full instrument <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+              <p class="s-hero-act"><a class="act" href="/now/forest-fire">See it in full <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
             </div>
           </div></div>
         </div>
@@ -3684,7 +3684,6 @@ main{display:block;margin:0;padding:0}
            be moved or cut only. 130.2px against the old line's 129.1px, so
            nothing in the head reflows at any width. -->
       <p class="lbl s-ticker-who">Delhi, then India.</p>
-      <p class="lbl s-ticker-count">Five in window &middot; one record</p>
       <!-- NO CLOCK IN THIS HEAD (AD-27.6-C), AND THAT IS THE THIRD MARK
            TAKEN OFF THIS LINE FOR ONE REASON.
 
@@ -3735,7 +3734,6 @@ main{display:block;margin:0;padding:0}
            so a bare text run would become an ANONYMOUS flex item and the
            gap would land inside the sentence. It stays one element with
            one text node. -->
-      <p class="lbl s-ticker-when">Each reading is dated on its own page.</p>
     </div>
   </div>
   <div class="s-ticker-frame">
@@ -3754,7 +3752,7 @@ main{display:block;margin:0;padding:0}
          otherwise announces as "one point six five M H A"; the Impact
          slot's has to be rewritten whenever its figure is rotated. -->
     <div class="s-ticker-rail">
-      <a class="s-ticker-cell" id="tk-air" href="/now/air" aria-label="Delhi's air, 153 air quality index, over the limit"><span class="lbl s-ticker-name">Air</span><span class="s-ticker-v is-over" id="tk-air-v"><b>153</b></span></a>
+      <a class="s-ticker-cell" id="tk-air" href="/now/air" aria-label="Delhi's air, 167 air quality index, over the limit"><span class="lbl s-ticker-name">Air</span><span class="s-ticker-v is-over" id="tk-air-v"><b>167</b></span></a>
       <a class="s-ticker-cell" href="/now/yamuna" aria-label="Yamuna dissolved oxygen, 0.3 milligrams per litre, below the detection limit, against a legal minimum of 5"><span class="lbl s-ticker-name">Yamuna DO</span><span class="s-ticker-v is-over"><b>0.3</b></span></a>
       <a class="s-ticker-cell" href="/now/forest-fire" aria-label="Forest fire, 34,562 square kilometres of forest burnt in the 2023 to 2024 season"><span class="lbl s-ticker-name">Forest burnt</span><span class="s-ticker-v is-over"><b>34,562</b></span></a>
       <a class="s-ticker-cell" href="/now/forest-loss" aria-label="Forest loss, 2.43 million hectares of tree cover, 2001 to 2025"><span class="lbl s-ticker-name">Forest loss</span><span class="s-ticker-v is-over"><b>2.43M ha</b></span></a>
@@ -4199,7 +4197,6 @@ main{display:block;margin:0;padding:0}
         <a class="lbl w7-ce-evmore" href="/work/events">and more <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </p>
       <div class="w7-ce-evfoot">
-        <p class="w7-ce-evnote">Every one of these has been run.</p>
         <a class="act" href="/work/events">All the events <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </div>
     </div>
@@ -4258,7 +4255,7 @@ main{display:block;margin:0;padding:0}
         </li>
         <li>
           <p class="w7-ab-yr rl">Now</p>
-          <p class="w7-ab-yt">Still showing up. A monitoring feed, and the records nobody else has.</p>
+          <p class="w7-ab-yt">Still showing up. Six situations, tracked hourly.</p>
         </li>
       </ol>
 
@@ -4406,7 +4403,7 @@ main{display:block;margin:0;padding:0}
       <div class="s-gtm-txt">
         <p class="lbl s-gtm-lbl">A different organisation</p>
         <h2 class="d1 s-gtm-h">Green the Map</h2>
-        <p class="s-gtm-b">Upcycled goods made from what the clean-ups pull out. It has its own site, its own accounts and it pays its own way. It is not a Swechha programme.</p>
+        <p class="s-gtm-b">Upcycled goods made from what the clean-ups pull out. A separate enterprise, with its own site and its own accounts. It is not a Swechha programme.</p>
         <a class="b b-2" href="https://greenthemap.com" rel="noopener" target="_blank">Visit the shop<span class="sr"> (opens in a new tab)</span></a>
       </div>
     </div>
@@ -4434,15 +4431,14 @@ main{display:block;margin:0;padding:0}
            immediately below ("9,400 days on file since 2000"). Founded
            2000 is sourced: SOURCE-FACTS.md, "Founded 2000, as the We for
            Yamuna campaign". -->
-      <div><p class="lead">Four things accumulate here whether or not anybody writes a post: the daily readings, the orders that follow them, the things you can do about them, and the paper since 2000.</p></div>
+      <div><p class="lead">The readings, where they come from, what to do about them, and the paper since 2000.</p></div>
     </div>
 
     <div class="s-record-doors">
       <a class="s-record-door" href="/now">
         <p class="lbl s-record-door-lbl">Updated every hour</p>
         <h3 class="s-record-door-h">Today&rsquo;s readings</h3>
-        <p class="s-record-door-t">Air, river, heat, fire and rainfall, each with its monitor and its hour. Every day&rsquo;s readings keep their own address after they stop being today&rsquo;s.</p>
-        <p class="s-record-door-n"><span>9,400 days on file since 2000</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></p>
+        <p class="s-record-door-t">Air, river, heat, fire and rainfall, each with its monitor and its hour.</p>
       </a>
       <!-- D-11.6. THIS DOOR CHANGED SUBJECT. It read "Orders and policy" and pointed at
            intelligence.html#orders — a weekly-compiled tracker of court orders "with the
@@ -4457,8 +4453,7 @@ main{display:block;margin:0;padding:0}
       <a class="s-record-door" href="/now">
         <p class="lbl s-record-door-lbl">Every source named</p>
         <h3 class="s-record-door-h">Where the readings come from</h3>
-        <p class="s-record-door-t">Every source behind the readings, with its cadence, the date it was last drawn, and whether it is running.</p>
-        <p class="s-record-door-n"><span>Nothing here is unsourced</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></p>
+        <p class="s-record-door-t">CPCB, IMD, the Forest Survey of India, NASA &mdash; named on every figure.</p>
       </a>
       <!-- NOT A LINK, AND NO CHIP (owner, 22 August; AD-28, 23 August). It
            advertised "34 guides" behind href="#" — a live-looking button over a
@@ -4536,7 +4531,6 @@ main{display:block;margin:0;padding:0}
       </div>
 
       <div class="s-record-foot">
-        <p class="cap s-record-note">Seven of the twenty-seven years are scanned. The other twenty are boxes nobody has opened yet.</p>
         <!-- NO BUTTON, AND NO SENTENCE ABOUT THERE BEING NO BUTTON.
              "Open the archive" behind href="#" was the most prominent dead
              control on the site and the owner struck it on 22 August. The line
@@ -4564,12 +4558,12 @@ main{display:block;margin:0;padding:0}
            non-breaking space binds the last two words: one line to 1280
            (99.2% fill), "Three / ways in" above it. No word changed. -->
       <div><h2 class="d1" style="max-width:14ch">Three ways&nbsp;in</h2></div>
-      <div><p class="lead">The monitoring and the archive are the two things nobody funds. They are the two things that outlast us.</p></div>
+      <div><p class="lead">Money, time, or somewhere to put us to work.</p></div>
     </div>
     <div class="gv-g">
       <div>
         <h3>Give</h3>
-        <p class="gv-t">From 500 rupees a month, recurring. It pays for journeys schools cannot fund, gardens still being planted, and an archive that will not scan itself.</p>
+        <p class="gv-t">From 500 rupees a month, recurring. It pays for journeys schools cannot fund, and gardens still being planted.</p>
         <p class="gv-a"><a class="b b-1" href="/act#give">Give monthly</a></p>
       </div>
       <div>
@@ -4598,8 +4592,12 @@ main{display:block;margin:0;padding:0}
          and the only global surface that can hold more than six words, so it is
          where the reader who has finished reading finds out what else exists —
          and a global index that omits three sections is not an index.
-         FIVE COLUMNS AND TWENTY-FOUR LINKS. Every route this site publishes is
-         now reachable from the bottom of every page, one click, no menu.
+         FIVE COLUMNS AND TWENTY-SIX INTERNAL LINKS, plus the mailto. Every
+         route this site publishes is now reachable from the bottom of every
+         page, one click, no menu. (Twenty-five before /healthy-cities joined
+         the Work column — see that row's own note below. A FIFTH COLUMN IS
+         FORBIDDEN: the grid is `1.3fr 1fr 1fr 1fr 1.05fr` and a new section
+         takes a row, not a column.)
          SET IN CAPS AT THE OWNER'S REQUEST, 24 August, and the caps are why the
          count is affordable: 13.5px uppercase with .05em tracking reads as a
          directory rather than as prose, so a longer list does not read as a
@@ -4607,12 +4605,13 @@ main{display:block;margin:0;padding:0}
          address, because a capitalised address invites the reader to retype it
          wrongly, and the one explanatory sentence under "Follow the work",
          because twenty words of caps is a shout, not a label.
-         AND IT IS BRIEFER ON PHONES, ALSO AS REQUESTED. `.foot-d` marks the ten
-         leaf links — six dashboard children, four journey names — that are the
-         detail rather than the route. Below 640px they are withdrawn and the
-         column keeps its "all six" / "all four" row, so a phone footer is 14
-         rows rather than 24 and NOTHING BECOMES UNREACHABLE: the parent page it
-         collapses to lists exactly the children that were hidden. -->
+         AND IT IS BRIEFER ON PHONES, ALSO AS REQUESTED. `.foot-d` marks the
+         sixteen leaf links — six dashboard children, the four Work kinds,
+         five Go rows and /search — that are the detail rather than the route.
+         Below 640px they are withdrawn and the column keeps its "all six" /
+         "all four" row, so a phone footer is 10 rows rather than 26 and
+         NOTHING BECOMES UNREACHABLE: the parent page it collapses to lists
+         exactly the children that were hidden. -->
     <div class="foot-g">
       <div>
         <div class="mark" style="font-size:34px;display:block;margin-bottom:12px"><img width="2048" height="512" src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"></div>
@@ -4630,8 +4629,21 @@ main{display:block;margin:0;padding:0}
         <a href="/impact">What changed</a>
         <a href="/act">Get involved</a>
       </div>
-      <div><h3 class="lbl">Dashboards</h3>
-        <a href="/now">All six, nearly live</a>
+      <div><h3 class="lbl">The readings</h3>
+        <a href="/now">All six situations</a>
+        <!-- ══ AD-48. FOUR NEW SECTIONS TAKE FOUR ROWS, NOT A SIXTH COLUMN. ══
+             /learn, /record, /schools and /journal are sections, not leaves, so
+             each takes a full row in the column it belongs to and none of them is
+             `.foot-d`. That costs four rows on a phone (10 to 14) and it is the
+             right cost: the withdrawal rule is that a hidden row must still be
+             listed on the parent it collapses to, and a top-level section has no
+             parent in this footer to collapse to. The grid stays five columns —
+             `1.3fr 1fr 1fr 1fr 1.05fr` — as the note above requires.
+             /use-the-data IS `.foot-d`, and legitimately: it collapses to
+             /record, which sits in the same column as a non-withdrawable row and
+             links it twice on the page. -->
+        <a href="/record">Past readings</a>
+        <a class="foot-d" href="/use-the-data">Download the data</a>
         <a class="foot-d" href="/now/air">Delhi air</a>
         <a class="foot-d" href="/now/yamuna">The Yamuna</a>
         <a class="foot-d" href="/now/heat">Heat</a>
@@ -4640,18 +4652,38 @@ main{display:block;margin:0;padding:0}
         <a class="foot-d" href="/now/climate-event">Extreme rain</a></div>
       <div><h3 class="lbl">Work</h3>
         <a href="/work">All of it</a>
+        <!-- THE MICROSITE'S ONE GLOBAL ROW. /healthy-cities is the 2025-26
+             chapter of Bridge the Gap, a project inside /work/projects, so this
+             is the column it belongs to — not "Go" (places you travel to) and
+             not "Read and reach" (things you read). It is NOT a seventh nav
+             word: the bar is closed at six plus the Give chip, and a seventh
+             was refused on arithmetic. The footer, the Bridge the Gap
+             cross-sell, /search and the sitemap are how it is reached.
+             AND IT IS DELIBERATELY NOT .foot-d. The phone withdrawal only
+             holds because "the parent page it collapses to lists exactly the
+             children that were hidden" — /work lists the four kinds, and it
+             does not list this. Marked .foot-d it would be the one footer row
+             that becomes unreachable below 640px. So it sits with "All of it"
+             as this column's second non-withdrawable row, which is also the
+             plain-then-.foot-d shape the other three labelled columns keep.
+             TWENTY-SIX LINKS NOW, still five columns; the .foot-d leaves are
+             sixteen, not ten — see the itemisation above. -->
+        <a href="/healthy-cities">Healthy Cities</a>
         <a class="foot-d" href="/work/projects">Projects</a>
         <a class="foot-d" href="/work/campaigns">Campaigns</a>
         <a class="foot-d" href="/work/journeys">Journeys</a>
         <a class="foot-d" href="/work/events">Events</a></div>
       <div><h3 class="lbl">Go</h3>
         <a href="/farm">Swechha Farm</a>
+        <a href="/schools">For schools</a>
         <a class="foot-d" href="/work/journeys">All four journeys</a>
         <a class="foot-d" href="/work/journeys/yamuna-yatra">Yamuna Yatra</a>
         <a class="foot-d" href="/work/journeys/naturescapes">NatureScapes</a>
         <a class="foot-d" href="/work/journeys/cityscapes">CityScapes</a>
         <a class="foot-d" href="/work/journeys/gram-anubhav">Gram Anubhav</a></div>
       <div><h3 class="lbl">Read and reach</h3>
+        <a href="/learn">Learn</a>
+        <a href="/journal">The Journal</a>
         <a href="/stories">Stories and films</a>
         <a href="/publications">Publications</a>
         <a href="/posters">Posters</a>

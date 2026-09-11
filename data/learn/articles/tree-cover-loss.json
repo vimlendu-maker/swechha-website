@@ -1,0 +1,140 @@
+{
+  "slug": "tree-cover-loss",
+  "category": "forest",
+  "h1": "What does tree-cover loss mean?",
+  "card": "A satellite measurement of canopy disappearing — which is not the same as deforestation.",
+  "frame": {
+    "src": "/images/photos/uttarakhand-fire-scar-2016.jpg",
+    "alt": "A hillside scarred by fire in Uttarakhand"
+  },
+  "answer": "Tree-cover loss is the removal of tree canopy in a mapped pixel, detected from Landsat imagery. It counts canopy disappearing for any reason — logging, fire, disease, storm, or a plantation being harvested on schedule. Its publisher states plainly that it is not equivalent to deforestation, and every figure depends on a canopy-density threshold that is a choice.",
+  "explainHead": "What the satellite sees",
+  "explainLead": "It sees canopy present in one year and absent in the next. It does not see why, and it does not see what came back.",
+  "explain": [
+    "The Hansen / University of Maryland dataset, published through Global Forest Watch, compares Landsat imagery year on year at 30-metre resolution and flags pixels where tree canopy was removed. It is a measurement, not a model — but what it is a measurement <i>of</i> is canopy, not forest.",
+    "So a eucalyptus plantation felled on a seven-year rotation registers as loss, and registers again every seven years. A patch of primary forest cleared for a mine registers once. Both are \"tree cover loss\" and only one is deforestation.",
+    "The threshold is the other trap. GFW's headline figures use 30 per cent canopy density in the year 2000 as the definition of \"tree cover\". A 10 per cent threshold gives a much larger area, and the thresholds are cumulative nested subsets — the 10 per cent figure <i>includes</i> the 30 per cent figure. Summing across thresholds double-counts and gives roughly eight times the real total."
+  ],
+  "defs": [
+    {
+      "term": "Canopy density threshold",
+      "d": "The minimum crown cover in 2000 for a pixel to count as tree cover. A choice, not a fact, and it must be printed wherever the number is."
+    },
+    {
+      "term": "Gross loss",
+      "d": "Canopy removed. It is not netted against regrowth, so it is not a net change in forest area."
+    },
+    {
+      "term": "Primary forest",
+      "d": "Mature natural forest. GFW reports loss within it separately, and that subset is much closer to what people mean by deforestation."
+    }
+  ],
+  "standard": {
+    "chip": "The threshold",
+    "head": "The numbers, and the choice behind them",
+    "lead": "India's cumulative tree-cover loss, as published, with the threshold that defines it.",
+    "rows": [
+      {
+        "name": "Canopy density threshold used",
+        "ref": {
+          "file": "gfw-india.json",
+          "path": "threshold.value"
+        },
+        "unit": "% canopy in 2000",
+        "authority": "Global Forest Watch headline convention"
+      },
+      {
+        "name": "Cumulative tree-cover loss",
+        "ref": {
+          "file": "gfw-india.json",
+          "path": "total.loss_mha"
+        },
+        "unit": "million hectares",
+        "authority": "Hansen / UMD, published by Global Forest Watch"
+      },
+      {
+        "name": "Same loss, in square kilometres",
+        "ref": {
+          "file": "gfw-india.json",
+          "path": "total.loss_km2"
+        },
+        "unit": "km²",
+        "authority": "Hansen / UMD, published by Global Forest Watch"
+      },
+      {
+        "name": "Period covered",
+        "refs": [
+          {
+            "file": "gfw-india.json",
+            "path": "total.from"
+          },
+          {
+            "file": "gfw-india.json",
+            "path": "total.to"
+          }
+        ],
+        "join": " – ",
+        "authority": "Hansen / UMD annual series"
+      },
+      {
+        "name": "Same loss at a 10 per cent threshold",
+        "ref": {
+          "file": "gfw-india.json",
+          "path": "threshold.ladder.1.total_ha"
+        },
+        "unit": "ha",
+        "authority": "Hansen / UMD, same dataset, different threshold"
+      }
+    ],
+    "after": [
+      "Both figures are the same country over the same period, at two different canopy thresholds. That is why a tree-cover-loss figure quoted without its threshold cannot be checked and should not be used."
+    ]
+  },
+  "readHead": "How to read a loss figure",
+  "readLead": "Four checks. A figure that survives them is usable.",
+  "measure": [
+    "<b>What threshold?</b> Without it the number has no definition.",
+    "<b>Gross or net?</b> This series is gross loss. It does not subtract gain, and gain is tracked separately and less well.",
+    "<b>All tree cover or primary forest?</b> The primary-forest subset is much smaller and much closer to \"deforestation\".",
+    "<b>Which years?</b> The series runs annually from 2001. Methodology improved over that period, and the publisher advises against reading short-run changes as trend."
+  ],
+  "cannot": [
+    "It cannot distinguish a harvest from a clearance. Both are canopy removed.",
+    "It cannot see regrowth in the same figure, so it is not a net change in forest area.",
+    "It cannot be compared with India's own forest-cover figures without accounting for both definitions — see <a class=\"lk\" href=\"/learn/forest-cover-vs-tree-cover\">forest cover or tree cover</a>.",
+    "Its thresholds cannot be summed. They are nested subsets, and adding them multiplies the answer."
+  ],
+  "live": {
+    "href": "/now/forest-loss",
+    "label": "Forest loss",
+    "note": "The satellite series and India's own report, side by side, with the threshold stated."
+  },
+  "sources": [
+    {
+      "name": "Global Forest Watch — tree cover loss",
+      "publisher": "World Resources Institute, using Hansen / University of Maryland data",
+      "url": "https://www.globalforestwatch.org/",
+      "note": "The dataset and its own caveat that loss is not deforestation"
+    },
+    {
+      "name": "GFW Data API",
+      "publisher": "World Resources Institute",
+      "url": "https://data-api.globalforestwatch.org/",
+      "note": "The authoritative interface; a key is required"
+    }
+  ],
+  "related": [
+    "forest-cover-vs-tree-cover",
+    "forest-loss-india",
+    "forest-fires-india"
+  ],
+  "programme": {
+    "href": "/work/journeys/naturescapes",
+    "label": "NatureScapes",
+    "why": "Four ecosystems in one programme, so a class has something to hold the satellite figure against."
+  },
+  "act": {
+    "href": "/act",
+    "label": "Work with us"
+  }
+}

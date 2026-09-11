@@ -203,8 +203,47 @@ export const NOT_FINAL = [
   { file: 'posters.html', why: 'FINISHED (AD-42), serving at /posters. Ten GIZ marine-plastic sheets as artefacts; the campaign that made them is at /work/campaigns/no-plastic, which shows the same set as its argument. Its own gates live in scripts/build-posters-page.mjs; the load-bearing ones are that no poster may sit in an .ht box or carry .duo (either would crop or duotone an A3 infographic), and that GIZ and the German federal environment ministry are named ONLY inside the credit quoted off the artwork.' },
   { file: 'publications.html', why: 'FINISHED (AD-26), serving at /publications. Its own gates live in scripts/build-publications-page.mjs; the load-bearing one reads every linked PDF\'s size off disk rather than trusting a typed figure, and refuses anything large enough to be a print master.' },
   { file: 'climate-event/', why: 'ONE PAGE PER PUBLISHED CLIMATE EVENT, from scripts/build-climate-disaster-pages.mjs, serving at /now/climate-event/<slug>. Outside this test because the SET IS NOT FIXED \u2014 it is whatever the detector currently has above its publication bar, which on a quiet week is nothing at all and after a regional disaster is one page. A register of fixed filenames is the wrong shape for it. Its gates live in lib/climate-events.mjs and run at build: a figure without a resolvable source, an automated event published on too little corroboration, or a published event with an empty `uncertain` list all fail the build rather than reaching a reader. Routes are derived from the same files by design-routes.ts, so a page cannot be built and left unrouted.' },
+  { file: 'healthy-cities.html', why: 'FINISHED, serving at /healthy-cities — the hub for Bridge the Gap’s 2025-26 Healthy Cities chapter, funded by the Bupa Foundation and Niva Bupa. Outside THIS test for the same reason as about.html: the twelve checks above are situation-specific (the fam-crumb’s "N of 6 situations", the five-sibling rail, the four-word state vocabulary), and a partner-facing microsite has no feed and therefore no cadence to state — which is itself a ruling on it rather than an omission, because the state mark belongs to a reading against a published legal limit and there is none on a school garden. Its own gates live in scripts/build-healthy-cities.mjs; the load-bearing ones are that the four rail figures’ SUM is computed and asserted absent from the rendered page in every format it could take (a fifth tile that totals the other four is the one number this page may not publish), that every figure rail sits inside a .wk-dark wrapper (the rail’s caption ink is the paper token, so the natural markup ships about 2.7:1 on a dark masthead and nothing but a rendered contrast check sees it), that every quote resolves against the fellow file that holds it rather than being copied onto the hub, that all ten fellows render as rows linking to their own pages, and — since the owner asked for Niva Bupa’s logo, which makes this the ONLY page on the site bearing a third-party mark — that the mark partition holds in both directions: exactly one image on the page is not a photograph, it is the /images/partners/ path the data registers, it sits in the #with band rather than the masthead, it carries NO duo/duo-dim because a mark is not a photograph and renders in colour, both funders are STILL credited as type beside it, the trademark acknowledgement naming the licensee renders, and every photograph on the page still carries the monochrome ramp. The Bupa Foundation stays type-only: separate legal entity, no published asset.' },
+  { file: 'healthy-cities/', why: 'FINISHED — ten fellow pages from scripts/build-healthy-cities.mjs, one per file in data/healthy-cities/fellows/, serving under /healthy-cities/fellows/<slug>. The same generator writes the hub above, deliberately: a fellow’s name, place, project or figure cannot differ between the register row and the page it opens, because both read the same two loaders. Outside THIS test for the reason the hub is — the twelve checks above are situation-specific and a person’s page has no feed and no cadence to state. Each page carries the hub’s own gates plus five that are about a person’s page: that every figure they published reaches it (figureRail takes four and slices the rest in silence, and two fellows publish five), that every quote renders verbatim because the hub POINTS at these quotes by their exact text rather than copying them, that every named hole in the report is stated, that the three fellows whose reports carry no publishable direct speech OMIT the voices band entirely rather than rendering it empty, and that each page builds its own section index — three of the hub’s five chips name bands that do not exist here, and a borrowed index is a control strip where three of five controls do nothing.' },
+  { file: 'journal.html', why: 'FINISHED \u2014 the Journal index, serving at /journal. Outside THIS test for the same reason as about.html. Its own gates live in scripts/build-journal.mjs.' },
+  { file: 'journal/', why: 'FINISHED \u2014 one page per APPROVED article in data/journal/articles/, serving at /journal/<slug>. The approval gate is the section: an article file that is not publish_state:"published" with a named approved_by gets no page, no route and no URL, which is the rule data/climate-events/ already runs on for an event below its publication bar. The other load-bearing gate is the inverse of /learn\u2019s: a Journal figure is SNAPSHOTTED, never referenced \u2014 it must carry the observation stamp it was true at, the source that published it and a counted/measured/modelled basis, and a `ref` into a live dataset is refused outright, because a figure that updates under a published date falsifies the record. Every article must also carry a non-empty `uncertain` list, machine-readable dates, and sources that are followable absolute URLs. Topics are proposed by scripts/propose-journal.mjs, which writes dossiers of numbers and links and no prose at all.' },
+  { file: 'schools.html', why: 'FINISHED \u2014 the school-facing page, serving at /schools. Outside THIS test for the same reason as about.html: the twelve checks above are situation-specific. Its own gates live in scripts/build-schools.mjs, and the load-bearing ones are the ones that keep it from becoming a seventh programme page \u2014 every programme row reads the item\u2019s own data/work/** file and links to it rather than restating it, every figure is NAMED by (kind, slug, label) and resolved against that file so it cannot disagree with the programme page it came from, no cumulative total may be printed (the counts are overlapping cohorts over unaligned periods, so the naive sum is computed and asserted absent), no price may appear, no school may be named that data/work/** does not name, and no quote block may appear because no attributable student or teacher testimonial has been collected yet.' },
+  { file: 'record.html', why: 'FINISHED \u2014 the archive index, serving at /record. Outside THIS test for the same reason as about.html. Built by scripts/build-record.mjs alongside /record/air, the month pages and /use-the-data, deliberately in one generator: the licence sentence, the citation format and the per-subject source register appear on all four, and two copies of a licence drift.' },
+  { file: 'record/', why: 'FINISHED \u2014 the Delhi air archive at /record/air plus one page per month of data/air-history/ at /record/air/<YYYY>/<MM>, from scripts/build-record.mjs. Routes are derived from the built files by design-routes.ts, so a thirteenth month needs no edit anywhere. Its load-bearing gates: every day present in the hourly store must render as a row, every rendered peak must equal the peak in the store (located by string rather than by a constructed regex \u2014 the first version fired on its own escaping), every month page must be linked from /record/air, a day with no reading may never print as a zero, and every month page must be a real <table> with a caption and scoped headers, because a record a researcher cannot parse is not one. The revisions band is the reason the section exists: CPCB revises published observations after the fact, and both versions are kept.' },
+  { file: 'use-the-data.html', why: 'FINISHED \u2014 the licence, attribution, citation formats, per-subject method register and per-subject limitations, serving at /use-the-data. Written by scripts/build-record.mjs from the same KEPT register the archive index renders, so the sources table and the archive cannot disagree. Its gate asserts the licence is stated by name.' },
+  { file: 'learn.html', why: 'FINISHED \u2014 the Learn index, serving at /learn. Outside THIS test for the same reason as about.html: the twelve checks above are situation-specific (the fam-crumb\u2019s "N of 6 situations", the five-sibling rail, the four-word state vocabulary), and an explainer library has no feed and therefore no cadence to state. Its own gates live in scripts/build-learn.mjs.' },
+  { file: 'learn/', why: 'FINISHED \u2014 one page per file in data/learn/articles/, serving at /learn/<slug>, from the same generator that writes the index above. Outside THIS test for the reason the index is. Its load-bearing gates are the ones that make the section structurally unable to contradict /now: NO FIGURE IS TYPED \u2014 every number is an address into the same committed dataset the situation page reads, a reference that will not resolve stops the build, a resolved value that does not reach the rendered page stops it too, and a reference into a live hourly field is refused outright because an evergreen explainer states the standard and not the hour. Beyond those: every article must carry a primary source with a followable absolute URL, a "what this cannot tell you" list, a lead photograph (the share card is derived from it), and at least two related articles \u2014 and nothing may be an orphan, so every article must also be related TO by another.' },
   { file: 'work/', why: 'FINISHED — 16 pages from scripts/build-work-pages.mjs, merged in PR #5 and serving under /work. It was in progress in a concurrent session when this line first read that way. It carries its own acceptance gate, the LINKS.json manifest, which fails the build on any unlisted or dead href.' },
 ];
+
+/* ═══ NO BACKTICK INSIDE ANY GENERATOR'S PAGE_CSS ════════════════════════
+   The check below has guarded SHARED_PAGE_CSS since three builds were broken
+   by a backtick inside one of its comments. On 9 September 2026 it happened a
+   FOURTH time, in a place that check does not look: four `const PAGE_CSS = `
+   literals in scripts/build-*.mjs, all four broken in one edit by writing
+   --hair and --rule-2 inside backticks in the prose of a CSS comment. The
+   symptom is baffling — "Invalid left-hand side expression in postfix
+   operation" on the line that OPENS the literal, because `--` after the
+   accidental close is parsed as a decrement.
+   `node --check` catches it, but only when someone runs that generator. This
+   catches it for every generator at once, and says what it actually is. */
+{
+  for (const f of readdirSync(join(ROOT, 'scripts')).filter((n) => /^build-.*\.mjs$/.test(n))) {
+    const src = readFileSync(join(ROOT, 'scripts', f), 'utf8');
+    const open_ = src.indexOf('const PAGE_CSS = `');
+    if (open_ < 0) continue;
+    const body = src.slice(open_ + 'const PAGE_CSS = `'.length);
+    const end = body.indexOf('`');
+    const after = body.slice(end + 1, end + 40).trim();
+    if (!after.startsWith(';')) {
+      console.error(`  FAIL ${f}'s PAGE_CSS closes early — a backtick inside it, probably in a `
+        + `comment. Text after the closing backtick: ${JSON.stringify(after.slice(0, 34))}`);
+      fail++;
+    } else {
+      console.log(`  ok   ${f} PAGE_CSS contains no stray backtick`);
+    }
+  }
+}
 
 /* ═══ NO BACKTICK INSIDE SHARED_PAGE_CSS ════════════════════════════════
    SHARED_PAGE_CSS is one template literal and a backtick anywhere inside it —
@@ -698,9 +737,21 @@ ${NOT_FINAL.map(n => `- **\`${n.file}\`** — ${n.why}`).join('\n')}
    \`build-situation-air.mjs\` as text. The intended end state is that the block
    moves into the shell and Air imports it; prove that migration with a
    byte-identical rebuild.
-3. **\`situation-soon.html\` is dead** and nothing links to it. Safe to delete.
-4. **\`home.html\` is hand-maintained**, which is why its ticker fallback figure
-   is typed rather than injected (D-24.5).
+3. **\`situation-soon.html\`, \`system.html\` and \`_mobile.html\` are not on this
+   register any more, because none of them is in \`public/_pages/v3\` any more** —
+   all three moved to \`docs/prototypes/\` when AD-17 §6.4 closed
+   \`public/design/\`, archived rather than destroyed (see design-routes.ts).
+   There is nothing left here to delete. The one live concern any of them
+   carried — \`system.html\`'s footer link ("The system sheet") 404ing at
+   \`/design/v3/system.html\` — closed when AD-27.10 pulled that link from the
+   footer: the footer today carries no "system sheet" text and no \`/design/\`
+   href.
+4. **\`design/home.html\`, the source, is hand-maintained; the \`home.html\` it
+   builds is not** — \`npm run build:hero\` emits the shipped copy from that
+   source, stripping comments and injecting the readings it can derive. Its
+   ticker fallback figure stays typed rather than injected because D-24.5
+   left it as an editorial judgement (see build-hero.mjs), not because the
+   shipped file is hand-edited.
 `;
   writeFileSync(join(ROOT, 'docs/design/FINAL.md'), doc);
   console.log('\nwrote docs/design/FINAL.md');

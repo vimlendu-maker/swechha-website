@@ -7,6 +7,7 @@ import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { seo, ROUTES } from './lib/seo-register.mjs';
 import { primaryImage, FALLBACK } from './lib/social-image.mjs';
+import { HASH_STRIP } from './lib/situation-shell.mjs';
 
 const V3 = 'public/_pages/v3';
 /* Same file the generators read (situation-shell.mjs's TRACKER) and the same
@@ -226,6 +227,22 @@ const CHECKS = [
         : 'no tracker tag — this page would be uncounted';
     },
   },
+  {
+    /* THE DEAD FRAGMENT STRIPPER, on the same reasoning as the tracker above:
+       a page that loses it is not broken, it just quietly keeps showing the
+       reader a legacy `#7G85YEUtVME` tail that no redirect can reach. Asserted
+       as the exact string, and imported from the shell that defines it, so a
+       page built by an edited copy of the script cannot pass. See HASH_STRIP
+       in situation-shell.mjs for what the script does and what in it is
+       load-bearing. */
+    name: 'carries the dead-fragment stripper',
+    run: ({ html }) => {
+      if (html.includes(HASH_STRIP)) return null;
+      return html.includes('DOMContentLoaded\',c)')
+        ? 'fragment stripper present but does not match situation-shell.mjs HASH_STRIP exactly'
+        : 'no fragment stripper — a legacy #fragment would stay in the address bar';
+    },
+  },
 ];
 
 const files = walk(V3);
@@ -257,8 +274,16 @@ for (const file of files) {
 
      They are still CHECKED — the entry is reconstructed from the page's own
      markup, so every rule below still runs against it. What is skipped is
-     the register lookup, not the checks. */
-  const isDerivedEvent = /^\/now\/climate-event\/.+/.test(route);
+     the register lookup, not the checks.
+
+     THE RECORD'S MONTH PAGES ARE THE SAME CASE. `/record/air/<YYYY>/<MM>`
+     appears on its own the moment the hourly store rolls into a new month, so
+     a register with an entry per page would go red on the first of every
+     month. `scripts/build-record.mjs` passes their title and description to
+     assemble() with the same gate applied, and `fitDesc()` there picks a
+     closing clause that fits the window whatever the month's name costs. */
+  const isDerivedEvent = /^\/now\/climate-event\/.+/.test(route)
+    || /^\/record\/air\/\d{4}\/\d{2}$/.test(route);
   if (isDerivedEvent) {
     const t = /<title[^>]*>([\s\S]*?)<\/title>/.exec(html);
     const d = /<meta name="description" content="([^"]*)"/.exec(html);

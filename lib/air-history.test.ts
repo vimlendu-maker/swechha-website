@@ -197,11 +197,33 @@ describe('air-hourly.yml is the sole Air publisher, and its contract holds', () 
      (AD-46 stores history in the DIRECTORY data/air-history/). Under
      `set -e` that is `git add` exiting 128 on every run.
      So: never assert prose. Assert that every path the workflow stages is a
-     path this repository actually has. */
-  it('stages only paths that exist in this repository', () => {
-    const staged = [...yml.matchAll(/^\s*git add (?:-A )?(.+)$/gm)]
+     path this repository actually has.
+
+     ★ AND FOLLOW THE INDIRECTION RATHER THAN DROPPING THE ASSERTION. The
+     staging list moved out of this workflow and into
+     scripts/stage-generated.sh, which all five cron publishers now share —
+     because five hand-written lists disagreed and public/images appeared in
+     exactly one of them. stagedPaths() resolves the call, so this test still
+     checks the paths air-hourly really stages, and the AD-46 defect it was
+     written for would still be caught. */
+  const stagedPaths = () => {
+    const src = yml.includes('scripts/stage-generated.sh')
+      ? readFileSync(join(__dirname, '..', 'scripts', 'stage-generated.sh'), 'utf8')
+      : yml
+    /* Comments out (both `#` in the shell script and in the YAML), because the
+       script's own header quotes `git add -A <tree>` while explaining why a
+       superset is safe — and a test that reads a comment as a command is the
+       prose-assertion mistake this block was written to stop making. Then the
+       backslash continuations are joined, because the real command spans seven
+       lines. */
+    const code = src.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n').replace(/\\\n/g, ' ')
+    return [...code.matchAll(/^\s*git add (?:-A )?(.+)$/gm)]
       .flatMap((m) => m[1].trim().split(/\s+/))
-      .filter((p) => !p.startsWith('-'))
+      .filter((p) => p && !p.startsWith('-'))
+  }
+
+  it('stages only paths that exist in this repository', () => {
+    const staged = stagedPaths()
     expect(staged.length).toBeGreaterThan(0)
     for (const rel of staged) {
       expect(existsSync(join(__dirname, '..', rel)), `air-hourly.yml stages "${rel}", which does not exist`).toBe(true)
@@ -209,8 +231,7 @@ describe('air-hourly.yml is the sole Air publisher, and its contract holds', () 
   })
 
   it('stages the Air data and the observation history', () => {
-    const staged = [...yml.matchAll(/^\s*git add (?:-A )?(.+)$/gm)]
-      .flatMap((m) => m[1].trim().split(/\s+/))
+    const staged = stagedPaths()
     // `data` covers data/air-delhi.json, data/air-india.json and
     // data/air-history/ in one tree — the point is that history is reachable.
     expect(staged.some((p) => p === 'data' || p.startsWith('data/air'))).toBe(true)

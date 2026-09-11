@@ -101,6 +101,51 @@ for Creation, never straight to mainspace).
 to fold into this document's other items. Flagging it here so it isn't
 lost, not proposing to start it.
 
+## 6. Search submission — what is now automatic, and what still is not
+
+Added 2026-09-08, after checking rather than assuming.
+
+**Automatic now.** `.github/workflows/indexnow-new-pages.yml` submits any page
+file **added** in a push to `main`. It closes a real gap: IndexNow was wired
+only into `content-rebuild.yml` and `climate-events.yml`, each of which submits
+only the pages *it* changed — so forty URLs added by hand in PRs #87–#89
+(`/learn`, `/schools`, `/record`, `/journal`) were published and never
+announced. Those forty were submitted by hand on 8 September; everything after
+is automatic.
+
+It filters to **added, not modified**, on purpose. `scripts/ping-indexnow.mjs`
+records that the hourly air job is deliberately *not* wired to IndexNow, because
+`/now/air` changes a few dozen times a day and submitting one URL that often is
+the behaviour the protocol asks you not to exhibit. A trigger on "any changed
+page" would reverse that decision by the back door. It also stands down when
+the pushing commit is authored by `actions@github.com`, so the workflows that
+already submit their own pages do not submit them twice.
+
+**IndexNow does not reach Google.** It reaches Bing, Yandex, Seznam and Naver.
+Both legacy sitemap pings are dead and were verified against the live
+endpoints: Google's answers 404 *"Sitemaps ping is deprecated"* and Bing's
+answers 410 Gone. Never wire either.
+
+**What Google actually gets** is the sitemap `lastmod`, which this repo already
+computes from a content hash so it moves only when a page really changed —
+Google's own stated replacement for the ping. That is a passive signal: hours
+to weeks.
+
+**The only push route to Google needs the owner.** Two options, and the first
+is ten minutes:
+
+1. **Search Console, by hand.** Resubmit `sitemap.xml`, then URL-inspect and
+   Request Indexing on `/learn`, `/schools`, `/record` and `/journal` — four
+   requests seed four sections. Do this after any large addition.
+2. **The Search Console API**, which needs an OAuth service account added as a
+   property owner. Deliberately not wired: unattended credentials for a search
+   property are a bigger commitment than a cron job should make on its own. It
+   remains a real option if the publishing rate justifies it.
+
+**Also owner-only, and time-sensitive:** set the measurement baseline. Thirty
+Learn articles are in the sitemap with no before-figures recorded against them,
+and the comparison gets weaker every day it is left.
+
 ## What NOT to do
 
 - No paid "best NGO" award/badge schemes — several exist and most are

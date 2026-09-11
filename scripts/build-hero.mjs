@@ -146,30 +146,13 @@ if (ob && (typeof ob.d !== 'number' || typeof ob.m !== 'number' || typeof ob.y !
   fail('air-delhi.json observed has no y / m / d — the hero stamps the observation date');
 }
 const airStamp = ob ? `${airHour} IST, ${ob.d} ${AIR_MON[ob.m - 1]} ${ob.y}` : '';
-/* AD-46 — THE SECOND CLOCK, PRINTED BESIDE THE FIRST. "Observed" is CPCB's
-   clock (when the air was measured); "last checked" is OURS (when this
-   build's fetch asked CPCB). Different clocks, different facts, and the
-   owner's brief requires both on the page. HONESTY CONSTRAINT: this page is
-   a build artefact, so "last checked" can only mean the check that produced
-   THIS page — a poll that finds nothing new normally commits nothing. The
-   heartbeat in air-hourly.yml bounds that gap at ~60 minutes, which is what
-   entitles the page to print the clause at all. Rendered in IST because it
-   sits inside an IST sentence; converted from the UTC instant by ADDING the
-   fixed IST offset to a UTC construction and reading UTC getters — never
-   through the builder's local timezone. */
-const airChecked = (() => {
-  const iso = AIR.time?.swechha_checked_utc;
-  const ms = iso ? Date.parse(iso) : AIR.fetched?.epochMs;
-  if (!Number.isFinite(ms)) {
-    fail('air-delhi.json has neither time.swechha_checked_utc nor fetched.epochMs — the hero states when Swechha last checked');
-    return '';
-  }
-  const d = new Date(ms + 19800000); // + IST offset, then UTC getters = IST wall clock
-  const hhmm = `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`;
-  const sameDay = ob && d.getUTCDate() === ob.d && d.getUTCMonth() + 1 === ob.m && d.getUTCFullYear() === ob.y;
-  return sameDay ? `${hhmm} IST`
-    : `${hhmm} IST, ${d.getUTCDate()} ${AIR_MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-})();
+/* AD-46 PRINTED A SECOND CLOCK BESIDE THE FIRST — "observed" (CPCB's, when the
+   air was measured) and "last checked" (ours, when this build's fetch asked).
+   The 2026-09-10 copy pass struck the second one from the page: a fetch time is
+   our own bookkeeping, not an observation, and the homepage is the regime where
+   the figure stands clean. The computation went with it rather than being left
+   here to fail the build over a value nothing prints. The heartbeat in
+   air-hourly.yml still bounds the staleness; it is simply no longer narrated. */
 
 /* ── YAMUNA. The station, by name, out of the source table. ──────────────── */
 const nizam = (YAM.stations || []).find((s) => /nizamuddin/i.test(s.station || ''));
@@ -219,8 +202,8 @@ const SLIDES = [
       [/(<span class="readout" data-committed=")[^"]*(" aria-hidden="true">)[^<]*(?:<span class="dp">\.<\/span>[^<]*)?(<\/span>)/,
         `$1${airAqi}$2${readout(airAqi)}$3`, 'readout, and the committed-value attribute beside it'],
       [/(<span class="s-hero-prov">)[^<]*(<\/span>)/,
-        `$1Observed ${airStamp} &middot; last checked ${airChecked}.$2`,
-        'provenance: the observation stamp and when Swechha last checked — two clocks, both printed (AD-46)'],
+        `$1Observed ${airStamp}.$2`,
+        'provenance: the source\'s own observation stamp. AD-46 printed a second clock beside it —\n         when Swechha last checked — and the 2026-09-10 copy pass struck it: a fetch time is our\n         bookkeeping, not an observation, and the homepage is the regime where the figure stands clean.'],
       /* THE PROVENANCE MUST DESCRIBE THE NUMBER BESIDE IT — AD-42C.
          This line has now been wrong in two opposite directions. It read
          "CPCB continuous monitor, Anand Vihar" while the figure above it was
@@ -692,12 +675,16 @@ const HOMEPAGE = homepageSlot();
       [/(<span class="limit">)[\s\S]*?(<\/span>)/,
         `$1${lead && lead[1].spread?.max > lead[1].spread?.min
           ? `Outlets report ${n0(lead[1].spread.min)}&ndash;${n0(lead[1].spread.max)}. <b>Not settled.</b>`
-          : 'Every figure carries the outlet that reported it.'}$2`, 'the limit line'],
+          : ''}$2`, 'the limit line'],
+      /* THE SOURCE LINE, CUT BACK TO THE EVENT — 10 September 2026 copy pass.
+         It used to run "<place> · <hazard>. N independent publishers. Feeds
+         re-read every hour." The cadence clause was the pipeline describing
+         itself on the homepage, and the publisher count is corroboration
+         bookkeeping: the event's own page carries it in full, with each
+         publisher named, which is where a reader who wants to weigh it goes. */
       [/(<p class="cap s-hero-src">)[\s\S]*?(<\/p>)/,
-        `$1${esc(ev.location.text)} &middot; ${esc(HAZ_WORD[ev.hazard] || ev.hazard)}. `
-        + `${ev.corroboration.independent_publishers} independent publishers`
-        + `${ev.corroboration.official_alerts ? `, ${ev.corroboration.official_alerts} official alerts` : ''}. `
-        + `Feeds re-read every hour.$2`, 'the source line'],
+        `$1${esc(ev.location.text)} &middot; ${esc(HAZ_WORD[ev.hazard] || ev.hazard)}.$2`,
+        'the source line'],
       [/(<span class="tag tag-season">)[^<]*(<\/span>)/, `$1${esc(status.label)}$2`, 'the status tag'],
       [/(<p class="s-hero-act"><a class="act" href=")[^"]*(")/, `$1${href}$2`, 'the link to the full situation'],
     ];
@@ -914,15 +901,25 @@ const HOMEPAGE = homepageSlot();
     }
   }
 
-  /* AND THE SENTENCE THAT REPLACED THE CLOCK IS A CHECKABLE CLAIM, so it is
-     checked. "Each reading is dated on its own page" is only true while every
-     reading cell is a link — five of the six; the Impact slot is a record,
-     not a reading, which is what the count line beside it already says. */
+  /* THE CLAIM THIS CHECKED IS GONE; THE STRUCTURAL FACT IT RELIED ON IS NOT.
+     The head used to carry "Each reading is dated on its own page" and a count
+     line reading "Five in window · one record", and this block existed because
+     the first was a checkable claim. The 10 September 2026 copy pass struck
+     both: a routing fact is not a statement about the work, and "in window" is
+     this build's own state vocabulary, not English.
+
+     THE ASSERTION STAYS, INVERTED FROM A CLAIM-CHECK TO A SHAPE-CHECK. Five of
+     the six cells must still link to a situation page — that is what makes the
+     strip a set of readings rather than a set of pictures, and AD-27.6-C's
+     whole argument for carrying no page-level clock is that each cell's own
+     page dates itself. If that stops being true the strip is wrong whether or
+     not a sentence above it says so. */
   const cells = [...src.matchAll(/<a class="s-ticker-cell[^"]*"[^>]*?href="([^"]+)"/g)].map((m) => m[1]);
   const readings = cells.filter((h) => h.startsWith('/now/'));
   if (readings.length < 5) {
-    fail(`ticker head: the head says "Each reading is dated on its own page" but only `
-      + `${readings.length} of the ${cells.length} cells link to a situation page that carries one`);
+    fail(`ticker cells: only ${readings.length} of the ${cells.length} link to a situation page `
+      + 'that dates its own reading. AD-27.6-C lets this strip carry no clock of its own '
+      + 'precisely because each cell has one; below five that stops being true.');
   } else {
     ok(`ticker cells  ${readings.length} reading cells link to a dated page, ${cells.length - readings.length} record cell`);
   }
@@ -1200,11 +1197,15 @@ for (const [re, what] of [
    the several `<body>` mentions inside the page's own JS comments cannot be
    hit; `String.replace` with a string pattern takes the first match, and the
    real tag is the first line-initial one. */
-const shipped = ship.replace('\n<body>', `\n${S.TRACKER}\n<body>`);
+/* HASH_STRIP RIDES THE SAME INSERTION for the same reason: it is a
+   `<script>`, so it has to land after the tag-count guard too, and this
+   page's head is the one no shared shell writes. */
+const shipped = ship.replace('\n<body>', `\n${S.TRACKER}\n${S.HASH_STRIP}\n<body>`);
 if (shipped === ship) {
   console.error('\nREFUSING TO WRITE: no line-initial <body> found in the shipped homepage, '
-    + 'so the analytics tag could not be inserted. The page would ship uncounted '
-    + 'while every other page reported, and verify:seo would fail on / alone. '
+    + 'so neither the analytics tag nor the fragment stripper could be inserted. The '
+    + 'page would ship uncounted while every other page reported, and verify:seo '
+    + 'would fail on / twice over. '
     + 'Check what shipDocument() did to the document head.');
   process.exit(1);
 }

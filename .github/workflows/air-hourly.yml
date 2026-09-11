@@ -320,31 +320,37 @@ jobs:
               echo "Cross-check verdict is under ${CROSSCHECK_MAX_AGE_H}h old; carried forward."
             fi
 
-            # ── BUILD: EVERY GENERATOR, NOT THE TWO AIR ONES ─────────────
-            # generated-current.yml regenerates all eleven on the next push and
+            # ── ONE REBUILD, SHARED WITH EVERY OTHER PUBLISHER ───────────
+            # generated-current.yml regenerates everything on the next push and
             # fails if the tree moves. The previous 15-minute workflow rebuilt
-            # two of them, leaving that gate primed to fail on the next pull
-            # request anyone opened, for a change that touched none of it.
-            # SITUATIONS BEFORE THE HERO, AND THAT ORDER IS LOAD-BEARING:
+            # two generators, leaving that gate primed to fail on the next pull
+            # request anyone opened, for a change that touched none of it. This
+            # loop was the fix, and it was STILL a hand-maintained list: it ran
+            # fourteen targets and the gate ran nineteen, so healthy-cities,
+            # learn, schools, journal and the share cards were left to whoever
+            # opened the next PR. Five publishers, five different lists.
+            #
+            # SITUATIONS BEFORE THE HERO, AND THAT ORDER IS LOAD-BEARING —
             # build-hero.mjs cross-checks the hero's figure against the figure
             # already in situation-air.html and refuses to write if they
-            # differ. Build the hero first and it compares fresh data against a
-            # page that has not been rebuilt yet, fails, and stops the run.
-            # (generated-current.yml runs hero-first for the opposite and
-            # equally correct reason: it starts from a tree already in step.)
-            for t in situations hero work about impact farm act stories publications posters search essays; do
-              npm run "build:$t" || { echo "::error::build:$t refused to write. A generator gate failed; nothing is published."; exit 1; }
-            done
+            # differ, so a hero built first compares fresh data against a page
+            # nobody has rebuilt. build:all now holds that order for everyone,
+            # including generated-current.yml, which had it the other way round
+            # and survived only because a gate starts from a tree in step.
+            npm run build:all   || { echo "::error::A generator refused to write. Nothing is published."; exit 1; }
             npm run verify:final || { echo "::error::verify:final refused."; exit 1; }
 
-            # ── COMMIT ───────────────────────────────────────────────────
-            # -A across the three generated trees: the previous version named
-            # five paths by hand and one of them (data/air-history.ndjson) did
-            # not exist — AD-46 stores history in a DIRECTORY,
-            # data/air-history/. Under `set -e` that `git add` exits 128, so
-            # the publisher was one gate-fix away from failing on every run
-            # instead. Naming trees, not files, cannot rot that way.
-            git add -A data public/_pages design
+            # ── COMMIT: ONE STAGING LIST, SHARED WITH EVERY PUBLISHER ────
+            # Two lessons this list learned the hard way now live in the
+            # script, where all five publishers get them: name TREES and not
+            # files (a previous version named data/air-history.ndjson, which
+            # AD-46 had turned into a directory, so `git add` exited 128 under
+            # `set -e`), and name every tree the run can write (build:data
+            # writes public/data/, which is not inside public/_pages, so an
+            # export left unstaged is committed by nobody and fails the gate on
+            # somebody else's pull request). This list was missing
+            # public/images and docs/design/FINAL.md.
+            ./scripts/stage-generated.sh
 
             if git diff --cached --quiet; then
               echo "::error::A successful Delhi check ($status) staged nothing. Every successful check must at least move time.swechha_checked_utc — see the AD-47 note in scripts/fetch-air.mjs."

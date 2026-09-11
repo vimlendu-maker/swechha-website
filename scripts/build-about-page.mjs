@@ -232,8 +232,8 @@ const RUNGS = [
   { year: '2016', head: 'City to countryside',
     text: 'From urban campaigns to land, water, livelihoods and the farm.' },
   { year: 'Now', head: 'Still showing up', green: true,
-    text: 'The journeys still run, the schools still run, and the readings still go up '
-        + 'with the hour they were taken.' },
+    text: 'The journeys still run, the schools still run, and six situations are '
+        + 'tracked every hour.' },
 ];
 
 /* ═══ THE CHECKABLE PART IS NOT A BAND ANY MORE — AD-27.41 ════════════════
@@ -436,7 +436,7 @@ ${PILLARS.map(([n, t]) => `          <div class="a-pil"><p class="a-pil-n">${n}<
 
       <div class="a-two">
         <div>
-          <h3 class="lbl a-sub">The five themes under those three</h3>
+          <h3 class="lbl a-sub">The five themes</h3>
           <ul class="a-list">
 ${THEMES.map(t => `            <li>${t}</li>`).join('\n')}
           </ul>
@@ -444,7 +444,7 @@ ${THEMES.map(t => `            <li>${t}</li>`).join('\n')}
             Sustainability</b> &mdash; research, communication, advocacy.</p>
         </div>
         <div>
-          <h3 class="lbl a-sub">And how it works</h3>
+          <h3 class="lbl a-sub">How it works</h3>
           <ul class="a-list a-list-n">
 ${WHEEL.map(t => `            <li>${t}</li>`).join('\n')}
           </ul>
@@ -453,7 +453,7 @@ ${WHEEL.map(t => `            <li>${t}</li>`).join('\n')}
       </div>
 
       <div class="a-def">
-        <h3 class="lbl a-sub">And what it means by the word</h3>
+        <h3 class="lbl a-sub">What change means here</h3>
         <p class="lead a-def-t">Change is &ldquo;a transformation in the attitude of the masses, in
           their perceptions and simultaneously in the environment &mdash; both social and human.&rdquo;</p>
       </div>
@@ -686,7 +686,7 @@ const NGO_LD = '      <script type="application/ld+json">'
   + JSON.stringify(NGO_JSON).replace(/</g, '\\u003c') + '</script>';
 
 const DOORS = [
-  ['/now', 'The readings', 'Six situations, each against its published limit.'],
+  ['/now', 'The readings', 'All six: air, the Yamuna, heat, forest fire, forest loss, extreme rain.'],
   ['/impact', 'The record', 'What the work adds up to.'],
   /* AD-24: `/farm` is a page now, and this door already says "you can come to
      it" — which the homepage band could only promise and the page can answer. */

@@ -206,6 +206,45 @@ export const SEVERITY_TERMS = {
    story ABOUT a hazard: a study, a memorial, a budget line, a film. These
    terms subtract, hard. "Flood of applications" is in here for the obvious
    reason, and it earns its place. */
+/* ★ AN EXPLAINER IS NOT AN EVENT, AND A PUBLISHED PAGE MUST NOT DECAY INTO
+   ONE. Three of the eight pages withdrawn by hand on 9 September 2026 were
+   leading on something that had never happened: an explainer about how floods
+   work ("From Nepal to Dikhow: Understanding the forces behind major floods"),
+   an op-ed about regional diplomacy ("Himalayan floods highlight urgent need
+   for regional disaster preparedness"), and a tunnel due to open in four days.
+
+   THE ROUTE IN WAS NOT THE PUBLICATION GATE. At withdrawal those three scored
+   6, −1 and 8 against THRESHOLD 14, on 1, 1 and 2 publishers against a bar of
+   8 (or 4 with an alert) — unpublishable today. They were live because
+   publishStateFor() latches, and they had cleared a lower bar long before.
+
+   What failed is LEAD SELECTION. `sources` is rebuilt every run from a rolling
+   two-day window and pickLead() takes the least-penalised survivor, so once
+   the real reporting ages out, commentary is what remains — and
+   headlinePenalty() REWARDED these, giving the first one −2 for containing the
+   word "flood" and penalising it for nothing at all.
+
+   So this list is used TWICE: appended to NEGATIVE_TERMS below, which drives
+   the proportional cluster penalty in the scorer (keeping the publication route
+   shut if THRESHOLD is ever lowered again — it has moved before), and in
+   headlinePenalty(), which is where the visible damage happened.
+
+   ★ EVERY MARKER IS TESTED AGAINST REAL REPORTING, NOT ONLY AGAINST THE THREE.
+   lib/event-noise.test.ts holds both halves: the three that must be rejected,
+   and 23 headlines from the four still-standing events' own source registers
+   that must come through untouched. Rejecting genuine disaster coverage is a
+   far worse failure than printing an op-ed, so nothing goes in here that the
+   positive corpus does not survive. That is also why there is no bare "why",
+   no "prone", and no "preparedness": each of them catches real reporting. */
+export const ANALYSIS_MARKERS = [
+  'understanding the', 'the forces behind', 'what causes',
+  'urgent need', 'highlights the need',
+  'explained', 'explainer', "here's why", "here's what", 'what you need to know',
+  'need to know', 'why it matters', 'in perspective', 'takeaways',
+  'opinion:', 'analysis:', 'op-ed', 'interview:', 'editorial:',
+  'prone zone', 'to be opened', 'to be inaugurated', 'set to open',
+];
+
 export const NEGATIVE_TERMS = [
   'anniversary', 'commemorat', 'memorial', 'years ago', 'decades ago', 'lessons from',
   'study finds', 'research shows', 'report says', 'according to a study', 'scientists say',
@@ -214,10 +253,24 @@ export const NEGATIVE_TERMS = [
   'budget', 'allocation', 'crore allocated', 'scheme launched', 'policy', 'bill passed',
   'flood of applications', 'flood of', 'wave of support', 'drought of ideas',
   'stock', 'shares', 'market', 'ipo', 'cricket', 'match', 'election',
+  ...ANALYSIS_MARKERS,
 ];
 
 /** Lowercased haystack for a news item: title plus publisher. */
 export const hay = (item) => `${item.title || ''} ${item.publisher || ''}`.toLowerCase();
+
+/* ★ PLACE IS READ FROM THE TITLE ONLY, AND THE PUBLISHER IS EXCLUDED BY NAME.
+   `hay()` folds the publisher into the text so a hazard word in a masthead
+   still counts. For PLACE that is a defect, and it published eight false
+   events. Greater Kashmir — a Srinagar newspaper — carried "Chinese experts
+   link deadly Tibet-Nepal flood to climate change", and because "kashmir" is
+   in the masthead the detector created a Kashmir flood. The same mechanism
+   produced an Odisha landslide and an Assam flood out of Nepal coverage.
+
+   A publisher's masthead is not a fact about the story. The regional
+   inference it was presumably included for — a local paper implying a local
+   event — is speculative; the failure is demonstrated. */
+export const hayPlace = (item) => `${item.title || ''}`.toLowerCase();
 
 /* ── COORDINATES, FOR THE LIVE WEATHER READING ────────────────────────────
    Only the places this detector can actually name. A coordinate here is a
@@ -352,3 +405,172 @@ export const regionOf = (place) => {
   const k = String(place || '').toLowerCase();
   return REGION_OF[k] || place;
 };
+
+/* ── EVERY NAME A HEADLINE MIGHT USE FOR THIS PLACE ───────────────────────
+   ★ THE CLUSTER KEY IS regionOf(place), SO A DOSSIER'S PLACE IS A CANONICAL
+   ONE AND ITS COVERAGE IS NOT. `uttar-pradesh-flood` is the case that proved
+   it: its register holds "Lucknow on Alert Today" and "flood-hit families in
+   Kanpur", and REGION_OF maps both cities to Uttar Pradesh, so the dossier is
+   correctly named and not one headline says "Uttar Pradesh".
+
+   Any check that asks "does the register mention the place" has to ask with
+   the same vocabulary the clusterer used, or it rejects real pages. The first
+   version of registerNamesPlace() did not, and this exact dossier failed it on
+   live data within one run of being written — which is the failure mode that
+   matters, because blocking a genuine flood page is far worse than tolerating
+   an odd register.
+
+   So: the place's own words, every sub-place REGION_OF folds into it, and —
+   for a tier-2 place — every alias in its zone, because "Rasuwa" and
+   "Sindhupalchok" are how Nepal's flood is actually reported. */
+export function placeVocabulary(place) {
+  const p = String(place || '').toLowerCase();
+  if (!p) return [];
+  const out = new Set(p.split(/[^a-z]+/).filter((w) => w.length >= 3));
+  for (const [sub, parent] of Object.entries(REGION_OF)) {
+    if (String(parent).toLowerCase() === p) out.add(sub);
+  }
+  const zone = TIER2.find((z) => z.match.some((m) => m === p));
+  if (zone) for (const m of zone.match) out.add(m);
+  return [...out];
+}
+
+/* ═══ LEAD SELECTION ══════════════════════════════════════════════════════
+   Moved here from detect-climate-events.mjs so it can be TESTED. The defect
+   these lists exist to prevent lived inside an unexported function in a
+   script that cannot be imported (it reads the news at module scope), so
+   nothing could assert on it and the explainer hole stayed open until a
+   person read eight live pages and withdrew them by hand. The vocabulary
+   and the scorer that uses it now sit together, and lib/event-noise.test.ts
+   calls the real function. cleanHeadline() stays in the detector: it is
+   about a feed's formatting, not about what a headline means. */
+export const ROUNDUP_MARKERS = [
+  'news today', 'live updates', 'live:', 'highlights', 'top news', 'morning digest',
+  'evening digest', 'what we know', 'explained', 'in pics', 'in photos', 'watch:',
+  'top 10', 'roundup', 'wrap', 'daily brief', 'newsletter', 'opinion', 'editorial',
+];
+
+/* Signals that a headline is about ONE PERSON rather than the event. The first
+   real run picked "Nepal flash floods: Software engineer from A.P.'s Kuppam
+   'missing', family appeals for assistance" as the lead for a disaster carried
+   by 123 publishers — a true story, and the wrong one to head a situation
+   board, because it describes an individual case rather than the event. */
+export const PERSONAL_MARKERS = [
+  'family appeals', 'appeals for', 'my son', 'my husband', 'my father', 'my brother',
+  'engineer from', 'student from', 'native of', 'hails from', 'resident of',
+  'body found', 'last seen', 'speaks to', 'recalls', 'tells us', 'i was', 'we were',
+  'survivor', 'eyewitness', 'trapped for', 'rescued after', 'reunited',
+];
+/* Words that indicate the headline describes the event at scale. */
+export const SCALE_MARKERS = [
+  'toll', 'dead', 'killed', 'missing', 'districts', 'villages', 'evacuated',
+  'displaced', 'swept', 'washed away', 'destroyed', 'submerged', 'stranded',
+  'alert', 'warning', 'rescue', 'relief', 'damage', 'bridge', 'highway',
+];
+
+/** Lower is better. Penalises roundups, single-person stories, questions, and
+ *  titles that are too long or too short to work as a page heading; rewards
+ *  headlines that name the hazard and describe it at scale. */
+export function headlinePenalty(title, hazard) {
+  const t = String(title || '').toLowerCase();
+  let p = 0;
+  for (const m of ROUNDUP_MARKERS) if (t.includes(m)) p += 4;
+  for (const m of PERSONAL_MARKERS) if (t.includes(m)) p += 5;
+  /* ★ COMMENTARY IS NEVER THE LEAD. +8 PER MARKER, AND THE NUMBER IS
+     DERIVED: the bonuses below can reach −7 (−2 hazard word, −1 a digit,
+     −4 for two scale markers), so anything smaller lets an explainer that
+     happens to name the hazard beat a plain report of the event. Three of
+     the eight pages withdrawn on 9 September 2026 were leading on
+     commentary that this function had actively REWARDED — "From Nepal to
+     Dikhow: Understanding the forces behind major floods" earned −2 for the
+     word "flood" and was penalised for nothing at all. ROUNDUP_MARKERS
+     already catches an aggregator's digest; it does not catch an op-ed.
+     Some markers appear in both lists ('explained', 'opinion', 'editorial')
+     and so score twice here, which is harmless and deliberate — the lead is
+     a ranking, not a gate. */
+  for (const m of ANALYSIS_MARKERS) if (t.includes(m)) p += 8;
+  if (/[‘’'"“”]/.test(title || '')) p += 2;        // a quoted word is usually one person speaking
+  if (t.includes('?')) p += 2;
+  if (t.split(':').length > 2) p += 2;
+  const scale = SCALE_MARKERS.filter((m) => t.includes(m)).length;
+  p -= Math.min(4, scale * 2);
+  const hazWords = { glof: ['glacial', 'glacier', 'outburst'], cloudburst: ['cloudburst'],
+    flood: ['flood'], landslide: ['landslide', 'landslip'], cyclone: ['cyclone'],
+    extreme_rain: ['rain', 'rainfall'] }[hazard] || [];
+  if (hazWords.some((w) => t.includes(w))) p -= 2;
+  if (/\d/.test(t)) p -= 1;                        // a number is usually a count
+  const n = t.length;
+  if (n > 110) p += 2;
+  if (n < 30) p += 2;
+  return p;
+}
+
+
+/* ═══ WHAT A HEADLINE IS ABOUT ═════════════════════════════════════════════
+   ★ A PLACE NAME MUST BE A WORD, NOT A SUBSTRING. These classifiers used a
+   bare `includes()`, and data/climate-events/active/krishna-flood.json is what
+   that produced. Its whole register is one item:
+
+     "Vice President Radhakrishnan urges deepening of Keralam rivers to
+      prevent floods"
+
+   A bare match finds "kerala" inside "Keralam" — correct, Keralam is Kerala —
+   and ALSO "krishna" inside RadhaKRISHNAn. title() below then picks the
+   LONGEST match, seven characters beating six, so a Vice-President's surname
+   created a Krishna river flood. mentionsPlace() in event-figures.mjs has
+   always anchored with \b and rejects that headline; the classifier that
+   decides what the page is ABOUT did not, so the wrong answer got in upstream
+   of every check.
+
+   ANCHORED AT THE START ONLY, exactly as mentionsPlace() does, because that is
+   the behaviour wanted: "flood" must still match "floods", "flooding" and
+   "flooded", and "kerala" must still match "Keralam". What it stops is a name
+   hiding inside a longer word.
+
+   Moved here from detect-climate-events.mjs to be TESTABLE. That script reads
+   the news at module scope and cannot be imported, which is how a defect this
+   demonstrable sat in it unnoticed — the same reason headlinePenalty() moved. */
+const named = (h, needle) => new RegExp(`\\b${needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(h);
+/** Which hazard is this item about? First strong match wins — HAZARD_TERMS is
+ *  ordered specific-to-general precisely so "glacial lake outburst" beats
+ *  "flood" and pulls the right context pack. */
+export function classifyHazard(h) {
+  for (const t of HAZARD_TERMS) if (t.strong.some((w) => named(h, w))) return { hazard: t.hazard, strength: 'strong' };
+  for (const t of HAZARD_TERMS) {
+    const n = t.weak.filter((w) => named(h, w)).length;
+    if (n >= 2) return { hazard: t.hazard, strength: 'weak' };
+  }
+  return null;
+}
+
+/** Where is it, and does that place reach India?
+ *
+ *  ★ THE TEXT IS THE TITLE, NEVER hay(). See hayPlace()'s note: the publisher
+ *    is folded into hay(), and matching a place against a masthead published
+ *    eight events that did not happen.
+ *
+ *  ★ A TITLE NAMING BOTH AN INDIAN AND A FOREIGN PLACE DOES NOT MINT AN
+ *    INDIAN EVENT. "Tamil Nadu: 23 give blood samples to identify Nepal flood
+ *    victims" names Tamil Nadu and names a flood, and there is no Tamil Nadu
+ *    flood in it — the state is where the mourners are, not where the water
+ *    was. Word matching cannot tell a subject from a mention, so where both
+ *    are present the item is treated as being about the FOREIGN event: it
+ *    still corroborates that one, and it no longer invents a domestic one.
+ *    This is deliberately asymmetric. Missing a real Indian event because a
+ *    foreign place was also named costs a page that other items will still
+ *    create; inventing one costs a false claim on a site whose whole argument
+ *    is that its claims are checkable. */
+export function classifyPlace(h) {
+  const t1 = TIER1.filter((p) => named(h, p));
+  const t2zone = TIER2.find((z) => z.match.some((p) => named(h, p)));
+  if (t1.length && !t2zone) {
+    return { tier: 1, place: title(t1.sort((a, b) => b.length - a.length)[0]), relevance: 'direct', why: null };
+  }
+  if (t2zone) {
+    const hit = t2zone.match.filter((p) => named(h, p));
+    return { tier: 2, place: title(hit.sort((a, b) => b.length - a.length)[0]), relevance: t2zone.relevance, why: t2zone.why };
+  }
+  return null;
+}
+
+const title = (s) => s.replace(/\b[a-z]/g, (c) => c.toUpperCase());

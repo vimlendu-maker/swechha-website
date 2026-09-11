@@ -125,11 +125,13 @@ image exists on disk and clears 600 × 315.
 
 ## What is still true after this
 
-**Ten pages carry no photograph and keep the brand card**, which is the correct
-answer for a page with nothing to show, not a gap in the mechanism:
+**Ten pages carry no photograph and keep the brand card**, which is the
+correct answer for a page with nothing to show, not a gap in the mechanism:
 
 `/now` · `/now/air/india` · `/act` · `/search` · `/work/journeys/gram-anubhav` ·
 and the five essays under `/stories/`.
+
+All ten fellow pages now carry their own masthead photograph.
 
 The five essays are the ones worth revisiting: they are the site's most
 shareable writing and `content/essay/_index.json` carries no image field at
