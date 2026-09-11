@@ -227,6 +227,43 @@ echo "wrote $OUT"
 # ── STAGE TWO: hand each brief to its specialist ─────────────────────────────
 # The manager decided; this executes. Only `work` mode delegates, and only
 # engineering may act -- execute.sh refuses a read-only specialist outright.
+# ── The task spine ───────────────────────────────────────────────────────────
+# Stage two's briefs are mktemp files destroyed at the end of the run, so every
+# delegation this department has ever made has left no durable trace of what was
+# asked or whether it shipped. `org status` could therefore answer nothing. These
+# helpers record the TITLE and the OUTCOME of each brief as a task.
+#
+# ★ NEVER THE BRIEF'S BODY. A brief is a prompt, and swechha/ai/events.md excludes
+#   prompts and model output from the stream because it is plain text a renderer
+#   reads. Title and outcome are what a person needs; the body stays ephemeral and
+#   is destroyed with the run, exactly as now.
+#
+# ★ IT MUST NEVER BREAK THE RUN. Every call is guarded by [ -x ] and swallows its
+#   own failure, the same rule hook-event.py follows. Bookkeeping that can stop the
+#   department has traded something that matters for something that does not. With
+#   the spine uninstalled this file behaves exactly as it did before.
+ORG="${ORG_CLI:-$HOME/.swechha-ai/org}"
+
+spine_new() {   # <title> -> task id on stdout, or nothing
+  [ -x "$ORG" ] || return 0
+  "$ORG" task new website "$1" --origin schedule 2>/dev/null || true
+}
+
+spine_close() { # <task id> <done|refused|escalate> <note>
+  [ -x "$ORG" ] || return 0
+  [ -n "$1" ] || return 0
+  case "$2" in
+    done)     "$ORG" task done    "$1" --outcome "$3"  >/dev/null 2>&1 || true ;;
+    # A brief this department declined to execute is CLOSED, not escalated. Only
+    # something genuinely stuck belongs in "needs you"; a queue full of routine
+    # skips is a queue nobody reads.
+    refused)  "$ORG" task refuse  "$1" "$3"            >/dev/null 2>&1 || true ;;
+    # A brief that did not ship STAYS VISIBLE until a person moves it. This is the
+    # structural answer to a task being skipped 682 times while reporting success.
+    escalate) "$ORG" task escalate "$1" --reason "$3"  >/dev/null 2>&1 || true ;;
+  esac
+}
+
 if [ "$MODE" = "work" ]; then
   BRIEFS="$(mktemp -d)"
   MAPPING="$(printf '%s' "$TEXT" | python3 "$REPO/scripts/website-team/extract-briefs.py" "$BRIEFS" || true)"
@@ -236,8 +273,16 @@ if [ "$MODE" = "work" ]; then
     while read -r spec model path; do
       [ -z "$spec" ] && continue
       echo "stage two: $spec ($model) <- $(basename "$path")"
+      # extract-briefs.py writes the title as the brief's first line.
+      TITLE="$(head -1 "$path" 2>/dev/null || true)"
+      [ -n "$TITLE" ] || TITLE="$(basename "$path")"
+      TASK="$(spine_new "$TITLE")"
+      if [ -n "$TASK" ]; then
+        "$ORG" task claim "$TASK" "$spec" >/dev/null 2>&1 || true
+      fi
       if [ "$spec" != "website-engineering" ]; then
         echo "stage two: skipped — $spec is read-only by policy; its findings are already in the record"
+        spine_close "$TASK" refused "read-only specialist; the findings are in the run record"
         continue
       fi
       # THREE ARGUMENTS, NOT TWO. execute.sh takes <specialist> <model> <brief>.
@@ -245,8 +290,12 @@ if [ "$MODE" = "work" ]; then
       # the brief path landed in $MODEL and every brief died on "unknown model"
       # before a specialist ever started. Stage two has never shipped anything
       # since; caught 2026-09-11 while moving the run into its own worktree.
-      "$REPO/scripts/website-team/execute.sh" "$spec" "$model" "$path" || \
+      if "$REPO/scripts/website-team/execute.sh" "$spec" "$model" "$path"; then
+        spine_close "$TASK" done "shipped"
+      else
         echo "stage two: $(basename "$path") did not ship — see output above"
+        spine_close "$TASK" escalate "execute.sh did not ship it"
+      fi
     done <<< "$MAPPING"
   fi
   rm -rf "$BRIEFS"
