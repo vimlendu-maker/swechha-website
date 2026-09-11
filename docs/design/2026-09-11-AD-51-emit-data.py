@@ -1,6 +1,18 @@
-import re, json, os
-SP="/private/tmp/claude-502/-Users-administrator-Farm-App/2d85ad1b-0108-4aec-8092-c9deb6412456/scratchpad"
-ROOT="/Users/administrator/swechha-website"
+import os, re, json
+# WHERE THE EXTRACTED PDF TEXT LIVES. Not in the repo — the manual is a 25MB
+# PDF and its text dump is an intermediate, so this is passed in:
+#   pdftotext -layout "Final BTG MANUAL.docx.pdf" $BTG_TEXT_DIR/btg.txt
+#   BTG_TEXT_DIR=/tmp/btg python3 docs/design/2026-09-11-AD-51-extract-manual.py
+# It fails here with that instruction rather than on a missing-file traceback.
+SP=os.environ.get("BTG_TEXT_DIR")
+if not SP or not os.path.isdir(SP):
+    raise SystemExit("Set BTG_TEXT_DIR to the directory holding btg.txt "
+                     "(pdftotext -layout 'Final BTG MANUAL.docx.pdf' $BTG_TEXT_DIR/btg.txt)")
+# ★ DERIVED FROM THIS FILE'S LOCATION, NEVER HARDCODED.
+# This was an absolute path to one checkout, and running the script from a git
+# worktree therefore wrote 54 data files into the OTHER working tree — silently,
+# and while reporting success. `docs/design/` is two levels below the repo root.
+ROOT=os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 OUT=os.path.join(ROOT,"data","teach")
 lines=open(SP+"/btg.txt").read().replace("​","").replace("﻿","").split("\n")
 themes=json.load(open(SP+"/btg-parsed.json"))
@@ -122,8 +134,16 @@ idx={"eyebrow":"Bridge the Gap","h1":"Take it into the room.",
             "sessions":len(t['sessions']),"reading":len(t['reading']),
             "photo":PHOTO[t['slug']]} for t in themes]}
 json.dump(idx,open(OUT+"/index.json","w"),indent=1,ensure_ascii=False)
-json.dump({"h1":"Before you start","sections":guide},
-          open(OUT+"/before-you-start.json","w"),indent=1,ensure_ascii=False)
+# ★ A CURATED GUIDE IS NOT REBUILT. The guide gained a section that is not in
+# the manual's front matter — the reference list, moved out of the climate
+# chapter's last activity where the source document had attached it. Rebuilding
+# from the front matter alone silently drops it, which is what happened once.
+gp=OUT+"/before-you-start.json"
+if os.path.exists(gp) and json.load(open(gp)).get('curated'):
+    print("  PRESERVED curated guide — delete `curated` to regenerate")
+else:
+    json.dump({"h1":"Before you start","sections":guide},
+              open(gp,"w"),indent=1,ensure_ascii=False)
 json.dump({"h1":"The A to Z","terms":gl},open(OUT+"/a-to-z.json","w"),indent=1,ensure_ascii=False)
 
 ns=0
@@ -144,20 +164,34 @@ for t in themes:
     if keep:
         print(f"  PRESERVED rewritten reading: {t['slug']} "
               f"({len(keep['reading'])} sections) — delete reading_note to regenerate")
-        json.dump(keep, open(tp,'w'), indent=1, ensure_ascii=False)
+        json.dump(keep, open(tp,'w'), indent=1, ensure_ascii=False); open(tp,'a').write('\n')
     else:
         json.dump({"slug":t['slug'],"name":t['name'],"sub":t['sub'],
                    "printed_as":t['printed_as'],"photo":PHOTO[t['slug']],
                    "learn":LEARN.get(t['slug'],[]),"reading":t['reading']},
                   open(tp,"w"),indent=1,ensure_ascii=False)
     for i,s in enumerate(t['sessions']):
+        # ★ AND A SESSION SWECHHA HAS ANNOTATED IS NOT OVERWRITTEN EITHER.
+        # Same reasoning as the theme guard above: a `content_note` records a
+        # re-attributed foreign figure or a table that did not survive
+        # extraction, and re-running this would drop the annotation while
+        # restoring the text it was written about.
+        sp=f"{OUT}/sessions/{t['slug']}/{s['slug']}.json"
+        if os.path.exists(sp):
+            prev=json.load(open(sp))
+            if prev.get('content_note'):
+                print(f"  PRESERVED annotated session: {t['slug']}/{s['slug']}"
+                      f" — delete content_note to regenerate")
+                json.dump(prev, open(sp,'w'), indent=1, ensure_ascii=False); open(sp,'a').write('\n')
+                ns+=1
+                continue
         json.dump({"theme":t['slug'],"position":i+1,"numeral":s['n'],
                    "title":s['title'],"title_source":s['title_source'],
                    "fields":{**s['fields'],
                              **({"sequence":split_steps(s['fields']['sequence'])}
                                 if s['fields'].get('sequence') else {})},
                    "other":s['other']},
-                  open(f"{OUT}/sessions/{t['slug']}/{s['slug']}.json","w"),indent=1,ensure_ascii=False)
+                  open(sp,"w"),indent=1,ensure_ascii=False)
         ns+=1
 print(f"themes 8  sessions {ns}  guide sections {len(guide)}  glossary terms {len(gl)}")
 print("guide:", [f"{g['n']}. {g['h'][:42]}" for g in guide])
