@@ -39,7 +39,36 @@ fi
 # and a single apostrophe in a comment was enough to make the whole file
 # unparseable. The probe exits with the checker's own status instead.
 HOOK="$HOOK" REGISTRY="$REGISTRY" exec python3 - <<'CHECK'
-import json, os, re, sys
+import json, os, re, subprocess, sys
+
+
+def settings_for(repo):
+    """Read .claude/settings.json from the repository's DEFAULT BRANCH.
+
+    ★ NOT FROM THE WORKING TREE. Whether a department is wired is a property of
+      the repository, not of whichever branch someone is standing on. Reading
+      the working tree reported "fundraising: no local checkout" while its main
+      branch carried the hooks and its checkout sat on a feature branch — a
+      monitor that says NOT WIRED about something that is wired is one you
+      learn to ignore, which is worse than no monitor.
+    """
+    if not os.path.isdir(os.path.join(repo, ".git")):
+        return None, "no local checkout"
+    # ★ NO "HEAD" FALLBACK. Reading the checked-out ref is precisely the
+    #   branch-dependence this function exists to remove: a repository whose
+    #   feature branch happens to lack the hooks would be reported unwired.
+    #   With no default branch to read, the honest answer is that this cannot
+    #   be checked — not a guess taken from whichever branch is out.
+    for ref in ("origin/HEAD", "origin/main", "origin/master"):
+        try:
+            out = subprocess.run(
+                ["git", "-C", repo, "show", "%s:.claude/settings.json" % ref],
+                capture_output=True, text=True, timeout=10)
+        except Exception:
+            continue
+        if out.returncode == 0:
+            return out.stdout, None
+    return None, "no readable default branch, or no .claude/settings.json on it"
 
 hook = os.environ["HOOK"]
 handled = set(re.findall(r'hook == "(\w+)"', open(hook, encoding="utf8").read()))
@@ -55,16 +84,15 @@ for dept in reg.get("departments", []):
     slug = (dept.get("repository") or "").split("/")[-1]
     if not slug:
         continue
-    settings = os.path.join(home, slug, ".claude/settings.json")
-    if not os.path.exists(settings):
-        # A department with no local checkout is not a fault, it is simply not
-        # visible from here. The fundraising pipeline runs on GitHub and has no
-        # Claude Code half until the team being built starts running.
-        unknown.append(dept["id"])
+    raw, why = settings_for(os.path.join(home, slug))
+    if raw is None:
+        # Not a fault — simply not visible from here. A department may run
+        # entirely on GitHub and have no Claude Code half at all.
+        unknown.append("%s: %s" % (dept["id"], why))
         continue
     checked += 1
     try:
-        hooks = json.load(open(settings, encoding="utf8")).get("hooks", {})
+        hooks = json.loads(raw).get("hooks", {})
     except Exception as exc:
         problems.append("%s: settings.json will not parse (%s)" % (dept["id"], exc))
         continue
@@ -84,7 +112,7 @@ if problems:
 if checked == 0:
     print("hooks: no department has a local checkout to check")
     sys.exit(2)
-note = " (%s: no local checkout)" % ", ".join(unknown) if unknown else ""
+note = " (%s)" % "; ".join(unknown) if unknown else ""
 print("hooks: %d department(s) wired for %d hooks%s" % (checked, len(handled), note))
 sys.exit(0)
 CHECK
