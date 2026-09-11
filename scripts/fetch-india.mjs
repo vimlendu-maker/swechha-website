@@ -58,7 +58,6 @@ import { isStuck } from './lib/air-rules.mjs';
 const KEY = process.env.DATA_GOV_IN_KEY;
 const OUT = resolve(process.argv[2] || 'data/air-india.json');
 const RESOURCE = '3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69';
-const LIMIT = 1000;
 
 if (!KEY) {
   console.error('DATA_GOV_IN_KEY is not set. Refusing to run.\n' +
@@ -334,8 +333,6 @@ if (!SERVED) SERVED = 'mirror'; // the loop above delivered, or AIR_FIXTURE repl
 
 /* ── FOLD: row -> station -> city ──────────────────────────────────────── */
 
-let stuckDropped = 0;
-
 const stations = new Map();
 const stampCount = {};
 for (const r of rows) {
@@ -355,7 +352,7 @@ for (const r of rows) {
      CO read 187/188/188 and took the top of this very table. See lib/air.ts
      for why the test is relative and where the 2% line comes from. */
   const lo = num(r.min_value), hi = num(r.max_value);
-  if (isStuck(lo, hi, sub)) { stuckDropped++; continue; }
+  if (isStuck(lo, hi, sub)) { continue; }
   const key = `${city}|${st}`;
   if (!stations.has(key)) stations.set(key, { city, station: st, state: r.state ?? null, aqi: -1, governing: null,
     pmSub: -1, lat: num(r.latitude), lng: num(r.longitude) });

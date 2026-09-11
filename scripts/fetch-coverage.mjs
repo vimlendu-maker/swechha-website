@@ -99,7 +99,7 @@ async function signal() {
     await sleep(attempt * 5000);                    // 5s, 10s, 15s … backoff
     let res, body;
     try { res = await fetch(url); body = await res.text(); }
-    catch (e) { continue; }
+    catch { continue; }
     // GDELT answers a rate-limit breach with 200-or-429 and PROSE. Validate
     // the shape, never the status.
     if (!body.trim().startsWith('{')) continue;

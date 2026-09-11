@@ -18,7 +18,7 @@
 // showing how much the answer depends on which satellite you ask.
 import * as S from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
-const { esc, n0, n1, compact, opener, tabs, hole, kd, KIND_LEGEND, ARROW, MON3,
+const { esc, n0, n1, compact, opener, tabs, hole, kd, KIND_LEGEND, ARROW,
   stateChip, measureRow, measureHead, disclose, crumb, siblings } = S;
 
 const sh = S.shell();

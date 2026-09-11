@@ -10,7 +10,6 @@
 // in front of it. A river sampled by hand once a month cannot earn it, and
 // D-10.1 forbids claiming it. So the state word is PERIODIC everywhere and the
 // page is built to be good at that rather than to look like a dashboard.
-import { readFileSync, writeFileSync } from 'node:fs';
 import * as S from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
 const { esc, n0, n1, compact, opener, tabs, hole, kd, KIND_LEGEND, ARROW, MON3, stateChip , crumb, siblings } = S;

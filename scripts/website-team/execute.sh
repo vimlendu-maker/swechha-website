@@ -7,7 +7,7 @@
 # has no file tools at all, so a synthesis error cannot become a commit. That
 # separation is the whole point and it is why there are two scripts.
 #
-# Usage: execute.sh <specialist> <brief-file> [--dry-run]
+# Usage: execute.sh <specialist> <model> <brief-file> [--dry-run]
 set -euo pipefail
 
 REPO="${WEBSITE_TEAM_REPO:-$HOME/swechha-website}"
@@ -16,10 +16,35 @@ REPO="${WEBSITE_TEAM_REPO:-$HOME/swechha-website}"
 # read docs/website-team/lessons.md or policy.json -- the context its role file
 # tells it to read first.
 BASE="${WEBSITE_TEAM_BASE:-origin/main}"
-SPECIALIST="${1:?usage: execute.sh <specialist> <brief-file> [--dry-run]}"
-BRIEF_FILE="${2:?usage: execute.sh <specialist> <brief-file> [--dry-run]}"
-DRY="${3:-}"
-cd "$REPO"
+SPECIALIST="${1:?usage: execute.sh <specialist> <model> <brief-file> [--dry-run]}"
+MODEL="${2:?usage: execute.sh <specialist> <model> <brief-file> [--dry-run]}"
+BRIEF_FILE="${3:?usage: execute.sh <specialist> <model> <brief-file> [--dry-run]}"
+DRY="${4:-}"
+case "$MODEL" in
+  haiku|sonnet|opus|fable|inherit) ;;
+  *) echo "execute: unknown model '$MODEL'" >&2; exit 2 ;;
+esac
+LOG="$REPO/scripts/website-team/log-event.py"
+ev() { python3 "$LOG" website "$SPECIALIST" "$@" 2>/dev/null || true; }
+
+# GATE OUTPUT GOES IN A PER-RUN DIRECTORY, not in fixed /tmp paths. The logs
+# used to be /tmp/wt-test.log and friends, which meant every run overwrote the
+# evidence of the last one -- and two runs starting together (both schedules
+# fire at 09:00) would interleave into the same files. These are the only record
+# of why a refused task was refused, so they are kept per run and not cleaned.
+RUNLOG="${WEBSITE_TEAM_LOGS:-$HOME/.swechha-ai/logs}/$(date +%Y%m%d-%H%M%S)-$SPECIALIST"
+mkdir -p "$RUNLOG"
+
+# ★ THIS RUNS IN THE DEPARTMENT'S OWN WORKTREE, NEVER IN THE MAIN CHECKOUT.
+#   Everything below checks out a branch, commits and pushes. Doing that in
+#   ~/swechha-website meant competing with whatever a person had checked out
+#   there, and on 2026-09-11 that cost a rebase of someone else's four commits.
+#   scripts/website-team/worktree.sh carries the full account.
+#
+#   run.sh has normally created and refreshed the tree already; ensure is
+#   idempotent, so calling execute.sh by hand works too.
+WORK="$("$REPO/scripts/website-team/worktree.sh" ensure)"
+cd "$WORK"
 
 case "$SPECIALIST" in
   website-engineering|website-design|website-content-seo) ;;
@@ -37,28 +62,43 @@ fi
 # An allow-list fails closed: a path nobody thought about is refused, not
 # permitted. `docs/**` does include policy.json, which must never be touched --
 # guard-paths.sh catches that, which is exactly the case it exists for.
+#
+# EVERY COMMAND GETS ITS `:*` FORM TOO. `Bash(npm run lint)` is exact-match: it
+# permits the bare command and refuses `npm run lint -- --fix`, which is
+# precisely what a specialist doing a lint pass would reach for. Measured on
+# 2026-09-11 against the Manager's allowlist, which had the same defect: the
+# argument form returned DENIED and ALLOWED once the `:*` form was added. The
+# specialist already holds Edit on these paths, so permitting arguments grants
+# no new capability -- it only stops a denial the agent then has to work around.
 ALLOWED='Read,Grep,Glob'
 ALLOWED="$ALLOWED,Edit(scripts/**),Edit(lib/**),Edit(components/**),Edit(docs/**)"
-ALLOWED="$ALLOWED,Bash(npm test),Bash(npm run lint),Bash(npm run build:all)"
-ALLOWED="$ALLOWED,Bash(npm run verify:seo),Bash(npm run verify:final)"
+ALLOWED="$ALLOWED,Bash(npm test),Bash(npm test:*)"
+ALLOWED="$ALLOWED,Bash(npm run lint),Bash(npm run lint:*)"
+ALLOWED="$ALLOWED,Bash(npm run build:all),Bash(npm run build:all:*)"
+ALLOWED="$ALLOWED,Bash(npm run verify:seo),Bash(npm run verify:seo:*)"
+ALLOWED="$ALLOWED,Bash(npm run verify:final),Bash(npm run verify:final:*)"
 ALLOWED="$ALLOWED,Bash(git status:*),Bash(git diff:*),Bash(git log:*)"
 
 BRANCH="team/$(date +%Y%m%d)-$(basename "$BRIEF_FILE" .txt | tr -cd '[:alnum:]-' | cut -c1-40)"
 
 # ★ STAGE THE HELPERS OUTSIDE THE WORKING TREE BEFORE ANY CHECKOUT.
-#   This script checks out a branch from origin/main, and origin/main may not
-#   contain scripts/website-team/ -- it does not today, because the team itself
-#   is still on a branch. The first run of this script deleted its own helpers
-#   out from under itself at the checkout and then reported "no changes made",
-#   which is the worst kind of failure: quiet and plausible. The same would
-#   happen on any base branch that lacks them.
+#   This script checks out a branch from $BASE, which replaces the files in the
+#   tree it is running from. origin/main does carry scripts/website-team/ as of
+#   2026-09-11 -- but the first run of this script, from a base that did not,
+#   deleted its own parser out from under itself at the checkout and then
+#   reported "no changes made": quiet, plausible, and wrong. Any base without
+#   them does the same, so the helpers are copied out first regardless and every
+#   call below uses $STAGE, never the working tree's copy.
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
-cp "$REPO/scripts/website-team/parse-result.py" "$REPO/scripts/website-team/guard-paths.sh" "$STAGE/"
+cp "$REPO/scripts/website-team/parse-result.py" \
+   "$REPO/scripts/website-team/guard-paths.sh" \
+   "$REPO/scripts/website-team/verify-claims.py" "$STAGE/"
 chmod +x "$STAGE/guard-paths.sh"
 
 if [ "$DRY" = "--dry-run" ]; then
   echo "specialist: $SPECIALIST"
+  echo "model:      $MODEL"
   echo "branch:     $BRANCH"
   echo "tools:      $ALLOWED"
   echo "brief:"; sed 's/^/  /' "$BRIEF_FILE"
@@ -100,12 +140,14 @@ Leave no scratch files behind. You cannot delete files in this mode, so do not
 create any — do your checking with Read and Grep rather than by writing a
 throwaway script."
 
-claude -p "$PROMPT" --agent "$SPECIALIST" --permission-mode dontAsk \
-  --allowedTools "$ALLOWED" --output-format json < /dev/null > /tmp/wt-exec.json 2>/dev/null || true
-if ! python3 "$STAGE/parse-result.py" < /tmp/wt-exec.json | tail -n +2 > /tmp/wt-exec.txt; then
+ev task_started model="$MODEL" brief="$(basename "$BRIEF_FILE")" branch="$BRANCH"
+claude -p "$PROMPT" --agent "$SPECIALIST" --model "$MODEL" --permission-mode dontAsk \
+  --allowedTools "$ALLOWED" --output-format json < /dev/null > "$RUNLOG"/exec.json 2>/dev/null || true
+ev task_returned cost_usd="$(python3 "$STAGE/parse-result.py" < "$RUNLOG"/exec.json 2>/dev/null | head -1)"
+if ! python3 "$STAGE/parse-result.py" < "$RUNLOG"/exec.json | tail -n +2 > "$RUNLOG"/exec.txt; then
   echo "execute: could not parse the specialist's output — refusing to continue" >&2
-  echo "execute: raw output is in /tmp/wt-exec.json" >&2
-  git checkout -q - ; git branch -qD "$BRANCH" 2>/dev/null || true
+  echo "execute: raw output is in "$RUNLOG"/exec.json" >&2
+  git checkout -q --detach "$BASE" ; git branch -qD "$BRANCH" 2>/dev/null || true
   exit 1
 fi
 
@@ -115,7 +157,7 @@ fi
 # commit by `git add -A`. Use porcelain, which sees untracked too.
 if [ -z "$(git status --porcelain)" ]; then
   echo "execute: no changes made — nothing to ship"
-  git checkout -q - ; git branch -qD "$BRANCH" 2>/dev/null || true
+  git checkout -q --detach "$BASE" ; git branch -qD "$BRANCH" 2>/dev/null || true
   exit 0
 fi
 
@@ -123,16 +165,36 @@ git add -A
 git commit -q -m "$(head -1 "$BRIEF_FILE" | cut -c1-70)
 
 Executed by $SPECIALIST from a website-team brief.
-$(sed 's/^/  /' /tmp/wt-exec.txt | head -20)"
+$(sed 's/^/  /' "$RUNLOG"/exec.txt | head -20)"
 
 # ── THE GATES, IN THE ORDER THAT FAILS CHEAPEST FIRST ────────────────────────
 FAILED=""
 # Pre-build: served HTML must not have been hand-edited.
 "$STAGE/guard-paths.sh" "$BASE" || FAILED="$FAILED guard"
-npm test  >/tmp/wt-test.log 2>&1 || FAILED="$FAILED tests"
-npm run lint >/tmp/wt-lint.log 2>&1 || FAILED="$FAILED lint"
-npm run build:all >/tmp/wt-build.log 2>&1 || FAILED="$FAILED build"
-npm run verify:seo >/tmp/wt-seo.log 2>&1 || FAILED="$FAILED verify:seo"
+npm test  >"$RUNLOG"/test.log 2>&1 || FAILED="$FAILED tests"
+npm run lint >"$RUNLOG"/lint.log 2>&1 || FAILED="$FAILED lint"
+npm run build:all >"$RUNLOG"/build.log 2>&1 || FAILED="$FAILED build"
+npm run verify:seo >"$RUNLOG"/seo.log 2>&1 || FAILED="$FAILED verify:seo"
+
+# ── THE FACT GATE ────────────────────────────────────────────────────────────
+# Any content this change adds must have its claims verified mechanically. A
+# test can prove the build works; no test can prove a figure is true, and a
+# research subagent on this repository has already produced fluent,
+# citation-dense fabrication and retracted it afterwards. So every changed
+# markdown or content file goes through verify-claims.py, which resolves DOIs
+# against Crossref, fetches source URLs, and checks quotes appear verbatim.
+# A source it cannot reach is NOT a pass.
+CONTENT_CHANGED="$(git diff --name-only "$BASE"...HEAD -- '*.md' 'content/**' 'data/**/*.json' | grep -v '^docs/website-team/' || true)"
+if [ -n "$CONTENT_CHANGED" ]; then
+  echo "execute: fact gate over:"; printf '  %s
+' $CONTENT_CHANGED
+  for f in $CONTENT_CHANGED; do
+    [ -f "$f" ] || continue
+    python3 "$STAGE/verify-claims.py" < "$f" >>"$RUNLOG"/claims.log 2>&1 || FAILED="$FAILED fact-gate($f)"
+  done
+else
+  echo "execute: fact gate — no content changed, nothing asserted"
+fi
 
 # A build may legitimately regenerate committed pages. That is a change to
 # public/_pages, which the guard forbids -- so re-run the guard AFTER the build
@@ -144,7 +206,11 @@ if ! git diff --cached --quiet; then
   "$STAGE/guard-paths.sh" "$BASE" --post-build || FAILED="$FAILED guard-after-build"
 fi
 
+for g in guard tests lint build verify:seo; do
+  case " $FAILED " in *" $g "*) ev gate_result gate="$g" result=fail ;; *) ev gate_result gate="$g" result=pass ;; esac
+done
 if [ -n "$FAILED" ]; then
+  ev task_refused reason="$FAILED" branch="$BRANCH"
   echo "execute: FAILED —$FAILED"
   echo "execute: branch $BRANCH kept locally for inspection; nothing pushed"
   exit 1
@@ -153,18 +219,64 @@ fi
 git push -q -u origin "$BRANCH"
 PR_URL="$(gh pr create --base "${BASE#origin/}" --head "$BRANCH" \
   --title "$(head -1 "$BRIEF_FILE" | cut -c1-70)" \
-  --body "$(printf 'Opened by the website team, stage two.\n\n## Brief\n\n%s\n\n## What the specialist reported\n\n%s\n\n## Gates\n\n- guard-paths: pass\n- npm test: pass\n- npm run lint: pass\n- npm run build:all: pass\n- npm run verify:seo: pass\n\nMerging is conditional on every `auto_merge` condition in `docs/website-team/policy.json`. If any failed, this PR waits for a human.\n' "$(cat "$BRIEF_FILE")" "$(cat /tmp/wt-exec.txt)")")"
+  --body "$(printf 'Opened by the website team, stage two.\n\n## Brief\n\n%s\n\n## What the specialist reported\n\n%s\n\n## Gates\n\n- guard-paths: pass\n- npm test: pass\n- npm run lint: pass\n- npm run build:all: pass\n- npm run verify:seo: pass\n- fact gate (verify-claims.py): pass\n\nMerging is conditional on every `auto_merge` condition in `docs/website-team/policy.json`. If any failed, this PR waits for a human.\n' "$(cat "$BRIEF_FILE")" "$(cat "$RUNLOG"/exec.txt)")")"
+ev pr_opened url="$PR_URL" branch="$BRANCH"
 echo "execute: opened $PR_URL"
 
 AUTO="$(python3 -c "import json;print(json.load(open('docs/website-team/policy.json'))['auto_merge']['enabled'])")"
 if [ "$AUTO" = "True" ]; then
-  # --auto asks GitHub to merge when required checks pass. It respects branch
-  # protection, so if review is required this waits for a human -- which is the
-  # correct outcome, not a failure.
-  if gh pr merge --auto --squash "$PR_URL" 2>/dev/null; then
-    echo "execute: auto-merge enabled; GitHub will merge when checks pass"
+  # ★ CONDITION 4 IS ENFORCED HERE, BY THIS SCRIPT, NOT BY GITHUB.
+  #
+  #   policy.json's auto_merge condition 4 is "generated-current.yml passes on
+  #   the PR". The obvious way to guarantee that is a required status check on
+  #   main -- and that route is CLOSED, deliberately: 67 of the last 100
+  #   commits to main are direct pushes from five automation identities and the
+  #   air pipeline pushes every fifteen minutes, so a required check on main
+  #   would stop them and take the site stale within the hour. The owner
+  #   declined it on 2026-09-11 for exactly that reason; see
+  #   docs/website-team/infrastructure.md.
+  #
+  #   Which leaves a trap. `allow_auto_merge` is now on at the repository level
+  #   but NOTHING is required, so `gh pr merge --auto` on a PR that nothing
+  #   blocks does not wait for anything -- it merges immediately, before the
+  #   workflow has even started. The department would then be merging on its
+  #   own say-so while its policy claimed CI had passed. A condition that is
+  #   asserted but not enforced is worse than one that was never written down.
+  #
+  #   So: wait for the check to CONCLUDE, read its conclusion, and merge only
+  #   on success. Anything else -- failure, cancellation, timeout, or the check
+  #   never appearing -- leaves the PR open for a human, which is the correct
+  #   outcome and not an error.
+  CHECK="${WEBSITE_TEAM_REQUIRED_CHECK:-current}"
+  LIMIT="${WEBSITE_TEAM_CHECK_WAIT:-1200}"
+  waited=0
+  state=""
+  echo "execute: waiting for '$CHECK' on $PR_URL (up to ${LIMIT}s)"
+  while [ "$waited" -lt "$LIMIT" ]; do
+    state="$(gh pr checks "$PR_URL" --json name,state \
+      --jq "[.[] | select(.name == \"$CHECK\") | .state] | first // empty" 2>/dev/null || echo '')"
+    case "$state" in
+      SUCCESS) break ;;
+      FAILURE|CANCELLED|TIMED_OUT|ACTION_REQUIRED|STARTUP_FAILURE|STALE|SKIPPED) break ;;
+      *) sleep 20; waited=$((waited + 20)) ;;
+    esac
+  done
+
+  if [ "$state" = "SUCCESS" ]; then
+    ev gate_result gate="generated-current" result=pass
+    # --squash, not a merge commit: condition 9 requires the whole change be
+    # revertible by a single `git revert`, and a squash guarantees that.
+    if gh pr merge --squash "$PR_URL" 2>/dev/null; then
+      ev automerge_enabled url="$PR_URL" check="$CHECK"
+      echo "execute: '$CHECK' passed — merged"
+    else
+      ev automerge_unavailable url="$PR_URL" reason="merge refused by GitHub"
+      echo "execute: '$CHECK' passed but GitHub refused the merge — PR waits for a human"
+    fi
   else
-    echo "execute: auto-merge unavailable (branch protection or repo setting) — PR waits for a human"
+    ev gate_result gate="generated-current" result="${state:-absent}"
+    ev automerge_unavailable url="$PR_URL" reason="check=$CHECK state=${state:-absent} waited=${waited}s"
+    echo "execute: '$CHECK' did not pass (state: ${state:-never appeared}) — PR waits for a human"
   fi
 else
   echo "execute: auto_merge disabled in policy — PR waits for a human"

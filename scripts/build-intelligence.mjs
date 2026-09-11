@@ -35,7 +35,7 @@ import * as S from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
 import { loadEvents } from './lib/climate-events.mjs';
 import { renderMore, CE_MORE_CSS, CE_TIME_JS } from './lib/climate-event-render.mjs';
-const { esc, n0, n1, compact, opener, ARROW, stateChip, disclose } = S;
+const { esc, n0, n1, opener, ARROW, stateChip } = S;
 
 const sh = S.shell();
 
@@ -56,10 +56,8 @@ const CL = S.J('climate-india.json');
    reader would look. Validated on load, same as everywhere else: a malformed
    dossier fails this build rather than reaching the page. */
 const EVENTS = loadEvents();
-const DTH = S.J('deaths-ncrb-2024.json');
 
 const airRd = AIR.city_reading;   // the HEADLINE: the WORST MONITOR, named (AD-42C)
-const airWorst = AIR.worst_station; // the worst monitor, named, never as the city
 const heatRec = HEAT.national.hottest_on_record;
 const burnt = ISFR.fire.burnt_area;
 const clWorst = [...CL.stations].sort((a, b) =>
@@ -307,7 +305,7 @@ B.top = () => `    <div class="wrap ix-hero">
 /* THE SIX. One card each. The KIND OF LIMIT is the field that carries the
    argument, so it is given the same weight as the reading. */
 B.set = () => {
-  const cards = SITUATIONS.map((s, i) => `<a class="ix-card${s.breach ? ' is-breach' : ''}${s.kind === 'none' ? ' is-nolimit' : ''}"${s.upgrades ? ` id="ix-${s.id}"` : ''} href="${esc(s.href)}">
+  const cards = SITUATIONS.map((s) => `<a class="ix-card${s.breach ? ' is-breach' : ''}${s.kind === 'none' ? ' is-nolimit' : ''}"${s.upgrades ? ` id="ix-${s.id}"` : ''} href="${esc(s.href)}">
           <span class="ix-card-top">
             <span class="lbl ix-card-n">${esc(s.name)}</span>
             <span class="cap ix-card-w">${esc(s.where)}</span>

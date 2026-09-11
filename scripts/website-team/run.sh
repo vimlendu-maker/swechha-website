@@ -23,9 +23,17 @@
 #   Its report comes back on stdout and THIS script writes it to the vault. An
 #   orchestrator with no hands cannot turn a synthesis error into a shipped
 #   change. Do not "simplify" by giving it Write.
+#
+# WHY THE SCRIPTS COME FROM $REPO BUT THE WORK HAPPENS IN $WORK:
+#   The department operates in its own git worktree (scripts/website-team/
+#   worktree.sh explains why). The helpers stay in the main checkout, because
+#   stage two checks out a branch in $WORK and a helper living there would be
+#   swapped out from under a running script -- that is not hypothetical, it is
+#   how the first stage-two run deleted its own parser mid-run.
 set -euo pipefail
 
 REPO="${WEBSITE_TEAM_REPO:-$HOME/swechha-website}"
+WT="$REPO/scripts/website-team/worktree.sh"
 VAULT="${WEBSITE_TEAM_VAULT:-$HOME/Desktop/swechha-vault}"
 RECORDS="$VAULT/swechha/website/decisions"
 STAMP="$(date +%Y-%m-%d)"
@@ -42,7 +50,8 @@ case "$MODE" in
 esac
 OUT="$RECORDS/$STAMP-website-team-$MODE.md"
 
-cd "$REPO"
+EV="$REPO/scripts/website-team/log-event.py"
+ev() { python3 "$EV" website manager "$@" 2>/dev/null || true; }
 
 if [ "$MODE" = "review" ]; then
   PROMPT="Run in **review** mode. Read the inbox first, then this week's run
@@ -87,16 +96,40 @@ fi
 # job description in its report for a human to save. A new agent is a new actor
 # on a live NGO's website; it should have a human gate, and this gives it one for
 # free.
+#
+# ★ EVERY COMMAND NEEDS ITS `:*` FORM TOO, OR AN ARGUMENT DENIES IT.
+#   `Bash(npm run infra:status)` is an EXACT-MATCH rule. It permits
+#   `npm run infra:status` and refuses `npm run infra:status --fresh`. That is
+#   not a guess: on 2026-09-11 the Manager reported the instrument denied, and
+#   a two-run test under this exact allowlist returned DENIED for the argument
+#   form and ALLOWED once `Bash(npm run infra:status:*)` was added. Every npm
+#   rule here had the same defect, which is most of what the lessons file
+#   records as "the allowlist is narrower than it looks".
+#
+#   A role file that names a command the allowlist withholds is an instruction
+#   the agent cannot follow, and it fails as a refusal the agent then has to
+#   explain rather than as an error anyone notices. `lib/website-team-infra.test.ts`
+#   now derives the check from the role file so the two cannot drift.
 ALLOWED='Read,Grep,Glob'
 ALLOWED="$ALLOWED,Bash(git log:*),Bash(git status:*),Bash(gh run list:*)"
-ALLOWED="$ALLOWED,Bash(npm test),Bash(npm run lint),Bash(npm run air:status)"
+# Read-only gh, so the Manager can see whether a PR merged and what a gate said.
+# NOT bare `gh api`: that is a verb-agnostic tool which would also POST.
+ALLOWED="$ALLOWED,Bash(gh pr list:*),Bash(gh pr view:*),Bash(gh pr checks:*)"
+ALLOWED="$ALLOWED,Bash(npm test),Bash(npm test:*)"
+ALLOWED="$ALLOWED,Bash(npm run lint),Bash(npm run lint:*)"
+ALLOWED="$ALLOWED,Bash(npm run air:status),Bash(npm run air:status:*)"
+# Infrastructure awareness is the Manager's job, so it must be able to read the
+# instrument. Deterministic, cached, and it makes at most one request per
+# provider per TTL -- see scripts/website-team/infra-status.py.
+ALLOWED="$ALLOWED,Bash(npm run infra:status),Bash(npm run infra:status:*)"
 
 if [ "$DRY" = "--dry-run" ]; then
-  echo "repo:    $REPO"
-  echo "vault:   $VAULT"
-  echo "record:  $OUT"
-  echo "agent:   website-manager"
-  echo "tools:   $ALLOWED"
+  echo "repo:     $REPO   (scripts come from here)"
+  echo "worktree: $("$WT" path)   (the run happens here)"
+  echo "vault:    $VAULT"
+  echo "record:   $OUT"
+  echo "agent:    website-manager"
+  echo "tools:    $ALLOWED"
   echo
   echo "would run: claude -p --agent website-manager --permission-mode dontAsk \\"
   echo "             --allowedTools '$ALLOWED' --output-format json"
@@ -104,6 +137,17 @@ if [ "$DRY" = "--dry-run" ]; then
 fi
 
 mkdir -p "$RECORDS"
+
+# ── ONE RUN AT A TIME, IN THE DEPARTMENT'S OWN TREE ──────────────────────────
+# Both schedules fire at 09:00, so on Mondays `work` and `review` start
+# together. They share one worktree, so they must not overlap: the lock makes
+# the second wait rather than read a tree the first is mid-checkout of.
+"$WT" lock "$$"
+trap '"$WT" unlock' EXIT
+WORK="$("$WT" ensure)"
+cd "$WORK"
+
+ev run_started mode="$MODE"
 
 RESULT="$(claude -p "$PROMPT" \
   --agent website-manager \
@@ -131,6 +175,7 @@ TEXT="$(printf '%s' "$PARSED" | tail -n +2)"
   printf '%s\n' "$TEXT"
 } > "$OUT"
 
+ev run_finished mode="$MODE" cost_usd="$COST" record="$(basename "$OUT")"
 echo "wrote $OUT"
 
 # ── STAGE TWO: hand each brief to its specialist ─────────────────────────────
@@ -142,14 +187,20 @@ if [ "$MODE" = "work" ]; then
   if [ -z "$MAPPING" ]; then
     echo "stage two: no execution briefs in this report"
   else
-    while read -r spec path; do
+    while read -r spec model path; do
       [ -z "$spec" ] && continue
-      echo "stage two: $spec <- $(basename "$path")"
+      echo "stage two: $spec ($model) <- $(basename "$path")"
       if [ "$spec" != "website-engineering" ]; then
         echo "stage two: skipped — $spec is read-only by policy; its findings are already in the record"
         continue
       fi
-      "$REPO/scripts/website-team/execute.sh" "$spec" "$path" ||         echo "stage two: $(basename "$path") did not ship — see output above"
+      # THREE ARGUMENTS, NOT TWO. execute.sh takes <specialist> <model> <brief>.
+      # This call passed <specialist> <brief> when model routing was added, so
+      # the brief path landed in $MODEL and every brief died on "unknown model"
+      # before a specialist ever started. Stage two has never shipped anything
+      # since; caught 2026-09-11 while moving the run into its own worktree.
+      "$REPO/scripts/website-team/execute.sh" "$spec" "$model" "$path" || \
+        echo "stage two: $(basename "$path") did not ship — see output above"
     done <<< "$MAPPING"
   fi
   rm -rf "$BRIEFS"

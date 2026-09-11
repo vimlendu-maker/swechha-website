@@ -55,7 +55,6 @@ import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import { withSocialImage } from './lib/social-image.mjs';
 import { stampLastmod } from './lib/lastmod.mjs';
-import { currentEvent } from './lib/climate-events.mjs';
 import { homepageSlot, situationHref, TYPE_LABEL } from './lib/active-situation.mjs';
 import { METRIC_ORDER, METRIC_LABEL, METRIC_SHORT, HAZARD_SHORT, eventName } from './lib/event-figures.mjs';
 

@@ -21,7 +21,7 @@ import { seo } from './lib/seo-register.mjs';
 import { loadEvents } from './lib/climate-events.mjs';
 import { homepageSlot } from './lib/active-situation.mjs';
 import { renderBanner, renderQuiet, renderMore, CE_CSS, CE_BANNER_CSS, CE_MORE_CSS, CE_TIME_JS } from './lib/climate-event-render.mjs';
-const { esc, n0, n1, compact, opener, tabs, hole, kd, KIND_LEGEND, ARROW, MON, MON3,
+const { esc, n0, n1, opener, tabs, hole, kd, KIND_LEGEND, ARROW, MON, MON3,
   stateChip, measureRow, measureHead, disclose, crumb, siblings } = S;
 
 const sh = S.shell();
@@ -416,7 +416,6 @@ B.trend = () => {
           <span class="c-cons-v">${c.up}<i>&uarr;</i></span>
           <span class="c-cons-x">${c.down}<i>&darr;</i></span></div>`;
   }).join('\n        ');
-  const h = ST[0].halves;
   return `${opener('trend', 'What is changing', 'More rain, in more extreme days. The concentration is the part that is not moving.')}
     <div class="wrap">
       <p class="c-lead">Four measures, the first eighteen years against the last, counted across all

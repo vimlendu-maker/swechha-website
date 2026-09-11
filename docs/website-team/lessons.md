@@ -114,3 +114,76 @@ not delete the file itself, because `dontAsk` denies `rm`.
 
 **Do:** use `git status --porcelain` to detect changes. And tell an agent that
 cannot delete files not to create them.
+
+## 2026-09-11 — Fact-checking is a script's job, not an agent's
+
+Content autonomy was blocked on one thing: no way to let an agent publish a
+figure without a human reading it. Requiring approval per article was the wrong
+answer — it makes the manager a bottleneck and does not scale.
+
+`scripts/website-team/verify-claims.py` resolves DOIs against Crossref, compares
+the returned record to what was claimed, fetches source URLs and confirms quotes
+appear verbatim. No model is involved, deliberately: an agent checking its own
+citations is the failure this repository has already had.
+
+Measured against four fabrication modes, all caught: a non-existent DOI (404), a
+real DOI attached to the wrong paper (metadata mismatch), a quote absent from its
+source, and a bare link offered as proof of a fact.
+
+**Do:** write claims in `claim` blocks and label the type honestly. Label
+analysis as analysis and the gate waves it through; dress analysis up as a
+verified fact and it stops you. **An unreachable source is not a pass** — re-run
+or drop the claim.
+
+**What the gate still cannot do**, and why the human approval list keeps these:
+it cannot judge whether a topic is appropriate for Swechha to write about, or
+whether a framing misrepresents a contested issue. Citations are checkable;
+editorial judgement is not.
+
+## 2026-09-11 — An observability layer an agent can write is one it can lie to
+
+The activity log is written by `run.sh` and `execute.sh`, never by an agent.
+Every event is emitted by the shell *around* the agent — before it starts, after
+it returns, on each gate result — so the log records what the system observed
+rather than what the agent said about itself. **An agent cannot mark itself
+green.**
+
+It lives at `~/.swechha-ai/activity.jsonl`, outside both repositories. It is
+neither knowledge (the vault) nor code (git): it is high-churn telemetry, and
+committing it would bury real history under machine noise. Decision records
+still go to the vault; this is the stream beneath them.
+
+**Do:** when adding a new stage, emit the event from the script, not from the
+prompt. If the only record that a thing happened is the agent's own claim that
+it happened, there is no record.
+
+## 2026-09-11 — Route the model, but first ask whether it needs a model
+
+Briefs now carry `model:` — haiku for inspection and deterministic work, sonnet
+for ordinary coding and editing, opus where being wrong costs more than the
+tokens. Unknown values fall back to sonnet with a warning rather than losing the
+brief, because a typo should not cost a run.
+
+The more valuable half is the question before it: **does this need an agent at
+all?** A shell command, a test, a parser, `git log` or a grep answers a
+deterministic question better, faster and for nothing. The fact gate is the
+worked example — fact-checking looked like a job for a careful model and turned
+out to be a job for `urllib` and a string comparison.
+
+## 2026-09-11 — A permission rule without `:*` is an exact-match rule, and an argument denies it
+The Manager reported `npm run infra:status` DENIED on the day the instrument
+shipped, with the rule `Bash(npm run infra:status)` present in the allowlist and
+visibly passed to `--allowedTools`. The rule was not ignored: it is
+EXACT-MATCH. It permits `npm run infra:status` and refuses
+`npm run infra:status --fresh`. Measured, not inferred — two `claude -p` runs
+under the same allowlist returned DENIED for the argument form and ALLOWED once
+`Bash(npm run infra:status:*)` was added. Every npm rule in the runner had the
+same defect, which is most of what the earlier "the allowlist is narrower than
+it looks" lesson was actually observing.
+**Do:** grant both forms, `Bash(cmd)` and `Bash(cmd:*)`. **Do not** conclude a
+rule is being ignored because a command it names was refused — check whether the
+agent invoked it bare. And when a role file tells an agent to run something,
+the allowlist must grant it in the form the agent will actually type; a role
+file naming an ungranted command is an instruction that fails as a refusal the
+agent then has to explain, not as an error anyone notices.
+`lib/website-team-infra.test.ts` now derives this check from the runner itself.

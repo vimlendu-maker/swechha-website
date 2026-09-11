@@ -20,7 +20,7 @@
 // 3. THE COPY IS CUT. Short sentences. The numbers carry it.
 import * as S from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
-const { esc, n0, n1, compact, opener, tabs, hole, kd, KIND_LEGEND, ARROW, MON, MON3,
+const { esc, n0, n1, opener, tabs, hole, kd, KIND_LEGEND, ARROW, MON, MON3,
   stateChip, measureRow, measureHead, disclose, crumb, siblings } = S;
 
 const sh = S.shell();
@@ -196,7 +196,7 @@ B.measured = () => `${opener('measured', 'What counts as heat', 'India does not 
             <i>and</i> stands <b>${C.departure_hw}&deg;C above the normal</b> for that place and
             date. <b>${C.departure_severe}&deg;C</b> above makes it severe.</p>
           <div class="h-zones">
-            ${Object.entries(C.zones).map(([k, z]) => `<div class="h-zone">
+            ${Object.entries(C.zones).map(([, z]) => `<div class="h-zone">
               <span class="h-zone-v">${z.base}&deg;C</span>
               <span class="lbl h-zone-l">${esc(z.label)}</span></div>`).join('\n            ')}
           </div>

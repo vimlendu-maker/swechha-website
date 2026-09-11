@@ -58,7 +58,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
-const { esc, opener, ARROW, ask, askGates } = S;
+const { esc, opener, ask, askGates } = S;
 
 const sh = S.shell();
 

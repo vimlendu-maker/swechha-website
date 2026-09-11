@@ -50,7 +50,26 @@ const CLASS: Record<PhotoSignal, string> = {
  * image with copy laid over it (a hero, a panel), not for cards and thumbnails.
  */
 export function signalClass(signal: PhotoSignal = 'none', underText = false): string {
-  return underText ? `${CLASS[signal]}-dim` : CLASS[signal]
+  // FAILS CLOSED, and the direction is the whole point. The two outcomes are
+  // not symmetric: an unrecognised hue falling back to `none` renders the frame
+  // the way this site renders photography anyway, whereas a bare `CLASS[signal]`
+  // returns `undefined` and emits `class="object-cover undefined"` — no filter
+  // resolves, and the photograph publishes in FULL COLOUR, the one result the
+  // design language rules out. So a bad value must cost monochrome, never
+  // colour. The default parameter cannot do this job: it only substitutes for
+  // `undefined`, so a `null` out of JSON or a word the palette dropped
+  // ("orange", "yellow") sails straight past it into the lookup.
+  //
+  // `Object.hasOwn` rather than `CLASS[signal] ?? CLASS.none`, because `CLASS`
+  // is an object literal and so inherits `toString`, `constructor`, `valueOf`
+  // and the rest. A `signal` of "toString" would look up a *truthy* inherited
+  // function, `??` would keep it, and the class attribute would end up holding
+  // a stringified function — no filter again, the same full-colour failure the
+  // `undefined` path caused, only harder to spot. Own keys are exactly
+  // PHOTO_SIGNALS (that is what the Record type above pins), so this asks the
+  // one question that matters: is this word one of the four?
+  const base = Object.hasOwn(CLASS, signal) ? CLASS[signal] : CLASS.none
+  return underText ? `${base}-dim` : base
 }
 
 const LUM = `0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0
