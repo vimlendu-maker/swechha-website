@@ -94,6 +94,36 @@ describe('website team: infrastructure and free-tier watch', () => {
     expect(pkg.scripts['infra:status']).toBe('python3 scripts/website-team/infra-status.py')
   })
 
+  it('every npm command the allowlist grants also grants its `:*` form', () => {
+    // `Bash(npm run x)` is EXACT-MATCH: it permits `npm run x` and refuses
+    // `npm run x --fresh`. Measured 2026-09-11 — the argument form returned
+    // DENIED under the exact rule and ALLOWED once the `:*` form was added,
+    // which is why the Manager reported the infra instrument as denied on the
+    // very day it shipped. Derived from the file rather than restated, because
+    // a hand-kept parallel list is this repo's most repeated defect.
+    const run = read('scripts/website-team/run.sh')
+    // Script names contain colons (`air:status`), so only a TRAILING `:*` marks
+    // the prefix form — do not exclude colons generally.
+    const granted = [...run.matchAll(/Bash\((npm(?: run)? [^)]+?)\)/g)]
+      .map((m) => m[1].trim())
+      .filter((c) => !c.endsWith(':*'))
+    expect(granted.length).toBeGreaterThan(3)
+    for (const cmd of granted) {
+      expect(run, `${cmd} is granted exactly but not with arguments — add Bash(${cmd}:*)`)
+        .toContain(`Bash(${cmd}:*)`)
+    }
+  })
+
+  it('the runner grants no write-capable gh verb to the read-only manager', () => {
+    const run = read('scripts/website-team/run.sh')
+    const ghRules = [...run.matchAll(/Bash\((gh [^)]+)\)/g)].map((m) => m[1])
+    for (const rule of ghRules) {
+      // `gh api` is verb-agnostic and can POST; `gh pr merge`/`create` write.
+      expect(rule, `${rule} would let the read-only manager change state`)
+        .toMatch(/^gh (run list|pr (list|view|checks))/)
+    }
+  })
+
   it('the inventory records provenance instead of asserting facts', () => {
     const doc = read('docs/website-team/infrastructure.md')
     for (const word of ['verified', 'published', 'unverified', 'UNKNOWN']) {

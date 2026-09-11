@@ -169,3 +169,21 @@ all?** A shell command, a test, a parser, `git log` or a grep answers a
 deterministic question better, faster and for nothing. The fact gate is the
 worked example — fact-checking looked like a job for a careful model and turned
 out to be a job for `urllib` and a string comparison.
+
+## 2026-09-11 — A permission rule without `:*` is an exact-match rule, and an argument denies it
+The Manager reported `npm run infra:status` DENIED on the day the instrument
+shipped, with the rule `Bash(npm run infra:status)` present in the allowlist and
+visibly passed to `--allowedTools`. The rule was not ignored: it is
+EXACT-MATCH. It permits `npm run infra:status` and refuses
+`npm run infra:status --fresh`. Measured, not inferred — two `claude -p` runs
+under the same allowlist returned DENIED for the argument form and ALLOWED once
+`Bash(npm run infra:status:*)` was added. Every npm rule in the runner had the
+same defect, which is most of what the earlier "the allowlist is narrower than
+it looks" lesson was actually observing.
+**Do:** grant both forms, `Bash(cmd)` and `Bash(cmd:*)`. **Do not** conclude a
+rule is being ignored because a command it names was refused — check whether the
+agent invoked it bare. And when a role file tells an agent to run something,
+the allowlist must grant it in the form the agent will actually type; a role
+file naming an ungranted command is an instruction that fails as a refusal the
+agent then has to explain, not as an error anyone notices.
+`lib/website-team-infra.test.ts` now derives this check from the runner itself.

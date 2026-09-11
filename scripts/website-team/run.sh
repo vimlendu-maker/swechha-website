@@ -96,13 +96,32 @@ fi
 # job description in its report for a human to save. A new agent is a new actor
 # on a live NGO's website; it should have a human gate, and this gives it one for
 # free.
+#
+# ★ EVERY COMMAND NEEDS ITS `:*` FORM TOO, OR AN ARGUMENT DENIES IT.
+#   `Bash(npm run infra:status)` is an EXACT-MATCH rule. It permits
+#   `npm run infra:status` and refuses `npm run infra:status --fresh`. That is
+#   not a guess: on 2026-09-11 the Manager reported the instrument denied, and
+#   a two-run test under this exact allowlist returned DENIED for the argument
+#   form and ALLOWED once `Bash(npm run infra:status:*)` was added. Every npm
+#   rule here had the same defect, which is most of what the lessons file
+#   records as "the allowlist is narrower than it looks".
+#
+#   A role file that names a command the allowlist withholds is an instruction
+#   the agent cannot follow, and it fails as a refusal the agent then has to
+#   explain rather than as an error anyone notices. `lib/website-team-infra.test.ts`
+#   now derives the check from the role file so the two cannot drift.
 ALLOWED='Read,Grep,Glob'
 ALLOWED="$ALLOWED,Bash(git log:*),Bash(git status:*),Bash(gh run list:*)"
-ALLOWED="$ALLOWED,Bash(npm test),Bash(npm run lint),Bash(npm run air:status)"
+# Read-only gh, so the Manager can see whether a PR merged and what a gate said.
+# NOT bare `gh api`: that is a verb-agnostic tool which would also POST.
+ALLOWED="$ALLOWED,Bash(gh pr list:*),Bash(gh pr view:*),Bash(gh pr checks:*)"
+ALLOWED="$ALLOWED,Bash(npm test),Bash(npm test:*)"
+ALLOWED="$ALLOWED,Bash(npm run lint),Bash(npm run lint:*)"
+ALLOWED="$ALLOWED,Bash(npm run air:status),Bash(npm run air:status:*)"
 # Infrastructure awareness is the Manager's job, so it must be able to read the
 # instrument. Deterministic, cached, and it makes at most one request per
 # provider per TTL -- see scripts/website-team/infra-status.py.
-ALLOWED="$ALLOWED,Bash(npm run infra:status)"
+ALLOWED="$ALLOWED,Bash(npm run infra:status),Bash(npm run infra:status:*)"
 
 if [ "$DRY" = "--dry-run" ]; then
   echo "repo:     $REPO   (scripts come from here)"
