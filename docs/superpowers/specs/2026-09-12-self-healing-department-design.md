@@ -244,7 +244,7 @@ detection, assembly, build, publication, and repair when any of those break.
 | Lessons file grows unreadable | At 40 entries the Manager is briefed to consolidate; a padded lessons file stops being read |
 | Queue issue storm | One issue per fingerprint, same dedupe the sentinel already uses |
 | Actions and the Mac both act | The existing `worktree.sh` lock; the queue is drained transactionally |
-| A `propose_only` PR sits forever | It is an open PR with a label — visible, and surfaced by `org status` under NEEDS YOU |
+| A `GATED` PR sits forever | It is an open PR the approval gate held — visible, and surfaced by `org status` under NEEDS YOU |
 | Lessons PR's required check never runs (docs-only) | `merge-when-green.sh` already leaves it open for a human rather than merging on its own say-so; the lesson is still committed on the branch and is not lost |
 | Budget ceiling hit mid-incident | Refuses and escalates loudly; a silent stop during an incident would be worse than the spend |
 
@@ -288,6 +288,8 @@ Every mechanism gets a test, in the repo's existing `lib/*.test.ts` style:
 - capability ledger: a write verb is rejected; a read verb is accepted
 - reconciler: one denial does nothing; two auto-apply or propose, correctly
 - lessons append: dedupes by heading, appends otherwise
-- `propose_only`: never auto-merges, even when every gate is green
+- `GATED` lock (ADR-0004): a diff touching `.github/workflows/**` never auto-merges,
+  even when every other gate is green. **This test fails if the lock is removed** —
+  the condition ADR-0004 sets for moving anything out of `FORBIDDEN`.
 - empty diff: reports `refused`, never `shipped`
 - budget: refuses above ceiling
