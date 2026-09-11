@@ -21,6 +21,13 @@
 #   quietly stops matching the other, and this repository's most repeated
 #   defect is exactly that — a list that must move in lockstep and does not.
 #
+#   It is shared ACROSS REPOSITORIES too: the fundraising department reaches it
+#   through ~/.swechha-ai/merge-when-green.sh, the same shared-install pattern
+#   as hook-event.py. That is a real cross-repository dependency and it is
+#   named rather than hidden. Unlike the hooks, a missing gate here must fail
+#   LOUDLY — telemetry may never block work, but a gate that silently passes
+#   is not a gate.
+#
 # ★ ANYTHING OTHER THAN SUCCESS LEAVES THE PR OPEN. Failure, cancellation,
 #   timeout, or a check that never appears are all the same answer: a human
 #   looks. That is the correct outcome, not an error condition.
@@ -29,8 +36,12 @@
 # Exit:  0 merged · 1 check did not pass · 2 check passed, GitHub refused · 3 usage
 set -euo pipefail
 
-CHECK="${WEBSITE_TEAM_REQUIRED_CHECK:-current}"
-LIMIT="${WEBSITE_TEAM_CHECK_WAIT:-1200}"
+# ★ THE CHECK NAME IS A PARAMETER, because this gate is now shared. The
+#   fundraising department requires `pytest`; this one requires `current`.
+#   The department-prefixed names are kept as a fallback so the website
+#   department's existing environment keeps working unchanged.
+CHECK="${SWECHHA_REQUIRED_CHECK:-${WEBSITE_TEAM_REQUIRED_CHECK:-current}}"
+LIMIT="${SWECHHA_CHECK_WAIT:-${WEBSITE_TEAM_CHECK_WAIT:-1200}}"
 PR="${1:-}"
 
 if [ -z "$PR" ]; then
