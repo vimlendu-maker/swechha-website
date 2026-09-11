@@ -66,6 +66,22 @@ if [ "$DRY" = "--dry-run" ]; then
 fi
 
 git fetch -q origin
+
+# ── PREFLIGHT: the base must contain the team itself ────────────────────────
+# This script checks out $BASE and then runs `claude --agent $SPECIALIST`. If
+# the agent definition is not present in $BASE, that call fails after the
+# checkout with an unhelpful error, having already moved the tree. Check first
+# and say exactly what is missing.
+for needed in ".claude/agents/$SPECIALIST.md" "docs/website-team/policy.json" "docs/website-team/lessons.md"; do
+  if ! git cat-file -e "$BASE:$needed" 2>/dev/null; then
+    echo "execute: REFUSED — $BASE does not contain $needed" >&2
+    echo "execute: the specialist would start in a tree without its own role file," >&2
+    echo "execute: policy or lessons. Merge the website-team branch to $BASE first," >&2
+    echo "execute: or set WEBSITE_TEAM_BASE to a branch that has them." >&2
+    exit 3
+  fi
+done
+
 git checkout -q -B "$BRANCH" "$BASE"
 
 PROMPT="$(cat "$BRIEF_FILE")

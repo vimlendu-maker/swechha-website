@@ -133,6 +133,28 @@ TEXT="$(printf '%s' "$PARSED" | tail -n +2)"
 
 echo "wrote $OUT"
 
+# ── STAGE TWO: hand each brief to its specialist ─────────────────────────────
+# The manager decided; this executes. Only `work` mode delegates, and only
+# engineering may act -- execute.sh refuses a read-only specialist outright.
+if [ "$MODE" = "work" ]; then
+  BRIEFS="$(mktemp -d)"
+  MAPPING="$(printf '%s' "$TEXT" | python3 "$REPO/scripts/website-team/extract-briefs.py" "$BRIEFS" || true)"
+  if [ -z "$MAPPING" ]; then
+    echo "stage two: no execution briefs in this report"
+  else
+    while read -r spec path; do
+      [ -z "$spec" ] && continue
+      echo "stage two: $spec <- $(basename "$path")"
+      if [ "$spec" != "website-engineering" ]; then
+        echo "stage two: skipped — $spec is read-only by policy; its findings are already in the record"
+        continue
+      fi
+      "$REPO/scripts/website-team/execute.sh" "$spec" "$path" ||         echo "stage two: $(basename "$path") did not ship — see output above"
+    done <<< "$MAPPING"
+  fi
+  rm -rf "$BRIEFS"
+fi
+
 # Push the record. Obsidian only syncs while it is open, so a scheduled run must
 # push for itself or the record sits local until someone opens the app.
 if git -C "$VAULT" diff --quiet --exit-code -- "$OUT" 2>/dev/null && \

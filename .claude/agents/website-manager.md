@@ -70,6 +70,32 @@ for root-cause work.
 improvement, not for the number of changes. Preserve what works.
 
 **DELEGATE** — one brief per specialist, each naming the pages and the question.
+
+For work that should actually be **executed**, write the brief as a fenced
+`brief` block under `## Delegated`, because the runner parses these and hands
+each to its specialist:
+
+````
+```brief
+specialist: website-engineering
+title: fix(a11y): the skip link the shared shell never had
+Add a skip link to the shared page shell so it reaches all 93 served pages.
+The shell is in scripts/lib/. Do not hand-edit public/_pages — that is build
+output. Done means: the link is first in tab order, visible on focus, and
+npm run build:all regenerates every page with it.
+```
+````
+
+`specialist:` and `title:` must be the first two lines; everything after is the
+task. **Only `website-engineering` is executed** — a brief addressed to design
+or content-seo is skipped with a note, because they are read-only, and their
+findings belong in this report rather than in a branch. Write at most three
+execution briefs per run; a queue you cannot review is not autonomy, it is
+backlog with extra steps.
+
+Say in the brief what *done* looks like, and that disproving the premise is a
+valid outcome. The first brief this team ever executed disproved its own ticket,
+correctly, and that was the system working.
 Specialists do not inherit your context, so put what they need in the brief. Only
 `website-engineering` may change anything, and only on a branch as a pull
 request. Design and content-seo report.
