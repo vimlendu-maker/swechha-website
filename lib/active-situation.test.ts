@@ -7,7 +7,7 @@ import { join } from 'node:path'
 import { figuresFromText, consolidate, eventName, mentionsPlace } from '../scripts/lib/event-figures.mjs'
 import { dedupeFeedItems, anchorPublished, lastUpdatedFrom, feedCollapse } from '../scripts/lib/event-feed.mjs'
 import { statusOf, homepageSlot, situationHref, publishStateFor, keepEditorFields, dossierSlug, slugify, SITUATION_STATUS } from '../scripts/lib/active-situation.mjs'
-import { validateEvent } from '../scripts/lib/climate-events.mjs'
+import { validateEvent, HAZARDS } from '../scripts/lib/climate-events.mjs'
 
 /**
  * consolidate() keys its result by metric name at runtime, so the inferred type
@@ -880,6 +880,63 @@ describe('every built event page is routed', () => {
       return JSON.parse(readFileSync(f, 'utf8')).publish_state !== 'published'
     })
     expect(unrouted).toEqual([])
+  })
+})
+
+/**
+ * A PUBLISHED PAGE'S URL MUST NOT NAME A HAZARD ITS OWN DOSSIER DISAGREES
+ * WITH — OR IT MUST BE ON THIS DATED, NAMED EXCEPTION LIST.
+ *
+ * dossierSlug() above deliberately holds a dossier's slug still once it is on
+ * disk, precisely so the winning hazard word can move without forking a
+ * second page for the same event (PR #113) — that's the whole subject of the
+ * describe block above. What that ruling cannot prevent is what it's FOR: a
+ * slug going on naming a hazard word the dossier no longer claims. Three of
+ * today's five published pages do exactly that, confirmed against the built
+ * HTML in public/_pages/v3/climate-event/ (each page's own title is right;
+ * the URL is what's stale):
+ *
+ *   assam-landslide.json        hazard: flood       — titles itself "Assam flood"
+ *   uttarakhand-landslide.json  hazard: cloudburst  — titles itself "Uttarakhand: cloudburst"
+ *   nepal-glof.json             hazard: landslide   — titles itself "Nepal landslide"
+ *
+ * These three are grandfathered by dossierSlug()'s identity-preserving
+ * no-op, PR #113; the URL question (rename with a redirect, or leave it) is
+ * the owner's, same reasoning as the still-open nepal-glof/nepal-flood
+ * URL-merge decision — see the 2026-09-11 decision record. Grandfathering is
+ * not the same as tolerating a fourth: a NEW published page with this
+ * mismatch must fail this test by name. And if one of the three named ones
+ * stops mismatching (a rename lands, with a redirect), this test must keep
+ * passing without being edited — the exception list is named slugs, never a
+ * count.
+ */
+describe('a published slug names the hazard its own dossier claims', () => {
+  // Named, dated exceptions only — see the comment above for why each is here.
+  const GRANDFATHERED = ['assam-landslide', 'uttarakhand-landslide', 'nepal-glof']
+
+  // The slug is `${place}-${hazardWord}`; find which HAZARDS entry it ends
+  // with (slugify turns "extreme_rain" into "extreme-rain", so compare
+  // against that form, not the raw underscored one).
+  const hazardInSlug = (slug: string): string | undefined =>
+    HAZARDS
+      .filter((h: string) => slug.endsWith(`-${h.replace(/_/g, '-')}`))
+      .sort((a: string, b: string) => b.length - a.length)[0]
+
+  it('flags exactly the named exceptions on today\'s published pages, and no fourth', () => {
+    const dir = join(process.cwd(), 'data/climate-events/active')
+    const published = readdirSync(dir)
+      .filter((f) => f.endsWith('.json'))
+      .map((f) => JSON.parse(readFileSync(join(dir, f), 'utf8')))
+      .filter((e) => e.publish_state === 'published')
+    expect(published.length).toBeGreaterThan(0)
+
+    const mismatched = published
+      .map((e) => ({ slug: e.slug as string, hazard: e.hazard as string, slugHazard: hazardInSlug(e.slug) }))
+      .filter((r) => r.slugHazard !== undefined && r.slugHazard !== r.hazard)
+      .map((r) => r.slug)
+
+    const unnamed = mismatched.filter((slug) => !GRANDFATHERED.includes(slug))
+    expect(unnamed).toEqual([])
   })
 })
 
