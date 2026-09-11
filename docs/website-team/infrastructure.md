@@ -31,11 +31,29 @@ useful than twelve invented percentages.
 ## The inventory
 
 ### Vercel — hosting
-- **Plan:** Hobby — *unverified.* No `VERCEL_TOKEN` and no Vercel CLI on this
-  machine, and `~/.vercel` does not exist, so the plan cannot be confirmed from
-  here. `.vercel/project.json` exists, so the project is linked.
+- **Token:** present since 2026-09-11, **project-scoped** to swechha-website, in
+  `~/.swechha-ai/env`. Verified against the live API.
+- **Plan:** Hobby — *still unverified,* and this is a scope consequence rather
+  than an oversight. A project-scoped token is denied user- and team-level
+  resources: `v2/user` returns 404 and `v1/usage` 400 with it. That is the
+  security trade-off working as intended — Vercel has no read-only permission
+  level, so narrow scope is the only control, and narrow scope cannot see
+  account-level plan data.
 - **Published limits:** 100 deployments/day; 100 GB bandwidth/month on Hobby.
-- **Usage:** UNKNOWN — needs `VERCEL_TOKEN`.
+- **Deployment health: MEASURED.** `sentinel/vercel-health.sh` reads
+  `v6/deployments` and reports consecutive production failures. Verified
+  retrospectively against the real 16:16 IST failure at `033235d0`, which it
+  detects and describes correctly.
+- **Deployment count: MEASURED, and it is the limit this site is closest to.**
+  **51 deployments in 24 hours against the published 100/day cap on
+  2026-09-11** — every push to `main` deploys, and the air pipeline pushes every
+  fifteen minutes. The probe warns at 70% and calls it red at 90%; those two
+  percentages are a choice and are labelled as one in the source, the 100 is the
+  provider's.
+- **Bandwidth: still UNKNOWN** — account-level, and the project scope cannot
+  reach it. Widening the token to Full Account would buy that figure at the cost
+  of giving a scheduled job write access to every project and the whole account.
+  Not recommended; recorded so the trade-off is a decision rather than a gap.
 - **Status:** verified reachable 2026-09-11 — `vercel-status.com` reported
   *All Systems Operational*.
 - **Cost risk: HIGH.** This is the largest single billing exposure in the

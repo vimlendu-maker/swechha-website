@@ -134,8 +134,14 @@ describe('website team: infrastructure and free-tier watch', () => {
     for (const word of ['verified', 'published', 'unverified', 'UNKNOWN']) {
       expect(doc).toContain(word)
     }
-    // The two blind spots that carry the highest cost risk must stay named.
-    expect(doc).toMatch(/VERCEL_TOKEN/)
-    expect(doc).toMatch(/NEON_API_KEY/)
+    // What is still unmeasurable must stay NAMED, so a gap cannot quietly
+    // become invisible. This list shrinks as credentials arrive — Vercel's
+    // deployment health became measurable on 2026-09-11 — but whatever is
+    // left blind has to be findable in this document by name.
+    expect(doc).toMatch(/NEON_API_KEY/)          // still wholly blind
+    expect(doc).toMatch(/Bandwidth: still UNKNOWN/)  // Vercel's remaining gap
+    // And the reason must be recorded, not just the fact: a project-scoped
+    // token cannot reach account-level usage, which is a deliberate trade.
+    expect(doc).toMatch(/project-scoped token is denied user- and team-level/)
   })
 })
