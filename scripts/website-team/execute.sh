@@ -11,6 +11,11 @@
 set -euo pipefail
 
 REPO="${WEBSITE_TEAM_REPO:-$HOME/swechha-website}"
+# The branch point. `origin/main` once the team is merged; until then it must be
+# the team's own branch, because a specialist that branches from main cannot
+# read docs/website-team/lessons.md or policy.json -- the context its role file
+# tells it to read first.
+BASE="${WEBSITE_TEAM_BASE:-origin/main}"
 SPECIALIST="${1:?usage: execute.sh <specialist> <brief-file> [--dry-run]}"
 BRIEF_FILE="${2:?usage: execute.sh <specialist> <brief-file> [--dry-run]}"
 DRY="${3:-}"
@@ -40,6 +45,18 @@ ALLOWED="$ALLOWED,Bash(git status:*),Bash(git diff:*),Bash(git log:*)"
 
 BRANCH="team/$(date +%Y%m%d)-$(basename "$BRIEF_FILE" .txt | tr -cd '[:alnum:]-' | cut -c1-40)"
 
+# ★ STAGE THE HELPERS OUTSIDE THE WORKING TREE BEFORE ANY CHECKOUT.
+#   This script checks out a branch from origin/main, and origin/main may not
+#   contain scripts/website-team/ -- it does not today, because the team itself
+#   is still on a branch. The first run of this script deleted its own helpers
+#   out from under itself at the checkout and then reported "no changes made",
+#   which is the worst kind of failure: quiet and plausible. The same would
+#   happen on any base branch that lacks them.
+STAGE="$(mktemp -d)"
+trap 'rm -rf "$STAGE"' EXIT
+cp "$REPO/scripts/website-team/parse-result.py" "$REPO/scripts/website-team/guard-paths.sh" "$STAGE/"
+chmod +x "$STAGE/guard-paths.sh"
+
 if [ "$DRY" = "--dry-run" ]; then
   echo "specialist: $SPECIALIST"
   echo "branch:     $BRANCH"
@@ -49,7 +66,7 @@ if [ "$DRY" = "--dry-run" ]; then
 fi
 
 git fetch -q origin
-git checkout -q -B "$BRANCH" origin/main
+git checkout -q -B "$BRANCH" "$BASE"
 
 PROMPT="$(cat "$BRIEF_FILE")
 
@@ -63,7 +80,12 @@ why — an empty diff is a fine outcome and far better than a partial one."
 
 claude -p "$PROMPT" --agent "$SPECIALIST" --permission-mode dontAsk \
   --allowedTools "$ALLOWED" --output-format json < /dev/null > /tmp/wt-exec.json 2>/dev/null || true
-python3 "$REPO/scripts/website-team/parse-result.py" < /tmp/wt-exec.json | tail -n +2 > /tmp/wt-exec.txt || true
+if ! python3 "$STAGE/parse-result.py" < /tmp/wt-exec.json | tail -n +2 > /tmp/wt-exec.txt; then
+  echo "execute: could not parse the specialist's output — refusing to continue" >&2
+  echo "execute: raw output is in /tmp/wt-exec.json" >&2
+  git checkout -q - ; git branch -qD "$BRANCH" 2>/dev/null || true
+  exit 1
+fi
 
 if git diff --quiet && git diff --cached --quiet; then
   echo "execute: no changes made — nothing to ship"
@@ -80,7 +102,7 @@ $(sed 's/^/  /' /tmp/wt-exec.txt | head -20)"
 # ── THE GATES, IN THE ORDER THAT FAILS CHEAPEST FIRST ────────────────────────
 FAILED=""
 # Pre-build: served HTML must not have been hand-edited.
-./scripts/website-team/guard-paths.sh origin/main || FAILED="$FAILED guard"
+"$STAGE/guard-paths.sh" "$BASE" || FAILED="$FAILED guard"
 npm test  >/tmp/wt-test.log 2>&1 || FAILED="$FAILED tests"
 npm run lint >/tmp/wt-lint.log 2>&1 || FAILED="$FAILED lint"
 npm run build:all >/tmp/wt-build.log 2>&1 || FAILED="$FAILED build"
@@ -93,7 +115,7 @@ git add -A
 if ! git diff --cached --quiet; then
   git commit -q -m "chore: regenerate after build:all"
   # Post-build: regenerated pages are expected; everything else still forbidden.
-  ./scripts/website-team/guard-paths.sh origin/main --post-build || FAILED="$FAILED guard-after-build"
+  "$STAGE/guard-paths.sh" "$BASE" --post-build || FAILED="$FAILED guard-after-build"
 fi
 
 if [ -n "$FAILED" ]; then
@@ -103,7 +125,7 @@ if [ -n "$FAILED" ]; then
 fi
 
 git push -q -u origin "$BRANCH"
-PR_URL="$(gh pr create --base main --head "$BRANCH" \
+PR_URL="$(gh pr create --base "${BASE#origin/}" --head "$BRANCH" \
   --title "$(head -1 "$BRIEF_FILE" | cut -c1-70)" \
   --body "$(printf 'Opened by the website team, stage two.\n\n## Brief\n\n%s\n\n## What the specialist reported\n\n%s\n\n## Gates\n\n- guard-paths: pass\n- npm test: pass\n- npm run lint: pass\n- npm run build:all: pass\n- npm run verify:seo: pass\n\nMerging is conditional on every `auto_merge` condition in `docs/website-team/policy.json`. If any failed, this PR waits for a human.\n' "$(cat "$BRIEF_FILE")" "$(cat /tmp/wt-exec.txt)")")"
 echo "execute: opened $PR_URL"
