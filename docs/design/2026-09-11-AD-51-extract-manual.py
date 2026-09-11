@@ -1,5 +1,14 @@
+import os
 import re, json
-SP="/private/tmp/claude-502/-Users-administrator-Farm-App/2d85ad1b-0108-4aec-8092-c9deb6412456/scratchpad"
+# WHERE THE EXTRACTED PDF TEXT LIVES. Not in the repo — the manual is a 25MB
+# PDF and its text dump is an intermediate, so this is passed in:
+#   pdftotext -layout "Final BTG MANUAL.docx.pdf" $BTG_TEXT_DIR/btg.txt
+#   BTG_TEXT_DIR=/tmp/btg python3 docs/design/2026-09-11-AD-51-extract-manual.py
+# It fails here with that instruction rather than on a missing-file traceback.
+SP=os.environ.get("BTG_TEXT_DIR")
+if not SP or not os.path.isdir(SP):
+    raise SystemExit("Set BTG_TEXT_DIR to the directory holding btg.txt "
+                     "(pdftotext -layout 'Final BTG MANUAL.docx.pdf' $BTG_TEXT_DIR/btg.txt)")
 raw=open(SP+"/btg.txt").read().replace("​","").replace("﻿","")
 lines=raw.split("\n")
 

@@ -364,7 +364,7 @@ for (const t of THEMES) {
         <p class="lbl wk-anc"><a class="lk" href="${themeHref(t.slug)}">&larr;&nbsp;${esc(t.name)}</a></p>
         <h1 class="d2" id="top-h">${esc(s.title)}</h1>
 ${(F.description || []).length ? `        <p class="lead lr-answer">${esc(firstLine(F.description))}</p>\n` : ''}${strip(s)}
-${s.title_source === 'editorial' ? `        <p class="cap tc-ed">The manual leaves this session untitled. The name is ours, taken from what the session says it is for; everything below is the manual's.</p>` : ''}
+${s.title_source === 'editorial' ? `        <p class="cap tc-ed">The manual leaves this session untitled. The name is ours, taken from what the session says it is for; everything below is the manual's.</p>` : ''}${s.content_note ? `\n        <p class="cap tc-ed">${esc(s.content_note)}</p>` : ''}
       </div>`,
       run: () => `${opener('run', 'How it runs', (F.sequence || []).length
         ? 'The teaching sequence as the manual gives it.'
@@ -917,6 +917,17 @@ if (!bad) pass('every theme page lists its own sessions');
     }
   }
   if (rewritten.length) pass(`${rewritten.length} theme(s) with rewritten reading disclose it`);
+  /* The same rule for a SESSION Swechha has annotated — a foreign figure
+     re-attributed, or a table that did not survive extraction. An edit the
+     page does not admit to is the failure mode. */
+  const annotated = ALL.filter((s) => s.content_note);
+  for (const s of annotated) {
+    const w = written.find((x) => x.route === sessHref(s.theme.slug, s.slug));
+    if (!w.OUT.includes(s.content_note.slice(0, 60))) {
+      fail(`${w.route} carries a content note but does not render it`);
+    }
+  }
+  if (annotated.length) pass(`${annotated.length} annotated session(s) disclose the annotation`);
 }
 
 console.log(`\nteach — ${written.length} pages written `
