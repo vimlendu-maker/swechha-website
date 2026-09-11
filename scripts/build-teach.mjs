@@ -151,12 +151,26 @@ const STRIP = [
   ['vocabulary', 'The words'],
 ];
 const strip = (s) => {
+  /* ★ RENDER EVERY BLOCK OF THE FIELD, NOT JUST THE FIRST.
+     This rendered `firstLine()` only, and 15 sessions carry a field split over
+     several blocks — so the strip silently dropped the rest. `dung-power`
+     showed ONE of its NINE materials for an activity that generates methane and
+     carries a safety warning in capitals; `what-sustainability-means-to-you`
+     rendered its materials as the single word "Per group:". A teacher reading
+     the page would have set up the wrong equipment and never known there was
+     more. A value that is a list renders as a list. */
   const rows = STRIP
-    .filter(([k]) => (s.fields[k] || []).length && firstLine(s.fields[k]).trim())
-    .map(([k, label]) => `          <div class="lr-st-r">
+    .filter(([k]) => (s.fields[k] || []).some((b) => b.x.trim()))
+    .map(([k, label]) => {
+      const parts = (s.fields[k] || []).filter((b) => b.x.trim());
+      const body = parts.length === 1
+        ? `<p class="lr-st-v tc-st-v">${esc(parts[0].x)}</p>`
+        : `<ul class="lr-st-v tc-st-v tc-st-l">${parts.map((b) => `<li>${esc(b.x)}</li>`).join('')}</ul>`;
+      return `          <div class="lr-st-r">
             <p class="lbl">${label}</p>
-            <p class="lr-st-v tc-st-v">${esc(firstLine(s.fields[k]))}</p>
-          </div>`);
+            ${body}
+          </div>`;
+    });
   if (!rows.length) return '';
   return `        <div class="lr-st">
 ${rows.join('\n')}
@@ -275,6 +289,9 @@ const PAGE_CSS = `
 .lr-ul{margin:0 0 clamp(12px,1.6vw,18px);padding-left:1.1em;max-width:62ch}
 .lr-ul li{margin:0 0 7px}
 .tc-st-v{white-space:normal;font-weight:600;max-width:56ch}
+.tc-st-l{margin:0;padding-left:1.05em}
+.tc-st-l li{margin:0 0 4px}
+.tc-st-l li:last-child{margin-bottom:0}
 .tc-st-m{margin:calc(-1 * clamp(10px,1.4vw,16px)) 0 0;max-width:52ch}
 .tc-seq{list-style:none;margin:clamp(18px,2.6vw,26px) 0 0;padding:0;counter-reset:none}
 .tc-seq-r{display:grid;grid-template-columns:auto minmax(0,1fr);gap:clamp(12px,2vw,22px);
