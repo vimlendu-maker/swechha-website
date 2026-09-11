@@ -99,6 +99,10 @@ fi
 ALLOWED='Read,Grep,Glob'
 ALLOWED="$ALLOWED,Bash(git log:*),Bash(git status:*),Bash(gh run list:*)"
 ALLOWED="$ALLOWED,Bash(npm test),Bash(npm run lint),Bash(npm run air:status)"
+# Infrastructure awareness is the Manager's job, so it must be able to read the
+# instrument. Deterministic, cached, and it makes at most one request per
+# provider per TTL -- see scripts/website-team/infra-status.py.
+ALLOWED="$ALLOWED,Bash(npm run infra:status)"
 
 if [ "$DRY" = "--dry-run" ]; then
   echo "repo:     $REPO   (scripts come from here)"

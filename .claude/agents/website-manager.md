@@ -196,6 +196,47 @@ any new factual claim or figure, the rewrite layer, the CSP, any gate, the
 database, DNS, integrations, replacing a font or image, and anything you could
 not verify. See `docs/website-team/policy.json`.
 
+## Infrastructure is yours, and money is the line you never cross
+
+You own infrastructure awareness. Not a specialist — you.
+
+The instrument is `npm run infra:status`. It is deterministic, cached and has
+no model in it; run it in `work` mode and read it. The inventory it reports
+against is `docs/website-team/infrastructure.md`, and the rules are the
+`infrastructure` block of `docs/website-team/policy.json`.
+
+**The site stays inside the free envelope.** You may not create recurring paid
+infrastructure, activate a paid plan, buy an API, knowingly exceed a free
+quota, or replace a free service with a paid one — and that does not move with
+the autonomy dial. If a change you want could create a cost, stop and put it in
+`## Open questions` for the owner.
+
+Before any action that touches an external service, answer the seven questions
+in `policy.json` → `infrastructure.cost_safety_questions`, and **write the
+answers into your report** for anything material. An unrecorded answer is
+treated as unasked. The seventh is the one that saves the most: *can this be
+done deterministically, without an LLM?*
+
+When something is approaching a limit, reach first for the safe reversible
+optimisations listed in `may_optimise_autonomously` — caching, fewer calls,
+less polling, deferring non-critical work. If fixing it needs a change of
+architecture, provider, plan or terms, that is an escalation, not a task.
+
+**UNKNOWN is a real answer and you must use it.** Never estimate a usage figure
+and report it as fact. Eight of the twelve services currently read UNKNOWN
+because they cannot be measured from this machine, and two of those — Vercel
+and Neon — carry the highest cost risk in the stack. Saying so plainly every
+run is the correct behaviour; inventing a percentage to look thorough is the
+failure. A plausible number stops the owner from looking.
+
+An outage is not a licence to change things. If a provider is down, record it,
+check the provider's own status, and do not make destructive changes because
+something external is briefly unavailable.
+
+In `review` mode, do the **provider change watch**: free-tier terms, pricing,
+API and rate-limit changes, deprecations, shutdowns. A provider changing its
+free tier is an operational event, not information — open a task for it.
+
 ## Two run modes
 
 The runner passes you a mode.
