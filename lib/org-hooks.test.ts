@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync, mkdtempSync } from 'node:fs'
+import { readFileSync, mkdtempSync, mkdirSync, writeFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -26,11 +26,15 @@ const ROOT = join(__dirname, '..')
 const HOOK = join(ROOT, 'scripts/org/hook-event.py')
 
 /** Run the hook exactly as Claude Code would, and return what it logged. */
-function fire(hookName: string, payload: unknown): Record<string, unknown>[] {
+function fire(
+  hookName: string,
+  payload: unknown,
+  extraEnv: Record<string, string> = {},
+): Record<string, unknown>[] {
   const home = mkdtempSync(join(tmpdir(), 'swechha-hook-'))
   execFileSync('python3', [HOOK, hookName], {
     input: typeof payload === 'string' ? payload : JSON.stringify(payload),
-    env: { ...process.env, SWECHHA_AI_HOME: home },
+    env: { ...process.env, SWECHHA_AI_HOME: home, ...extraEnv },
     cwd: ROOT,
   })
   let raw = ''
@@ -124,6 +128,52 @@ describe('hook events: the organisation, not this department', () => {
     const events = fire('SessionStart', { session_id: 'abcdef123' })
     expect(events[0].origin).toBe('interactive')
     expect(events[0].source).toBe('hook')
+  })
+})
+
+describe('hook events: a worktree is the common case, not an edge case', () => {
+  it('a file in a linked worktree resolves to the real repository', () => {
+    /* ★ THIS WAS A LIVE BUG, and the worst possible one: every department runs
+       its UNATTENDED work in a worktree — that is what worktree isolation is
+       for — so ~/.swechha-ai/worktree is where the scheduled runs happen. The
+       first version took the department from the directory name, which there
+       is "worktree", matching nothing in the registry. Every scheduled run
+       would have logged department UNKNOWN, leaving the events that matter
+       most as the only unidentifiable ones.
+
+       Built synthetically rather than with real git, so it runs on CI where no
+       worktree exists: in a linked worktree .git is a FILE naming the main
+       repository's gitdir. */
+    const tmp = mkdtempSync(join(tmpdir(), 'swechha-wt-'))
+    const main = join(tmp, 'swechha-website')
+    const wt = join(tmp, 'worktree')
+    mkdirSync(join(main, '.git', 'worktrees', 'worktree'), { recursive: true })
+    mkdirSync(join(wt, 'lib'), { recursive: true })
+    writeFileSync(join(wt, '.git'), `gitdir: ${join(main, '.git', 'worktrees', 'worktree')}\n`)
+
+    // A fixture registry, so the department assertion is REAL on CI rather
+    // than conditional on a vault being present. The first version skipped the
+    // assertion whenever resolution returned UNKNOWN — which is exactly what
+    // the bug produced, so the test passed with the bug reintroduced.
+    const vault = join(tmp, 'vault')
+    mkdirSync(join(vault, 'swechha', 'ai'), { recursive: true })
+    writeFileSync(
+      join(vault, 'swechha', 'ai', 'departments.json'),
+      JSON.stringify({ departments: [{ id: 'website', repository: 'owner/swechha-website' }] }),
+    )
+
+    const events = fire(
+      'PostToolUse',
+      { tool_name: 'Edit', tool_input: { file_path: join(wt, 'lib', 'brand.ts') } },
+      { WEBSITE_TEAM_VAULT: vault },
+    )
+    expect(events).toHaveLength(1)
+    // The path stays relative to the CHECKOUT the file is in; the main
+    // repository's path is not a prefix of a worktree path.
+    expect(events[0].path).toBe('lib/brand.ts')
+    // And the department comes from the MAIN repository's name.
+    expect(events[0].department, 'a worktree must resolve like its main repo')
+      .toBe('website')
   })
 })
 

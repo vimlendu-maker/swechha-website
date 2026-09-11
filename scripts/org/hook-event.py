@@ -51,24 +51,61 @@ REGISTRY = os.path.join(VAULT, "swechha/ai/departments.json")
 MAX_BYTES = 8 * 1024 * 1024
 
 
-def repo_root(path):
-    """Walk up to the enclosing git repository.
+def _dot_git(path):
+    """The nearest directory containing a .git, and that .git itself."""
+    d = path if os.path.isdir(path) else os.path.dirname(path)
+    while d and d != "/":
+        dot = os.path.join(d, ".git")
+        if os.path.exists(dot):
+            return d, dot
+        d = os.path.dirname(d)
+    return None, None
+
+
+def worktree_root(path):
+    """The checkout the file is in — what a path should be relative to.
 
     The session's working directory is NOT reliably the repository being
-    edited — this was found the hard way: the first version derived everything
-    from os.getcwd() and a session bound to one project while editing another
-    logged every event against the wrong department. The file being touched
-    knows which repository it is in; the shell does not.
+    edited: found the hard way, when a session bound to one project while
+    editing another logged every event against the wrong department. The file
+    knows which checkout it is in; the shell does not.
     """
     try:
-        d = path if os.path.isdir(path) else os.path.dirname(path)
-        while d and d != "/":
-            if os.path.exists(os.path.join(d, ".git")):
-                return d
-            d = os.path.dirname(d)
+        root, _ = _dot_git(path)
+        return root
     except Exception:
-        pass
-    return None
+        return None
+
+
+def canonical_root(path):
+    """The MAIN repository, even when the file is in a linked worktree.
+
+    ★ THIS IS THE COMMON CASE, NOT AN EDGE CASE. Every department runs its
+      unattended work in a worktree — that is the whole point of worktree
+      isolation — so ~/.swechha-ai/worktree is where the scheduled runs
+      happen. The first version derived the department from the directory
+      name, which in a worktree is "worktree", matching nothing in the
+      registry. Every scheduled run would have logged department UNKNOWN,
+      leaving the events that matter most as the only unidentifiable ones.
+
+      In a linked worktree .git is a FILE reading
+      `gitdir: <main>/.git/worktrees/<name>`, so the main checkout is the part
+      before /.git/worktrees/.
+    """
+    try:
+        root, dot = _dot_git(path)
+        if root is None:
+            return None
+        if os.path.isdir(dot):
+            return root
+        with open(dot, encoding="utf8") as f:
+            line = f.read().strip()
+        marker = "/.git/worktrees/"
+        if line.startswith("gitdir:") and marker in line:
+            return line.split(":", 1)[1].strip().split(marker)[0]
+        return root
+    except Exception:
+        return None
 
 
 def department(path):
@@ -80,7 +117,7 @@ def department(path):
     override = os.environ.get("SWECHHA_DEPARTMENT")
     if override:
         return override
-    root = repo_root(path)
+    root = canonical_root(path)
     if not root:
         return "UNKNOWN"
     slug = os.path.basename(root)
@@ -98,7 +135,9 @@ def department(path):
 def relative(path):
     """Repo-relative. An absolute path leaks the machine's directory layout,
     and this repository is public."""
-    root = repo_root(path)
+    # Relative to the CHECKOUT the file is in, not the main repository — in a
+    # worktree those differ, and the main repo's path is not a prefix of it.
+    root = worktree_root(path)
     try:
         if root and path.startswith(root + "/"):
             return path[len(root) + 1:]
