@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Daily working run.
+
+  Install both:
+      cp scripts/website-team/com.swechha.website-team-*.plist ~/Library/LaunchAgents/
+      launchctl load ~/Library/LaunchAgents/com.swechha.website-team-work.plist
+      launchctl load ~/Library/LaunchAgents/com.swechha.website-team-review.plist
+
+  launchd uses LOCAL time, not UTC — unlike GitHub Actions cron, which is the
+  trap recorded in the farm app's notes. 09:00 here is 09:00 IST.
+
+  It does not fire while the Mac is asleep. A missed run happens at the next
+  wake, which is fine for a daily review pass and would not be for anything
+  time-critical.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>              <string>com.swechha.website-team-work</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-lc</string>
+    <string>$HOME/swechha-website/scripts/website-team/run.sh work</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+
+    <key>Hour</key>             <integer>9</integer>
+    <key>Minute</key>           <integer>0</integer>
+  </dict>
+  <key>StandardOutPath</key>    <string>/tmp/swechha-website-team-work.log</string>
+  <key>StandardErrorPath</key>  <string>/tmp/swechha-website-team-work.err</string>
+  <key>RunAtLoad</key>          <false/>
+</dict>
+</plist>

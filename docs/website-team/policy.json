@@ -1,18 +1,30 @@
 {
-  "$comment": "Operating policy for the Website Team. Autonomy is this file, not the agents. See docs/website-team/README.md and the vault's swechha/website/team/04-operating-policy.md.",
-  "autonomy_level": 2,
+  "$comment": "Operating policy for the Website Team. Autonomy is this file, not the agents. Level 4 = the team fixes, tests and ships the safe_to_automate list without asking. The never list does NOT move with the dial.",
+  "autonomy_level": 4,
   "levels": {
-    "1": "Observer — inspect and report",
-    "2": "Advisor — diagnose and propose; engineering opens PRs",
-    "3": "Implementer — implement approved changes without re-asking per file",
-    "4": "Operator — independently fix, test and deploy the safe_to_automate list",
-    "5": "Autonomous — continuous loop, escalating high-risk decisions"
+    "1": "Observer \u2014 inspect and report",
+    "2": "Advisor \u2014 diagnose and propose; engineering opens PRs",
+    "3": "Implementer \u2014 implement approved changes without re-asking per file",
+    "4": "Operator \u2014 independently fix, test and deploy the safe_to_automate list",
+    "5": "Autonomous \u2014 continuous loop, escalating high-risk decisions"
   },
   "roles": {
-    "manager":     { "site_write": false,     "vault_write": true  },
-    "design":      { "site_write": false,     "vault_write": false },
-    "content_seo": { "site_write": false,     "vault_write": false },
-    "engineering": { "site_write": "pr_only", "vault_write": false }
+    "manager": {
+      "site_write": false,
+      "vault_write": true
+    },
+    "design": {
+      "site_write": false,
+      "vault_write": false
+    },
+    "content_seo": {
+      "site_write": false,
+      "vault_write": false
+    },
+    "engineering": {
+      "site_write": "pr_only",
+      "vault_write": false
+    }
   },
   "safe_to_automate": [
     "broken internal links and hrefs resolving to no mapped route",
@@ -26,11 +38,11 @@
     "anything reversible by a single git revert with no data change"
   ],
   "requires_approval": [
+    "ANY new factual claim, figure, citation or statement about Swechha \u2014 this gate does not move with the autonomy dial",
     "the homepage above the fold",
     "navigation changes",
     "deleting a page or removing a route from a derived map",
     "organisational messaging or positioning",
-    "any new factual claim, figure or citation",
     "the rewrite layer (design-routes.ts, next.config.ts rewrites)",
     "the CSP or security headers",
     "generated-current.yml or any other gate",
@@ -38,22 +50,63 @@
     "DNS or domain changes",
     "adding or removing a third-party integration",
     "replacing a font or image",
+    "promoting an agent, or adding a recruit to .claude/agents/",
     "anything the agent cannot verify"
   ],
   "never": [
     "push directly to main",
-    "merge its own pull request",
+    "merge a pull request that does not meet EVERY auto_merge condition",
     "remove a step from generated-current.yml",
     "add a CSP host without the subresource that needs it, on the same commit",
     "replace a font or image at its existing filename",
     "delete code that has a test",
     "write a sourced figure that has not passed the DOI/URL check",
-    "claim to have verified anything against the live site — production returns 403 to this machine",
-    "edit app/ believing it is what readers see"
+    "claim to have verified anything against the live site \u2014 production returns 403 to this machine",
+    "edit app/ believing it is what readers see",
+    "weaken, or propose weakening, anything in this file"
   ],
   "allowlist": {
-    "read": ["/Users/administrator/swechha-website", "~/Desktop/swechha-vault/swechha/website"],
-    "write": ["/Users/administrator/swechha-website", "~/Desktop/swechha-vault/swechha/website/decisions"],
+    "read": [
+      "/Users/administrator/swechha-website",
+      "~/Desktop/swechha-vault/swechha/website"
+    ],
+    "write": [
+      "/Users/administrator/swechha-website",
+      "~/Desktop/swechha-vault/swechha/website/decisions"
+    ],
     "$comment": "Never a recursive search from ~. Enforced by --allowedTools plus the working directory."
+  },
+  "cadence": {
+    "work": "daily 09:00 local \u2014 observe, act on the safe list, open and merge PRs that pass every gate",
+    "review": "Monday 09:00 local \u2014 the weekly review for the owner, written to the vault",
+    "$comment": "launchd uses local time and does not fire while the Mac is asleep; a missed run happens at next wake."
+  },
+  "auto_merge": {
+    "enabled": true,
+    "$comment": "Engineering may merge its own PR ONLY when every one of these holds. Any single failure stops it and the PR waits for a human. This is the one exception to 'never merge its own pull request' and it is conditional, not general.",
+    "conditions": [
+      "the change is wholly within safe_to_automate",
+      "npm test passes with no new failures against the recorded baseline",
+      "npm run lint reports 0 errors and no increase in warnings over the baseline (42 as of 2026-09-11)",
+      "generated-current.yml passes on the PR",
+      "npm run verify:seo passes",
+      "the diff touches no path in never_touch",
+      "the diff adds no factual claim, figure, citation or organisational statement",
+      "the whole change is revertible by a single git revert"
+    ],
+    "never_touch": [
+      "app/**",
+      "public/_pages/**",
+      "data/**",
+      "next.config.ts",
+      "design-routes.ts",
+      ".github/workflows/**",
+      "docs/website-team/policy.json",
+      "lib/seo/register.test.ts"
+    ]
+  },
+  "inbox": {
+    "path": "~/Desktop/swechha-vault/swechha/website/team/inbox.md",
+    "$comment": "The owner drops jobs here in Obsidian, from any device. The manager reads it at the start of every run, acts on what it can, and reports what it did under '## Inbox'. It cannot edit the file, so it never marks its own homework \u2014 the owner strikes items through."
   }
 }
