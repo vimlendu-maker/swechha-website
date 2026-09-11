@@ -654,3 +654,88 @@ guide resolves to **7 numbered sections**, the manual's own.
 attempt at the generator was delegated and returned nothing — it spent its whole
 turn budget reading the repo. Nothing of it survives; no branch, no worktree, no
 file.
+
+## D-51.2 RESOLVED — theme 02 rewritten for India, 11 September 2026
+
+The air theme's reading material was replaced. What the manual printed taught the
+**United Kingdom**: the industrial revolution, the 1952 London smog, *"about 23
+million vehicles on the road in Britain"*, with two mentions of India or Delhi in
+the whole chapter — plus a paragraph pasted in from an unrelated document
+(*"This Proposal Letter serves as an introduction to the themes… during this
+Hackathon"*).
+
+The problem was **wider than the two sections first identified.** Sections 3
+through 6 explained a **foreign air quality index**. India publishes its own
+National AQI through CPCB, whose six band names and breakpoints are not the ones
+the manual described, so a student taught from it would have read the wrong band
+names off an Indian reading.
+
+### What was replaced, and what was kept
+
+Kept as written, because it is chemistry and true anywhere: the **main pollutants**
+section (19 blocks — sulphur dioxide, carbon monoxide, nitrogen oxides, VOCs,
+particulates, ozone, CFCs, unburned hydrocarbons, heavy metals) and the note on
+**sensitive groups**.
+
+Written by Swechha and marked as ours:
+
+- **What makes the air dirty in India** — burning (transport, coal, biomass in
+  kitchens without a gas connection, roadside waste) and the dust that does not
+  burn; the two seasonal northern sources; and the fact that **the split between
+  them is disputed**, with both government-commissioned studies quoted rather than
+  one pie chart published as settled.
+- **Why the same air is worse in winter** — the temperature inversion over the
+  Indo-Gangetic Plain, and the teaching point that a reading reports two things at
+  once: what was emitted, and what the weather did with it.
+- **India's Air Quality Index** — the eight pollutants, the 0–500 sub-index per
+  pollutant, that the station AQI is the **highest** sub-index and not the average,
+  the minimum-three rule, the **six CPCB bands with their real names and ranges**,
+  why the bands are deliberately unequal, and the NAAQS 2009 concentration limits.
+- **What the index will not tell you** — the `/learn` "what this cannot tell you"
+  convention applied to the index itself, ending by sending a teacher to the live
+  reading at `/now/air` rather than freezing a number in a teaching document.
+
+### Every figure is verified against committed data, not typed from memory
+
+| Claim | Source in this repo | Checked |
+|---|---|---|
+| Six band names and ranges | `data/air-delhi.json` `bands` | all six match |
+| PM2.5 60/40, PM10 100/60 µg/m³ | `data/air-delhi.json` `limits`, CPCB NAAQS 2009 | match |
+| IIT Kanpur vehicles 6–29% of PM2.5 | `data/apportionment-delhi.json` | match |
+| TERI-ARAI transport 17–28% dispersion, 18–23% receptor | same | match, both models named |
+| Eight pollutants, highest sub-index, minimum-three, population-weighted city figure | `data/learn/articles/cpcb-aqi.json` | match |
+
+**No figure was written that this repository cannot source.** Deliberately absent:
+death counts, national vehicle totals, city rankings and "worst in the world"
+claims — none of which are sourced in-repo, and none of which the chapter needs.
+
+### Two mechanisms so this does not silently revert
+
+1. **The theme page discloses it.** `themes/*.json` may carry `reading_note`; where
+   it does, the generator renders it as a `.cap` under the reading band and the
+   band's lead says "what this theme sets out" rather than "what the manual sets
+   out". Gate 13 fails a theme that has rewritten reading and does not disclose it
+   — the same rule the six editorial titles run under.
+2. **The extractor refuses to overwrite it.** `2026-09-11-AD-51-emit-data.py`
+   treats the presence of `reading_note` as a flag and preserves the theme file,
+   printing `PRESERVED rewritten reading`. Without this, re-running the extractor
+   would restore the London smog silently. Gate 12 independently fails any page
+   that republishes `vehicles on the road in Britain`, `This Proposal Letter` or
+   `this Hackathon` — gated on the **claims**, not the words, because the
+   disclosure names the London smog in order to say what was removed.
+
+### Still foreign, and deliberately out of scope
+
+Found while checking; **not** part of this rewrite, and none of it is in theme 02:
+
+- `sustainable-development/the-life-of-a-t-shirt-activity` — UK clothing-waste
+  figures (*"PEOPLE IN BRITAIN SEND 11 MILLION ITEMS OF CLOTHING A WEEK TO
+  LANDFILL"*).
+- `water-water-everywhere/the-ocean-and-plastic-pollution` — *"microplastics in up
+  to 80% of mussels taken from British"* waters. Its own source line reads
+  *"Contextualized to Indian ocean from here: godinton.kent.sch.uk"*, so it is a
+  Kent primary school's worksheet that was half-adapted already.
+- `climate-justice/climate-game` and `themes/wasted` reference the US EPA.
+
+`themes/trees-and-forests` calling Kipling a British author is correct and needs
+nothing.

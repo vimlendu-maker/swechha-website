@@ -468,8 +468,10 @@ for (const [ti, t] of THEMES.entries()) {
        than an index: the chapter's own background text, sectioned on the
        manual's own numbered sub-headings, on the page a teacher reads before
        choosing a session. */
-    reading: () => `${opener('reading', 'The background', `What the manual sets out on ${t.card.toLowerCase()}, before any session.`)}
-      <div class="wrap">
+    reading: () => `${opener('reading', 'The background', t.reading_note
+      ? `What this theme sets out on ${t.card.toLowerCase()}, before any session.`
+      : `What the manual sets out on ${t.card.toLowerCase()}, before any session.`)}
+      <div class="wrap">${t.reading_note ? `\n        <p class="cap tc-ed">${esc(t.reading_note)}</p>` : ''}
 ${t.reading.map((sec) => `${sec.h ? `        <h3 class="h2 tc-rh">${esc(sec.h)}</h3>\n` : ''}${prose(sec.body)}`).join('\n')}
       </div>`,
     sessions: () => `${opener('sessions', 'The sessions', `${t.sessions.length} ${t.sessions.length === 1 ? 'session' : 'sessions'} for this theme. Take one, take all of them, or change them for your own room.`)}
@@ -889,6 +891,32 @@ if (!bad) pass('every theme page lists its own sessions');
     : pass('no session asserts a licence over the compilation');
   const credited = ALL.filter((s) => (s.fields.source || []).length).length;
   pass(`${credited} of ${ALL.length} sessions carry a source the manual named; the rest say so plainly`);
+}
+
+/* 9. THE REPLACED FOREIGN CONTENT DOES NOT COME BACK.
+      The air theme as printed taught the 1952 London smog and British vehicle
+      counts, and carried a paragraph pasted in from a hackathon proposal
+      letter. Re-running the extractor over the original text would restore all
+      of it silently, so the claims themselves are gated. The disclosure on the
+      theme page NAMES the London smog in order to say what was removed, which
+      is why the gate is on the claims and not on the words. */
+{
+  const STALE = ['vehicles on the road in Britain', 'This Proposal Letter', 'this Hackathon'];
+  let n = 0;
+  for (const w of written) {
+    for (const claim of STALE) {
+      if (w.OUT.includes(claim)) { fail(`${w.route} republishes "${claim}"`); n += 1; }
+    }
+  }
+  if (!n) pass('the replaced foreign content has not returned');
+  const rewritten = THEMES.filter((t) => t.reading_note);
+  for (const t of rewritten) {
+    const w = written.find((x) => x.route === themeHref(t.slug));
+    if (!w.OUT.includes(t.reading_note.slice(0, 60))) {
+      fail(`${w.route} has rewritten reading but does not disclose it`);
+    }
+  }
+  if (rewritten.length) pass(`${rewritten.length} theme(s) with rewritten reading disclose it`);
 }
 
 console.log(`\nteach — ${written.length} pages written `
