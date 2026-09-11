@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Land a run's lessons on main, as a pull request, deterministically.
+# Land a run's LEARNING on main, as a pull request, deterministically: the
+# lessons it wrote, and the tool grants its own telemetry has earned.
 #
 #   land-lessons.sh <report-file>
 #
@@ -24,6 +25,7 @@ set -euo pipefail
 REPO="${WEBSITE_TEAM_REPO:-$HOME/swechha-website}"
 REPORT="${1:?usage: land-lessons.sh <report-file>}"
 LESSONS="docs/website-team/lessons.md"
+GRANTS="docs/website-team/tool-grants.json"
 STAMP="$(date +%Y%m%d)"
 BRANCH="team/lessons-$STAMP"
 APPEND="$REPO/scripts/website-team/append-lessons.py"
@@ -39,13 +41,22 @@ git -C "$REPO" fetch -q origin
 git -C "$REPO" worktree add -q -B "$BRANCH" "$WT" origin/main
 
 N="$(python3 "$APPEND" "$WT/$LESSONS" < "$REPORT" 2>/dev/null || echo 0)"
-if [ "${N:-0}" -eq 0 ]; then
+
+# ── AND WHAT THE TELEMETRY EARNED ────────────────────────────────────────────
+# A lesson in prose is advice the next run can skim past. reconcile.py reads the
+# `run_blocked` events run.sh emits and turns a verb refused in two DIFFERENT
+# runs into a grant -- but only one tool-grants.py can prove read-only. Anything
+# else it reports for a human and never applies, however often it recurs. The
+# ratchet tightens; it does not loosen.
+python3 "$REPO/scripts/website-team/reconcile.py" \
+  --ledger "$WT/$GRANTS" --apply 2>&1 | sed 's/^/land-lessons: /' || true
+
+cd "$WT"
+if git diff --quiet -- "$LESSONS" "$GRANTS" 2>/dev/null && [ "${N:-0}" -eq 0 ]; then
   echo "land-lessons: nothing new to record"
   exit 0
 fi
-
-cd "$WT"
-git add "$LESSONS"
+git add "$LESSONS" "$GRANTS"
 git commit -q -m "docs(lessons): $N lesson(s) from the $(date +%Y-%m-%d) run
 
 Appended by scripts/website-team/land-lessons.sh. The Manager decides what the

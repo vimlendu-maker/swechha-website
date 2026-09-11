@@ -90,6 +90,16 @@ ALLOWED="$ALLOWED,Bash(git status:*),Bash(git diff:*),Bash(git log:*)"
 #   what ships is exactly the diff and nothing else.
 ALLOWED="$ALLOWED,Bash(gh run list:*),Bash(gh run view:*)"
 
+# ── EARNED GRANTS ────────────────────────────────────────────────────────────
+# docs/website-team/tool-grants.json is data the department may add to;
+# tool-grants.py refuses anything it cannot prove read-only, and IT lives in
+# scripts/website-team/**, which is GATED. So an agent can grant itself eyes and
+# can never grant itself hands -- the thing deciding which is which is not
+# something it can edit. A missing or broken ledger grants nothing and is never
+# a reason the run cannot start.
+_GRANTS="$(python3 "$REPO/scripts/website-team/tool-grants.py" "$REPO/docs/website-team/tool-grants.json" 2>/dev/null || true)"
+[ -n "$_GRANTS" ] && ALLOWED="$ALLOWED,$_GRANTS"
+
 BRANCH="team/$(date +%Y%m%d)-$(basename "$BRIEF_FILE" .txt | tr -cd '[:alnum:]-' | cut -c1-40)"
 
 # ★ STAGE THE HELPERS OUTSIDE THE WORKING TREE BEFORE ANY CHECKOUT.

@@ -156,6 +156,16 @@ ALLOWED="$ALLOWED,Bash(npm run air:status),Bash(npm run air:status:*)"
 # provider per TTL -- see swechha-ai/infra-status.py.
 ALLOWED="$ALLOWED,Bash(npm run infra:status),Bash(npm run infra:status:*)"
 
+# ── EARNED GRANTS ────────────────────────────────────────────────────────────
+# docs/website-team/tool-grants.json is data the department may add to;
+# tool-grants.py refuses anything it cannot prove read-only, and IT lives in
+# scripts/website-team/**, which is GATED. So an agent can grant itself eyes and
+# can never grant itself hands -- the thing deciding which is which is not
+# something it can edit. A missing or broken ledger grants nothing and is never
+# a reason the run cannot start.
+_GRANTS="$(python3 "$REPO/scripts/website-team/tool-grants.py" "$REPO/docs/website-team/tool-grants.json" 2>/dev/null || true)"
+[ -n "$_GRANTS" ] && ALLOWED="$ALLOWED,$_GRANTS"
+
 if [ "$DRY" = "--dry-run" ]; then
   echo "repo:     $REPO   (scripts come from here)"
   echo "worktree: $("$WT" path)   (the run happens here)"
@@ -188,6 +198,44 @@ if [ ! -r "$INBOX" ] || ! mkdir -p "$RECORDS" 2>/dev/null || [ ! -w "$RECORDS" ]
   echo "run.sh: job, or move the vault outside ~/Desktop. Nothing was spent." >&2
   python3 "$EV" "$DEPARTMENT" runner run_refused reason=vault-unreachable 2>/dev/null || true
   exit 5
+fi
+
+# ── THE DAILY CEILING ────────────────────────────────────────────────────────
+# Checked BEFORE the model call, like the vault preflight above and for the same
+# reason: a refusal that costs a dollar to discover is not a refusal.
+#
+# ★ WHAT IT GUARDS AGAINST IS REAL, NOT THEORETICAL. The sentinel wakes this
+#   department whenever the PROBLEM SET CHANGES, so a service flapping through
+#   the night changes it on every flap. On 2026-09-12 an unscheduled 00:24 wake
+#   cost $1.37 -- correct behaviour, and exactly the shape that turns into a
+#   bill nobody chose once self-repair adds runs.
+#
+# ★ IT REFUSES LOUDLY. policy.json's `on_exceeded` says why: a department that
+#   goes quiet mid-incident because it hit a number, with nobody told, has
+#   turned a cost control into an outage.
+#
+# ★ THE CEILING LIVES IN policy.json, WHICH THIS DEPARTMENT MAY NOT WRITE. An
+#   agent that can raise its own ceiling has no ceiling. A missing or unreadable
+#   `cost` block leaves CEILING empty and skips the check -- a brake must not
+#   become a second way for a bad parse to stop the department.
+CEILING="$(python3 -c "import json;print(json.load(open('$REPO/docs/website-team/policy.json')).get('cost',{}).get('daily_ceiling_usd',''))" 2>/dev/null || true)"
+if [ -n "$CEILING" ]; then
+  SPENT="$(python3 "$REPO/scripts/website-team/budget.py" 2>/dev/null || echo 0)"
+  OVER="$(python3 -c "print(1 if float('${SPENT:-0}') >= float('$CEILING') else 0)" 2>/dev/null || echo 0)"
+  if [ "$OVER" = "1" ]; then
+    echo "run.sh: REFUSED — today's spend \$$SPENT has reached the \$$CEILING daily ceiling." >&2
+    echo "run.sh: Nothing was spent on this run. The ceiling is docs/website-team/policy.json" >&2
+    echo "run.sh: -> cost.daily_ceiling_usd, and only a human can raise it." >&2
+    echo "run.sh: If this is an incident, raise it deliberately rather than waiting for midnight." >&2
+    ev run_refused reason=daily-ceiling spent_usd="$SPENT" ceiling_usd="$CEILING"
+    ORGB="${ORG_CLI:-$HOME/.swechha-ai/org}"
+    if [ -x "$ORGB" ]; then
+      BID="$("$ORGB" task new "$DEPARTMENT" "BLOCKED: daily cost ceiling reached (\$$SPENT of \$$CEILING)" --origin schedule 2>/dev/null || true)"
+      [ -n "$BID" ] && { "$ORGB" task escalate "$BID" --reason "the department stopped itself; raise cost.daily_ceiling_usd or wait for tomorrow" >/dev/null 2>&1 || true; }
+    fi
+    exit 6
+  fi
+  echo "run.sh: budget ok — \$$SPENT of \$$CEILING spent today"
 fi
 
 # ── ONE RUN AT A TIME, IN THE DEPARTMENT'S OWN TREE ──────────────────────────
