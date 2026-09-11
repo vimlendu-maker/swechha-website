@@ -3,8 +3,10 @@ import { execFileSync } from 'node:child_process'
 import { writeFileSync, rmSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-// @ts-expect-error — a plain .mjs with no type declarations; this suite is the
-// only consumer and the two exports it uses are asserted below.
+/* A plain .mjs with no declaration file. TypeScript infers both exports from
+   the source (`allowJs`), so no directive is needed here — and a `@ts-expect-error`
+   guarding against an error that does not occur is itself an error under
+   `next build`'s type check, which is the only step in this repo that runs tsc. */
 import { targets, checkAll } from '../scripts/check-parse.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
