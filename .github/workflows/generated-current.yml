@@ -54,9 +54,16 @@ jobs:
       # description length (the only gate at all for the 15 WORK pages). Runs
       # before the build so a broken register fails fast, before spending time
       # regenerating 29 pages against it.
-      - name: Test and lint
+      - name: Test, type-check and lint
         run: |
           npm test
+          # ★ NOTHING ELSE IN THIS REPOSITORY RUNS tsc, AND VERCEL DOES.
+          # On 2026-09-11 a dotAll regex in a TEST FILE broke every production
+          # deployment: vitest transpiles without type-checking, eslint does
+          # not type-check, and this gate did not either -- but `next build`
+          # type-checks the WHOLE repository, test files included. Every gate
+          # was green while the site could not deploy at all. 1.2 seconds.
+          npm run typecheck
           npm run lint
 
       # ── THE SAME REBUILD THE PUBLISHERS RUN, WHICH IS THE POINT ─────────

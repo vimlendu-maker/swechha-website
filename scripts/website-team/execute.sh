@@ -74,6 +74,7 @@ ALLOWED='Read,Grep,Glob'
 ALLOWED="$ALLOWED,Edit(scripts/**),Edit(lib/**),Edit(components/**),Edit(docs/**)"
 ALLOWED="$ALLOWED,Bash(npm test),Bash(npm test:*)"
 ALLOWED="$ALLOWED,Bash(npm run lint),Bash(npm run lint:*)"
+ALLOWED="$ALLOWED,Bash(npm run typecheck),Bash(npm run typecheck:*)"
 ALLOWED="$ALLOWED,Bash(npm run build:all),Bash(npm run build:all:*)"
 ALLOWED="$ALLOWED,Bash(npm run verify:seo),Bash(npm run verify:seo:*)"
 ALLOWED="$ALLOWED,Bash(npm run verify:final),Bash(npm run verify:final:*)"
@@ -130,7 +131,9 @@ Make the change. Edit files only — **do not run git, do not commit, do not
 push, do not open a pull request.** The runner does all of that, so that what
 ships is exactly the diff and nothing else.
 
-Before you finish, run \`npm test\` and \`npm run lint\` and report their output.
+Before you finish, run \`npm test\`, \`npm run lint\` and \`npm run typecheck\`
+and report their output. The type check matters: nothing else here runs tsc, and
+`next build` type-checks the whole repository including test files.
 If you cannot do the task within your permitted paths, change nothing and say
 why — an empty diff is a fine outcome and far better than a partial one. If the
 brief's premise turns out to be wrong, say so and change nothing; do not invent
@@ -172,6 +175,13 @@ FAILED=""
 # Pre-build: served HTML must not have been hand-edited.
 "$STAGE/guard-paths.sh" "$BASE" || FAILED="$FAILED guard"
 npm test  >"$RUNLOG"/test.log 2>&1 || FAILED="$FAILED tests"
+# ★ TYPE-CHECK, BECAUSE NOTHING ELSE HERE RUNS tsc. On 2026-09-11 a dotAll
+#   regex in a TEST FILE broke every production deployment for over half an
+#   hour: vitest transpiles without type-checking, eslint does not type-check,
+#   and generated-current.yml does not either -- but `next build` type-checks
+#   the WHOLE repository, test files included, and that is what Vercel runs.
+#   Every gate was green while the site could not deploy at all. 1.2 seconds.
+npm run typecheck >"$RUNLOG"/typecheck.log 2>&1 || FAILED="$FAILED typecheck"
 npm run lint >"$RUNLOG"/lint.log 2>&1 || FAILED="$FAILED lint"
 npm run build:all >"$RUNLOG"/build.log 2>&1 || FAILED="$FAILED build"
 npm run verify:seo >"$RUNLOG"/seo.log 2>&1 || FAILED="$FAILED verify:seo"
@@ -206,7 +216,7 @@ if ! git diff --cached --quiet; then
   "$STAGE/guard-paths.sh" "$BASE" --post-build || FAILED="$FAILED guard-after-build"
 fi
 
-for g in guard tests lint build verify:seo; do
+for g in guard tests typecheck lint build verify:seo; do
   case " $FAILED " in *" $g "*) ev gate_result gate="$g" result=fail ;; *) ev gate_result gate="$g" result=pass ;; esac
 done
 if [ -n "$FAILED" ]; then
