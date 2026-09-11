@@ -76,7 +76,13 @@ ships is exactly the diff and nothing else.
 
 Before you finish, run \`npm test\` and \`npm run lint\` and report their output.
 If you cannot do the task within your permitted paths, change nothing and say
-why — an empty diff is a fine outcome and far better than a partial one."
+why — an empty diff is a fine outcome and far better than a partial one. If the
+brief's premise turns out to be wrong, say so and change nothing; do not invent
+a change to justify the ticket.
+
+Leave no scratch files behind. You cannot delete files in this mode, so do not
+create any — do your checking with Read and Grep rather than by writing a
+throwaway script."
 
 claude -p "$PROMPT" --agent "$SPECIALIST" --permission-mode dontAsk \
   --allowedTools "$ALLOWED" --output-format json < /dev/null > /tmp/wt-exec.json 2>/dev/null || true
@@ -87,7 +93,11 @@ if ! python3 "$STAGE/parse-result.py" < /tmp/wt-exec.json | tail -n +2 > /tmp/wt
   exit 1
 fi
 
-if git diff --quiet && git diff --cached --quiet; then
+# `git diff` does not see UNTRACKED files. The first real run left a throwaway
+# diagnostic script behind and this check reported "no changes made" while an
+# untracked file sat in the tree -- it would have been swept into the next
+# commit by `git add -A`. Use porcelain, which sees untracked too.
+if [ -z "$(git status --porcelain)" ]; then
   echo "execute: no changes made — nothing to ship"
   git checkout -q - ; git branch -qD "$BRANCH" 2>/dev/null || true
   exit 0

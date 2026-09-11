@@ -85,3 +85,32 @@ touching the second.
 **Do:** test an enforcement boundary with the role's own conscience removed —
 plain `claude -p` with the same allowlist and a flat instruction. If the tool
 layer does not stop it, the boundary is a suggestion.
+
+## 2026-09-11 — The team's first real task disproved the ticket that commissioned it
+
+`website-engineering` was briefed to fix "two `<img>` tags without `alt`" on the
+homepage, a figure from `02-baseline-audit.md`. It found 43 `<img>` tags and 43
+`alt` attributes, changed nothing, and explained why: two tags wrap onto a second
+line, so the audit's `grep -ohE '<img[^>]*alt='` matched `<img` but not the
+`alt=` that followed a newline. Verified independently with a DOTALL parse: 43
+tags, 0 without alt. **The backlog item was void and the agent was right.**
+
+**Do:** a regex over HTML is a guess. `[^>]*` does not cross a newline in a
+line-oriented grep, so any multi-line tag is silently miscounted. Parse, or at
+least use DOTALL, before a count becomes a backlog item.
+
+**Also do:** brief a specialist with the evidence, not just the conclusion, and
+tell it explicitly that disproving the premise is a valid outcome. This one did
+that unprompted; the instruction is now in `execute.sh` so it does not depend on
+the model's disposition.
+
+## 2026-09-11 — `git diff` does not see untracked files
+
+The executor checked `git diff --quiet && git diff --cached --quiet` to decide
+whether anything had changed. A specialist left a throwaway diagnostic script in
+the tree; `git diff` did not see it, the run reported "no changes made", and the
+file would have been swept into the next commit by `git add -A`. It also could
+not delete the file itself, because `dontAsk` denies `rm`.
+
+**Do:** use `git status --porcelain` to detect changes. And tell an agent that
+cannot delete files not to create them.
