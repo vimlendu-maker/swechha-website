@@ -1,0 +1,62 @@
+{
+  "$comment": "Hooks that turn Claude Code's own lifecycle into organisation events. The script is reached through ~/.swechha-ai/hook-event.py (a symlink to scripts/org/hook-event.py) because a session's working directory is not reliably this repository \u2014 CLAUDE_PROJECT_DIR was unset and a relative path resolved into an unrelated project. Every command ends `; exit 0`: a failing hook surfaces as a BLOCKING error on the tool call, so telemetry must not be able to stop the work. See scripts/org/hook-event.py for what is recorded and what is deliberately not.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.swechha-ai/hook-event.py\" SessionStart 2>/dev/null; exit 0",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.swechha-ai/hook-event.py\" Stop 2>/dev/null; exit 0",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.swechha-ai/hook-event.py\" PreToolUse 2>/dev/null; exit 0",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Agent|Write|Edit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.swechha-ai/hook-event.py\" PostToolUse 2>/dev/null; exit 0",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.swechha-ai/hook-event.py\" PostToolUseFailure 2>/dev/null; exit 0",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
