@@ -113,7 +113,7 @@ describe('inbox: urgency, and the sentinel it feeds', () => {
     // Everything else is queued, because every run is an LLM invocation and a
     // BACKLOG idea typed at midnight must not bill one.
     expect(src).toMatch(/\^\(NOW\|TODAY\)\[\[:space:\]\]\*:/)
-    expect(src).toMatch(/URGENT.*-eq 0/s)
+    expect(src).toMatch(/URGENT[\s\S]*-eq 0/)
     expect(src, 'a non-urgent change must record the hash and NOT run')
       .toMatch(/leaving it for the next scheduled run/)
   })
