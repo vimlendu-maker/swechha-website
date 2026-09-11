@@ -133,7 +133,7 @@ ships is exactly the diff and nothing else.
 
 Before you finish, run \`npm test\`, \`npm run lint\` and \`npm run typecheck\`
 and report their output. The type check matters: nothing else here runs tsc, and
-`next build` type-checks the whole repository including test files.
+\`next build\` type-checks the whole repository including test files.
 If you cannot do the task within your permitted paths, change nothing and say
 why — an empty diff is a fine outcome and far better than a partial one. If the
 brief's premise turns out to be wrong, say so and change nothing; do not invent

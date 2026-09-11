@@ -87,3 +87,29 @@ describe('website team policy', () => {
       .toBe('pr_only')
   })
 })
+
+describe('website team: the specialist prompt is a string, not a script', () => {
+  it('has no unescaped backtick, which bash would run as a command', () => {
+    /* On 2026-09-11 an edit put `next build` into the double-quoted PROMPT
+       string. Bash read the backticks as command substitution, tried to run
+       `next`, and two real briefs died at runtime having already cost a
+       manager run each. `bash -n` PASSED — command substitution is valid
+       syntax — and `--dry-run` exits before the prompt is built, so neither
+       of the two checks in use could see it. Hence this one. */
+    const src = readFileSync(join(ROOT, 'scripts/website-team/execute.sh'), 'utf8')
+    const start = src.indexOf('PROMPT="$(cat "$BRIEF_FILE")')
+    expect(start, 'the PROMPT assignment moved or was renamed').toBeGreaterThan(-1)
+    const endMarker = 'throwaway script."'
+    const end = src.indexOf(endMarker, start)
+    expect(end, 'the PROMPT string no longer ends where expected').toBeGreaterThan(start)
+    const block = src.slice(start, end + endMarker.length)
+    const unescaped = [...block.matchAll(/(?<!\\)`/g)]
+    expect(unescaped.length,
+      `unescaped backtick(s) in the prompt — bash will execute them: ` +
+      unescaped.map((m) => block.slice(Math.max(0, m.index! - 30), m.index! + 15)).join(' | ')
+    ).toBe(0)
+    // $( ) would run too, apart from the one deliberate `cat` on the first line.
+    const subs = [...block.matchAll(/(?<!\\)\$\(/g)]
+    expect(subs.length, 'only the deliberate $(cat "$BRIEF_FILE") may substitute').toBe(1)
+  })
+})
