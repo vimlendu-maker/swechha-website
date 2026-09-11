@@ -86,8 +86,17 @@ describe('website team: infrastructure and free-tier watch', () => {
     const ghRules = [...run.matchAll(/Bash\((gh [^)]+)\)/g)].map((m) => m[1])
     for (const rule of ghRules) {
       // `gh api` is verb-agnostic and can POST; `gh pr merge`/`create` write.
+      //
+      // `run view` was added 2026-09-12 and is the reason this list is a
+      // whitelist rather than a blocklist -- it had to be argued for, not
+      // merely not-forbidden. It reads a run and its logs and cannot change
+      // anything. Withholding it while granting `run list` is what produced a
+      // wrong diagnosis on 2026-09-11: the Manager could see a workflow was red
+      // and not why, so it reasoned from the workflow's own comments, and those
+      // comments were themselves wrong. Reading the evidence is the cheapest
+      // thing this department can be given.
       expect(rule, `${rule} would let the read-only manager change state`)
-        .toMatch(/^gh (run list|pr (list|view|checks))/)
+        .toMatch(/^gh (run (list|view)|pr (list|view|checks))/)
     }
   })
 

@@ -139,6 +139,12 @@ fi
 #   now derives the check from the role file so the two cannot drift.
 ALLOWED='Read,Grep,Glob'
 ALLOWED="$ALLOWED,Bash(git log:*),Bash(git status:*),Bash(gh run list:*)"
+# ★ `gh run list` DOES NOT IMPLY THE REST OF `gh run`. Granting the list and
+#   withholding the log is the shape that produced a wrong diagnosis on
+#   2026-09-11: the Manager could see that a workflow was red and could not see
+#   why, so it reasoned from the workflow's comments instead -- and those
+#   comments were themselves wrong. Reading a log is strictly read-only.
+ALLOWED="$ALLOWED,Bash(gh run view:*)"
 # Read-only gh, so the Manager can see whether a PR merged and what a gate said.
 # NOT bare `gh api`: that is a verb-agnostic tool which would also POST.
 ALLOWED="$ALLOWED,Bash(gh pr list:*),Bash(gh pr view:*),Bash(gh pr checks:*)"
@@ -205,6 +211,14 @@ PARSED="$(printf '%s' "$RESULT" | python3 "$REPO/scripts/website-team/parse-resu
 COST="$(printf '%s' "$PARSED" | head -1)"
 TEXT="$(printf '%s' "$PARSED" | tail -n +2)"
 
+# ── WHAT THE PERMISSION LAYER REFUSED ────────────────────────────────────────
+# `--output-format json` carries a `permission_denials` array and this runner
+# threw it away for as long as it existed. A cause the agent COULD NOT VERIFY
+# must not become the report's headline: on 2026-09-11 both `gh run view
+# --log-failed` calls were refused, the Manager said so in one line, and the
+# guess it was forced into was printed above that caveat as the finding.
+DENIED="$(printf '%s' "$RESULT" | python3 "$REPO/scripts/website-team/denials.py" 2>/dev/null || true)"
+
 {
   echo "---"
   echo "title: Website team run — $STAMP"
@@ -214,6 +228,16 @@ TEXT="$(printf '%s' "$PARSED" | tail -n +2)"
   echo
   echo "# Website team run — $STAMP"
   echo
+  if [ -n "${DENIED:-}" ]; then
+    echo "> [!warning] **BLOCKED — this run was refused tools it asked for.**"
+    echo "> Any cause below that was not confirmed from evidence is a HYPOTHESIS,"
+    echo "> not a finding. Refused, with the number of attempts:"
+    echo ">"
+    printf '%s\n' "${DENIED:-}" | while IFS="$(printf '\t')" read -r cmd n; do
+      echo "> - \`$cmd\` × ${n:-1}"
+    done
+    echo
+  fi
   echo "_Generated. The cost figure is Claude Code's own client-side estimate and"
   echo "can differ from the real bill. Verification in this run is against the"
   echo "local repository only; swechha.in returns 403 to this machine._"
@@ -222,6 +246,7 @@ TEXT="$(printf '%s' "$PARSED" | tail -n +2)"
 } > "$OUT"
 
 ev run_finished mode="$MODE" cost_usd="$COST" record="$(basename "$OUT")"
+
 echo "wrote $OUT"
 
 # ── STAGE TWO: hand each brief to its specialist ─────────────────────────────
@@ -263,6 +288,15 @@ spine_close() { # <task id> <done|refused|escalate> <note>
     escalate) "$ORG" task escalate "$1" --reason "$3"  >/dev/null 2>&1 || true ;;
   esac
 }
+
+# A blocked run is the owner's to unblock -- nothing downstream can grant a
+# permission. It goes on the "needs you" queue rather than into a record that
+# reads as routine.
+if [ -n "${DENIED:-}" ]; then
+  ev run_blocked refused="$(printf '%s' "${DENIED:-}" | cut -f1 | tr '\n' ';')"
+  BTASK="$(spine_new "BLOCKED: the $MODE run was refused $(printf '%s' "${DENIED:-}" | wc -l | tr -d ' ') tool(s)")"
+  spine_close "$BTASK" escalate "refused: $(printf '%s' "${DENIED:-}" | cut -f1 | tr '\n' ';')"
+fi
 
 if [ "$MODE" = "work" ]; then
   BRIEFS="$(mktemp -d)"

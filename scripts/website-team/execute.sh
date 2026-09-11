@@ -79,6 +79,16 @@ ALLOWED="$ALLOWED,Bash(npm run build:all),Bash(npm run build:all:*)"
 ALLOWED="$ALLOWED,Bash(npm run verify:seo),Bash(npm run verify:seo:*)"
 ALLOWED="$ALLOWED,Bash(npm run verify:final),Bash(npm run verify:final:*)"
 ALLOWED="$ALLOWED,Bash(git status:*),Bash(git diff:*),Bash(git log:*)"
+# ★ READ-ONLY gh, BECAUSE A SPECIALIST CANNOT INVESTIGATE WHAT IT CANNOT SEE.
+#   engineering.md has listed `gh` under Commands since the role was written;
+#   this allowlist granted none of it. On 2026-09-11 the Manager briefed
+#   "get the actual logs" and handed it to a specialist with STRICTLY FEWER
+#   permissions than itself. denials.py shows it then tried eight different
+#   routes -- gh, curl, node fetch, git -C -- and was refused every one, before
+#   correctly changing nothing. List and view only: `gh pr create` and
+#   `gh pr merge` stay out, because the runner opens and merges the PR, so that
+#   what ships is exactly the diff and nothing else.
+ALLOWED="$ALLOWED,Bash(gh run list:*),Bash(gh run view:*)"
 
 BRANCH="team/$(date +%Y%m%d)-$(basename "$BRIEF_FILE" .txt | tr -cd '[:alnum:]-' | cut -c1-40)"
 
