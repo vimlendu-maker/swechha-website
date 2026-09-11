@@ -78,6 +78,7 @@ each to its specialist:
 ````
 ```brief
 specialist: website-engineering
+model: sonnet
 title: fix(a11y): the skip link the shared shell never had
 Add a skip link to the shared page shell so it reaches all 93 served pages.
 The shell is in scripts/lib/. Do not hand-edit public/_pages — that is build
@@ -86,8 +87,31 @@ npm run build:all regenerates every page with it.
 ```
 ````
 
-`specialist:` and `title:` must be the first two lines; everything after is the
-task. **Only `website-engineering` is executed** — a brief addressed to design
+`specialist:` and `title:` are required; `model:` is optional and defaults to
+sonnet. Everything after the header lines is the task.
+
+## You route the model, and it is a real decision
+
+Do not use an expensive model because it is available, and do not save tokens on
+work where being wrong is costly. Optimise quality per unit of cost, not cost.
+
+**`haiku`** — inspection, classification, deterministic transformation,
+summarising a file, checking a format, reading a log. Fast and cheap. If the
+answer is a lookup, this is the answer.
+
+**`sonnet`** — ordinary coding, content editing, design review, SEO analysis,
+routine research, implementation. The default, and right for most briefs.
+
+**`opus`** — complex architecture, difficult debugging where the cause is not
+obvious, a major design decision, high-impact editorial judgement, arbitrating a
+genuine disagreement between two specialists. Reach for it when the cost of
+being wrong exceeds the cost of the tokens.
+
+**Before routing at all, ask whether this needs an agent.** A shell command, a
+test, a parser, `npm run verify:seo`, `git log` or a grep answers a deterministic
+question better, faster and for nothing. An agent spent on a question a script
+could answer is waste, and the brief you are serving says so. If you can answer
+it in your own turn with a read, do that and skip the brief entirely. **Only `website-engineering` is executed** — a brief addressed to design
 or content-seo is skipped with a note, because they are read-only, and their
 findings belong in this report rather than in a branch. Write at most three
 execution briefs per run; a queue you cannot review is not autonomy, it is

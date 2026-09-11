@@ -43,6 +43,8 @@ esac
 OUT="$RECORDS/$STAMP-website-team-$MODE.md"
 
 cd "$REPO"
+EV="$REPO/scripts/website-team/log-event.py"
+ev() { python3 "$EV" website manager "$@" 2>/dev/null || true; }
 
 if [ "$MODE" = "review" ]; then
   PROMPT="Run in **review** mode. Read the inbox first, then this week's run
@@ -104,6 +106,7 @@ if [ "$DRY" = "--dry-run" ]; then
 fi
 
 mkdir -p "$RECORDS"
+ev run_started mode="$MODE"
 
 RESULT="$(claude -p "$PROMPT" \
   --agent website-manager \
@@ -131,6 +134,7 @@ TEXT="$(printf '%s' "$PARSED" | tail -n +2)"
   printf '%s\n' "$TEXT"
 } > "$OUT"
 
+ev run_finished mode="$MODE" cost_usd="$COST" record="$(basename "$OUT")"
 echo "wrote $OUT"
 
 # ── STAGE TWO: hand each brief to its specialist ─────────────────────────────
@@ -142,9 +146,9 @@ if [ "$MODE" = "work" ]; then
   if [ -z "$MAPPING" ]; then
     echo "stage two: no execution briefs in this report"
   else
-    while read -r spec path; do
+    while read -r spec model path; do
       [ -z "$spec" ] && continue
-      echo "stage two: $spec <- $(basename "$path")"
+      echo "stage two: $spec ($model) <- $(basename "$path")"
       if [ "$spec" != "website-engineering" ]; then
         echo "stage two: skipped — $spec is read-only by policy; its findings are already in the record"
         continue

@@ -16,9 +16,16 @@ REPO="${WEBSITE_TEAM_REPO:-$HOME/swechha-website}"
 # read docs/website-team/lessons.md or policy.json -- the context its role file
 # tells it to read first.
 BASE="${WEBSITE_TEAM_BASE:-origin/main}"
-SPECIALIST="${1:?usage: execute.sh <specialist> <brief-file> [--dry-run]}"
-BRIEF_FILE="${2:?usage: execute.sh <specialist> <brief-file> [--dry-run]}"
-DRY="${3:-}"
+SPECIALIST="${1:?usage: execute.sh <specialist> <model> <brief-file> [--dry-run]}"
+MODEL="${2:?usage: execute.sh <specialist> <model> <brief-file> [--dry-run]}"
+BRIEF_FILE="${3:?usage: execute.sh <specialist> <model> <brief-file> [--dry-run]}"
+DRY="${4:-}"
+case "$MODEL" in
+  haiku|sonnet|opus|fable|inherit) ;;
+  *) echo "execute: unknown model '$MODEL'" >&2; exit 2 ;;
+esac
+LOG="$REPO/scripts/website-team/log-event.py"
+ev() { python3 "$LOG" website "$SPECIALIST" "$@" 2>/dev/null || true; }
 cd "$REPO"
 
 case "$SPECIALIST" in
@@ -61,6 +68,7 @@ chmod +x "$STAGE/guard-paths.sh"
 
 if [ "$DRY" = "--dry-run" ]; then
   echo "specialist: $SPECIALIST"
+  echo "model:      $MODEL"
   echo "branch:     $BRANCH"
   echo "tools:      $ALLOWED"
   echo "brief:"; sed 's/^/  /' "$BRIEF_FILE"
@@ -102,8 +110,10 @@ Leave no scratch files behind. You cannot delete files in this mode, so do not
 create any — do your checking with Read and Grep rather than by writing a
 throwaway script."
 
-claude -p "$PROMPT" --agent "$SPECIALIST" --permission-mode dontAsk \
+ev task_started model="$MODEL" brief="$(basename "$BRIEF_FILE")" branch="$BRANCH"
+claude -p "$PROMPT" --agent "$SPECIALIST" --model "$MODEL" --permission-mode dontAsk \
   --allowedTools "$ALLOWED" --output-format json < /dev/null > /tmp/wt-exec.json 2>/dev/null || true
+ev task_returned cost_usd="$(python3 "$STAGE/parse-result.py" < /tmp/wt-exec.json 2>/dev/null | head -1)"
 if ! python3 "$STAGE/parse-result.py" < /tmp/wt-exec.json | tail -n +2 > /tmp/wt-exec.txt; then
   echo "execute: could not parse the specialist's output — refusing to continue" >&2
   echo "execute: raw output is in /tmp/wt-exec.json" >&2
@@ -166,7 +176,11 @@ if ! git diff --cached --quiet; then
   "$STAGE/guard-paths.sh" "$BASE" --post-build || FAILED="$FAILED guard-after-build"
 fi
 
+for g in guard tests lint build verify:seo; do
+  case " $FAILED " in *" $g "*) ev gate_result gate="$g" result=fail ;; *) ev gate_result gate="$g" result=pass ;; esac
+done
 if [ -n "$FAILED" ]; then
+  ev task_refused reason="$FAILED" branch="$BRANCH"
   echo "execute: FAILED —$FAILED"
   echo "execute: branch $BRANCH kept locally for inspection; nothing pushed"
   exit 1
@@ -176,6 +190,7 @@ git push -q -u origin "$BRANCH"
 PR_URL="$(gh pr create --base "${BASE#origin/}" --head "$BRANCH" \
   --title "$(head -1 "$BRIEF_FILE" | cut -c1-70)" \
   --body "$(printf 'Opened by the website team, stage two.\n\n## Brief\n\n%s\n\n## What the specialist reported\n\n%s\n\n## Gates\n\n- guard-paths: pass\n- npm test: pass\n- npm run lint: pass\n- npm run build:all: pass\n- npm run verify:seo: pass\n- fact gate (verify-claims.py): pass\n\nMerging is conditional on every `auto_merge` condition in `docs/website-team/policy.json`. If any failed, this PR waits for a human.\n' "$(cat "$BRIEF_FILE")" "$(cat /tmp/wt-exec.txt)")")"
+ev pr_opened url="$PR_URL" branch="$BRANCH"
 echo "execute: opened $PR_URL"
 
 AUTO="$(python3 -c "import json;print(json.load(open('docs/website-team/policy.json'))['auto_merge']['enabled'])")"
@@ -184,8 +199,10 @@ if [ "$AUTO" = "True" ]; then
   # protection, so if review is required this waits for a human -- which is the
   # correct outcome, not a failure.
   if gh pr merge --auto --squash "$PR_URL" 2>/dev/null; then
+    ev automerge_enabled url="$PR_URL"
     echo "execute: auto-merge enabled; GitHub will merge when checks pass"
   else
+    ev automerge_unavailable url="$PR_URL"
     echo "execute: auto-merge unavailable (branch protection or repo setting) — PR waits for a human"
   fi
 else

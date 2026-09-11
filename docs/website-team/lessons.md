@@ -139,3 +139,33 @@ or drop the claim.
 it cannot judge whether a topic is appropriate for Swechha to write about, or
 whether a framing misrepresents a contested issue. Citations are checkable;
 editorial judgement is not.
+
+## 2026-09-11 — An observability layer an agent can write is one it can lie to
+
+The activity log is written by `run.sh` and `execute.sh`, never by an agent.
+Every event is emitted by the shell *around* the agent — before it starts, after
+it returns, on each gate result — so the log records what the system observed
+rather than what the agent said about itself. **An agent cannot mark itself
+green.**
+
+It lives at `~/.swechha-ai/activity.jsonl`, outside both repositories. It is
+neither knowledge (the vault) nor code (git): it is high-churn telemetry, and
+committing it would bury real history under machine noise. Decision records
+still go to the vault; this is the stream beneath them.
+
+**Do:** when adding a new stage, emit the event from the script, not from the
+prompt. If the only record that a thing happened is the agent's own claim that
+it happened, there is no record.
+
+## 2026-09-11 — Route the model, but first ask whether it needs a model
+
+Briefs now carry `model:` — haiku for inspection and deterministic work, sonnet
+for ordinary coding and editing, opus where being wrong costs more than the
+tokens. Unknown values fall back to sonnet with a warning rather than losing the
+brief, because a typo should not cost a run.
+
+The more valuable half is the question before it: **does this need an agent at
+all?** A shell command, a test, a parser, `git log` or a grep answers a
+deterministic question better, faster and for nothing. The fact gate is the
+worked example — fact-checking looked like a job for a careful model and turned
+out to be a job for `urllib` and a string comparison.
