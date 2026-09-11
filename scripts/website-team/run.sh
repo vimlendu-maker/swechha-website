@@ -301,6 +301,20 @@ if [ "$MODE" = "work" ]; then
   rm -rf "$BRIEFS"
 fi
 
+# ── LAND THE LESSONS ─────────────────────────────────────────────────────────
+# AFTER stage two, never before: stage two checks branches out, and a lessons
+# commit racing that is how a specialist's branch ends up carrying an unrelated
+# docs edit. land-lessons.sh takes its own worktree for the same reason.
+#
+# Guarded and non-fatal. `swechha/ai/README.md`'s memory model says the
+# department may append to its own lessons file; until 2026-09-12 nothing did,
+# so every lesson the Manager wrote died in a dated record and the next run paid
+# to relearn it.
+if [ -x "$REPO/scripts/website-team/land-lessons.sh" ]; then
+  "$REPO/scripts/website-team/land-lessons.sh" "$OUT" || \
+    echo "run.sh: lessons did not land; the run itself is unaffected"
+fi
+
 # Push the record. Obsidian only syncs while it is open, so a scheduled run must
 # push for itself or the record sits local until someone opens the app.
 if git -C "$VAULT" diff --quiet --exit-code -- "$OUT" 2>/dev/null && \

@@ -131,7 +131,10 @@ different things is the confusion this estate can least afford.
 
 New mechanisms built here are **registered** in that catalogue, with a real
 `implemented_by` path — a capability whose implementation cannot be found is a
-claim, not a capability.
+claim, not a capability. **Registration happens after the PR merges, never in
+the same change:** `lib/skilltree.test.ts` resolves those paths against the real
+checkout, so an entry added alongside the code it describes asserts a file that
+is not there yet.
 
 So an agent can grant itself eyes and can never grant itself hands.
 
@@ -245,7 +248,7 @@ detection, assembly, build, publication, and repair when any of those break.
 | Queue issue storm | One issue per fingerprint, same dedupe the sentinel already uses |
 | Actions and the Mac both act | The existing `worktree.sh` lock; the queue is drained transactionally |
 | A `GATED` PR sits forever | It is an open PR the approval gate held — visible, and surfaced by `org status` under NEEDS YOU |
-| Lessons PR's required check never runs (docs-only) | `merge-when-green.sh` already leaves it open for a human rather than merging on its own say-so; the lesson is still committed on the branch and is not lost |
+| Lessons PR's required check never runs (docs-only) | **Not a live risk** — verified 2026-09-12: `generated-current.yml` triggers on bare `pull_request:` with no path filter, so a docs-only PR does get the check. If it ever gains one, `merge-when-green.sh` leaves the PR open for a human and the lesson is still on the branch |
 | Budget ceiling hit mid-incident | Refuses and escalates loudly; a silent stop during an incident would be worse than the spend |
 
 ---
