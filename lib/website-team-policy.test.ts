@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, copyFileSync } from 'node:fs'
+import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, copyFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { tmpdir } from 'node:os'
 import { execFileSync } from 'node:child_process'
@@ -178,6 +178,60 @@ describe('website team policy', () => {
     expect(writers).toHaveLength(1)
     expect((policy.roles as Record<string, { site_write: unknown }>).engineering.site_write)
       .toBe('pr_only')
+  })
+})
+
+/**
+ * THE ORGANISATION'S CONTRACT, CHECKED HERE RATHER THAN DESCRIBED HERE.
+ *
+ * `swechha-vault/swechha/ai/policy.schema.json` says what every department's
+ * policy must answer, and `swechha-ai/validate-policy.py` enforces it. Neither
+ * travels into this repository: the schema lives in the vault because the spec
+ * travels and the executable does not, and the validator lives in the org repo
+ * so one implementation serves every department. Restating the rules here in
+ * TypeScript would be a second copy of the contract that must move in lockstep
+ * with the first — the defect class this file's own header is about.
+ *
+ * It SKIPS rather than fails when the validator is absent. The same contract the
+ * org CLI has: a department must not stop because its bookkeeping is missing,
+ * and a machine without the org checkout is not a non-conforming department.
+ */
+describe('website team policy: the organisation-wide contract', () => {
+  const validator = join(process.env.HOME ?? '', '.swechha-ai/validate-policy.py')
+
+  it('conforms to swechha/ai/policy.schema.json', () => {
+    if (!existsSync(validator)) {
+      console.warn(`skipped: no validator at ${validator} (org repo not installed here)`)
+      return
+    }
+    const policy = join(ROOT, 'docs/website-team/policy.json')
+    let out = ''
+    let code = 0
+    try {
+      out = execFileSync('python3', [validator, policy, '--json'], { encoding: 'utf8' })
+    } catch (e: unknown) {
+      // Narrowed rather than `any`: execFileSync throws an Error carrying the
+      // child's stdout and exit status, and a non-zero exit is the EXPECTED
+      // path here — the validator exits 1 for "does not conform".
+      const failure = e as { stdout?: string; status?: number }
+      out = failure.stdout ?? ''
+      code = failure.status ?? 1
+    }
+    // Exit 2 is "could not check" -- a missing vault, not a failing department.
+    if (code === 2) {
+      console.warn('skipped: could not read the schema (vault not checked out here)')
+      return
+    }
+    const result = JSON.parse(out)
+    expect(result.failures, result.failures?.join('\n')).toEqual([])
+    expect(result.conforms).toBe(true)
+  })
+
+  it('names the department it governs', () => {
+    // Cheap, local, and true even where the validator is absent: without this a
+    // reader infers the department from the path, which is how a copied policy
+    // file ends up quietly governing the wrong one.
+    expect(readPolicy().department).toBe('website')
   })
 })
 
