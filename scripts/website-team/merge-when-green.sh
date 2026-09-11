@@ -23,8 +23,10 @@
 #
 #   It is shared ACROSS REPOSITORIES too: the fundraising department reaches it
 #   through ~/.swechha-ai/merge-when-green.sh, the same shared-install pattern
-#   as hook-event.py. That is a real cross-repository dependency and it is
-#   named rather than hidden. Unlike the hooks, a missing gate here must fail
+#   as hook-event.py, which now lives in the swechha-ai repository and is
+#   reached the same way. That is a real cross-repository dependency, named
+#   rather than hidden — and this file is the last org-level script still
+#   living in a department's repository. Unlike the hooks, a missing gate here must fail
 #   LOUDLY — telemetry may never block work, but a gate that silently passes
 #   is not a gate.
 #

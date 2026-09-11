@@ -67,7 +67,7 @@ case "$MODE" in
 esac
 OUT="$RECORDS/$STAMP-$DEPARTMENT-team-$MODE.md"
 
-EV="$REPO/scripts/website-team/log-event.py"
+EV="${SWECHHA_LOG_EVENT:-$HOME/.swechha-ai/log-event.py}"
 ev() { python3 "$EV" "$DEPARTMENT" manager "$@" 2>/dev/null || true; }
 
 if [ "$MODE" = "review" ]; then

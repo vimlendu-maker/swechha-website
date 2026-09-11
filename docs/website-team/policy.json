@@ -105,7 +105,7 @@
       ".github/workflows/**",
       "docs/website-team/policy.json",
       "lib/seo/register.test.ts",
-      "scripts/org/** (the hook observer: an agent that can edit what records it can stop being recorded)",
+      "scripts/org/** (EMPTY since 2026-09-11 \u2014 hook-event.py moved to the swechha-ai repository. The rule stays so organisation-level code cannot quietly reappear inside a department, which is how it got here the first time)",
       "scripts/website-team/** (the department's own machinery: the runner, the executor, the worktree, the schedules and this guard itself. There is no exception any more \u2014 the sentinel and its probes moved to the swechha-ai repository on 2026-09-11, so nothing here is the department's to write)"
     ],
     "condition_4_enforcement": "\u2605 Condition 4 is enforced by scripts/website-team/execute.sh, NOT by GitHub. `allow_auto_merge` is on at the repository level (enabled 2026-09-11 at the owner's request) but NO status check is required on main -- a required check would block the five automation identities that make 67 of the last 100 commits there, and the owner declined it for that reason. Consequence: `gh pr merge --auto` on a PR that nothing blocks does NOT wait, it merges at once, before generated-current.yml has started. So execute.sh polls `gh pr checks` for the check named in WEBSITE_TEAM_REQUIRED_CHECK (default `current`), merges only on SUCCESS, and leaves the PR open for a human on failure, timeout, or a check that never appears. Do not 'simplify' this back to --auto."

@@ -24,7 +24,7 @@ case "$MODEL" in
   haiku|sonnet|opus|fable|inherit) ;;
   *) echo "execute: unknown model '$MODEL'" >&2; exit 2 ;;
 esac
-LOG="$REPO/scripts/website-team/log-event.py"
+LOG="${SWECHHA_LOG_EVENT:-$HOME/.swechha-ai/log-event.py}"
 ev() { python3 "$LOG" website "$SPECIALIST" "$@" 2>/dev/null || true; }
 
 # GATE OUTPUT GOES IN A PER-RUN DIRECTORY, not in fixed /tmp paths. The logs
