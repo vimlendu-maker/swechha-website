@@ -228,3 +228,52 @@ npm test && npm run build:situations
   preview URLs are SSO-gated. Verify a deploy by the commit status
   (`gh api repos/<owner>/<repo>/commits/<sha>/status`), and say what was and was
   not checked.
+
+## 6. Taking one down
+
+These pages **publish themselves**. The detector runs ten times a day and
+`publishable()` is purely mechanical — the score clears the threshold AND the
+event is corroborated, by eight independent publishers or by four plus a
+matching official alert. Nobody approves a page before it goes live. That is
+the design: a disaster reported at noon reaches the site the same afternoon,
+and waiting for a person would have meant waiting for a person.
+
+The counterweight is **withdrawal**, and it is yours alone:
+
+```bash
+node scripts/situation.mjs list
+node scripts/situation.mjs withdraw <slug> --why "your reason"
+npm run build:all && git add -A && git commit -m "data(climate-event): withdraw <slug>" && git push
+```
+
+Four things worth knowing before you use it.
+
+**It is permanent.** `withdrawn` outranks the detector and no later run can
+overturn it. Setting a page back to `draft` would NOT hold — the next run that
+found it publishable would publish it again, which is exactly why the state
+exists. This was learned on 9 September 2026, when eight published events
+needed taking down: places read off a publisher's masthead, one flood filed as
+a landslide, and two stories that were an explainer and an opinion piece.
+
+**The reason is required, and it is the point.** `withdrawn_why` is the only
+record of why a public page about a disaster came down. The tool refuses
+without it.
+
+**It is not deletion.** The dossier, its sources and its score all stay on
+disk. A page that vanished without trace would leave the next reader — and the
+next run — unable to tell a considered decision from a bug.
+
+**There is no restore command.** Undoing a human judgement is a person editing
+the file back, which is the correct amount of friction.
+
+Publication also **latches**: an event that ever cleared the bar stays
+published even as coverage decays, so a quiet news day cannot 404 a live
+disaster page. `situation.mjs list` flags any published page now scoring below
+the threshold. That is not a bug, and it is the most likely reason you would
+reach for this tool.
+
+**No agent can do any of this.** `situation.mjs` writes `data/**`, which is
+`never_touch` in `docs/website-team/policy.json` and refused outright by
+`guard-paths.sh`; it appears in no allowlist. The department publishes these
+pages, so it is the thing being overruled — an agent that could withdraw a page
+could withdraw the evidence of its own mistake.
