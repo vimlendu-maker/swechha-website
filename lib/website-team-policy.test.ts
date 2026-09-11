@@ -209,9 +209,13 @@ describe('website team policy: the organisation-wide contract', () => {
     let code = 0
     try {
       out = execFileSync('python3', [validator, policy, '--json'], { encoding: 'utf8' })
-    } catch (e: any) {
-      out = e.stdout ?? ''
-      code = e.status ?? 1
+    } catch (e: unknown) {
+      // Narrowed rather than `any`: execFileSync throws an Error carrying the
+      // child's stdout and exit status, and a non-zero exit is the EXPECTED
+      // path here — the validator exits 1 for "does not conform".
+      const failure = e as { stdout?: string; status?: number }
+      out = failure.stdout ?? ''
+      code = failure.status ?? 1
     }
     // Exit 2 is "could not check" -- a missing vault, not a failing department.
     if (code === 2) {
