@@ -46,9 +46,16 @@ try {
 }
 try {
   const txt = (await resolveTxt('swechha.in')).flat().join(' ')
-  txt.includes('v=spf1') ? pass('SPF record intact') : fail('SPF record GONE', 'mail will be marked as spam')
-  txt.includes('google-site-verification') ? pass('Google verification TXT intact')
-    : warn('Google verification TXT missing', 'Search Console may need re-verifying')
+  if (txt.includes('v=spf1')) {
+    pass('SPF record intact');
+  } else {
+    fail('SPF record GONE', 'mail will be marked as spam');
+  }
+  if (txt.includes('google-site-verification')) {
+    pass('Google verification TXT intact');
+  } else {
+    warn('Google verification TXT missing', 'Search Console may need re-verifying');
+  }
 } catch { fail('TXT lookup failed') }
 
 /* ★ THE APP'S OWN MAIL, WHICH IS NOT THE ORGANISATION'S MAIL.
@@ -66,14 +73,21 @@ try {
 }
 try {
   const bounce = (await resolveTxt('send.swechha.in')).flat().join(' ')
-  bounce.includes('v=spf1') ? pass('Resend bounce subdomain SPF intact', 'send.swechha.in')
-    : warn('send.swechha.in has no SPF', 'bounce handling degraded, DKIM still carries DMARC')
+  if (bounce.includes('v=spf1')) {
+    pass('Resend bounce subdomain SPF intact', 'send.swechha.in');
+  } else {
+    warn('send.swechha.in has no SPF', 'bounce handling degraded, DKIM still carries DMARC');
+  }
 } catch { warn('send.swechha.in does not resolve', 'Resend Return-Path unconfigured') }
 
 /* ------------------------------------------------------------ 2. THE SITE */
 console.log('\n2. THE SITE')
 const home = await head('/', 'follow')
-home.ok ? pass('homepage 200 over HTTPS') : fail('homepage not OK', `status ${home.status}`)
+if (home.ok) {
+  pass('homepage 200 over HTTPS');
+} else {
+  fail('homepage not OK', `status ${home.status}`);
+}
 if (home.url && !home.url.startsWith('https://')) fail('homepage did not end up on HTTPS', home.url)
 
 const www = await fetch(`https://www.swechha.in/`, { redirect: 'manual' }).catch(() => null)
@@ -84,7 +98,11 @@ else fail('www is broken', `status ${www.status}`)
 
 for (const r of ['/about', '/work', '/farm', '/act', '/now/air', '/stories', '/publications', '/impact']) {
   const res = await head(r, 'follow')
-  res.ok ? pass(`${r} 200`) : fail(`${r} not OK`, `status ${res.status}`)
+  if (res.ok) {
+    pass(`${r} 200`);
+  } else {
+    fail(`${r} not OK`, `status ${res.status}`);
+  }
 }
 
 /* ------------------------------------------------------- 3. INDEXABILITY */
@@ -97,10 +115,18 @@ else if (/Allow:\s*\//.test(robotsBody)) pass('robots.txt allows crawling')
 else warn('robots.txt is an unexpected shape', robotsBody.replace(/\s+/g, ' ').slice(0, 90))
 
 const xr = (await head('/', 'follow')).headers?.get('x-robots-tag')
-xr ? fail('X-Robots-Tag still set on the homepage', xr) : pass('no blanket X-Robots-Tag on the homepage')
+if (xr) {
+  fail('X-Robots-Tag still set on the homepage', xr);
+} else {
+  pass('no blanket X-Robots-Tag on the homepage');
+}
 
 const kx = (await head('/keystatic')).headers?.get('x-robots-tag')
-kx?.includes('noindex') ? pass('/keystatic still noindex') : warn('/keystatic has no noindex header', 'expected if the CMS is not deployed')
+if (kx?.includes('noindex')) {
+  pass('/keystatic still noindex');
+} else {
+  warn('/keystatic has no noindex header', 'expected if the CMS is not deployed');
+}
 
 /* ------------------------------------------------------- 4. SITE_ORIGIN */
 console.log('\n4. SITE_ORIGIN — set in Vercel AND as a GitHub variable')
@@ -136,9 +162,11 @@ for (let i = 0; i < live.length; i += 8) {
   results.push(...(await Promise.all(live.slice(i, i + 8).map(check))))
 }
 const bad = results.filter((r) => !r.ok)
-bad.length === 0
-  ? pass(`all ${results.length} redirects land on their destination with a 200`)
-  : fail(`${bad.length} of ${results.length} redirects are wrong`)
+if (bad.length === 0) {
+  pass(`all ${results.length} redirects land on their destination with a 200`);
+} else {
+  fail(`${bad.length} of ${results.length} redirects are wrong`);
+}
 for (const b of bad.slice(0, 12)) console.log(`          ${b.row.from}  ->  expected ${b.row.to}, got ${b.landed ?? '-'} (${b.status})`)
 if (bad.length > 12) console.log(`          ...and ${bad.length - 12} more`)
 
@@ -150,9 +178,11 @@ for (let i = 0; i < dead.length; i += 8) {
   }))))
 }
 const notGone = deadRes.filter((r) => !r.is404)
-notGone.length === 0
-  ? pass(`all ${deadRes.length} deliberate 404s return 404`)
-  : warn(`${notGone.length} URLs meant to 404 do not`, notGone.slice(0, 5).map((r) => r.row.from).join(', '))
+if (notGone.length === 0) {
+  pass(`all ${deadRes.length} deliberate 404s return 404`);
+} else {
+  warn(`${notGone.length} URLs meant to 404 do not`, notGone.slice(0, 5).map((r) => r.row.from).join(', '));
+}
 
 /* ------------------------------------------------------------- VERDICT */
 console.log('\n' + '='.repeat(50))

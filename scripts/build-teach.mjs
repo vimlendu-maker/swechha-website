@@ -816,11 +816,17 @@ const IXPAGE = written.find((w) => w.kind === 'index').OUT;
       because a missing row fails the build. */
 {
   const missing = ALL.filter((s) => !IXPAGE.includes(`href="${sessHref(s.theme.slug, s.slug)}"`));
-  missing.length ? fail(`the index omits ${missing.length} session(s): ${missing.slice(0, 3).map((s) => s.slug).join(', ')}`)
-    : pass(`the index lists all ${ALL.length} sessions`);
+  if (missing.length) {
+    fail(`the index omits ${missing.length} session(s): ${missing.slice(0, 3).map((s) => s.slug).join(', ')}`);
+  } else {
+    pass(`the index lists all ${ALL.length} sessions`);
+  }
   const mt = THEMES.filter((t) => !IXPAGE.includes(`href="${themeHref(t.slug)}"`));
-  mt.length ? fail(`the index omits theme(s): ${mt.map((t) => t.slug).join(', ')}`)
-    : pass(`the index lists all ${THEMES.length} themes`);
+  if (mt.length) {
+    fail(`the index omits theme(s): ${mt.map((t) => t.slug).join(', ')}`);
+  } else {
+    pass(`the index lists all ${THEMES.length} themes`);
+  }
 }
 
 /* 2. EVERY THEME PAGE LISTS ITS OWN SESSIONS, and no other theme's. */
@@ -849,8 +855,11 @@ if (!bad) pass('every theme page lists its own sessions');
     const w = written.find((x) => x.route === sessHref(s.theme.slug, s.slug));
     return !w.OUT.includes('The manual leaves this session untitled');
   });
-  silent.length ? fail(`${silent.length} editorial title(s) do not disclose it`)
-    : pass(`all ${ed.length} editorial titles disclose that the name is ours`);
+  if (silent.length) {
+    fail(`${silent.length} editorial title(s) do not disclose it`);
+  } else {
+    pass(`all ${ed.length} editorial titles disclose that the name is ours`);
+  }
 }
 
 /* 5. THE BLANK SCREEN IS ONLY WHERE THERE IS NO PHOTOGRAPH, and a theme with
@@ -870,11 +879,17 @@ if (!bad) pass('every theme page lists its own sessions');
       JavaScript off, or a photocopy, must get the whole session. */
 {
   const noPrint = written.filter((w) => !w.OUT.includes('@media print'));
-  noPrint.length ? fail(`${noPrint.length} page(s) carry no print rules`)
-    : pass(`all ${written.length} pages carry print rules`);
+  if (noPrint.length) {
+    fail(`${noPrint.length} page(s) carry no print rules`);
+  } else {
+    pass(`all ${written.length} pages carry print rules`);
+  }
   const tabbed = written.filter((w) => /class="tabs?-/.test(strip0(w.OUT)));
-  tabbed.length ? fail(`${tabbed.length} page(s) use tabs(), which needs JavaScript`)
-    : pass('no page depends on JavaScript');
+  if (tabbed.length) {
+    fail(`${tabbed.length} page(s) use tabs(), which needs JavaScript`);
+  } else {
+    pass('no page depends on JavaScript');
+  }
 }
 
 /* 7. EVERY PHOTOGRAPH THIS GENERATOR EMITS HAS A REAL ALT SENTENCE.
@@ -904,8 +919,11 @@ if (!bad) pass('every theme page lists its own sessions');
 {
   const claiming = written.filter((w) => w.kind === 'session'
     && /rel="license"/.test(w.OUT));
-  claiming.length ? fail(`${claiming.length} session(s) carry rel="license" over third-party material`)
-    : pass('no session asserts a licence over the compilation');
+  if (claiming.length) {
+    fail(`${claiming.length} session(s) carry rel="license" over third-party material`);
+  } else {
+    pass('no session asserts a licence over the compilation');
+  }
   const credited = ALL.filter((s) => (s.fields.source || []).length).length;
   pass(`${credited} of ${ALL.length} sessions carry a source the manual named; the rest say so plainly`);
 }
