@@ -40,6 +40,7 @@ FORBIDDEN=(
   '.github/workflows/'
   'docs/website-team/policy.json'
   'lib/seo/register.test.ts'
+  'scripts/org/'
 )
 
 # Hand-editing served HTML is forbidden; the build regenerating it is not.

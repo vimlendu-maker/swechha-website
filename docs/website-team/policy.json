@@ -2,11 +2,11 @@
   "$comment": "Operating policy for the Website Team. Autonomy is this file, not the agents. Level 4 = the team fixes, tests and ships the safe_to_automate list without asking. The never list does NOT move with the dial.",
   "autonomy_level": 4,
   "levels": {
-    "1": "Observer — inspect and report",
-    "2": "Advisor — diagnose and propose; engineering opens PRs",
-    "3": "Implementer — implement approved changes without re-asking per file",
-    "4": "Operator — independently fix, test and deploy the safe_to_automate list",
-    "5": "Autonomous — continuous loop, escalating high-risk decisions"
+    "1": "Observer \u2014 inspect and report",
+    "2": "Advisor \u2014 diagnose and propose; engineering opens PRs",
+    "3": "Implementer \u2014 implement approved changes without re-asking per file",
+    "4": "Operator \u2014 independently fix, test and deploy the safe_to_automate list",
+    "5": "Autonomous \u2014 continuous loop, escalating high-risk decisions"
   },
   "roles": {
     "manager": {
@@ -38,7 +38,7 @@
     "anything reversible by a single git revert with no data change"
   ],
   "requires_approval": [
-    "ANY new factual claim, figure, citation or statement about Swechha — this gate does not move with the autonomy dial",
+    "ANY new factual claim, figure, citation or statement about Swechha \u2014 this gate does not move with the autonomy dial",
     "the homepage above the fold",
     "navigation changes",
     "deleting a page or removing a route from a derived map",
@@ -61,7 +61,7 @@
     "replace a font or image at its existing filename",
     "delete code that has a test",
     "write a sourced figure that has not passed the DOI/URL check",
-    "claim to have verified anything against the live site — production returns 403 to this machine",
+    "claim to have verified anything against the live site \u2014 production returns 403 to this machine",
     "edit app/ believing it is what readers see",
     "weaken, or propose weakening, anything in this file"
   ],
@@ -75,12 +75,12 @@
       "/Users/administrator/swechha-website",
       "~/swechha-vault/swechha/website/decisions"
     ],
-    "$comment": "Never a recursive search from ~. Enforced by --allowedTools plus the working directory. swechha/ai is read-only and org-wide: it holds the organisation's spec and the org inbox, which every department's manager reads. No department may WRITE there — the spec is the operating system layer and changes by human pull request only."
+    "$comment": "Never a recursive search from ~. Enforced by --allowedTools plus the working directory. swechha/ai is read-only and org-wide: it holds the organisation's spec and the org inbox, which every department's manager reads. No department may WRITE there \u2014 the spec is the operating system layer and changes by human pull request only."
   },
   "cadence": {
-    "work": "daily 09:00 local — observe, act on the safe list, open and merge PRs that pass every gate",
-    "review": "Monday 10:00 local — the weekly review for the owner, written to the vault",
-    "$comment": "launchd uses local time and does not fire while the Mac is asleep; a missed run happens at next wake. Review is an hour after work, not alongside it: both used to say 09:00, so on Mondays two sessions started in the same second against one shared worktree. run.sh takes a lock, but a lock hit every Monday is a design leaning on its own backstop. The hour is load-bearing — keep this in step with com.swechha.website-team-review.plist, which lib/website-team-worktree.test.ts checks."
+    "work": "daily 09:00 local \u2014 observe, act on the safe list, open and merge PRs that pass every gate",
+    "review": "Monday 10:00 local \u2014 the weekly review for the owner, written to the vault",
+    "$comment": "launchd uses local time and does not fire while the Mac is asleep; a missed run happens at next wake. Review is an hour after work, not alongside it: both used to say 09:00, so on Mondays two sessions started in the same second against one shared worktree. run.sh takes a lock, but a lock hit every Monday is a design leaning on its own backstop. The hour is load-bearing \u2014 keep this in step with com.swechha.website-team-review.plist, which lib/website-team-worktree.test.ts checks."
   },
   "auto_merge": {
     "enabled": true,
@@ -91,7 +91,7 @@
       "npm run lint reports 0 errors and no increase in warnings over the baseline (42 as of 2026-09-11)",
       "generated-current.yml passes on the PR",
       "npm run verify:seo passes",
-      "every claim in changed content passes scripts/website-team/verify-claims.py — DOIs resolve at Crossref, source URLs fetch, quotes appear verbatim; an unreachable source is not a pass",
+      "every claim in changed content passes scripts/website-team/verify-claims.py \u2014 DOIs resolve at Crossref, source URLs fetch, quotes appear verbatim; an unreachable source is not a pass",
       "the diff touches no path in never_touch",
       "the diff adds no factual claim, figure, citation or organisational statement",
       "the whole change is revertible by a single git revert"
@@ -104,15 +104,16 @@
       "design-routes.ts",
       ".github/workflows/**",
       "docs/website-team/policy.json",
-      "lib/seo/register.test.ts"
+      "lib/seo/register.test.ts",
+      "scripts/org/** (the hook observer: an agent that can edit what records it can stop being recorded)"
     ],
-    "condition_4_enforcement": "★ Condition 4 is enforced by scripts/website-team/execute.sh, NOT by GitHub. `allow_auto_merge` is on at the repository level (enabled 2026-09-11 at the owner's request) but NO status check is required on main -- a required check would block the five automation identities that make 67 of the last 100 commits there, and the owner declined it for that reason. Consequence: `gh pr merge --auto` on a PR that nothing blocks does NOT wait, it merges at once, before generated-current.yml has started. So execute.sh polls `gh pr checks` for the check named in WEBSITE_TEAM_REQUIRED_CHECK (default `current`), merges only on SUCCESS, and leaves the PR open for a human on failure, timeout, or a check that never appears. Do not 'simplify' this back to --auto."
+    "condition_4_enforcement": "\u2605 Condition 4 is enforced by scripts/website-team/execute.sh, NOT by GitHub. `allow_auto_merge` is on at the repository level (enabled 2026-09-11 at the owner's request) but NO status check is required on main -- a required check would block the five automation identities that make 67 of the last 100 commits there, and the owner declined it for that reason. Consequence: `gh pr merge --auto` on a PR that nothing blocks does NOT wait, it merges at once, before generated-current.yml has started. So execute.sh polls `gh pr checks` for the check named in WEBSITE_TEAM_REQUIRED_CHECK (default `current`), merges only on SUCCESS, and leaves the PR open for a human on failure, timeout, or a check that never appears. Do not 'simplify' this back to --auto."
   },
   "inbox": {
     "department_inbox": "~/swechha-vault/swechha/website/team/inbox.md",
     "org_inbox": "~/swechha-vault/swechha/ai/inbox.md",
     "spec": "~/swechha-vault/swechha/ai/README.md",
-    "$comment": "★ AN ORGANISATION-WIDE CONVENTION, NOT THIS DEPARTMENT'S INVENTION. The spec above governs every AI department Swechha runs, so the owner gives work to any of them the same way and reads any of their accounts the same way. Do not invent a different task system for a new department; adopt this one. The manager reads BOTH files at the start of every run, before anything else, and an item in either outranks its own priorities. In the ORG inbox it acts only on what names this department or is plainly its own -- anything ambiguous it REPORTS rather than does, because two departments must never both act on one job. Position in the file carries no meaning: the whole file is read, there is no parser, and a job typed above every heading still counts (which has happened). No agent may edit either file -- an agent that can edit the list of jobs can mark its own homework. The owner needs to click nothing: the manager reads local disk, so an Obsidian save is enough.",
+    "$comment": "\u2605 AN ORGANISATION-WIDE CONVENTION, NOT THIS DEPARTMENT'S INVENTION. The spec above governs every AI department Swechha runs, so the owner gives work to any of them the same way and reads any of their accounts the same way. Do not invent a different task system for a new department; adopt this one. The manager reads BOTH files at the start of every run, before anything else, and an item in either outranks its own priorities. In the ORG inbox it acts only on what names this department or is plainly its own -- anything ambiguous it REPORTS rather than does, because two departments must never both act on one job. Position in the file carries no meaning: the whole file is read, there is no parser, and a job typed above every heading still counts (which has happened). No agent may edit either file -- an agent that can edit the list of jobs can mark its own homework. The owner needs to click nothing: the manager reads local disk, so an Obsidian save is enough.",
     "read_only_for_agents": true
   },
   "fact_verification": {
@@ -140,17 +141,17 @@
     "$comment": "The manager routes per brief. Before routing, it must ask whether the question is deterministic -- a script, test or grep answers those better and for nothing. An unknown model falls back to the default with a warning rather than losing the brief."
   },
   "infrastructure": {
-    "$comment": "★ FREE-FIRST IS A HARD CONSTRAINT, NOT A PREFERENCE. The whole site must stay inside the free envelope unless the owner explicitly authorises a paid service. No agent may create recurring paid infrastructure or API expenditure, and this does not move with the autonomy dial. The owner's brief of 2026-09-11 is the source; scripts/website-team/infra-status.py is the deterministic instrument and docs/website-team/infrastructure.md is the inventory.",
-    "owner": "website-manager — infrastructure awareness is the Manager's, not a specialist's",
+    "$comment": "\u2605 FREE-FIRST IS A HARD CONSTRAINT, NOT A PREFERENCE. The whole site must stay inside the free envelope unless the owner explicitly authorises a paid service. No agent may create recurring paid infrastructure or API expenditure, and this does not move with the autonomy dial. The owner's brief of 2026-09-11 is the source; scripts/website-team/infra-status.py is the deterministic instrument and docs/website-team/infrastructure.md is the inventory.",
+    "owner": "website-manager \u2014 infrastructure awareness is the Manager's, not a specialist's",
     "instrument": "scripts/website-team/infra-status.py (deterministic, cached, no LLM)",
     "inventory": "docs/website-team/infrastructure.md",
-    "never_fabricate": "★ A metric that cannot be obtained is reported as UNKNOWN. Never estimate a usage figure and present it as fact: a plausible number stops someone looking, where UNKNOWN sends them to look. UNKNOWN is a gap, not a pass, and never a green.",
+    "never_fabricate": "\u2605 A metric that cannot be obtained is reported as UNKNOWN. Never estimate a usage figure and present it as fact: a plausible number stops someone looking, where UNKNOWN sends them to look. UNKNOWN is a gap, not a pass, and never a green.",
     "thresholds": {
       "$comment": "Derived from each provider's published limit, never invented. A service with no measurable usage is UNKNOWN rather than assigned a colour.",
       "GREEN": "comfortably within the published limit",
-      "AMBER": "approaching a limit — investigate and reduce consumption",
-      "RED": "high risk of exhausting the limit — take safe preventative action",
-      "BLOCKED": "continuing could create cost, outage or data loss — stop and escalate"
+      "AMBER": "approaching a limit \u2014 investigate and reduce consumption",
+      "RED": "high risk of exhausting the limit \u2014 take safe preventative action",
+      "BLOCKED": "continuing could create cost, outage or data loss \u2014 stop and escalate"
     },
     "cost_safety_questions": [
       "Does this consume a quota?",
@@ -197,7 +198,7 @@
       "record the incident and its resolution as a lesson"
     ],
     "provider_change_watch": {
-      "cadence": "weekly, in the review run — not on every daily run",
+      "cadence": "weekly, in the review run \u2014 not on every daily run",
       "watch_for": [
         "free-tier changes",
         "pricing changes",
@@ -237,6 +238,6 @@
   "activity_log": {
     "path": "~/.swechha-ai/activity.jsonl",
     "written_by": "scripts/website-team/log-event.py, called by run.sh and execute.sh only",
-    "$comment": "★ Agents never write this. An observability layer an agent can write is one it can lie to, so every event is emitted by the shell around the agent -- before it starts, after it returns, on each gate result. An agent cannot mark itself green. Outside both repositories on purpose: telemetry is neither knowledge (the vault) nor code (git), and committing it would bury real history under machine noise."
+    "$comment": "\u2605 Agents never write this. An observability layer an agent can write is one it can lie to, so every event is emitted by the shell around the agent -- before it starts, after it returns, on each gate result. An agent cannot mark itself green. Outside both repositories on purpose: telemetry is neither knowledge (the vault) nor code (git), and committing it would bury real history under machine noise."
   }
 }
