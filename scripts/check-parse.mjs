@@ -141,8 +141,33 @@ export async function checkAll(files = targets(), skipped = []) {
   const queue = [...files];
   const workers = Array.from({ length: 8 }, async () => {
     for (let file = queue.shift(); file; file = queue.shift()) {
-      let firstLine = '';
-      try { firstLine = readFileSync(join(ROOT, file), 'utf8').split('\n', 1)[0]; } catch { continue; }
+      let source = '';
+      try { source = readFileSync(join(ROOT, file), 'utf8'); } catch { continue; }
+      const firstLine = source.split('\n', 1)[0];
+
+      /* ★ THE ONE CASE `node --check` SILENTLY DOES NOTHING, reported rather
+         than passed. Measured on Node 24: for a `.js` file containing ESM
+         syntax in a package without `"type": "module"`, `node --check` exits 0
+         NO MATTER HOW BROKEN THE FILE IS — verified against a 3,583-line file
+         with a deliberate syntax error appended, which it accepted. `.mjs` is
+         unambiguous and is checked properly; the ambiguous extension is the
+         whole problem.
+
+         There are no tracked `.js` files in this repository today, so this is a
+         guard against a future one rather than a live finding. It says
+         UNVERIFIABLE instead of quietly passing, because a gate reporting
+         success on a file it did not read is the failure mode this whole script
+         exists to remove. The fix is a rename: `.mjs` says what the file is. */
+      if (file.endsWith('.js') && /^\s*(import|export)\s/m.test(source)) {
+        failures.push({
+          file,
+          detail: 'Contains ESM syntax with the ambiguous `.js` extension, where '
+            + '`node --check` exits 0 regardless of what the file contains — it cannot be '
+            + 'verified here. Rename it to `.mjs` so it is actually checked.',
+        });
+        continue;
+      }
+
       const interpreter = interpreterFor(file, firstLine);
       if (!interpreter) { skipped.push(file); continue; }
       const [cmd, args] = BY_INTERPRETER[interpreter](file);

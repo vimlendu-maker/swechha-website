@@ -109,6 +109,26 @@ describe('every committed script parses', () => {
     }
   })
 
+  it('reports an ESM .js file as unverifiable rather than passing it', async () => {
+    /* ★ `node --check` exits 0 on a `.js` file containing ESM syntax no matter
+       how broken it is — measured on Node 24 against a 3,583-line file with a
+       deliberate syntax error appended. `.mjs` is unambiguous and checked
+       properly. There are no tracked `.js` files here today; this stops a
+       future one from being silently waved through by a gate that never read
+       it. */
+    const tmp = join(ROOT, 'scripts', '.check-parse-ambiguous.js')
+    try {
+      writeFileSync(tmp, "import { x } from './nope.mjs'\nconst broken = (((;\n")
+      const failures = (await checkAll(['scripts/.check-parse-ambiguous.js'])) as Array<{
+        file: string; detail: string
+      }>
+      expect(failures).toHaveLength(1)
+      expect(failures[0].detail).toContain('cannot be verified')
+    } finally {
+      rmSync(tmp, { force: true })
+    }
+  })
+
   it('leaves the working tree untouched — it parses, it never executes', () => {
     /* `node --check` and `sh -n` parse only. If this ever regressed into
        importing the generators, running the suite would rewrite 30 pages and
