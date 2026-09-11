@@ -138,10 +138,21 @@ describe('website team: infrastructure and free-tier watch', () => {
     // become invisible. This list shrinks as credentials arrive — Vercel's
     // deployment health became measurable on 2026-09-11 — but whatever is
     // left blind has to be findable in this document by name.
-    expect(doc).toMatch(/NEON_API_KEY/)          // still wholly blind
-    expect(doc).toMatch(/Bandwidth: still UNKNOWN/)  // Vercel's remaining gap
-    // And the reason must be recorded, not just the fact: a project-scoped
-    // token cannot reach account-level usage, which is a deliberate trade.
+    // The list of blind spots SHRINKS as credentials arrive — Vercel's
+    // deployments and Neon's storage both became measurable on 2026-09-11 — so
+    // this cannot name specific services forever. What it must guarantee is
+    // that whatever remains unmeasurable is still findable here by name, and
+    // that each gap records WHY, not just that it exists.
+    const stillUnknown = doc.match(/still UNKNOWN/g) ?? []
+    expect(stillUnknown.length, 'no remaining gap is named — either everything is '
+      + 'measured (record that) or a gap went silent').toBeGreaterThan(0)
+    // Each of those must carry a reason on the same line or the next.
+    for (const m of doc.matchAll(/still UNKNOWN[^\n]*\n?[^\n]*/g)) {
+      expect(m[0], `a gap is named without a reason: ${m[0].slice(0, 60)}`)
+        .toMatch(/—|because|cannot|returns|needs/)
+    }
+    // And the Vercel scope trade-off specifically, because a future reader will
+    // otherwise "fix" it by widening the token.
     expect(doc).toMatch(/project-scoped token is denied user- and team-level/)
   })
 })

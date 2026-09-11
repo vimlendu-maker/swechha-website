@@ -64,12 +64,31 @@ useful than twelve invented percentages.
   the air pipeline is driven by an external heartbeat.
 
 ### Neon — Postgres
-- **Plan:** Free — *unverified.* No `NEON_API_KEY` on this machine.
+- **Key:** present since 2026-09-11, a **personal** key (`napi_`) in
+  `~/.swechha-ai/env`. A personal key reaches every project the account is a
+  member of; a project-scoped key would be narrower but needs org-admin rights.
+- **Plan: `free` — MEASURED**, read from `/organizations/{org}` rather than
+  assumed.
 - **Published limits:** 0.5 GB storage; 191.9 compute-hours/month on Free.
-- **Usage:** UNKNOWN — needs `NEON_API_KEY`.
-- **Cost risk: HIGH,** and it is the one that grows without anyone acting:
-  the self-hosted Umami analytics tables accumulate rows every time somebody
-  visits the site. Storage is the metric to watch, and nobody can watch it yet.
+- **Storage: MEASURED, 112 MB — 22% of the published 512 MB allowance**
+  (2026-09-11), leaving ~400 MB.
+
+  | project | storage |
+  |---|---|
+  | farm-app | 46 MB |
+  | swechha-analytics (Umami) | 36 MB |
+  | Swechha Website | 31 MB |
+
+- **★ THREE PROJECTS SHARE THIS ONE FREE PLAN, and one is not the website's.**
+  `farm-app` is the largest of the three. So the website department watches a
+  quota it does not solely control, and a figure naming only the website's own
+  project would understate the risk by two thirds. The probe counts all three.
+- **Compute hours: still UNKNOWN.** `consumption_history/account` returns 404 on
+  this plan, so the 191.9-hour allowance cannot be read from here. Named rather
+  than estimated.
+- **Cost risk: HIGH,** and it is the one that grows without anyone acting: the
+  self-hosted Umami tables accumulate a row per visit. Storage is now watched;
+  at 22% the headroom is real but it only moves one way on its own.
 
 ### GitHub — Actions
 - **Plan:** public repository — **verified 2026-09-11**,
