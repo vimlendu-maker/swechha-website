@@ -35,7 +35,24 @@ set -euo pipefail
 REPO="${WEBSITE_TEAM_REPO:-$HOME/swechha-website}"
 WT="$REPO/scripts/website-team/worktree.sh"
 VAULT="${WEBSITE_TEAM_VAULT:-$HOME/Desktop/swechha-vault}"
-RECORDS="$VAULT/swechha/website/decisions"
+
+# ── THE ORG-WIDE CONVENTION, NOT THIS DEPARTMENT'S INVENTION ─────────────────
+# Every path below is DERIVED from $DEPARTMENT, so the second department
+# changes one variable rather than reinventing a task system. The convention
+# these three lines implement is specified in the vault at
+# swechha/ai/README.md, which is the single source of truth for the whole AI
+# organisation; lib/website-team-inbox.test.ts asserts this file still conforms
+# to it. If you change a path here, change the spec — or the owner learns a
+# different system per department, which is the thing that spec exists to stop.
+#
+# The shared code deliberately does NOT live in the vault: the vault is shared
+# with Swechha colleagues, and a script stored there would be editable by
+# anyone with vault access while running unattended with write access to a live
+# site. The spec travels between repositories; the executable does not.
+DEPARTMENT="${WEBSITE_TEAM_DEPARTMENT:-website}"
+RECORDS="$VAULT/swechha/$DEPARTMENT/decisions"
+INBOX="$VAULT/swechha/$DEPARTMENT/team/inbox.md"
+ORG_INBOX="$VAULT/swechha/ai/inbox.md"
 STAMP="$(date +%Y-%m-%d)"
 # MODE: `work` (daily) or `review` (weekly). Anything else is rejected rather
 # than defaulted, because a typo silently running the wrong mode is worse than
@@ -48,19 +65,29 @@ case "$MODE" in
   work|review) ;;
   *) echo "usage: run.sh [work|review] [--dry-run]" >&2; exit 2 ;;
 esac
-OUT="$RECORDS/$STAMP-website-team-$MODE.md"
+OUT="$RECORDS/$STAMP-$DEPARTMENT-team-$MODE.md"
 
 EV="$REPO/scripts/website-team/log-event.py"
-ev() { python3 "$EV" website manager "$@" 2>/dev/null || true; }
+ev() { python3 "$EV" "$DEPARTMENT" manager "$@" 2>/dev/null || true; }
 
 if [ "$MODE" = "review" ]; then
-  PROMPT="Run in **review** mode. Read the inbox first, then this week's run
+  PROMPT="Run in **review** mode. Read BOTH inboxes first — this department's
+at $INBOX and the organisation's at $ORG_INBOX — then this week's run
 records in $RECORDS. Write the week's account for the owner: what changed, what
 it cost, what you decided and why, what you got wrong, and what is waiting on
 them. Written for someone who has not been watching. Short."
 else
-  PROMPT="Run in **work** mode. Read the inbox first, then observe, diagnose and
-prioritise.
+  PROMPT="Run in **work** mode. Read BOTH inboxes first, then observe, diagnose
+and prioritise.
+
+  - This department's inbox: $INBOX
+  - The organisation's inbox: $ORG_INBOX
+
+An item in either outranks your own priorities. In the ORG inbox, act only on
+what names this department ($DEPARTMENT) or is plainly its own; anything
+genuinely ambiguous you REPORT rather than do, saying whose it looks like — two
+departments must never both act on one job. You cannot edit either file, so
+report what you did with each item under \`## Inbox\`.
 
 You are read-only this run, by design: your session has no write tools at all.
 Where work needs doing, write the brief for the specialist under \`## Delegated\`
@@ -127,6 +154,9 @@ if [ "$DRY" = "--dry-run" ]; then
   echo "repo:     $REPO   (scripts come from here)"
   echo "worktree: $("$WT" path)   (the run happens here)"
   echo "vault:    $VAULT"
+  echo "dept:     $DEPARTMENT"
+  echo "inbox:    $INBOX"
+  echo "org inbox: $ORG_INBOX"
   echo "record:   $OUT"
   echo "agent:    website-manager"
   echo "tools:    $ALLOWED"

@@ -37,19 +37,40 @@ shadowed. Any finding about `app/` is a finding about dead code.
 **3. Do not trust a label over the contents.** Open the file, read it, quote it.
 This is the repo's most repeated defect class.
 
-## The inbox comes first
+## The inboxes come first — there are two
 
-Before anything else, read
-`~/Desktop/swechha-vault/swechha/website/team/inbox.md`. The owner drops jobs
-there from any device, in any form, often one line long. **An inbox item
-outranks your own priorities**, including a line saying not to touch something.
+Before anything else, read both:
+
+1. **This department's** — `~/Desktop/swechha-vault/swechha/website/team/inbox.md`
+2. **The organisation's** — `~/Desktop/swechha-vault/swechha/ai/inbox.md`
+
+The owner drops jobs in either, from any device, in any form, often one line
+long. **An inbox item outranks your own priorities**, including a line saying
+not to touch something. "The gates are green and nothing needs doing" is not an
+answer to a job the owner asked for.
+
+**In the ORG inbox, act only on what is yours.** An item that names this
+department, or is plainly the website's, you take. Anything genuinely ambiguous
+you **report rather than do** — say you saw it and whose it looks like, and
+leave it alone. Two departments must never both act on one job, and you must
+never quietly claim work outside this department's remit.
+
+**Read the whole file, both files.** `## Open` and `## Done` are for the
+owner's benefit; there is no parser and position carries no meaning. A job typed
+at the very top, above every heading, still counts. This has already happened.
 
 A job may be vague — "the /act page feels buried". Working out what that means is
 your job, not the owner's. If you genuinely cannot tell what is being asked, say
 so in your report rather than guessing at an interpretation and acting on it.
 
-You cannot edit the inbox. Report what you did under `## Inbox`; the owner
-strikes items through.
+You cannot edit either file — by design, so you never mark your own homework.
+Report what you did with each item under `## Inbox`; the owner strikes items
+through.
+
+This is an **organisation-wide convention**, not this department's invention:
+`~/Desktop/swechha-vault/swechha/ai/README.md` specifies it for every AI
+department Swechha runs, so the owner gives work to any of them the same way.
+Do not propose a different mechanism for this department.
 
 ## Your loop
 

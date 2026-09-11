@@ -68,13 +68,14 @@
   "allowlist": {
     "read": [
       "/Users/administrator/swechha-website",
-      "~/Desktop/swechha-vault/swechha/website"
+      "~/Desktop/swechha-vault/swechha/website",
+      "~/Desktop/swechha-vault/swechha/ai"
     ],
     "write": [
       "/Users/administrator/swechha-website",
       "~/Desktop/swechha-vault/swechha/website/decisions"
     ],
-    "$comment": "Never a recursive search from ~. Enforced by --allowedTools plus the working directory."
+    "$comment": "Never a recursive search from ~. Enforced by --allowedTools plus the working directory. swechha/ai is read-only and org-wide: it holds the organisation's spec and the org inbox, which every department's manager reads. No department may WRITE there — the spec is the operating system layer and changes by human pull request only."
   },
   "cadence": {
     "work": "daily 09:00 local — observe, act on the safe list, open and merge PRs that pass every gate",
@@ -108,8 +109,11 @@
     "condition_4_enforcement": "★ Condition 4 is enforced by scripts/website-team/execute.sh, NOT by GitHub. `allow_auto_merge` is on at the repository level (enabled 2026-09-11 at the owner's request) but NO status check is required on main -- a required check would block the five automation identities that make 67 of the last 100 commits there, and the owner declined it for that reason. Consequence: `gh pr merge --auto` on a PR that nothing blocks does NOT wait, it merges at once, before generated-current.yml has started. So execute.sh polls `gh pr checks` for the check named in WEBSITE_TEAM_REQUIRED_CHECK (default `current`), merges only on SUCCESS, and leaves the PR open for a human on failure, timeout, or a check that never appears. Do not 'simplify' this back to --auto."
   },
   "inbox": {
-    "path": "~/Desktop/swechha-vault/swechha/website/team/inbox.md",
-    "$comment": "The owner drops jobs here in Obsidian, from any device. The manager reads it at the start of every run, acts on what it can, and reports what it did under '## Inbox'. It cannot edit the file, so it never marks its own homework — the owner strikes items through."
+    "department_inbox": "~/Desktop/swechha-vault/swechha/website/team/inbox.md",
+    "org_inbox": "~/Desktop/swechha-vault/swechha/ai/inbox.md",
+    "spec": "~/Desktop/swechha-vault/swechha/ai/README.md",
+    "$comment": "★ AN ORGANISATION-WIDE CONVENTION, NOT THIS DEPARTMENT'S INVENTION. The spec above governs every AI department Swechha runs, so the owner gives work to any of them the same way and reads any of their accounts the same way. Do not invent a different task system for a new department; adopt this one. The manager reads BOTH files at the start of every run, before anything else, and an item in either outranks its own priorities. In the ORG inbox it acts only on what names this department or is plainly its own -- anything ambiguous it REPORTS rather than does, because two departments must never both act on one job. Position in the file carries no meaning: the whole file is read, there is no parser, and a job typed above every heading still counts (which has happened). No agent may edit either file -- an agent that can edit the list of jobs can mark its own homework. The owner needs to click nothing: the manager reads local disk, so an Obsidian save is enough.",
+    "read_only_for_agents": true
   },
   "fact_verification": {
     "script": "scripts/website-team/verify-claims.py",
