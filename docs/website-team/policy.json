@@ -1,0 +1,59 @@
+{
+  "$comment": "Operating policy for the Website Team. Autonomy is this file, not the agents. See docs/website-team/README.md and the vault's swechha/website/team/04-operating-policy.md.",
+  "autonomy_level": 2,
+  "levels": {
+    "1": "Observer — inspect and report",
+    "2": "Advisor — diagnose and propose; engineering opens PRs",
+    "3": "Implementer — implement approved changes without re-asking per file",
+    "4": "Operator — independently fix, test and deploy the safe_to_automate list",
+    "5": "Autonomous — continuous loop, escalating high-risk decisions"
+  },
+  "roles": {
+    "manager":     { "site_write": false,     "vault_write": true  },
+    "design":      { "site_write": false,     "vault_write": false },
+    "content_seo": { "site_write": false,     "vault_write": false },
+    "engineering": { "site_write": "pr_only", "vault_write": false }
+  },
+  "safe_to_automate": [
+    "broken internal links and hrefs resolving to no mapped route",
+    "restoring whichever of nav-word / built-file / route is missing when the other two agree",
+    "missing alt where surrounding text supplies it",
+    "a missing skip link in a shared shell",
+    "metadata violating an invariant already tested in lib/seo/register.test.ts",
+    "regenerating committed pages when generated-current.yml fails",
+    "dependency and security updates within a minor version, tests green",
+    "formatting and lint fixes",
+    "anything reversible by a single git revert with no data change"
+  ],
+  "requires_approval": [
+    "the homepage above the fold",
+    "navigation changes",
+    "deleting a page or removing a route from a derived map",
+    "organisational messaging or positioning",
+    "any new factual claim, figure or citation",
+    "the rewrite layer (design-routes.ts, next.config.ts rewrites)",
+    "the CSP or security headers",
+    "generated-current.yml or any other gate",
+    "database migrations and anything touching Neon",
+    "DNS or domain changes",
+    "adding or removing a third-party integration",
+    "replacing a font or image",
+    "anything the agent cannot verify"
+  ],
+  "never": [
+    "push directly to main",
+    "merge its own pull request",
+    "remove a step from generated-current.yml",
+    "add a CSP host without the subresource that needs it, on the same commit",
+    "replace a font or image at its existing filename",
+    "delete code that has a test",
+    "write a sourced figure that has not passed the DOI/URL check",
+    "claim to have verified anything against the live site — production returns 403 to this machine",
+    "edit app/ believing it is what readers see"
+  ],
+  "allowlist": {
+    "read": ["/Users/administrator/swechha-website", "~/Desktop/swechha-vault/swechha/website"],
+    "write": ["/Users/administrator/swechha-website", "~/Desktop/swechha-vault/swechha/website/decisions"],
+    "$comment": "Never a recursive search from ~. Enforced by --allowedTools plus the working directory."
+  }
+}
