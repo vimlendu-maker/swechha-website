@@ -147,7 +147,11 @@ describe('inbox: urgency, and the sentinel it feeds', () => {
     expect(probes.length).toBeGreaterThanOrEqual(5)
     for (const p of probes) {
       const src = readFileSync(join(dir, p), 'utf8')
-      expect(src, `${p} invokes a model`).not.toMatch(/\bclaude\b|anthropic/i)
+      // Comments legitimately NAME providers: fundraising-health.sh explains
+      // that Anthropic spend is precisely the thing it cannot see. Assert on
+      // the code, or an honest explanation fails the test.
+      const code = src.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n')
+      expect(code, `${p} invokes a model`).not.toMatch(/\bclaude\b|anthropic/i)
       // Every probe must document what its exit codes mean by using them.
       expect(src, `${p} never exits non-zero, so it can only ever say "fine"`)
         .toMatch(/exit [12]/)

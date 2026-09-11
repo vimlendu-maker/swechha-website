@@ -1,5 +1,5 @@
 {
-  "$comment": "★ THE INVENTORY OF RECORD — SLOW-MOVING FACTS ONLY. Plan, published limit, cost risk, and which probe reports this service's live state. NOTHING HERE IS MEASURED AT RUNTIME. Liveness belongs to scripts/website-team/sentinel/*.sh and to nothing else: on 2026-09-11 infra-status.py carried its own copy of the GitHub and Vercel checks, drifted from the probes within four hours, and reported Neon as UNKNOWN while the probe was measuring 112MB of it. Two instruments computing one fact is this repository's most repeated defect class. If you want to change what a service REPORTS, change its probe. This file says only what is true between runs.",
+  "$comment": "★ THE INVENTORY OF RECORD — SLOW-MOVING FACTS ONLY. Plan, published limit, cost risk, and which probe reports this service's live state. NOTHING HERE IS MEASURED AT RUNTIME. Liveness belongs to scripts/website-team/sentinel/*.sh and to nothing else: on 2026-09-11 infra-status.py carried its own copy of the GitHub and Vercel checks, drifted from the probes within four hours, and reported Neon as UNKNOWN while the probe was measuring 112MB of it. Two instruments computing one fact is this repository's most repeated defect class. If you want to change what a service REPORTS, change its probe. This file says only what is true between runs. EXTENDED 2026-09-11 to cover the fundraising department, which had no infrastructure watch at all despite being the only department with a bill. Rows carry a `department` field so the table can be read per department.",
   "published_limits_are_quotations": "Every `limit` here is read from the provider's own terms on the date in `read`. It is a quotation, not a measurement, and the renderer labels it as published.",
   "services": [
     {
@@ -9,7 +9,8 @@
       "limit": "100 deploys/day; 100GB bandwidth/month",
       "read": "2026-09-11",
       "cost_risk": "HIGH — hosting; the largest single billing exposure in the stack",
-      "unmeasured": "bandwidth — account-level, out of the project scope's reach"
+      "unmeasured": "bandwidth — account-level, out of the project scope's reach",
+      "department": "website"
     },
     {
       "name": "Neon (Postgres)",
@@ -18,7 +19,8 @@
       "limit": "0.5GB storage; 191.9 compute-hours/month",
       "read": "2026-09-11",
       "cost_risk": "HIGH — and the only limit that grows without anyone acting, because Umami writes a row per visit. Three projects share this one plan and the largest is farm-app, not the website.",
-      "unmeasured": "compute hours — consumption_history/account 404s on the free plan"
+      "unmeasured": "compute hours — consumption_history/account 404s on the free plan",
+      "department": "website"
     },
     {
       "name": "GitHub — Actions",
@@ -26,7 +28,8 @@
       "plan": "public repository",
       "limit": "not metered",
       "read": "2026-09-11",
-      "cost_risk": "NONE while the repository is public. Making it private starts metering at 2,000 minutes/month and this line becomes wrong."
+      "cost_risk": "NONE while the repository is public. Making it private starts metering at 2,000 minutes/month and this line becomes wrong.",
+      "department": "website"
     },
     {
       "name": "GitHub — API & storage",
@@ -34,7 +37,8 @@
       "plan": "authenticated",
       "limit": "5,000 requests/hour; repo soft guide 1GB",
       "read": "2026-09-11",
-      "cost_risk": "NONE — exhaustion throttles, it does not bill"
+      "cost_risk": "NONE — exhaustion throttles, it does not bill",
+      "department": "website"
     },
     {
       "name": "data.gov.in (CPCB air)",
@@ -43,7 +47,8 @@
       "limit": "no published per-key quota",
       "read": "2026-09-11",
       "cost_risk": "NONE — no paid tier exists; the risk is withdrawal, not cost",
-      "unmeasured": "consumption — the provider exposes no quota endpoint"
+      "unmeasured": "consumption — the provider exposes no quota endpoint",
+      "department": "website"
     },
     {
       "name": "WAQI / AQICN",
@@ -52,7 +57,8 @@
       "limit": "1,000 requests/day",
       "read": "2026-09-11",
       "cost_risk": "LOW — exceeding it throttles rather than bills",
-      "unmeasured": "consumption — no quota endpoint"
+      "unmeasured": "consumption — no quota endpoint",
+      "department": "website"
     },
     {
       "name": "NASA FIRMS",
@@ -61,7 +67,8 @@
       "limit": "5,000 transactions/10 minutes",
       "read": "2026-09-11",
       "cost_risk": "NONE — no paid tier",
-      "unmeasured": "consumption — readable from mapkey_status, not yet surfaced"
+      "unmeasured": "consumption — readable from mapkey_status, not yet surfaced",
+      "department": "website"
     },
     {
       "name": "swechha.in (the site itself)",
@@ -69,7 +76,8 @@
       "plan": "served from Vercel",
       "limit": "n/a",
       "read": "2026-09-11",
-      "cost_risk": "NONE directly — but a frozen site is the failure this department exists to catch"
+      "cost_risk": "NONE directly — but a frozen site is the failure this department exists to catch",
+      "department": "website"
     },
     {
       "name": "Air / climate pipelines",
@@ -77,7 +85,8 @@
       "plan": "GitHub Actions + an external heartbeat",
       "limit": "n/a",
       "read": "2026-09-11",
-      "cost_risk": "NONE — but staleness here is invisible from outside, which is why it is probed"
+      "cost_risk": "NONE — but staleness here is invisible from outside, which is why it is probed",
+      "department": "website"
     },
     {
       "name": "Resend (email)",
@@ -86,7 +95,8 @@
       "limit": "100 emails/day; 3,000/month",
       "read": "2026-09-11",
       "cost_risk": "LOW — the site sends on form submission only",
-      "unmeasured": "no probe; reading usage needs an authenticated call"
+      "unmeasured": "no probe; reading usage needs an authenticated call",
+      "department": "website"
     },
     {
       "name": "Umami (analytics)",
@@ -95,7 +105,8 @@
       "limit": "bounded by its Neon database",
       "read": "2026-09-11",
       "cost_risk": "INDIRECT — it is the thing that grows Neon storage",
-      "unmeasured": "its counts live in Neon; watch the Neon row instead"
+      "unmeasured": "its counts live in Neon; watch the Neon row instead",
+      "department": "website"
     },
     {
       "name": "cron-job.org (air heartbeat)",
@@ -104,7 +115,8 @@
       "limit": "free plan terms not recorded",
       "read": "2026-09-11",
       "cost_risk": "LOW, but it holds a GitHub PAT whose expiry stops the pipeline being driven at all",
-      "unmeasured": "no API token recorded for this account"
+      "unmeasured": "no API token recorded for this account",
+      "department": "website"
     },
     {
       "name": "DNS / domain (swechha.in)",
@@ -113,7 +125,57 @@
       "limit": "n/a",
       "read": "2026-09-11",
       "cost_risk": "RECURRING AND ALREADY PAID — an expiry takes the whole site down and no free-tier care prevents it",
-      "unmeasured": "registrar not recorded in this repository"
+      "unmeasured": "registrar not recorded in this repository",
+      "department": "website"
+    },
+    {
+      "name": "Fundraising department",
+      "probe": "fundraising-health",
+      "plan": "GitHub Actions, public repo",
+      "limit": "not metered",
+      "read": "2026-09-11",
+      "cost_risk": "NONE for the runtime — but see its paid dependencies below",
+      "department": "fundraising"
+    },
+    {
+      "name": "Anthropic API (proposal drafting)",
+      "probe": null,
+      "plan": "commercial API, pay per token",
+      "limit": "no free tier — billed",
+      "read": "2026-09-11",
+      "cost_risk": "★ THE ONLY RECURRING PAID DEPENDENCY IN THE ORGANISATION. Used by fundraising's drafting stage because the commercial API does not train on inputs and that stage sends Swechha's knowledge base. Free-first does not apply here — the privacy requirement bought this cost deliberately.",
+      "unmeasured": "spend — needs an Anthropic ADMIN key, which is more powerful than the API key the pipeline uses and is not on this machine",
+      "department": "fundraising"
+    },
+    {
+      "name": "Tavily (search)",
+      "probe": null,
+      "plan": "free tier, then billed",
+      "limit": "UNKNOWN — plan terms not recorded",
+      "read": "2026-09-11",
+      "cost_risk": "MEDIUM — bills past the free tier and nothing counts the calls",
+      "unmeasured": "usage — no key on this machine; the key is a GitHub Actions secret",
+      "department": "fundraising"
+    },
+    {
+      "name": "Airtable (fundraising task store)",
+      "probe": null,
+      "plan": "UNKNOWN",
+      "limit": "UNKNOWN — record/automation limits not recorded",
+      "read": "2026-09-11",
+      "cost_risk": "MEDIUM — it is the department's TASK STORE, so exhausting a record limit stops the decision queue rather than degrading it",
+      "unmeasured": "record count and plan — key is a GitHub Actions secret",
+      "department": "fundraising"
+    },
+    {
+      "name": "Brevo (fundraising email)",
+      "probe": null,
+      "plan": "free",
+      "limit": "300 messages/day, no card, no expiry",
+      "read": "2026-09-11",
+      "cost_risk": "LOW, but email is this department's ONLY output and only failure channel — if it stops, the department goes silent in exactly the way its guards exist to prevent",
+      "unmeasured": "send count — key is a GitHub Actions secret",
+      "department": "fundraising"
     }
   ]
 }

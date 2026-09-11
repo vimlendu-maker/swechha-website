@@ -36,7 +36,16 @@ import time
 from pathlib import Path
 
 HOME = Path(os.path.expanduser("~"))
-REPO = Path(os.environ.get("WEBSITE_TEAM_REPO", HOME / "swechha-website"))
+
+# ★ THE REPO IS FOUND FROM THIS FILE, NOT FROM $HOME.
+#   This script lives at <repo>/scripts/website-team/, so the repo root is two
+#   parents up — always, on any machine. Deriving it from $HOME instead worked
+#   on the owner's Mac by coincidence (~/swechha-website) and failed on CI,
+#   where the checkout is at /home/runner/work/<repo>/<repo> and $HOME is
+#   /home/runner: the inventory was looked for at a path that has never existed
+#   there. A path that only resolves on one machine is a path that will surprise
+#   you on every other one.
+REPO = Path(os.environ.get("WEBSITE_TEAM_REPO", Path(__file__).resolve().parents[2]))
 PROBES = Path(os.environ.get("WEBSITE_TEAM_PROBES", REPO / "scripts/website-team/sentinel"))
 INVENTORY = Path(os.environ.get("WEBSITE_TEAM_SERVICES", REPO / "docs/website-team/services.json"))
 
@@ -136,6 +145,10 @@ def build(fresh: bool = False, offline: bool = False) -> dict:
             "cost_risk": s["cost_risk"],
             "last_check": last,
             "probe": pn or "—",
+            # Which department owns this service. The table spans more than one
+            # department since 2026-09-11, and a reader that cannot separate
+            # them cannot answer "is MY department healthy".
+            "department": s.get("department", "website"),
         })
     return {"checked_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "services": rows}
 
