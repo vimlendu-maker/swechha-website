@@ -117,7 +117,8 @@ useful than twelve invented percentages.
   CI run, so the cost is time.
 
 ### data.gov.in — CPCB air data
-- **Plan:** free API key (`DATA_GOV_IN_KEY`).
+- **Plan:** free API key (`DATA_GOV_IN_KEY`), read from `.env.local`.
+- **Key: VERIFIED WORKING** 2026-09-11, checked at most once every six hours.
 - **Limit:** UNKNOWN — no published per-key quota found.
 - **Usage:** UNKNOWN — the provider exposes no quota endpoint.
 - **Cost risk: NONE** — no paid tier exists. The real risk is *withdrawal or
@@ -125,15 +126,21 @@ useful than twelve invented percentages.
   cloud already changes by the hour (hence the fetch → curl → relay ladder).
 
 ### WAQI / AQICN
-- **Plan:** free token (`WAQI_TOKEN`).
+- **Plan:** free token (`WAQI_TOKEN`), read from `.env.local`.
+- **Key: VERIFIED WORKING** 2026-09-11.
 - **Published limit:** 1,000 requests/day.
 - **Usage:** UNKNOWN — no quota endpoint; it would have to be counted locally.
+  The probe checks at most **once every six hours** precisely so it does not
+  become a meaningful consumer of the quota it is watching: every 30 minutes
+  would spend 48 requests a day to learn nothing.
 - **Cost risk: LOW** — exceeding it throttles rather than bills.
 
 ### NASA FIRMS — fire data
-- **Plan:** free `MAP_KEY` (`FIRMS_MAP_KEY`).
+- **Plan:** free `MAP_KEY` (`FIRMS_MAP_KEY`), read from `.env.local`.
+- **Key: VERIFIED WORKING** 2026-09-11 via the `mapkey_status` endpoint, which
+  is the one provider here that reports transactions back.
 - **Published limit:** 5,000 transactions per 10 minutes.
-- **Usage:** UNKNOWN — no quota endpoint.
+- **Usage:** readable from `mapkey_status`; not yet surfaced.
 - **Cost risk: NONE** — no paid tier.
 
 ### Resend — transactional email
@@ -162,6 +169,35 @@ useful than twelve invented percentages.
 - **Cost risk: RECURRING AND ALREADY PAID.** No amount of free-tier discipline
   protects against an expired domain, which takes the whole site down. This is
   the one cost in the stack that is *supposed* to exist.
+
+## Where the credentials live
+
+Two files, read and never copied between:
+
+- `~/.swechha-ai/env` (mode 600) — the keys added for the departments:
+  `VERCEL_TOKEN`, `NEON_API_KEY`.
+- `<repo>/.env.local` — the pipeline keys local development already uses:
+  `DATA_GOV_IN_KEY`, `WAQI_TOKEN`, `FIRMS_MAP_KEY`, `AIR_RELAY_TOKEN`,
+  `OPENAQ_KEY`. These also exist as GitHub Actions secrets.
+
+`scripts/website-team/sentinel/env.inc` loads both, without overwriting anything
+already in the environment. **It is deliberately not named `*.sh` and not
+executable**, so the orchestrator's probe discovery cannot pick it up; a test
+asserts both, and asserts no probe echoes a credential.
+
+**A secret stored twice is one you will eventually rotate once.** The keys were
+read where they already are rather than copied into a third file.
+
+## What is still unmeasured
+
+| Gap | Why |
+|---|---|
+| Vercel bandwidth | account-level; the project-scoped token cannot reach it |
+| Neon compute hours | `consumption_history/account` 404s on the free plan |
+| data.gov.in / WAQI quota consumption | neither provider exposes a quota endpoint |
+
+Everything else in this inventory is measured. Three services were UNKNOWN this
+morning and are not now; what remains is named here so a gap cannot go quiet.
 
 ## The gap that needs the owner
 

@@ -19,9 +19,9 @@
 # user-level resources. Team- and project-scoped tokens need no teamId.
 set -euo pipefail
 
-ENV_FILE="${WEBSITE_TEAM_ENV:-$HOME/.swechha-ai/env}"
-# shellcheck disable=SC1090
-[ -r "$ENV_FILE" ] && . "$ENV_FILE"
+HERE="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck disable=SC1091
+. "$HERE/env.inc"
 
 # ── 1. Platform status, which needs no credential ────────────────────────────
 S="$(curl -sS --max-time 10 https://www.vercel-status.com/api/v2/status.json 2>/dev/null)" || {
@@ -36,7 +36,7 @@ esac
 
 # ── 2. Is production actually deploying? ─────────────────────────────────────
 if [ -z "${VERCEL_TOKEN:-}" ]; then
-  echo "vercel deployments and usage UNKNOWN — no VERCEL_TOKEN in $ENV_FILE"
+  echo "vercel deployments and usage UNKNOWN — no VERCEL_TOKEN in ~/.swechha-ai/env"
   exit 2
 fi
 

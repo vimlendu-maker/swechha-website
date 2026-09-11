@@ -53,6 +53,10 @@ def _load_env(path: Path) -> None:
 
 
 _load_env(Path(os.environ.get("WEBSITE_TEAM_ENV", HOME / ".swechha-ai" / "env")))
+# The pipeline keys already live here and in GitHub Actions secrets; reading
+# them beats copying them, because a secret stored twice is one you will
+# eventually rotate once.
+_load_env(Path(os.environ.get("WEBSITE_TEAM_REPO", HOME / "swechha-website")) / ".env.local")
 CACHE = Path(os.environ.get("WEBSITE_TEAM_INFRA_CACHE", HOME / ".swechha-ai" / "infra-cache.json"))
 REPO = Path(os.environ.get("WEBSITE_TEAM_REPO", HOME / "swechha-website"))
 

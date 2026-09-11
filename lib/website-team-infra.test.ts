@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
 import { mkdtempSync } from 'node:fs'
@@ -126,6 +126,28 @@ describe('website team: infrastructure and free-tier watch', () => {
       // `gh api` is verb-agnostic and can POST; `gh pr merge`/`create` write.
       expect(rule, `${rule} would let the read-only manager change state`)
         .toMatch(/^gh (run list|pr (list|view|checks))/)
+    }
+  })
+
+
+  it('env.inc cannot be mistaken for a probe, and no probe prints a secret', () => {
+    const dir = join(root, 'scripts/website-team/sentinel')
+    // The orchestrator discovers `*.sh` and runs each executable one. A shared
+    // include must therefore not end in .sh AND not be executable — either
+    // alone would be a single rename away from being executed as a probe.
+    const inc = join(dir, 'env.inc')
+    expect(existsSync(inc), 'the shared env loader is missing').toBe(true)
+    expect(inc.endsWith('.sh')).toBe(false)
+    expect(statSync(inc).mode & 0o111, 'env.inc must not be executable').toBe(0)
+
+    // A probe may USE a credential; it may never echo one. Catch the shapes
+    // that would put a value on stdout.
+    for (const f of readdirSync(dir).filter((x) => x.endsWith('.sh'))) {
+      const src = readFileSync(join(dir, f), 'utf8')
+      for (const m of src.matchAll(/^\s*echo\s+.*$/gm)) {
+        expect(m[0], `${f} echoes a credential: ${m[0].trim().slice(0, 70)}`)
+          .not.toMatch(/\$\{?(VERCEL_TOKEN|NEON_API_KEY|WAQI_TOKEN|DATA_GOV_IN_KEY|FIRMS_MAP_KEY|AIR_RELAY_TOKEN)\b/)
+      }
     }
   })
 

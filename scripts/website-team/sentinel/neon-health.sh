@@ -18,12 +18,12 @@
 # a hardcoded one silently rots the day the account changes. Two cheap requests.
 set -euo pipefail
 
-ENV_FILE="${WEBSITE_TEAM_ENV:-$HOME/.swechha-ai/env}"
-# shellcheck disable=SC1090
-[ -r "$ENV_FILE" ] && . "$ENV_FILE"
+HERE="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck disable=SC1091
+. "$HERE/env.inc"
 
 if [ -z "${NEON_API_KEY:-}" ]; then
-  echo "neon storage/compute UNKNOWN — no NEON_API_KEY in $ENV_FILE (the one limit that grows on its own)"
+  echo "neon storage/compute UNKNOWN — no NEON_API_KEY in ~/.swechha-ai/env (the one limit that grows on its own)"
   exit 2
 fi
 
