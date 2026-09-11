@@ -1,0 +1,119 @@
+{
+  "$comment": "★ THE INVENTORY OF RECORD — SLOW-MOVING FACTS ONLY. Plan, published limit, cost risk, and which probe reports this service's live state. NOTHING HERE IS MEASURED AT RUNTIME. Liveness belongs to scripts/website-team/sentinel/*.sh and to nothing else: on 2026-09-11 infra-status.py carried its own copy of the GitHub and Vercel checks, drifted from the probes within four hours, and reported Neon as UNKNOWN while the probe was measuring 112MB of it. Two instruments computing one fact is this repository's most repeated defect class. If you want to change what a service REPORTS, change its probe. This file says only what is true between runs.",
+  "published_limits_are_quotations": "Every `limit` here is read from the provider's own terms on the date in `read`. It is a quotation, not a measurement, and the renderer labels it as published.",
+  "services": [
+    {
+      "name": "Vercel",
+      "probe": "vercel-health",
+      "plan": "Hobby (plan itself unverified — the project-scoped token cannot read account-level plan data)",
+      "limit": "100 deploys/day; 100GB bandwidth/month",
+      "read": "2026-09-11",
+      "cost_risk": "HIGH — hosting; the largest single billing exposure in the stack",
+      "unmeasured": "bandwidth — account-level, out of the project scope's reach"
+    },
+    {
+      "name": "Neon (Postgres)",
+      "probe": "neon-health",
+      "plan": "free (MEASURED from /organizations)",
+      "limit": "0.5GB storage; 191.9 compute-hours/month",
+      "read": "2026-09-11",
+      "cost_risk": "HIGH — and the only limit that grows without anyone acting, because Umami writes a row per visit. Three projects share this one plan and the largest is farm-app, not the website.",
+      "unmeasured": "compute hours — consumption_history/account 404s on the free plan"
+    },
+    {
+      "name": "GitHub — Actions",
+      "probe": "github-health",
+      "plan": "public repository",
+      "limit": "not metered",
+      "read": "2026-09-11",
+      "cost_risk": "NONE while the repository is public. Making it private starts metering at 2,000 minutes/month and this line becomes wrong."
+    },
+    {
+      "name": "GitHub — API & storage",
+      "probe": "api-health",
+      "plan": "authenticated",
+      "limit": "5,000 requests/hour; repo soft guide 1GB",
+      "read": "2026-09-11",
+      "cost_risk": "NONE — exhaustion throttles, it does not bill"
+    },
+    {
+      "name": "data.gov.in (CPCB air)",
+      "probe": "api-health",
+      "plan": "free API key",
+      "limit": "no published per-key quota",
+      "read": "2026-09-11",
+      "cost_risk": "NONE — no paid tier exists; the risk is withdrawal, not cost",
+      "unmeasured": "consumption — the provider exposes no quota endpoint"
+    },
+    {
+      "name": "WAQI / AQICN",
+      "probe": "api-health",
+      "plan": "free token",
+      "limit": "1,000 requests/day",
+      "read": "2026-09-11",
+      "cost_risk": "LOW — exceeding it throttles rather than bills",
+      "unmeasured": "consumption — no quota endpoint"
+    },
+    {
+      "name": "NASA FIRMS",
+      "probe": "api-health",
+      "plan": "free MAP_KEY",
+      "limit": "5,000 transactions/10 minutes",
+      "read": "2026-09-11",
+      "cost_risk": "NONE — no paid tier",
+      "unmeasured": "consumption — readable from mapkey_status, not yet surfaced"
+    },
+    {
+      "name": "swechha.in (the site itself)",
+      "probe": "site-health",
+      "plan": "served from Vercel",
+      "limit": "n/a",
+      "read": "2026-09-11",
+      "cost_risk": "NONE directly — but a frozen site is the failure this department exists to catch"
+    },
+    {
+      "name": "Air / climate pipelines",
+      "probe": "climate-health",
+      "plan": "GitHub Actions + an external heartbeat",
+      "limit": "n/a",
+      "read": "2026-09-11",
+      "cost_risk": "NONE — but staleness here is invisible from outside, which is why it is probed"
+    },
+    {
+      "name": "Resend (email)",
+      "probe": null,
+      "plan": "free",
+      "limit": "100 emails/day; 3,000/month",
+      "read": "2026-09-11",
+      "cost_risk": "LOW — the site sends on form submission only",
+      "unmeasured": "no probe; reading usage needs an authenticated call"
+    },
+    {
+      "name": "Umami (analytics)",
+      "probe": null,
+      "plan": "self-hosted, first-party via /ledger",
+      "limit": "bounded by its Neon database",
+      "read": "2026-09-11",
+      "cost_risk": "INDIRECT — it is the thing that grows Neon storage",
+      "unmeasured": "its counts live in Neon; watch the Neon row instead"
+    },
+    {
+      "name": "cron-job.org (air heartbeat)",
+      "probe": null,
+      "plan": "free",
+      "limit": "free plan terms not recorded",
+      "read": "2026-09-11",
+      "cost_risk": "LOW, but it holds a GitHub PAT whose expiry stops the pipeline being driven at all",
+      "unmeasured": "no API token recorded for this account"
+    },
+    {
+      "name": "DNS / domain (swechha.in)",
+      "probe": null,
+      "plan": "registered domain, annual renewal",
+      "limit": "n/a",
+      "read": "2026-09-11",
+      "cost_risk": "RECURRING AND ALREADY PAID — an expiry takes the whole site down and no free-tier care prevents it",
+      "unmeasured": "registrar not recorded in this repository"
+    }
+  ]
+}
