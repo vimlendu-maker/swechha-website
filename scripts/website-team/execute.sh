@@ -214,15 +214,58 @@ echo "execute: opened $PR_URL"
 
 AUTO="$(python3 -c "import json;print(json.load(open('docs/website-team/policy.json'))['auto_merge']['enabled'])")"
 if [ "$AUTO" = "True" ]; then
-  # --auto asks GitHub to merge when required checks pass. It respects branch
-  # protection, so if review is required this waits for a human -- which is the
-  # correct outcome, not a failure.
-  if gh pr merge --auto --squash "$PR_URL" 2>/dev/null; then
-    ev automerge_enabled url="$PR_URL"
-    echo "execute: auto-merge enabled; GitHub will merge when checks pass"
+  # ★ CONDITION 4 IS ENFORCED HERE, BY THIS SCRIPT, NOT BY GITHUB.
+  #
+  #   policy.json's auto_merge condition 4 is "generated-current.yml passes on
+  #   the PR". The obvious way to guarantee that is a required status check on
+  #   main -- and that route is CLOSED, deliberately: 67 of the last 100
+  #   commits to main are direct pushes from five automation identities and the
+  #   air pipeline pushes every fifteen minutes, so a required check on main
+  #   would stop them and take the site stale within the hour. The owner
+  #   declined it on 2026-09-11 for exactly that reason; see
+  #   docs/website-team/infrastructure.md.
+  #
+  #   Which leaves a trap. `allow_auto_merge` is now on at the repository level
+  #   but NOTHING is required, so `gh pr merge --auto` on a PR that nothing
+  #   blocks does not wait for anything -- it merges immediately, before the
+  #   workflow has even started. The department would then be merging on its
+  #   own say-so while its policy claimed CI had passed. A condition that is
+  #   asserted but not enforced is worse than one that was never written down.
+  #
+  #   So: wait for the check to CONCLUDE, read its conclusion, and merge only
+  #   on success. Anything else -- failure, cancellation, timeout, or the check
+  #   never appearing -- leaves the PR open for a human, which is the correct
+  #   outcome and not an error.
+  CHECK="${WEBSITE_TEAM_REQUIRED_CHECK:-current}"
+  LIMIT="${WEBSITE_TEAM_CHECK_WAIT:-1200}"
+  waited=0
+  state=""
+  echo "execute: waiting for '$CHECK' on $PR_URL (up to ${LIMIT}s)"
+  while [ "$waited" -lt "$LIMIT" ]; do
+    state="$(gh pr checks "$PR_URL" --json name,state \
+      --jq "[.[] | select(.name == \"$CHECK\") | .state] | first // empty" 2>/dev/null || echo '')"
+    case "$state" in
+      SUCCESS) break ;;
+      FAILURE|CANCELLED|TIMED_OUT|ACTION_REQUIRED|STARTUP_FAILURE|STALE|SKIPPED) break ;;
+      *) sleep 20; waited=$((waited + 20)) ;;
+    esac
+  done
+
+  if [ "$state" = "SUCCESS" ]; then
+    ev gate_result gate="generated-current" result=pass
+    # --squash, not a merge commit: condition 9 requires the whole change be
+    # revertible by a single `git revert`, and a squash guarantees that.
+    if gh pr merge --squash "$PR_URL" 2>/dev/null; then
+      ev automerge_enabled url="$PR_URL" check="$CHECK"
+      echo "execute: '$CHECK' passed — merged"
+    else
+      ev automerge_unavailable url="$PR_URL" reason="merge refused by GitHub"
+      echo "execute: '$CHECK' passed but GitHub refused the merge — PR waits for a human"
+    fi
   else
-    ev automerge_unavailable url="$PR_URL"
-    echo "execute: auto-merge unavailable (branch protection or repo setting) — PR waits for a human"
+    ev gate_result gate="generated-current" result="${state:-absent}"
+    ev automerge_unavailable url="$PR_URL" reason="check=$CHECK state=${state:-absent} waited=${waited}s"
+    echo "execute: '$CHECK' did not pass (state: ${state:-never appeared}) — PR waits for a human"
   fi
 else
   echo "execute: auto_merge disabled in policy — PR waits for a human"

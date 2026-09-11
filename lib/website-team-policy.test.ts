@@ -53,6 +53,31 @@ describe('website team policy', () => {
     expect(approval).toContain('factual claim')
   })
 
+  it('condition 4 is enforced in code, because nothing on GitHub enforces it', () => {
+    /* `auto_merge` condition 4 says generated-current.yml passes on the PR.
+       The owner declined a required status check on main on 2026-09-11 (67 of
+       the last 100 commits there are direct bot pushes and a required check
+       would stop them), and `allow_auto_merge` is now on at the repository
+       level. So NOTHING blocks a fresh PR, and `gh pr merge --auto` on an
+       unblocked PR does not wait — it merges at once, before the workflow has
+       started. That would leave the department merging on its own say-so while
+       its policy claimed CI had passed. An asserted-but-unenforced condition is
+       worse than one never written down, so execute.sh waits itself. */
+    const policy = readPolicy()
+    const four = policy.auto_merge.conditions.find((c: string) => c.includes('generated-current'))
+    expect(four, 'the CI condition disappeared from policy').toBeTruthy()
+
+    const exec = readFileSync(join(ROOT, 'scripts/website-team/execute.sh'), 'utf8')
+    const code = exec.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n')
+    // --auto is the trap: it is a no-op wait when nothing is required.
+    expect(code, 'gh pr merge --auto merges immediately when no check is required')
+      .not.toMatch(/gh pr merge --auto/)
+    // It must poll the check and merge only on SUCCESS.
+    expect(code).toMatch(/gh pr checks/)
+    expect(code).toMatch(/if \[ "\$state" = "SUCCESS" \]/)
+    expect(code).toMatch(/gh pr merge --squash/)
+  })
+
   it('never grants a recruit write access', () => {
     const policy = readPolicy()
     const roles = Object.values(policy.roles) as Array<Record<string, unknown>>
