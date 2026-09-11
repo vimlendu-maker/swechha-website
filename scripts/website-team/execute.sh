@@ -79,6 +79,26 @@ ALLOWED="$ALLOWED,Bash(npm run build:all),Bash(npm run build:all:*)"
 ALLOWED="$ALLOWED,Bash(npm run verify:seo),Bash(npm run verify:seo:*)"
 ALLOWED="$ALLOWED,Bash(npm run verify:final),Bash(npm run verify:final:*)"
 ALLOWED="$ALLOWED,Bash(git status:*),Bash(git diff:*),Bash(git log:*)"
+# ★ READ-ONLY gh, BECAUSE A SPECIALIST CANNOT INVESTIGATE WHAT IT CANNOT SEE.
+#   engineering.md has listed `gh` under Commands since the role was written;
+#   this allowlist granted none of it. On 2026-09-11 the Manager briefed
+#   "get the actual logs" and handed it to a specialist with STRICTLY FEWER
+#   permissions than itself. denials.py shows it then tried eight different
+#   routes -- gh, curl, node fetch, git -C -- and was refused every one, before
+#   correctly changing nothing. List and view only: `gh pr create` and
+#   `gh pr merge` stay out, because the runner opens and merges the PR, so that
+#   what ships is exactly the diff and nothing else.
+ALLOWED="$ALLOWED,Bash(gh run list:*),Bash(gh run view:*)"
+
+# ── EARNED GRANTS ────────────────────────────────────────────────────────────
+# docs/website-team/tool-grants.json is data the department may add to;
+# tool-grants.py refuses anything it cannot prove read-only, and IT lives in
+# scripts/website-team/**, which is GATED. So an agent can grant itself eyes and
+# can never grant itself hands -- the thing deciding which is which is not
+# something it can edit. A missing or broken ledger grants nothing and is never
+# a reason the run cannot start.
+_GRANTS="$(python3 "$REPO/scripts/website-team/tool-grants.py" "$REPO/docs/website-team/tool-grants.json" 2>/dev/null || true)"
+[ -n "$_GRANTS" ] && ALLOWED="$ALLOWED,$_GRANTS"
 
 BRANCH="team/$(date +%Y%m%d)-$(basename "$BRIEF_FILE" .txt | tr -cd '[:alnum:]-' | cut -c1-40)"
 
@@ -159,9 +179,18 @@ fi
 # untracked file sat in the tree -- it would have been swept into the next
 # commit by `git add -A`. Use porcelain, which sees untracked too.
 if [ -z "$(git status --porcelain)" ]; then
+  # ★ EXIT 4, NOT 0. An empty diff is a legitimate outcome -- disproving a
+  #   brief's premise is a complete piece of work -- but it is NOT a shipped
+  #   change, and run.sh reads this script's exit status to close the task.
+  #   While this returned 0, "the specialist could not do the job and said so"
+  #   was recorded as `done: shipped`. That happened on 2026-09-11: the air
+  #   investigation could not read the workflow log, correctly changed nothing,
+  #   and the spine logged it as shipped. A task system that reports success for
+  #   work that did not happen is the failure it was built to end.
   echo "execute: no changes made — nothing to ship"
+  ev task_returned_empty brief="$(basename "$BRIEF_FILE")"
   git checkout -q --detach "$BASE" ; git branch -qD "$BRANCH" 2>/dev/null || true
-  exit 0
+  exit 4
 fi
 
 git add -A
@@ -234,6 +263,48 @@ ev pr_opened url="$PR_URL" branch="$BRANCH"
 echo "execute: opened $PR_URL"
 
 AUTO="$(python3 -c "import json;print(json.load(open('docs/website-team/policy.json'))['auto_merge']['enabled'])")"
+
+# ── THE APPROVAL GATE: THE AGENT DOES NOT DECIDE WHETHER IT NEEDS APPROVAL ───
+# policy.json declares fourteen `requires_approval` rules. Until 2026-09-12 all
+# fourteen were prose a manager was trusted to honour, which ADR-0004 is blunt
+# about: "an approval is an artefact, not a prompt. A prompt gets clicked
+# through at 23:50 on a deadline."
+#
+# ★ IT READS THE DIFF, NOT THE BRIEF. An earlier draft of this had the runner
+#   classify the brief before handing it over -- which is the agent's own
+#   account of what it is about to do. The gate reads what actually changed,
+#   after the fact, and that is the whole difference.
+#
+# ★ FAIL-CLOSED. Exit 0 clear, 1 approval required, 2 could not decide. Only 0
+#   permits an automatic merge; a missing gate, an unreadable policy or a
+#   crash all leave the pull request open for a human. A gate that approves
+#   when it cannot decide is not a gate.
+#
+#   Status letters are normalised to one character and renames take the NEW
+#   path (`R100 old new`), because the gate reads `A|M|D|R` and a four-character
+#   status would fall through to being treated as a path.
+APPROVAL="${SWECHHA_APPROVAL_GATE:-$HOME/.swechha-ai/approval-gate.py}"
+if [ -f "$APPROVAL" ]; then
+  CHANGED_NS="$(git diff --name-status "$BASE"...HEAD | awk '{print substr($1,1,1) ":" $NF}')"
+  set +e
+  # shellcheck disable=SC2086
+  python3 "$APPROVAL" --policy docs/website-team/policy.json --paths $CHANGED_NS \
+    | tee "$RUNLOG"/approval.log
+  approval_rc="${PIPESTATUS[0]}"
+  set -e
+else
+  echo "execute: approval gate not installed at $APPROVAL — treating as UNDECIDED" >&2
+  approval_rc=2
+fi
+if [ "$approval_rc" -ne 0 ]; then
+  case "$approval_rc" in
+    1) echo "execute: an approval rule tripped — this pull request waits for a human" ;;
+    *) echo "execute: the approval gate could not decide — this pull request waits for a human" ;;
+  esac
+  ev approval_required url="$PR_URL" rc="$approval_rc"
+  AUTO=Held
+fi
+
 if [ "$AUTO" = "True" ]; then
   # ★ CONDITION 4 IS ENFORCED HERE, BY THIS SCRIPT, NOT BY GITHUB.
   #

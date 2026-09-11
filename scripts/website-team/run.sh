@@ -139,6 +139,12 @@ fi
 #   now derives the check from the role file so the two cannot drift.
 ALLOWED='Read,Grep,Glob'
 ALLOWED="$ALLOWED,Bash(git log:*),Bash(git status:*),Bash(gh run list:*)"
+# ★ `gh run list` DOES NOT IMPLY THE REST OF `gh run`. Granting the list and
+#   withholding the log is the shape that produced a wrong diagnosis on
+#   2026-09-11: the Manager could see that a workflow was red and could not see
+#   why, so it reasoned from the workflow's comments instead -- and those
+#   comments were themselves wrong. Reading a log is strictly read-only.
+ALLOWED="$ALLOWED,Bash(gh run view:*)"
 # Read-only gh, so the Manager can see whether a PR merged and what a gate said.
 # NOT bare `gh api`: that is a verb-agnostic tool which would also POST.
 ALLOWED="$ALLOWED,Bash(gh pr list:*),Bash(gh pr view:*),Bash(gh pr checks:*)"
@@ -149,6 +155,16 @@ ALLOWED="$ALLOWED,Bash(npm run air:status),Bash(npm run air:status:*)"
 # instrument. Deterministic, cached, and it makes at most one request per
 # provider per TTL -- see swechha-ai/infra-status.py.
 ALLOWED="$ALLOWED,Bash(npm run infra:status),Bash(npm run infra:status:*)"
+
+# ── EARNED GRANTS ────────────────────────────────────────────────────────────
+# docs/website-team/tool-grants.json is data the department may add to;
+# tool-grants.py refuses anything it cannot prove read-only, and IT lives in
+# scripts/website-team/**, which is GATED. So an agent can grant itself eyes and
+# can never grant itself hands -- the thing deciding which is which is not
+# something it can edit. A missing or broken ledger grants nothing and is never
+# a reason the run cannot start.
+_GRANTS="$(python3 "$REPO/scripts/website-team/tool-grants.py" "$REPO/docs/website-team/tool-grants.json" 2>/dev/null || true)"
+[ -n "$_GRANTS" ] && ALLOWED="$ALLOWED,$_GRANTS"
 
 if [ "$DRY" = "--dry-run" ]; then
   echo "repo:     $REPO   (scripts come from here)"
@@ -184,6 +200,44 @@ if [ ! -r "$INBOX" ] || ! mkdir -p "$RECORDS" 2>/dev/null || [ ! -w "$RECORDS" ]
   exit 5
 fi
 
+# ── THE DAILY CEILING ────────────────────────────────────────────────────────
+# Checked BEFORE the model call, like the vault preflight above and for the same
+# reason: a refusal that costs a dollar to discover is not a refusal.
+#
+# ★ WHAT IT GUARDS AGAINST IS REAL, NOT THEORETICAL. The sentinel wakes this
+#   department whenever the PROBLEM SET CHANGES, so a service flapping through
+#   the night changes it on every flap. On 2026-09-12 an unscheduled 00:24 wake
+#   cost $1.37 -- correct behaviour, and exactly the shape that turns into a
+#   bill nobody chose once self-repair adds runs.
+#
+# ★ IT REFUSES LOUDLY. policy.json's `on_exceeded` says why: a department that
+#   goes quiet mid-incident because it hit a number, with nobody told, has
+#   turned a cost control into an outage.
+#
+# ★ THE CEILING LIVES IN policy.json, WHICH THIS DEPARTMENT MAY NOT WRITE. An
+#   agent that can raise its own ceiling has no ceiling. A missing or unreadable
+#   `cost` block leaves CEILING empty and skips the check -- a brake must not
+#   become a second way for a bad parse to stop the department.
+CEILING="$(python3 -c "import json;print(json.load(open('$REPO/docs/website-team/policy.json')).get('cost',{}).get('daily_ceiling_usd',''))" 2>/dev/null || true)"
+if [ -n "$CEILING" ]; then
+  SPENT="$(python3 "$REPO/scripts/website-team/budget.py" 2>/dev/null || echo 0)"
+  OVER="$(python3 -c "print(1 if float('${SPENT:-0}') >= float('$CEILING') else 0)" 2>/dev/null || echo 0)"
+  if [ "$OVER" = "1" ]; then
+    echo "run.sh: REFUSED — today's spend \$$SPENT has reached the \$$CEILING daily ceiling." >&2
+    echo "run.sh: Nothing was spent on this run. The ceiling is docs/website-team/policy.json" >&2
+    echo "run.sh: -> cost.daily_ceiling_usd, and only a human can raise it." >&2
+    echo "run.sh: If this is an incident, raise it deliberately rather than waiting for midnight." >&2
+    ev run_refused reason=daily-ceiling spent_usd="$SPENT" ceiling_usd="$CEILING"
+    ORGB="${ORG_CLI:-$HOME/.swechha-ai/org}"
+    if [ -x "$ORGB" ]; then
+      BID="$("$ORGB" task new "$DEPARTMENT" "BLOCKED: daily cost ceiling reached (\$$SPENT of \$$CEILING)" --origin schedule 2>/dev/null || true)"
+      [ -n "$BID" ] && { "$ORGB" task escalate "$BID" --reason "the department stopped itself; raise cost.daily_ceiling_usd or wait for tomorrow" >/dev/null 2>&1 || true; }
+    fi
+    exit 6
+  fi
+  echo "run.sh: budget ok — \$$SPENT of \$$CEILING spent today"
+fi
+
 # ── ONE RUN AT A TIME, IN THE DEPARTMENT'S OWN TREE ──────────────────────────
 # Both schedules fire at 09:00, so on Mondays `work` and `review` start
 # together. They share one worktree, so they must not overlap: the lock makes
@@ -205,6 +259,14 @@ PARSED="$(printf '%s' "$RESULT" | python3 "$REPO/scripts/website-team/parse-resu
 COST="$(printf '%s' "$PARSED" | head -1)"
 TEXT="$(printf '%s' "$PARSED" | tail -n +2)"
 
+# ── WHAT THE PERMISSION LAYER REFUSED ────────────────────────────────────────
+# `--output-format json` carries a `permission_denials` array and this runner
+# threw it away for as long as it existed. A cause the agent COULD NOT VERIFY
+# must not become the report's headline: on 2026-09-11 both `gh run view
+# --log-failed` calls were refused, the Manager said so in one line, and the
+# guess it was forced into was printed above that caveat as the finding.
+DENIED="$(printf '%s' "$RESULT" | python3 "$REPO/scripts/website-team/denials.py" 2>/dev/null || true)"
+
 {
   echo "---"
   echo "title: Website team run — $STAMP"
@@ -214,6 +276,16 @@ TEXT="$(printf '%s' "$PARSED" | tail -n +2)"
   echo
   echo "# Website team run — $STAMP"
   echo
+  if [ -n "${DENIED:-}" ]; then
+    echo "> [!warning] **BLOCKED — this run was refused tools it asked for.**"
+    echo "> Any cause below that was not confirmed from evidence is a HYPOTHESIS,"
+    echo "> not a finding. Refused, with the number of attempts:"
+    echo ">"
+    printf '%s\n' "${DENIED:-}" | while IFS="$(printf '\t')" read -r cmd n; do
+      echo "> - \`$cmd\` × ${n:-1}"
+    done
+    echo
+  fi
   echo "_Generated. The cost figure is Claude Code's own client-side estimate and"
   echo "can differ from the real bill. Verification in this run is against the"
   echo "local repository only; swechha.in returns 403 to this machine._"
@@ -222,6 +294,7 @@ TEXT="$(printf '%s' "$PARSED" | tail -n +2)"
 } > "$OUT"
 
 ev run_finished mode="$MODE" cost_usd="$COST" record="$(basename "$OUT")"
+
 echo "wrote $OUT"
 
 # ── STAGE TWO: hand each brief to its specialist ─────────────────────────────
@@ -264,6 +337,15 @@ spine_close() { # <task id> <done|refused|escalate> <note>
   esac
 }
 
+# A blocked run is the owner's to unblock -- nothing downstream can grant a
+# permission. It goes on the "needs you" queue rather than into a record that
+# reads as routine.
+if [ -n "${DENIED:-}" ]; then
+  ev run_blocked refused="$(printf '%s' "${DENIED:-}" | cut -f1 | tr '\n' ';')"
+  BTASK="$(spine_new "BLOCKED: the $MODE run was refused $(printf '%s' "${DENIED:-}" | wc -l | tr -d ' ') tool(s)")"
+  spine_close "$BTASK" escalate "refused: $(printf '%s' "${DENIED:-}" | cut -f1 | tr '\n' ';')"
+fi
+
 if [ "$MODE" = "work" ]; then
   BRIEFS="$(mktemp -d)"
   MAPPING="$(printf '%s' "$TEXT" | python3 "$REPO/scripts/website-team/extract-briefs.py" "$BRIEFS" || true)"
@@ -290,15 +372,37 @@ if [ "$MODE" = "work" ]; then
       # the brief path landed in $MODEL and every brief died on "unknown model"
       # before a specialist ever started. Stage two has never shipped anything
       # since; caught 2026-09-11 while moving the run into its own worktree.
-      if "$REPO/scripts/website-team/execute.sh" "$spec" "$model" "$path"; then
-        spine_close "$TASK" done "shipped"
-      else
-        echo "stage two: $(basename "$path") did not ship — see output above"
-        spine_close "$TASK" escalate "execute.sh did not ship it"
-      fi
+      # Three outcomes, not two. Exit 4 is "the specialist changed nothing and
+      # said why" -- a real result, and never `shipped`. Collapsing it into
+      # success is how a brief that could not be done was reported as done.
+      set +e
+      "$REPO/scripts/website-team/execute.sh" "$spec" "$model" "$path"
+      exec_rc=$?
+      set -e
+      case "$exec_rc" in
+        0) spine_close "$TASK" done "shipped" ;;
+        4) echo "stage two: $(basename "$path") made no change — recorded as refused, not shipped"
+           spine_close "$TASK" refused "the specialist changed nothing and said why" ;;
+        *) echo "stage two: $(basename "$path") did not ship — see output above"
+           spine_close "$TASK" escalate "execute.sh did not ship it" ;;
+      esac
     done <<< "$MAPPING"
   fi
   rm -rf "$BRIEFS"
+fi
+
+# ── LAND THE LESSONS ─────────────────────────────────────────────────────────
+# AFTER stage two, never before: stage two checks branches out, and a lessons
+# commit racing that is how a specialist's branch ends up carrying an unrelated
+# docs edit. land-lessons.sh takes its own worktree for the same reason.
+#
+# Guarded and non-fatal. `swechha/ai/README.md`'s memory model says the
+# department may append to its own lessons file; until 2026-09-12 nothing did,
+# so every lesson the Manager wrote died in a dated record and the next run paid
+# to relearn it.
+if [ -x "$REPO/scripts/website-team/land-lessons.sh" ]; then
+  "$REPO/scripts/website-team/land-lessons.sh" "$OUT" || \
+    echo "run.sh: lessons did not land; the run itself is unaffected"
 fi
 
 # Push the record. Obsidian only syncs while it is open, so a scheduled run must

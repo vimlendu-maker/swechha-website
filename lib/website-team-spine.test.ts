@@ -116,6 +116,38 @@ describe('run.sh ↔ the task spine', () => {
     expect(flat).not.toContain('task escalate')
   })
 
+  /**
+   * AN EMPTY DIFF IS A RESULT, AND IT IS NOT `shipped`.
+   *
+   * execute.sh returned 0 when a specialist changed nothing, and run.sh maps 0
+   * to `done: shipped`. So on 2026-09-11 the air investigation -- which could
+   * not read the workflow log, correctly changed nothing, and said so -- was
+   * recorded as shipped. A task system reporting success for work that did not
+   * happen is precisely the failure the spine was built to end, reappearing
+   * inside the spine itself. execute.sh now exits 4 and run.sh reads it.
+   */
+  it('a specialist that changed nothing is refused, never shipped', () => {
+    const { argv } = callHelpers(
+      'spine_close "website-19700101-0001" refused "the specialist changed nothing and said why"\n',
+      { installed: true },
+    )
+    const flat = argv.map((a) => a.join(' ')).join('\n')
+    expect(flat).toContain('task refuse')
+    expect(flat).not.toContain('task done')
+  })
+
+  it('stage two distinguishes shipped, refused and escalated by exit status', () => {
+    // Reads the runner itself: the three-way case must not collapse back into
+    // an if/else, which is what recorded an undone brief as done.
+    const runner = readFileSync(join(__dirname, '..', 'scripts', 'website-team', 'run.sh'), 'utf8')
+    expect(runner).toMatch(/exec_rc=\$\?/)
+    expect(runner).toMatch(/4\)\s*echo[\s\S]*?spine_close "\$TASK" refused/)
+    expect(runner).toMatch(/0\)\s*spine_close "\$TASK" done "shipped"/)
+    // And execute.sh must actually produce a 4.
+    const exec = readFileSync(join(__dirname, '..', 'scripts', 'website-team', 'execute.sh'), 'utf8')
+    expect(exec).toMatch(/no changes made[\s\S]*?exit 4/)
+  })
+
   it('does nothing, and does not fail, when the spine is not installed', () => {
     // The org CLI lives in a separate repository. On CI it is always absent.
     const { argv, status } = callHelpers(

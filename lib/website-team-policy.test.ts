@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, copyFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
-import { tmpdir } from 'node:os'
-import { execFileSync } from 'node:child_process'
+import { tmpdir, homedir } from 'node:os'
+import { execFileSync, spawnSync } from 'node:child_process'
 
 /**
  * THE GUARD'S LIST AND THE POLICY'S LIST MUST AGREE.
@@ -258,5 +258,70 @@ describe('website team: the specialist prompt is a string, not a script', () => 
     // $( ) would run too, apart from the one deliberate `cat` on the first line.
     const subs = [...block.matchAll(/(?<!\\)\$\(/g)]
     expect(subs.length, 'only the deliberate $(cat "$BRIEF_FILE") may substitute').toBe(1)
+  })
+})
+
+/**
+ * THE LOCK ON `.github/workflows/**`, AND WHY IT IS A TEST AND NOT A COMMENT.
+ *
+ * ADR-0004: moving an action out of FORBIDDEN "additionally requires a test
+ * that fails if the lock is removed." CI is the one path where a bad change is
+ * not merely wrong but unreviewable-by-gates — the gates are the thing being
+ * edited. So the department may propose a workflow change and may never merge
+ * one.
+ *
+ * The lock is TWO independent things, and this asserts both, because either
+ * alone has a failure mode: the policy mapping is what makes approval-gate.py
+ * trip, and execute.sh's fail-closed handling is what makes tripping mean
+ * anything. A mapping nothing consults is decoration; a consulted gate with
+ * nothing mapped approves everything.
+ */
+describe('CI changes can be proposed and never merged', () => {
+  const policyPath = join(ROOT, 'docs/website-team/policy.json')
+  const policy = JSON.parse(readFileSync(policyPath, 'utf8'))
+
+  it('maps .github/workflows/** to an approval rule', () => {
+    const mapped = Object.entries(policy.requires_approval_paths ?? {})
+      .filter(([k]) => !k.startsWith('$'))
+      .flatMap(([rule, spec]) => {
+        // A mapping is either a bare glob list or { globs, on } — approval-gate.py
+        // accepts both, so this must read both or it would miss half the rules.
+        const globs: string[] = Array.isArray(spec)
+          ? (spec as string[])
+          : ((spec as { globs?: string[] })?.globs ?? [])
+        return globs.map((g) => [rule, g] as const)
+      })
+    expect(mapped.some(([, g]) => g.startsWith('.github/workflows')),
+      'no approval rule covers .github/workflows — a CI diff would sail through').toBe(true)
+  })
+
+  it('every mapped rule names a requires_approval entry verbatim', () => {
+    // approval-gate.py derives its NOT-MECHANICALLY-ENFORCED list by comparing
+    // the two. A typo here silently drops a rule while the prose still promises it.
+    const declared = new Set<string>(policy.requires_approval ?? [])
+    const keys = Object.keys(policy.requires_approval_paths ?? {}).filter((k) => !k.startsWith('$'))
+    expect(keys.filter((k) => !declared.has(k)),
+      'a mapping key does not match any requires_approval rule').toEqual([])
+  })
+
+  it('execute.sh consults the gate before auto-merge, and fails closed', () => {
+    const s = readFileSync(join(ROOT, 'scripts/website-team/execute.sh'), 'utf8')
+    expect(s).toContain('approval-gate.py')
+    // Undecided and missing must both block, not just "approval required".
+    expect(s).toMatch(/approval_rc=2/)
+    expect(s).toMatch(/if \[ "\$approval_rc" -ne 0 \]/)
+    // And it must run BEFORE the merge decision, or it decides nothing.
+    expect(s.indexOf('approval-gate.py')).toBeLessThan(s.indexOf('merge-when-green.sh'))
+  })
+
+  /** The gate itself, against the real policy — not a fixture that could drift. */
+  it('the installed gate actually holds a workflow diff', () => {
+    const gate = join(homedir(), '.swechha-ai', 'approval-gate.py')
+    if (!existsSync(gate)) return // the org repo is not checked out on every machine
+    const r = spawnSync('python3',
+      [gate, '--policy', policyPath, '--paths', 'M:.github/workflows/air-hourly.yml', '--json'],
+      { encoding: 'utf8' })
+    expect(r.status, `gate did not hold a CI change: ${r.stdout}${r.stderr}`).toBe(1)
+    expect(JSON.parse(r.stdout).requires_approval).toBe(true)
   })
 })
