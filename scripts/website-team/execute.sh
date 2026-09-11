@@ -257,14 +257,17 @@ if [ "$AUTO" = "True" ]; then
   #   on success. Anything else -- failure, cancellation, timeout, or the check
   #   never appearing -- leaves the PR open for a human, which is the correct
   #   outcome and not an error.
-  # ── THE WAIT LIVES IN merge-when-green.sh, NOT HERE ──────────────────────
-  # A person merging by hand needs exactly this gate, and a second copy of it
-  # would drift from this one. `npm run pr:merge` calls the same script. The
-  # events stay here, because the runtime emits events and the thing being
+  # ── THE WAIT LIVES IN THE SHARED GATE, NOT HERE ──────────────────────────
+  # A person merging by hand needs exactly this gate, and so does the
+  # fundraising department; a second copy would drift from this one. The gate
+  # moved to the swechha-ai repository on 2026-09-11 and is reached at a stable
+  # path, so this line did not have to change when it moved. `npm run pr:merge`
+  # calls the same script.
+  # The events stay HERE, because the runtime emits events and the thing being
   # gated must never be the thing reporting on the gate.
   CHECK="${WEBSITE_TEAM_REQUIRED_CHECK:-current}"
   set +e
-  "$REPO/scripts/website-team/merge-when-green.sh" "$PR_URL"
+  "${SWECHHA_MERGE_GATE:-$HOME/.swechha-ai/merge-when-green.sh}" "$PR_URL"
   merge_rc=$?
   set -e
   case "$merge_rc" in
