@@ -290,12 +290,20 @@ if [ "$MODE" = "work" ]; then
       # the brief path landed in $MODEL and every brief died on "unknown model"
       # before a specialist ever started. Stage two has never shipped anything
       # since; caught 2026-09-11 while moving the run into its own worktree.
-      if "$REPO/scripts/website-team/execute.sh" "$spec" "$model" "$path"; then
-        spine_close "$TASK" done "shipped"
-      else
-        echo "stage two: $(basename "$path") did not ship — see output above"
-        spine_close "$TASK" escalate "execute.sh did not ship it"
-      fi
+      # Three outcomes, not two. Exit 4 is "the specialist changed nothing and
+      # said why" -- a real result, and never `shipped`. Collapsing it into
+      # success is how a brief that could not be done was reported as done.
+      set +e
+      "$REPO/scripts/website-team/execute.sh" "$spec" "$model" "$path"
+      exec_rc=$?
+      set -e
+      case "$exec_rc" in
+        0) spine_close "$TASK" done "shipped" ;;
+        4) echo "stage two: $(basename "$path") made no change — recorded as refused, not shipped"
+           spine_close "$TASK" refused "the specialist changed nothing and said why" ;;
+        *) echo "stage two: $(basename "$path") did not ship — see output above"
+           spine_close "$TASK" escalate "execute.sh did not ship it" ;;
+      esac
     done <<< "$MAPPING"
   fi
   rm -rf "$BRIEFS"

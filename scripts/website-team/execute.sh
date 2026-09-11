@@ -159,9 +159,18 @@ fi
 # untracked file sat in the tree -- it would have been swept into the next
 # commit by `git add -A`. Use porcelain, which sees untracked too.
 if [ -z "$(git status --porcelain)" ]; then
+  # ★ EXIT 4, NOT 0. An empty diff is a legitimate outcome -- disproving a
+  #   brief's premise is a complete piece of work -- but it is NOT a shipped
+  #   change, and run.sh reads this script's exit status to close the task.
+  #   While this returned 0, "the specialist could not do the job and said so"
+  #   was recorded as `done: shipped`. That happened on 2026-09-11: the air
+  #   investigation could not read the workflow log, correctly changed nothing,
+  #   and the spine logged it as shipped. A task system that reports success for
+  #   work that did not happen is the failure it was built to end.
   echo "execute: no changes made — nothing to ship"
+  ev task_returned_empty brief="$(basename "$BRIEF_FILE")"
   git checkout -q --detach "$BASE" ; git branch -qD "$BRANCH" 2>/dev/null || true
-  exit 0
+  exit 4
 fi
 
 git add -A
