@@ -67,15 +67,33 @@ describe('website team policy', () => {
     const four = policy.auto_merge.conditions.find((c: string) => c.includes('generated-current'))
     expect(four, 'the CI condition disappeared from policy').toBeTruthy()
 
+    /* The gate now lives in merge-when-green.sh, because a person merging by
+       hand needs exactly the same wait — PR #115 was merged 38 seconds before
+       `current` finished, and #116 by 76, both by someone typing --auto and
+       believing it meant "when green". So this test FOLLOWS THE DELEGATION
+       rather than naming a file: whichever script execute.sh hands the merge
+       to is the one that must hold the gate. Pinning the file name is how a
+       test ends up guarding an empty room. */
     const exec = readFileSync(join(ROOT, 'scripts/website-team/execute.sh'), 'utf8')
-    const code = exec.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n')
+    const delegate = exec.match(/scripts\/website-team\/([a-z-]+\.sh)" "\$PR_URL"/)
+    expect(delegate, 'execute.sh no longer delegates the merge to a script').toBeTruthy()
+    const gate = readFileSync(join(ROOT, `scripts/website-team/${delegate![1]}`), 'utf8')
+
+    const strip = (s: string) => s.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n')
     // --auto is the trap: it is a no-op wait when nothing is required.
-    expect(code, 'gh pr merge --auto merges immediately when no check is required')
-      .not.toMatch(/gh pr merge --auto/)
-    // It must poll the check and merge only on SUCCESS.
+    for (const [name, src] of [['execute.sh', exec], [delegate![1], gate]] as const) {
+      expect(strip(src), `${name}: --auto merges immediately when no check is required`)
+        .not.toMatch(/gh pr merge --auto/)
+    }
+    // And the delegate must poll the check and merge only on SUCCESS.
+    const code = strip(gate)
     expect(code).toMatch(/gh pr checks/)
-    expect(code).toMatch(/if \[ "\$state" = "SUCCESS" \]/)
+    expect(code).toMatch(/\[ "\$state" != "SUCCESS" \]/)
     expect(code).toMatch(/gh pr merge --squash/)
+    // The same gate a human reaches, or it is not the same gate.
+    const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
+    expect(pkg.scripts['pr:merge'], 'npm run pr:merge must call the same script')
+      .toContain(delegate![1])
   })
 
   it('never grants a recruit write access', () => {
