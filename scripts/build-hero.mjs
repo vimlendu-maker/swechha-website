@@ -1,29 +1,3 @@
-cd ~/Desktop/swechha-website
-
-# Create the fixes with Python
-python3 << 'PYEOF'
-import re
-
-# Fix 1: build-hero.mjs - remove cross-check loop
-with open('scripts/build-hero.mjs', 'r') as f:
-    content = f.read()
-
-# Replace the entire CROSS-CHECK section
-pattern = r'/\* ── THE CROSS-CHECK .*?}\n'
-replacement = '''/* ── THE CROSS-CHECK MOVED TO verify-final.mjs ─────────────────────────────
-   This cross-check was moved from build:hero to verify:final (Option B, AD-47
-   architectural resolution). It runs AFTER all builds complete, so it compares
-   fresh hero data against fresh situation pages, not stale ones. */
-
-'''
-content = re.sub(pattern, replacement, content, flags=re.DOTALL)
-
-
-with open('scripts/build-hero.mjs', 'w') as f:
-    f.write(content)
-
-print("✓ build-hero.mjs fixed")
-PYEOF
 /* ═══════════════════════════════════════════════════════════════════════════
    THE HOMEPAGE HERO'S FOUR READINGS BECOME A BUILD ARTEFACT
    ───────────────────────────────────────────────────────────────────────────
@@ -274,6 +248,7 @@ const SLIDES = [
        old anchored pattern stopped matching. A cross-check that fails because
        the other page gained an attribute is a cross-check that will be deleted
        by the next person; it matches the id, not the tag's exact shape. */
+    crossCheck: { file: 'situation-air.html', re: /id="air-aqi"[^>]*>([0-9,]+)/, label: '/now/air' },
   },
   {
     id: 'h-yamuna',
@@ -289,6 +264,7 @@ const SLIDES = [
          punctuation that belongs to the prose around it. */
       [/(against a legal minimum of )\d+(?:\.\d+)?/, `$1${yamLimit}`, 'sentence: the legal minimum'],
     ],
+    crossCheck: null,
   },
   {
     id: 'h-monsoon',
@@ -326,6 +302,7 @@ const SLIDES = [
           : `$1Normal to ${RAIN.reading?.as_of_label || 'date'} is ${rainNormal}mm.$2`,
         'limit line: the normal, or the named hole'],
     ],
+    crossCheck: null,
   },
   {
     id: 'h-fire',
@@ -338,6 +315,7 @@ const SLIDES = [
       [/(<span class="sr">North India \/ Active fire detections\. )\d+( thermal detections, )\d+( days)/,
         `$1${fireCount}$2${fireDays}$3`, 'sentence: the count and the window'],
     ],
+    crossCheck: null,
   },
 ];
 
@@ -1029,16 +1007,44 @@ const HOMEPAGE = homepageSlot();
    hazard the comment above `S.abs()` in situation-shell.mjs warns against,
    and the one lib/org.ts:22-47 records as a real production incident (a
    mistyped/hardcoded origin silently corrupted the sitemap and robots.txt).
-/* ── THE CROSS-CHECK MOVED TO verify-final.mjs ─────────────────────────────
-   This cross-check was moved from build:hero to verify:final (Option B, AD-47
-   architectural resolution). It runs AFTER all builds complete, so it compares
-   fresh hero data against fresh situation pages, not stale ones. */
+   Under a SITE_ORIGIN-driven regeneration this page would keep describing
+   the production host while all 34 other pages correctly moved.
+   THIS PAGE CANNOT CALL `S.abs()` ITSELF — it is static HTML, not a
+   generator — so the value is computed here, at build time, and substituted
+   in, THE SAME ONE-LINE TECHNIQUE AS THE READINGS AND THE ORGANIZATION
+   JSON-LD ABOVE: matched exactly once, so a hand edit that moves the markup
+   fails the build rather than being silently skipped.
+   THE RENDERED VALUE DOES NOT CHANGE: with SITE_ORIGIN unset this still
+   writes https://swechha.in, because that is `S.abs()`'s own default. What
+   changed is how the value is produced, not what it is. */
+{
+  const SHARE_URLS = [
+    [/(<meta property="og:url" content=")[^"]*(")/, S.abs('/'), 'og:url'],
+    [/(<meta property="og:image" content=")[^"]*(")/, S.abs('/images/og/og-default.png'), 'og:image'],
+    [/(<meta name="twitter:image" content=")[^"]*(")/, S.abs('/images/og/og-default.png'), 'twitter:image'],
+  ];
+  for (const [re, value, label] of SHARE_URLS) {
+    const hits = src.match(new RegExp(re.source, 'g'));
+    if (!hits || hits.length !== 1) {
+      fail(`${label} matched ${hits ? hits.length : 0} times in home.html, expected exactly 1 — the markup moved`);
+      continue;
+    }
+    const before = src;
+    src = src.replace(re, `$1${value}$2`);
+    ok(`share url    ${label} -> ${value}${src === before ? '  (already in step)' : '  (updated)'}`);
+  }
+}
 
+/* ── THE CROSS-CHECK ────────────────────────────────────────────────────── */
 console.log('\nCROSS-CHECK AGAINST THE SITUATION PAGES');
 for (const slide of SLIDES) {
+  if (!slide.crossCheck) {
     console.log(`  n/a  ${slide.id.padEnd(10)} no single comparable figure on its situation page`);
     continue;
   }
+  const other = readFileSync(join(S.V3, slide.crossCheck.file), 'utf8');
+  const m = other.match(slide.crossCheck.re);
+  if (!m) { fail(`${slide.id}: could not read the comparable figure from ${slide.crossCheck.file}`); continue; }
   const theirs = Number(String(m[1]).replace(/,/g, ''));
   if (theirs !== slide.figure) {
     /* NAME WHICH ONE IS STALE, AND NAME THE FIX. This check has one predictable
@@ -1051,8 +1057,11 @@ for (const slide of SLIDES) {
        report, which is how a real gate becomes a notification people mute.
        So the message says which page to rebuild rather than leaving the reader
        to work out which of two numbers is the new one. */
+    fail(`${slide.id}: hero says ${slide.figure}, ${slide.crossCheck.label} says ${theirs} — one of them is stale. `
+      + `If ${slide.figure} is the figure in the dataset, ${slide.crossCheck.label} has not been rebuilt yet: `
       + `run its generator first, then this one. Air's is \`npm run build:situation-air\`.`);
   } else {
+    ok(`${slide.id.padEnd(10)} agrees with ${slide.crossCheck.label} at ${theirs}`);
   }
 }
 
