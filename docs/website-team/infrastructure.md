@@ -154,3 +154,44 @@ Run it by hand any time:
 ```bash
 npm run infra:status
 ```
+
+## Repository protection (decided 2026-09-11)
+
+`main` carries a ruleset — **"main — no history rewrites, no deletion"**,
+ruleset `22888329` — with two rules, `non_fast_forward` and `deletion`, and
+**no bypass actors**: it binds the owner, every agent and every bot equally.
+Verified enforced server-side by force-pushing a disposable branch under an
+identical temporary rule and being refused (*"Cannot force-push to this
+branch"*), not merely by reading the config back.
+
+**Requiring pull requests or status checks on `main` was considered and
+deliberately declined by the owner.** The reason is architectural, and any
+future agent proposing it must account for it: **67 of the last 100 commits to
+`main` are direct pushes from five automation identities** —
+`swechha-air[bot]`, `swechha-climate-events[bot]`,
+`swechha-coverage-hourly[bot]`, `swechha-data-refresh[bot]`,
+`swechha-search-console[bot]` — all authenticating as the GitHub Actions app
+with `permissions: contents: write`, and the air pipeline pushes every fifteen
+minutes. A rule that required a PR or a passing check before a commit could
+land on `main` would stop those pushes and the site would go stale within the
+hour unless the bypass exactly matched how they authenticate. The owner chose
+the safety net over that risk.
+
+So the gap is known and accepted: **a direct push that has not passed CI can
+still land on `main`.** What cannot happen is history being rewritten or the
+branch being deleted — which is the irreversible class, and the one a
+mis-aimed rebase actually reached for earlier the same day.
+
+Do not re-raise this as a defect. If it is ever revisited, the test is whether
+the bypass covers the GitHub Actions app, and the way to find out is to watch
+whether `air-hourly` publishes on its next run rather than to reason about it.
+
+### Auto-merge is off at the repository level
+
+`allow_auto_merge` is **false** on the repository (read 2026-09-11). This is
+why `gh pr merge --auto` in `execute.sh` has never taken effect and logs
+`automerge_unavailable`: the flag has nothing to attach to, and with no
+required status checks there is nothing for it to wait on either. Turning it on
+is a repository-settings change and therefore the owner's, not an agent's. Note
+that it would also be of limited use while no check is required — `--auto`
+would merge as soon as GitHub saw no blocking requirement.
