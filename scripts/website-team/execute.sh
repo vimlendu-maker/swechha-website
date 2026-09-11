@@ -257,37 +257,30 @@ if [ "$AUTO" = "True" ]; then
   #   on success. Anything else -- failure, cancellation, timeout, or the check
   #   never appearing -- leaves the PR open for a human, which is the correct
   #   outcome and not an error.
+  # ── THE WAIT LIVES IN merge-when-green.sh, NOT HERE ──────────────────────
+  # A person merging by hand needs exactly this gate, and a second copy of it
+  # would drift from this one. `npm run pr:merge` calls the same script. The
+  # events stay here, because the runtime emits events and the thing being
+  # gated must never be the thing reporting on the gate.
   CHECK="${WEBSITE_TEAM_REQUIRED_CHECK:-current}"
-  LIMIT="${WEBSITE_TEAM_CHECK_WAIT:-1200}"
-  waited=0
-  state=""
-  echo "execute: waiting for '$CHECK' on $PR_URL (up to ${LIMIT}s)"
-  while [ "$waited" -lt "$LIMIT" ]; do
-    state="$(gh pr checks "$PR_URL" --json name,state \
-      --jq "[.[] | select(.name == \"$CHECK\") | .state] | first // empty" 2>/dev/null || echo '')"
-    case "$state" in
-      SUCCESS) break ;;
-      FAILURE|CANCELLED|TIMED_OUT|ACTION_REQUIRED|STARTUP_FAILURE|STALE|SKIPPED) break ;;
-      *) sleep 20; waited=$((waited + 20)) ;;
-    esac
-  done
-
-  if [ "$state" = "SUCCESS" ]; then
-    ev gate_result gate="generated-current" result=pass
-    # --squash, not a merge commit: condition 9 requires the whole change be
-    # revertible by a single `git revert`, and a squash guarantees that.
-    if gh pr merge --squash "$PR_URL" 2>/dev/null; then
+  set +e
+  "$REPO/scripts/website-team/merge-when-green.sh" "$PR_URL"
+  merge_rc=$?
+  set -e
+  case "$merge_rc" in
+    0)
+      ev gate_result gate="generated-current" result=pass
       ev automerge_enabled url="$PR_URL" check="$CHECK"
-      echo "execute: '$CHECK' passed — merged"
-    else
+      ;;
+    2)
+      ev gate_result gate="generated-current" result=pass
       ev automerge_unavailable url="$PR_URL" reason="merge refused by GitHub"
-      echo "execute: '$CHECK' passed but GitHub refused the merge — PR waits for a human"
-    fi
-  else
-    ev gate_result gate="generated-current" result="${state:-absent}"
-    ev automerge_unavailable url="$PR_URL" reason="check=$CHECK state=${state:-absent} waited=${waited}s"
-    echo "execute: '$CHECK' did not pass (state: ${state:-never appeared}) — PR waits for a human"
-  fi
+      ;;
+    *)
+      ev gate_result gate="generated-current" result=blocked
+      ev automerge_unavailable url="$PR_URL" reason="check=$CHECK did not pass"
+      ;;
+  esac
 else
   echo "execute: auto_merge disabled in policy — PR waits for a human"
 fi
