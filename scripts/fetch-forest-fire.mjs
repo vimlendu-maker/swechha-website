@@ -82,7 +82,6 @@ if (!KEY) {
   process.exit(1);
 }
 
-const MON = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 // Local getters only. Never toISOString.
 const now = new Date();
 const Y = now.getFullYear(), M = now.getMonth() + 1, D = now.getDate();

@@ -1593,8 +1593,6 @@ function applyCanvas(bands, body) {
   }
   return out;
 }
-const subLabel = (t) => `      <p class="lbl" style="margin:var(--gap-block) 0 14px">${t}</p>`;
-
 /* THE FIGURE BLOCK. The legend states the solid/dotted vocabulary once per band
    rather than tagging every figure, which is how the frozen pages do it. An
    EMPTY figure list is valid output, not an error (schema addendum §8) — the

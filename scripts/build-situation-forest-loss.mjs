@@ -16,7 +16,7 @@
 // web client's proxy rather than a documented contract.
 import * as S from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
-const { esc, n0, n1, compact, opener, tabs, hole, kd, KIND_LEGEND, ARROW,
+const { esc, n0, n1, opener, tabs, hole, kd, KIND_LEGEND, ARROW,
   stateChip, measureRow, measureHead, disclose, crumb, siblings } = S;
 
 const sh = S.shell();

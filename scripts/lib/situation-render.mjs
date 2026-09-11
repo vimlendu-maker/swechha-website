@@ -52,7 +52,7 @@
 import { esc, ARROW, imgDim, disclose, opener, n0, tabs } from './situation-shell.mjs';
 import { CLAIM_STATUS, RELEVANCE, istStamp } from './climate-events.mjs';
 import { statusOf, TYPE_LABEL } from './active-situation.mjs';
-import { METRIC_ORDER, METRIC_LABEL, eventName, HAZARD_NAME } from './event-figures.mjs';
+import { METRIC_ORDER, METRIC_LABEL, eventName } from './event-figures.mjs';
 import { layerById, worldviewUrl } from './event-imagery.mjs';
 
 const HAZARD_LABEL = {
