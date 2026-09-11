@@ -71,6 +71,44 @@ describe('every committed script parses', () => {
     }
   })
 
+  it('checks a script with the interpreter its shebang names, not the one its extension implies', async () => {
+    /* ★ REGRESSION, and it cost a red CI run. The first version checked every
+       `.sh` with `sh -n`, and reported scripts/website-team/{guard-paths,run}.sh
+       as broken — on the runner only. Both declare `#!/usr/bin/env bash` and use
+       ordinary bash: an array literal and a here-string. macOS `/bin/sh` IS bash
+       in POSIX mode and accepted them; Ubuntu's is dash and did not. A gate that
+       accuses correct files is worse than no gate — it is the "notification
+       people mute" this repository already warns about elsewhere. */
+    const tmp = join(ROOT, 'scripts', '.check-parse-bashism.sh')
+    try {
+      writeFileSync(tmp, '#!/usr/bin/env bash\nARR=(one two)\ncat <<< "${ARR[0]}"\n')
+      const failures = (await checkAll(['scripts/.check-parse-bashism.sh'])) as Array<unknown>
+      expect(failures).toEqual([])
+    } finally {
+      rmSync(tmp, { force: true })
+    }
+  })
+
+  it('catches a broken shell script even when the shell exits 0 — output is the signal', async () => {
+    /* ★ REGRESSION. macOS ships bash 3.2, which for an unterminated `(` prints
+       "unexpected EOF while looking for matching `)'" and EXITS 0 — it only
+       returns non-zero when it also emits the follow-on "syntax error" line,
+       which this breakage does not. Reading the exit code alone passes a
+       genuinely broken script on every Mac in the project. A clean parse is
+       silent, so any output at all is the finding. */
+    const tmp = join(ROOT, 'scripts', '.check-parse-silent-fail.sh')
+    try {
+      writeFileSync(tmp, '#!/usr/bin/env bash\nFORBIDDEN=(\n  unterminated\n')
+      const failures = (await checkAll(['scripts/.check-parse-silent-fail.sh'])) as Array<{
+        file: string; detail: string
+      }>
+      expect(failures).toHaveLength(1)
+      expect(failures[0].detail).toMatch(/EOF|syntax error/)
+    } finally {
+      rmSync(tmp, { force: true })
+    }
+  })
+
   it('leaves the working tree untouched — it parses, it never executes', () => {
     /* `node --check` and `sh -n` parse only. If this ever regressed into
        importing the generators, running the suite would rewrite 30 pages and

@@ -51,6 +51,7 @@
    Exit:   0 when everything parses; 1 with a per-file report otherwise. */
 
 import { execFile, execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { promisify } from 'node:util';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -68,14 +69,58 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
    CODE. Read the exit code, never the output: `node --check f | head` reports
    success no matter what, because `$?` is then head's. That mistake is how a
    gate becomes a false green.) */
-const CHECKERS = {
-  '.mjs': (file) => ['node', ['--check', file]],
-  '.js': (file) => ['node', ['--check', file]],
-  '.cjs': (file) => ['node', ['--check', file]],
-  '.sh': (file) => ['sh', ['-n', file]],
+/* ★ THE INTERPRETER IS THE ONE THE FILE ASKS FOR, NOT THE ONE THE EXTENSION
+   SUGGESTS. The first version checked every `.sh` with `sh -n` and reported
+   scripts/website-team/{guard-paths,run}.sh as broken — on CI only. Both
+   declare `#!/usr/bin/env bash` and use ordinary bash: an array literal
+   (`FORBIDDEN=(`) and a here-string (`<<<`). They are correct files.
+
+   The split is the platform's: macOS `/bin/sh` IS bash in POSIX mode and
+   accepts both, Ubuntu's is dash and accepts neither. So the gate passed
+   locally, failed on the runner, and accused two innocent files — which is
+   precisely the failure this repository already names elsewhere: "a gate that
+   goes red on most days it had anything to report ... is how a real gate
+   becomes a notification people mute". A false positive is more expensive than
+   the bug it was meant to find.
+
+   KNOWN LIMIT, and it is the same platform split from the other side: a script
+   whose shebang says `#!/bin/sh` but which uses bashisms passes here on macOS
+   and fails on a dash system. Honouring the shebang cannot fix that — only
+   running dash could, and it is not present on macOS. The two `#!/bin/sh`
+   files in this tree are checked on Ubuntu by CI on every push, which is where
+   that difference would surface. */
+const BY_INTERPRETER = {
+  node: (file) => ['node', ['--check', file]],
+  bash: (file) => ['bash', ['-n', file]],
+  zsh: (file) => ['zsh', ['-n', file]],
+  sh: (file) => ['sh', ['-n', file]],
+  dash: (file) => ['dash', ['-n', file]],
 };
 
-const EXTENSIONS = Object.keys(CHECKERS);
+/* Extension decides for JavaScript, because a .mjs is ESM whatever its shebang
+   says (most have none — they are imported, not executed). */
+const BY_EXTENSION = {
+  '.mjs': 'node',
+  '.js': 'node',
+  '.cjs': 'node',
+};
+
+const EXTENSIONS = [...Object.keys(BY_EXTENSION), '.sh'];
+
+/** The interpreter this file should be parsed with, or null to skip it.
+ *  `#!/usr/bin/env bash` and `#!/bin/bash` both resolve to `bash`. */
+function interpreterFor(file, firstLine) {
+  const ext = file.slice(file.lastIndexOf('.'));
+  if (BY_EXTENSION[ext]) return BY_EXTENSION[ext];
+  const shebang = /^#!\s*(\S+)(?:\s+(\S+))?/.exec(firstLine);
+  if (!shebang) return ext === '.sh' ? 'sh' : null;
+  const [, first, second] = shebang;
+  const name = first.endsWith('/env') && second ? second : first.slice(first.lastIndexOf('/') + 1);
+  /* An interpreter with no syntax-only mode wired here (python, perl, ruby) is
+     SKIPPED rather than guessed at. Skipping is honest; guessing produces the
+     false positive this whole comment is about. */
+  return BY_INTERPRETER[name] ? name : null;
+}
 
 /** Every tracked file this knows how to parse. Tracked, so an untracked
  *  scratch file in the working tree is not the gate's business — and a file
@@ -88,7 +133,7 @@ export function targets() {
 }
 
 /** @returns {Promise<Array<{file: string, detail: string}>>} one entry per file that does not parse. */
-export async function checkAll(files = targets()) {
+export async function checkAll(files = targets(), skipped = []) {
   const failures = [];
   /* Bounded concurrency: ~95 files at 8 at a time is well under a second,
      where serial spawning is closer to two. The cap keeps a CI runner with
@@ -96,10 +141,24 @@ export async function checkAll(files = targets()) {
   const queue = [...files];
   const workers = Array.from({ length: 8 }, async () => {
     for (let file = queue.shift(); file; file = queue.shift()) {
-      const ext = file.slice(file.lastIndexOf('.'));
-      const [cmd, args] = CHECKERS[ext](file);
+      let firstLine = '';
+      try { firstLine = readFileSync(join(ROOT, file), 'utf8').split('\n', 1)[0]; } catch { continue; }
+      const interpreter = interpreterFor(file, firstLine);
+      if (!interpreter) { skipped.push(file); continue; }
+      const [cmd, args] = BY_INTERPRETER[interpreter](file);
+      /* ★ A CLEAN PARSE IS SILENT, AND THAT — NOT THE EXIT CODE ALONE — IS THE
+         SIGNAL. macOS ships bash 3.2, which for an unterminated `(` prints
+         "unexpected EOF while looking for matching `)'" AND EXITS 0. It only
+         returns non-zero when it also emits the follow-on "syntax error:
+         unexpected end of file", which that particular breakage does not
+         produce. Trusting the exit code alone therefore passes a genuinely
+         broken script on every developer's Mac while CI's dash rejects it.
+         Measured: all 102 tracked scripts in this repository emit NOTHING on a
+         successful check, so any output at all is a finding. */
       try {
-        await execFileAsync(cmd, args, { cwd: ROOT });
+        const { stderr } = await execFileAsync(cmd, args, { cwd: ROOT });
+        const noise = String(stderr || '').trim();
+        if (noise) failures.push({ file, detail: noise });
       } catch (err) {
         /* Node's own message already carries the line, the source line and a
            caret under the offending token. Reproducing that by hand would only
