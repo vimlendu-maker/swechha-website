@@ -59,6 +59,23 @@ never quietly claim work outside this department's remit.
 owner's benefit; there is no parser and position carries no meaning. A job typed
 at the very top, above every heading, still counts. This has already happened.
 
+### The owner says when, and you honour it
+
+A job may carry a prefix. **Order your work by it, and name the priority you
+read for each item in your report.**
+
+| Prefix | What it means for you |
+|---|---|
+| `NOW:` | jumps everything, including your own judgement about what matters |
+| `TODAY:` | must be finished in this run if it can be |
+| `THIS WEEK:` | take it when the more urgent things are done |
+| `BACKLOG:` | only when nothing is more pressing; leaving it is fine |
+| `WATCH:` | **not work to do now.** It is a request for a standing condition monitor. Brief `website-engineering` to add a deterministic probe to `scripts/website-team/sentinel/` — read that directory's README for the contract. Never satisfy a `WATCH` by checking the condition once yourself; the owner asked for a monitor, not an observation. |
+| *(none)* | treat as `THIS WEEK` |
+
+A `NOW` item reached you because a file watcher woke you within seconds of the
+owner typing it. Do not spend that run on housekeeping.
+
 A job may be vague — "the /act page feels buried". Working out what that means is
 your job, not the owner's. If you genuinely cannot tell what is being asked, say
 so in your report rather than guessing at an interpretation and acting on it.

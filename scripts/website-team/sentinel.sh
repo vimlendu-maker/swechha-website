@@ -1,25 +1,36 @@
 #!/usr/bin/env bash
 # Watch for things going wrong, and wake the department only when they do.
 #
-# THE PROBLEM THIS SOLVES
-#   "If a code breaks, do they wait for tomorrow?" — they did. The department
-#   ran at 09:00 and nothing else, so a publisher that broke at 09:05 stayed
-#   broken for a day. That is exactly what happened on 2026-09-10: a commit made
-#   build-hero.mjs unparseable and every scheduled publisher failed for about
-#   eighteen hours before a human noticed.
+# ★ THIS FILE IS AN ORCHESTRATOR, NOT A CHECKER. Every actual check lives in
+#   scripts/website-team/sentinel/ as its own executable. The owner's
+#   instruction, 2026-09-11: do not let this become a 3,000-line script with
+#   Vercel, Neon, APIs, climate, SEO and GitHub all inside it. Adding a check
+#   here instead of there is the mistake this comment exists to prevent.
 #
-# ★ THIS SCRIPT CONTAINS NO MODEL CALL AND COSTS NOTHING TO RUN.
-#   That is the entire point. Waking the manager every fifteen minutes to ask
-#   "is anything wrong?" would cost $75-450 a day to hear "no" almost every
-#   time. So the cheap deterministic checks run often, and the expensive
-#   judgement is invoked only when a check actually trips. The owner's own brief
-#   says it: use deterministic scripts instead of LLM calls wherever you can.
+#   Probes are DISCOVERED, not listed. There is no array to keep in step with
+#   the directory — a hand-maintained list that must move in lockstep with
+#   something else is this repository's most repeated defect class.
 #
-# IT WAKES THE DEPARTMENT ONCE PER PROBLEM, NOT ONCE PER CHECK.
-#   A fingerprint of the current problem is stored. While the same thing is
-#   still wrong, this stays quiet — otherwise a broken publisher would bill a
-#   run every fifteen minutes all night. A NEW problem, or the same problem
-#   recurring after a recovery, wakes it again.
+# ★ NO PROBE CONTAINS A MODEL CALL, so running this costs nothing. That is the
+#   whole design. Each department run is an LLM invocation (~$0.80 observing,
+#   ~$4.67 delegating, both measured 2026-09-11); waking the manager every
+#   thirty minutes to ask "is anything wrong?" would cost $38-225 a day to hear
+#   "no". Cheap deterministic eyes; expensive judgement only when they trip.
+#
+# ── THE PROBE CONTRACT ───────────────────────────────────────────────────────
+#   exit 0  all clear, say nothing
+#   exit 1  a problem — stdout is the one-line description
+#   exit 2  UNKNOWN — could not determine (no credential, host unreachable)
+#
+#   UNKNOWN IS NOT A PASS. It is surfaced, and it never wakes the department on
+#   its own: an unmeasurable thing is a standing gap for the owner to close, not
+#   an incident to page about every thirty minutes. Same rule the infrastructure
+#   inventory follows — never present an unobtainable metric as healthy.
+#
+# ── ONCE PER PROBLEM, NOT ONCE PER CHECK ─────────────────────────────────────
+#   A fingerprint of the current problem set is stored. While the same thing is
+#   still wrong this stays quiet, so a publisher that breaks overnight bills one
+#   run and not sixteen. A new problem, or a recurrence after recovery, wakes it.
 set -euo pipefail
 
 REPO="${WEBSITE_TEAM_REPO:-$HOME/swechha-website}"
@@ -27,65 +38,48 @@ DEPARTMENT="${WEBSITE_TEAM_DEPARTMENT:-website}"
 STATE="${WEBSITE_TEAM_STATE:-$HOME/.swechha-ai}"
 LOCK="${WEBSITE_TEAM_LOCK:-$STATE/run.lock}"
 SEEN="$STATE/sentinel-seen.$DEPARTMENT"
+PROBES="${WEBSITE_TEAM_PROBES:-$REPO/scripts/website-team/sentinel}"
 DRY="${1:-}"
 
 mkdir -p "$STATE"
-cd "$REPO"
 
 PROBLEMS=""
-note() { PROBLEMS="$PROBLEMS$1"$'\n'; }
+UNKNOWNS=""
+RAN=0
 
-# ── 1. Scheduled workflows ───────────────────────────────────────────────────
-# The publishers keep the site current. When they fail the site silently goes
-# stale, which is the failure mode that is invisible from the outside.
-FAILED="$(gh run list --limit 12 --json conclusion,name,createdAt \
-  --jq '[.[] | select(.conclusion == "failure") | .name] | unique | join(", ")' 2>/dev/null || echo '')"
-[ -n "$FAILED" ] && note "workflows failing: $FAILED"
+for probe in "$PROBES"/*.sh; do
+  [ -x "$probe" ] || continue
+  RAN=$((RAN + 1))
+  name="$(basename "$probe" .sh)"
+  set +e
+  out="$("$probe" 2>/dev/null)"
+  rc=$?
+  set -e
+  case "$rc" in
+    0) ;;
+    1) PROBLEMS="$PROBLEMS$name: ${out:-reported a problem with no detail}"$'\n' ;;
+    2) UNKNOWNS="$UNKNOWNS$name: ${out:-could not determine}"$'\n' ;;
+    *) PROBLEMS="$PROBLEMS$name: probe exited $rc (a probe must exit 0, 1 or 2)"$'\n' ;;
+  esac
+done
 
-# ── 2. Is the site's own data fresh? ─────────────────────────────────────────
-# air:status compares what the site is showing against CPCB's freshest
-# reachable observation. It is the one check that sees staleness rather than
-# breakage — a pipeline can be green and still be publishing yesterday.
-#
-# ★ THE FORMAT IS `VERDICT   OK`, WHITESPACE-SEPARATED, NOT `VERDICT: OK`.
-#   The first version of this line grepped for a colon, matched nothing ever,
-#   and so reported the air pipeline healthy under every possible condition —
-#   a check that cannot fail, which is worse than no check. Caught only by
-#   running each probe separately and noticing probe 2 returned empty.
-#   Re-read the real output before changing this pattern.
-set +e
-AIR_OUT="$(npm run --silent air:status 2>/dev/null)"
-AIR_RC=$?
-set -e
-AIR="$(printf '%s' "$AIR_OUT" | grep -oE 'VERDICT[[:space:]]+[A-Z]+' | head -1 | awk '{print $2}')"
-if [ "$AIR_RC" -ne 0 ]; then
-  note "air pipeline: air:status exited $AIR_RC"
-elif [ -z "$AIR" ]; then
-  # Silence is not health. If the instrument stops producing a verdict, that
-  # is itself the finding — the same rule the infrastructure watch follows.
-  note "air pipeline: air:status produced no VERDICT line"
-elif [ "$AIR" != "OK" ]; then
-  note "air pipeline: $AIR"
+if [ "$RAN" -eq 0 ]; then
+  # A sentinel that runs no probes reports "all clear" forever, which is the
+  # most dangerous possible state: silent, plausible and wrong.
+  echo "sentinel: REFUSED — no executable probes found in $PROBES" >&2
+  exit 3
 fi
 
-# ── 3. Infrastructure ────────────────────────────────────────────────────────
-# Cached, so this makes at most one request per provider per TTL. Exit 2 is
-# RED or BLOCKED; exit 1 is AMBER, which is a watch item rather than a wake-up.
-set +e
-python3 scripts/website-team/infra-status.py >/dev/null 2>&1
-INFRA=$?
-set -e
-[ "$INFRA" -ge 2 ] && note "infrastructure: a service is RED or BLOCKED"
+[ -n "$UNKNOWNS" ] && printf 'sentinel: UNKNOWN (a gap, not a pass) —\n%s' "$UNKNOWNS"
 
-# ── decide ───────────────────────────────────────────────────────────────────
 if [ -z "$PROBLEMS" ]; then
-  # Recovered? Clear the fingerprint so the next occurrence wakes it again.
   [ -f "$SEEN" ] && { rm -f "$SEEN"; echo "sentinel: recovered — all clear"; }
+  [ "$DRY" = "--dry-run" ] && echo "sentinel: $RAN probes ran, nothing wrong"
   exit 0
 fi
 
-FINGERPRINT="$(printf '%s' "$PROBLEMS" | shasum | cut -d' ' -f1)"
 printf 'sentinel: %s' "$PROBLEMS"
+FINGERPRINT="$(printf '%s' "$PROBLEMS" | shasum | cut -d' ' -f1)"
 
 if [ -f "$SEEN" ] && [ "$(cat "$SEEN")" = "$FINGERPRINT" ]; then
   echo "sentinel: already reported this — staying quiet"

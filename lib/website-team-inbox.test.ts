@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync, existsSync } from 'node:fs'
+import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 
@@ -102,5 +102,67 @@ describe('inbox: the org-wide convention', () => {
     if (!existsSync(VAULT)) return
     const spec = readFileSync(join(VAULT, 'swechha/ai/README.md'), 'utf8')
     expect(spec).toMatch(/vimlendu-maker\/swechha-website/)
+  })
+})
+
+describe('inbox: urgency, and the sentinel it feeds', () => {
+  const readSh = (p: string) => readFileSync(join(ROOT, p), 'utf8')
+
+  it('only NOW and TODAY wake the department off-schedule', () => {
+    const src = readSh('scripts/website-team/on-change.sh')
+    // Everything else is queued, because every run is an LLM invocation and a
+    // BACKLOG idea typed at midnight must not bill one.
+    expect(src).toMatch(/\^\(NOW\|TODAY\)\[\[:space:\]\]\*:/)
+    expect(src).toMatch(/URGENT.*-eq 0/s)
+    expect(src, 'a non-urgent change must record the hash and NOT run')
+      .toMatch(/leaving it for the next scheduled run/)
+  })
+
+  it('the manager is told what each prefix means, including WATCH', () => {
+    const role = readSh('.claude/agents/website-manager.md')
+    for (const p of ['NOW:', 'TODAY:', 'THIS WEEK:', 'BACKLOG:', 'WATCH:']) {
+      expect(role, `the role file never explains ${p}`).toContain(p)
+    }
+    // WATCH must become a monitor, not a one-off look.
+    expect(role).toMatch(/never satisfy a `?WATCH`? by checking the condition once/i)
+  })
+
+  it('the sentinel orchestrates and does not itself check anything', () => {
+    const s = readSh('scripts/website-team/sentinel.sh')
+    // Probes are discovered, never listed — a hand-kept list beside a
+    // directory is this repo's most repeated defect.
+    expect(s).toMatch(/for probe in "\$PROBES"\/\*\.sh/)
+    // The orchestrator must stay short. If this trips, the check you just
+    // added belongs in sentinel/, not here.
+    const lines = s.split('\n').filter((l) => !/^\s*#/.test(l) && l.trim()).length
+    expect(lines, 'sentinel.sh is growing into the thing it must not become').toBeLessThan(70)
+    for (const forbidden of [/curl /, /gh run list/, /npm run air:status/]) {
+      expect(s, 'a probe leaked into the orchestrator').not.toMatch(forbidden)
+    }
+  })
+
+  it('no probe contains a model call — that is what makes monitoring free', () => {
+    const dir = join(ROOT, 'scripts/website-team/sentinel')
+    const probes = readdirSync(dir).filter((f) => f.endsWith('.sh'))
+    expect(probes.length).toBeGreaterThanOrEqual(5)
+    for (const p of probes) {
+      const src = readFileSync(join(dir, p), 'utf8')
+      expect(src, `${p} invokes a model`).not.toMatch(/\bclaude\b|anthropic/i)
+      // Every probe must document what its exit codes mean by using them.
+      expect(src, `${p} never exits non-zero, so it can only ever say "fine"`)
+        .toMatch(/exit [12]/)
+    }
+  })
+
+  it('an unmeasurable thing is UNKNOWN, never healthy', () => {
+    const dir = join(ROOT, 'scripts/website-team/sentinel')
+    // The two highest cost risks in the stack cannot be measured without
+    // credentials that do not exist. They must say so rather than pass.
+    for (const [probe, token] of [['neon-health.sh', 'NEON_API_KEY'], ['vercel-health.sh', 'VERCEL_TOKEN']]) {
+      const src = readFileSync(join(dir, probe), 'utf8')
+      expect(src).toContain(token)
+      expect(src).toMatch(/UNKNOWN/)
+      expect(src).toMatch(/exit 2/)
+    }
   })
 })
