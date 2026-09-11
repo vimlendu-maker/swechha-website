@@ -29,11 +29,11 @@
  * ★ AND IT CANNOT ANSWER THE QUESTIONS. The two days that went into Air and
  * Yamuna were source verification over the network. No scaffold shortens that.
  */
-import { writeFileSync, existsSync, readFileSync } from 'node:fs';
+import { writeFileSync, existsSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 
 const ROOT = resolve(import.meta.dirname, '..');
-const [id, title, where] = process.argv.slice(2);
+const [id, title] = process.argv.slice(2);
 
 if (!id || !title) {
   console.error(`Usage: npm run new:situation -- <id> "<Title>" [where]

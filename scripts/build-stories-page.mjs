@@ -28,7 +28,7 @@
    embedding all of them would put 21 third-party players on one page, on a
    site whose own audit named page weight as its main performance problem.
    ═══════════════════════════════════════════════════════════════════════════ */
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';

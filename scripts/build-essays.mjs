@@ -33,7 +33,7 @@
    that used to say this on /stories is deleted, and so are the orphaned
    "Image source – ..." captions the dropped pictures left behind.
    ═══════════════════════════════════════════════════════════════════════════ */
-import { readFileSync, readdirSync, mkdirSync, existsSync } from 'node:fs';
+import { readFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';

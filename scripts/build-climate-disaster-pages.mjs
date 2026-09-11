@@ -46,7 +46,7 @@ import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import { loadEvents, isCurrent, loadContext, istStamp } from './lib/climate-events.mjs';
 import { coordsFor } from './lib/event-terms.mjs';
-import { statusOf, adminHelp, TYPE_LABEL, situationHref } from './lib/active-situation.mjs';
+import { statusOf, adminHelp, situationHref } from './lib/active-situation.mjs';
 import { eventName } from './lib/event-figures.mjs';
 import {
   heroBand, explainBand, whereBand, causeBand, eoBand, timelineBand,

@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 
 const TYPES = ['post','page','attachment','soliloquy','project','profile','post_tag','pj-categs','pl-categs']
 const rows = []

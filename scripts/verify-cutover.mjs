@@ -127,7 +127,7 @@ if (SAMPLE) { live = live.slice(0, SAMPLE); dead = dead.slice(0, Math.ceil(SAMPL
 /* Old URLs carry WordPress's trailing slash, so each costs two hops: Next
    normalises the slash away, then the redirect fires. Follow, don't count. */
 const check = async (row) => {
-  const res = await fetch(ORIGIN + row.from, { redirect: 'follow' }).catch((e) => ({ ok: false, status: 0 }))
+  const res = await fetch(ORIGIN + row.from, { redirect: 'follow' }).catch(() => ({ ok: false, status: 0 }))
   const landed = res.url ? new URL(res.url).pathname : null
   return { row, ok: res.ok && landed === row.to, status: res.status, landed }
 }

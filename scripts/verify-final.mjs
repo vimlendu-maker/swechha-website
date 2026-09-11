@@ -640,7 +640,6 @@ if (unaccounted.length || missing.length) {
    ═══════════════════════════════════════════════════════════════════════ */
 if (WRITE_DOC) {
   const { writeFileSync } = await import('node:fs');
-  const stamp = readFileSync(join(DATA, 'air-delhi.json'), 'utf8').length ? '' : '';
   const row = (p) => {
     const r = results.find(x => x.file === p.file);
     const rd = r?.checks.find(c => c.name === 'reading');
