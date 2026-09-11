@@ -128,10 +128,28 @@ json.dump({"h1":"The A to Z","terms":gl},open(OUT+"/a-to-z.json","w"),indent=1,e
 
 ns=0
 for t in themes:
-    json.dump({"slug":t['slug'],"name":t['name'],"sub":t['sub'],
-               "printed_as":t['printed_as'],"photo":PHOTO[t['slug']],
-               "learn":LEARN.get(t['slug'],[]),"reading":t['reading']},
-              open(f"{OUT}/themes/{t['slug']}.json","w"),indent=1,ensure_ascii=False)
+    # ★ A THEME WHOSE READING HAS BEEN REWRITTEN IS NOT OVERWRITTEN.
+    # The air chapter as printed taught the United Kingdom, so its reading was
+    # replaced by hand and the theme file carries a `reading_note` saying so.
+    # Re-running this extractor would otherwise restore the original text
+    # silently — the failure mode being that nobody notices the site has gone
+    # back to teaching the 1952 London smog. The presence of `reading_note` is
+    # the flag, and it is preserved along with the reading it describes.
+    tp=f"{OUT}/themes/{t['slug']}.json"
+    keep=None
+    if os.path.exists(tp):
+        prev=json.load(open(tp))
+        if prev.get('reading_note'):
+            keep=prev
+    if keep:
+        print(f"  PRESERVED rewritten reading: {t['slug']} "
+              f"({len(keep['reading'])} sections) — delete reading_note to regenerate")
+        json.dump(keep, open(tp,'w'), indent=1, ensure_ascii=False)
+    else:
+        json.dump({"slug":t['slug'],"name":t['name'],"sub":t['sub'],
+                   "printed_as":t['printed_as'],"photo":PHOTO[t['slug']],
+                   "learn":LEARN.get(t['slug'],[]),"reading":t['reading']},
+                  open(tp,"w"),indent=1,ensure_ascii=False)
     for i,s in enumerate(t['sessions']):
         json.dump({"theme":t['slug'],"position":i+1,"numeral":s['n'],
                    "title":s['title'],"title_source":s['title_source'],
