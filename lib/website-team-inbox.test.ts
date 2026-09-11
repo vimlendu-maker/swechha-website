@@ -24,7 +24,7 @@ import { homedir } from 'node:os'
 
 const ROOT = join(__dirname, '..')
 const read = (p: string) => readFileSync(join(ROOT, p), 'utf8')
-const VAULT = join(homedir(), 'Desktop', 'swechha-vault')
+const VAULT = join(homedir(), 'swechha-vault')
 
 describe('inbox: the org-wide convention', () => {
   it('every path derives from $DEPARTMENT rather than being hardcoded', () => {

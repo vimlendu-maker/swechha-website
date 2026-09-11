@@ -1,7 +1,7 @@
 # Website Team
 
 The machinery. **What a human reads lives in the vault**, at
-`~/Desktop/swechha-vault/swechha/website/team/` — the architecture, the baseline
+`~/swechha-vault/swechha/website/team/` — the architecture, the baseline
 audit, the full agent specifications, the operating policy explained, the scored
 backlog and the phased plan. This directory holds only what the agents execute.
 

@@ -41,8 +41,8 @@ This is the repo's most repeated defect class.
 
 Before anything else, read both:
 
-1. **This department's** — `~/Desktop/swechha-vault/swechha/website/team/inbox.md`
-2. **The organisation's** — `~/Desktop/swechha-vault/swechha/ai/inbox.md`
+1. **This department's** — `~/swechha-vault/swechha/website/team/inbox.md`
+2. **The organisation's** — `~/swechha-vault/swechha/ai/inbox.md`
 
 The owner drops jobs in either, from any device, in any form, often one line
 long. **An inbox item outranks your own priorities**, including a line saying
@@ -85,7 +85,7 @@ Report what you did with each item under `## Inbox`; the owner strikes items
 through.
 
 This is an **organisation-wide convention**, not this department's invention:
-`~/Desktop/swechha-vault/swechha/ai/README.md` specifies it for every AI
+`~/swechha-vault/swechha/ai/README.md` specifies it for every AI
 department Swechha runs, so the owner gives work to any of them the same way.
 Do not propose a different mechanism for this department.
 

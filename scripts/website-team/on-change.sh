@@ -32,7 +32,7 @@
 set -euo pipefail
 
 REPO="${WEBSITE_TEAM_REPO:-$HOME/swechha-website}"
-VAULT="${WEBSITE_TEAM_VAULT:-$HOME/Desktop/swechha-vault}"
+VAULT="${WEBSITE_TEAM_VAULT:-$HOME/swechha-vault}"
 DEPARTMENT="${WEBSITE_TEAM_DEPARTMENT:-website}"
 STATE="${WEBSITE_TEAM_STATE:-$HOME/.swechha-ai}"
 LOCK="${WEBSITE_TEAM_LOCK:-$STATE/run.lock}"

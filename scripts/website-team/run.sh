@@ -34,7 +34,7 @@ set -euo pipefail
 
 REPO="${WEBSITE_TEAM_REPO:-$HOME/swechha-website}"
 WT="$REPO/scripts/website-team/worktree.sh"
-VAULT="${WEBSITE_TEAM_VAULT:-$HOME/Desktop/swechha-vault}"
+VAULT="${WEBSITE_TEAM_VAULT:-$HOME/swechha-vault}"
 
 # ── THE ORG-WIDE CONVENTION, NOT THIS DEPARTMENT'S INVENTION ─────────────────
 # Every path below is DERIVED from $DEPARTMENT, so the second department
