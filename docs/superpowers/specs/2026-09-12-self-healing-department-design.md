@@ -228,8 +228,25 @@ runs. Adjust before implementation.
 
 ## 6. Phase 3 — situation pages publish themselves
 
-*Gated on phase 2 producing a month of sound records. Unchanged from the
-graduation proposal already on record.*
+> **SUPERSEDED BY EVIDENCE, 2026-09-12. They already do.**
+>
+> The detector runs ten times a day, `publishable()` is purely mechanical, and
+> `climate-events.yml` builds, commits and pushes to `main` in the same run.
+> There is no human in that loop and there never was. Audited: 73 dossiers — 5
+> published, 60 correctly held as drafts, 8 withdrawn, 0 stale, all five
+> published pages live at HTTP 200.
+>
+> **The staging gate below would have made the site worse** — up to two hours of
+> delay on a live disaster page, bought with no safety the fact pipeline was not
+> already providing. It was not built.
+>
+> The real gap was the other half of the owner's sentence, *"unless I make an
+> intervention"*: the withdrawal veto existed, was permanent, and was documented
+> nowhere outside the source. Shipped instead as `scripts/situation.mjs` and
+> §6 of `docs/ACTIVE-SITUATION-STANDARD.md`.
+>
+> The original proposal, kept because the reasoning is still the right shape for
+> a content type that does NOT yet publish itself:
 
 Detect → draft → build → **`noindex` staging route** → live on the next run
 unless the owner objects. Intervention is a veto, not a prerequisite.
