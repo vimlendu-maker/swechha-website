@@ -83,7 +83,7 @@
   },
   "auto_merge": {
     "enabled": true,
-    "$comment": "Engineering may merge its own PR ONLY when every one of these holds. Any single failure stops it and the PR waits for a human. This is the one exception to 'never merge its own pull request' and it is conditional, not general.",
+    "$comment": "Engineering may merge its own PR ONLY when every one of these holds. Any single failure stops it and the PR waits for a human. This is the one exception to 'never merge its own pull request' and it is conditional, not general. public/_pages is a build artefact: a specialist may never hand-edit it, but `npm run build:all` regenerating it is expected and allowed. guard-paths.sh enforces both halves by running once before the build and once after with --post-build.",
     "conditions": [
       "the change is wholly within safe_to_automate",
       "npm test passes with no new failures against the recorded baseline",
@@ -96,7 +96,7 @@
     ],
     "never_touch": [
       "app/**",
-      "public/_pages/**",
+      "public/_pages/** (hand-edits only; the build may regenerate it)",
       "data/**",
       "next.config.ts",
       "design-routes.ts",
