@@ -147,7 +147,7 @@ ALLOWED="$ALLOWED,Bash(npm run lint),Bash(npm run lint:*)"
 ALLOWED="$ALLOWED,Bash(npm run air:status),Bash(npm run air:status:*)"
 # Infrastructure awareness is the Manager's job, so it must be able to read the
 # instrument. Deterministic, cached, and it makes at most one request per
-# provider per TTL -- see scripts/website-team/infra-status.py.
+# provider per TTL -- see swechha-ai/infra-status.py.
 ALLOWED="$ALLOWED,Bash(npm run infra:status),Bash(npm run infra:status:*)"
 
 if [ "$DRY" = "--dry-run" ]; then

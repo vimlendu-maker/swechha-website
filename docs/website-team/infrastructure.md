@@ -2,7 +2,9 @@
 
 Every external service swechha.in depends on, what it costs, and how close it
 is to costing more. The instrument is
-`scripts/website-team/infra-status.py` — deterministic, cached, no model call.
+`swechha-ai/infra-status.py` — deterministic, cached, no model call. Run it with
+`npm run infra:status`. It moved out of this repository on 2026-09-11: it watches
+every department, so it no longer belongs to one.
 The rules are the `infrastructure` block in `policy.json`.
 
 **Read this before adding any dependency.** The site must stay inside the free
@@ -180,7 +182,7 @@ Two files, read and never copied between:
   `DATA_GOV_IN_KEY`, `WAQI_TOKEN`, `FIRMS_MAP_KEY`, `AIR_RELAY_TOKEN`,
   `OPENAQ_KEY`. These also exist as GitHub Actions secrets.
 
-`scripts/website-team/sentinel/env.inc` loads both, without overwriting anything
+`swechha-ai/sentinel/env.inc` loads both, without overwriting anything
 already in the environment. **It is deliberately not named `*.sh` and not
 executable**, so the orchestrator's probe discovery cannot pick it up; a test
 asserts both, and asserts no probe echoes a credential.

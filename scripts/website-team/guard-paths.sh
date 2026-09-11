@@ -44,21 +44,29 @@ FORBIDDEN=(
   'scripts/website-team/'
 )
 
-# ★ CHECKED BEFORE FORBIDDEN, and the reason the rule above can be a whole
-#   directory rather than a hand-kept list of machinery files.
+# ★ CHECKED BEFORE FORBIDDEN. The mechanism for narrowing a deny, currently
+#   holding nothing.
 #
-#   The department is DESIGNED to write here: a `WATCH:` inbox item means "add
-#   a deterministic probe to scripts/website-team/sentinel/", and the manager's
-#   role file says so in as many words. Blocking it would break a capability
-#   the owner asked for.
+#   It existed for one case: a `WATCH:` inbox item meant "add a deterministic
+#   probe to scripts/website-team/sentinel/", so that one directory had to stay
+#   writable inside an otherwise forbidden tree. The sentinel moved to the
+#   swechha-ai repository on 2026-09-11 — it watches two departments and lived
+#   inside one of them — so the exception has nothing left to except.
 #
-#   Deny-the-directory-allow-the-exception is deliberate over listing run.sh,
-#   execute.sh, worktree.sh and the rest by name. A list of machinery files is
-#   a list that must move in lockstep with the machinery — this repository's
-#   most repeated defect, four times over. New machinery is now forbidden by
-#   DEFAULT, and only this one directory is open.
+#   The directory-wide deny above stays as it is. Denying the directory rather
+#   than listing run.sh, execute.sh, worktree.sh and the rest by name is the
+#   point: a list of machinery files is a list that must move in lockstep with
+#   the machinery, which is this repository's most repeated defect. New
+#   machinery is forbidden by DEFAULT.
+#
+#   The mechanism is kept rather than deleted because the next legitimate
+#   exception should narrow a deny, not delete one.
 ALLOWED=(
-  'scripts/website-team/sentinel/'
+  # ★ EMPTY, AND THAT IS THE POINT. It held scripts/website-team/sentinel/,
+  #   because a `WATCH:` item meant "add a probe there". The sentinel moved to
+  #   the swechha-ai repository on 2026-09-11, so there is nothing here for the
+  #   department to write and no exception to make. The mechanism stays because
+  #   the next legitimate exception should narrow a deny, not delete one.
 )
 
 # Hand-editing served HTML is forbidden; the build regenerating it is not.
@@ -73,7 +81,12 @@ VIOLATIONS=""
 while IFS= read -r f; do
   [ -z "$f" ] && continue
   allowed=""
-  for ok in "${ALLOWED[@]}"; do
+  # ${A[@]+"${A[@]}"} rather than "${A[@]}": macOS ships bash 3.2, where
+  # expanding an EMPTY array under `set -u` is an unbound-variable error. The
+  # list is empty today, and an empty exception list must not break the guard
+  # into refusing everything — which is exactly what it did, caught by the test
+  # that runs the guard rather than reading it.
+  for ok in ${ALLOWED[@]+"${ALLOWED[@]}"}; do
     case "$f" in "$ok"*) allowed=1 ;; esac
   done
   # An `if` rather than `[ -n "$allowed" ] && continue`. Both are correct here
