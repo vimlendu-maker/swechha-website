@@ -32,6 +32,7 @@ import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { consolidate, METRIC_LABEL } from './lib/event-figures.mjs';
+import { headlineDisagreesWith } from './lib/event-lead.mjs';
 import { validateEvent } from './lib/climate-events.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -59,6 +60,25 @@ for (const f of readdirSync(DIR).filter((x) => x.endsWith('.json'))) {
   }
 
   const next = { ...e, impact: { ...read, ...existing } };
+
+  /* ★ AND IT MAY NOT PUT A FIGURE UNDER A HEADLINE THAT DISAGREES WITH IT.
+     This is the second write path to `impact`, and the detector's guard cannot
+     reach it: this script backfills a row onto a dossier whose headline was
+     elected by an earlier run, against figures that did not then exist. Adding
+     a deaths row here can therefore MANUFACTURE the contradiction the detector
+     now prevents — one toll in the heading, another in the card.
+
+     It abstains rather than choosing. It has no candidate pool to re-elect a
+     headline from (its whole input is the register already in the file), and
+     picking a number or writing a heading is precisely what nothing in this
+     pipeline may do. So the dossier keeps what it has, the reason is printed,
+     and the next detector run — which does have a pool, and now checks — is
+     what resolves it. See lib/event-lead.mjs. */
+  if (headlineDisagreesWith(e.headline, next.impact)) {
+    console.log(`  ${String(e.slug).padEnd(26)} SKIPPED — the extracted figure disagrees with this `
+      + `dossier's own headline (${e.headline}). Left for the detector to re-elect a lead against.`);
+    continue;
+  }
 
   /* ★ VALIDATED BEFORE IT IS WRITTEN, WITH THE REAL GATE.
      validateEvent() is what the page build runs, and it throws on a claim

@@ -42,8 +42,9 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 import { writeFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve, join } from 'node:path';
-import { HAZARD_TERMS, SEVERITY_TERMS, NEGATIVE_TERMS, hay, hayPlace, ownedElsewhere, coordsFor, regionOf, headlinePenalty, classifyPlace, classifyHazard } from './lib/event-terms.mjs';
+import { HAZARD_TERMS, SEVERITY_TERMS, NEGATIVE_TERMS, hay, hayPlace, ownedElsewhere, coordsFor, regionOf, classifyPlace, classifyHazard } from './lib/event-terms.mjs';
 import { consolidate } from './lib/event-figures.mjs';
+import { electHeadline } from './lib/event-lead.mjs';
 import { dedupeFeedItems, anchorPublished, lastUpdatedFrom, feedCollapse } from './lib/event-feed.mjs';
 import { HAZARDS, hasContext } from './lib/climate-events.mjs';
 import { publishStateFor, keepEditorFields, dossierSlug, slugify } from './lib/active-situation.mjs';
@@ -484,13 +485,22 @@ function cleanHeadline(title, publisher) {
   return t;
 }
 
-/** The headline that will lead the page: least penalised, then most recent. */
-function pickLead(items, hazard) {
-  return items.slice().sort((a, b) => {
-    const pa = headlinePenalty(cleanHeadline(a.title, a.publisher), hazard);
-    const pb = headlinePenalty(cleanHeadline(b.title, b.publisher), hazard);
-    return pa - pb || (b.publishedMs || 0) - (a.publishedMs || 0);
-  })[0];
+/** The headline that will lead the page: least penalised, then most recent —
+ *  and, since 11 September 2026, never one whose own death toll contradicts the
+ *  figure this dossier is about to print. The election itself lives in
+ *  lib/event-lead.mjs so it can be TESTED; this function is the adapter that
+ *  applies the feed-formatting rules above and hands over cleaned titles.
+ *
+ *  `impact` is the already-computed impact block. Passing it is what makes the
+ *  contradiction impossible rather than unlikely — see event-lead.mjs, which
+ *  carries the whole account. */
+function pickLead(items, hazard, impact = null) {
+  const pick = electHeadline(items.map((i) => ({
+    item: i,
+    title: cleanHeadline(i.title, i.publisher),
+    publishedMs: i.publishedMs,
+  })), hazard, impact);
+  return pick ? pick.item : items[0];
 }
 
 /* ── FIELDS THE DETECTOR MUST NEVER TOUCH ─────────────────────────────────
@@ -547,10 +557,93 @@ async function dossier(c, s, existing, slug) {
      `official-N` ids are positional and must not be anchored. */
   const register = anchorPublished(sources, existing?.sources);
 
+  /* ── THE IMPACT FIGURES, READ OUT OF THE HEADLINES ABOVE ─────────────────
+     ★ THIS FIELD USED TO BE `existing?.impact || {}` AND IT WAS ALWAYS {}.
+     Nothing wrote it, because nothing could: this script may not state a death
+     toll in its own voice, so the slot waited for an editor who, on a disaster
+     carried by 125 publishers inside twelve hours, does not exist. The
+     consequence shipped: /now/climate-event/nepal-glof led on four cells
+     reading "— not established" while the twenty-four sources listed at the
+     bottom of the same page carried 547 dead, 1,944 injured and 320 Indians
+     uncontactable in their own titles.
+
+     consolidate() resolves that without breaking the rule. It reads digits out
+     of the headline strings ALREADY in `sources` above, attributes each to the
+     source that printed it, keeps that source's own hedge, and where outlets
+     disagree carries every value and marks the row PRELIMINARY. No figure is
+     averaged, rounded or stated in this script's voice — each one is a
+     quotation of a number, printed beside a link to the sentence it was quoted
+     from.
+
+     ★ AN EDITOR'S FIGURES WIN, PER METRIC. A hand-set `deaths` claim is not
+     overwritten by a headline; the extracted rows fill in around it. That is
+     the same asymmetry `headline` and `what_happened` already have — the
+     detector may add under a human's writing and may never replace it.
+
+     ★ IT IS COMPUTED HERE, ABOVE THE HEADLINE, AND THE ORDER IS THE FIX.
+     It used to be an IIFE inside the returned object literal, evaluated after
+     pickLead() had already chosen a headline from a different pool by a
+     different rule — so on 11 September 2026 nepal-glof.json shipped
+     "death toll rises to 1,377" over an impact.deaths.value of 1365, and
+     nothing in the program was in a position to notice. The figures now exist
+     before the headline is elected, and pickLead() is handed them. */
+  const impact = (() => {
+    const read = consolidate(register, { place: c.place });
+    const kept = { ...read };
+    /* ── ONLY AN EDITOR'S ROW SURVIVES A RE-DETECTION ────────────────────
+       ★ THIS MERGE USED TO BE `{ ...read, ...existing.impact }` AND IT
+       DEADLOCKED THE WHOLE PIPELINE. Spreading the previous impact over the
+       fresh one preserved EVERY row, including the machine-extracted ones —
+       and an extracted row cites source ids out of `sources`, which is
+       rebuilt from the last two days of news on every run and capped at 24
+       entries. So the moment a quoted headline aged out of that window, the
+       row it produced stayed behind citing a source the register no longer
+       held, and lib/climate-events.mjs correctly refused the file:
+
+         active/nepal-glof.json: impact.deaths cites source
+         "india-today-nepal-tibet-floods-toll-hits-5", which is not in this
+         file's source register.
+
+       That throw is inside the page rebuild, which runs BEFORE the commit —
+       so a failing run committed nothing, the dossier on disk never moved,
+       and the next run inherited the same doomed impact. The failure was
+       guaranteed to repeat and guaranteed to get worse, because more
+       citations expire with every passing day. Measured 28 August 2026: the
+       first live run of this workflow died exactly here.
+
+       It was also silently freezing the figures. nepal-glof's preserved
+       `deaths` read 547 while the sources in its own register had moved to
+       600 — the page was quoting a toll no listed source still printed.
+
+       So an extracted row is now RECOMPUTED from the register every run,
+       which makes a dangling citation structurally impossible: the row and
+       the register are built from the same array in the same call. Only a
+       row a human set — no `extracted` flag — is carried across, which is
+       all the original comment ever claimed to protect, and it keeps the
+       editor's own status word (`confirmed`, where a headline could only
+       ever be `media_report`).
+
+       ★ A FIGURE WHOSE LAST SOURCE HAS AGED OUT NOW DISAPPEARS, and that is
+       the honest behaviour, not a regression: this page's rule is that every
+       number is a quotation attributable to a source listed beneath it. If
+       nothing in the register still prints it, the page has no business
+       printing it either. (nepal-glof's `injured: 1944` goes this way.) The
+       lever if that proves too aggressive is the 24-item cap on `sources`
+       above — widen the register, not the merge. */
+    for (const [metric, claim] of Object.entries(existing?.impact || {})) {
+      if (claim && !claim.extracted) kept[metric] = claim;
+    }
+    return kept;
+  })();
+
   /* The headline is the most-corroborated actual headline, verbatim. The
      script does not write one of its own — a generated headline about a
-     disaster is exactly the sentence nobody should be inventing. */
-  const lead = pickLead(c.items, c.hazard);
+     disaster is exactly the sentence nobody should be inventing.
+
+     ★ AND IT MAY NOT DISAGREE WITH THE FIGURES JUST COMPUTED. A candidate
+     whose own death toll differs from `impact.deaths` is disqualified and the
+     next-best is asked instead — lib/event-lead.mjs carries the account. */
+  const lead = pickLead(c.items, c.hazard, impact);
 
   /* ── A QUIET RUN MUST PRODUCE AN IDENTICAL FILE ────────────────────────
      ★ SAME LESSON AS THE RELATIVE TIMESTAMPS, ONE LAYER DOWN.
@@ -683,76 +776,9 @@ async function dossier(c, s, existing, slug) {
        renders the context pack in its place rather than a gap. */
     what_happened: existing?.what_happened || null,
     why_it_matters: existing?.why_it_matters || null,
-    /* ── THE IMPACT FIGURES, READ OUT OF THE HEADLINES ABOVE ─────────────
-       ★ THIS FIELD USED TO BE `existing?.impact || {}` AND IT WAS ALWAYS {}.
-       Nothing wrote it, because nothing could: this script may not state a
-       death toll in its own voice, so the slot waited for an editor who, on a
-       disaster carried by 125 publishers inside twelve hours, does not exist.
-       The consequence shipped: /now/climate-event/nepal-glof led on four cells
-       reading "— not established" while the twenty-four sources listed at the
-       bottom of the same page carried 547 dead, 1,944 injured and 320 Indians
-       uncontactable in their own titles.
-
-       consolidate() resolves that without breaking the rule. It reads digits
-       out of the headline strings ALREADY in `sources` above, attributes each
-       to the source that printed it, keeps that source's own hedge, and where
-       outlets disagree carries every value and marks the row PRELIMINARY. No
-       figure is averaged, rounded or stated in this script's voice — each one
-       is a quotation of a number, printed beside a link to the sentence it was
-       quoted from.
-
-       ★ AN EDITOR'S FIGURES WIN, PER METRIC. A hand-set `deaths` claim is not
-       overwritten by a headline; the extracted rows fill in around it. That is
-       the same asymmetry `headline` and `what_happened` already have — the
-       detector may add under a human's writing and may never replace it. */
-    impact: (() => {
-      const read = consolidate(register, { place: c.place });
-      const kept = { ...read };
-      /* ── ONLY AN EDITOR'S ROW SURVIVES A RE-DETECTION ──────────────────
-         ★ THIS MERGE USED TO BE `{ ...read, ...existing.impact }` AND IT
-         DEADLOCKED THE WHOLE PIPELINE. Spreading the previous impact over the
-         fresh one preserved EVERY row, including the machine-extracted ones —
-         and an extracted row cites source ids out of `sources`, which is
-         rebuilt from the last two days of news on every run and capped at 24
-         entries. So the moment a quoted headline aged out of that window, the
-         row it produced stayed behind citing a source the register no longer
-         held, and lib/climate-events.mjs correctly refused the file:
-
-           active/nepal-glof.json: impact.deaths cites source
-           "india-today-nepal-tibet-floods-toll-hits-5", which is not in this
-           file's source register.
-
-         That throw is inside the page rebuild, which runs BEFORE the commit —
-         so a failing run committed nothing, the dossier on disk never moved,
-         and the next run inherited the same doomed impact. The failure was
-         guaranteed to repeat and guaranteed to get worse, because more
-         citations expire with every passing day. Measured 28 August 2026: the
-         first live run of this workflow died exactly here.
-
-         It was also silently freezing the figures. nepal-glof's preserved
-         `deaths` read 547 while the sources in its own register had moved to
-         600 — the page was quoting a toll no listed source still printed.
-
-         So an extracted row is now RECOMPUTED from the register every run,
-         which makes a dangling citation structurally impossible: the row and
-         the register are built from the same array in the same call. Only a
-         row a human set — no `extracted` flag — is carried across, which is
-         all the original comment ever claimed to protect, and it keeps the
-         editor's own status word (`confirmed`, where a headline could only
-         ever be `media_report`).
-
-         ★ A FIGURE WHOSE LAST SOURCE HAS AGED OUT NOW DISAPPEARS, and that is
-         the honest behaviour, not a regression: this page's rule is that every
-         number is a quotation attributable to a source listed beneath it. If
-         nothing in the register still prints it, the page has no business
-         printing it either. (nepal-glof's `injured: 1944` goes this way.) The
-         lever if that proves too aggressive is the 24-item cap on `sources`
-         above — widen the register, not the merge. */
-      for (const [metric, claim] of Object.entries(existing?.impact || {})) {
-        if (claim && !claim.extracted) kept[metric] = claim;
-      }
-      return kept;
-    })(),
+    /* Computed above, BEFORE the headline was elected, because the headline is
+       not allowed to contradict it. */
+    impact,
     figures: existing?.figures || [],
     timeline: (existing?.timeline || []).length ? existing.timeline : [
       { when: lead.published || null, what: 'First reported in the sources below.', source: register[0]?.id || null },
