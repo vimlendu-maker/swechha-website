@@ -166,7 +166,23 @@ if [ "$DRY" = "--dry-run" ]; then
   exit 0
 fi
 
-mkdir -p "$RECORDS"
+# ── PREFLIGHT: CAN WE ACTUALLY REACH THE VAULT? ──────────────────────────────
+# Check BEFORE spending anything. A launchd-spawned process cannot read or
+# write ~/Desktop — macOS TCC protects it, an agent inherits no grant and can
+# show no prompt. Without this check the run reads an empty inbox, reports "no
+# open items", calls the model, and only then dies trying to write its record:
+# a wasted ~$1 and a false account of the owner's own instructions. Found
+# 2026-09-11 when the inbox watcher fired and silently read nothing.
+if [ ! -r "$INBOX" ] || ! mkdir -p "$RECORDS" 2>/dev/null || [ ! -w "$RECORDS" ]; then
+  echo "run.sh: REFUSED — the vault is not reachable from this process." >&2
+  echo "run.sh:   inbox readable:   $([ -r "$INBOX" ] && echo yes || echo NO)  ($INBOX)" >&2
+  echo "run.sh:   records writable: $([ -w "$RECORDS" ] && echo yes || echo NO)  ($RECORDS)" >&2
+  echo "run.sh: If this ran from launchd, it is macOS TCC: ~/Desktop is protected" >&2
+  echo "run.sh: and a launch agent has no access. Grant Full Disk Access to the" >&2
+  echo "run.sh: job, or move the vault outside ~/Desktop. Nothing was spent." >&2
+  python3 "$EV" "$DEPARTMENT" runner run_refused reason=vault-unreachable 2>/dev/null || true
+  exit 5
+fi
 
 # ── ONE RUN AT A TIME, IN THE DEPARTMENT'S OWN TREE ──────────────────────────
 # Both schedules fire at 09:00, so on Mondays `work` and `review` start

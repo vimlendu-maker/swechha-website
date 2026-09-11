@@ -47,8 +47,24 @@ mkdir -p "$STATE"
 # The `## Open` section, stripped of blanks, HTML comments and the horizontal
 # rule that sits inside the awk range. That rule counting as a job is why an
 # empty inbox once looked occupied.
+#
+# ★ UNREADABLE IS NOT EMPTY. On 2026-09-11 this returned nothing because a
+#   launchd-spawned process cannot read ~/Desktop at all — macOS TCC protects
+#   it and an agent inherits no grant and can show no prompt. The watcher fired
+#   correctly, read nothing, concluded "no open jobs", recorded the hash and
+#   exited 0. Silent, plausible, and wrong: every scheduled run would have
+#   reported an empty inbox forever. Refuse loudly instead.
 open_section() {
-  [ -f "$1" ] || return 0
+  if [ ! -r "$1" ]; then
+    if [ -e "$1" ]; then
+      echo "on-change: REFUSED — cannot READ $1" >&2
+      echo "on-change: a launchd job has no access to ~/Desktop (macOS TCC)." >&2
+      echo "on-change: grant Full Disk Access, or move the vault outside Desktop." >&2
+    else
+      echo "on-change: REFUSED — $1 does not exist" >&2
+    fi
+    exit 4
+  fi
   awk '/^## Open/{f=1;next} /^## Done/{f=0} f' "$1" \
     | grep -vE '^[[:space:]]*(<!--.*-->)?[[:space:]]*$' \
     | grep -vE '^[[:space:]]*-{3,}[[:space:]]*$' || true
