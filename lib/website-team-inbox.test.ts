@@ -151,7 +151,15 @@ describe('inbox: urgency, and the sentinel it feeds', () => {
       // that Anthropic spend is precisely the thing it cannot see. Assert on
       // the code, or an honest explanation fails the test.
       const code = src.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n')
-      expect(code, `${p} invokes a model`).not.toMatch(/\bclaude\b|anthropic/i)
+      // Match an INVOCATION, not the word. The first version matched /\bclaude\b/
+      // anywhere, which made `.claude/settings.json` — a directory every probe
+      // may legitimately read — indistinguishable from spending money. A test
+      // that forbids a path name while claiming to forbid a model call sends the
+      // next person looking in the wrong place entirely.
+      expect(code, `${p} invokes the claude CLI`)
+        .not.toMatch(/(^|[;|&(]|\$\()\s*claude\s/m)
+      expect(code, `${p} calls an Anthropic endpoint`)
+        .not.toMatch(/api\.anthropic\.com|ANTHROPIC_API_KEY/)
       // Every probe must document what its exit codes mean by using them.
       expect(src, `${p} never exits non-zero, so it can only ever say "fine"`)
         .toMatch(/exit [12]/)
