@@ -31,10 +31,13 @@ import { join } from 'node:path'
  * behind, and a second run that must still deliver its grant.
  */
 const ROOT = join(__dirname, '..')
-const sh = (script: string, env: NodeJS.ProcessEnv = {}) =>
+// `Record<string, string>`, not `NodeJS.ProcessEnv`: next typegen narrows
+// ProcessEnv so NODE_ENV is REQUIRED, and a partial override object does not
+// satisfy it. `npm run typecheck` catches this and `vitest` does not.
+const sh = (script: string, env: Record<string, string> = {}) =>
   execFileSync('bash', ['-c', script], {
     encoding: 'utf8',
-    env: { ...process.env, ...env },
+    env: { ...process.env, ...env } as NodeJS.ProcessEnv,
     stdio: ['ignore', 'pipe', 'pipe'],
   })
 
