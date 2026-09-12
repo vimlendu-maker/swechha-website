@@ -47,8 +47,9 @@ useful than twelve invented percentages.
   retrospectively against the real 16:16 IST failure at `033235d0`, which it
   detects and describes correctly.
 - **Deployment count: MEASURED, and it is the limit this site is closest to.**
-  **51 deployments in 24 hours against the published 100/day cap on
-  2026-09-11** — every push to `main` deploys, and the air pipeline pushes every
+  **425 deployments retained on 2026-09-12** (verified via `npm run infra:status`)
+  — every push to `main` deploys. The air pipeline runs **19 times a day**
+  (`.github/workflows/air-hourly.yml` cron `'34 0-17,23 * * *'`), not every
   fifteen minutes. The probe warns at 70% and calls it red at 90%; those two
   percentages are a choice and are labelled as one in the source, the 100 is the
   provider's.
@@ -58,12 +59,17 @@ useful than twelve invented percentages.
   Not recommended; recorded so the trade-off is a decision rather than a gap.
 - **Status:** verified reachable 2026-09-11 — `vercel-status.com` reported
   *All Systems Operational*.
+- **Public/ storage:** 104 MB on `main` today (verified via `du -sh public`).
+  PR #155 (`fix/deployment-storage-cap`, open and green, not yet merged) would
+  reduce this to 89 MB via `scripts/optimise-photos.mjs`. Note: PR #155 is
+  pending human approval because it modifies `public/images/**`, which requires
+  approval per policy — do not merge autonomously.
 - **Cost risk: HIGH.** This is the largest single billing exposure in the
   stack: it hosts the site, it meters bandwidth, and a Hobby project that
   outgrows its limits is pushed toward Pro.
-- **Known constraint already recorded:** sub-daily cron fails Hobby deploys and
-  there is a 100/day deployment cap — see the air-pipeline notes. This is why
-  the air pipeline is driven by an external heartbeat.
+- **Known constraint already recorded:** there is a 100/day deployment cap — see
+  the air-pipeline notes. This is why the air pipeline is driven by an external
+  heartbeat.
 
 ### Neon — Postgres
 - **Key:** present since 2026-09-11, a **personal** key (`napi_`) in
@@ -262,11 +268,13 @@ future agent proposing it must account for it: **67 of the last 100 commits to
 `swechha-air[bot]`, `swechha-climate-events[bot]`,
 `swechha-coverage-hourly[bot]`, `swechha-data-refresh[bot]`,
 `swechha-search-console[bot]` — all authenticating as the GitHub Actions app
-with `permissions: contents: write`, and the air pipeline pushes every fifteen
-minutes. A rule that required a PR or a passing check before a commit could
-land on `main` would stop those pushes and the site would go stale within the
-hour unless the bypass exactly matched how they authenticate. The owner chose
-the safety net over that risk.
+with `permissions: contents: write`. The air pipeline runs 19 times a day
+(`.github/workflows/air-hourly.yml` cron `'34 0-17,23 * * *'`), and climate
+events runs 10 times a day (`.github/workflows/climate-events.yml` cron `'5 0,2,4,6,8,10,12,14,16,18 * * *'`).
+A rule that required a PR or a passing check before a commit could land on
+`main` would stop those pushes and the site would go stale within the hour
+unless the bypass exactly matched how they authenticate. The owner chose the
+safety net over that risk.
 
 So the gap is known and accepted: **a direct push that has not passed CI can
 still land on `main`.** What cannot happen is history being rewritten or the
