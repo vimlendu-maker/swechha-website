@@ -29,7 +29,10 @@ const VAULT = join(homedir(), 'swechha-vault')
 describe('inbox: the org-wide convention', () => {
   it('every path derives from $DEPARTMENT rather than being hardcoded', () => {
     const run = read('scripts/website-team/run.sh')
-    expect(run).toMatch(/DEPARTMENT="\$\{WEBSITE_TEAM_DEPARTMENT:-website\}"/)
+    // The department is settable, and the old variable name is still honoured
+    // so nothing already scheduled breaks.
+    expect(run).toMatch(
+      /DEPARTMENT="\$\{TEAM_DEPARTMENT:-\$\{WEBSITE_TEAM_DEPARTMENT:-website\}\}"/)
     // The three derived paths. A literal 'website' in any of them means the
     // next department has to rewrite the script instead of setting a variable.
     expect(run).toMatch(/RECORDS="\$VAULT\/swechha\/\$DEPARTMENT\/decisions"/)
@@ -39,6 +42,70 @@ describe('inbox: the org-wide convention', () => {
       .toMatch(/OUT="\$RECORDS\/\$STAMP-\$DEPARTMENT-team-\$MODE\.md"/)
     expect(run, 'the activity log actor must be the department, not a literal')
       .toMatch(/"\$EV" "\$DEPARTMENT" manager/)
+  })
+
+  /**
+   * ★ THE TEST ABOVE IS NAMED "every path" AND CHECKED SIX.
+   *
+   * It passed for as long as it existed while TWELVE other lines named
+   * scripts/website-team/ and docs/website-team/ outright, and while the agent
+   * was `--agent website-manager` literally. Its own comment says "a literal
+   * 'website' in any of them means the next department has to rewrite the
+   * script" — which is exactly what happened. On 2026-09-12 the owner found
+   * the fundraising department had a policy file, a path guard and a worktree
+   * script, and no runner able to call any of them; its policy.json had been
+   * recording `claude_code_team: "not yet running"` since it was written.
+   *
+   * A test named for a property it only spot-checks reports that property
+   * without holding it. This one reads every non-comment line.
+   */
+  it('NO line in the runner names one department outright', () => {
+    const run = read('scripts/website-team/run.sh')
+    const offenders = run
+      .split('\n')
+      .filter((line) => !line.trimStart().startsWith('#'))
+      .filter((line) => /website-team\/|website-manager|Website team/.test(line))
+    expect(
+      offenders,
+      `these lines pin the runner to one department:\n${offenders.join('\n')}`,
+    ).toEqual([])
+  })
+
+  it('the helpers are found next to the runner, not under a named department', () => {
+    const run = read('scripts/website-team/run.sh')
+    // $LIB is the runner's own directory, so the helpers travel with it and
+    // moving the whole thing into the org spine becomes a `git mv` rather than
+    // a rewrite — nothing in the file names its own location.
+    expect(run).toMatch(
+      /LIB="\$\(cd "\$\(dirname "\$\{BASH_SOURCE\[0\]\}"\)" && pwd\)"/)
+    expect(run, 'the department supplies its own worktree script')
+      .toMatch(/WT="\$REPO\/scripts\/\$DEPARTMENT-team\/worktree\.sh"/)
+    expect(run, 'and its own manager agent')
+      .toMatch(/--agent "\$DEPARTMENT-manager"/)
+  })
+
+  /**
+   * ★ ${VAR^} IS BASH 4 AND /bin/bash HERE IS 3.2.57, where it is a fatal
+   * "bad substitution" — and under `set -euo pipefail` that aborts the run
+   * before it does anything. The LaunchAgents invoke /bin/bash directly.
+   * `bash -n` parses it happily, so nothing but running it catches this; it was
+   * introduced and caught during the one-runner change on 2026-09-12.
+   */
+  it('the runner uses no bash 4 syntax, because launchd runs it under 3.2', () => {
+    for (const path of ['scripts/website-team/run.sh',
+                        'scripts/website-team/on-change.sh']) {
+      // Comments are stripped first: the comment explaining this rule spells
+      // ${VAR^} out, and a guard that trips on its own documentation is a
+      // guard somebody deletes.
+      const src = read(path)
+        .split('\n')
+        .filter((line) => !line.trimStart().startsWith('#'))
+        .join('\n')
+      expect(src, `${path} uses \${VAR^} or \${VAR,} — bash 4 only`)
+        .not.toMatch(/\$\{[A-Za-z_][A-Za-z0-9_]*[\^,]{1,2}\}/)
+      expect(src, `${path} declares an associative array — bash 4 only`)
+        .not.toMatch(/declare\s+-A\b/)
+    }
   })
 
   it('the manager is told to read BOTH inboxes, and only to claim its own', () => {
@@ -112,7 +179,16 @@ describe('inbox: urgency, and the sentinel it feeds', () => {
     const src = readSh('scripts/website-team/on-change.sh')
     // Everything else is queued, because every run is an LLM invocation and a
     // BACKLOG idea typed at midnight must not bill one.
-    expect(src).toMatch(/\^\(NOW\|TODAY\)\[\[:space:\]\]\*:/)
+    // ★ WAS PINNED TO THE OLD LITERAL `^(NOW|TODAY)[[:space:]]*:` and went red
+    //   the moment the matcher learned the Obsidian tag forms -- five jobs
+    //   filed as `#today` had sat unworked because only `TODAY:` matched. The
+    //   claim is which INPUTS wake the department, so assert those, not the
+    //   spelling of the regex that recognises them.
+    expect(src, 'the prefix form must still wake it').toMatch(/\(NOW\|TODAY\)\[\[:space:\]\]\*:/)
+    expect(src, 'and so must the #now / #today tag form')
+      .toMatch(/#\(NOW\|TODAY\)\(\[\^\[:alnum:\]_-\]\|\$\)/)
+    expect(src, 'a tag must end at a non-word character, so #nowhere does not count')
+      .toMatch(/\[\^\[:alnum:\]_-\]/)
     expect(src).toMatch(/URGENT[\s\S]*-eq 0/)
     expect(src, 'a non-urgent change must record the hash and NOT run')
       .toMatch(/leaving it for the next scheduled run/)
