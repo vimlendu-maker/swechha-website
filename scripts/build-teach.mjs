@@ -114,6 +114,24 @@ const sessHref = (theme, slug) => `/teach/${theme}/${slug}`;
 const GUIDE_HREF = '/teach/before-you-start';
 const ATOZ_HREF = '/teach/a-to-z';
 
+/* A "p" BLOCK READS AS A LABEL, NOT A SENTENCE, WHEN IT CARRIES NO
+   SENTENCE-ENDING PUNCTUATION ANYWHERE AND IS SHORT: a station name
+   ("Atmosphere Pre-1700"), a phase marker (ENGAGE/EXPLAIN/ELABORATE/EVALUATE),
+   a duration, a section title. Checking only the LAST character would have
+   let "2 or 3: a plant has taken you in through photosynthesis and built you
+   into a sugar… Join Terrestrial Life." through — it ends mid-clause-looking
+   but is a full instructional sentence — so a "." "!" or "?" ANYWHERE, not
+   just at the end, disqualifies a block from being a label. A length ceiling
+   keeps a long, terminal-punctuation-free run of manual text (the OCR
+   fragments in "the-life-of-a-t-shirt-activity" among them) from being
+   mistaken for a short label too. This changes only which class a block
+   renders under — no text is reworded, reordered or dropped. */
+const LABEL_MAX = 40;
+const looksLikeLabel = (x) => {
+  const t = x.trim();
+  return t.length > 0 && t.length <= LABEL_MAX && !/[.!?]/.test(t);
+};
+
 /* ═══ PROSE ══════════════════════════════════════════════════════════════
    Blocks arrive as [{t,x}] with t of "p" or "li". Consecutive list items
    become ONE list; a stray bullet does not become a one-item list on its own
@@ -131,7 +149,11 @@ const prose = (blocks, pad = '        ') => {
   };
   for (const b of blocks) {
     if (b.t === 'li') li.push(b.x);
-    else { flush(); out.push(`${pad}<p class="lr-p">${esc(b.x)}</p>`); }
+    else {
+      flush();
+      const cls = looksLikeLabel(b.x) ? 'lbl' : 'lr-p';
+      out.push(`${pad}<p class="${cls}">${esc(b.x)}</p>`);
+    }
   }
   flush();
   return out.join('\n');
@@ -318,6 +340,89 @@ const PAGE_CSS = `
 .tc-jump{display:flex;flex-wrap:wrap;gap:6px 10px;margin:clamp(14px,2vw,20px) 0 0;padding:0;list-style:none}
 .tc-jump a{font-variant-numeric:tabular-nums;text-decoration:none}
 @media (max-width:560px){.tc-seq-r{grid-template-columns:minmax(0,1fr);gap:4px}}
+
+/* THE "EIGHT THEMES" LIST, AND A THEME'S OWN SESSION LIST, BOTH a.d1/d2.rl.w7-do-t.
+   NO BACKTICKS IN THIS BLOCK: it is inside build-teach.mjs's own PAGE_CSS
+   template literal, and a pair of them here would silently truncate it, the
+   same trap WORK_CSS's own comment warns about.
+   work-shell.mjs (and healthy-cities, which shares it) puts .w7-do-t on a
+   nested h3 and resets text-decoration on the WRAPPING .w7-do-list>li>a one
+   level up — this file puts the class combination directly on the a itself,
+   so that reset never reaches it and the browser's native underline renders
+   through the display-scale word, over the .cap caption below it.
+   .w7-do-t{--rl-top;--rl-bottom} is the same trim home.html's own rule
+   carries; it is not defined anywhere this file imports, so it has to be
+   stated here too. Scoped to this file's own style tag — no other generator
+   reads PAGE_CSS from build-teach.mjs. */
+a.w7-do-t{text-decoration:none;--rl-top:.055em;--rl-bottom:.135em}
+@media (max-width:767px){a.w7-do-t{--rl-bottom:.11em}}
+
+/* THE "NEXT" DOOR GRID. Every onward() band in this file (the /teach index,
+   all 8 themes, all 43 sessions) uses .lr-doors/.lr-door, but those
+   classnames are only ever defined in scripts/build-learn.mjs's own PAGE_CSS
+   — this file doesn't import that constant, so without a copy here every
+   "Next" band on /teach rendered in default unstyled block flow. Adapted from
+   build-learn.mjs's own .lr-doors/.lr-door rule (this file has no .lr-door-h
+   heading span to match, so that half is left out). */
+/* THE INDEX COLUMNS AND THE DIRECTORY TABLE. Same root cause as the two rules
+   above, found by gate 15 on its first run rather than by a reader: .lx-cats /
+   .lx-c / .lx-c-h / .lx-l (the "other themes" list on every theme page and the
+   guide), .lx-s (the "If you have one period" entry band) and .lr-st /
+   .lr-st-r / .lr-st-v (the 43-row session directory on /teach) are all defined
+   only in build-learn.mjs's own PAGE_CSS. This file uses the markup and never
+   imported the CSS, so the directory table rendered as plain stacked text and
+   the theme columns had no rules, no grid and no spacing.
+   Copied from build-learn.mjs. .lr-st-r's three-column grid is kept as it is
+   there — session, theme, what it is for — and collapses under 720px. */
+/* THE SESSION PAGE'S OWN COMPONENTS. Gate 15's third pass. Every one of the 43
+   session pages opens with .wk-anc (the "back to the theme" line), leads with
+   .lr-answer, carries .p-do/.p-do-r discussion rows, closes with .lr-cannot
+   tail blocks and .lr-src credits, and some carry .cl-learn. Not one of those
+   rules was in this file: .wk-anc lives in work-shell.mjs, .p-do-r in
+   build-situation-air.mjs, the rest in build-learn.mjs. So the breadcrumb was
+   plain text with no target size, the lead had no measure, and the ruled rows
+   had no rules — on the page a teacher actually uses.
+   .p-do is a bare container everywhere on the site (no rule of its own), so it
+   is declared here as the grid its rows sit in rather than copied. */
+.wk-anc{display:inline-flex;align-items:center;gap:9px;min-height:44px;margin:0;
+  text-decoration:none;color:var(--ink-2)}
+.wk-anc i{font-style:normal}
+.p-do{display:grid;margin:clamp(16px,2.4vw,24px) 0 0}
+.p-do-r{border-top:1px solid var(--rule);padding:clamp(11px,1.5vw,15px) 0}
+.p-do-r:last-child{border-bottom:1px solid var(--rule)}
+.lr-answer{max-width:60ch;font-weight:500}
+.lr-ul{margin:10px 0 0;padding-left:1.1em;display:grid;gap:8px}
+.lr-cannot{margin:clamp(22px,3vw,32px) 0 0;border-top:2px solid currentColor;
+  padding-top:14px;max-width:64ch}
+.lr-src{list-style:none;margin:clamp(16px,2.4vw,24px) 0 0;padding:0;display:grid;
+  gap:14px;max-width:70ch}
+.cl-learn{margin-top:clamp(26px,3.6vw,40px);border-top:1px solid var(--rule);
+  padding-top:clamp(16px,2.2vw,22px)}
+.cl-learn-l{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:10px}
+.cl-learn-l a{text-decoration:none;color:inherit;display:grid;gap:2px}
+.lx-cats{display:grid;gap:clamp(26px,4vw,44px);margin:clamp(20px,3vw,32px) 0 0;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.lx-c{min-width:0}
+.lx-c-h{margin:0 0 4px}
+.lx-c-l{margin:0 0 12px;max-width:44ch}
+.lx-l{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.lx-l li{border-top:1px solid currentColor;padding-top:9px}
+.lx-l a{text-decoration:none;color:inherit;display:grid;gap:2px}
+.lx-start{display:grid;gap:clamp(20px,3vw,34px);margin:clamp(20px,3vw,32px) 0 0;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.lx-s{display:grid;gap:7px;align-content:start;min-width:0;text-decoration:none;
+  color:inherit;border-top:2px solid currentColor;padding-top:14px}
+.lr-st{display:grid;gap:0;margin:clamp(18px,2.6vw,26px) 0 clamp(20px,3vw,30px);
+  grid-template-columns:minmax(0,1fr)}
+.lr-st-r{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1.4fr);
+  gap:12px;align-items:baseline;padding:14px 0;border-top:1px solid currentColor}
+.lr-st-r:last-child{border-bottom:1px solid currentColor}
+.lr-st-v{margin:0}
+@media (max-width:720px){.lr-st-r{grid-template-columns:minmax(0,1fr);gap:4px}}
+.lr-doors{display:grid;gap:clamp(14px,2vw,20px);margin:clamp(18px,2.6vw,26px) 0 0;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.lr-door{display:grid;gap:5px;align-content:start;min-width:0;text-decoration:none;
+  color:inherit;border-top:2px solid currentColor;padding-top:12px}
 
 /* PRINT. A teacher prints a session and carries it into a room, and until now
    that produced a black rectangle — @media print matched nothing on any of the
@@ -963,6 +1068,45 @@ if (!bad) pass('every theme page lists its own sessions');
     }
   }
   if (annotated.length) pass(`${annotated.length} annotated session(s) disclose the annotation`);
+}
+
+/* 15. EVERY CLASS THE MARKUP USES IS DEFINED IN THE PAGE'S OWN CSS.
+      ★ THIS IS THE GATE THAT SHOULD HAVE EXISTED FROM THE START.
+      This section shipped using `.w7-do-t`, `.lr-doors` and `.lr-door` — class
+      names that exist elsewhere on the site but whose RULES live in
+      work-shell.mjs, design/home.html and build-learn.mjs's own PAGE_CSS, none
+      of which this generator imports. Every page carries its own <style>, so
+      reusing a class name is not reusing a class. The result was live for a
+      day: the "Eight themes" headings struck through by the browser's native
+      underline, and every "Next" band on all 54 pages in unstyled block flow.
+      The other fourteen gates all passed, because they check structure,
+      content and disclosure — not whether a thing a reader looks at has any
+      styling at all.
+
+      A class is EXEMPT only if it is a behaviour hook or a semantic marker
+      that is deliberately unstyled. Anything else that is used and never
+      defined fails the build. */
+{
+  const EXEMPT = new Set([
+    'duo', 'duo-dim',            /* the photo treatment, defined in the shell's defs */
+    'skip', 'visually-hidden',   /* accessibility hooks */
+    'tc-blank',                  /* defined; matched by the .tc-blank rule below */
+  ]);
+  let n = 0;
+  for (const w of written) {
+    const css = [...w.OUT.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join('\n');
+    const defined = new Set([...css.matchAll(/\.([a-zA-Z][\w-]*)/g)].map((m) => m[1]));
+    const used = new Set();
+    for (const m of w.OUT.matchAll(/class="([^"]+)"/g)) {
+      for (const c of m[1].trim().split(/\s+/)) used.add(c);
+    }
+    const orphan = [...used].filter((c) => !defined.has(c) && !EXEMPT.has(c)).sort();
+    if (orphan.length) {
+      fail(`${w.route} uses ${orphan.length} class(es) its own CSS never defines: ${orphan.slice(0, 6).join(', ')}`);
+      n += 1;
+    }
+  }
+  if (!n) pass('every class the markup uses is defined in the page\'s own CSS');
 }
 
 console.log(`\nteach — ${written.length} pages written `
