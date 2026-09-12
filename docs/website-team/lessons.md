@@ -187,3 +187,9 @@ the allowlist must grant it in the form the agent will actually type; a role
 file naming an ungranted command is an instruction that fails as a refusal the
 agent then has to explain, not as an error anyone notices.
 `lib/website-team-infra.test.ts` now derives this check from the runner itself.
+
+## 2026-09-12 — `Agent` with a fresh call does not continue a prior agent; only `SendMessage` to its id does
+
+Two specialists exhausted their turn budget mid-investigation and returned no final text. I tried to recover their work by dispatching a *new* `Agent` call and asking it to "just write up what you already found" — that produces a **fresh agent with no memory of the prior run**, and to its credit it said so plainly rather than fabricating a history it didn't have (one even flagged "I have no record of the 38 tool calls you're describing" and redid the check from scratch). The correct recovery is `SendMessage` addressed to the exhausted agent's own id, which does carry its actual context forward — confirmed working on the second attempt, and the design specialist's real 26-tool-call investigation surfaced findings a fresh instance had already missed.
+
+**Do:** if a subagent returns with no final text, use `SendMessage` to its own `agentId`, not a new `Agent` dispatch — and don't ask a fresh instance to recount work it never did.
