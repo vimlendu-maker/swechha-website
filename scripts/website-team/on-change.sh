@@ -10,6 +10,15 @@
 #     NOW:        wake the department immediately
 #     TODAY:      wake it immediately too — the next scheduled run may be
 #                 tomorrow morning, and "today" would then mean "tomorrow"
+#
+#   The Obsidian TAG forms `#now` and `#today` mean exactly the same thing and
+#   are accepted wherever the colon forms are. The owner reaches for tags
+#   because Obsidian autocompletes them and they are clickable; on 2026-09-12
+#   five jobs filed as `#today` sat unworked because only `TODAY:` matched.
+#   Tags are matched only at the START of a line, like every other prefix, so
+#   prose mentioning #now in passing still does not wake anyone. A tag must end
+#   at a non-word character: `#nowhere` and `#todayish` are different tags and
+#   do not match.
 #     THIS WEEK:  queued; taken at the next scheduled run
 #     BACKLOG:    queued; taken when there is nothing more pressing
 #     WATCH:      not work to do now — a request for a standing condition
@@ -74,11 +83,18 @@ BOTH="$( { open_section "$INBOX"; open_section "$ORG_INBOX"; } )"
 CURRENT="$(printf '%s' "$BOTH" | shasum | cut -d' ' -f1)"
 JOBS="$(printf '%s' "$BOTH" | grep -c . || true)"
 
-# Urgent = a line whose first word, after any markdown heading or bullet
-# marker, is NOW: or TODAY:. Case-insensitive, because the owner types fast.
+# Urgent = a line that OPENS with NOW/TODAY, in either the colon form
+# (`TODAY:`) or the Obsidian tag form (`#today`). Case-insensitive, because the
+# owner types fast.
+#
+# Strip every leading marker first, not just one: `- #today ...` carries a
+# bullet AND a tag, and a single strip left `#today` sitting where the matcher
+# expected the keyword. Heading hashes are stripped only when FOLLOWED BY
+# WHITESPACE — that is what a markdown heading is — so `### TODAY:` loses its
+# hashes while the `#` of `#today` survives to be recognised as a tag.
 URGENT="$(printf '%s' "$BOTH" \
-  | sed -E 's/^[[:space:]]*([#]+|[-*])[[:space:]]*//' \
-  | grep -icE '^(NOW|TODAY)[[:space:]]*:' || true)"
+  | sed -E 's/^([[:space:]]*(#+[[:space:]]+|[-*+][[:space:]]*|\[[ xX]\][[:space:]]*))+//' \
+  | grep -icE '^(#?(NOW|TODAY)[[:space:]]*:|#(NOW|TODAY)([^[:alnum:]_-]|$))' || true)"
 
 if [ "$JOBS" -eq 0 ]; then
   echo "$CURRENT" > "$SEEN"
