@@ -59,39 +59,21 @@ describe('budget', () => {
     expect(read(withLog([row(`${stamp}T09:00:00+0530`), row(`${stamp}T10:00:00+0530`, 1.5)]))).toBeCloseTo(1.5, 3)
   })
 
-  /**
-   * ★ THIS TEST DEMANDED A CEILING THE OWNER HAD DELIBERATELY REMOVED.
-   *
-   * On 2026-09-12 the owner deleted `daily_ceiling_usd` in full knowledge of
-   * what it was for, and policy.json records the reasoning at length --
-   * including "Do not reinstate a number". The test went on asserting
-   * `typeof ... === 'number'` and turned that decision into a red suite, on
-   * main and on the deployed branch both. A test that contradicts an explicit
-   * owner decision is not a guard; it is a request to undo the decision, filed
-   * where nobody reads it.
-   *
-   * What is still worth holding is the part the removal did NOT change: the
-   * ceiling, present or absent, lives where the department cannot write it.
-   */
-  it('whatever the ceiling is, the department may not write it', () => {
+  it('the ceiling is deliberately ABSENT from policy.json, not a number', () => {
+    // Per 4406b9ee, the owner removed cost.daily_ceiling_usd on 2026-09-12 —
+    // its absence is the current, correct state, not an oversight. A number
+    // reappearing here means it was silently reinstated rather than added
+    // back deliberately by the owner.
     const policy = JSON.parse(readFileSync(join(ROOT, 'docs/website-team/policy.json'), 'utf8'))
-    const ceiling = policy.cost?.daily_ceiling_usd
-    expect(ceiling === undefined || typeof ceiling === 'number').toBe(true)
-    // An agent that can raise its own ceiling has no ceiling -- and an agent
-    // that can ADD one back to a file the owner emptied is the same problem
-    // wearing a different hat.
+    expect(policy.cost?.daily_ceiling_usd).toBeUndefined()
+    expect(policy.cost?.$comment_no_ceiling, 'the removal must stay documented, not just silent').toMatch(
+      /THERE IS NO DAILY CEILING/,
+    )
+    // Even with no ceiling to protect, the file itself stays outside the
+    // department's write path — an agent that could write policy.json could
+    // put a ceiling of its own choosing back in.
     const guard = readFileSync(join(ROOT, 'scripts/website-team/guard-paths.sh'), 'utf8')
     expect(guard).toContain('docs/website-team/policy.json')
-  })
-
-  it('the absence of a ceiling is deliberate and says so in the file', () => {
-    // So that a future reader -- or a future agent -- cannot mistake the empty
-    // key for an oversight and helpfully restore it.
-    const raw = readFileSync(join(ROOT, 'docs/website-team/policy.json'), 'utf8')
-    const policy = JSON.parse(raw)
-    if (policy.cost?.daily_ceiling_usd === undefined) {
-      expect(raw).toMatch(/THERE IS NO DAILY CEILING/)
-    }
   })
 
   it('run.sh checks the ceiling BEFORE it calls the model', () => {
