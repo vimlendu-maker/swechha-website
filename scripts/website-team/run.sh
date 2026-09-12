@@ -274,7 +274,7 @@ fi
 # Placed AFTER the vault preflight so an unreadable inbox is already a loud
 # refusal, and BEFORE the ceiling so a refused run still files the work it was
 # refused from doing.
-python3 "$REPO/scripts/website-team/inbox-intake.py" "$DEPARTMENT" \
+python3 "$LIB/inbox-intake.py" "$DEPARTMENT" \
   "$INBOX" "$ORG_INBOX" || true
 
 # ── THE DAILY CEILING ────────────────────────────────────────────────────────
