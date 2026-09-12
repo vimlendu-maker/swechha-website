@@ -29,6 +29,58 @@ def tidy(d):
     d=d.rstrip(' ,;:—-')
     return d if d[-1:] in '.?!' else d+'.'
 
+def _lastword(s):
+    s=s.strip().rstrip('.?!').strip()
+    if not s: return ''
+    return re.sub(r"^[^\w']+|[^\w'-]+$",'',s.rsplit(' ',1)[-1]).lower()
+
+def legit_endings(pool):
+    """Every word a built description is allowed to end on: each pool
+    sentence's OWN final word (tier 1/2's only move), or any word
+    immediately before an internal ';'/',' (tier 3's only move — a clause
+    boundary the SOURCE actually put there). Anything else is a truncation
+    invented by trimming, not a stopping point the source chose."""
+    ends=set()
+    for s in pool:
+        w=_lastword(s)
+        if w: ends.add(w)
+        for m in re.finditer(r"([A-Za-z][\w'-]*)\s*[;,]", s):
+            ends.add(m.group(1).lower())
+    return ends
+
+def dangling(desc, pool):
+    """True if `desc` ends on a word that is not a legitimate ending drawn
+    from `pool` — i.e. neither a pool sentence's own last word nor a word
+    that precedes a ';'/',' in one. Stricter than checking the last word
+    against a fixed stopword list: that list is exactly as complete as
+    whoever wrote it remembered to make it, and 'make' — an ordinary verb,
+    nobody's idea of a stopword — is the word that got through. This asks
+    the SOURCE what a legitimate ending looks like instead of guessing."""
+    d=dec(desc).strip()
+    if d[-1:] not in '.?!': return True
+    last=_lastword(d)
+    return not last or last not in legit_endings(pool)
+
+# ── PROOF, not assertion-by-comment: run the OLD check and the NEW check
+#    against the exact bug this file shipped (data/seo/pages.json line 665,
+#    /teach/blowing-in-the-wind/how-do-we-get-to-school), before either
+#    check is used for anything else. If this block doesn't raise, the old
+#    regex really did miss it and the new one really does catch it — that
+#    claim is checked here on every run, not just asserted in a commit
+#    message.
+_OLD_BUG_TEXT=("How do we get to school?: a classroom session on air pollution "
+ "from Swechha's compendium for teachers. The way children travel to "
+ "school can make.")
+_OLD_BUG_SENTENCE=("The way children travel to school can make a difference "
+ "to their health and the environment.")
+_OLD_REGEX=r'\b(a|an|the|or|and|of|to|in|on|for|with|from|by|at|is|are|it|as)\.$'
+_old_caught = bool(re.search(_OLD_REGEX, dec(_OLD_BUG_TEXT)))
+_new_caught = dangling(_OLD_BUG_TEXT, [_OLD_BUG_SENTENCE])
+assert not _old_caught, ("the OLD stopword-list check now catches the known bug text — "
+ "the regression proof below is stale, re-check it")
+assert _new_caught, ("the NEW dangling() check fails to catch the known bug text — "
+ "it is not the fix it claims to be")
+
 def sents(blocks):
     out=[]
     for b in blocks:
@@ -63,7 +115,12 @@ def build(prefix,pool,lo=140,hi=158,whole=()):
         c=f"{prefix} {s}"
         while L(tidy(c))>hi and ' ' in c: c=c.rsplit(' ',1)[0]
         c=tidy(c)
-        if lo<=L(c)<=hi: return c
+        # The word-trim above stops purely on LENGTH, so it can and did land
+        # mid-clause ("...can make."). dangling() checks the result against
+        # what `s` itself can legitimately end on; reject and keep searching
+        # (next pool sentence, then the next prefix) rather than ship a cut
+        # the source never made.
+        if lo<=L(c)<=hi and not dangling(c,[s]): return c
     c=tidy(prefix)
     return c if lo<=L(c)<=hi else None
 
@@ -98,6 +155,12 @@ SHORT={'sustainable-development':'sustainable development','blowing-in-the-wind'
  'wasted':'waste','trees-and-forests':'trees and forests','climate-justice':'climate justice'}
 
 SEO={}
+# POOL[route] records the exact sentence pool that route's description was
+# built from, so the errs loop below can hold a MACHINE-COMPOSED description
+# to the strict dangling() test (a legitimate ending drawn from ITS OWN
+# source), rather than a generic stopword guess. HAND entries have no pool —
+# they're prose someone wrote and read, not sentences build() assembled.
+POOL={}
 for r,(t,ix,d,og) in HAND.items(): SEO[r]={"title":t,"indexName":ix,"description":d,"ogType":og}
 IXNAME={s:HAND[f"/teach/{s}"][1] for s in themes}
 
@@ -143,8 +206,10 @@ for slug in themes:
             if d and not any(e['description']==d for e in SEO.values()): break
             d=None
         assert d, f"no description for /teach/{slug}/{f}"
-        SEO[f"/teach/{slug}/{f[:-5]}"]={"title":title,"indexName":f"{base} ({IXNAME[slug]})",
+        route=f"/teach/{slug}/{f[:-5]}"
+        SEO[route]={"title":title,"indexName":f"{base} ({IXNAME[slug]})",
                                         "description":d,"ogType":"article"}
+        POOL[route]=pool
 errs=[]
 for r,e in SEO.items():
     if L(e['title'])>60: errs.append(f"{r}: title {L(e['title'])}")
@@ -153,7 +218,15 @@ for r,e in SEO.items():
     head=re.sub(r'\s*—\s*Swechha\s*$','',dec(e['title']))
     if len(head)<15: errs.append(f"{r}: bare label")
     if not any(t in head.lower() for t in TERMS): errs.append(f"{r}: no term — {e['title']}")
-    if re.search(r'\b(a|an|the|or|and|of|to|in|on|for|with|from|by|at|is|are|it|as)\.$',dec(e['description'])):
+    # Machine-composed descriptions are held to the strict test — a
+    # legitimate ending drawn from the exact sentences THIS route was built
+    # from. Hand-written ones (no POOL entry) keep the old stopword check;
+    # it was never the part that was wrong for those, and it's still a
+    # reasonable smell test for prose nobody assembled by trimming.
+    if r in POOL:
+        if dangling(e['description'], POOL[r]):
+            errs.append(f"{r}: dangling word — ...{e['description'][-40:]}")
+    elif re.search(r'\b(a|an|the|or|and|of|to|in|on|for|with|from|by|at|is|are|it|as)\.$',dec(e['description'])):
         errs.append(f"{r}: dangling word — ...{e['description'][-40:]}")
 for k in ('title','description','indexName'):
     v=[e[k] for e in SEO.values()]
