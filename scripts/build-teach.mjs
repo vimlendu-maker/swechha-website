@@ -362,8 +362,10 @@ a.w7-do-t{text-decoration:none;--rl-top:.055em;--rl-bottom:.135em}
    classnames are only ever defined in scripts/build-learn.mjs's own PAGE_CSS
    — this file doesn't import that constant, so without a copy here every
    "Next" band on /teach rendered in default unstyled block flow. Adapted from
-   build-learn.mjs's own .lr-doors/.lr-door rule (this file has no .lr-door-h
-   heading span to match, so that half is left out). */
+   build-learn.mjs's own .lr-doors/.lr-door rule. The door title itself was
+   still a bare <b>, with no .lr-door-h span to match it against — copied
+   below along with the underline treatment (definition + hover/focus states)
+   from build-learn.mjs:411,457-462, scoped to this file's own style tag. */
 /* THE INDEX COLUMNS AND THE DIRECTORY TABLE. Same root cause as the two rules
    above, found by gate 15 on its first run rather than by a reader: .lx-cats /
    .lx-c / .lx-c-h / .lx-l (the "other themes" list on every theme page and the
@@ -423,6 +425,12 @@ a.w7-do-t{text-decoration:none;--rl-top:.055em;--rl-bottom:.135em}
   grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
 .lr-door{display:grid;gap:5px;align-content:start;min-width:0;text-decoration:none;
   color:inherit;border-top:2px solid currentColor;padding-top:12px}
+.lr-door-h{font-family:var(--display);font-size:clamp(19px,2.2vw,24px);line-height:1.14;
+  text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:5px;
+  text-decoration-color:var(--hair);transition:text-decoration-color .14s ease}
+.paper .lr-door-h,.paper-2 .lr-door-h{text-decoration-color:var(--rule-2)}
+.lr-door:hover .lr-door-h,.lr-door:focus-visible .lr-door-h{text-decoration-color:var(--mustard)}
+@media (prefers-reduced-motion:reduce){.lr-door-h{transition:none}}
 
 /* PRINT. A teacher prints a session and carries it into a room, and until now
    that produced a black rectangle — @media print matched nothing on any of the
@@ -528,10 +536,10 @@ ${(F.source || []).length
       </div>`,
       onward: () => `${opener('onward', 'Next', 'Where to go from here.')}
       <div class="wrap"><div class="lr-doors">
-${next ? `        <a class="lr-door" href="${sessHref(t.slug, next.slug)}"><p class="lbl">Next session</p><b>${esc(next.title)}</b><span class="cap">${esc(t.name)}, ${next.position} of ${t.sessions.length}</span></a>` : ''}
-${prev && !next ? `        <a class="lr-door" href="${sessHref(t.slug, prev.slug)}"><p class="lbl">Previous session</p><b>${esc(prev.title)}</b><span class="cap">${esc(t.name)}, ${prev.position} of ${t.sessions.length}</span></a>` : ''}
-        <a class="lr-door" href="${themeHref(t.slug)}"><p class="lbl">The theme</p><b>${esc(t.name)}</b><span class="cap">${t.sessions.length} sessions and the background reading</span></a>
-        <a class="lr-door" href="/teach"><p class="lbl">All eight themes</p><b>Teach</b><span class="cap">${ALL.length} sessions across ${THEMES.length} themes</span></a>
+${next ? `        <a class="lr-door" href="${sessHref(t.slug, next.slug)}"><p class="lbl">Next session</p><span class="lr-door-h">${esc(next.title)}</span><span class="cap">${esc(t.name)}, ${next.position} of ${t.sessions.length}</span></a>` : ''}
+${prev && !next ? `        <a class="lr-door" href="${sessHref(t.slug, prev.slug)}"><p class="lbl">Previous session</p><span class="lr-door-h">${esc(prev.title)}</span><span class="cap">${esc(t.name)}, ${prev.position} of ${t.sessions.length}</span></a>` : ''}
+        <a class="lr-door" href="${themeHref(t.slug)}"><p class="lbl">The theme</p><span class="lr-door-h">${esc(t.name)}</span><span class="cap">${t.sessions.length} sessions and the background reading</span></a>
+        <a class="lr-door" href="/teach"><p class="lbl">All eight themes</p><span class="lr-door-h">Teach</span><span class="cap">${ALL.length} sessions across ${THEMES.length} themes</span></a>
       </div>
 ${learnRail(t.learn)}
       </div>`,
@@ -612,9 +620,9 @@ ${learnRail(t.learn)}
       </div>`,
     onward: () => `${opener('onward', 'Next', 'The other themes, and what to read first.')}
       <div class="wrap"><div class="lr-doors">
-        <a class="lr-door" href="${GUIDE_HREF}"><p class="lbl">Start here</p><b>Before you start</b><span class="cap">How to teach this, and why it is taught this way</span></a>
-        <a class="lr-door" href="/teach"><p class="lbl">All eight</p><b>Teach</b><span class="cap">${ALL.length} sessions across ${THEMES.length} themes</span></a>
-        <a class="lr-door" href="${ATOZ_HREF}"><p class="lbl">Look a word up</p><b>The A to Z</b><span class="cap">${ATOZ.terms.length} environmental terms, defined plainly</span></a>
+        <a class="lr-door" href="${GUIDE_HREF}"><p class="lbl">Start here</p><span class="lr-door-h">Before you start</span><span class="cap">How to teach this, and why it is taught this way</span></a>
+        <a class="lr-door" href="/teach"><p class="lbl">All eight</p><span class="lr-door-h">Teach</span><span class="cap">${ALL.length} sessions across ${THEMES.length} themes</span></a>
+        <a class="lr-door" href="${ATOZ_HREF}"><p class="lbl">Look a word up</p><span class="lr-door-h">The A to Z</span><span class="cap">${ATOZ.terms.length} environmental terms, defined plainly</span></a>
       </div>
       <div class="lx-cats">
         <div class="lx-c"><h3 class="d2 lx-c-h">The other themes</h3>
@@ -703,9 +711,9 @@ ${col.map((t) => `            <li><a href="${themeHref(t.slug)}"><span>${esc(t.n
         </div>`).join('\n')}
       </div>
       <div class="lr-doors">
-        <a class="lr-door" href="${ATOZ_HREF}"><p class="lbl">Look a word up</p><b>The A to Z</b><span class="cap">${ATOZ.terms.length} environmental terms, defined plainly</span></a>
-        <a class="lr-door" href="/schools"><p class="lbl">Bring us in</p><b>Work with a school</b><span class="cap">Swechha runs these sessions with schools directly</span></a>
-        <a class="lr-door" href="/learn"><p class="lbl">The data</p><b>Learn</b><span class="cap">What the numbers behind these themes actually mean</span></a>
+        <a class="lr-door" href="${ATOZ_HREF}"><p class="lbl">Look a word up</p><span class="lr-door-h">The A to Z</span><span class="cap">${ATOZ.terms.length} environmental terms, defined plainly</span></a>
+        <a class="lr-door" href="/schools"><p class="lbl">Bring us in</p><span class="lr-door-h">Work with a school</span><span class="cap">Swechha runs these sessions with schools directly</span></a>
+        <a class="lr-door" href="/learn"><p class="lbl">The data</p><span class="lr-door-h">Learn</span><span class="cap">What the numbers behind these themes actually mean</span></a>
       </div>
       </div>`,
   };
@@ -767,9 +775,9 @@ ${ATOZ.terms.filter((t) => t.term[0].toUpperCase() === g).map((t) => `          
       </div>`,
     onward: () => `${opener('onward', 'Next', 'Where these words are used.')}
       <div class="wrap"><div class="lr-doors">
-        <a class="lr-door" href="/teach"><p class="lbl">The compendium</p><b>Teach</b><span class="cap">${ALL.length} sessions across ${THEMES.length} themes</span></a>
-        <a class="lr-door" href="/learn"><p class="lbl">The data</p><b>Learn</b><span class="cap">What India's own environmental figures mean, with their sources</span></a>
-        <a class="lr-door" href="${GUIDE_HREF}"><p class="lbl">Start here</p><b>Before you start</b><span class="cap">How to teach this, and why it is taught this way</span></a>
+        <a class="lr-door" href="/teach"><p class="lbl">The compendium</p><span class="lr-door-h">Teach</span><span class="cap">${ALL.length} sessions across ${THEMES.length} themes</span></a>
+        <a class="lr-door" href="/learn"><p class="lbl">The data</p><span class="lr-door-h">Learn</span><span class="cap">What India's own environmental figures mean, with their sources</span></a>
+        <a class="lr-door" href="${GUIDE_HREF}"><p class="lbl">Start here</p><span class="lr-door-h">Before you start</span><span class="cap">How to teach this, and why it is taught this way</span></a>
       </div></div>`,
   };
   const OUT = await S.assemble({
@@ -860,10 +868,10 @@ ${ALL.map((s) => `          <div class="lr-st-r">
       </div>`,
     onward: () => `${opener('onward', 'Next', 'The guide, the words, and the people who run these sessions.')}
       <div class="wrap"><div class="lr-doors">
-        <a class="lr-door" href="${GUIDE_HREF}"><p class="lbl">Start here</p><b>Before you start</b><span class="cap">How to teach this, and why it is taught this way</span></a>
-        <a class="lr-door" href="${ATOZ_HREF}"><p class="lbl">Look a word up</p><b>The A to Z</b><span class="cap">${ATOZ.terms.length} environmental terms, defined plainly</span></a>
-        <a class="lr-door" href="/schools"><p class="lbl">Bring us in</p><b>Work with a school</b><span class="cap">Swechha runs these sessions with schools directly</span></a>
-        <a class="lr-door" href="/healthy-cities"><p class="lbl">In the field</p><b>Healthy Cities</b><span class="cap">The funded chapter delivering this curriculum now</span></a>
+        <a class="lr-door" href="${GUIDE_HREF}"><p class="lbl">Start here</p><span class="lr-door-h">Before you start</span><span class="cap">How to teach this, and why it is taught this way</span></a>
+        <a class="lr-door" href="${ATOZ_HREF}"><p class="lbl">Look a word up</p><span class="lr-door-h">The A to Z</span><span class="cap">${ATOZ.terms.length} environmental terms, defined plainly</span></a>
+        <a class="lr-door" href="/schools"><p class="lbl">Bring us in</p><span class="lr-door-h">Work with a school</span><span class="cap">Swechha runs these sessions with schools directly</span></a>
+        <a class="lr-door" href="/healthy-cities"><p class="lbl">In the field</p><span class="lr-door-h">Healthy Cities</span><span class="cap">The funded chapter delivering this curriculum now</span></a>
       </div></div>`,
   };
   const OUT = await S.assemble({
