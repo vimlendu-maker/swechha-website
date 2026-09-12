@@ -81,6 +81,72 @@ describe('tool grants', () => {
     expect(r).toBe('')
   })
 
+  /**
+   * THE TWELVE REFUSALS, ANSWERED 2026-09-12 — and eight of them stay refused.
+   *
+   * The department had been filing a `needs_human` task roughly hourly naming
+   * verbs the permission layer refused. Most were not a narrow allowlist: they
+   * were the agent writing arbitrary code. `python3 -c`, `node -e`, a heredoc
+   * and a `for` loop admit anything at all, so granting one grants everything,
+   * which is the single thing this file exists to prevent.
+   */
+  it.each([
+    ['python3 -c "', 'arbitrary code'],
+    ["python3 - <<'EOF'", 'arbitrary code, heredoc'],
+    ['node -e "', 'arbitrary code, and an egress route this file already names'],
+    ['node -e "console.log(1+1)"', 'harmless instance of an unbounded verb'],
+    ['for f in', 'a shell fragment, not a verb'],
+    ['node scripts/verify-seo.mjs 2>&1', '"run an arbitrary file" is not a permission'],
+    ['npx vitest run', 'npx fetches and executes a package; the npm script is the granted form'],
+    ['gh secret list', 'reads no value, but enumerates the credential inventory into an agent'],
+  ])('still refuses %s (%s)', (verb) => {
+    expect(allowed([verb])).toBe('')
+  })
+
+  /**
+   * `git fetch` writes remote-tracking refs and reaches the network, so it is the
+   * one deliberate exception — a checkout that is behind is indistinguishable
+   * from one that is missing, and the department was reasoning from stale state.
+   * `git pull` is the same verb plus a merge, and the merge is a write.
+   */
+  it('admits git fetch origin and still refuses git pull', () => {
+    expect(allowed(['git fetch origin'])).toBe('Bash(git fetch origin),Bash(git fetch origin:*)')
+    expect(allowed(['git pull'])).toBe('')
+    expect(allowed(['git pull origin main'])).toBe('')
+  })
+
+  /**
+   * The suffix convention was written from half this repository's evidence and
+   * refused `verify:seo`. The obvious repair — accept a reporting word in the
+   * first segment too — would have admitted `verify:final`, which writes
+   * docs/design/FINAL.md, and `verify:crosscheck`, which writes data files. The
+   * name is not evidence; each entry was decided by reading its script.
+   */
+  it('admits verify:seo by name and still refuses the verify: scripts that write', () => {
+    expect(allowed(['npm run verify:seo'])).toBe('Bash(npm run verify:seo)')
+    expect(allowed(['npm run verify:final'])).toBe('')
+    expect(allowed(['npm run verify:crosscheck'])).toBe('')
+  })
+
+  /**
+   * An npm script must never be emitted with the trailing-argument form.
+   * `Bash(npm run test:*)` matches `npm run test:watch` — a watcher that never
+   * exits, which would hang an unattended run — and `npm run test -- --update`,
+   * which rewrites snapshots. For a script the trailing form does not widen what
+   * can be seen; it widens what can be run.
+   */
+  it('emits an npm script without the trailing-argument form', () => {
+    expect(allowed(['npm run test'])).toBe('Bash(npm run test)')
+    expect(allowed(['npm run test'])).not.toContain('npm run test:*')
+  })
+
+  it.each([
+    ['npm run test:watch', 'vitest with no run — never exits'],
+    ['npm run test -- --update', 'arguments rewrite snapshots'],
+  ])('refuses %s (%s)', (verb) => {
+    expect(allowed([verb])).toBe('')
+  })
+
   it('the whitelist lives where the department cannot edit it', () => {
     // guard-paths.sh forbids scripts/website-team/** outright; the ledger sits
     // in docs/ on purpose. If tool-grants.py ever moved, the ratchet would be

@@ -2,5 +2,12 @@
   "$comment": "★ EARNED EYES. Commands the department has been refused often enough that going without them was costing more than granting them. Appended by scripts/website-team/reconcile.py when the SAME verb is refused in two DIFFERENT runs, and read by run.sh and execute.sh through scripts/website-team/tool-grants.py — which refuses anything that is not on its own read-only verb list. That reader lives in scripts/website-team/**, which is GATED and needs a human merge to change, so the worst a wrong entry here can do is be ignored. An agent can grant itself eyes; it can never grant itself hands.",
   "$comment_why": "The department repeats its mistakes because nothing it learns changes a mechanism. A lesson in prose is advice an agent can skim past; a grant is a fact about what the next run can see. On 2026-09-11 the manager discovered gh run view was denied, wrote that lesson correctly, and the next run would have started without it — this is the file that stops that.",
   "$comment_removing": "Deleting an entry narrows the department and needs no ceremony: the next run simply does without it. Adding one by hand is fine too, subject to the same reader. What may never happen is widening the reader's whitelist from inside the department.",
-  "grants": []
+  "$comment_seeded_by_hand": "★ THE FIRST FIVE WERE PUT HERE BY A HUMAN, 2026-09-12, AND TWO OF THEM SHOULD NOT HAVE NEEDED TO BE. reconcile.py had already reported `granting 'gh run list'` and `granting 'gh workflow list'` on run after run — both provably read-only, both past the two-run threshold — and this file still read `grants: []`. The reason is that land-lessons.sh computes the grant inside a `mktemp -d` worktree which its own `trap cleanup EXIT` destroys, so on any run where the push or the pull request fails the earned grant dies with the directory. PR #140 merged today carrying lessons.md and no ledger change. The ratchet has therefore never once ratcheted, which is why the same verbs were refused every hour for two days. That defect is NOT fixed here — it is in land-lessons.sh, it is reported, and fixing it under the same change would hide it.",
+  "grants": [
+    "gh run list",
+    "gh workflow list",
+    "git fetch origin",
+    "npm run test",
+    "npm run verify:seo"
+  ]
 }

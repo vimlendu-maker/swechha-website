@@ -41,13 +41,61 @@ READ_ONLY = frozenset({
     "gh workflow list", "gh workflow view",
     "gh label list", "gh release list", "gh release view",
     "git log", "git show", "git diff", "git status", "git blame", "git ls-files",
+
+    # ★ THE ONE NETWORK VERB, AND IT IS HERE DELIBERATELY. `git fetch` reaches the
+    #   network and writes remote-tracking refs, so it fails the literal reading
+    #   of "read-only" that governs everything else in this set. Admitted anyway,
+    #   by the owner, 2026-09-12, because the alternative was measured and is
+    #   worse: without it the department reasons from whatever this checkout
+    #   happens to hold and CANNOT TELL BEHIND FROM MISSING -- the exact confusion
+    #   org-spine's `fix/stale-checkout-is-not-an-absent-one` was written to end.
+    #
+    #   What makes it safe is what it does not touch: no working tree, no index,
+    #   no local branch, no merge. `git pull` is therefore NOT here and must never
+    #   be added -- it is a fetch plus a merge, and the merge is a write.
+    #
+    #   It is not a precedent for `curl`, `wget` or `node -e`. Each of those
+    #   carries an arbitrary URL and can post the model's context to it. This one
+    #   speaks only to `origin`.
+    "git fetch origin",
 })
 
-# npm scripts are named by the repository, so they cannot be enumerated here.
+# ★ NAMED ONE BY ONE, BECAUSE THE NAMING CONVENTION LIED. The suffix rule below
+#   was written from half this repository's evidence. It admits `air:status` and
+#   `seo:gsc:check` and refuses `verify:seo`, because the same words are used as
+#   a PREFIX here too. The obvious repair -- also accept a reporting word in the
+#   FIRST segment -- was drafted and then abandoned on inspection:
+#
+#       verify:final       writes docs/design/FINAL.md      verify-final.mjs:757
+#       verify:crosscheck  writes data files, mkdir -p      verify-air-crosscheck.mjs:114,341
+#       verify:seo         writes nothing                   read in full, 2026-09-12
+#
+#   Two of the three `verify:*` scripts write. A prefix rule would have granted
+#   both. So the NAME IS NOT EVIDENCE in either direction, and every entry here
+#   was decided by reading the script it runs, not by the shape of its label.
+#
+#   `test` is the exact name only. `test:watch` is `vitest` with no `run` -- a
+#   watcher that never exits, which would hang an unattended run forever -- and
+#   exact matching is what excludes it.
+READ_ONLY_NPM_SCRIPTS = frozenset({
+    "test",         # vitest run -- the suite, non-watch
+    "verify:seo",   # node scripts/verify-seo.mjs -- reports, writes nothing
+})
+
+# npm scripts are named by the repository, so they cannot all be enumerated here.
 # These suffixes are the repository's own convention for a script that reports
 # and writes nothing; `npm run build:*` and `npm run data:*` deliberately do not
 # appear, because both commit.
 READ_ONLY_NPM_SUFFIXES = ("status", "check", "verify")
+
+
+def is_npm_script(grant: str) -> bool:
+    """True when this grant names an npm script rather than a plain verb.
+
+    Separate from permitted() because the two answer different questions and
+    main() needs both: whether a grant is allowed, and how to EMIT it.
+    """
+    return " ".join(str(grant).split()).startswith("npm run ")
 
 
 def permitted(grant: str) -> bool:
@@ -56,8 +104,12 @@ def permitted(grant: str) -> bool:
         return True
     if g.startswith("npm run "):
         script = g[len("npm run "):]
-        # No arguments, and a reporting-shaped name.
-        return " " not in script and script.split(":")[-1] in READ_ONLY_NPM_SUFFIXES
+        if " " in script:          # no arguments, ever
+            return False
+        # The named exceptions first, then the convention for scripts that
+        # genuinely follow it.
+        return (script in READ_ONLY_NPM_SCRIPTS
+                or script.split(":")[-1] in READ_ONLY_NPM_SUFFIXES)
     return False
 
 
@@ -88,10 +140,18 @@ def main() -> int:
     if a.check:
         print(f"{len(ok)} granted, {len(refused)} refused", file=sys.stderr)
         return 1 if refused else 0
-    # Both forms: an exact-match rule permits the bare command and refuses it
-    # with an argument, which is the defect that made half this repository's
-    # allowlist narrower than it looked.
-    print(",".join(f"Bash({g}),Bash({g}:*)" for g in ok), end="")
+    # Both forms for a plain verb: an exact-match rule permits the bare command
+    # and refuses it with an argument, which is the defect that made half this
+    # repository's allowlist narrower than it looked.
+    #
+    # ★ BUT NEVER THE `:*` FORM FOR AN NPM SCRIPT. `Bash(npm run test:*)` matches
+    #   `npm run test:watch` -- a watcher that never exits -- and also
+    #   `npm run test -- --update`, which rewrites snapshots. For a script the
+    #   trailing form does not widen what can be SEEN, it widens what can be RUN,
+    #   which is the one thing this file exists to prevent.
+    fragments = [f"Bash({g})" if is_npm_script(g) else f"Bash({g}),Bash({g}:*)"
+                 for g in ok]
+    print(",".join(fragments), end="")
     return 0
 
 
