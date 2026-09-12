@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, existsSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 
@@ -108,14 +109,55 @@ describe('inbox: the org-wide convention', () => {
 describe('inbox: urgency, and the sentinel it feeds', () => {
   const readSh = (p: string) => readFileSync(join(ROOT, p), 'utf8')
 
-  it('only NOW and TODAY wake the department off-schedule', () => {
+  it('only NOW and TODAY — colon or #tag — wake the department off-schedule', () => {
     const src = readSh('scripts/website-team/on-change.sh')
     // Everything else is queued, because every run is an LLM invocation and a
     // BACKLOG idea typed at midnight must not bill one.
-    expect(src).toMatch(/\^\(NOW\|TODAY\)\[\[:space:\]\]\*:/)
     expect(src).toMatch(/URGENT[\s\S]*-eq 0/)
     expect(src, 'a non-urgent change must record the hash and NOT run')
       .toMatch(/leaving it for the next scheduled run/)
+
+    // Since 4406b9ee, `#now`/`#today` (the Obsidian tag form) are urgent too,
+    // not just `NOW:`/`TODAY:`. Pull the REAL strip+match pipeline out of the
+    // script and run sample lines through it, rather than asserting a regex
+    // string that could drift from what the script actually executes.
+    const sedMatch = src.match(/sed -E '([^']*)'/)
+    const grepMatch = src.match(/grep -icE '([^']*)'/)
+    expect(sedMatch, 'could not find the leading-marker strip in on-change.sh').not.toBeNull()
+    expect(grepMatch, 'could not find the URGENT match pattern in on-change.sh').not.toBeNull()
+    const [, sedPattern] = sedMatch!
+    const [, grepPattern] = grepMatch!
+
+    const urgentCountFor = (line: string) =>
+      Number(
+        execFileSync(
+          'bash',
+          [
+            '-c',
+            'printf "%s\\n" "$1" | sed -E "$2" | grep -icE "$3" || true',
+            '_',
+            line,
+            sedPattern,
+            grepPattern,
+          ],
+          { encoding: 'utf8' },
+        ).trim(),
+      )
+
+    // The colon form, bulleted or not.
+    expect(urgentCountFor('NOW: fix the CDN')).toBe(1)
+    expect(urgentCountFor('- TODAY: fix the CDN')).toBe(1)
+    // The Obsidian tag form — including bulleted, the case that sat unworked
+    // on 2026-09-12 until this commit.
+    expect(urgentCountFor('#now fix the CDN')).toBe(1)
+    expect(urgentCountFor('- #today fix the CDN')).toBe(1)
+    // A tag ends at a non-word character: these are different tags.
+    expect(urgentCountFor('#nowhere is not urgent')).toBe(0)
+    expect(urgentCountFor('#todayish is not urgent')).toBe(0)
+    // Everything else still queues rather than waking anyone.
+    expect(urgentCountFor('THIS WEEK: refresh the sitemap')).toBe(0)
+    expect(urgentCountFor('BACKLOG: someday')).toBe(0)
+    expect(urgentCountFor('fix the broken link')).toBe(0)
   })
 
   it('the manager is told what each prefix means, including WATCH', () => {
