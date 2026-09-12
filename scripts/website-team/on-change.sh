@@ -38,6 +38,9 @@
 # ── WHAT IT DELIBERATELY DOES NOT DO ─────────────────────────────────────────
 #   It does not queue. If a run is already in flight the lock is held and this
 #   exits — that run reads the same file and will see the job.
+#
+#   It does not close anything. A line leaving `## Open` is evidence the file
+#   changed, not evidence the work happened; see inbox-intake.py.
 set -euo pipefail
 
 REPO="${WEBSITE_TEAM_REPO:-$HOME/swechha-website}"
@@ -95,6 +98,26 @@ JOBS="$(printf '%s' "$BOTH" | grep -c . || true)"
 URGENT="$(printf '%s' "$BOTH" \
   | sed -E 's/^([[:space:]]*(#+[[:space:]]+|[-*+][[:space:]]*|\[[ xX]\][[:space:]]*))+//' \
   | grep -icE '^(#?(NOW|TODAY)[[:space:]]*:|#(NOW|TODAY)([^[:alnum:]_-]|$))' || true)"
+
+# ── FILE EVERY OPEN LINE AS A WORK ITEM, BEFORE DECIDING WHETHER TO WAKE ANYONE ─
+#   Tracking and waking are different questions and conflating them is what made
+#   this file lose work. A non-urgent line used to be answered by recording the
+#   hash and saying "leaving it for the next scheduled run" -- to /tmp, which
+#   nobody reads, with the hash recorded so it would never re-trigger. On
+#   2026-09-12 that next run was refused on cost and five jobs simply ceased to
+#   exist anywhere. A task survives a refused run; a recorded hash does not.
+#
+#   It runs BEFORE the hash short-circuit on purpose: the hash says the OPEN LIST
+#   is unchanged, which is not the same as saying every line in it was filed. If
+#   the store was unreachable last time, this is the pass that catches up.
+#
+#   `|| true` because bookkeeping may never stop the department, the same rule
+#   run.sh follows for the spine. It is idempotent -- filing is keyed on the task
+#   store, not on a marker -- so running it on every save costs one read.
+if [ "$JOBS" -gt 0 ]; then
+  python3 "$REPO/scripts/website-team/inbox-intake.py" "$DEPARTMENT" \
+    "$INBOX" "$ORG_INBOX" || true
+fi
 
 if [ "$JOBS" -eq 0 ]; then
   echo "$CURRENT" > "$SEEN"

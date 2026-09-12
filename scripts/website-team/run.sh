@@ -200,6 +200,20 @@ if [ ! -r "$INBOX" ] || ! mkdir -p "$RECORDS" 2>/dev/null || [ ! -w "$RECORDS" ]
   exit 5
 fi
 
+# ── FILE THE INBOX AS WORK ITEMS, BEFORE SPENDING ANYTHING ───────────────────
+# The watcher does this too. Both, because they fail in different directions: the
+# watcher can be skipped (a run held the lock, or the edit landed while the Mac
+# slept) and a scheduled run can be refused before it reads anything. Running it
+# here means a job the owner typed is tracked even on a day the department never
+# gets as far as the model -- which is precisely the day it matters, and precisely
+# the day it used to vanish.
+#
+# Placed AFTER the vault preflight so an unreadable inbox is already a loud
+# refusal, and BEFORE the ceiling so a refused run still files the work it was
+# refused from doing.
+python3 "$REPO/scripts/website-team/inbox-intake.py" "$DEPARTMENT" \
+  "$INBOX" "$ORG_INBOX" || true
+
 # ── THE DAILY CEILING ────────────────────────────────────────────────────────
 # Checked BEFORE the model call, like the vault preflight above and for the same
 # reason: a refusal that costs a dollar to discover is not a refusal.
