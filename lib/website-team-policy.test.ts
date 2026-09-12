@@ -325,3 +325,45 @@ describe('CI changes can be proposed and never merged', () => {
     expect(JSON.parse(r.stdout).requires_approval).toBe(true)
   })
 })
+
+/**
+ * THE ONE NARROWED DENY, AND WHY IT IS A TEST.
+ *
+ * `data/` is forbidden because the authored data under it is exactly what the
+ * department must not rewrite. But `npm run build:all` rewrites ONE generated
+ * file under it — data/seo/lastmod.json, the hash register — on every run that
+ * changes a rendered page. With `data/` denied outright, every visible fix the
+ * department made was refused and stranded locally, while changes that altered
+ * no output shipped fine. Five branches were lost that way on 2026-09-12.
+ *
+ * ADR-0004's spirit: a narrowed deny needs a test that fails if the narrowing
+ * widens. This asserts the exception is exactly one file, named in full, and
+ * that the directory it sits in is still denied.
+ */
+describe('the guard excepts the build hash register and nothing more', () => {
+  const guard = readFileSync(join(ROOT, 'scripts/website-team/guard-paths.sh'), 'utf8')
+  const block = guard.match(/ALLOWED=\(([\s\S]*?)\n\)/)
+
+  const entries = (block?.[1] ?? '')
+    .split('\n')
+    .map((l) => l.replace(/#.*$/, '').trim())
+    .filter(Boolean)
+    .map((l) => l.replace(/^'|'$/g, ''))
+
+  it('allows exactly one path', () => {
+    expect(block, 'guard-paths.sh has no ALLOWED=( ... ) block').toBeTruthy()
+    expect(entries).toEqual(['data/seo/lastmod.json'])
+  })
+
+  it('names a file, never a directory — the guard prefix-matches', () => {
+    for (const e of entries) {
+      expect(e.endsWith('/'), `${e} is a directory; the guard matches by prefix so this would except the whole tree`).toBe(false)
+      expect(e.split('/').length, `${e} should be an exact file path`).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  it('leaves data/ itself denied', () => {
+    const forbidden = guard.match(/FORBIDDEN=\(([\s\S]*?)\n\)/)?.[1] ?? ''
+    expect(forbidden).toContain("'data/'")
+  })
+})
