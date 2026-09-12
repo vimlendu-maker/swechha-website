@@ -59,10 +59,19 @@ describe('budget', () => {
     expect(read(withLog([row(`${stamp}T09:00:00+0530`), row(`${stamp}T10:00:00+0530`, 1.5)]))).toBeCloseTo(1.5, 3)
   })
 
-  it('the ceiling is a number in policy.json, which the department may not write', () => {
+  it('the ceiling is deliberately ABSENT from policy.json, not a number', () => {
+    // Per 4406b9ee, the owner removed cost.daily_ceiling_usd on 2026-09-12 —
+    // its absence is the current, correct state, not an oversight. A number
+    // reappearing here means it was silently reinstated rather than added
+    // back deliberately by the owner.
     const policy = JSON.parse(readFileSync(join(ROOT, 'docs/website-team/policy.json'), 'utf8'))
-    expect(typeof policy.cost?.daily_ceiling_usd).toBe('number')
-    // An agent that can raise its own ceiling has no ceiling.
+    expect(policy.cost?.daily_ceiling_usd).toBeUndefined()
+    expect(policy.cost?.$comment_no_ceiling, 'the removal must stay documented, not just silent').toMatch(
+      /THERE IS NO DAILY CEILING/,
+    )
+    // Even with no ceiling to protect, the file itself stays outside the
+    // department's write path — an agent that could write policy.json could
+    // put a ceiling of its own choosing back in.
     const guard = readFileSync(join(ROOT, 'scripts/website-team/guard-paths.sh'), 'utf8')
     expect(guard).toContain('docs/website-team/policy.json')
   })

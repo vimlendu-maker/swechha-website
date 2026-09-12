@@ -62,11 +62,34 @@ FORBIDDEN=(
 #   The mechanism is kept rather than deleted because the next legitimate
 #   exception should narrow a deny, not delete one.
 ALLOWED=(
-  # ★ EMPTY, AND THAT IS THE POINT. It held scripts/website-team/sentinel/,
-  #   because a `WATCH:` item meant "add a probe there". The sentinel moved to
-  #   the swechha-ai repository on 2026-09-11, so there is nothing here for the
-  #   department to write and no exception to make. The mechanism stays because
-  #   the next legitimate exception should narrow a deny, not delete one.
+  # ★ THE BUILD'S OWN HASH REGISTER, AND WHY DENYING IT BROKE THE DEPARTMENT.
+  #
+  #   `npm run build:all` rewrites data/seo/lastmod.json on every run that
+  #   changes any rendered page — that is what the file is for. `data/` is
+  #   forbidden above, and nothing narrowed it, so ANY change that altered what
+  #   a reader sees failed the guard and was refused with "branch kept locally
+  #   for inspection; nothing pushed".
+  #
+  #   The effect was exactly backwards. A change that alters no output — the
+  #   ternary-to-if/else lint pass in #136 — produced no lastmod diff and
+  #   shipped. Every change that FIXED SOMETHING VISIBLE could not. Measured on
+  #   2026-09-12: five branches, all of them /teach, refused between 08:21 and
+  #   13:10, four of them re-diagnosing and re-fixing the same two unstyled
+  #   classes because none of the earlier ones had reached main for the next
+  #   run to see. The live site kept the defect all day.
+  #
+  #   This is the narrowing the mechanism was kept for. `data/` stays denied —
+  #   the real authored data under it is exactly what the department must not
+  #   rewrite. Only this one generated file is excepted, and it is named in
+  #   full rather than as a directory so the exception cannot widen by
+  #   accident. lib/website-team-policy.test.ts fails if it does.
+  #
+  #   Safe to except because it is machine-written by definition: it carries a
+  #   custom key-wise merge driver precisely because no human edits it
+  #   (docs/LASTMOD-MERGE-DRIVER.md), and generated-current.yml regenerates it
+  #   on every pull request and fails on any drift. A hand edit here cannot
+  #   survive; a denied build artefact stopped all shipping.
+  'data/seo/lastmod.json'
 )
 
 # Hand-editing served HTML is forbidden; the build regenerating it is not.

@@ -32,9 +32,48 @@
 #   how the first stage-two run deleted its own parser mid-run.
 set -euo pipefail
 
-REPO="${WEBSITE_TEAM_REPO:-$HOME/swechha-website}"
-WT="$REPO/scripts/website-team/worktree.sh"
-VAULT="${WEBSITE_TEAM_VAULT:-$HOME/swechha-vault}"
+# ── ONE RUNNER, TWO DEPARTMENTS ──────────────────────────────────────────────
+#
+# ★ THE COMMENT BELOW PROMISED THIS AND THE CODE DID NOT DELIVER IT. "The second
+#   department changes one variable rather than reinventing a task system" was
+#   true of the VAULT paths and false of everything else: twelve lines named
+#   scripts/website-team/ and docs/website-team/ outright, and the agent was
+#   named literally. So fundraising could not use this runner, and on 2026-09-12
+#   the owner found out the hard way — the fundraising department had a policy
+#   file, a path guard and a worktree script, and no runner to call any of them.
+#   Its own policy.json had been recording `claude_code_team: "not yet running"`
+#   since it was written.
+#
+#   Copying this file into the second department was the obvious fix and the
+#   wrong one: two 23KB runners that must move in lockstep is the duplicated-
+#   machinery defect class this estate keeps paying for. So the file is now
+#   genuinely department-neutral, and there is exactly one of it.
+#
+# THREE DIRECTORIES, AND THEY ARE NOT THE SAME DIRECTORY:
+#
+#   $LIB    where THIS script and its helpers live. Resolved from the script's
+#           own path, so the helpers travel with the runner wherever it is moved
+#           to — including into the org spine, which is where it belongs and is
+#           now a `git mv` rather than a rewrite, because nothing below names
+#           this location.
+#   $REPO   the DEPARTMENT'S repository. Its worktree.sh, its guard-paths.sh,
+#           its policy.json, its tool grants, its agent definition.
+#   $VAULT  the shared record. Already derived from $DEPARTMENT, and was the
+#           only thing that ever was.
+#
+# For $DEPARTMENT=website every path below resolves to the byte-identical string
+# it did before this change. That is the point: the live department cannot
+# notice, and lib/website-team-spine.test.ts proves it rather than asserting it.
+LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# ★ THE DEPARTMENT IS READ FIRST NOW, because $REPO and $WT are derived from it.
+#   WEBSITE_TEAM_* is still honoured so nothing already scheduled breaks; TEAM_*
+#   is the name to use from here, since "WEBSITE_TEAM_DEPARTMENT=fundraising" is
+#   a sentence that reads like a bug.
+DEPARTMENT="${TEAM_DEPARTMENT:-${WEBSITE_TEAM_DEPARTMENT:-website}}"
+REPO="${TEAM_REPO:-${WEBSITE_TEAM_REPO:-$HOME/swechha-$DEPARTMENT}}"
+WT="$REPO/scripts/$DEPARTMENT-team/worktree.sh"
+VAULT="${TEAM_VAULT:-${WEBSITE_TEAM_VAULT:-$HOME/swechha-vault}}"
 
 # ── THE ORG-WIDE CONVENTION, NOT THIS DEPARTMENT'S INVENTION ─────────────────
 # Every path below is DERIVED from $DEPARTMENT, so the second department
@@ -49,11 +88,14 @@ VAULT="${WEBSITE_TEAM_VAULT:-$HOME/swechha-vault}"
 # with Swechha colleagues, and a script stored there would be editable by
 # anyone with vault access while running unattended with write access to a live
 # site. The spec travels between repositories; the executable does not.
-DEPARTMENT="${WEBSITE_TEAM_DEPARTMENT:-website}"
 RECORDS="$VAULT/swechha/$DEPARTMENT/decisions"
 INBOX="$VAULT/swechha/$DEPARTMENT/team/inbox.md"
 ORG_INBOX="$VAULT/swechha/ai/inbox.md"
 STAMP="$(date +%Y-%m-%d)"
+# Portable capitalisation. The ${VAR^} form is bash 4 and /bin/bash here is
+# 3.2.57, where it is a fatal "bad substitution" -- and the LaunchAgents run
+# this under /bin/bash. `bash -n` does not catch it; running it does.
+DEPT_TITLE="$(printf '%s' "$DEPARTMENT" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')"
 # MODE: `work` (daily) or `review` (weekly). Anything else is rejected rather
 # than defaulted, because a typo silently running the wrong mode is worse than
 # not running.
@@ -156,6 +198,27 @@ ALLOWED="$ALLOWED,Bash(npm run air:status),Bash(npm run air:status:*)"
 # provider per TTL -- see swechha-ai/infra-status.py.
 ALLOWED="$ALLOWED,Bash(npm run infra:status),Bash(npm run infra:status:*)"
 
+# ── THE DEPARTMENT'S OWN READ-ONLY COMMANDS ──────────────────────────────────
+# The block above is the shared core plus, for now, the website department's npm
+# rules -- harmless to a department that has no npm, and left here rather than
+# migrated because lib/website-team-infra.test.ts derives its check from this
+# file and moving them would buy tidiness with a broken guard.
+#
+# A department whose test command is `pytest` rather than `npm test` adds it
+# here. The file is OPTIONAL: a department without one gets the core and
+# nothing else, and a missing file is never a reason a run cannot start.
+#
+# ★ IT LIVES UNDER scripts/$DEPARTMENT-team/, WHICH EVERY DEPARTMENT'S PATH
+#   GUARD FORBIDS. That is the whole reason it is a shell file there rather
+#   than data anywhere else: an agent that can append to its own allowlist has
+#   no allowlist. The earned-grants ledger below is the path that IS agent-
+#   writable, and tool-grants.py refuses anything it cannot prove read-only.
+_DEPT_TOOLS="$REPO/scripts/$DEPARTMENT-team/allowed-tools.sh"
+if [ -r "$_DEPT_TOOLS" ]; then
+  # shellcheck source=/dev/null
+  . "$_DEPT_TOOLS"
+fi
+
 # ── EARNED GRANTS ────────────────────────────────────────────────────────────
 # docs/website-team/tool-grants.json is data the department may add to;
 # tool-grants.py refuses anything it cannot prove read-only, and IT lives in
@@ -163,7 +226,7 @@ ALLOWED="$ALLOWED,Bash(npm run infra:status),Bash(npm run infra:status:*)"
 # can never grant itself hands -- the thing deciding which is which is not
 # something it can edit. A missing or broken ledger grants nothing and is never
 # a reason the run cannot start.
-_GRANTS="$(python3 "$REPO/scripts/website-team/tool-grants.py" "$REPO/docs/website-team/tool-grants.json" 2>/dev/null || true)"
+_GRANTS="$(python3 "$LIB/tool-grants.py" "$REPO/docs/$DEPARTMENT-team/tool-grants.json" 2>/dev/null || true)"
 [ -n "$_GRANTS" ] && ALLOWED="$ALLOWED,$_GRANTS"
 
 if [ "$DRY" = "--dry-run" ]; then
@@ -174,10 +237,10 @@ if [ "$DRY" = "--dry-run" ]; then
   echo "inbox:    $INBOX"
   echo "org inbox: $ORG_INBOX"
   echo "record:   $OUT"
-  echo "agent:    website-manager"
+  echo "agent:    $DEPARTMENT-manager"
   echo "tools:    $ALLOWED"
   echo
-  echo "would run: claude -p --agent website-manager --permission-mode dontAsk \\"
+  echo "would run: claude -p --agent "$DEPARTMENT-manager" --permission-mode dontAsk \\"
   echo "             --allowedTools '$ALLOWED' --output-format json"
   exit 0
 fi
@@ -232,13 +295,13 @@ python3 "$REPO/scripts/website-team/inbox-intake.py" "$DEPARTMENT" \
 #   agent that can raise its own ceiling has no ceiling. A missing or unreadable
 #   `cost` block leaves CEILING empty and skips the check -- a brake must not
 #   become a second way for a bad parse to stop the department.
-CEILING="$(python3 -c "import json;print(json.load(open('$REPO/docs/website-team/policy.json')).get('cost',{}).get('daily_ceiling_usd',''))" 2>/dev/null || true)"
+CEILING="$(python3 -c "import json;print(json.load(open('$REPO/docs/$DEPARTMENT-team/policy.json')).get('cost',{}).get('daily_ceiling_usd',''))" 2>/dev/null || true)"
 if [ -n "$CEILING" ]; then
-  SPENT="$(python3 "$REPO/scripts/website-team/budget.py" 2>/dev/null || echo 0)"
+  SPENT="$(python3 "$LIB/budget.py" 2>/dev/null || echo 0)"
   OVER="$(python3 -c "print(1 if float('${SPENT:-0}') >= float('$CEILING') else 0)" 2>/dev/null || echo 0)"
   if [ "$OVER" = "1" ]; then
     echo "run.sh: REFUSED — today's spend \$$SPENT has reached the \$$CEILING daily ceiling." >&2
-    echo "run.sh: Nothing was spent on this run. The ceiling is docs/website-team/policy.json" >&2
+    echo "run.sh: Nothing was spent on this run. The ceiling is docs/$DEPARTMENT-team/policy.json" >&2
     echo "run.sh: -> cost.daily_ceiling_usd, and only a human can raise it." >&2
     echo "run.sh: If this is an incident, raise it deliberately rather than waiting for midnight." >&2
     ev run_refused reason=daily-ceiling spent_usd="$SPENT" ceiling_usd="$CEILING"
@@ -264,12 +327,12 @@ cd "$WORK"
 ev run_started mode="$MODE"
 
 RESULT="$(claude -p "$PROMPT" \
-  --agent website-manager \
+  --agent "$DEPARTMENT-manager" \
   --permission-mode dontAsk \
   --allowedTools "$ALLOWED" \
   --output-format json < /dev/null 2>/dev/null)"
 
-PARSED="$(printf '%s' "$RESULT" | python3 "$REPO/scripts/website-team/parse-result.py")"
+PARSED="$(printf '%s' "$RESULT" | python3 "$LIB/parse-result.py")"
 COST="$(printf '%s' "$PARSED" | head -1)"
 TEXT="$(printf '%s' "$PARSED" | tail -n +2)"
 
@@ -279,16 +342,16 @@ TEXT="$(printf '%s' "$PARSED" | tail -n +2)"
 # must not become the report's headline: on 2026-09-11 both `gh run view
 # --log-failed` calls were refused, the Manager said so in one line, and the
 # guess it was forced into was printed above that caveat as the finding.
-DENIED="$(printf '%s' "$RESULT" | python3 "$REPO/scripts/website-team/denials.py" 2>/dev/null || true)"
+DENIED="$(printf '%s' "$RESULT" | python3 "$LIB/denials.py" 2>/dev/null || true)"
 
 {
   echo "---"
-  echo "title: Website team run — $STAMP"
-  echo "source: scripts/website-team/run.sh, claude -p --agent website-manager"
+  echo "title: $DEPT_TITLE team run — $STAMP"
+  echo "source: $DEPARTMENT-team/run.sh, claude -p --agent $DEPARTMENT-manager"
   echo "cost_usd_estimate: $COST"
   echo "---"
   echo
-  echo "# Website team run — $STAMP"
+  echo "# $DEPT_TITLE team run — $STAMP"
   echo
   if [ -n "${DENIED:-}" ]; then
     echo "> [!warning] **BLOCKED — this run was refused tools it asked for.**"
@@ -362,7 +425,7 @@ fi
 
 if [ "$MODE" = "work" ]; then
   BRIEFS="$(mktemp -d)"
-  MAPPING="$(printf '%s' "$TEXT" | python3 "$REPO/scripts/website-team/extract-briefs.py" "$BRIEFS" || true)"
+  MAPPING="$(printf '%s' "$TEXT" | python3 "$LIB/extract-briefs.py" "$BRIEFS" || true)"
   if [ -z "$MAPPING" ]; then
     echo "stage two: no execution briefs in this report"
   else
@@ -390,7 +453,7 @@ if [ "$MODE" = "work" ]; then
       # said why" -- a real result, and never `shipped`. Collapsing it into
       # success is how a brief that could not be done was reported as done.
       set +e
-      "$REPO/scripts/website-team/execute.sh" "$spec" "$model" "$path"
+      "$LIB/execute.sh" "$spec" "$model" "$path"
       exec_rc=$?
       set -e
       case "$exec_rc" in
@@ -414,8 +477,8 @@ fi
 # department may append to its own lessons file; until 2026-09-12 nothing did,
 # so every lesson the Manager wrote died in a dated record and the next run paid
 # to relearn it.
-if [ -x "$REPO/scripts/website-team/land-lessons.sh" ]; then
-  "$REPO/scripts/website-team/land-lessons.sh" "$OUT" || \
+if [ -x "$LIB/land-lessons.sh" ]; then
+  "$LIB/land-lessons.sh" "$OUT" || \
     echo "run.sh: lessons did not land; the run itself is unaffected"
 fi
 

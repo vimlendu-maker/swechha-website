@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, existsSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 
@@ -29,7 +30,10 @@ const VAULT = join(homedir(), 'swechha-vault')
 describe('inbox: the org-wide convention', () => {
   it('every path derives from $DEPARTMENT rather than being hardcoded', () => {
     const run = read('scripts/website-team/run.sh')
-    expect(run).toMatch(/DEPARTMENT="\$\{WEBSITE_TEAM_DEPARTMENT:-website\}"/)
+    // The department is settable, and the old variable name is still honoured
+    // so nothing already scheduled breaks.
+    expect(run).toMatch(
+      /DEPARTMENT="\$\{TEAM_DEPARTMENT:-\$\{WEBSITE_TEAM_DEPARTMENT:-website\}\}"/)
     // The three derived paths. A literal 'website' in any of them means the
     // next department has to rewrite the script instead of setting a variable.
     expect(run).toMatch(/RECORDS="\$VAULT\/swechha\/\$DEPARTMENT\/decisions"/)
@@ -39,6 +43,70 @@ describe('inbox: the org-wide convention', () => {
       .toMatch(/OUT="\$RECORDS\/\$STAMP-\$DEPARTMENT-team-\$MODE\.md"/)
     expect(run, 'the activity log actor must be the department, not a literal')
       .toMatch(/"\$EV" "\$DEPARTMENT" manager/)
+  })
+
+  /**
+   * ★ THE TEST ABOVE IS NAMED "every path" AND CHECKED SIX.
+   *
+   * It passed for as long as it existed while TWELVE other lines named
+   * scripts/website-team/ and docs/website-team/ outright, and while the agent
+   * was `--agent website-manager` literally. Its own comment says "a literal
+   * 'website' in any of them means the next department has to rewrite the
+   * script" — which is exactly what happened. On 2026-09-12 the owner found
+   * the fundraising department had a policy file, a path guard and a worktree
+   * script, and no runner able to call any of them; its policy.json had been
+   * recording `claude_code_team: "not yet running"` since it was written.
+   *
+   * A test named for a property it only spot-checks reports that property
+   * without holding it. This one reads every non-comment line.
+   */
+  it('NO line in the runner names one department outright', () => {
+    const run = read('scripts/website-team/run.sh')
+    const offenders = run
+      .split('\n')
+      .filter((line) => !line.trimStart().startsWith('#'))
+      .filter((line) => /website-team\/|website-manager|Website team/.test(line))
+    expect(
+      offenders,
+      `these lines pin the runner to one department:\n${offenders.join('\n')}`,
+    ).toEqual([])
+  })
+
+  it('the helpers are found next to the runner, not under a named department', () => {
+    const run = read('scripts/website-team/run.sh')
+    // $LIB is the runner's own directory, so the helpers travel with it and
+    // moving the whole thing into the org spine becomes a `git mv` rather than
+    // a rewrite — nothing in the file names its own location.
+    expect(run).toMatch(
+      /LIB="\$\(cd "\$\(dirname "\$\{BASH_SOURCE\[0\]\}"\)" && pwd\)"/)
+    expect(run, 'the department supplies its own worktree script')
+      .toMatch(/WT="\$REPO\/scripts\/\$DEPARTMENT-team\/worktree\.sh"/)
+    expect(run, 'and its own manager agent')
+      .toMatch(/--agent "\$DEPARTMENT-manager"/)
+  })
+
+  /**
+   * ★ ${VAR^} IS BASH 4 AND /bin/bash HERE IS 3.2.57, where it is a fatal
+   * "bad substitution" — and under `set -euo pipefail` that aborts the run
+   * before it does anything. The LaunchAgents invoke /bin/bash directly.
+   * `bash -n` parses it happily, so nothing but running it catches this; it was
+   * introduced and caught during the one-runner change on 2026-09-12.
+   */
+  it('the runner uses no bash 4 syntax, because launchd runs it under 3.2', () => {
+    for (const path of ['scripts/website-team/run.sh',
+                        'scripts/website-team/on-change.sh']) {
+      // Comments are stripped first: the comment explaining this rule spells
+      // ${VAR^} out, and a guard that trips on its own documentation is a
+      // guard somebody deletes.
+      const src = read(path)
+        .split('\n')
+        .filter((line) => !line.trimStart().startsWith('#'))
+        .join('\n')
+      expect(src, `${path} uses \${VAR^} or \${VAR,} — bash 4 only`)
+        .not.toMatch(/\$\{[A-Za-z_][A-Za-z0-9_]*[\^,]{1,2}\}/)
+      expect(src, `${path} declares an associative array — bash 4 only`)
+        .not.toMatch(/declare\s+-A\b/)
+    }
   })
 
   it('the manager is told to read BOTH inboxes, and only to claim its own', () => {
@@ -108,14 +176,55 @@ describe('inbox: the org-wide convention', () => {
 describe('inbox: urgency, and the sentinel it feeds', () => {
   const readSh = (p: string) => readFileSync(join(ROOT, p), 'utf8')
 
-  it('only NOW and TODAY wake the department off-schedule', () => {
+  it('only NOW and TODAY — colon or #tag — wake the department off-schedule', () => {
     const src = readSh('scripts/website-team/on-change.sh')
     // Everything else is queued, because every run is an LLM invocation and a
     // BACKLOG idea typed at midnight must not bill one.
-    expect(src).toMatch(/\^\(NOW\|TODAY\)\[\[:space:\]\]\*:/)
     expect(src).toMatch(/URGENT[\s\S]*-eq 0/)
     expect(src, 'a non-urgent change must record the hash and NOT run')
       .toMatch(/leaving it for the next scheduled run/)
+
+    // Since 4406b9ee, `#now`/`#today` (the Obsidian tag form) are urgent too,
+    // not just `NOW:`/`TODAY:`. Pull the REAL strip+match pipeline out of the
+    // script and run sample lines through it, rather than asserting a regex
+    // string that could drift from what the script actually executes.
+    const sedMatch = src.match(/sed -E '([^']*)'/)
+    const grepMatch = src.match(/grep -icE '([^']*)'/)
+    expect(sedMatch, 'could not find the leading-marker strip in on-change.sh').not.toBeNull()
+    expect(grepMatch, 'could not find the URGENT match pattern in on-change.sh').not.toBeNull()
+    const [, sedPattern] = sedMatch!
+    const [, grepPattern] = grepMatch!
+
+    const urgentCountFor = (line: string) =>
+      Number(
+        execFileSync(
+          'bash',
+          [
+            '-c',
+            'printf "%s\\n" "$1" | sed -E "$2" | grep -icE "$3" || true',
+            '_',
+            line,
+            sedPattern,
+            grepPattern,
+          ],
+          { encoding: 'utf8' },
+        ).trim(),
+      )
+
+    // The colon form, bulleted or not.
+    expect(urgentCountFor('NOW: fix the CDN')).toBe(1)
+    expect(urgentCountFor('- TODAY: fix the CDN')).toBe(1)
+    // The Obsidian tag form — including bulleted, the case that sat unworked
+    // on 2026-09-12 until this commit.
+    expect(urgentCountFor('#now fix the CDN')).toBe(1)
+    expect(urgentCountFor('- #today fix the CDN')).toBe(1)
+    // A tag ends at a non-word character: these are different tags.
+    expect(urgentCountFor('#nowhere is not urgent')).toBe(0)
+    expect(urgentCountFor('#todayish is not urgent')).toBe(0)
+    // Everything else still queues rather than waking anyone.
+    expect(urgentCountFor('THIS WEEK: refresh the sitemap')).toBe(0)
+    expect(urgentCountFor('BACKLOG: someday')).toBe(0)
+    expect(urgentCountFor('fix the broken link')).toBe(0)
   })
 
   it('the manager is told what each prefix means, including WATCH', () => {
