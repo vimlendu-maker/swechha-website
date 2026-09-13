@@ -209,6 +209,14 @@ ALLOWED="$ALLOWED,Bash(npm run air:status),Bash(npm run air:status:*)"
 # instrument. Deterministic, cached, and it makes at most one request per
 # provider per TTL -- see swechha-ai/infra-status.py.
 ALLOWED="$ALLOWED,Bash(npm run infra:status),Bash(npm run infra:status:*)"
+# ★ THE ROLE FILE NAMED THIS AND THE ALLOWLIST DID NOT GRANT IT, which is the
+#   exact drift the comment above warns about -- "an instruction the agent
+#   cannot follow, and it fails as a refusal the agent then has to explain".
+#   Refused on three separate runs before anybody noticed, because the refusal
+#   was buried among commands the manager had merely improvised.
+#   scripts/verify-seo.mjs opens nothing but readFileSync/readdirSync/statSync/
+#   existsSync: read-only, so granting it widens nothing that matters.
+ALLOWED="$ALLOWED,Bash(npm run verify:seo),Bash(npm run verify:seo:*)"
 
 # ── THE DEPARTMENT'S OWN READ-ONLY COMMANDS ──────────────────────────────────
 # The block above is the shared core plus, for now, the website department's npm
@@ -591,8 +599,29 @@ if [ -n "${DENIED:-}" ]; then
   # Keyed on the VERBS, so the same standing gap is one incident however many
   # runs hit it -- the same argument as the task dedupe, one layer up.
   spine_incident tools_refused "$(printf '%s' "${DENIED:-}" | cut -f1 | sort -u | tr '\n' ' ')" >/dev/null
-  BTASK="$(spine_new "BLOCKED: the $MODE run was refused $(printf '%s' "${DENIED:-}" | wc -l | tr -d ' ') tool(s)" "run-refused-tools:$MODE")"
-  spine_close "$BTASK" escalate "refused: $(printf '%s' "${DENIED:-}" | cut -f1 | tr '\n' ';')"
+  # ★ RECORDED AND CLOSED, NOT ESCALATED -- AND THE REASON IS THIS BLOCK'S OWN
+  #   POSITION IN THE FILE. `ev run_finished` is emitted at line 562, ABOVE.
+  #   Nothing reaches here except a run that already succeeded, so every task
+  #   this ever filed was titled BLOCKED on a run that was not blocked. Sixteen
+  #   of them sat in `org status` NEEDS YOU on 2026-09-14, three quarters of the
+  #   whole queue, every one of them a run that finished.
+  #
+  #   What they actually recorded was THE ALLOWLIST WORKING. The manager
+  #   improvised `date`, `echo`, `npx vitest run`, `gh secret list`, `git fetch`;
+  #   the boundary refused them; the run completed anyway. A security boundary
+  #   doing its job must not generate work for a human.
+  #
+  #   This file already states the rule one level down, at spine_close:
+  #   "Only something genuinely stuck belongs in 'needs you'; a queue full of
+  #   routine skips is a queue nobody reads." The same rule, applied here.
+  #
+  # ★ IT IS STILL RECORDED, LOUDLY. The incident above, the run_blocked event,
+  #   and a closed task carrying the full list. That record is how the genuine
+  #   defect underneath was found: the manager's role file names
+  #   `npm run verify:seo` and the allowlist did not grant it -- an instruction
+  #   the agent could not follow. Deleting the signal would have hidden it.
+  BTASK="$(spine_new "the $MODE run was refused $(printf '%s' "${DENIED:-}" | wc -l | tr -d ' ') tool(s) — the run finished" "run-refused-tools:$MODE")"
+  spine_close "$BTASK" refused "the run FINISHED; refused: $(printf '%s' "${DENIED:-}" | cut -f1 | tr '\n' ';')"
 fi
 
 if [ "$MODE" = "work" ]; then

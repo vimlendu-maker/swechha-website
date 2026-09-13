@@ -33,7 +33,14 @@ const RUN = readFileSync(join(__dirname, '..', 'scripts', 'website-team', 'run.s
 
 describe('the auto-filed BLOCKED tasks declare their recurring condition', () => {
   it('keys the refused-tools filing, whose title carries a varying count', () => {
-    const line = RUN.split('\n').find((l) => l.includes('BLOCKED: the $MODE run was refused'))
+    // ★ ANCHORED ON THE STABLE HALF OF THE TITLE, NOT ON THE WHOLE STRING.
+    //   This searched for the literal 'BLOCKED: the $MODE run was refused'. On
+    //   2026-09-14 the filing stopped calling itself BLOCKED — it is emitted
+    //   AFTER run_finished, so it had never once described a blocked run — and
+    //   this test failed on the rewording while the thing it exists to protect,
+    //   the --key, was untouched. A guard that breaks when its subject is
+    //   renamed sends you to fix the guard instead of reading it.
+    const line = RUN.split('\n').find((l) => l.includes('run was refused') && l.includes('spine_new'))
     expect(line, 'the refused-tools filing disappeared').toBeTruthy()
     expect(line).toContain('run-refused-tools:$MODE')
   })
