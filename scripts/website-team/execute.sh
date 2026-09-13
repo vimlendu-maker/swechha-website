@@ -164,7 +164,25 @@ Leave no scratch files behind. You cannot delete files in this mode, so do not
 create any — do your checking with Read and Grep rather than by writing a
 throwaway script."
 
-ev task_started model="$MODEL" brief="$(basename "$BRIEF_FILE")" branch="$BRANCH"
+# ★ model_requested, NOT model. This fires BEFORE the run, so it cannot know
+#   what actually served the call -- and `claude -p --model sonnet` reports
+#   `claude-sonnet-5` back, while the ACP agent reports plain `sonnet` whatever
+#   id it was handed. Emitting the REQUEST under the name `model` is how a log
+#   comes to agree with the intention instead of the fact. The runtime's own
+#   answer arrives on task_returned, from parse-result.py, under `model`.
+#
+# ★ routed_because IS A TOKEN, NOT A SENTENCE. $SPEC_METRICS is interpolated
+#   unquoted into the ev call below, so any value containing a space would split
+#   into a second key=value pair and corrupt the record. One token, always.
+#   `manager-brief` says the manager's brief named this model, per the criteria
+#   in .claude/agents/website-manager.md. It does NOT distinguish a model the
+#   manager chose from one extract-briefs.py fell back to -- that fallback is
+#   visible only on stderr today, and this field does not pretend otherwise.
+ROUTED_BECAUSE="${WEBSITE_TEAM_ROUTED_BECAUSE:-manager-brief}"
+case "$ROUTED_BECAUSE" in *[[:space:]]*) ROUTED_BECAUSE="malformed" ;; esac
+ev task_started model_requested="$MODEL" routed_because="$ROUTED_BECAUSE" \
+   lane=agentic provider=anthropic-claude-code \
+   brief="$(basename "$BRIEF_FILE")" branch="$BRANCH"
 # ★ STDERR IS KEPT, beside the JSON it belongs to. It was `2>/dev/null || true`,
 #   so a specialist that could not reach the model at all looked identical to one
 #   that ran and produced nothing parsable -- and the run log, which exists
@@ -176,11 +194,11 @@ if [ ! -s "$RUNLOG"/exec.json ] && [ -s "$RUNLOG"/exec.stderr ]; then
   WHY="$(python3 "$STAGE/model-failure.py" 1 < "$RUNLOG"/exec.stderr 2>/dev/null || true)"
   echo "execute: the model call produced nothing. $WHY" >&2
   sed -n '1,20p' "$RUNLOG"/exec.stderr >&2
-  ev task_failed brief="$(basename "$BRIEF_FILE")" $WHY
+  ev task_failed lane=agentic provider=anthropic-claude-code model_requested="$MODEL" brief="$(basename "$BRIEF_FILE")" $WHY
 fi
 # Same as run.sh: the specialist's token counts were being discarded too.
 SPEC_METRICS="$(python3 "$STAGE/parse-result.py" --metrics < "$RUNLOG"/exec.json 2>/dev/null || true)"
-ev task_returned cost_usd="$(python3 "$STAGE/parse-result.py" < "$RUNLOG"/exec.json 2>/dev/null | head -1)" $SPEC_METRICS
+ev task_returned cost_usd="$(python3 "$STAGE/parse-result.py" < "$RUNLOG"/exec.json 2>/dev/null | head -1)" routed_because="$ROUTED_BECAUSE" $SPEC_METRICS
 if ! python3 "$STAGE/parse-result.py" < "$RUNLOG"/exec.json | tail -n +2 > "$RUNLOG"/exec.txt; then
   echo "execute: could not parse the specialist's output — refusing to continue" >&2
   echo "execute: raw output is in "$RUNLOG"/exec.json" >&2
