@@ -83,19 +83,34 @@ def main() -> int:
         return 0
     have = set(data.get("grants") or [])
 
+    # ★ THE REFUSAL AND THE GRANT ARE NOT THE SAME STRING, and pretending they
+    #   were is why this never fired. The log says `git log --oneline`; the
+    #   ledger holds `git log`. tg.canonical() is the one place that knows the
+    #   difference, and BOTH the decision and the value written come from it --
+    #   so a grant is always a verb the gated machinery itself declares, never
+    #   the caller's text. ADR-0011 clause 7.
     grant, report = [], []
     for verb, runs in sorted(counts.items()):
-        if len(runs) < a.threshold or verb in have:
+        if len(runs) < a.threshold:
             continue
-        (grant if tg.permitted(verb) else report).append((verb, len(runs)))
+        want = tg.canonical(verb)
+        if want and want in have:
+            continue            # already granted, under its canonical name
+        if verb in have:
+            continue
+        if want:
+            grant.append((verb, want, len(runs)))
+        else:
+            report.append((verb, len(runs)))
 
     for verb, n in report:
         print(f"reconcile: NEEDS A HUMAN — {verb!r} refused in {n} runs; not provably read-only")
-    for verb, n in grant:
-        print(f"reconcile: {'granting' if a.apply else 'would grant'} {verb!r} — refused in {n} runs")
+    for verb, want, n in grant:
+        shown = f"{verb!r}" if verb == want else f"{verb!r} (as {want!r})"
+        print(f"reconcile: {'granting' if a.apply else 'would grant'} {shown} — refused in {n} runs")
 
     if a.apply and grant:
-        data["grants"] = sorted(have | {v for v, _ in grant})
+        data["grants"] = sorted(have | {w for _, w, _ in grant})
         with open(a.ledger, "w", encoding="utf-8") as fh:
             json.dump(data, fh, indent=2, ensure_ascii=False)
             fh.write("\n")
