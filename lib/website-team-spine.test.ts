@@ -171,7 +171,19 @@ describe('run.sh ↔ the task spine', () => {
     for (const line of calls) {
       expect(line, `unguarded spine call: ${line.trim()}`).toMatch(/\|\| true/)
     }
-    // Both helpers must refuse early when the CLI is missing.
-    expect((helperBlock().match(/\[ -x "\$ORG" \] \|\| return 0/g) || []).length).toBe(2)
+    // ★ EVERY helper must refuse early when the CLI is missing — DERIVED, not
+    //   counted. This read `.toBe(2)` and broke the moment a third helper was
+    //   added (spine_incident, ADR-0010), which is a count that must move in
+    //   lockstep with a list: the defect ADR-0011 clause 7 forbids, in a test
+    //   whose whole job is guarding an invariant.
+    //
+    //   The invariant was never "there are two helpers". It is "no helper
+    //   touches $ORG without checking it exists first", and that is checkable
+    //   without knowing how many there are.
+    const helpers = [...helperBlock().matchAll(/^(spine_[a-z_]+)\(\) \{/gm)].map((m) => m[1])
+    expect(helpers.length, 'run.sh defines no spine helpers at all').toBeGreaterThan(0)
+    const guards = (helperBlock().match(/\[ -x "\$ORG" \] \|\| return 0/g) || []).length
+    expect(guards, `${helpers.join(', ')} — one of them does not guard on $ORG existing`)
+      .toBe(helpers.length)
   })
 })
