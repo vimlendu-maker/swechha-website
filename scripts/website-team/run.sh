@@ -72,7 +72,11 @@ LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 #   a sentence that reads like a bug.
 DEPARTMENT="${TEAM_DEPARTMENT:-${WEBSITE_TEAM_DEPARTMENT:-website}}"
 REPO="${TEAM_REPO:-${WEBSITE_TEAM_REPO:-$HOME/swechha-$DEPARTMENT}}"
-WT="$REPO/scripts/$DEPARTMENT-team/worktree.sh"
+# ★ FROM $LIB, NOT $REPO. $LIB is where THIS script is running from, which
+#   under snapshot-run.sh is a copy nobody is editing. Taking worktree.sh from
+#   the live checkout would leave one more file that can change underneath a
+#   run in flight -- the defect snapshot-run.sh exists to close.
+WT="$LIB/worktree.sh"
 VAULT="${TEAM_VAULT:-${WEBSITE_TEAM_VAULT:-$HOME/swechha-vault}}"
 
 # ── THE ORG-WIDE CONVENTION, NOT THIS DEPARTMENT'S INVENTION ─────────────────
