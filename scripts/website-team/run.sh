@@ -374,6 +374,27 @@ spine_new() {   # <title> [dedupe-key] -> task id on stdout, or nothing
   fi
 }
 
+# ★ AN INCIDENT IS NOT A TASK, and raising one is not the same as filing one.
+#   A task is work somebody must do. An incident is a FAULT: deduplicated by
+#   signature so a flapping service is one row with a count rather than forty,
+#   dispatched ONCE to a phone, and closed only when a person says what the
+#   outcome was. ADR-0010.
+#
+#   The error text stays LOCAL -- it is what the signature is computed from and
+#   it lands in the incident record on this machine. What reaches the phone is a
+#   closed vocabulary that cannot express it: department, kind, count, minutes,
+#   id. The topic is a bearer URL and org/notify.py is built so a secret cannot
+#   travel over it even by accident.
+#
+#   `|| true` like every other spine call here: a runner must not die because
+#   the incident store is unavailable, and lib/website-team-spine.test.ts
+#   asserts that for every line touching $ORG.
+spine_incident() {  # <kind> <error-text> -> id on stdout, or nothing
+  [ -x "$ORG" ] || return 0
+  "$ORG" incident detect "$DEPARTMENT" "$1" "$2" \
+      --workflow "$DEPARTMENT-$MODE" --notify 2>/dev/null || true
+}
+
 spine_close() { # <task id> <done|refused|escalate> <note>
   [ -x "$ORG" ] || return 0
   [ -n "$1" ] || return 0
@@ -416,6 +437,10 @@ if [ "$MODEL_RC" -ne 0 ] || [ -z "$RESULT" ]; then
   echo "run.sh: the model call FAILED (exit $MODEL_RC). $WHY" >&2
   sed -n '1,20p' "$MODEL_ERR" >&2
   ev run_failed mode="$MODE" $WHY
+  # The reason, not the whole stderr: the classification is what deduplicates,
+  # and model-failure.py already refuses to guess when it does not recognise it.
+  INC="$(spine_incident model_call_failed "$(printf '%s' "$WHY" | tr ' ' '\n' | grep '^reason=' | cut -d= -f2 || echo unknown)")"
+  [ -n "$INC" ] && echo "run.sh: incident $INC — org incident show $INC"
   BTASK="$(spine_new "BLOCKED: the $MODE run could not reach the model" "model-call-failed:$MODE")"
   [ -n "$BTASK" ] && { spine_close "$BTASK" escalate "the model call failed: $WHY"; }
   rm -f "$MODEL_ERR"
@@ -499,6 +524,9 @@ echo "wrote $OUT"
 # reads as routine.
 if [ -n "${DENIED:-}" ]; then
   ev run_blocked refused="$(printf '%s' "${DENIED:-}" | cut -f1 | tr '\n' ';')"
+  # Keyed on the VERBS, so the same standing gap is one incident however many
+  # runs hit it -- the same argument as the task dedupe, one layer up.
+  spine_incident tools_refused "$(printf '%s' "${DENIED:-}" | cut -f1 | sort -u | tr '\n' ' ')" >/dev/null
   BTASK="$(spine_new "BLOCKED: the $MODE run was refused $(printf '%s' "${DENIED:-}" | wc -l | tr -d ' ') tool(s)" "run-refused-tools:$MODE")"
   spine_close "$BTASK" escalate "refused: $(printf '%s' "${DENIED:-}" | cut -f1 | tr '\n' ';')"
 fi
