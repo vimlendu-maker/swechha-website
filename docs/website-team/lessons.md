@@ -217,3 +217,15 @@ Two prior runs (per this file's own 2026-09-12 entries) burned `website-design`'
 ## 2026-09-12 — A brief that explicitly forbade rendering still exhausted its budget on a pure counting task
 
 Unlike the two prior 2026-09-12 turn-budget failures (which were mis-scoped as rendering/visual tasks), this brief was already file-based and non-rendering by design — read 36 JSON files, count array lengths, check 5 built HTML files for a CSS class. It still ran 26 tool calls and 148.7k tokens without producing a final answer. The likely cause: "count `sequence` steps across 36 files, then also check for natural break markers, then also check 5 built pages for visual breaks" is three passes disguised as one brief. **Do:** even a file-based brief should ask for one deliverable per dispatch when the file count is large (>~20) — split "how many files, what size" from "which ones have natural break points" into two smaller briefs rather than one compound one, and prefer a number the manager could get from `wc`/`grep` directly over dispatching an agent for pure counting at all.
+
+## 2026-09-13 — A "fixed" commit's own diff can tell you it only fixed one instance, not the class of bug
+
+`78a97ed5` said, accurately, in its own commit body: "these three exact marker patterns occur ... in exactly one file." The org inbox item that prompted it ("individual session pages are too text heavy," plural) was never actually resolved by that commit — it fixed the one file where the heuristic's trigger phrases existed, and the other 42 session pages still carry zero content usage of the same breakup components. Reading a commit's own stated scope, not just its title (`fix(teach): ...`), is what caught this — the title alone reads as a general fix.
+
+**Do:** when a fix commit names a count ("exactly one file," "one page affected"), check that count against the width of the original complaint before marking the complaint resolved. A precise, honest commit message is not the same thing as full resolution of the ticket that prompted it.
+
+## 2026-09-13 — An undefined CSS custom property with no fallback is invisible to every existing gate
+
+`--display` is referenced 146 times across every served page and defined zero times, anywhere in the repository — confirmed by two greps, not assumed. `verify:seo` (147/147 clean), `npm test`, `npm run lint` (1 warning) and the route-invariant test all pass with this bug live, because none of them check that a CSS custom property a page's `<style>` *uses* is also *defined* somewhere reachable by that same page. This is the same species of gap AD-51's "Gate 15" was built for (a class with no styling behind it) but one level lower — a *property* with no value behind it, which produces no missing-class symptom, just a silent fallback to the inherited font.
+
+**Do:** when auditing a served page's CSS for a visual complaint, grep for `var(--` tokens used and check each has a matching `--name:` definition in the same page's own `<style>` — this class of bug produces no error, no missing element and no failing existing gate, only a font (or colour, or size) quietly reverting to its inherited value.
