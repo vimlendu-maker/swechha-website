@@ -374,7 +374,14 @@ DENIED="$(printf '%s' "$RESULT" | python3 "$LIB/denials.py" 2>/dev/null || true)
   printf '%s\n' "$TEXT"
 } > "$OUT"
 
-ev run_finished mode="$MODE" cost_usd="$COST" record="$(basename "$OUT")"
+# ★ THE TOKENS WERE ALWAYS IN THIS JSON. Until 2026-09-13 this line recorded
+#   cost_usd and nothing else, so when the manager's cost per run went
+#   $1.21 -> $4.94 overnight NOTHING IN THE ESTATE COULD SAY WHY. `usage`,
+#   `duration_ms` and `num_turns` were in the reply all along and parse-result.py
+#   dropped them. Unquoted on purpose: --metrics emits bare key=value pairs and
+#   word-splitting is how they become separate arguments to log-event.py.
+METRICS="$(printf '%s' "$RESULT" | python3 "$LIB/parse-result.py" --metrics 2>/dev/null || true)"
+ev run_finished mode="$MODE" cost_usd="$COST" record="$(basename "$OUT")" $METRICS
 
 echo "wrote $OUT"
 

@@ -166,7 +166,9 @@ throwaway script."
 ev task_started model="$MODEL" brief="$(basename "$BRIEF_FILE")" branch="$BRANCH"
 claude -p "$PROMPT" --agent "$SPECIALIST" --model "$MODEL" --permission-mode dontAsk \
   --allowedTools "$ALLOWED" --output-format json < /dev/null > "$RUNLOG"/exec.json 2>/dev/null || true
-ev task_returned cost_usd="$(python3 "$STAGE/parse-result.py" < "$RUNLOG"/exec.json 2>/dev/null | head -1)"
+# Same as run.sh: the specialist's token counts were being discarded too.
+SPEC_METRICS="$(python3 "$STAGE/parse-result.py" --metrics < "$RUNLOG"/exec.json 2>/dev/null || true)"
+ev task_returned cost_usd="$(python3 "$STAGE/parse-result.py" < "$RUNLOG"/exec.json 2>/dev/null | head -1)" $SPEC_METRICS
 if ! python3 "$STAGE/parse-result.py" < "$RUNLOG"/exec.json | tail -n +2 > "$RUNLOG"/exec.txt; then
   echo "execute: could not parse the specialist's output — refusing to continue" >&2
   echo "execute: raw output is in "$RUNLOG"/exec.json" >&2
