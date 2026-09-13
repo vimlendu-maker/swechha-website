@@ -60,7 +60,20 @@ function callHelpers(script: string, opts: { installed: boolean }): { argv: stri
   }
 
   const runner = join(dir, 'run.sh')
-  writeFileSync(runner, `#!/usr/bin/env bash\nset -euo pipefail\n${helperBlock()}\n${script}\n`)
+  // ★ `ev` AND THE HOOKS PROBE ARE STUBBED FOR THE SAME REASON THE SPINE IS.
+  //   The extracted block is a slice of the real run.sh, and since 2026-09-14 it
+  //   also contains the folded hooks-health check. Unstubbed, that printed
+  //   `ev: command not found` and RAN THE REAL PROBE on whatever machine the
+  //   suite happened to be on — a unit test reaching out to the developer's home
+  //   directory. Stubbing makes the harness match the real script, which defines
+  //   `ev` well before this block; it removes no assertion.
+  const noProbe = join(dir, 'no-such-probe')
+  writeFileSync(
+    runner,
+    `#!/usr/bin/env bash\nset -euo pipefail\n` +
+      `ev() { :; }\nSWECHHA_HOOKS_PROBE=${noProbe}\n` +
+      `${helperBlock()}\n${script}\n`,
+  )
   chmodSync(runner, 0o755)
 
   let status = 0
