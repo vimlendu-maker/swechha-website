@@ -72,11 +72,19 @@ LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 #   a sentence that reads like a bug.
 DEPARTMENT="${TEAM_DEPARTMENT:-${WEBSITE_TEAM_DEPARTMENT:-website}}"
 REPO="${TEAM_REPO:-${WEBSITE_TEAM_REPO:-$HOME/swechha-$DEPARTMENT}}"
-# ★ FROM $LIB, NOT $REPO. $LIB is where THIS script is running from, which
-#   under snapshot-run.sh is a copy nobody is editing. Taking worktree.sh from
-#   the live checkout would leave one more file that can change underneath a
-#   run in flight -- the defect snapshot-run.sh exists to close.
-WT="$LIB/worktree.sh"
+# ★ FROM $REPO, AND DELIBERATELY NOT FROM THE SNAPSHOT. I changed this to
+#   "$LIB/worktree.sh" so it would travel with snapshot-run.sh, and
+#   lib/website-team-inbox.test.ts refused it: "the department supplies its own
+#   worktree script". It is right. One runner serves two departments, and
+#   fundraising's worktree.sh lives in ~/swechha-fundraising -- taking it from
+#   the website snapshot would hand fundraising the wrong repository's tree
+#   management, which is a far worse failure than the one I was closing.
+#
+#   The residual risk is accepted and it is small: worktree.sh is invoked as a
+#   SUBPROCESS, so each call reads a whole consistent file. That is nothing like
+#   bash resuming mid-statement in a rewritten script, which is what
+#   snapshot-run.sh exists to prevent.
+WT="$REPO/scripts/$DEPARTMENT-team/worktree.sh"
 VAULT="${TEAM_VAULT:-${WEBSITE_TEAM_VAULT:-$HOME/swechha-vault}}"
 
 # ── THE ORG-WIDE CONVENTION, NOT THIS DEPARTMENT'S INVENTION ─────────────────

@@ -44,9 +44,18 @@ describe('snapshot-run.sh', () => {
       .toBeLessThan(20)
   })
 
-  it('run.sh takes worktree.sh from the snapshot, not the live repo', () => {
-    // Otherwise one more file can change underneath a run in flight.
-    expect(readFileSync(RUN, 'utf8')).toMatch(/^WT="\$LIB\/worktree\.sh"/m)
+  it('leaves worktree.sh with the DEPARTMENT, which is the harder call', () => {
+    // I changed this to $LIB so it would travel with the snapshot, and
+    // lib/website-team-inbox.test.ts refused it: "the department supplies its
+    // own worktree script". One runner serves two departments, and
+    // fundraising's worktree.sh lives in its own repo — taking it from the
+    // website snapshot would hand fundraising the wrong tree management.
+    //
+    // The residual risk is accepted: worktree.sh is invoked as a SUBPROCESS,
+    // so each call reads a whole consistent file. That is nothing like bash
+    // resuming mid-statement in a rewritten script.
+    expect(readFileSync(RUN, 'utf8'))
+      .toMatch(/^WT="\$REPO\/scripts\/\$DEPARTMENT-team\/worktree\.sh"/m)
   })
 
   it('a snapshot is genuinely immune to an edit of the source', () => {
