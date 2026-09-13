@@ -112,4 +112,11 @@ if isinstance(model_usage, dict) and model_usage:
 put("cost_basis", "subscription")
 put("lane", "agentic")
 
+# ★ provider IS THE RUNTIME THAT SERVED THE CALL, not the company. It is
+#   `anthropic-claude-code` and never plain `anthropic`, because the whole point
+#   of the field is to separate the subscription CLI from the metered API -- two
+#   things that would otherwise both read "anthropic" and be summed into one
+#   number. events.md names the vocabulary.
+put("provider", "anthropic-claude-code")
+
 print(" ".join(pairs))
