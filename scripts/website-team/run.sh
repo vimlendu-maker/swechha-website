@@ -307,7 +307,11 @@ if [ -n "$CEILING" ]; then
     ev run_refused reason=daily-ceiling spent_usd="$SPENT" ceiling_usd="$CEILING"
     ORGB="${ORG_CLI:-$HOME/.swechha-ai/org}"
     if [ -x "$ORGB" ]; then
-      BID="$("$ORGB" task new "$DEPARTMENT" "BLOCKED: daily cost ceiling reached (\$$SPENT of \$$CEILING)" --origin schedule 2>/dev/null || true)"
+      # Keyed: the SPENT figure moves every run, so the title never repeats and
+      # two identical ceilings were filed twice on 2026-09-12 alone.
+      KEYARG=""
+      [ "${ORG_HAS_KEY:-0}" != "0" ] && KEYARG="--key daily-cost-ceiling"
+      BID="$("$ORGB" task new "$DEPARTMENT" "BLOCKED: daily cost ceiling reached (\$$SPENT of \$$CEILING)" --origin schedule ${KEYARG} 2>/dev/null || true)"
       [ -n "$BID" ] && { "$ORGB" task escalate "$BID" --reason "the department stopped itself; raise cost.daily_ceiling_usd or wait for tomorrow" >/dev/null 2>&1 || true; }
     fi
     exit 6
@@ -394,9 +398,39 @@ echo "wrote $OUT"
 #   the spine uninstalled this file behaves exactly as it did before.
 ORG="${ORG_CLI:-$HOME/.swechha-ai/org}"
 
-spine_new() {   # <title> -> task id on stdout, or nothing
+# Probed once per run, not per filing: `--help` is cheap but not free, and a
+# capability of the installed spine cannot change mid-run. `|| true` because
+# EVERY spine call here swallows its own failure -- a runner must not die
+# because the task store is unavailable, and lib/website-team-spine.test.ts
+# asserts exactly that for every line that touches $ORG.
+ORG_HAS_KEY="$({ [ -x "$ORG" ] && "$ORG" task new --help 2>/dev/null | grep -c -- "--key"; } || true)"
+
+spine_new() {   # <title> [dedupe-key] -> task id on stdout, or nothing
   [ -x "$ORG" ] || return 0
-  "$ORG" task new website "$1" --origin schedule 2>/dev/null || true
+  # ★ THE KEY IS WHY THE QUEUE STOPPED GROWING. The spine folds a repeat into
+  #   the live task it repeats, same department, same day -- but only if it can
+  #   tell that two filings are the same condition, and it cannot do that from
+  #   these titles:
+  #
+  #       BLOCKED: the work run was refused 5 tool(s)
+  #       BLOCKED: the work run was refused 17 tool(s)
+  #
+  #   One standing fact, a varying parameter, two different strings. THIS runner
+  #   knows they are one condition; the spine must not guess it, because a
+  #   near-match rule would eventually fold "section 3" into "section 4".
+  #
+  #   Measured 2026-09-12: 13 needs_human tasks, 10 of them duplicates of two
+  #   messages. Measured 2026-09-13: 24, all undated. Every one of them filed
+  #   from here.
+  #
+  #   `--key` is ignored by an older spine? No -- it would be an ARGPARSE ERROR
+  #   and the task would not be filed at all. The `|| true` below swallows that
+  #   into "no task", which is why this is guarded on the flag existing.
+  if [ -n "${2:-}" ] && [ "${ORG_HAS_KEY:-0}" != "0" ]; then
+    "$ORG" task new website "$1" --origin schedule --key "$2" 2>/dev/null || true
+  else
+    "$ORG" task new website "$1" --origin schedule 2>/dev/null || true
+  fi
 }
 
 spine_close() { # <task id> <done|refused|escalate> <note>
@@ -419,7 +453,7 @@ spine_close() { # <task id> <done|refused|escalate> <note>
 # reads as routine.
 if [ -n "${DENIED:-}" ]; then
   ev run_blocked refused="$(printf '%s' "${DENIED:-}" | cut -f1 | tr '\n' ';')"
-  BTASK="$(spine_new "BLOCKED: the $MODE run was refused $(printf '%s' "${DENIED:-}" | wc -l | tr -d ' ') tool(s)")"
+  BTASK="$(spine_new "BLOCKED: the $MODE run was refused $(printf '%s' "${DENIED:-}" | wc -l | tr -d ' ') tool(s)" "run-refused-tools:$MODE")"
   spine_close "$BTASK" escalate "refused: $(printf '%s' "${DENIED:-}" | cut -f1 | tr '\n' ';')"
 fi
 
