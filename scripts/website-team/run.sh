@@ -330,11 +330,100 @@ cd "$WORK"
 
 ev run_started mode="$MODE"
 
+# ── THE SPINE HELPERS, DEFINED BEFORE ANYTHING CALLS THEM ────────────────────
+# ★ MOVED UP 2026-09-13, and a test caught why it had to be. Bash resolves a
+#   function at CALL time, so a `spine_new` used above its own definition is
+#   simply "command not found" -- and under `set -e` that aborts the script. The
+#   new model-failure handler below files a task, so the definitions have to come
+#   first. lib/website-team-denials.test.ts asserts the ordering and found this
+#   within a minute of the handler being written.
+ORG="${ORG_CLI:-$HOME/.swechha-ai/org}"
+
+# Probed once per run, not per filing: `--help` is cheap but not free, and a
+# capability of the installed spine cannot change mid-run. `|| true` because
+# EVERY spine call here swallows its own failure -- a runner must not die
+# because the task store is unavailable, and lib/website-team-spine.test.ts
+# asserts exactly that for every line that touches $ORG.
+ORG_HAS_KEY="$({ [ -x "$ORG" ] && "$ORG" task new --help 2>/dev/null | grep -c -- "--key"; } || true)"
+
+spine_new() {   # <title> [dedupe-key] -> task id on stdout, or nothing
+  [ -x "$ORG" ] || return 0
+  # ★ THE KEY IS WHY THE QUEUE STOPPED GROWING. The spine folds a repeat into
+  #   the live task it repeats, same department, same day -- but only if it can
+  #   tell that two filings are the same condition, and it cannot do that from
+  #   these titles:
+  #
+  #       BLOCKED: the work run was refused 5 tool(s)
+  #       BLOCKED: the work run was refused 17 tool(s)
+  #
+  #   One standing fact, a varying parameter, two different strings. THIS runner
+  #   knows they are one condition; the spine must not guess it, because a
+  #   near-match rule would eventually fold "section 3" into "section 4".
+  #
+  #   Measured 2026-09-12: 13 needs_human tasks, 10 of them duplicates of two
+  #   messages. Measured 2026-09-13: 24, all undated. Every one of them filed
+  #   from here.
+  #
+  #   `--key` is ignored by an older spine? No -- it would be an ARGPARSE ERROR
+  #   and the task would not be filed at all. The `|| true` below swallows that
+  #   into "no task", which is why this is guarded on the flag existing.
+  if [ -n "${2:-}" ] && [ "${ORG_HAS_KEY:-0}" != "0" ]; then
+    "$ORG" task new website "$1" --origin schedule --key "$2" 2>/dev/null || true
+  else
+    "$ORG" task new website "$1" --origin schedule 2>/dev/null || true
+  fi
+}
+
+spine_close() { # <task id> <done|refused|escalate> <note>
+  [ -x "$ORG" ] || return 0
+  [ -n "$1" ] || return 0
+  case "$2" in
+    done)     "$ORG" task done    "$1" --outcome "$3"  >/dev/null 2>&1 || true ;;
+    # A brief this department declined to execute is CLOSED, not escalated. Only
+    # something genuinely stuck belongs in "needs you"; a queue full of routine
+    # skips is a queue nobody reads.
+    refused)  "$ORG" task refuse  "$1" "$3"            >/dev/null 2>&1 || true ;;
+    # A brief that did not ship STAYS VISIBLE until a person moves it. This is the
+    # structural answer to a task being skipped 682 times while reporting success.
+    escalate) "$ORG" task escalate "$1" --reason "$3"  >/dev/null 2>&1 || true ;;
+  esac
+
+# ★ STDERR IS KEPT, AND THE FAILURE IS SURVIVED LONG ENOUGH TO REPORT IT.
+#   This was `2>/dev/null` with no guard, under `set -euo pipefail`. A non-zero
+#   exit therefore killed the runner ON THIS LINE with the explanation already
+#   discarded -- which is how two manager runs died on 2026-09-13 (17:16 and
+#   19:18) leaving nothing in the log but `run_started`.
+#
+#   On a subscription this is THE failure that matters. The estate has no
+#   per-token cost to run out of; what it can run out of is the subscription's
+#   own usage window, and if that happens the department goes quiet mid-incident.
+#   api-health.sh watches GitHub's rate limit. Nothing watches Anthropic's.
+MODEL_ERR="$(mktemp)"
+set +e
 RESULT="$(claude -p "$PROMPT" \
   --agent "$DEPARTMENT-manager" \
   --permission-mode dontAsk \
   --allowedTools "$ALLOWED" \
-  --output-format json < /dev/null 2>/dev/null)"
+  --output-format json < /dev/null 2>"$MODEL_ERR")"
+MODEL_RC=$?
+set -e
+
+if [ "$MODEL_RC" -ne 0 ] || [ -z "$RESULT" ]; then
+  # Classified, not guessed: model-failure.py says `unknown` rather than
+  # inventing a cause, and carries the stderr so a person can read what the
+  # matcher could not.
+  WHY="$(python3 "$LIB/model-failure.py" "$MODEL_RC" < "$MODEL_ERR" 2>/dev/null || true)"
+  echo "run.sh: the model call FAILED (exit $MODEL_RC). $WHY" >&2
+  sed -n '1,20p' "$MODEL_ERR" >&2
+  ev run_failed mode="$MODE" $WHY
+  BTASK="$(spine_new "BLOCKED: the $MODE run could not reach the model" "model-call-failed:$MODE")"
+  [ -n "$BTASK" ] && { spine_close "$BTASK" escalate "the model call failed: $WHY"; }
+  rm -f "$MODEL_ERR"
+  # Exit 7, distinct from the budget brake's 6: a caller must be able to tell
+  # "the department refused to spend" from "the department could not run".
+  exit 7
+fi
+rm -f "$MODEL_ERR"
 
 PARSED="$(printf '%s' "$RESULT" | python3 "$LIB/parse-result.py")"
 COST="$(printf '%s' "$PARSED" | head -1)"
@@ -403,56 +492,6 @@ echo "wrote $OUT"
 #   own failure, the same rule hook-event.py follows. Bookkeeping that can stop the
 #   department has traded something that matters for something that does not. With
 #   the spine uninstalled this file behaves exactly as it did before.
-ORG="${ORG_CLI:-$HOME/.swechha-ai/org}"
-
-# Probed once per run, not per filing: `--help` is cheap but not free, and a
-# capability of the installed spine cannot change mid-run. `|| true` because
-# EVERY spine call here swallows its own failure -- a runner must not die
-# because the task store is unavailable, and lib/website-team-spine.test.ts
-# asserts exactly that for every line that touches $ORG.
-ORG_HAS_KEY="$({ [ -x "$ORG" ] && "$ORG" task new --help 2>/dev/null | grep -c -- "--key"; } || true)"
-
-spine_new() {   # <title> [dedupe-key] -> task id on stdout, or nothing
-  [ -x "$ORG" ] || return 0
-  # ★ THE KEY IS WHY THE QUEUE STOPPED GROWING. The spine folds a repeat into
-  #   the live task it repeats, same department, same day -- but only if it can
-  #   tell that two filings are the same condition, and it cannot do that from
-  #   these titles:
-  #
-  #       BLOCKED: the work run was refused 5 tool(s)
-  #       BLOCKED: the work run was refused 17 tool(s)
-  #
-  #   One standing fact, a varying parameter, two different strings. THIS runner
-  #   knows they are one condition; the spine must not guess it, because a
-  #   near-match rule would eventually fold "section 3" into "section 4".
-  #
-  #   Measured 2026-09-12: 13 needs_human tasks, 10 of them duplicates of two
-  #   messages. Measured 2026-09-13: 24, all undated. Every one of them filed
-  #   from here.
-  #
-  #   `--key` is ignored by an older spine? No -- it would be an ARGPARSE ERROR
-  #   and the task would not be filed at all. The `|| true` below swallows that
-  #   into "no task", which is why this is guarded on the flag existing.
-  if [ -n "${2:-}" ] && [ "${ORG_HAS_KEY:-0}" != "0" ]; then
-    "$ORG" task new website "$1" --origin schedule --key "$2" 2>/dev/null || true
-  else
-    "$ORG" task new website "$1" --origin schedule 2>/dev/null || true
-  fi
-}
-
-spine_close() { # <task id> <done|refused|escalate> <note>
-  [ -x "$ORG" ] || return 0
-  [ -n "$1" ] || return 0
-  case "$2" in
-    done)     "$ORG" task done    "$1" --outcome "$3"  >/dev/null 2>&1 || true ;;
-    # A brief this department declined to execute is CLOSED, not escalated. Only
-    # something genuinely stuck belongs in "needs you"; a queue full of routine
-    # skips is a queue nobody reads.
-    refused)  "$ORG" task refuse  "$1" "$3"            >/dev/null 2>&1 || true ;;
-    # A brief that did not ship STAYS VISIBLE until a person moves it. This is the
-    # structural answer to a task being skipped 682 times while reporting success.
-    escalate) "$ORG" task escalate "$1" --reason "$3"  >/dev/null 2>&1 || true ;;
-  esac
 }
 
 # A blocked run is the owner's to unblock -- nothing downstream can grant a
