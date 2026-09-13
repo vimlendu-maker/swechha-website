@@ -43,6 +43,29 @@ describe('website team: infrastructure and free-tier watch', () => {
     ])
   })
 
+  /**
+   * ★ THIS TEST SAID IT DERIVED AND IT HARDCODED. run.sh's comment claims the
+   *   check is "derived from the role file so the two cannot drift" — it
+   *   asserted one literal string, `infra:status`. So when the role file also
+   *   came to name `npm run verify:seo`, which the allowlist did NOT grant,
+   *   nothing caught it: the manager was refused on three separate runs and the
+   *   refusal was buried among commands it had merely improvised.
+   *
+   *   It derives now. Every `npm run` command the role file names must be
+   *   granted, so a command added to either file fails here rather than in
+   *   production three days later.
+   */
+  it('every npm command the role file names is granted by the allowlist', () => {
+    const role = read('.claude/agents/website-manager.md')
+    const runner = read('scripts/website-team/run.sh')
+    const named = [...new Set([...role.matchAll(/`npm run ([a-z0-9:-]+)`/g)].map((m) => m[1]))]
+    expect(named.length, 'the role file names no npm command at all — has it been rewritten?')
+      .toBeGreaterThan(0)
+    const ungranted = named.filter((c) => !runner.includes(`Bash(npm run ${c})`))
+    expect(ungranted, 'the role file tells the manager to run commands the allowlist withholds')
+      .toEqual([])
+  })
+
   it('the manager can actually run the instrument it is told to read', () => {
     // A role file that names a command the runner's allowlist does not grant
     // is an instruction the agent cannot follow — the allowlist is the real
