@@ -330,72 +330,13 @@ cd "$WORK"
 
 ev run_started mode="$MODE"
 
-RESULT="$(claude -p "$PROMPT" \
-  --agent "$DEPARTMENT-manager" \
-  --permission-mode dontAsk \
-  --allowedTools "$ALLOWED" \
-  --output-format json < /dev/null 2>/dev/null)"
-
-PARSED="$(printf '%s' "$RESULT" | python3 "$LIB/parse-result.py")"
-COST="$(printf '%s' "$PARSED" | head -1)"
-TEXT="$(printf '%s' "$PARSED" | tail -n +2)"
-
-# ── WHAT THE PERMISSION LAYER REFUSED ────────────────────────────────────────
-# `--output-format json` carries a `permission_denials` array and this runner
-# threw it away for as long as it existed. A cause the agent COULD NOT VERIFY
-# must not become the report's headline: on 2026-09-11 both `gh run view
-# --log-failed` calls were refused, the Manager said so in one line, and the
-# guess it was forced into was printed above that caveat as the finding.
-DENIED="$(printf '%s' "$RESULT" | python3 "$LIB/denials.py" 2>/dev/null || true)"
-
-{
-  echo "---"
-  echo "title: $DEPT_TITLE team run — $STAMP"
-  echo "source: $DEPARTMENT-team/run.sh, claude -p --agent $DEPARTMENT-manager"
-  echo "cost_usd_estimate: $COST"
-  echo "---"
-  echo
-  echo "# $DEPT_TITLE team run — $STAMP"
-  echo
-  if [ -n "${DENIED:-}" ]; then
-    echo "> [!warning] **BLOCKED — this run was refused tools it asked for.**"
-    echo "> Any cause below that was not confirmed from evidence is a HYPOTHESIS,"
-    echo "> not a finding. Refused, with the number of attempts:"
-    echo ">"
-    printf '%s\n' "${DENIED:-}" | while IFS="$(printf '\t')" read -r cmd n; do
-      echo "> - \`$cmd\` × ${n:-1}"
-    done
-    echo
-  fi
-  echo "_Generated. The cost figure is Claude Code's own client-side estimate and"
-  echo "can differ from the real bill. Verification in this run is against the"
-  echo "local repository only; swechha.in returns 403 to this machine._"
-  echo
-  printf '%s\n' "$TEXT"
-} > "$OUT"
-
-ev run_finished mode="$MODE" cost_usd="$COST" record="$(basename "$OUT")"
-
-echo "wrote $OUT"
-
-# ── STAGE TWO: hand each brief to its specialist ─────────────────────────────
-# The manager decided; this executes. Only `work` mode delegates, and only
-# engineering may act -- execute.sh refuses a read-only specialist outright.
-# ── The task spine ───────────────────────────────────────────────────────────
-# Stage two's briefs are mktemp files destroyed at the end of the run, so every
-# delegation this department has ever made has left no durable trace of what was
-# asked or whether it shipped. `org status` could therefore answer nothing. These
-# helpers record the TITLE and the OUTCOME of each brief as a task.
-#
-# ★ NEVER THE BRIEF'S BODY. A brief is a prompt, and swechha/ai/events.md excludes
-#   prompts and model output from the stream because it is plain text a renderer
-#   reads. Title and outcome are what a person needs; the body stays ephemeral and
-#   is destroyed with the run, exactly as now.
-#
-# ★ IT MUST NEVER BREAK THE RUN. Every call is guarded by [ -x ] and swallows its
-#   own failure, the same rule hook-event.py follows. Bookkeeping that can stop the
-#   department has traded something that matters for something that does not. With
-#   the spine uninstalled this file behaves exactly as it did before.
+# ── THE SPINE HELPERS, DEFINED BEFORE ANYTHING CALLS THEM ────────────────────
+# ★ MOVED UP 2026-09-13, and a test caught why it had to be. Bash resolves a
+#   function at CALL time, so a `spine_new` used above its own definition is
+#   simply "command not found" -- and under `set -e` that aborts the script. The
+#   new model-failure handler below files a task, so the definitions have to come
+#   first. lib/website-team-denials.test.ts asserts the ordering and found this
+#   within a minute of the handler being written.
 ORG="${ORG_CLI:-$HOME/.swechha-ai/org}"
 
 # Probed once per run, not per filing: `--help` is cheap but not free, and a
@@ -446,6 +387,111 @@ spine_close() { # <task id> <done|refused|escalate> <note>
     # structural answer to a task being skipped 682 times while reporting success.
     escalate) "$ORG" task escalate "$1" --reason "$3"  >/dev/null 2>&1 || true ;;
   esac
+
+# ★ STDERR IS KEPT, AND THE FAILURE IS SURVIVED LONG ENOUGH TO REPORT IT.
+#   This was `2>/dev/null` with no guard, under `set -euo pipefail`. A non-zero
+#   exit therefore killed the runner ON THIS LINE with the explanation already
+#   discarded -- which is how two manager runs died on 2026-09-13 (17:16 and
+#   19:18) leaving nothing in the log but `run_started`.
+#
+#   On a subscription this is THE failure that matters. The estate has no
+#   per-token cost to run out of; what it can run out of is the subscription's
+#   own usage window, and if that happens the department goes quiet mid-incident.
+#   api-health.sh watches GitHub's rate limit. Nothing watches Anthropic's.
+MODEL_ERR="$(mktemp)"
+set +e
+RESULT="$(claude -p "$PROMPT" \
+  --agent "$DEPARTMENT-manager" \
+  --permission-mode dontAsk \
+  --allowedTools "$ALLOWED" \
+  --output-format json < /dev/null 2>"$MODEL_ERR")"
+MODEL_RC=$?
+set -e
+
+if [ "$MODEL_RC" -ne 0 ] || [ -z "$RESULT" ]; then
+  # Classified, not guessed: model-failure.py says `unknown` rather than
+  # inventing a cause, and carries the stderr so a person can read what the
+  # matcher could not.
+  WHY="$(python3 "$LIB/model-failure.py" "$MODEL_RC" < "$MODEL_ERR" 2>/dev/null || true)"
+  echo "run.sh: the model call FAILED (exit $MODEL_RC). $WHY" >&2
+  sed -n '1,20p' "$MODEL_ERR" >&2
+  ev run_failed mode="$MODE" $WHY
+  BTASK="$(spine_new "BLOCKED: the $MODE run could not reach the model" "model-call-failed:$MODE")"
+  [ -n "$BTASK" ] && { spine_close "$BTASK" escalate "the model call failed: $WHY"; }
+  rm -f "$MODEL_ERR"
+  # Exit 7, distinct from the budget brake's 6: a caller must be able to tell
+  # "the department refused to spend" from "the department could not run".
+  exit 7
+fi
+rm -f "$MODEL_ERR"
+
+PARSED="$(printf '%s' "$RESULT" | python3 "$LIB/parse-result.py")"
+COST="$(printf '%s' "$PARSED" | head -1)"
+TEXT="$(printf '%s' "$PARSED" | tail -n +2)"
+
+# ── WHAT THE PERMISSION LAYER REFUSED ────────────────────────────────────────
+# `--output-format json` carries a `permission_denials` array and this runner
+# threw it away for as long as it existed. A cause the agent COULD NOT VERIFY
+# must not become the report's headline: on 2026-09-11 both `gh run view
+# --log-failed` calls were refused, the Manager said so in one line, and the
+# guess it was forced into was printed above that caveat as the finding.
+DENIED="$(printf '%s' "$RESULT" | python3 "$LIB/denials.py" 2>/dev/null || true)"
+
+{
+  echo "---"
+  echo "title: $DEPT_TITLE team run — $STAMP"
+  echo "source: $DEPARTMENT-team/run.sh, claude -p --agent $DEPARTMENT-manager"
+  echo "cost_usd_estimate: $COST"
+  echo "---"
+  echo
+  echo "# $DEPT_TITLE team run — $STAMP"
+  echo
+  if [ -n "${DENIED:-}" ]; then
+    echo "> [!warning] **BLOCKED — this run was refused tools it asked for.**"
+    echo "> Any cause below that was not confirmed from evidence is a HYPOTHESIS,"
+    echo "> not a finding. Refused, with the number of attempts:"
+    echo ">"
+    printf '%s\n' "${DENIED:-}" | while IFS="$(printf '\t')" read -r cmd n; do
+      echo "> - \`$cmd\` × ${n:-1}"
+    done
+    echo
+  fi
+  echo "_Generated. The cost figure is Claude Code's own client-side estimate and"
+  echo "can differ from the real bill. Verification in this run is against the"
+  echo "local repository only; swechha.in returns 403 to this machine._"
+  echo
+  printf '%s\n' "$TEXT"
+} > "$OUT"
+
+# ★ THE TOKENS WERE ALWAYS IN THIS JSON. Until 2026-09-13 this line recorded
+#   cost_usd and nothing else, so when the manager's cost per run went
+#   $1.21 -> $4.94 overnight NOTHING IN THE ESTATE COULD SAY WHY. `usage`,
+#   `duration_ms` and `num_turns` were in the reply all along and parse-result.py
+#   dropped them. Unquoted on purpose: --metrics emits bare key=value pairs and
+#   word-splitting is how they become separate arguments to log-event.py.
+METRICS="$(printf '%s' "$RESULT" | python3 "$LIB/parse-result.py" --metrics 2>/dev/null || true)"
+ev run_finished mode="$MODE" cost_usd="$COST" record="$(basename "$OUT")" $METRICS
+
+echo "wrote $OUT"
+
+# ── STAGE TWO: hand each brief to its specialist ─────────────────────────────
+# The manager decided; this executes. Only `work` mode delegates, and only
+# engineering may act -- execute.sh refuses a read-only specialist outright.
+# ── The task spine ───────────────────────────────────────────────────────────
+# Stage two's briefs are mktemp files destroyed at the end of the run, so every
+# delegation this department has ever made has left no durable trace of what was
+# asked or whether it shipped. `org status` could therefore answer nothing. These
+# helpers record the TITLE and the OUTCOME of each brief as a task.
+#
+# ★ NEVER THE BRIEF'S BODY. A brief is a prompt, and swechha/ai/events.md excludes
+#   prompts and model output from the stream because it is plain text a renderer
+#   reads. Title and outcome are what a person needs; the body stays ephemeral and
+#   is destroyed with the run, exactly as now.
+#
+# ★ IT MUST NEVER BREAK THE RUN. Every call is guarded by [ -x ] and swallows its
+#   own failure, the same rule hook-event.py follows. Bookkeeping that can stop the
+#   department has traded something that matters for something that does not. With
+#   the spine uninstalled this file behaves exactly as it did before.
 }
 
 # A blocked run is the owner's to unblock -- nothing downstream can grant a

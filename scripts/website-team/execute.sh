@@ -112,6 +112,7 @@ BRANCH="team/$(date +%Y%m%d)-$(basename "$BRIEF_FILE" .txt | tr -cd '[:alnum:]-'
 #   call below uses $STAGE, never the working tree's copy.
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
+cp "$REPO/scripts/website-team/model-failure.py" "$STAGE/" 2>/dev/null || true
 cp "$REPO/scripts/website-team/parse-result.py" \
    "$REPO/scripts/website-team/guard-paths.sh" \
    "$REPO/scripts/website-team/verify-claims.py" "$STAGE/"
@@ -164,9 +165,22 @@ create any — do your checking with Read and Grep rather than by writing a
 throwaway script."
 
 ev task_started model="$MODEL" brief="$(basename "$BRIEF_FILE")" branch="$BRANCH"
+# ★ STDERR IS KEPT, beside the JSON it belongs to. It was `2>/dev/null || true`,
+#   so a specialist that could not reach the model at all looked identical to one
+#   that ran and produced nothing parsable -- and the run log, which exists
+#   precisely so a failure can be read afterwards, held no trace of the reason.
 claude -p "$PROMPT" --agent "$SPECIALIST" --model "$MODEL" --permission-mode dontAsk \
-  --allowedTools "$ALLOWED" --output-format json < /dev/null > "$RUNLOG"/exec.json 2>/dev/null || true
-ev task_returned cost_usd="$(python3 "$STAGE/parse-result.py" < "$RUNLOG"/exec.json 2>/dev/null | head -1)"
+  --allowedTools "$ALLOWED" --output-format json < /dev/null \
+  > "$RUNLOG"/exec.json 2>"$RUNLOG"/exec.stderr || true
+if [ ! -s "$RUNLOG"/exec.json ] && [ -s "$RUNLOG"/exec.stderr ]; then
+  WHY="$(python3 "$STAGE/model-failure.py" 1 < "$RUNLOG"/exec.stderr 2>/dev/null || true)"
+  echo "execute: the model call produced nothing. $WHY" >&2
+  sed -n '1,20p' "$RUNLOG"/exec.stderr >&2
+  ev task_failed brief="$(basename "$BRIEF_FILE")" $WHY
+fi
+# Same as run.sh: the specialist's token counts were being discarded too.
+SPEC_METRICS="$(python3 "$STAGE/parse-result.py" --metrics < "$RUNLOG"/exec.json 2>/dev/null || true)"
+ev task_returned cost_usd="$(python3 "$STAGE/parse-result.py" < "$RUNLOG"/exec.json 2>/dev/null | head -1)" $SPEC_METRICS
 if ! python3 "$STAGE/parse-result.py" < "$RUNLOG"/exec.json | tail -n +2 > "$RUNLOG"/exec.txt; then
   echo "execute: could not parse the specialist's output — refusing to continue" >&2
   echo "execute: raw output is in "$RUNLOG"/exec.json" >&2
