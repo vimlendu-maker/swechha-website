@@ -98,6 +98,58 @@ def is_npm_script(grant: str) -> bool:
     return " ".join(str(grant).split()).startswith("npm run ")
 
 
+def canonical(grant: str):
+    """The read-only verb this refusal is asking for, or None.
+
+    ★ THE RATCHET COULD NOT RATCHET AND THIS IS WHY. `denials.py` emits the
+      first THREE words of a refused command; this file's set holds TWO-word
+      verbs. So the log said `git log --oneline` and the set said `git log`,
+      they never matched, and ADR-0011's own worked example sat in the
+      "NEEDS A HUMAN" column forever. Measured against the live log on
+      2026-09-13: twelve standing gaps reported, zero granted.
+
+      Two components, one vocabulary, nothing asserting they agree -- which
+      ADR-0011 clause 7 names as this estate's most repeated defect and forbids
+      outright: "one derives it from the other, or a test asserts they agree on
+      real data taken from the log."
+
+      This is the derivation. `permitted()` now answers through it, so there is
+      one rule and not two.
+
+    ★ THE GRANT WAS NEVER THE PROBLEM -- THE COMPARISON WAS. A granted `git log`
+      is emitted as `Bash(git log),Bash(git log:*)`, which already covers
+      `--oneline`. Nothing widens here; a refusal is merely recognised as
+      asking for a verb the gate already considers read-only.
+
+    ★ AND WHAT IS RETURNED IS ALWAYS AN ENTRY THIS FILE DECLARES, never the
+      caller's string. That is STRONGER than the exact-match it replaces: the
+      value that reaches the ledger cannot be influenced by what a refused
+      command happened to contain.
+
+    ★ WORD BOUNDARIES, NOT SUBSTRINGS. `git logs-everything` must not reduce to
+      `git log`. runs.py learned the same lesson matching repository names
+      inside paths, and `swechha-ai` not matching `swechha-airtable` is the
+      same rule.
+    """
+    g = " ".join(str(grant).split())
+    if not g:
+        return None
+    if g in READ_ONLY:
+        return g
+    # npm scripts keep their own rule and are NEVER prefix-reduced: the estate
+    # already measured that `Bash(npm run test:*)` matches `npm run test:watch`
+    # and `npm run test -- --update`, which is why they are emitted bare. A
+    # prefix rule here would reintroduce exactly that.
+    if g.startswith("npm run "):
+        return g if permitted(g) else None
+    best = None
+    for verb in READ_ONLY:
+        if g == verb or g.startswith(verb + " "):
+            if best is None or len(verb) > len(best):
+                best = verb
+    return best
+
+
 def permitted(grant: str) -> bool:
     g = " ".join(str(grant).split())
     if g in READ_ONLY:
