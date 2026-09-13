@@ -95,8 +95,8 @@ print("IN_SET" if c in m.READ_ONLY else "NOT_IN_SET")`)
     const verbs = new Set<string>()
     for (const line of readFileSync(LOG, 'utf8').split('\n')) {
       if (!line.trim().startsWith('{')) continue
-      let row: any
-      try { row = JSON.parse(line) } catch { continue }
+      let row: Record<string, unknown>
+      try { row = JSON.parse(line) as Record<string, unknown> } catch { continue }
       const refused = row.refused
       if (typeof refused !== 'string') continue
       for (const v of refused.split(';')) if (v.trim()) verbs.add(v.trim())
