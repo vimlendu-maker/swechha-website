@@ -421,6 +421,58 @@ spine_close() { # <task id> <done|refused|escalate> <note>
     escalate) "$ORG" task escalate "$1" --reason "$3"  >/dev/null 2>&1 || true ;;
   esac
 
+# ── THE HOOK WIRING ──────────────────────────────────────────────────────────
+# ★ FOLDED IN FROM THE SENTINEL, 2026-09-14, when the Mac's half-hourly sentinel
+#   was retired in favour of the hourly cloud one. Every other probe travels
+#   fine; hooks-health does not. It verifies that each department registers the
+#   hooks the shared translator handles, and that is a property of a machine
+#   where CLAUDE CODE RUNS. On a GitHub runner there is nothing to check, so
+#   the probe correctly answers UNKNOWN there -- and with the Mac job gone,
+#   UNKNOWN would have been the only answer anyone ever got.
+#
+# ★ IT IS A STRUCTURAL CHECK, SO DAILY IS THE RIGHT CADENCE, not a compromise.
+#   Hook wiring changes when somebody edits a settings.json, which is rare; it
+#   never needed the half-hourly beat it was getting.
+#
+# ★ WHAT IT GUARDS AGAINST IS SILENCE. Every hook command ends `; exit 0` so a
+#   broken hook can never block the work -- the right trade, and it means a hook
+#   that has stopped working looks exactly like a quiet afternoon. Nothing else
+#   would ever tell you. That is also why this block raises an INCIDENT rather
+#   than refusing the run: a dead event stream must be loud, and must not become
+#   a second way for the department to stop working.
+#
+# ★ BEFORE THE MODEL CALL, like the vault preflight and the ceiling, so the
+#   answer exists even on a run that later dies reaching the model.
+HOOKS_PROBE="${SWECHHA_HOOKS_PROBE:-$HOME/swechha-ai/sentinel/hooks-health.sh}"
+if [ -r "$HOOKS_PROBE" ]; then
+  set +e
+  HOOKS_OUT="$(bash "$HOOKS_PROBE" 2>&1)"
+  HOOKS_RC=$?
+  set -e
+  case "$HOOKS_RC" in
+    0)
+      ev gate_result gate=hooks-health result=pass
+      ;;
+    2)
+      # Exit 2 is the probe's UNKNOWN: a gap, never a pass. Reported as such.
+      ev gate_result gate=hooks-health result=unknown
+      echo "run.sh: hooks-health UNKNOWN — $HOOKS_OUT" >&2
+      ;;
+    *)
+      ev gate_result gate=hooks-health result=fail
+      echo "run.sh: hooks-health FAILED — $HOOKS_OUT" >&2
+      spine_incident hooks_unwired \
+        "$(printf '%s' "$HOOKS_OUT" | tr '\n' ' ' | cut -c1-200)" >/dev/null || true
+      ;;
+  esac
+else
+  # ★ NOT A PASS. An absent probe is the same class of gap as an absent answer,
+  #   and silently skipping it is how a check stops existing without anyone
+  #   deciding that it should.
+  ev gate_result gate=hooks-health result=unknown
+  echo "run.sh: hooks-health UNKNOWN — no probe at $HOOKS_PROBE" >&2
+fi
+
 # ★ STDERR IS KEPT, AND THE FAILURE IS SURVIVED LONG ENOUGH TO REPORT IT.
 #   This was `2>/dev/null` with no guard, under `set -euo pipefail`. A non-zero
 #   exit therefore killed the runner ON THIS LINE with the explanation already
