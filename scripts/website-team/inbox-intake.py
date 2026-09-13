@@ -91,6 +91,70 @@ def open_section(path):
     return out
 
 
+# A markdown heading, which is the only thing that opens a job once the file
+# uses headings at all. `#today` is not one: a heading needs whitespace after
+# the hashes, which is the same distinction _LEAD already relies on.
+_HEADING = re.compile(r"^#{1,6}\s")
+
+
+def jobs(lines):
+    """Group an `## Open` section into JOBS. A job may span many lines.
+
+    ★ A JOB IS NOT A LINE, AND ASSUMING IT WAS COST 46 WORK ITEMS. On 2026-09-12
+      at 18:4x the owner filed one brief -- a `### THIS WEEK:` heading with a
+      body of prose and bullets explaining what had already been done. This file
+      filed EVERY LINE of it: 46 tasks, each a sentence fragment, one of them
+      reading "stop spending. Take it on the next scheduled run." The store went
+      from 34 objects to 86 in an hour and the real job had no single task
+      representing it. A Work Item store full of fragments is worse than one
+      missing an entry, because the fragments look like work.
+
+    ★ TWO SHAPES, AND THE HEADING WINS. The inbox has been written both ways:
+      as a flat list, one job per line, which is what the five tasks filed
+      earlier that day came from; and as headed sections with bodies. So:
+
+        - a heading opens a job, and everything up to the next heading is its
+          body -- including bullets, which are part of the explanation and are
+          NOT separate jobs;
+        - lines BEFORE the first heading keep the old one-job-per-line rule, so
+          a flat file behaves exactly as it did and no existing title changes.
+
+      Titles are compared exactly for idempotency, so changing how a title is
+      derived re-files every job. The flat path is therefore left alone rather
+      than unified for tidiness.
+
+    ★ THE KNOWN COST, STATED: once a file uses a heading, a job appended after it
+      WITHOUT a heading is read as part of the last section's body and is not
+      filed. That is the documented contract -- if you use headings, every job
+      gets one. It is the one case where this returns to losing a job rather
+      than duplicating it, and it is why main() prints the job count and its
+      first heading rather than a bare number.
+    """
+    out, heading_seen, cur = [], False, None
+    for line in lines:
+        if _HEADING.match(line):
+            heading_seen = True
+            if cur is not None:
+                out.append(cur)
+            cur = [line]
+            continue
+        if heading_seen:
+            if cur is not None:
+                cur.append(line)
+            continue
+        # Flat mode, unchanged in effect: an unindented line opens a job, an
+        # indented one continues the job above it.
+        if not line.strip():
+            continue
+        if len(line) - len(line.lstrip()) == 0:
+            out.append([line])
+        elif out:
+            out[-1].append(line)
+    if cur is not None:
+        out.append(cur)
+    return out
+
+
 def title_of(line):
     """The stable title for an inbox line, or None if the line is not a job.
 
@@ -149,8 +213,8 @@ def main(argv):
 
     seen, titles = set(), []
     for p in paths:
-        for line in open_section(p):
-            t = title_of(line)
+        for job in jobs(open_section(p)):
+            t = title_of(job[0])
             if t and t not in seen:
                 seen.add(t)
                 titles.append(t)
@@ -175,7 +239,9 @@ def main(argv):
         else:
             sys.stderr.write("inbox-intake: could not file %r: %s\n"
                              % (t, (r.stderr or "").strip()))
-    print("inbox-intake: %d open line(s), %d already filed, %d new"
+    # JOBS, not lines. The count is the check the owner reads: if one brief
+    # reports as forty-six, the grouping is wrong and it is wrong visibly.
+    print("inbox-intake: %d open job(s), %d already filed, %d new"
           % (len(titles), len(titles) - created, created))
     return 0
 
