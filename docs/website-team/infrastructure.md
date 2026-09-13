@@ -47,12 +47,73 @@ useful than twelve invented percentages.
   retrospectively against the real 16:16 IST failure at `033235d0`, which it
   detects and describes correctly.
 - **Deployment count: MEASURED, and it is the limit this site is closest to.**
-  **425 deployments retained on 2026-09-12** (verified via `npm run infra:status`)
-  — every push to `main` deploys. The air pipeline runs **19 times a day**
+  **425 deployments retained on 2026-09-12**, **445 on 2026-09-13** (both
+  verified via `npm run infra:status`) — every push to `main` deploys. The air
+  pipeline runs **19 times a day**
   (`.github/workflows/air-hourly.yml` cron `'34 0-17,23 * * *'`), not every
   fifteen minutes. The probe warns at 70% and calls it red at 90%; those two
   percentages are a choice and are labelled as one in the source, the 100 is the
   provider's.
+
+  **+20 in a day is a NET figure, not a creation rate.** Retained is a stock:
+  created minus aged out of the retention window. A net change cannot be read as
+  "20 deployments were created", and the two must not be conflated when
+  reasoning about which pipeline is responsible.
+
+- **Deployment breakdown by trigger: UNKNOWN, and this is a tooling gap rather
+  than an unanswerable question.** The useful question behind the retained count
+  is *what creates these* — scheduled pipeline commits, pull-request previews,
+  merges to `main`, manual dispatches — and `v6/deployments` carries the
+  `meta.githubCommitRef` / `meta.githubCommitAuthorLogin` / `target` fields that
+  answer it directly. Nothing in this repository asks it. `vercel-health.sh`
+  counts the deployments and does not bucket them, and the count is all
+  `infra-status.py` surfaces.
+
+  ★ **AND AN ENGINEERING RUN CANNOT ANSWER IT AD HOC.** The runner's Bash
+  allowlist admits `npm run infra:status` and the test/lint/typecheck scripts;
+  `bash sentinel/vercel-health.sh`, `gh`, and any direct `curl`/`python3` call
+  are denied, and no other tool in that sandbox reaches the network. So the
+  breakdown is not something a specialist can go and fetch when asked for it —
+  it has to be *built into the probe* to exist at all. Recorded here so the next
+  run does not rediscover this by spending its budget on denied commands.
+
+  Until it is built, the honest statement is: **the cause of the retained count
+  is UNKNOWN.** It is specifically NOT established that the air and climate
+  pipelines are the dominant term. Their published cadences —
+  air ≤48 publishes/day gated by `MIN_PUBLISH_MINUTES=30`, climate-events 10/day
+  behind `data-refresh-changed.mjs`, climate-coverage 4/day, data-refresh 1/day —
+  sum well under 100/day and do not on their own account for the per-day figures
+  recorded against this window. That gap is the finding; a batching proposal
+  built on top of it would be a guess.
+
+- **The branch deploy list is hand-kept, and three prefixes in active use are
+  not on it.** `vercel.json`'s `git.deploymentEnabled` names nine prefixes
+  `false` (`chore/`, `ci/`, `claude/`, `docs/`, `feat/`, `fix/`, `refactor/`,
+  `team/`, `test/`) and `preview/**` `true`. There is **no `"**": false`
+  catch-all**, so any prefix not listed deploys by default. Three that have been
+  pushed to `origin` are absent: **`edit/`** (`edit/copy-pass-plumbing-strip`,
+  `edit/plumbing-voice-pass`), **`data/`** (`data/landslide-context-pack`,
+  `data/withdraw-nepal-flood`) and **`design/`** (`design/self-healing-department`).
+
+  ★ **THIS IS EXACTLY THE STATE THE 2026-09-12 INBOX ITEM RECORDS AS ALREADY
+  FIXED**, naming those same three prefixes. It is not fixed on `main` as of
+  2026-09-13 — read the file, not the note. Whether the change is sitting
+  unmerged (PR #155 `fix/deployment-storage-cap` is open and touches deployment
+  storage) or was never written is not something this run could check, `gh`
+  being denied. **Check that before doing anything else about deploy volume:** a
+  hand-kept deny-list that is one prefix behind the branches people actually use
+  is a standing leak, and it is the cheapest thing on this page to close.
+
+- **The retained COUNT is not a proxy for retained STORAGE at this magnitude.**
+  `RETAINED_ATTENTION` is derived in the probe as 10240MB ÷ ~89MB of `public/`
+  ≈ 115 break-even, alarming at 90. At 445 retained that arithmetic gives
+  ~40GB against a 10GB cap — four times a quota that is hard. Both cannot be
+  true, so some large share of those 445 records must carry little or no
+  retained build output (skipped `CANCELED` builds from
+  `scripts/vercel-ignore-build.sh`, errored builds), or Vercel is not charging
+  them linearly. **Stated as a question, not a conclusion** — resolving it needs
+  the per-deployment `state` breakdown named above, which is the same missing
+  measurement. Until then, do not re-derive the threshold from the count alone.
 - **Bandwidth: still UNKNOWN** — account-level, and the project scope cannot
   reach it. Widening the token to Full Account would buy that figure at the cost
   of giving a scheduled job write access to every project and the whole account.
@@ -201,8 +262,26 @@ read where they already are rather than copied into a third file.
 | Gap | Why |
 |---|---|
 | Vercel bandwidth | account-level; the project-scoped token cannot reach it |
+| **Vercel deployments bucketed by trigger/creator/state** | **reachable with the existing project-scoped token — `v6/deployments` already returns `target`, `state` and `meta.githubCommitRef` — but nothing asks, and no agent tool can ask ad hoc. Build it into `vercel-health.sh`; see the Vercel section above.** |
 | Neon compute hours | `consumption_history/account` 404s on the free plan |
 | data.gov.in / WAQI quota consumption | neither provider exposes a quota endpoint |
+
+### Before proposing to batch a pipeline, read the trade it already made
+
+Any scheme that publishes less often makes a page's figures older. That trade
+has been priced on this site once already and the reasoning is committed, at
+`scripts/lib/situation-render.mjs` around the LAST UPDATED comment: making the
+situation clock a real read-time was refused *because* a moving clock has to be
+committed to be visible and every commit is a deploy — "up to 24 a day for this
+page alone (cut from 48 on 29 August — a Deployment Storage audit found an
+actively-moving dossier was committing on nearly every half-hourly tick)".
+
+So the deployment budget and the currency of the figures are already known to
+trade against each other, and the trade has already been spent once in the
+direction of fewer deployments. Spending it again is not free, and it is not a
+tidy-up: **say plainly what the page loses in minutes or hours of staleness**,
+and do it against a measured breakdown, not against the cadence arithmetic —
+which, per the Vercel section above, does not currently explain the number.
 
 Everything else in this inventory is measured. Three services were UNKNOWN this
 morning and are not now; what remains is named here so a gap cannot go quiet.
