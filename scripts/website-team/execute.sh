@@ -180,7 +180,15 @@ throwaway script."
 #   visible only on stderr today, and this field does not pretend otherwise.
 ROUTED_BECAUSE="${WEBSITE_TEAM_ROUTED_BECAUSE:-manager-brief}"
 case "$ROUTED_BECAUSE" in *[[:space:]]*) ROUTED_BECAUSE="malformed" ;; esac
-ev task_started model_requested="$MODEL" routed_because="$ROUTED_BECAUSE" \
+# ★ THE SPINE TASK THIS WORK BELONGS TO, or absent. run.sh sets TEAM_TASK_ID
+#   from the task it claimed before dispatching; a hand-run execute.sh has no
+#   task and says nothing rather than inventing one. `task=` is omitted entirely
+#   when empty, because an empty string would join to nothing while looking like
+#   a value.
+TASK_FIELD=""
+[ -n "${TEAM_TASK_ID:-}" ] && TASK_FIELD="task=$TEAM_TASK_ID"
+
+ev task_started $TASK_FIELD model_requested="$MODEL" routed_because="$ROUTED_BECAUSE" \
    lane=agentic provider=anthropic-claude-code \
    brief="$(basename "$BRIEF_FILE")" branch="$BRANCH"
 # ★ STDERR IS KEPT, beside the JSON it belongs to. It was `2>/dev/null || true`,
@@ -194,11 +202,11 @@ if [ ! -s "$RUNLOG"/exec.json ] && [ -s "$RUNLOG"/exec.stderr ]; then
   WHY="$(python3 "$STAGE/model-failure.py" 1 < "$RUNLOG"/exec.stderr 2>/dev/null || true)"
   echo "execute: the model call produced nothing. $WHY" >&2
   sed -n '1,20p' "$RUNLOG"/exec.stderr >&2
-  ev task_failed lane=agentic provider=anthropic-claude-code model_requested="$MODEL" brief="$(basename "$BRIEF_FILE")" $WHY
+  ev task_failed $TASK_FIELD lane=agentic provider=anthropic-claude-code model_requested="$MODEL" brief="$(basename "$BRIEF_FILE")" $WHY
 fi
 # Same as run.sh: the specialist's token counts were being discarded too.
 SPEC_METRICS="$(python3 "$STAGE/parse-result.py" --metrics < "$RUNLOG"/exec.json 2>/dev/null || true)"
-ev task_returned cost_usd="$(python3 "$STAGE/parse-result.py" < "$RUNLOG"/exec.json 2>/dev/null | head -1)" routed_because="$ROUTED_BECAUSE" $SPEC_METRICS
+ev task_returned $TASK_FIELD cost_usd="$(python3 "$STAGE/parse-result.py" < "$RUNLOG"/exec.json 2>/dev/null | head -1)" routed_because="$ROUTED_BECAUSE" $SPEC_METRICS
 if ! python3 "$STAGE/parse-result.py" < "$RUNLOG"/exec.json | tail -n +2 > "$RUNLOG"/exec.txt; then
   echo "execute: could not parse the specialist's output — refusing to continue" >&2
   echo "execute: raw output is in "$RUNLOG"/exec.json" >&2
@@ -220,7 +228,7 @@ if [ -z "$(git status --porcelain)" ]; then
   #   and the spine logged it as shipped. A task system that reports success for
   #   work that did not happen is the failure it was built to end.
   echo "execute: no changes made — nothing to ship"
-  ev task_returned_empty brief="$(basename "$BRIEF_FILE")"
+  ev task_returned_empty $TASK_FIELD brief="$(basename "$BRIEF_FILE")"
   git checkout -q --detach "$BASE" ; git branch -qD "$BRANCH" 2>/dev/null || true
   exit 4
 fi
@@ -281,7 +289,7 @@ for g in guard tests typecheck lint build verify:seo; do
   case " $FAILED " in *" $g "*) ev gate_result gate="$g" result=fail ;; *) ev gate_result gate="$g" result=pass ;; esac
 done
 if [ -n "$FAILED" ]; then
-  ev task_refused reason="$FAILED" branch="$BRANCH"
+  ev task_refused $TASK_FIELD reason="$FAILED" branch="$BRANCH"
   echo "execute: FAILED —$FAILED"
   echo "execute: branch $BRANCH kept locally for inspection; nothing pushed"
   exit 1

@@ -176,3 +176,55 @@ describe('every run boundary names the process that produced it', () => {
     for (const l of emissions) expect(l).toMatch(/run_pid="\$\$"/)
   })
 })
+
+/**
+ * WORK EVENTS NAME THE SPINE TASK THEY BELONG TO.
+ *
+ * `org doctor` reported this every day: the STUCK rule's false-positive rate is
+ * NOT AVAILABLE, because no gap on a task the department actually WORKED could
+ * be measured.
+ *
+ * ★ THE CAUSE WAS ONE MISSING FIELD. Every `task` value in the stream came from
+ *   Claude Code's Agent hooks, where it is a subagent DESCRIPTION —
+ *   'Copywriter: energy theme', 'Recover design findings' — never a spine id.
+ *   execute.sh emitted task_started and task_returned with NO task field at
+ *   all, while run.sh had claimed the task three lines before dispatching it.
+ */
+describe('work events name the spine task', () => {
+  const RUN = readFileSync(join(DIR, 'run.sh'), 'utf8')
+  const EXEC = readFileSync(join(DIR, 'execute.sh'), 'utf8')
+
+  it('run.sh passes the claimed task id to execute.sh', () => {
+    expect(RUN).toMatch(/TEAM_TASK_ID="\$\{TASK:-\}"\s+"\$LIB\/execute\.sh"/)
+  })
+
+  it('★ it travels by environment, never as a fourth positional', () => {
+    /**
+     * execute.sh takes <specialist> <model> <brief> positionally, and THIS CALL
+     * already broke once when model routing was added and the brief path landed
+     * in $MODEL. A named variable cannot be silently mis-ordered.
+     */
+    const call = RUN.split('\n').find((l) => l.includes('"$LIB/execute.sh"'))
+    expect(call).toBeTruthy()
+    const args = call!.slice(call!.indexOf('execute.sh"') + 11).trim()
+    expect(args.split(/\s+/).filter(Boolean)).toHaveLength(3)
+  })
+
+  it.each(['task_started', 'task_returned', 'task_failed', 'task_refused'])(
+    '%s carries the task field', (event) => {
+      const line = EXEC.split('\n').find(
+        (l) => l.trim().startsWith(`ev ${event} `) && !l.trim().startsWith('#'))
+      expect(line, `${event} is no longer emitted`).toBeTruthy()
+      expect(line).toContain('$TASK_FIELD')
+    })
+
+  it('★ an absent task id emits NO field rather than an empty one', () => {
+    /**
+     * `task=` with nothing after it joins to nothing while looking like a
+     * value — the same shape as a zero that reads as "measured". A hand-run
+     * execute.sh has no task and must say nothing.
+     */
+    expect(EXEC).toMatch(/TASK_FIELD=""/)
+    expect(EXEC).toMatch(/\[ -n "\$\{TEAM_TASK_ID:-\}" \] && TASK_FIELD="task=\$TEAM_TASK_ID"/)
+  })
+})
