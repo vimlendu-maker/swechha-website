@@ -5,8 +5,12 @@
 `data/work/**`, the 76-entry gap register in `data/**`, the committed copy and
 branding standards, the live site at `swechha.in`, and twelve benchmark
 organisations checked against their live sites on this date.
-**Status:** strategy only. No page, template, navigation item or line of copy
-was changed in producing this. Implementation waits for approval.
+**Status:** strategy, **plus a status section**. It was written as strategy
+only, with nothing changed in producing it. The owner then approved the NOW list
+and part of NEXT, and those shipped the same day — **see §1a for what landed,
+and for the two recommendations this audit got wrong.** Sections 2 to 19 are
+left exactly as written, so the reasoning can be read against the state that
+produced it.
 
 **Relationship to prior work.** This document does **not** restate
 `docs/design/2026-08-24-CONTENT-COMPLETENESS-AUDIT.md`, which enumerated what
@@ -39,6 +43,9 @@ argument is that claims should be checkable.
 
 ### The three structural gaps
 
+> **Status, 2026-09-14 (§1a):** gap 2 is largely closed and gap 3 is half
+> closed. Gap 1 is untouched and is now the most important thing on this list.
+
 **1. The record proves measurement, not consequence.** Six situations are read,
 sourced and dated. Nothing anywhere on 147 pages shows Swechha *acting* on a
 measurement — no RTI, no consultation objection, no written submission, no
@@ -54,6 +61,13 @@ certificate. Twenty-two of twenty-six years have no photograph. Two of the four
 figures in the homepage's own record band are not in `/impact`'s register. This
 was named the highest-value, zero-collection item three weeks ago and has not
 moved.
+>
+> **CLOSED IN PART.** The shelf is built and the record rail now runs to eleven
+> sourced rungs. What the documents cannot close: the footer's 80G/12A/FCRA
+> claim still has no current certificate behind it — the one on the server is a
+> 2013 order superseded by the 2021 re-registration — and there is still no
+> financial figure of any kind, because not one of the nine reports contains
+> one. They are activity reports.
 
 **3. Nothing recurs.** `/journal` has two entries, both published 8 September
 2026. `/stories` has published nothing since August 2023. The digest subscribe
@@ -62,6 +76,12 @@ and `lib/newsletter.ts` has `subscribe`, `confirm`, `unsubscribe` and `send`,
 **no digest composer, and no workflow that sends one**. There is no RSS feed.
 So the only reason to return is the readings themselves, which is a reason to
 bookmark, not a reason to read.
+>
+> **HALF CLOSED.** The feed exists and the digest can now be sent — composer,
+> workflow and gate. But **nothing has recurred yet**: no digest has gone out,
+> and the Journal is still at two published entries plus one held draft. The
+> machinery is not the habit, and this gap stays open until something has
+> actually happened twice.
 
 ### What the benchmark work actually showed
 
@@ -84,6 +104,74 @@ put a name on the work.
 are perhaps two days of work, require no new content collection, and close the
 two gaps most visible to a funder, a journalist and a school. Everything else in
 this document is downstream of those two.
+
+---
+
+## 1a. Status, and what this audit got wrong
+
+**Added 2026-09-14, after the NOW list was built and part of NEXT was
+attempted.** The sections below are left as they were written. This one records
+what has since shipped and — more usefully — **the two places this audit was
+wrong**, because a strategy document that quietly corrects itself teaches
+nobody anything.
+
+### Two recommendations were wrong
+
+**§19 NEXT item 9, "close the 13 unbuilt work items", was wrong as framed.**
+There are not thirteen unbuilt pages. There are thirteen items the WORK
+architecture **ruled rows**, and the ruling is closed and enforced: events never
+get a detail page at any count, and for everything else the build asserts the
+data *agrees with the ruling* rather than trusting whichever it read last. The
+principle is stated in the code — **"a stub page is worse than a rich row"** —
+and promotion is precedented and narrow: a row becomes a page the moment **one
+named missing fact** arrives. Monsoon Wooding was promoted when the survival
+method was answered; No Plastic when the ten printed sheets turned up carrying a
+demand, a year and partners.
+
+So the work was never "build thirteen pages". It is "find, for one item, the
+fact the architecture already said would buy it a page". For We for Yamuna that
+fact is named — *one dated action and one demand that is not the founding story
+`/about` already tells* — and the nine reports supply neither.
+
+**§19 NOW item 4's "Do it yourself" half was wrong.** The homepage door was
+already settled: it was deliberately made a non-link, with the count and the
+empty-state chip removed, and the note *"it becomes a link again when there is
+something to link to."* It is not a defect and was left alone. The other half of
+that item — the two unsourced homepage figures — was real and is fixed.
+
+### A third thing this audit did not know
+
+The 80G certificate on the server is a **2013 order**, and India re-registered
+every 12A/80G holder under section 12AB in 2021. It is therefore the grant as it
+was made and **not evidence of approval today** — while the footer asserts 80G,
+12A and FCRA on all 147 pages. §12's Tier 1 called the transparency shelf "zero
+collection"; the documents were, but the *claim the footer makes* still needs the
+current Form 10AC and an FCRA number. Both are logged as holes.
+
+### What has shipped
+
+| Item | State |
+|---|---|
+| NOW 1 — transparency shelf | **Shipped.** `/about` has an `On file` band: nine reports, the 80G order, legal name, status and PAN. No FCRA number, no Form 10AC, no financial figure — none exists in the repo |
+| NOW 2 — the digest | **Machinery shipped, never sent.** Composer, monthly workflow, approval gate, tests. Needs two Actions secrets and an approved note |
+| NOW 3 — retire `/explore` | **Shipped.** Redirected to `/learn` and deleted |
+| NOW 4 — homepage figures | **Shipped** for the two figures; the DIY door was a wrong recommendation (above) |
+| NOW 5 — RSS | **Shipped.** `/feed.xml`, prerendered, with the approval gate re-checked against the site's own predicate |
+| NOW 6 — digest placement | **Shipped** on `/learn`, `/teach`, `/journal`, `/impact`. Not the homepage: that band sequence is frozen and its CSS is pinned by line number, so it is an art-direction call |
+| NOW 7 — publish one Reading | **Drafted and held.** Proven to build; needs a named approver |
+| NEXT 8 — the real timeline | **Shipped.** `/about`'s record rail went from four rungs to eleven, every new one a year a committed report states in its own words |
+| NEXT 9 — the 13 work items | **Refused by the architecture** (above). Three event rows were enriched from the reports instead |
+| NEXT 12 — the Method page | **Shipped.** `/method` — what counts as a reading, the five kinds of limit, four closed vocabularies, nine refusals |
+
+Everything else in §19 is untouched.
+
+### The thing that made most of this possible
+
+**Publishing the nine reports turned them into a source.** They had been sitting
+unlinked under `public/docs/`; once the shelf made them part of the site, they
+supplied seven dated rungs for the timeline and closed part of three named holes
+on the WORK rows. That is worth generalising: **the cheapest content in this
+organisation is the material it has already written down and not published.**
 
 ---
 
@@ -404,9 +492,12 @@ Drawn from the benchmarks, filtered to what fits Swechha. Techniques, not copies
   unambiguous *remove* in the audit.
 - **The dead `signal` field** on `heroImageSchema` — selective colour is retired
   and `CLAUDE.md` already records that nothing should be built on it.
-- **The homepage "Do it yourself" door** — it has no `href` and nothing behind
-  it. Either build the four guides (§7 Level 3) or remove the door. A door that
-  opens onto nothing is worse than no door on a site arguing for checkability.
+- ~~**The homepage "Do it yourself" door**~~ — **CORRECTED 2026-09-14, see §1a.**
+  This was wrong. The door was already settled: it was deliberately made a
+  non-link, its count and its empty-state chip removed, with the note *"it
+  becomes a link again when there is something to link to."* It is not a live
+  button over an empty library and it is not a defect. Building the four guides
+  (§7 Level 3, §19 NEXT 14) is still worth doing; removing the door is not.
 - **The unsourced homepage figures** — 6,890t "Out of the Yamuna" and "100+
   green infrastructures" appear in no register and the band links to "The whole
   record →". Source them or take them off the homepage.
@@ -802,15 +893,19 @@ sentence asserts what those facts demonstrate. Subtract.*
 sentence. One named campaign beats all of them — and the gap register already
 knows which campaigns need naming.*
 
-**6. Homepage — a door with nothing behind it**
-> **Before:** Do it yourself *(no href, no destination)*
+**6. Homepage — the door that is waiting for its guides**
+> **Now, correctly:** Do it yourself *(a statement, not a link — see §1a)*
 
-> **After:** *(remove until the guides exist; then)* Four things you can do
-> without us — compost, a balcony garden that scrubs air, a school waste audit,
-> a river walk you lead yourself.
+> **When the four guides exist:** Four things you can do without us — compost, a
+> balcony garden that scrubs air, a school waste audit, a river walk you lead
+> yourself.
 
-*Why: on a site whose entire argument is checkability, an empty door is the most
-expensive defect available.*
+*Why: this example originally read the door as a live button over an empty
+library and called it the site's most expensive defect. It is not — the link,
+the count and the empty-state chip were all deliberately removed, leaving a
+statement of something Swechha does. The lesson survives in a better form: the
+copy is already right and it is the CONTENT that is missing, which is a
+commissioning problem rather than an editing one.*
 
 **7. `/journal` — already right, shown as the standard**
 > On the evening of 8 September, one Delhi monitor read 35 and another read 211.
@@ -913,7 +1008,7 @@ whom → what came back, or that nothing did → what happens next.
 **Distinctive element:** must be publishable when the answer is *nothing
 happened*. A Consequence page that only runs on wins is advertising.
 
-### 7. Work item *(`/work/**` — exists, 13 unbuilt)*
+### 7. Work item *(`/work/**` — exists; 11 pages and 13 ruled rows, see §1a)*
 **Purpose:** what a programme is, what it produced, how to join.
 **Structure:** what it is → where and since when → the figures, counted or
 modelled → named people → what it needs → how to join.
@@ -1325,7 +1420,7 @@ Impact / Effort / Strategic importance, all High / Medium / Low.
 | 1 | **Publish the transparency shelf** — 9 reports + 80G cert + registration numbers + one financial figure | **High** | **Low** | **High** |
 | 2 | **Build and send the monthly digest** — composer + workflow; the promise is already public on 11 pages | **High** | Medium | **High** |
 | 3 | **Retire `/explore`** — redirect to `/learn`; it contradicts the site's own licence | Medium | **Low** | Medium |
-| 4 | **Fix or remove the "Do it yourself" door** and the two unsourced homepage figures | Medium | **Low** | **High** |
+| 4 | ~~Fix or remove the "Do it yourself" door~~ **and** the two unsourced homepage figures — **the door half was wrong (§1a); the figures are fixed** | Medium | **Low** | **High** |
 | 5 | **Add RSS/Atom** for `/journal` and `/record` | Medium | **Low** | Medium |
 | 6 | **Put the digest form on the homepage, `/learn`, `/teach`, `/journal`, `/impact`** | Medium | **Low** | Medium |
 | 7 | **Publish one Reading** — prove the monthly cadence exists | Medium | **Low** | **High** |
@@ -1339,7 +1434,7 @@ is the only kind of defect that damages a site built on checkability.*
 | # | Action | Impact | Effort | Strategic |
 |---|---|---|---|---|
 | 8 | **Build the real timeline** from the nine reports | **High** | Medium | **High** |
-| 9 | **Close the 13 unbuilt work items**, starting with *We for Yamuna* | **High** | **High** | **High** |
+| 9 | ~~Close the 13 unbuilt work items~~ — **WRONG AS FRAMED (§1a).** They are ruled ROWS, not a backlog. The real task: find the one named fact that promotes a single row, and enrich the rest | Medium | **High** | Medium |
 | 10 | **Start Field notes** — fortnightly, from journeys already running | **High** | **Low** | **High** |
 | 11 | **Named voices** — extend the Healthy Cities pattern, de-anonymised with consent | **High** | Medium | **High** |
 | 12 | **Write the Method page** | Medium | **Low** | **High** |
@@ -1373,6 +1468,27 @@ average of the internet, which is precisely the outcome the brief rules out.
 ## Appendix A — measured facts underlying this audit
 
 All counted on this commit, 2026-09-14. Nothing here is asserted from memory.
+
+> **Re-measured after the NOW list and part of NEXT shipped, same day.** The
+> table below is the state this audit was WRITTEN against and is left alone, so
+> the reasoning above can be read against the numbers that produced it. What
+> changed:
+>
+> | Fact | Was | Now |
+> |---|---|---|
+> | Built HTML pages | 147 | **148** (`/method`) |
+> | Pages linking to the nine reports | **0** | **1** (`/about`'s `On file` band) |
+> | `/about` record rungs | 4 | **11** |
+> | Pages carrying the digest form | 11 | **15** |
+> | Pages advertising a feed | 0 | **148** |
+> | Digest sender workflows | **0** | **1** |
+> | Open `holes` entries | 76 | **83** — *higher on purpose*: the ledger and the three event rows added named, unlockable gaps. A rising hole count on this site is the register working, not decay |
+> | `/journal` articles on disk | 2 | **3** (two published, one held) |
+> | `/explore` | HTTP 200, old nav, "All rights reserved" | **gone**, 308 to `/learn` |
+>
+> **Unchanged, and each one still matters:** 2 blockquotes across the whole
+> site; 11 of 24 work items with pages; `/stories` last published August 2023;
+> no financial figure anywhere; no consequence trail.
 
 | Fact | Value | How counted |
 |---|---|---|
@@ -1410,5 +1526,7 @@ indiaspend.com (301 → isignal.in, rebranded; not pursued).
 
 ---
 
-*Prepared as a strategic audit only. No page, template, navigation item or line
-of copy was changed. Implementation awaits approval.*
+*Written as a strategic audit, with nothing changed in producing it. Sections 2
+to 19 stand as first written. §1a records what has since shipped, what this
+audit got wrong, and what is still waiting on a fact only the organisation
+holds.*
