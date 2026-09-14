@@ -71,6 +71,7 @@ teach
 schools
 data
 record
+method
 journal
 essays
 search

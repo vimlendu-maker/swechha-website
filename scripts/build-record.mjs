@@ -837,6 +837,9 @@ https://swechha.in/record/air/2026/09</code>
         <a class="lk" href="/learn/measured-vs-modelled">the difference</a> is on the page it came from.</p>
       <p class="rc-p"><b>Quote the observation time, not the time you read it.</b> Every reading here carries
         the source's own stamp for when the air, the water or the imagery was actually observed.</p>
+      <p class="rc-p">Both of those rules, and the rest of them, are set out at
+        <a class="lk" href="/method">how a reading is decided</a> &mdash; what counts as one, the kinds of
+        limit a figure is held to, and what this site will not do to a number.</p>
 ${/* NOTE: the four-layer register that used to close this band — source data,
       Swechha processing, Swechha analysis, editorial interpretation — was cut
       in the copy pass, and with it the "if you only take one rule" line. The
