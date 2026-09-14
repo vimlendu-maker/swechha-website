@@ -134,12 +134,45 @@ STAGE="startup"
 ENDED=0
 stage() { STAGE="$1"; }
 
+# ★ WHAT IS ALREADY FILED, BECAUSE THIS MANAGER HAS NEVER BEEN TOLD. It
+#   re-derives its work from the site on every run, so it observed the same
+#   unstyled CSS four mornings running and wrote four differently-worded briefs
+#   for it -- four tasks for ONE bug, and four of the six `fix(teach)` items
+#   that sat in NEEDS YOU until a human read them side by side on 2026-09-14
+#   and found every one obsolete.
+#
+#   THE SPINE CANNOT DEDUPE THESE AND DELIBERATELY DOES NOT TRY: a near-match
+#   rule "would eventually fold 'section 3' into 'section 4'", so it folds a
+#   repeat only when a caller declares two filings are one condition with --key.
+#   A brief carries no key because only the MANAGER knows whether today's
+#   observation is yesterday's task. So the manager is the actor that must be
+#   given the list.
+#
+#   `|| true`, and a self-describing fallback: a runner must not die because the
+#   spine is unreadable, and an empty string must never be mistaken for
+#   "nothing is open" -- which is the reading that licenses a duplicate.
+OPEN_TASKS="$(python3 "$LIB/open-tasks.py" "$DEPARTMENT" --limit 20 2>/dev/null || true)"
+[ -n "$OPEN_TASKS" ] || OPEN_TASKS="ALREADY OPEN: UNKNOWN — this run could not read the task list. Treat that as 'there may be open tasks', never as 'there are none'."
+
 if [ "$MODE" = "review" ]; then
   PROMPT="Run in **review** mode. Read BOTH inboxes first — this department's
 at $INBOX and the organisation's at $ORG_INBOX — then this week's run
 records in $RECORDS. Write the week's account for the owner: what changed, what
 it cost, what you decided and why, what you got wrong, and what is waiting on
-them. Written for someone who has not been watching. Short."
+them. Written for someone who has not been watching. Short.
+
+$OPEN_TASKS
+
+Two things follow from that list, and they matter more than they look:
+
+  - DO NOT write a brief for something already on it. Say under \`## Inbox\` which
+    open task your observation matches, and move on. A second task for one
+    condition is a queue nobody reads, and this department has already produced
+    four for a single bug.
+  - IF YOU BELIEVE AN OPEN TASK IS ALREADY FIXED, say so under \`## Resolved\`
+    with its id and the evidence you actually checked. You cannot close it and
+    must not try; a human decides. An agent that could close the record of its
+    own unfinished work would have no record."
 else
   PROMPT="Run in **work** mode. Read BOTH inboxes first, then observe, diagnose
 and prioritise.
@@ -160,7 +193,20 @@ executes those briefs with the permissions for it; your job is to decide what
 should happen and to be right about it.
 
 Report in the format your role file specifies. Name files. Say plainly if
-nothing needs doing — a quiet report is a good outcome."
+nothing needs doing — a quiet report is a good outcome.
+
+$OPEN_TASKS
+
+Two things follow from that list, and they matter more than they look:
+
+  - DO NOT write a brief for something already on it. Say under \`## Inbox\` which
+    open task your observation matches, and move on. A second task for one
+    condition is a queue nobody reads, and this department has already produced
+    four for a single bug.
+  - IF YOU BELIEVE AN OPEN TASK IS ALREADY FIXED, say so under \`## Resolved\`
+    with its id and the evidence you actually checked. You cannot close it and
+    must not try; a human decides. An agent that could close the record of its
+    own unfinished work would have no record."
 fi
 
 # THE ALLOWLIST IS THE SECURITY BOUNDARY, not the role file.
