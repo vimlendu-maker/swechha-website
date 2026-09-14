@@ -19,7 +19,11 @@ import { useEffect, useRef, useState } from 'react'
 const NAV = [
   { href: '/now', label: 'Now' },
   { href: '/work', label: 'Work', children: true },
-  { href: '/explore', label: 'Explore' },
+  /* WAS `/explore`, WHICH IS RETIRED (see redirects.ts). This nav is live on
+     the 404 page, so leaving the old href here would have pointed every
+     mistyped URL at a 308 into a page that no longer exists. `Learn` is both
+     the redirect's destination and the word the built lane's own nav uses. */
+  { href: '/learn', label: 'Learn' },
   { href: '/impact', label: 'Impact' },
   { href: '/act', label: 'Act' },
   { href: '/about', label: 'About' },

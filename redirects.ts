@@ -134,4 +134,31 @@ export const movedRedirects: Redirect[] = [
     destination: '/healthy-cities#fellows',
     permanent: true,
   },
+  /* ★ `/explore` IS RETIRED. It was the last page of the pre-design scaffold
+     still answering 200, and it had drifted into being a second, worse site:
+     the OLD navigation (a `Donate` word this site does not use), three "nothing
+     published yet" empty states, a different boilerplate sentence about what
+     Swechha is, and a footer reading "© 2026 Swechha. All rights reserved."
+
+     THE COPYRIGHT LINE IS WHY THIS IS A DELETION RATHER THAN A CLEAN-UP.
+     `/use-the-data` grants every reading, table and record on this site under
+     CC BY 4.0. One live page asserting all rights reserved is not an
+     inconsistency of tone; it is the site contradicting its own licence, and a
+     re-user who found this page first would be right to believe it.
+
+     `noindex` DID NOT CONTAIN IT. The page was excluded from the sitemap and
+     carried `robots: noindex, follow`, so it was never a search problem — which
+     is precisely why it survived three audits. It was reachable by typing the
+     URL, by any old link, and from `components/site-nav.tsx`, which is live on
+     the 404 page.
+
+     THE DESTINATION IS `/learn`, NOT `/stories`. The scaffold's own subject
+     line was "Stories, explainers, guides and films", and of those four the
+     library that actually exists is the thirty explainers at `/learn`. A
+     redirect should land on the page that answers the reason the reader came. */
+  {
+    source: '/explore',
+    destination: '/learn',
+    permanent: true,
+  },
 ]

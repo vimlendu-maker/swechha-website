@@ -615,6 +615,7 @@ ${INDEX_DATA.onward.doors.map((d) => `        <a class="lr-door" href="${esc(d.h
           <span class="cap">${esc(d.note)}</span>
         </a>`).join('\n')}
       </div>
+${S.newsletter('learn')}
     </div>`,
 };
 
@@ -660,6 +661,11 @@ const IX = await S.assemble({
   ],
   sh, clashes: S.groundChain(INDEX_BANDS),
   pageCss: PAGE_CSS,
+  /* The digest band is in `onward` above and this is its handler. /learn is
+     where the search traffic lands — the explainers are the pages a stranger
+     finds first — so it is the single most valuable place on this site to offer
+     a reason to come back, and it had no offer on it at all. */
+  script: S.NEWSLETTER_JS,
   navMark: { current: 'Learn', url: '/learn' },
   sectionFor: (id) => IB[id](),
   note: `${ARTICLES.length} articles in ${CATS.length} categories.`,

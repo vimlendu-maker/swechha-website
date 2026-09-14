@@ -872,7 +872,9 @@ ${ALL.map((s) => `          <div class="lr-st-r">
         <a class="lr-door" href="${ATOZ_HREF}"><p class="lbl">Look a word up</p><span class="lr-door-h">The A to Z</span><span class="cap">${ATOZ.terms.length} environmental terms, defined plainly</span></a>
         <a class="lr-door" href="/schools"><p class="lbl">Bring us in</p><span class="lr-door-h">Work with a school</span><span class="cap">Swechha runs these sessions with schools directly</span></a>
         <a class="lr-door" href="/healthy-cities"><p class="lbl">In the field</p><span class="lr-door-h">Healthy Cities</span><span class="cap">The funded chapter delivering this curriculum now</span></a>
-      </div></div>`,
+      </div>
+${S.newsletter('teach')}
+      </div>`,
   };
   const OUT = await S.assemble({
     file: 'teach.html',
@@ -892,6 +894,11 @@ ${ALL.map((s) => `          <div class="lr-st-r">
       ['All sessions', '#directory'], ['Next', '#onward']],
     sh, clashes: S.groundChain(BANDS),
     pageCss: PAGE_CSS,
+    /* THE INDEX ONLY, NOT THE 43 SESSION PAGES. A teacher reading a session is
+       mid-task and the offer would be an interruption; a teacher on the index
+       is deciding whether this is a place worth coming back to, which is the
+       question the digest answers. */
+    script: S.NEWSLETTER_JS,
     sectionFor: (id) => B[id](),
     note: `${ALL.length} sessions in ${THEMES.length} themes; ${oneP.length} one-period picks.`,
   });

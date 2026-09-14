@@ -387,6 +387,7 @@ ${Object.values(TYPES).map((t) => `        <div class="jr-k">
         <a class="jr-door" href="/learn"><span class="lbl">Learn</span><span class="jr-door-h">What the numbers mean</span><span class="cap">Twenty explainers behind the readings.</span></a>
         <a class="jr-door" href="/record"><span class="lbl">Record</span><span class="jr-door-h">The archive</span><span class="cap">Every reading, kept and dated.</span></a>
       </div>
+${S.newsletter('journal')}
     </div>`,
 };
 
@@ -429,6 +430,10 @@ const IX = await S.assemble({
   index: [['Latest', '#latest'], ['Five kinds', '#kinds'], ['Next', '#onward']],
   sh, clashes: S.groundChain(IX_BANDS),
   pageCss: PAGE_CSS,
+  /* THE DIGEST BAND'S BEHAVIOUR. The markup is in the `onward` band above; this
+     is the form's script, and it has to travel with it — a subscribe box with
+     no handler posts nowhere and says nothing. */
+  script: S.NEWSLETTER_JS,
   navMark: { current: null, url: null },
   sectionFor: (id) => IB[id](),
   note: `${ARTICLES.length} published, ${DRAFTS.length} held.`,
