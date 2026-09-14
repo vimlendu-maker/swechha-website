@@ -148,6 +148,40 @@ was made and **not evidence of approval today** — while the footer asserts 80G
 collection"; the documents were, but the *claim the footer makes* still needs the
 current Form 10AC and an FCRA number. Both are logged as holes.
 
+### A third wrong recommendation, found later the same day
+
+**§19 NEXT item 14, "four DIY guides into `/learn`", was wrong twice over.**
+
+*They cannot live in `/learn`.* Every Learn article is built around a published
+standard and is required to carry one, plus a primary source with an absolute
+URL and a named publisher and a list of what the measurement cannot tell you. A
+compost guide has none of those. This is the same mistake as item 9 — a
+recommendation made by analogy without checking the schema it landed in.
+
+*And one of the four should not be written at all.* The homepage door named "a
+balcony air-detox garden". The claim behind it does not hold: houseplants do not
+meaningfully clean the air in a ventilated room. It rests on a 1989 NASA
+sealed-chamber experiment that is very widely misread; real-world air exchange
+dilutes volatile compounds far faster than plants take them up, a 2019 Drexel
+review found potted plants do not improve indoor air quality, and the American
+Lung Association states plainly that they do not clean air.
+
+That made it **the worst sentence this site could carry.** Two bands above that
+door, the homepage publishes Delhi's air against a published limit and names the
+monitor. Telling the same reader to detox it with a balcony garden is the site
+contradicting its own argument inside one scroll — in a term neither of
+Swechha's own sources ever used, and which an earlier ruling had already killed
+everywhere else. The frozen-language ledger had recorded it as "needs a ruling"
+and left it open. **It is now struck**, replaced with "a herb garden on a
+balcony" — Eco Action's own word, and a claim about plants rather than about air.
+
+The other three are real and worth writing. They are **blocked on Swechha's own
+method**, which is in no file in this repository: the site records that the farm
+composts 5,000 kg of leaves and that Eco Action has built 70+ butterfly parks
+and 20+ herb gardens, and it records no method for any of it. Writing them from
+general knowledge would put Swechha's name on generic instructions, which is
+precisely what §18 forbids.
+
 ### What has shipped
 
 | Item | State |
@@ -690,11 +724,17 @@ naive reading.
 the dataset is already in the repo.*
 
 **Level 3 — Explainer** *(1–2 days, evergreen)*
-A `/learn` page. Thirty exist. The remaining obvious ones: the four homepage DIY
-guides (compost, balcony air-detox garden, school waste audit, self-guided river
-walk), which are currently a door with nothing behind it.
+A `/learn` page. Thirty exist.
 *Must contain:* the definition, who set it, how it is measured, what it cannot
 tell you.
+
+> **CORRECTED 2026-09-14 (§1a).** This originally named the four homepage DIY
+> guides as the obvious next Learn pages. **They cannot be Learn pages.** Every
+> Learn article is built around a published standard and is required to carry
+> one, plus a primary source with an absolute URL and a named publisher and a
+> list of what the measurement cannot tell you. A compost guide has none of
+> those. A DIY guide is a different rung and needs a different home — and one
+> of the four should not be written at all; see §19 NEXT 14.
 
 **Level 4 — Perspective** *(1 week, quarterly)*
 Swechha's position on something contested, argued from the record and signed by
@@ -1112,8 +1152,11 @@ better to be the organisation that published them first.
 ### Evergreen — found by search, returned to as reference
 
 `/learn` (30 pages), `/teach` (53), `/use-the-data`, `/record`. These already
-work and need extension, not reinvention. The four missing DIY guides are the
-obvious additions. **No new cadence required.**
+work and need extension, not reinvention. **No new cadence required.**
+
+> **CORRECTED 2026-09-14 (§1a).** "The four missing DIY guides are the obvious
+> additions" was wrong twice over: they do not fit the Learn schema, and one of
+> the four rests on a claim this site's own standards refuse. See §19 NEXT 14.
 
 ### Recurring — the promise a reader can subscribe to
 
@@ -1439,7 +1482,7 @@ is the only kind of defect that damages a site built on checkability.*
 | 11 | **Named voices** — extend the Healthy Cities pattern, de-anonymised with consent | **High** | Medium | **High** |
 | 12 | **Write the Method page** | Medium | **Low** | **High** |
 | 13 | **First Perspective**, signed | **High** | Medium | **High** |
-| 14 | **Four DIY guides** into `/learn` | Medium | Medium | Medium |
+| 14 | ~~Four DIY guides into `/learn`~~ — **WRONG TWICE (§1a).** They do not fit the Learn schema, and the "balcony air-detox garden" rests on a claim the evidence does not support: that one is **struck from the homepage**, not written. The other three need Swechha's own method, which is in no file here | Medium | **High** | Low |
 | 15 | **Off-site SEO** — fix dead press links, submit to the seven listicles | **High** | Medium | Medium |
 | 16 | **Policies** — safeguarding, POSH, privacy | Medium | **Low** | **High** |
 
