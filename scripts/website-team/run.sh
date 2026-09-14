@@ -778,7 +778,20 @@ if [ "$MODE" = "work" ]; then
       # said why" -- a real result, and never `shipped`. Collapsing it into
       # success is how a brief that could not be done was reported as done.
       set +e
-      "$LIB/execute.sh" "$spec" "$model" "$path"
+      # ★ THE TASK ID TRAVELS BY ENVIRONMENT, NOT AS A FOURTH ARGUMENT.
+      #   execute.sh takes <specialist> <model> <brief> positionally, and this
+      #   very call already broke once when model routing was added and the
+      #   brief path landed in $MODEL. Adding a fourth positional is the same
+      #   trap; a named variable cannot be silently mis-ordered.
+      #
+      # ★ WHY IT MUST TRAVEL AT ALL. execute.sh emits task_started and
+      #   task_returned with NO task field, so nothing joins a run's work to the
+      #   task it was doing. `org doctor` reports the consequence every day:
+      #   the STUCK rule's false-positive rate is NOT AVAILABLE, because the
+      #   only `task` values in the stream come from Claude Code's hooks and are
+      #   subagent DESCRIPTIONS ('Copywriter: energy theme'), never spine ids.
+      #   run.sh has claimed the task three lines above and simply never said so.
+      TEAM_TASK_ID="${TASK:-}" "$LIB/execute.sh" "$spec" "$model" "$path"
       exec_rc=$?
       set -e
       case "$exec_rc" in
