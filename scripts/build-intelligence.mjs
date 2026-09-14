@@ -377,7 +377,7 @@ B.campaigns = () => `${opener('campaigns', 'What we do about it', 'Three campaig
         ${GFW.total.loss_mha} million hectares. Both are on this site, in their own units, and
         neither is used to cancel the other.</p>
       <p class="cap ix-close">Every reading here is public, dated and linked to the document it
-        came from.</p>
+        came from. <a class="lk" href="/method">How a reading is decided ${ARROW}</a></p>
       <p style="margin:0"><a class="act" href="/act">Support the work ${ARROW}</a></p>
 ${S.newsletter('index')}
     </div>`;

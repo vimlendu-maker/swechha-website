@@ -351,6 +351,17 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
        does not cover. It is what makes the archive above citeable by somebody
        who is not us, which is the whole point of keeping it. */
     '/use-the-data': 'use-the-data.html',
+    /* `/method` — how a reading is decided: what counts as one, the five kinds
+       of limit, the four closed vocabularies, and the refusals. The rules were
+       already in force and were distributed across the situations index, the
+       licence page above, the impact register and a standard no reader can
+       open; a method owned by four pages is owned by none of them. It is routed
+       in the same commit that builds it and that adds the footer row and the
+       two inbound links, for the reason this file's own note gives: a built
+       page, a routed page and a linked page are one change, and any two of them
+       without the third is a defect. NOT a nav word — the bar is closed at six
+       plus the Give chip. */
+    '/method': 'method.html',
     '/learn': 'learn.html',
     ...learnRoutes(),
     /* `/teach` — Swechha's Bridge the Gap compendium, published as eight themes
