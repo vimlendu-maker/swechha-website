@@ -98,9 +98,25 @@ describe('tool grants', () => {
     ['for f in', 'a shell fragment, not a verb'],
     ['node scripts/verify-seo.mjs 2>&1', '"run an arbitrary file" is not a permission'],
     ['npx vitest run', 'npx fetches and executes a package; the npm script is the granted form'],
-    ['gh secret list', 'reads no value, but enumerates the credential inventory into an agent'],
   ])('still refuses %s (%s)', (verb) => {
     expect(allowed([verb])).toBe('')
+  })
+
+  /**
+   * ★ `gh secret list` MOVED OUT OF THAT LIST BY THE OWNER, 2026-09-14, and the
+   *   reason it was in it is recorded here rather than deleted: it "reads no
+   *   value, but enumerates the credential inventory into an agent". That cost
+   *   is real and was stated when the decision was put; the owner weighed it
+   *   against three refused runs, each a manager trying to explain a red
+   *   workflow it could not see the cause of.
+   *
+   *   What did NOT move: `gh secret set` and `gh secret delete`. The rule is
+   *   verbs, not prefixes, and admitting the list must not admit the writes.
+   */
+  it('admits gh secret list and still refuses the gh secret writes', () => {
+    expect(allowed(['gh secret list'])).toBe('Bash(gh secret list),Bash(gh secret list:*)')
+    expect(allowed(['gh secret set'])).toBe('')
+    expect(allowed(['gh secret delete'])).toBe('')
   })
 
   /**
