@@ -588,6 +588,88 @@ export function consolidate(sources, { place = null } = {}) {
   return out;
 }
 
+/* ── THE REGISTER MUST BE ABLE TO HOLD WHAT THE PAGE QUOTES ───────────────
+   ★ THE DEFECT, MEASURED. On 14 September 2026 at 17:02 UTC the homepage hero
+     stopped leading on Nepal's death toll and started leading on "69 —
+     independent publishers reporting it". A count of press outlets, 40pt, as
+     the main number for a disaster that had killed about 1,390 people.
+
+     Nothing broke. `impact` went from { deaths: 1388 } to {} because the one
+     headline still printing a number — Press Trust of India, "Nepal flood
+     death toll reaches 1,388", published 13 Sep 13:16 GMT — had been pushed
+     past position 24 by a day of relief logistics. All 24 entries the register
+     kept that run were the India angle: power export cleared, Bailey bridges
+     dispatched, an IAF flight. Exactly one carried a casualty word at all
+     (Reuters, "after deadly flood") and that is an adjective, not a digit.
+
+   ★ THE SAME RUN ELECTED THIS HEADLINE: "Bhote Koshi flood death toll reaches
+     1,390; over 4,000 still missing" — and wrote `impact: {}` underneath it.
+     So the toll was in the item pool. It was not in the register, and the
+     register is the only thing consolidate() can read.
+
+   ★ THIS IS THE CAUSE lib/event-lead.test.ts DESCRIBES, ARRIVING BY THE OTHER
+     DOOR. That test was written for the day the page printed 1,377 in its
+     heading over an impact.deaths of 1,365: "two pools and two rules", the
+     headline ranked over the detector's FULL item list, the figure consolidated
+     over the 24-item register. The fix then was to disqualify a headline that
+     disagrees with the figures. It could not fire here, because an empty impact
+     disagrees with nothing — the page lost the number instead of contradicting
+     itself, which is quieter and no better.
+
+     So the register is widened, which is the lever detect-climate-events.mjs
+     named when it wrote down this failure in advance: "A FIGURE WHOSE LAST
+     SOURCE HAS AGED OUT NOW DISAPPEARS ... The lever if that proves too
+     aggressive is the 24-item cap on `sources` — widen the register, not the
+     merge." It has proved too aggressive. Not because the coverage stopped
+     printing the number, but because relief logistics outranked it.
+
+   ★ WHAT IS NOT CHANGED, AND MUST NOT BE. A figure whose sources have genuinely
+     aged out still disappears. Every query is bounded by `when:2d`, so this
+     admits nothing older than the pool itself; when two days pass with nobody
+     printing a toll, the page holds none. The rule stays "a number is a
+     quotation attributable to a source listed beneath it" — this only stops the
+     register from dropping the source while the quotation is still being made.
+
+   ★ THE PREDICATE IS consolidate()'s OWN TWO TESTS AND MAY NOT DIVERGE.
+     An item is admitted when it names the dossier's place and yields a figure —
+     the identical pair of conditions in the loop above. Anything looser would
+     admit a source no figure ever cites, which is just a longer list; anything
+     tighter would drop a source a figure DOES cite, which is the dangling
+     citation that once deadlocked the whole pipeline.
+
+   ★ THE OVERFLOW CAP IS MEASURED, NOT CHOSEN FOR TIDINESS. Across 335 committed
+     revisions of the four busiest dossiers, the most figure-bearing headlines
+     ever held inside one 24-item register is 11 — nepal-glof, at its peak.
+     Twelve is one more than the worst case this site has ever had to carry, so
+     a disaster's full quotable record fits beyond the freshest 24 and the
+     reader-visible source list still cannot run away. */
+export const REGISTER_CAP = 24;
+export const REGISTER_FIGURE_CAP = 12;
+
+/**
+ * @param {Array<{id:string, publisher:string, title:string, published?:string|null}>} candidates
+ *   this run's items, deduplicated, in the order the feeds returned them, each
+ *   title ALREADY through cleanHeadline().
+ * @param {{place?: string|null, cap?: number, figureCap?: number}} [opts]
+ * @returns {Array} the freshest `cap`, plus every later item that consolidate()
+ *   could quote from, up to `figureCap` of them.
+ */
+export function selectRegister(candidates, {
+  place = null, cap = REGISTER_CAP, figureCap = REGISTER_FIGURE_CAP,
+} = {}) {
+  const head = candidates.slice(0, cap);
+  const out = [...head];
+  let budget = figureCap;
+  for (const c of candidates.slice(cap)) {
+    if (budget <= 0) break;
+    if (place && !mentionsPlace(c.title, place)) continue;
+    if (!figuresFromText(c.title).length) continue;
+    out.push(c);
+    budget -= 1;
+  }
+  return out;
+}
+
 /* ── THE HEADLINE, WHEN THE DETECTOR'S PICK IS A LISTICLE ─────────────────
    The Nepal page's own heading was "Nepal floods: 6 ways to help victims of
    the glacial collapse that left hundreds dead or missing" — a service piece,
