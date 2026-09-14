@@ -52,7 +52,9 @@ describe('one vocabulary, derived (ADR-0011 clause 7)', () => {
   })
 
   it('refuses a verb with no read-only prefix', () => {
-    expect(canonical('gh secret list')).toBe('')
+    // Was `gh secret list` until the owner granted it on 2026-09-14; `gh secret
+    // set` makes the same point and is one this file will never admit.
+    expect(canonical('gh secret set')).toBe('')
     expect(canonical('node -e "')).toBe('')
     expect(canonical('rm -rf')).toBe('')
   })
