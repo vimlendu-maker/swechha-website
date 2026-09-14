@@ -40,6 +40,21 @@ READ_ONLY = frozenset({
     "gh issue list", "gh issue view",
     "gh workflow list", "gh workflow view",
     "gh label list", "gh release list", "gh release view",
+
+    # ★ NAMES ONLY, NEVER VALUES, and that distinction is the whole grant.
+    #   `gh secret list` prints secret NAMES and timestamps; there is no gh verb
+    #   that prints a value, because GitHub does not serve them. Admitted by the
+    #   owner 2026-09-14 after it was refused on three separate runs, every one
+    #   of them a manager trying to explain a red workflow.
+    #
+    #   What it costs: the manager can enumerate WHICH credentials exist. What
+    #   withholding it cost is already measured in this file -- a manager that
+    #   can see a workflow is red and not why "reasoned from the workflow's
+    #   comments instead, and the comments were wrong".
+    #
+    #   `gh secret set` and `gh secret delete` are NOT here and must never be:
+    #   the rule above is verbs, not prefixes, and those two write.
+    "gh secret list",
     "git log", "git show", "git diff", "git status", "git blame", "git ls-files",
 
     # ★ THE ONE NETWORK VERB, AND IT IS HERE DELIBERATELY. `git fetch` reaches the

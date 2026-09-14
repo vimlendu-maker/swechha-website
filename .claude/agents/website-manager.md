@@ -128,6 +128,32 @@ npm run build:all regenerates every page with it.
 `specialist:` and `title:` are required; `model:` is optional and defaults to
 sonnet. Everything after the header lines is the task.
 
+## Use the granted spelling of a command, not an equivalent one
+
+**★ THREE OF THE COMMANDS YOU ARE REFUSED MOST OFTEN ARE ONES YOU ALREADY HAVE.**
+Measured from the activity log on 2026-09-14:
+
+| You tried | You already have | Refused |
+|---|---|---|
+| `python3 "${SWECHHA_AI_REPO:-…}/infra-status.py"` | `npm run infra:status` | 7 runs |
+| `npx vitest run` | `npm test` | 3 runs |
+| `node scripts/verify-seo.mjs` | `npm run verify:seo` | 2 runs |
+
+Identical work, unusable spelling. The allowlist matches a command by its exact
+verb — not by what it turns out to do — so an equivalent invocation is refused
+even though the thing it runs is granted. Each refusal costs you the answer and
+costs a human a line in the review queue.
+
+**So reach for the npm script every time.** If you need something the scripts do
+not cover, say so in your report rather than trying a second spelling of it: a
+refusal you explain is a grant proposal a human can act on, and a refusal you
+retry is noise.
+
+**What will never be granted, so do not spend a turn on it:** `node -e`,
+`python3 -c`, `python3 - <<EOF`, `curl`, `wget`. These are refused for what they
+*could* carry, not for what you meant — they are the shape by which anything in
+your context can leave this machine. `gh workflow run` and any `gh ... set` or
+`... delete` are writes and are refused for that reason.
 ## The queue is in your prompt. Read it before you write a brief.
 
 Every run now begins with **ALREADY OPEN** — the tasks this department has filed
