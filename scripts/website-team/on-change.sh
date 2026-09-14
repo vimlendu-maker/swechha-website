@@ -116,7 +116,7 @@ URGENT="$(printf '%s' "$BOTH" \
 #   store, not on a marker -- so running it on every save costs one read.
 if [ "$JOBS" -gt 0 ]; then
   python3 "$REPO/scripts/website-team/inbox-intake.py" "$DEPARTMENT" \
-    "$INBOX" "$ORG_INBOX" || true
+    "$INBOX" --org-inbox "$ORG_INBOX" || true
 fi
 
 if [ "$JOBS" -eq 0 ]; then

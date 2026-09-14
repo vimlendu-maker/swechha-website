@@ -352,7 +352,7 @@ fi
 # refused from doing.
 stage inbox-intake
 python3 "$LIB/inbox-intake.py" "$DEPARTMENT" \
-  "$INBOX" "$ORG_INBOX" || true
+  "$INBOX" --org-inbox "$ORG_INBOX" || true
 
 # ── THE DAILY CEILING ────────────────────────────────────────────────────────
 # Checked BEFORE the model call, like the vault preflight above and for the same

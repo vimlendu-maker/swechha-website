@@ -39,7 +39,31 @@
   same cost: a launchd job that cannot read the vault must refuse loudly. Reading
   nothing and concluding "no open jobs" is silent, plausible and wrong.
 
-Usage:  inbox-intake.py <department> <inbox.md> [<inbox.md> ...]
+★ THE SHARED INBOX IS TRIAGED, THE DEPARTMENT'S OWN INBOX IS CLAIMED, AND
+  CONFLATING THEM FILED EVERY JOB TWICE. Until 2026-09-14 this file flattened
+  every path it was given into one list and filed all of it to the department
+  that invoked it. Two departments run this same runner against the SAME shared
+  swechha/ai/inbox.md, so on 2026-09-13 the five website jobs sitting in it were
+  filed a second time as fundraising-20260913-0001..0005: CSS and SEO work handed
+  to a department with no manager agent, no website repository and no way to do
+  any of it. The vault README had forbidden exactly this from the first day --
+  "Two departments must never both act on one job" -- and nothing enforced it.
+
+  A department's OWN inbox needs no routing: everything in it is that
+  department's by construction. The SHARED inbox does, and the rule is the
+  registry's, not this file's: a line prefixed `website:` or `fundraising:`
+  belongs to that department, and everything unrouted belongs to the one
+  department named in organisation.org_inbox_reader. Both are read from
+  `org registry --json` so that adding a fourth department does not mean editing
+  a list in here that nobody remembers exists.
+
+  THE PREFIX IS STRIPPED FROM THE TITLE, deliberately. Titles are compared
+  exactly for idempotency, so a title carrying `website:` would re-file the job
+  the day the owner deletes the prefix. Stripping also makes the same job
+  written in the shared inbox and in the department's own inbox one task rather
+  than two.
+
+Usage:  inbox-intake.py <department> <own-inbox.md> [...] [--org-inbox <path>]
 Prints one line per task created. Exit 4 if an inbox could not be read.
 """
 import json
@@ -199,11 +223,55 @@ def filed_already(department):
     return set(r.get("title", "") for r in rows if r.get("origin") == "inbox")
 
 
+def registry():
+    """Department ids and the shared inbox's reader, from the vault via the spine.
+
+    Returns None if it cannot be read. A caller must then refuse to triage rather
+    than guess -- guessing is the bug this function exists to end.
+    """
+    try:
+        r = subprocess.run([ORG, "registry", "--json"], capture_output=True, text=True)
+        if r.returncode != 0:
+            return None
+        reg = json.loads(r.stdout)
+    except (OSError, ValueError):
+        return None
+    ids = [str(i) for i in reg.get("departments") or [] if str(i).strip()]
+    if not ids:
+        return None
+    return ids, (reg.get("organisation") or {}).get("org_inbox_reader")
+
+
+def claimant(title, dept_ids, default):
+    """Which department a SHARED-inbox job belongs to, and the title to file it as.
+
+    The prefix is the only signal read. Guessing from prose -- "the /act page feels
+    buried is obviously the website's" -- is a manager's judgement, and a manager
+    can say "that is not mine"; a regex in an intake script cannot, and a wrong
+    guess is a task in a department that cannot do it.
+    """
+    for d in dept_ids:
+        p = d + ":"
+        if title[:len(p)].lower() == p.lower():
+            return d, title[len(p):].strip() or title
+    return default, title
+
+
 def main(argv):
-    if len(argv) < 3:
+    args = argv[1:]
+    paths, org_paths = [], []
+    i = 0
+    while i < len(args):
+        if args[i] == "--org-inbox":
+            if i + 1 >= len(args):
+                sys.stderr.write("inbox-intake: --org-inbox needs a path\n")
+                return 2
+            org_paths.append(args[i + 1]); i += 2; continue
+        paths.append(args[i]); i += 1
+    if len(paths) < 2:
         sys.stderr.write(__doc__.rsplit("Usage:", 1)[-1].strip() + "\n")
         return 2
-    department, paths = argv[1], argv[2:]
+    department, paths = paths[0], paths[1:]
 
     if not os.access(ORG, os.X_OK):
         # The same rule run.sh follows: with the spine uninstalled this file does
@@ -212,12 +280,45 @@ def main(argv):
         return 0
 
     seen, titles = set(), []
+    # The department's OWN inboxes. No routing question exists here: a job in
+    # swechha/<department>/team/inbox.md is that department's by construction.
     for p in paths:
         for job in jobs(open_section(p)):
             t = title_of(job[0])
             if t and t not in seen:
                 seen.add(t)
                 titles.append(t)
+
+    # The SHARED inbox, which every department reads and only one may claim from.
+    triaged_away, unroutable = 0, False
+    if org_paths:
+        reg = registry()
+        default = reg[1] if reg else None
+        if reg is None or not default:
+            # ★ REFUSE THE SHARED INBOX, KEEP THE OWN ONE. Filing an unrouted job
+            #   to whoever happens to be running is the exact defect this rewrite
+            #   removes, so it is not the fallback. Losing the department's own
+            #   inbox too would punish it for a registry problem it did not cause.
+            sys.stderr.write(
+                "inbox-intake: REFUSED the shared inbox -- cannot read "
+                "organisation.org_inbox_reader from `org registry`. Filing this "
+                "department's own inbox only; shared jobs are NOT filed and NOT "
+                "guessed at.\n")
+            unroutable = True
+        else:
+            dept_ids = reg[0]
+            for p in org_paths:
+                for job in jobs(open_section(p)):
+                    t = title_of(job[0])
+                    if not t:
+                        continue
+                    owner, t = claimant(t, dept_ids, default)
+                    if owner != department:
+                        triaged_away += 1
+                        continue
+                    if t not in seen:
+                        seen.add(t)
+                        titles.append(t)
 
     already = filed_already(department)
     if already is None:
@@ -243,7 +344,10 @@ def main(argv):
     # reports as forty-six, the grouping is wrong and it is wrong visibly.
     print("inbox-intake: %d open job(s), %d already filed, %d new"
           % (len(titles), len(titles) - created, created))
-    return 0
+    if triaged_away:
+        print("inbox-intake: %d shared-inbox job(s) belong to another department "
+              "and were left alone" % triaged_away)
+    return 6 if unroutable else 0
 
 
 if __name__ == "__main__":
