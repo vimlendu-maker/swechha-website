@@ -4,7 +4,9 @@ import type { Entry } from '@/lib/content'
 const PATHS: Record<Entry['type'], string> = {
   story: '/stories',
   project: '/work',
-  knowledge: '/explore',
+  /* `/explore` is retired (redirects.ts). Knowledge entries belong at /learn,
+     which is where that scaffold's "explainers" half actually got built. */
+  knowledge: '/learn',
   film: '/films',
   campaign: '/work/campaigns',
 }

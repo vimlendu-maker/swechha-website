@@ -2440,6 +2440,18 @@ export class Links {
            verdict says so by name rather than by a misleading route failure. */
         row.verdict = existsSync(join(ROOT, 'public', href.replace(/^\//, '')))
           ? 'asset' : 'asset-missing';
+      } else if (href === '/feed.xml') {
+        /* THE FEED IS A ROUTE, AND IT IS NOT IN THE ROUTE MAP — CORRECTLY.
+           `this.routes` is built from design-routes.ts, which maps BUILT PAGES
+           onto URLs. /feed.xml is an App Router route (app/feed.xml/route.ts)
+           and has no built file, so it can never appear there and this gate
+           would report every page's discovery link as a dead one.
+           CHECKED AGAINST THE FILESYSTEM, not waved through, the same way the
+           asset branch above resolves an icon: the route map cannot know about
+           this file and `app/` can. Delete the route and this fails, which is
+           the property that makes it a check rather than an exemption. */
+        row.verdict = existsSync(join(ROOT, 'app/feed.xml/route.ts'))
+          ? 'app-route' : 'FAIL:no-such-app-route';
       } else if (href.startsWith('#')) {
         row.verdict = ids.has(href.slice(1)) ? 'in-page' : 'FAIL:no-such-id';
       } else {
@@ -2641,6 +2653,7 @@ export async function buildPage({ file, url, title, desc, bands, sectionFor, sec
 <meta name="color-scheme" content="dark">
 <title>${esc(title)}</title>
 <link rel="canonical" href="${esc(abs(url))}">
+<link rel="alternate" type="application/rss+xml" title="The Swechha Journal" href="${esc(abs('/feed.xml'))}">
 ${HEAD_ICONS}
 <meta name="description" content="${esc(desc)}">
 ${headSocial(title, desc, url, ogType)}

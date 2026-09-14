@@ -442,6 +442,7 @@ ${S.tabs('Where to next', IMPACT.act.tabs.map(t => [esc(t.label), `\n        <di
           <p class="body ip-next-p">${esc(t.p)}</p>
           <p><a class="b b-2" href="${t.href}">${esc(t.cta)} ${ARROW}</a></p>
         </div>\n      `]))}
+${S.newsletter('impact')}
     </div>`;
 
 /* ═══ PAGE CSS ═══════════════════════════════════════════════════════════
@@ -531,6 +532,10 @@ const OUT = await S.assemble({
   title: TITLE,
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
+  /* The digest band closes the `act` band above, and this is its handler. A
+     reader who has just read the whole register is the reader most likely to
+     want next month's. */
+  script: S.NEWSLETTER_JS,
   /* AD-19 §5: `aria-current="page"` ONLY where the href equals the URL being
      built. `/impact` IS a nav word, so it takes "page" — unlike a situation
      page, which marks Now with "true" because its href is the index, not

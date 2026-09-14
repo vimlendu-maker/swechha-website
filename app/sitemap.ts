@@ -12,10 +12,11 @@ import { designRoutes } from '@/design-routes'
    check that fails when a route has no built file, so a page cannot be served
    and left unmapped. Do not replace it with a list.
 
-   TWO ROUTES ARE DELIBERATELY ABSENT: `/explore` and, as of Task 9, `/search`.
-   `/explore` never appears in `designRoutes()`'s own map, so there is nothing
-   to filter — it is excluded at the source. `/search` is not: it is built and
+   ONE ROUTE IS DELIBERATELY ABSENT: `/search`, as of Task 9. It is built and
    routed, so it reaches this file by default and has to be filtered out here.
+   (`/explore` used to be named here too. It is now retired outright rather
+   than merely unmapped — `app/explore/` is deleted and `redirects.ts` sends
+   the URL to `/learn` — so there is no longer a route to exclude.)
    The note that used to stand in this spot argued FOR including `/search`,
    on the grounds that it was finished and shipped rather than held back —
    true when it was written, and beside the point now: `/search` carries its

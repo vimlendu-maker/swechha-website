@@ -1,0 +1,102 @@
+name: The monthly digest — compose and send
+
+# ★ THE JOB THAT KEEPS THE PROMISE THE SUBSCRIBE BOX MAKES.
+# Eleven pages carried "Once a month, what these numbers did" with a real
+# double-opt-in table behind them and NO SENDER. Not one digest had ever gone
+# out. scripts/digest-send.mjs is the composer; this is its clock.
+#
+# ★ IT CANNOT SEND ANYTHING UNTIL TWO SECRETS EXIST. Until then every run stops
+# at the guard in the script with a clear message, which is the intended
+# behaviour — a scheduled job that quietly does nothing is worse than one that
+# says why.
+#
+#   DATABASE_URL      Neon Postgres; db/002-newsletter-subscriptions.sql applied
+#   RESEND_API_KEY    Resend, for the send
+#
+# Add them under Settings -> Secrets and variables -> Actions.
+#
+# ★ A MONTH WITH NO APPROVED NOTE EXITS 75 AND THE RUN STAYS GREEN.
+# The digest promises "what we did about it", which no dataset contains, so a
+# month needs data/digest/<YYYY-MM>.json with a named approver. Without one the
+# script composes nothing and sends nothing. That is a month nobody wrote, not a
+# failure, and turning the workflow red for it would train everyone to ignore it
+# — the same reasoning air-hourly.yml applies to a silent CPCB.
+
+on:
+  schedule:
+    # 11:00 IST on the 1st, about the month that just ended.
+    #
+    # THE QUIET HOURS APPLY TO THIS JOB. Nothing on this repository's schedule
+    # runs between midnight and 05:00 IST (owner's instruction, 5 September);
+    # ward-alerts.yml is the single exemption and it is held by name in
+    # lib/workflows.test.ts. Cron is UTC and IST is +5:30, so 05:30 UTC is
+    # 11:00 IST — comfortably outside the window, and a civilised hour for
+    # something that puts mail in front of a person.
+    - cron: '30 5 1 * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Compose and print without sending or writing'
+        type: boolean
+        default: true
+      month:
+        description: 'YYYY-MM (blank = the month that just ended)'
+        type: string
+        default: ''
+
+concurrency:
+  # Two overlapping runs could both read the same unstamped rows and both mail
+  # them. `last_digest_month` makes a re-run safe AFTER a send lands; it cannot
+  # help two runs that are in flight together.
+  group: digest-monthly
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # --omit=dev is safe: the composer needs @neondatabase/serverless, which
+      # is a production dependency, and nothing else outside node builtins.
+      - run: npm ci --omit=dev
+
+      - name: Compose and send
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          DIGEST_MAIL_FROM: ${{ vars.DIGEST_MAIL_FROM }}
+          SITE_ORIGIN: ${{ vars.SITE_ORIGIN }}
+        run: |
+          # ★ `set +e` BEFORE CAPTURING $?. GitHub runs every `run:` block as
+          # `bash -e {0}`, so a non-zero exit kills the shell AT THAT LINE and a
+          # `code=$?` written after it is never reached — the branch becomes
+          # dead code while the comments above go on describing behaviour that
+          # has never occurred. air-hourly.yml shipped exactly that and it
+          # produced a wrong diagnosis on 2026-09-11. lib/workflows.test.ts
+          # now refuses the shape.
+          set +e
+          args=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            args="--dry-run"
+          fi
+          if [ -n "${{ github.event.inputs.month }}" ]; then
+            args="$args --month ${{ github.event.inputs.month }}"
+          fi
+          node scripts/digest-send.mjs $args
+          code=$?
+          set -e
+          if [ "$code" = "75" ]; then
+            echo "::notice::No approved note for this month. Nothing composed, nothing sent, nothing written."
+            exit 0
+          fi
+          exit "$code"

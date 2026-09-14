@@ -1722,7 +1722,18 @@ ${/* THE JOURNAL RAIL, AFTER THE LEARN RAIL AND BEFORE THE DOORS. Learn is
    a page whose id is in NO_DIGEST, so that decision cannot be quietly undone.
 
    THE PROMISE IS STATED IN FULL, ABOVE THE FIELD, not in a privacy policy
-   nobody opens: what arrives, how often, and that the address is never shared. */
+   nobody opens: what arrives, how often, and that the address is never shared.
+
+   ★ `dg-say` AND `dg-form` WERE CLASS NAMES NOTHING STYLED. Both shipped on
+   every page carrying this band and neither appeared in NEWSLETTER_CSS or in
+   any page's own CSS — they were hooks written for rules that were never
+   needed, because both elements are plain grid children of `.dg-in`. They are
+   removed rather than given empty rules: dead surface is how a later session
+   comes to believe a class is load-bearing. The FORM KEEPS ITS id, which is
+   what NEWSLETTER_JS actually looks up. Found by build-teach.mjs's
+   undefined-class gate, which is the only generator on this site strict enough
+   to have noticed; the eleven pages that already carried the band had been
+   emitting both since the digest was built. */
 const NO_DIGEST = new Set(['air']);
 export const newsletter = (id) => {
   if (NO_DIGEST.has(id)) {
@@ -1732,7 +1743,7 @@ export const newsletter = (id) => {
   }
   return `      <section class="dg" aria-labelledby="dg-h">
         <div class="dg-in">
-          <div class="dg-say">
+          <div>
             <h2 class="dg-h" id="dg-h">Once a month, what these numbers did.</h2>
             <p class="dg-b">One email. What the six readings did that month, what moved and what
               did not, and what we did about it. Nothing else, ever &mdash; no appeals between
@@ -1740,7 +1751,7 @@ export const newsletter = (id) => {
             <p class="cap dg-fine">Confirm by email before anything is stored. Every message
               carries a one-click link to stop them.</p>
           </div>
-          <form class="dg-form" id="dg-form" novalidate>
+          <form id="dg-form" novalidate>
             <label class="lbl dg-l" for="dg-mail">Your email</label>
             <div class="dg-row">
               <input class="dg-in-f" id="dg-mail" type="email" name="email" autocomplete="email"
@@ -2821,7 +2832,8 @@ export async function assemble({ file, title, desc = null, bands, sectionFor, in
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>${title}</title>
-<link rel="canonical" href="${attr(abs(canonical))}">${fam ? `\n<link rel="license" href="${attr(LICENCE_URL)}">` : ''}
+<link rel="canonical" href="${attr(abs(canonical))}">
+<link rel="alternate" type="application/rss+xml" title="The Swechha Journal" href="${attr(abs('/feed.xml'))}">${fam ? `\n<link rel="license" href="${attr(LICENCE_URL)}">` : ''}
 ${headTags(title, description, canonical, ogType)}
 ${headExtra ? `${headExtra}\n` : ''}${sh.HEAD_FONTS}
 ${TRACKER}

@@ -6,6 +6,7 @@
 <meta name="color-scheme" content="dark">
 <title>Impact: youth, school and volunteer figures &mdash; Swechha</title>
 <link rel="canonical" href="https://swechha.in/impact">
+<link rel="alternate" type="application/rss+xml" title="The Swechha Journal" href="https://swechha.in/feed.xml">
 <link rel="icon" href="/icons/icon-32.png" sizes="32x32"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="description" content="Every figure Swechha holds, on one page, by programme and by the span it counts. No single total: the figures count overlapping groups of people.">
 <meta property="og:type" content="website"><meta property="og:site_name" content="Swechha"><meta property="og:locale" content="en_IN"><meta property="og:title" content="Impact: youth, school and volunteer figures &mdash; Swechha"><meta property="og:description" content="Every figure Swechha holds, on one page, by programme and by the span it counts. No single total: the figures count overlapping groups of people."><meta property="og:url" content="https://swechha.in/impact"><meta property="og:image" content="https://swechha.in/images/photos/clean-air-protest.jpg"><meta property="og:image:secure_url" content="https://swechha.in/images/photos/clean-air-protest.jpg"><meta property="og:image:type" content="image/jpeg"><meta property="og:image:width" content="2400"><meta property="og:image:height" content="1600"><meta property="og:image:alt" content="Students holding hand-lettered clean-air placards"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://swechha.in/images/photos/clean-air-protest.jpg"><meta name="twitter:image:alt" content="Students holding hand-lettered clean-air placards"><meta name="twitter:site" content="@swechhaindia">
@@ -1310,6 +1311,27 @@ pointer-events:none;transition:background .12s}
         </div>
       </div>
       </div>
+      <section class="dg" aria-labelledby="dg-h">
+        <div class="dg-in">
+          <div>
+            <h2 class="dg-h" id="dg-h">Once a month, what these numbers did.</h2>
+            <p class="dg-b">One email. What the six readings did that month, what moved and what
+              did not, and what we did about it. Nothing else, ever &mdash; no appeals between
+              digests, and your address is never shared with anybody.</p>
+            <p class="cap dg-fine">Confirm by email before anything is stored. Every message
+              carries a one-click link to stop them.</p>
+          </div>
+          <form id="dg-form" novalidate>
+            <label class="lbl dg-l" for="dg-mail">Your email</label>
+            <div class="dg-row">
+              <input class="dg-in-f" id="dg-mail" type="email" name="email" autocomplete="email"
+                inputmode="email" placeholder="you@example.com" required>
+              <button class="dg-go" id="dg-go" type="submit">Subscribe</button>
+            </div>
+            <p class="cap dg-msg" id="dg-msg" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+      </section>
     </div>
   </section>
 </main>
@@ -1479,6 +1501,41 @@ pointer-events:none;transition:background .12s}
   var r; addEventListener('resize',function(){
     clearTimeout(r); r=setTimeout(function(){ if(innerWidth>940&&!shut()) show(false); },150);
   },{passive:true});
+})();
+
+/* ── THE MONTHLY DIGEST FORM. One field, one request, and it never lies about
+   what happened to the address. Mirrors the ward form's contract: a
+   not_configured reply NAMES THE HOLE instead of thanking the reader. */
+(function(){
+  var f=document.getElementById('dg-form'); if(!f||!window.fetch) return;
+  var mail=document.getElementById('dg-mail'), go=document.getElementById('dg-go'),
+      msg=document.getElementById('dg-msg');
+  if(!mail||!go||!msg) return;
+  var esc=function(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); };
+  f.addEventListener('submit',function(ev){
+    ev.preventDefault();
+    var e=(mail.value||'').trim();
+    if(e.length<6||e.indexOf('@')<1){
+      msg.textContent='That does not look like an address an email could reach.'; mail.focus(); return; }
+    go.disabled=true; msg.textContent='Sending a confirmation…';
+    fetch('/api/newsletter/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:e})})
+      .then(function(r){ return r.json().then(function(j){ return {s:r.status,j:j}; }); })
+      .then(function(o){
+        go.disabled=false;
+        if(o.j&&o.j.ok){ msg.textContent=o.j.message; mail.value=''; return; }
+        if(o.j&&o.j.state==='not_configured'){
+          /* Name the hole. Do not thank them for an address that went nowhere. */
+          msg.innerHTML='<b>Not wired yet, and it will not pretend.</b> This site has no '
+            +esc((o.j.missing||[]).join(' and '))+', so the digest cannot be promised. '
+            +'Your address was not stored and nothing was sent.';
+          return;
+        }
+        msg.textContent=(o.j&&o.j.reason)||'That did not work. Nothing was stored.';
+      }).catch(function(){
+        go.disabled=false; msg.textContent='That did not work. Nothing was stored.';
+      });
+  });
 })();
 </script>
 </body>

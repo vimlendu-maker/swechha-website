@@ -289,10 +289,12 @@ const BANDS = [
   // takes t3's tighter rhythm because its own rows already carry the air.
   ['team',    'paper-2 t3', '#ECEBE8'],
   ['board',   'paper t2',  '#F3F2F0'],
-  /* `legible` sat here on `dark-2` #151512 until AD-27.41 deleted it. Removing
-     it does not break the chain — board #F3F2F0 -> act #0D0D0B -> footer
-     #151512 — and it takes the page's only `dark-2` ground with it, which is
-     why the `.dark-2 .a-src` rule went from the CSS in the same edit. */
+  /* `legible` sat here on `dark-2` #151512 until AD-27.41 deleted it, and the
+     shelf that AD-27.41 asked for instead now takes the same ground — for the
+     chain's reasons, not out of sentiment. board #F3F2F0 -> ledger #151512 ->
+     act #0D0D0B -> footer #151512: no two adjacent grounds share a hex, and
+     #0D0D0B is unavailable here precisely because `act` below is on it. */
+  ['ledger',  'dark-2 t2', '#151512'],
   ['act',     't3',        '#0D0D0B'],
 ];
 const clashes = S.groundChain(BANDS);
@@ -307,10 +309,14 @@ const clashes = S.groundChain(BANDS);
    chip at -1.70px, so the mechanism is inherited chrome rather than a defect
    here — but long labels make the page meet it five times instead of once, and
    the labels were the half of it this page controls. */
-/* AD-27.41: `Checkable` goes with the band it pointed at. Six chips, not seven. */
+/* AD-27.41 took `Checkable` off this row with the band it pointed at. `On file`
+   is not that chip coming back: it points at documents rather than at a list of
+   claims, and it is a two-word noun phrase, which is the grammar this row is
+   measured on. Seven chips. */
 const INDEX = [
   ['The word', '#top'], ['What we say', '#says'], ['The record', '#since'],
-  ['The team', '#team'], ['The board', '#board'], ['Turn up', '#act'],
+  ['The team', '#team'], ['The board', '#board'], ['On file', '#ledger'],
+  ['Turn up', '#act'],
 ];
 
 const B = {};
@@ -602,6 +608,82 @@ ${BOARD.map(boardRow).join('\n')}
    The reasoning is at the top of this file, with the row-by-row account of
    where each of its six facts now lives. Nothing is restored here without
    reading it. */
+
+/* ── BAND 6. ON FILE — THE TRANSPARENCY SHELF. ───────────────────────────
+   ★ THIS IS THE PASS AD-27.41 SCOPED, AND IT IS NOT THE BAND IT DELETED.
+   That band was a definition list of six ASSERTIONS with two dotted holes in
+   it, and every one of its facts now rides the footer on all 147 pages. This
+   one carries DOCUMENTS. The distinction is the whole point: AD-27.41's own
+   closing instruction was "A transparency shelf with twelve real files is
+   worth more than a dotted line saying there is not one, and it is its own
+   pass. DO NOT restore the dotted rows instead of building it."
+
+   WHAT IT FIXES. Nine files sat under public/docs/ answering HTTP 200, linked
+   from no page on this site, while the footer asserted 80G, 12A and FCRA
+   everywhere with no document behind any of them. A site that names the source
+   of every air reading it publishes was the only subject it did not source.
+
+   ★ THE ROWS SAY "ACTIVITY REPORT" BECAUSE THAT IS WHAT THE DOCUMENTS SAY.
+   All eight PDFs were opened and their text extracted before this was written:
+   each is titled ACTIVITY REPORT or ANNUAL ACTIVITY REPORT, and not one
+   contains an income figure, an expenditure figure or an auditor's statement.
+   Six of the FILENAMES say annual-report; those are URLs and are left alone.
+   The label a reader sees is the document's own title, because "annual report"
+   invites an inference about accounts that these documents do not support.
+
+   ★ AND THE TAX ORDER IS DATED, LOUDLY. It was granted in 2013 and approvals
+   under that section were re-issued from 2021 under the rules that replaced
+   it, so it shows the grant as it was made and is not evidence of approval
+   today. Saying so is not a confession about this page — it is a fact about
+   the document, which is the one kind of gap the copy standard keeps. The
+   current approval is in this dataset's `holes`, which do not render.
+
+   NO DOTTED MARKERS, NO GAP COUNTER, NO EMPTY-STATE SENTENCE. Four years have
+   no report and the band shows the years it has. Gate 6 refuses `p-hole` on
+   this page and gate 1e refuses sourcing apparatus; both still pass, and the
+   band is written to them rather than around them. */
+const LEDGER = JSON.parse(readFileSync(join(S.ROOT, 'data/ledger.json'), 'utf8'));
+const REG = LEDGER.registration;
+
+const docRow = (d) => `        <li class="a-file">
+          <a class="a-file-a" href="${d.href}">
+            <span class="lbl a-file-k">${esc(d.kind)}</span>
+            <span class="a-file-n">${esc(d.title)}</span>
+            <span class="cap a-file-m">${esc(d.format)} &middot; ${esc(d.size)}${
+  d.pages ? ` &middot; ${d.pages} pages` : ''}</span>
+${d.note ? `            <span class="cap a-file-w">${esc(d.note)}</span>\n` : ''}          </a>
+        </li>`;
+
+/* The four registration facts, as a definition list rather than prose: a PAN
+   and an order number are looked up, not read. `a-led-v` is set in the numeric
+   face for the same reason every reading on this site is — these are figures a
+   reader copies into a form. */
+const LED_ROWS = [
+  ['Registered name', REG.legal_name],
+  ['Legal status', REG.legal_status],
+  ['PAN', REG.pan],
+  ['Tax order', `${REG.eightyg.order}, ${REG.eightyg.dated}`],
+];
+
+B.ledger = () => `${opener('ledger', 'On file',
+  'The reports, year by year, and the order a donation is claimed against. '
+  + 'Not summaries of them &mdash; the documents.')}
+    <div class="wrap">
+      <dl class="a-led">
+${LED_ROWS.map(([k, v]) => `        <div class="a-led-r">
+          <dt class="lbl a-led-k">${esc(k)}</dt>
+          <dd class="a-led-v">${esc(v)}</dd>
+        </div>`).join('\n')}
+      </dl>
+      <p class="a-led-note">The order was granted in ${
+  esc(REG.eightyg.dated.replace(/^\d+ /, ''))} by the ${esc(REG.eightyg.issued_by)}, and every
+        receipt issued against it carries its number. Approvals under this section were
+        re-issued from 2021 under the rules that replaced it.</p>
+
+      <ul class="a-files" role="list">
+${LEDGER.documents.map(docRow).join('\n')}
+      </ul>
+    </div>`;
 
 /* ── BAND 6. TURN UP. ────────────────────────────────────────────────────
    Three doors and one act. Mustard is the only hue in the band and it is on
@@ -948,12 +1030,61 @@ const PAGE_CSS = `
   .a-door-go{grid-column:3;grid-row:1}
 }
 
+/* ── ON FILE. THE REGISTRATION FACTS, THEN THE DOCUMENTS. ────────────────
+   SAME ROW GRAMMAR AS THE BOARD AND THE DOORS ABOVE IT, deliberately — the
+   note on .a-door says this page has one kind of ruled row and not three, and
+   a shelf is the fourth thing that would have broken it. Label left, value
+   right, hairline between.
+   THE VALUES ARE IN THE NUMERIC FACE because they are transcribed, not read: a
+   PAN and an order number get copied into a form, and tabular figures are what
+   stop a reader losing their place in the middle of one.
+   THIS BAND IS ON dark-2, SO THE INK TABLE IS --fg*, NOT --ink*. The deleted
+   legible band was the page's only other dark-2 ground and its .a-src rule
+   went with it; nothing here inherits from that, so every colour is stated. */
+.a-led{margin:0 0 clamp(26px,3vw,40px);padding:0}
+.a-led-r{display:grid;grid-template-columns:minmax(0,1fr);gap:.15em 0;
+  padding:clamp(11px,1.3vw,15px) 0;border-top:1px solid var(--hair)}
+.a-led-r:first-child{border-top:2px solid var(--rule)}
+.a-led-k{color:var(--fg-3);margin:0}
+.a-led-v{margin:0;color:var(--fg);font-size:var(--t-num);
+  font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.a-led-note{color:var(--fg-2);margin:0 0 clamp(26px,3vw,40px);max-width:64ch}
+
+/* THE FILE LIST. One row per document, the whole row a link, and the metre
+   (format, size, extent) is part of the link rather than a caption beside it —
+   a reader deciding whether to open a 270 KB PDF on a phone is deciding about
+   the same thing they are clicking. */
+.a-files{list-style:none;margin:0;padding:0;display:grid;
+  grid-template-columns:minmax(0,1fr);gap:1px;background:var(--hair)}
+.a-file{margin:0}
+.a-file-a{display:grid;grid-template-columns:minmax(0,1fr);gap:.2em 0;
+  background:var(--ground-2);padding:clamp(14px,1.7vw,20px) clamp(12px,1.4vw,18px);
+  text-decoration:none;color:inherit;transition:background .14s}
+.a-file-a:hover,.a-file-a:focus-visible{background:rgba(251,248,240,.05)}
+.a-file-a:focus-visible{outline:2px solid var(--fg);outline-offset:-3px}
+.a-file-k{color:var(--mustard);margin:0}
+.a-file-n{color:var(--fg);font-size:clamp(17px,1.3vw,21px);line-height:1.22}
+.a-file-m{color:var(--fg-3);font-variant-numeric:tabular-nums}
+.a-file-w{color:var(--fg-2);max-width:58ch}
+
 @media (min-width:640px){
   .a-p{grid-template-columns:230px minmax(0,1fr)}
   .a-b{grid-template-columns:minmax(0,14em) minmax(0,1fr)}
   .a-rung{grid-template-columns:minmax(0,4.6em) minmax(0,1fr)}
   .a-three-g{grid-template-columns:repeat(3,minmax(0,1fr))}
   .a-doors{padding:0}
+  /* The label column is 14em to line up with .a-b above it — the two registers
+     sit two bands apart and a reader scrolling past sees one rhythm. */
+  .a-led-r{grid-template-columns:minmax(0,14em) minmax(0,1fr);gap:0 clamp(14px,2vw,30px)}
+  /* Kind, then name, then metre: three columns, the middle one taking the
+     slack. The metre is right-aligned so eight sizes read as a column a reader
+     can compare down rather than eight strings at eight different offsets. */
+  .a-file-a{grid-template-columns:minmax(0,9em) minmax(0,1fr) minmax(0,11em);
+    gap:.2em clamp(14px,2vw,26px);align-items:baseline}
+  .a-file-k{grid-column:1;grid-row:1}
+  .a-file-n{grid-column:2;grid-row:1}
+  .a-file-m{grid-column:3;grid-row:1;text-align:right}
+  .a-file-w{grid-column:2;grid-row:2}
 }
 @media (min-width:900px){
   /* ".a-hero" and ".a-regs" both lived here and both are gone with AD-27.39's
@@ -1091,6 +1222,15 @@ const RENDERED = BODY
   .replace(/<[^>]+>/g, ' ')
   .replace(/&(?:amp|lt|gt|quot|rsquo|lsquo|ldquo|rdquo|mdash|ndash|nbsp|middot|hellip);/g, ' ')
   .replace(/\s+/g, ' ');
+/* ★ THE CLASS NAMES HERE ARE THE DELETED REGISTER'S, NOT THE SHELF'S.
+   The `ledger` band's rows were first written as `.a-reg-*` and tripped this
+   gate on the build that introduced them — correctly. `a-reg-v` WAS the
+   four-figure register's value class, so a new component borrowing the name
+   would have made this gate unfalsifiable from then on: it would have gone on
+   passing or failing for a reason unrelated to AD-27.39. The shelf was renamed
+   to `.a-led-*` and this list is left exactly as it was. Do not "tidy" these
+   three names to match whatever is currently on the page — they are here
+   precisely because nothing on the page should match them. */
 gate(!/a-hero-reg|a-regs|a-reg-v|This page, counted/.test(BODY),
   'the four-figure register is gone from the markup, not merely hidden');
 const HEAD_NOUN = '(?:members?|people|persons?|staff|colleagues|employees|trustees|governing body)';
@@ -1110,7 +1250,18 @@ gate(headcounts.length === 0,
 //    every <img>, and the site logo is 2048x512 — a markup attribute, not a
 //    year anyone typed, and OUT's raw HTML matched it as one.
 const years = [...new Set((RENDERED.match(/\b(?:19|20)\d\d\b/g) || []))].sort();
-const declared = new Set(['2000', '2004', '2008', '2016', '2026',
+/* ★ THE SHELF DECLARES ITS OWN YEARS, AND THAT IS NOT A LOOPHOLE.
+   This gate exists to catch a date TYPED into a bio or a source line, where
+   nobody would look for it. Every year the `ledger` band prints is a period
+   printed on a document in data/ledger.json — the years are the dataset, not
+   prose about it — so listing them again as literals here would be a second
+   copy that drifts the first time a report is added. A year reaches this set
+   only by being some real document's own period. */
+const LEDGER_YEARS = new Set(
+  LEDGER.documents.flatMap(d => (`${d.period} ${d.title} ${d.note || ''}`
+    .match(/\b(?:19|20)\d\d\b/g) || [])),
+);
+const declared = new Set([...LEDGER_YEARS, '2000', '2004', '2008', '2016', '2026',
   // years inside the people's own descriptions of themselves, which are
   // quoted and therefore historical statements, not claims by this page
   '2001', '2003', '2005', '2006', '2007', '2011', '2013', '2014', '2017', '2018', '2019', '2020', '2024']);
