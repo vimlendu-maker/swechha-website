@@ -442,8 +442,8 @@ on_exit() {
   #   which is the only moment this trap matters. Found by running the trap with
   #   a $WT that does not exist; it reported nothing at all.
   if [ "$ENDED" = "0" ]; then
-    ev run_failed mode="$MODE" reason=died_without_reporting stage="$STAGE" rc="$_rc"
-    echo "run.sh: DIED at stage '$STAGE' (exit $_rc) without reporting an outcome." >&2
+    ev run_failed mode="$MODE" reason=died_without_reporting stage="$STAGE" rc="$_rc" run_pid="$$"
+    echo "run.sh: DIED at stage '$STAGE' (exit $_rc, pid $$) without reporting an outcome." >&2
   fi
 
   "$WT" unlock || true
@@ -454,7 +454,19 @@ stage worktree
 WORK="$("$WT" ensure)"
 cd "$WORK"
 
-ev run_started mode="$MODE"
+# ★ run_pid IS THE RUNNER'S OWN PID, AND NOTHING HAD ONE. log-event.py records
+#   os.getpid() -- the pid of the short-lived python process that writes the
+#   line -- so every event in the stream carries a DIFFERENT pid and no event
+#   can be attributed to the run that produced it. org/sla.py's header already
+#   names this as the fact that shapes its whole module: "across 23 run_started
+#   and 22 run_finished events the pid sets overlap in ZERO places".
+#
+#   It cost a diagnosis today. Two runs wrote to one launchd log and the
+#   evidence read as impossible: a death reported at stage `worktree` while the
+#   same log showed line 695 reached, which is 240 lines and three stage markers
+#   later, and past the run_finished at 635. Both are true of DIFFERENT
+#   processes and neither is true of one. With run_pid that is a glance.
+ev run_started mode="$MODE" run_pid="$$"
 
 # ── THE SPINE HELPERS, DEFINED BEFORE ANYTHING CALLS THEM ────────────────────
 # ★ MOVED UP 2026-09-13, and a test caught why it had to be. Bash resolves a
@@ -678,7 +690,7 @@ DENIED="$(printf '%s' "$RESULT" | python3 "$LIB/denials.py" 2>/dev/null || true)
 #   dropped them. Unquoted on purpose: --metrics emits bare key=value pairs and
 #   word-splitting is how they become separate arguments to log-event.py.
 METRICS="$(printf '%s' "$RESULT" | python3 "$LIB/parse-result.py" --metrics 2>/dev/null || true)"
-ev run_finished mode="$MODE" cost_usd="$COST" record="$(basename "$OUT")" $METRICS
+ev run_finished mode="$MODE" run_pid="$$" cost_usd="$COST" record="$(basename "$OUT")" $METRICS
 ENDED=1
 
 echo "wrote $OUT"

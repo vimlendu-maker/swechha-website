@@ -142,3 +142,37 @@ describe('the exit trap always reports how a run ended', () => {
     expect(defined, 'stage() is defined after it is first called').toBeLessThan(firstCall)
   })
 })
+
+/**
+ * A RUN CARRIES ITS OWN PID.
+ *
+ * `log-event.py` records `os.getpid()` — the pid of the short-lived python
+ * process that writes the line — so every event carries a DIFFERENT pid and
+ * none can be attributed to the run that produced it. org/sla.py's header
+ * already names this: "across 23 run_started and 22 run_finished events the pid
+ * sets overlap in ZERO places".
+ *
+ * ★ IT COST A DIAGNOSIS ON 2026-09-14. Two runs wrote to one launchd log and
+ *   the evidence read as impossible: a death reported at stage `worktree` while
+ *   the same log showed line 695 reached — 240 lines and three stage markers
+ *   later, and past the `run_finished` at 635. Both are true of DIFFERENT
+ *   processes; neither is true of one.
+ */
+describe('every run boundary names the process that produced it', () => {
+  const RUN = readFileSync(join(DIR, 'run.sh'), 'utf8')
+
+  it.each(['run_started', 'run_finished', 'run_failed'])(
+    '%s carries run_pid', (event) => {
+      const line = RUN.split('\n').find(
+        (l) => l.trim().startsWith(`ev ${event} `) && !l.trim().startsWith('#'))
+      expect(line, `${event} is no longer emitted`).toBeTruthy()
+      expect(line).toContain('run_pid="$$"')
+    })
+
+  it('the pid is $$ — the runner, not a child', () => {
+    /** $BASHPID or a subshell pid would name a process that is already gone. */
+    const emissions = RUN.split('\n').filter((l) => l.includes('run_pid='))
+    expect(emissions.length).toBeGreaterThanOrEqual(3)
+    for (const l of emissions) expect(l).toMatch(/run_pid="\$\$"/)
+  })
+})
