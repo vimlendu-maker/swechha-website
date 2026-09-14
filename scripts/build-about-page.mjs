@@ -918,6 +918,7 @@ ${DOORS.map(([h, n, t]) => `        <a class="a-door" href="${h}">
       </div>
 ${ask({ audience: 'media', label: 'Ask for an interview', page: 'About Swechha', path: '/about', level: 1 })}
       <p class="a-foot a-foot-2"><a class="b b-2" href="/act">Give monthly</a></p>
+${S.newsletter('about')}
 ${PERSON_LD}
 ${NGO_LD}
     </div>`;
@@ -1256,6 +1257,7 @@ const OUT = await S.assemble({
   desc: seo('/about').description,
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
+  script: S.NEWSLETTER_JS,
   sectionFor: (id) => (B[id] || (() => '    <div class="wrap"><p class="lead">&mdash;</p></div>'))(),
   /* The counts survive HERE and only here. AD-27.39 removed them from the page,
      not from the build log: whoever runs this build still needs to see that the

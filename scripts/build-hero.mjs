@@ -1209,6 +1209,103 @@ if (shipped === ship) {
   process.exit(1);
 }
 
+/* ── THE MONTHLY DIGEST, ON THE ARTEFACT ONLY ─────────────────────────────
+   The homepage was the largest page on this site with NO way to come back.
+   Measured 15 September 2026: the digest box was on 15 of 148 pages and `/`
+   was not one of them — the one page every reader passes through asked for
+   nothing.
+
+   ★ IT IS INJECTED, NOT WRITTEN INTO design/home.html, AND THAT IS THE WHOLE
+     REASON THIS LIVES HERE. Seven CSS ranges in situation-shell.mjs and
+     work-shell.mjs pin the source by ABSOLUTE LINE NUMBER, the last of them
+     ending at 3033. Hand-writing a band into the source moves lines and the
+     markers those ranges assert stop matching — a real failure, caught loudly,
+     but paid on every future edit too. Injecting into the artefact costs the
+     source nothing and keeps ONE definition of the band: `newsletter()` in the
+     shell, the same string the other nineteen pages carry.
+
+   ★ AFTER THE TAG-COUNT GUARD, for the identical reason TRACKER and HASH_STRIP
+     are: this adds a `<script>`, and the guard refuses a write when the ship's
+     tag counts differ from the source's. Injecting earlier would abort the
+     build with a message about a truncating `</script>` that had nothing to do
+     with the cause.
+
+   ★ ITS OWN BAND, NOT INSIDE `give`. `.dg` carries a dark rule set and a
+     `.paper` variant and nothing else; `#give` paints `var(--mustard)`, on
+     which neither is legible. So the digest takes a band of its own with the
+     page's default ground — mustard, then #0D0D0B, then the footer's #151512.
+     No two adjacent grounds share a hex, which is the rule groundChain()
+     enforces for every page that has a generator to enforce it in.
+
+   ★ AND THE COMPONENT'S OWN TOP RULE IS DROPPED HERE, scoped to `#digest`, so
+     it cannot reach the other nineteen. On those pages `.dg` follows content
+     inside a band and its hairline separates the two. Here it IS the band, and
+     a hairline immediately under a mustard edge is a seam, not a separator. */
+const digest = (() => {
+  const band = `
+<section class="t3" id="digest">
+  <div class="wrap">
+${S.newsletter('home')}
+  </div>
+</section>
+`;
+  const css = `
+/* THE DIGEST BAND. It is the band here, so it does not rule itself off. */
+#digest .dg{margin-top:0;border-top:0;padding-top:0}
+`;
+  return { band, css, js: `\n<script>${S.NEWSLETTER_JS}</script>` };
+})();
+
+const withDigest = (() => {
+  let h = shipped;
+  const steps = [
+    ['the band', () => {
+      const i = h.lastIndexOf('\n</main>');
+      if (i < 0) return false;
+      h = h.slice(0, i) + `\n${digest.band}` + h.slice(i);
+      return true;
+    }],
+    ['its CSS', () => {
+      const i = h.lastIndexOf('</style>');
+      if (i < 0) return false;
+      h = h.slice(0, i) + S.NEWSLETTER_CSS + digest.css + h.slice(i);
+      return true;
+    }],
+    ['its script', () => {
+      const i = h.lastIndexOf('\n</body>') >= 0 ? h.lastIndexOf('\n</body>') : h.lastIndexOf('</html>');
+      if (i < 0) return false;
+      h = h.slice(0, i) + digest.js + h.slice(i);
+      return true;
+    }],
+  ];
+  for (const [what, run] of steps) {
+    if (!run()) {
+      console.error(`\nREFUSING TO WRITE: could not inject ${what} of the monthly digest into the `
+        + 'shipped homepage — its anchor is gone. The homepage would ship as the only page on '
+        + 'this site with no way for a reader to come back, and silently. '
+        + 'Check what shipDocument() did to the document.');
+      process.exit(1);
+    }
+  }
+  return h;
+})();
+
+/* One field, one endpoint, one handler — the same three the other nineteen
+   pages carry. A second of any of them means the band went in twice. */
+for (const [re, what, want] of [
+  [/id="dg-form"/g, 'the digest form', 1],
+  [/id="dg-mail"/g, 'its email field', 1],
+  [/\/api\/newsletter\/subscribe/g, 'its endpoint', 1],
+]) {
+  const n = (withDigest.match(re) || []).length;
+  if (n !== want) {
+    console.error(`\nREFUSING TO WRITE: the shipped homepage carries ${n} of ${what}, expected ${want}.`);
+    process.exit(1);
+  }
+}
+console.log(`digest band: injected into the artefact, ${withDigest.length - shipped.length} bytes, `
+  + 'design/home.html untouched');
+
 /* ── THE SHARE CARD, ON THE ARTEFACT ONLY ──────────────────────────────────
    The homepage's hero is the situation deck, and its lead slide is whatever
    active situation is running — so this page's share image has to be derived
@@ -1226,7 +1323,7 @@ if (shipped === ship) {
    fallback and then the page, in that order, which is exactly the rule the
    other 38 pages follow inside their shells. */
 const { html: withCard, image: cardImage, fallback: cardIsFallback } =
-  withSocialImage(shipped, { label: 'home.html' });
+  withSocialImage(withDigest, { label: 'home.html' });
 
 if (CHECK) {
   console.log(`\n--check: ${changed} slide(s) would change. Nothing written.`);

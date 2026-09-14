@@ -564,6 +564,7 @@ ${T.onward.map(o => `        <a class="ac-door-a" href="${o.href}">
           <p class="body ac-door-ap">${esc(copy(o.p))}</p>
         </a>`).join('\n')}
       </div>
+${S.newsletter('act')}
     </div>`;
 
 /* ═══ PAGE CSS ═══════════════════════════════════════════════════════════
@@ -820,6 +821,7 @@ const OUT = await S.assemble({
   title: seo('/act').title,
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
+  script: S.NEWSLETTER_JS,
   /* /act is not a nav word — the Give chip points here and the chip carries no
      aria-current in the frozen header. Nothing is marked, deliberately;
      marking `Work` or `Impact` here would be a lie about where the reader is. */
