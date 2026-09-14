@@ -546,6 +546,7 @@ spine_close() { # <task id> <done|refused|escalate> <note>
     # structural answer to a task being skipped 682 times while reporting success.
     escalate) "$ORG" task escalate "$1" --reason "$3"  >/dev/null 2>&1 || true ;;
   esac
+}
 
 # ── THE HOOK WIRING ──────────────────────────────────────────────────────────
 # ★ FOLDED IN FROM THE SENTINEL, 2026-09-14, when the Mac's half-hourly sentinel
@@ -713,7 +714,6 @@ echo "wrote $OUT"
 #   own failure, the same rule hook-event.py follows. Bookkeeping that can stop the
 #   department has traded something that matters for something that does not. With
 #   the spine uninstalled this file behaves exactly as it did before.
-}
 
 # A blocked run is the owner's to unblock -- nothing downstream can grant a
 # permission. It goes on the "needs you" queue rather than into a record that
