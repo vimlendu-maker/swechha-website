@@ -40,7 +40,7 @@
     "anything reversible by a single git revert with no data change"
   ],
   "requires_approval_paths": {
-    "$comment": "★ KEYS MATCH `requires_approval` VERBATIM. approval-gate.py derives the NOT-MECHANICALLY-ENFORCED list by comparing the two, so a typo here silently drops a rule from the gate while the prose still promises it. ★ NO COUNT IS WRITTEN HERE ANY MORE. This comment used to open 'Seven of the fourteen rules are path-shaped' and was wrong by one before anybody noticed: a number in prose that must move in lockstep with a list beside it is the exact defect this gate exists to catch, reproduced in the gate's own documentation. The count is derivable; read it from the lists. ★ AN UNCOVERED RULE IS NOT A DROPPED ONE. Anything in `requires_approval` without a key here is REPORTED ON EVERY RUN as not mechanically enforced, which is a designed state and the honest one for a rule no glob can see. The two below are uncovered ON PURPOSE, and the reasons are different:\n\n  navigation changes — it lives across a dozen build scripts, and a glob wide enough to catch it would trip on ordinary content work, which is how a gate gets switched off within a week.\n\n  DNS or domain changes — DNS records live at the registrar and in the Vercel dashboard, NOT in this repository. vercel.json is deployment configuration (regions, crons, which branches deploy) and mapping the rule to it would be a category error: the gate would fall silent about DNS while catching something else entirely. Being named every run is the correct answer for a rule whose subject is outside the diff.\n\nThe semantic rules — 'any new factual claim', 'organisational messaging', 'anything the agent cannot verify' — are uncovered for the obvious reason and always will be.\n\n★ WHY `.env.example` IS THE SIGNAL FOR A THIRD-PARTY INTEGRATION. A third party needs credentials, so it arrives as a new variable there. Measured over 200 commits: .env.example changed 5 times — the Search Console API, Neon and Brevo for Watch-your-ward, the deploy move — while package.json changed in 40 and would have fired on every dependency bump. The precise signal was chosen over the obvious one for exactly the reason navigation is absent.",
+    "$comment": "★ KEYS MATCH `requires_approval` VERBATIM. approval-gate.py derives the NOT-MECHANICALLY-ENFORCED list by comparing the two, so a typo here silently drops a rule from the gate while the prose still promises it. ★ NO COUNT IS WRITTEN HERE ANY MORE. This comment used to open 'Seven of the fourteen rules are path-shaped' and was wrong by one before anybody noticed: a number in prose that must move in lockstep with a list beside it is the exact defect this gate exists to catch, reproduced in the gate's own documentation. The count is derivable; read it from the lists. ★ AN UNCOVERED RULE IS NOT A DROPPED ONE. Anything in `requires_approval` without a key here is REPORTED ON EVERY RUN as not mechanically enforced, which is a designed state and the honest one for a rule no glob can see. The two below are uncovered ON PURPOSE, and the reasons are different:\n\n  navigation changes — it lives across a dozen build scripts, and a glob wide enough to catch it would trip on ordinary content work, which is how a gate gets switched off within a week.\n\n  DNS or domain changes — DNS records live at the registrar and in the Vercel dashboard, NOT in this repository. vercel.json is deployment configuration (regions, crons, which branches deploy) and mapping the rule to it would be a category error: the gate would fall silent about DNS while catching something else entirely. Being named every run is the correct answer for a rule whose subject is outside the diff.\n\nThe semantic rules — 'any new factual claim', 'organisational messaging', 'anything the agent cannot verify' — are uncovered for the obvious reason and always will be.\n\n★ WHY `.env.example` IS THE SIGNAL FOR A THIRD-PARTY INTEGRATION. A third party needs credentials, so it arrives as a new variable there. Measured over 200 commits: .env.example changed 5 times — the Search Console API, Neon and Brevo for Watch-your-ward, the deploy move — while package.json changed in 40 and would have fired on every dependency bump. The precise signal was chosen over the obvious one for exactly the reason navigation is absent.\n\n★ FOUR NARROWINGS RESTORED, 14 September 2026, and the test is the rule's OWN NAME. Each of these let through exactly what the rule it belongs to says must stop.\n\n  \"deleting a page OR REMOVING A ROUTE\" — R was dropped, so `git mv app/foo/page.tsx app/bar/` removed the /foo route with the gate silent. A rename is the commonest way to remove a route without deleting anything. ★ R IS NOT YET SUFFICIENT: the shared merge gate builds its --paths list as D: or M: only and never emits R, so this is the policy half of a two-part fix. The caller has to learn renames before this fires.\n\n  \"generated-current.yml OR ANY OTHER GATE\" — had been cut to workflows alone. verify-seo.mjs, verify-final.mjs and check-merge-refs.mjs ARE gates: each refuses a build or a merge. Weakening a check inside one asked for no approval, while a whitespace change to any workflow file still did.\n\n  \"the CSP OR SECURITY HEADERS\" — middleware.ts is a normal place to set or relax CSP, and app/robots.ts decides what crawlers are told. Neither file exists here today, which is presumably why they went; a rule that silently stops covering its subject the day the file is added is worse than one that names a path that is not there yet.\n\n  \"database migrations AND ANYTHING TOUCHING NEON\" — db/** matches the .sql files and not scripts/db-migrate.mjs, so changing HOW migrations are applied to the production database was ungated while adding a comment to a .sql file was not.\n\nWHAT IS DELIBERATELY LEFT NARROW, because it was argued and the argument is good: .env.example rather than package.json for a third-party integration (measured — 5 changes in 200 commits against 40, and a gate that trips on every dependency bump is one somebody switches off); `navigation changes` uncovered and reported every run; and app/page.tsx gone from the homepage rule, which is genuinely shadowed dead code since design-routes.ts rewrites / to the built page.",
     "the homepage above the fold": {
       "globs": [
         "scripts/build-hero.mjs",
@@ -54,7 +54,8 @@
         "design-routes.ts"
       ],
       "on": [
-        "D"
+        "D",
+        "R"
       ]
     },
     "the rewrite layer (design-routes.ts, next.config.ts rewrites)": {
@@ -65,17 +66,24 @@
     },
     "the CSP or security headers": {
       "globs": [
-        "next.config.ts"
+        "next.config.ts",
+        "middleware.ts",
+        "app/robots.ts"
       ]
     },
     "generated-current.yml or any other gate": {
       "globs": [
-        ".github/workflows/**"
+        ".github/workflows/**",
+        "scripts/verify-*.mjs",
+        "scripts/check-*.mjs",
+        "scripts/stage-generated.sh"
       ]
     },
     "database migrations and anything touching Neon": {
       "globs": [
-        "db/**"
+        "db/**",
+        "scripts/db-migrate.mjs",
+        "lib/db/**"
       ]
     },
     "adding or removing a third-party integration": {
