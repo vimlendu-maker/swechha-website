@@ -43,7 +43,7 @@
 import { writeFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { HAZARD_TERMS, SEVERITY_TERMS, NEGATIVE_TERMS, hay, hayPlace, ownedElsewhere, coordsFor, regionOf, classifyPlace, classifyHazard } from './lib/event-terms.mjs';
-import { consolidate } from './lib/event-figures.mjs';
+import { consolidate, selectRegister } from './lib/event-figures.mjs';
 import { electHeadline } from './lib/event-lead.mjs';
 import { dedupeFeedItems, anchorPublished, lastUpdatedFrom, feedCollapse } from './lib/event-feed.mjs';
 import { HAZARDS, hasContext } from './lib/climate-events.mjs';
@@ -526,13 +526,25 @@ function pickLead(items, hazard, impact = null) {
  *  derived it a second time for the lookup — two expressions for one identity,
  *  which is how a hazard-word change minted a fork of a live dossier. */
 async function dossier(c, s, existing, slug) {
-  const sources = [];
+  /* ── THE NEWS REGISTER ───────────────────────────────────────────────────
+     Every candidate this run read, deduplicated and cleaned, in the order the
+     feeds returned it; selectRegister() then keeps the freshest 24 plus any
+     later item consolidate() could quote a figure from. The second half is
+     what stops a day of relief logistics silently deleting a death toll from
+     the page — the account, and the measurement behind the cap, are on
+     selectRegister() itself.
+
+     ★ THE DEDUPLICATION NOW RUNS BEFORE THE CAP, NOT INSIDE IT. It used to
+     `continue` inside `slice(0, 24)`, so a syndicated duplicate spent one of
+     the twenty-four slots and the register came back short. Filling the cap is
+     the behaviour the number 24 always described. */
+  const candidates = [];
   const seen = new Set();
-  for (const i of c.items.slice(0, 24)) {
+  for (const i of c.items) {
     const id = slugify(`${i.publisher || 'unattributed'}-${(i.title || '').slice(0, 30)}`);
     if (seen.has(id)) continue;
     seen.add(id);
-    sources.push({
+    candidates.push({
       id, tier: 'news',
       publisher: i.publisher || 'Unattributed',
       title: cleanHeadline(i.title, i.publisher),
@@ -540,6 +552,7 @@ async function dossier(c, s, existing, slug) {
       published: i.published || null,
     });
   }
+  const sources = selectRegister(candidates, { place: c.place });
   for (const [n, a] of s.matchedAlerts.slice(0, 6).entries()) {
     sources.push({
       id: `official-${n + 1}`, tier: 'official',
