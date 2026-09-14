@@ -200,6 +200,44 @@ const WHEEL = ['Research and knowledge creation', 'Media and advocacy', 'Network
    as a bug — see the deleted CNN rung below. A rung whose year cannot be
    settled does not belong on the spine at all; put the claim where it can be
    attributed instead. */
+/* ★ SEVEN RUNGS ADDED 14 SEPTEMBER 2026, AND EVERY ONE OF THEM IS A YEAR A
+   COMMITTED REPORT STATES IN ITS OWN WORDS.
+   The spine ran 2000 · 2004 · 2016 · Now — four rungs for twenty-six years, on
+   the page whose whole argument is that this organisation should be the most
+   legible object on its own website. The material to fix it was already in the
+   repository and had been since the transparency shelf landed: nine activity
+   reports under public/docs/reports/, which the `ledger` band below now
+   publishes. These rungs were read out of them.
+
+   THE RULE ABOVE IS OBEYED, NOT WORKED AROUND. "A rung whose year cannot be
+   settled does not belong on the spine." Each entry below carries a `source`
+   field holding the report and the SENTENCE it came from, so a later session
+   can check the claim without re-reading nine PDFs. `source` is never rendered
+   — the renderer reads year/head/text/green only, and gate 1e refuses sourcing
+   apparatus in the page's own voice. This page states the fact; the file keeps
+   the receipt.
+
+   ★ 2006 IS THE RUNG AD-28 DELETED, RESTORED ON AD-28'S OWN TERMS. It struck
+   "Gram Anubhav and the Farm School begin" because no source named the year and
+   said: "Do not restore it without a source that names the year." The 2016-17
+   report names it — "Since 2006, more than 1,000 school and college students
+   have experienced rural Rajasthan and Uttarakhand through Gram Anubhavs" — and
+   the 2018-19 report repeats it with 1,500. So GRAM ANUBHAV returns with its
+   year; THE FARM DOES NOT, because no report states a year for it and the
+   deleted rung's other half is still unsourced. Half a claim is not the claim.
+
+   ★ WHAT IS DELIBERATELY NOT HERE.
+   · The farm. It first appears in the 2020-21 report and the 2022-23 report
+     places it in Mewat, but "appears in a report" is not "began in" — that is
+     inference, and the spine takes stated years only.
+   · "India's first upcycled work space", which is what the 2011-13 report calls
+     the 2013 opening. The date is used; the superlative is not. It is the
+     organisation's own claim about itself, and the copy standard's ban on
+     self-superlatives applies to a sentence this page would be asserting. The
+     workspace is described by what it was made of instead.
+   · Any year between 2017 and 2023. The four reports covering that span record
+     continuing work and no datable first, so the spine skips it rather than
+     inventing a rung to fill the gap. */
 const RUNGS = [
   { year: '2000', head: 'We for Yamuna',
     text: 'A collective response towards growing apathy towards one of the most polluted '
@@ -208,6 +246,48 @@ const RUNGS = [
     text: 'Twelve days from Yamunotri to Agra, about a thousand kilometres, tracking the river '
         + '&ldquo;from where it originates and is pristine, down to the point where it reaches '
         + 'Agra and is almost a toxic body of water.&rdquo;' },
+  { year: '2006', head: 'Out of the city',
+    text: 'Gram Anubhav starts taking school and college groups into rural Rajasthan and '
+        + 'Uttarakhand &mdash; a few days at a time, staying where the work is.',
+    source: 'Annual Activity Report 2016-2017: "Since 2006, more than 1,000 school and '
+          + 'college students have experienced rural Rajasthan and Uttarakhand through Gram '
+          + 'Anubhavs." The 2018-19 report repeats it at more than 1,500.' },
+  { year: '2009', head: 'Pagdandi',
+    text: 'A year-round learning programme for children in one Delhi neighbourhood, running '
+        + 'alongside their formal education rather than instead of it.',
+    source: 'Activity Report 2011-2013 and 2013-2014, identically: "Since its inception in '
+          + '2009, Pagdandi\u2019s vision has been to supplement the formal education of these '
+          + 'children." The neighbourhood is NOT named here: AD-28 \u00a75 retracted the '
+          + '"Jagdamba Camp school" association and gate 1d refuses it back.' },
+  { year: '2011', head: 'Monsoon Wooding',
+    text: 'The planting campaign becomes annual, and has run every monsoon since.',
+    source: 'Activity Report 2011-2013 and 2013-2014, identically: "It has been implemented '
+          + 'every year since 2011." NOTE WHAT THIS DOES NOT SETTLE: '
+          + 'data/work/campaigns/monsoon-wooding.json carries "cumulative, no start year '
+          + 'sourced" on its 50,000-tree FIGURE, and that is a different claim \u2014 the '
+          + 'report dates the CAMPAIGN, not the span the total covers. The figure is left '
+          + 'exactly as it is. Two adjacent facts do not license a third between them.' },
+  { year: '2012', head: 'ME to WE',
+    text: 'The adolescent programme begins in July. Boys and girls meet weekly in their own '
+        + 'groups, on identity, gender, health and what to do next.',
+    source: 'Activity Report 2011-2013 and 2013-2014, identically: "This programme titled the '
+          + 'Me to We programme was initiated in July 2012." The rung\u2019s second sentence is '
+          + 'the same report: a curriculum on "identity, gender, reproductive health to stress '
+          + 'management and vocational guidance", with separate weekly groups for boys and '
+          + 'girls. An earlier draft said cohorts "start coming back to run it" \u2014 true of '
+          + 'the programme (200+ alumni peer leaders, registered in data/work) but NOT sourced '
+          + 'to 2012, and a rung may not imply a year its source does not give.' },
+  { year: '2013', head: 'A workspace made of waste',
+    text: 'In June the enterprise strand gets a place of its own &mdash; a working space built '
+        + 'out of what other people had thrown away.',
+    source: 'Activity Report 2011-2013 and 2013-2014: "In June 2013, Swechha launched '
+          + 'India\u2019s first upcyled work space." The DATE is used and the superlative is '
+          + 'not \u2014 see the note above.' },
+  { year: '2015', head: 'Green Creeps',
+    text: 'Urban farming set up as an enterprise: gardens in city homes, and the knowledge to '
+        + 'keep one alive past its first season.',
+    source: 'Annual Activity Report 2016-2017 and 2018-2019, identically: "Green Creeps is our '
+          + 'Urban Farming enterprise that was set up in May 2015."' },
   /* AD-28 — THE CNN RUNG IS DELETED, AND THE FACT IS NOT LOST.
      Three sources on this one page gave three different years for it: this rung
      said 2008, Vimlendu's own bio five hundred pixels below says 2007, and
@@ -231,6 +311,12 @@ const RUNGS = [
      Do not restore it without a source that names the year. */
   { year: '2016', head: 'City to countryside',
     text: 'From urban campaigns to land, water, livelihoods and the farm.' },
+  { year: '2024', head: 'Farming as a living',
+    text: 'A pilot with the Morimura Fund puts adolescent girls in farming families in front of '
+        + 'agriculture as a career to choose rather than a thing to inherit.',
+    source: 'Annual Activity Report 2024-2025: "In 2024, we conducted a pilot program in '
+          + 'partnership with The Morimura Fund... to introduce them to profitable agriculture '
+          + '... and promote farming as a viable career choice amongst youth."' },
   { year: 'Now', head: 'Still showing up', green: true,
     text: 'The journeys still run, the schools still run, and six situations are '
         + 'tracked every hour.' },
@@ -1268,7 +1354,13 @@ const LEDGER_YEARS = new Set(
   LEDGER.documents.flatMap(d => (`${d.period} ${d.title} ${d.note || ''}`
     .match(/\b(?:19|20)\d\d\b/g) || [])),
 );
-const declared = new Set([...LEDGER_YEARS, '2000', '2004', '2008', '2016', '2026',
+/* ★ AND THE RECORD RAIL DECLARES ITS OWN YEARS, for the same reason the shelf
+   does. Every rung's year is read off a committed report and recorded in that
+   rung's own `source`; restating the set as literals here would be a second
+   copy that goes stale the first time a rung is added or corrected. `Now` is
+   not a year and matches nothing, which is correct. */
+const RUNG_YEARS = new Set(RUNGS.map(r => r.year).filter(y => /^(?:19|20)\d\d$/.test(y)));
+const declared = new Set([...LEDGER_YEARS, ...RUNG_YEARS, '2000', '2004', '2008', '2016', '2026',
   // years inside the people's own descriptions of themselves, which are
   // quoted and therefore historical statements, not claims by this page
   '2001', '2003', '2005', '2006', '2007', '2011', '2013', '2014', '2017', '2018', '2019', '2020', '2024']);

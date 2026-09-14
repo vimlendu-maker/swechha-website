@@ -40,17 +40,64 @@
     "anything reversible by a single git revert with no data change"
   ],
   "requires_approval_paths": {
-    "$comment": "★ THE PATH-SHAPED HALF OF requires_approval, MADE MECHANICAL. Until 2026-09-11 that list was prose the manager was trusted to honour, with no artefact anywhere — and ADR-0004 is blunt about why that is not a gate: an approval is an artefact, not a prompt, because a prompt gets clicked through at 23:50 on a deadline. swechha-ai/approval-gate.py matches a change's paths against these globs and, when one trips, the shared merge gate requests an approval and leaves the pull request open. THE AGENT DOES NOT DECIDE WHETHER THE AGENT NEEDS APPROVAL: this reads the diff. ★ THE KEYS MUST MATCH requires_approval ENTRIES VERBATIM. Anything in that list without a key here is reported, every run, as NOT MECHANICALLY ENFORCED — derived by comparing the two lists, never hand-maintained, because a second list of 'the ones we cannot check' is the lockstep defect this repository keeps paying for.",
-    "the homepage above the fold": ["app/page.tsx", "scripts/build-hero.mjs", "public/_pages/index.html", "data/hero/**"],
-    "navigation changes": ["components/nav/**", "components/Nav*", "app/layout.tsx", "lib/seo/register.ts"],
-    "deleting a page or removing a route from a derived map": {"on": ["D", "R"], "globs": ["design-routes.ts", "app/**/page.tsx", "public/_pages/**"]},
-    "the rewrite layer (design-routes.ts, next.config.ts rewrites)": ["design-routes.ts", "next.config.ts"],
-    "the CSP or security headers": ["next.config.ts", "middleware.ts", "app/robots.ts"],
-    "generated-current.yml or any other gate": [".github/workflows/**", "scripts/verify-*.mjs", "scripts/check-*.mjs", "scripts/stage-generated.sh"],
-    "database migrations and anything touching Neon": ["db/**", "scripts/db-migrate.mjs", "lib/db/**", "drizzle/**"],
-    "adding or removing a third-party integration": ["package.json", "package-lock.json"],
-    "replacing a font or image": ["public/fonts/**", "public/images/**", "**/*.woff", "**/*.woff2", "**/*.png", "**/*.jpg", "**/*.webp", "**/*.avif"],
-    "promoting an agent, or adding a recruit to .claude/agents/": [".claude/agents/**", "docs/website-team/roster.json", "docs/website-team/roles/**"]
+    "$comment": "★ KEYS MATCH `requires_approval` VERBATIM. approval-gate.py derives the NOT-MECHANICALLY-ENFORCED list by comparing the two, so a typo here silently drops a rule from the gate while the prose still promises it. ★ NO COUNT IS WRITTEN HERE ANY MORE. This comment used to open 'Seven of the fourteen rules are path-shaped' and was wrong by one before anybody noticed: a number in prose that must move in lockstep with a list beside it is the exact defect this gate exists to catch, reproduced in the gate's own documentation. The count is derivable; read it from the lists. ★ AN UNCOVERED RULE IS NOT A DROPPED ONE. Anything in `requires_approval` without a key here is REPORTED ON EVERY RUN as not mechanically enforced, which is a designed state and the honest one for a rule no glob can see. The two below are uncovered ON PURPOSE, and the reasons are different:\n\n  navigation changes — it lives across a dozen build scripts, and a glob wide enough to catch it would trip on ordinary content work, which is how a gate gets switched off within a week.\n\n  DNS or domain changes — DNS records live at the registrar and in the Vercel dashboard, NOT in this repository. vercel.json is deployment configuration (regions, crons, which branches deploy) and mapping the rule to it would be a category error: the gate would fall silent about DNS while catching something else entirely. Being named every run is the correct answer for a rule whose subject is outside the diff.\n\nThe semantic rules — 'any new factual claim', 'organisational messaging', 'anything the agent cannot verify' — are uncovered for the obvious reason and always will be.\n\n★ WHY `.env.example` IS THE SIGNAL FOR A THIRD-PARTY INTEGRATION. A third party needs credentials, so it arrives as a new variable there. Measured over 200 commits: .env.example changed 5 times — the Search Console API, Neon and Brevo for Watch-your-ward, the deploy move — while package.json changed in 40 and would have fired on every dependency bump. The precise signal was chosen over the obvious one for exactly the reason navigation is absent.",
+    "the homepage above the fold": {
+      "globs": [
+        "scripts/build-hero.mjs",
+        "public/_pages/index.html"
+      ]
+    },
+    "deleting a page or removing a route from a derived map": {
+      "globs": [
+        "public/_pages/**",
+        "app/**",
+        "design-routes.ts"
+      ],
+      "on": [
+        "D"
+      ]
+    },
+    "the rewrite layer (design-routes.ts, next.config.ts rewrites)": {
+      "globs": [
+        "design-routes.ts",
+        "next.config.ts"
+      ]
+    },
+    "the CSP or security headers": {
+      "globs": [
+        "next.config.ts"
+      ]
+    },
+    "generated-current.yml or any other gate": {
+      "globs": [
+        ".github/workflows/**"
+      ]
+    },
+    "database migrations and anything touching Neon": {
+      "globs": [
+        "db/**"
+      ]
+    },
+    "adding or removing a third-party integration": {
+      "globs": [
+        ".env.example"
+      ]
+    },
+    "replacing a font or image": {
+      "globs": [
+        "public/fonts/**",
+        "public/images/**"
+      ],
+      "on": [
+        "M",
+        "D"
+      ]
+    },
+    "promoting an agent, or adding a recruit to .claude/agents/": {
+      "globs": [
+        ".claude/agents/**"
+      ]
+    }
   },
   "requires_approval": [
     "ANY new factual claim, figure, citation or statement about Swechha — this gate does not move with the autonomy dial",
@@ -255,61 +302,6 @@
     "path": "~/.swechha-ai/activity.jsonl",
     "written_by": "scripts/website-team/log-event.py, called by run.sh and execute.sh only",
     "$comment": "★ Agents never write this. An observability layer an agent can write is one it can lie to, so every event is emitted by the shell around the agent -- before it starts, after it returns, on each gate result. An agent cannot mark itself green. Outside both repositories on purpose: telemetry is neither knowledge (the vault) nor code (git), and committing it would bury real history under machine noise."
-  },
-  "requires_approval_paths": {
-    "$comment": "★ KEYS MATCH `requires_approval` VERBATIM. approval-gate.py derives the NOT-MECHANICALLY-ENFORCED list by comparing the two, so a typo here silently drops a rule from the gate while the prose still promises it. Seven of the fourteen rules are path-shaped and appear below; the rest are semantic -- \"any new factual claim\", \"organisational messaging\" -- and the gate names them as uncovered on every run rather than reading as complete. Navigation is deliberately absent: it lives across a dozen build scripts, and a glob wide enough to catch it would trip on ordinary content work, which is how a gate gets switched off within a week.",
-    "the homepage above the fold": {
-      "globs": [
-        "scripts/build-hero.mjs",
-        "public/_pages/index.html"
-      ]
-    },
-    "deleting a page or removing a route from a derived map": {
-      "globs": [
-        "public/_pages/**",
-        "app/**",
-        "design-routes.ts"
-      ],
-      "on": [
-        "D"
-      ]
-    },
-    "the rewrite layer (design-routes.ts, next.config.ts rewrites)": {
-      "globs": [
-        "design-routes.ts",
-        "next.config.ts"
-      ]
-    },
-    "the CSP or security headers": {
-      "globs": [
-        "next.config.ts"
-      ]
-    },
-    "generated-current.yml or any other gate": {
-      "globs": [
-        ".github/workflows/**"
-      ]
-    },
-    "database migrations and anything touching Neon": {
-      "globs": [
-        "db/**"
-      ]
-    },
-    "replacing a font or image": {
-      "globs": [
-        "public/fonts/**",
-        "public/images/**"
-      ],
-      "on": [
-        "M",
-        "D"
-      ]
-    },
-    "promoting an agent, or adding a recruit to .claude/agents/": {
-      "globs": [
-        ".claude/agents/**"
-      ]
-    }
   },
   "cost": {
     "$comment": "★ A BRAKE, NOT AN ACCOUNTING RECORD. Figures are Claude Code's own client-side estimates and can differ from the real bill. It lives HERE, in the operating-system layer the agents may read and never write, for the obvious reason: an agent that can raise its own ceiling has no ceiling. scripts/website-team/budget.py sums today's cost_usd from the activity log and run.sh refuses to start above the line.",
