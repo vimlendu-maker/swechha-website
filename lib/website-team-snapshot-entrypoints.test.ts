@@ -228,3 +228,63 @@ describe('work events name the spine task', () => {
     expect(EXEC).toMatch(/\[ -n "\$\{TEAM_TASK_ID:-\}" \] && TASK_FIELD="task=\$TEAM_TASK_ID"/)
   })
 })
+
+/**
+ * THE MODEL CALL IS NOT INSIDE A FUNCTION.
+ *
+ * ★ THE DEFECT THAT BROKE THE DEPARTMENT FOR A DAY. `spine_close()`'s closing
+ *   brace was lost on 2026-09-13 at 21:52 (cb3086f9). Every line after it —
+ *   the hooks probe, THE MODEL CALL, the parse, `TEXT=`, the denials check and
+ *   `ev run_finished` — became part of the function body, 180 lines of it.
+ *
+ *   The main path therefore defined a large function and skipped straight to
+ *   stage two, where `$TEXT` was unbound. The first stalled run was 22:22,
+ *   THIRTY MINUTES LATER, and every run since produced no work.
+ *
+ *   It also explains the burst nobody could account for: `ev run_finished` was
+ *   inside that body too, so a single `spine_close` call in stage two executed
+ *   the whole block — which is why 22 terminal events landed in one second at
+ *   23:41.
+ *
+ * ★ `bash -n` DOES NOT CATCH THIS. The file parses perfectly; a function may
+ *   contain anything. Only the SHAPE is wrong, which is why this asserts sizes.
+ */
+describe('the runner\'s functions contain only their own bodies', () => {
+  const RUN = readFileSync(join(DIR, 'run.sh'), 'utf8').split('\n')
+
+  function bodyOf(name: string): number {
+    const i = RUN.findIndex((l) => l.startsWith(`${name}() `))
+    expect(i, `${name} is gone`).toBeGreaterThan(-1)
+    const j = RUN.findIndex((l, n) => n > i && l === '}')
+    expect(j, `${name} is never closed`).toBeGreaterThan(i)
+    return j - i
+  }
+
+  it.each([
+    ['spine_new', 40],
+    ['spine_incident', 20],
+    ['spine_close', 30],
+    ['on_exit', 40],
+  ])('%s is under %d lines', (name, max) => {
+    expect(bodyOf(name)).toBeLessThan(max)
+  })
+
+  it('★ the model call is at the top level, not inside any function', () => {
+    const call = RUN.findIndex((l) => l.startsWith('RESULT="$(claude -p'))
+    expect(call, 'the model call is gone').toBeGreaterThan(-1)
+    for (const fn of ['spine_new', 'spine_incident', 'spine_close', 'on_exit']) {
+      const i = RUN.findIndex((l) => l.startsWith(`${fn}() `))
+      const j = RUN.findIndex((l, n) => n > i && l === '}')
+      expect(call > i && call < j,
+        `the model call is inside ${fn}() — it will never run`).toBe(false)
+    }
+  })
+
+  it('★ so is ev run_finished — a run must report at the top level', () => {
+    const fin = RUN.findIndex((l) => l.startsWith('ev run_finished'))
+    expect(fin).toBeGreaterThan(-1)
+    const i = RUN.findIndex((l) => l.startsWith('spine_close() '))
+    const j = RUN.findIndex((l, n) => n > i && l === '}')
+    expect(fin > i && fin < j, 'run_finished fires only when spine_close is called').toBe(false)
+  })
+})

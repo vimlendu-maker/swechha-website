@@ -30,14 +30,29 @@ import { tmpdir } from 'node:os'
 const ROOT = join(__dirname, '..')
 const RUN_SH = join(ROOT, 'scripts/website-team/run.sh')
 
-/** The helper block as it actually appears in run.sh, between ORG= and stage two. */
+/**
+ * The spine HELPERS only — ORG= down to the close of the last spine_ function.
+ *
+ * ★ IT USED TO RUN TO STAGE TWO, AND THAT SWEPT IN THE MODEL CALL. Harmless
+ *   only while `spine_close()` was missing its closing brace: the model call
+ *   and everything with it sat INSIDE that function, so extracting and running
+ *   this block defined them and called nothing. The moment the brace was
+ *   restored on 2026-09-14, five tests here tried to invoke `claude`.
+ *
+ *   So these tests were passing BECAUSE of the defect they sat next to. The
+ *   extraction now stops where the helpers stop, which is what the name always
+ *   claimed.
+ */
 function helperBlock(): string {
   const src = readFileSync(RUN_SH, 'utf8').split('\n')
   const start = src.findIndex((l) => l.startsWith('ORG="${ORG_CLI'))
-  const end = src.findIndex((l) => l.startsWith('if [ "$MODE" = "work" ]'))
   expect(start, 'run.sh no longer defines ORG=${ORG_CLI...}').toBeGreaterThan(-1)
-  expect(end, 'run.sh no longer has a stage two').toBeGreaterThan(start)
-  return src.slice(start, end).join('\n')
+  const lastFn = src.findIndex((l) => l.startsWith('spine_close() '))
+  expect(lastFn, 'run.sh no longer defines spine_close()').toBeGreaterThan(start)
+  const end = src.findIndex((l, n) => n > lastFn && l === '}')
+  expect(end, 'spine_close() is never closed — the model call is inside it')
+    .toBeGreaterThan(lastFn)
+  return src.slice(start, end + 1).join('\n')
 }
 
 /**
