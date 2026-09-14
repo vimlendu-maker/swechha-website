@@ -1046,7 +1046,14 @@ const PAGE_CSS = `
   padding:clamp(11px,1.3vw,15px) 0;border-top:1px solid var(--hair)}
 .a-led-r:first-child{border-top:2px solid var(--rule)}
 .a-led-k{color:var(--fg-3);margin:0}
-.a-led-v{margin:0;color:var(--fg);font-size:var(--t-num);
+/* ★ NOT --t-num. The first version set these at the reading face and it was
+   wrong in the browser in a way the build could not see: --t-num is
+   clamp(2.6rem,6vw,4.6rem), the size a LIVE MEASUREMENT is set at, and it made
+   a PAN and a legal name into 74px display type — the band ran to 2,164px and
+   the registered name wrapped over two lines. These are not readings. They are
+   values a reader copies into a form, so they take the lead size and keep only
+   the tabular figures, which is what actually helps somebody transcribe one. */
+.a-led-v{margin:0;color:var(--fg);font-size:var(--t-lead);line-height:1.35;
   font-variant-numeric:tabular-nums;letter-spacing:.01em}
 .a-led-note{color:var(--fg-2);margin:0 0 clamp(26px,3vw,40px);max-width:64ch}
 
