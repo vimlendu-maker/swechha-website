@@ -124,6 +124,16 @@ OUT="$RECORDS/$STAMP-$DEPARTMENT-team-$MODE.md"
 EV="${SWECHHA_LOG_EVENT:-$HOME/.swechha-ai/log-event.py}"
 ev() { python3 "$EV" "$DEPARTMENT" manager "$@" 2>/dev/null || true; }
 
+# ★ DEFINED HERE, BESIDE `ev`, NOT BESIDE THE TRAP THAT READS IT. The first
+#   version put these three lines next to `trap on_exit EXIT` — two hundred
+#   lines BELOW the first `stage` call, so every run would have died on
+#   "stage: command not found" under `set -e`. A progress marker that kills the
+#   run it is meant to explain is worse than no marker at all. Caught by
+#   checking definition order against first use, not by reading it back.
+STAGE="startup"
+ENDED=0
+stage() { STAGE="$1"; }
+
 if [ "$MODE" = "review" ]; then
   PROMPT="Run in **review** mode. Read BOTH inboxes first — this department's
 at $INBOX and the organisation's at $ORG_INBOX — then this week's run
@@ -294,6 +304,7 @@ fi
 # Placed AFTER the vault preflight so an unreadable inbox is already a loud
 # refusal, and BEFORE the ceiling so a refused run still files the work it was
 # refused from doing.
+stage inbox-intake
 python3 "$LIB/inbox-intake.py" "$DEPARTMENT" \
   "$INBOX" "$ORG_INBOX" || true
 
@@ -315,6 +326,7 @@ python3 "$LIB/inbox-intake.py" "$DEPARTMENT" \
 #   agent that can raise its own ceiling has no ceiling. A missing or unreadable
 #   `cost` block leaves CEILING empty and skips the check -- a brake must not
 #   become a second way for a bad parse to stop the department.
+stage cost-ceiling
 CEILING="$(python3 -c "import json;print(json.load(open('$REPO/docs/$DEPARTMENT-team/policy.json')).get('cost',{}).get('daily_ceiling_usd',''))" 2>/dev/null || true)"
 if [ -n "$CEILING" ]; then
   SPENT="$(python3 "$LIB/budget.py" 2>/dev/null || echo 0)"
@@ -325,6 +337,7 @@ if [ -n "$CEILING" ]; then
     echo "run.sh: -> cost.daily_ceiling_usd, and only a human can raise it." >&2
     echo "run.sh: If this is an incident, raise it deliberately rather than waiting for midnight." >&2
     ev run_refused reason=daily-ceiling spent_usd="$SPENT" ceiling_usd="$CEILING"
+    ENDED=1
     ORGB="${ORG_CLI:-$HOME/.swechha-ai/org}"
     if [ -x "$ORGB" ]; then
       # Keyed: the SPENT figure moves every run, so the title never repeats and
@@ -344,7 +357,54 @@ fi
 # together. They share one worktree, so they must not overlap: the lock makes
 # the second wait rather than read a tree the first is mid-checkout of.
 "$WT" lock "$$"
-trap '"$WT" unlock' EXIT
+# ── A RUN CANNOT DIE SILENTLY ────────────────────────────────────────────────
+#
+# ★ THE FAILURE THIS ENDS. Six runs on 2026-09-13/14 emitted `run_started` and
+#   then NOTHING -- no run_finished, no run_refused, no run_failed -- and sat in
+#   `org status` as STALLED for ten hours. One of them died on
+#   "line 629: TEXT: unbound variable", a variable assigned unconditionally a
+#   hundred lines above the line that could not see it, and working out even
+#   THAT much took reading byte offsets out of a temp directory. The stream
+#   recorded that the run began and nothing else, which is the one thing
+#   events.md says a control plane must never do.
+#
+# ★ THE EXIT TRAP FIRES ON EVERY DEATH, including a `set -u` abort, a `set -e`
+#   abort and a signal. So the last thing this script does, always, is say how
+#   it ended -- and if nothing else already said so, it says the run died and
+#   names the last stage it reached.
+#
+# ★ NO NEW EVENT NAME. `run_failed` is already in events.md and already
+#   classified by org/runs.py as an ENDING. Inventing `run_died` would have
+#   created a fourth hand-kept list of run_* names, which is the exact defect
+#   that produced the phantom stalls in the first place. Readers must tolerate
+#   unknown FIELDS, so `stage` and `rc` ride along on an event that already
+#   means what this means.
+#
+# ★ STAGE COSTS NOTHING UNTIL IT IS NEEDED. `stage` is a variable assignment
+#   and no I/O whatsoever; the value is only ever written out by the trap, on a
+#   run that is already over. A progress log that wrote a line per phase would
+#   be four hundred lines nobody opens.
+on_exit() {
+  # ★ CAPTURE $? FIRST. Anything above this line replaces the exit status that
+  #   is the whole point of the report.
+  _rc=$?
+
+  # ★ REPORT BEFORE UNLOCKING, AND GUARD THE UNLOCK. The first version ran
+  #   `"$WT" unlock` first, unguarded. A trap body runs under the script's
+  #   `set -e`, so a failing unlock ABORTED THE TRAP before it could report --
+  #   and the moment unlock is most likely to fail is a run that already broke,
+  #   which is the only moment this trap matters. Found by running the trap with
+  #   a $WT that does not exist; it reported nothing at all.
+  if [ "$ENDED" = "0" ]; then
+    ev run_failed mode="$MODE" reason=died_without_reporting stage="$STAGE" rc="$_rc"
+    echo "run.sh: DIED at stage '$STAGE' (exit $_rc) without reporting an outcome." >&2
+  fi
+
+  "$WT" unlock || true
+  return 0
+}
+trap on_exit EXIT
+stage worktree
 WORK="$("$WT" ensure)"
 cd "$WORK"
 
@@ -451,6 +511,7 @@ spine_close() { # <task id> <done|refused|escalate> <note>
 #
 # ★ BEFORE THE MODEL CALL, like the vault preflight and the ceiling, so the
 #   answer exists even on a run that later dies reaching the model.
+stage hooks-health
 HOOKS_PROBE="${SWECHHA_HOOKS_PROBE:-$HOME/swechha-ai/sentinel/hooks-health.sh}"
 if [ -r "$HOOKS_PROBE" ]; then
   set +e
@@ -493,6 +554,7 @@ fi
 #   api-health.sh watches GitHub's rate limit. Nothing watches Anthropic's.
 MODEL_ERR="$(mktemp)"
 set +e
+stage model-call
 RESULT="$(claude -p "$PROMPT" \
   --agent "$DEPARTMENT-manager" \
   --permission-mode dontAsk \
@@ -509,6 +571,7 @@ if [ "$MODEL_RC" -ne 0 ] || [ -z "$RESULT" ]; then
   echo "run.sh: the model call FAILED (exit $MODEL_RC). $WHY" >&2
   sed -n '1,20p' "$MODEL_ERR" >&2
   ev run_failed mode="$MODE" $WHY
+  ENDED=1
   # The reason, not the whole stderr: the classification is what deduplicates,
   # and model-failure.py already refuses to guess when it does not recognise it.
   INC="$(spine_incident model_call_failed "$(printf '%s' "$WHY" | tr ' ' '\n' | grep '^reason=' | cut -d= -f2 || echo unknown)")"
@@ -522,6 +585,7 @@ if [ "$MODEL_RC" -ne 0 ] || [ -z "$RESULT" ]; then
 fi
 rm -f "$MODEL_ERR"
 
+stage parse-result
 PARSED="$(printf '%s' "$RESULT" | python3 "$LIB/parse-result.py")"
 COST="$(printf '%s' "$PARSED" | head -1)"
 TEXT="$(printf '%s' "$PARSED" | tail -n +2)"
@@ -532,6 +596,7 @@ TEXT="$(printf '%s' "$PARSED" | tail -n +2)"
 # must not become the report's headline: on 2026-09-11 both `gh run view
 # --log-failed` calls were refused, the Manager said so in one line, and the
 # guess it was forced into was printed above that caveat as the finding.
+stage denials
 DENIED="$(printf '%s' "$RESULT" | python3 "$LIB/denials.py" 2>/dev/null || true)"
 
 {
@@ -568,6 +633,7 @@ DENIED="$(printf '%s' "$RESULT" | python3 "$LIB/denials.py" 2>/dev/null || true)
 #   word-splitting is how they become separate arguments to log-event.py.
 METRICS="$(printf '%s' "$RESULT" | python3 "$LIB/parse-result.py" --metrics 2>/dev/null || true)"
 ev run_finished mode="$MODE" cost_usd="$COST" record="$(basename "$OUT")" $METRICS
+ENDED=1
 
 echo "wrote $OUT"
 
