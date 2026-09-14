@@ -333,6 +333,46 @@ describe('the scheduled workflows together cannot exhaust the deploy budget', ()
     expect(dispatchedPerDay('climate-events.yml')).toBeGreaterThan(0)
   })
 
+  /* ★ THE DIGEST IS DRIVEN BY THE ROUTE, NOT BY ITS OWN CRON, AND NOTHING ELSE
+     WOULD NOTICE IF THAT STOPPED. Its schedule line says `30 5 1 * *`; this
+     repository has measured GitHub's schedule service delivering five events in
+     forty-eight hours across seven workflows. A monthly cron on that is a job
+     that runs when it feels like it, and the band it sits under promises a
+     reader "once a month". Remove it from PIPELINES and the workflow still
+     exists, still passes every other check, and simply never fires again. */
+  it('the monthly digest is on the heartbeat, not left to its own cron', () => {
+    expect(dispatchedPerDay('digest-monthly.yml'),
+      'app/api/cron/air/route.ts must declare digest-monthly.yml in PIPELINES — '
+      + 'its own schedule: line is the cheap rung and cannot be trusted to fire')
+      .toBeGreaterThan(0)
+  })
+
+  /* ★ AND IT IS DELIBERATELY EXEMPT FROM THE RULE BELOW. Air and the detector
+     are rate-limited by how often they are woken. The digest is rate-limited by
+     `last_digest_month`, a column the send job checks per subscriber, so waking
+     it daily against a monthly cron cannot send twice — and it buys the digest
+     going out on the day its note is approved instead of up to a month later.
+     Asserted rather than left as prose, so a later pass that "fixes" the
+     inconsistency by slowing the dispatch has to read this first. */
+  it('wakes the digest far more often than its cron, on purpose', () => {
+    /* The cron is MONTHLY — a specific day-of-month, so roughly twelve firings
+       a year if the service delivered every one of them, which it does not. */
+    const cron = /- cron: '([^']+)'/.exec(read('digest-monthly.yml'))?.[1] ?? ''
+    const dom = cron.trim().split(/\s+/)[2]
+    expect(dom, 'the digest cron should name a day of the month').toMatch(/^\d+$/)
+
+    /* The route wakes it daily, which is ~30x the cron's real rate. It cannot
+       send twice: `last_digest_month` is a column the send job checks per
+       subscriber. What it buys is the digest going out on the day its note is
+       approved rather than up to a month later.
+       NOTE for anyone reading scheduledPerDay() above: it counts minute x hour
+       and IGNORES day-of-month, so it scores this cron as 1/day rather than
+       ~1/month. That is conservative for the deploy-budget check it was written
+       for — it overstates — so it is left alone rather than "corrected" into
+       something that would relax that guard. */
+    expect(dispatchedPerDay('digest-monthly.yml')).toBeGreaterThanOrEqual(1)
+  })
+
   it('keeps the dispatcher no faster than the cron it stands in for', () => {
     for (const w of ['air-hourly.yml', 'climate-events.yml']) {
       const byCron = scheduledPerDay(read(w), { ignoreFloor: true })
