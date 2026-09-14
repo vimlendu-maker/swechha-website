@@ -63,6 +63,13 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
+
+/* ── THE PAN IS READ, NOT RESTATED ───────────────────────────────────────
+   data/ledger.json already holds the registration facts and /about renders
+   them. A donor needs the PAN at the moment of transfer, which is here, so
+   this page prints it — by reading that file. Two copies of a registration
+   number is how one of them goes stale, and this repository has a name for
+   that failure class. */
 /* `hole` is deliberately NOT imported. AD-28 removed every named hole from
    this page and a build gate refuses to write one; importing the helper back is
    the first half of putting one on the page. */
@@ -72,6 +79,7 @@ const sh = S.shell();
 
 /* ═══ DATA ═══════════════════════════════════════════════════════════════ */
 const A = JSON.parse(readFileSync(join(S.ROOT, 'data/act.json'), 'utf8'));
+const LEDGER = JSON.parse(readFileSync(join(S.ROOT, 'data/ledger.json'), 'utf8'));
 const ONWARD = JSON.parse(readFileSync(join(S.ROOT, 'data/work/onward.json'), 'utf8'));
 const KINDS = JSON.parse(readFileSync(join(S.ROOT, 'data/work/kinds.json'), 'utf8'));
 const ROUTES = new Set(ONWARD.routes);
@@ -370,6 +378,65 @@ B.top = () => `    <div class="wrap ac-mast">
    button would be. The hole is the band's most important element: G-1 means
    this page asks for money it cannot yet receive, and saying so is the only
    version of that which is not a trick. */
+/* ── THE PAYMENT DESTINATION (ruling G-1, closed 15 September 2026) ───────
+   G-1 said there was no payment destination in this repository, that none
+   would be invented, and that the Give button would open an email rather than
+   fake a card form. The owner supplied the two accounts and the FCRA
+   certificate that names one of them, so the ruling is closed by the only
+   thing that could close it — a real destination.
+
+   THE MAILTO STAYS ABOVE IT. A RECURRING gift needs a standing instruction,
+   which is a thing a bank sets up and a web page cannot.
+
+   ★ THE TWO ACCOUNTS ARE NOT INTERCHANGEABLE AND THIS BLOCK MAY NEVER LET
+     THEM READ AS IF THEY WERE. Under section 17 of the FCRA — and under
+     clause 2 of Swechha's own renewal certificate, in those words — a foreign
+     contribution may be received ONLY in the designated account, and no other
+     amount may be credited to it. So each account leads with who it is for,
+     before any digits, and gate 11 refuses the page if either account number
+     ever renders without its own eligibility sentence.
+
+   ★ NOTHING HERE IS A LITERAL. Every digit comes from data/act.json and the
+     PAN from data/ledger.json, which is the file that already holds it. */
+const PAY = A.payment;
+/* ★ ONE ACCOUNT NAME, RENDERED ONCE, AND THE BUILD REFUSES IF THAT STOPS BEING
+     TRUE. Both accounts are held in the same registered name, so printing it on
+     each card repeated the longest string on the page for nothing — and tripped
+     the legal-name gate, which is right to count it. It is rendered once beside
+     the PAN, where a donor filling in a transfer form needs both together. If a
+     future account ever carries a different name the shared row would be a lie
+     about one of them, so that case stops the build instead. */
+const ACCT_NAMES = [...new Set(PAY.accounts.map(a => a.name))];
+if (ACCT_NAMES.length !== 1) {
+  die(`the accounts are held in ${ACCT_NAMES.length} different names (${ACCT_NAMES.join(' / ')}).\n`
+    + '  The block renders ONE shared "Account name" row. Render it per card before adding an\n'
+    + '  account in another name — a shared row would be wrong about one of them.');
+}
+const accounts = () => `      <div class="ac-acct">
+        <h3 class="ac-sub" id="accounts">${esc(PAY.head)}</h3>
+        <p class="body ac-acct-l">${esc(PAY.lead)}</p>
+        <div class="ac-acct-g">
+${PAY.accounts.map(a => `          <div class="ac-acct-c">
+            <p class="lbl ac-acct-k">${esc(a.label)}</p>
+            <p class="cap ac-acct-w">${esc(a.who)}</p>
+            <dl class="ac-acct-d">
+${[['Account type', a.kind], ['Bank', a.bank], ['Branch', a.branch],
+    ['Account number', a.number], ['IFSC', a.ifsc], ['SWIFT', a.swift]]
+    .filter(([, v]) => v)
+    .map(([k, v]) => `              <div class="ac-acct-r"><dt class="lbl ac-acct-dk">${esc(k)}</dt>`
+      + `<dd class="ac-acct-dv">${esc(v)}</dd></div>`).join('\n')}
+            </dl>
+          </div>`).join('\n')}
+        </div>
+        <dl class="ac-acct-d ac-acct-pan">
+${[['Account name', ACCT_NAMES[0]], [PAY.pan_label, LEDGER.registration.pan]]
+    .map(([k, v]) => `          <div class="ac-acct-r"><dt class="lbl ac-acct-dk">${esc(k)}</dt>`
+      + `<dd class="ac-acct-dv">${esc(v)}</dd></div>`).join('\n')}
+        </dl>
+        <p class="cap ac-acct-n">${esc(PAY.note)} <a class="lk" href="/about#ledger">The orders this
+          organisation holds, and the years they cover${ARROW}</a></p>
+      </div>`;
+
 const G = A.give;
 B.give = () => `${opener('give', G.head, esc(G.lead))}
     <div class="wrap">
@@ -386,6 +453,7 @@ ${G.funds.map(f => `          <div class="ac-fund">
         </div>
       </div>
       <div class="ac-cta">${cta('give', 'Set up a monthly gift', 'I want to give monthly')}</div>
+${accounts()}
       <h3 class="ac-sub">${esc(G.ask_head)}</h3>
 ${askList('give')}
     </div>`;
@@ -503,6 +571,28 @@ ${T.onward.map(o => `        <a class="ac-door-a" href="${o.href}">
    Every grid track is minmax(0,1fr) or an fr pair with a 0 basis; gate 8
    fails a bare 1fr, which does not shrink and blows the page out sideways. */
 const PAGE_CSS = `
+/* -- THE PAYMENT ACCOUNTS. Two cards, each led by who it is for, because the
+      FCRA account and the domestic one are not interchangeable and a reader
+      skimming digits must meet the eligibility line first. Every grid track is
+      minmax(0,1fr) per gate 8. -- */
+.ac-acct{margin:clamp(30px,3.4vw,46px) 0 0;border-top:1px solid var(--rule);
+  padding-top:clamp(18px,2vw,28px)}
+.ac-acct-l{color:var(--ink-2);max-width:54ch;margin:0 0 clamp(16px,1.8vw,24px)}
+.ac-acct-g{display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(20px,2.2vw,32px);
+  margin:0 0 clamp(16px,1.8vw,22px)}
+@media (min-width:760px){ .ac-acct-g{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
+.ac-acct-c{border-top:2px solid var(--rule-2);padding-top:12px}
+.ac-acct-k{color:var(--ink);margin:0 0 6px}
+.ac-acct-w{color:var(--ink-2);max-width:40ch;margin:0 0 12px}
+.ac-acct-d{margin:0;padding:0}
+.ac-acct-r{display:grid;grid-template-columns:minmax(0,10em) minmax(0,1fr);gap:4px 14px;
+  border-top:1px solid var(--rule);padding:7px 0}
+.ac-acct-dk{color:var(--ink-3);margin:0}
+.ac-acct-dv{color:var(--ink);margin:0;font-variant-numeric:tabular-nums;
+  word-break:break-word}
+.ac-acct-pan{max-width:32em;border-bottom:1px solid var(--rule)}
+.ac-acct-n{color:var(--ink-3);max-width:58ch;margin:clamp(12px,1.4vw,18px) 0 0}
+@media (max-width:519px){ .ac-acct-r{grid-template-columns:minmax(0,1fr)} }
 /* ── masthead. A text masthead, deliberately: this page has no photograph of
       its own and a borrowed one would be decoration. The rail is TWO cells in
       a three-column grid — AD-28 deleted the first, which counted this site's
@@ -1006,7 +1096,60 @@ if (footerAt < 0) {
 const BODY = RENDERED.slice(0, footerAt);
 const longName = (BODY.match(/Swechha We for Change Foundation/g) || []).length;
 const brandName = (BODY.match(/\bSwechha\b/g) || []).length;
-gate(longName === 1, `the full legal name appears exactly once in the page's own body (found ${longName})`);
+/* ★ THE SECOND OCCURRENCE IS THE ACCOUNT NAME, AND IT IS ALLOWED BY LOCATION
+     RATHER THAN BY COUNT. The rule this gate keeps is the owner's: the long
+     name belongs to the registrar and everywhere else the organisation is
+     Swechha. An "Account name" field is not the page calling itself anything —
+     it is the string a bank will match a transfer against, and abbreviating it
+     would send somebody's money nowhere.
+
+     So the allowance is not `longName <= 2`, which would let the long name
+     drift back into prose anywhere on the page. The accounts block is rendered
+     a second time here and measured on its own: exactly one inside it, and
+     exactly one in all the rest of the body. Both halves have to hold. */
+const ACCT_RENDERED = accounts().replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+/* ── 10c. THE TWO ACCOUNTS MAY NEVER READ AS INTERCHANGEABLE ──────────────
+   Section 17 of the FCRA, and clause 2 of Swechha's own renewal certificate in
+   those words: a foreign contribution may be received ONLY in the designated
+   account, and no other amount may be credited to it. A donor who reads the
+   digits without the eligibility line can put the wrong money in the wrong one
+   of these, and that is the organisation's problem, not theirs.
+
+   So every account number must be preceded, in the RENDERED text, by its own
+   `who` sentence. Rendered order, not source order — the source could be
+   rearranged by a later layout change and the gate would still be reading the
+   thing the reader actually meets.
+
+   ★ AND THE FCRA ACCOUNT IS CHECKED AGAINST THE CERTIFICATE. data/ledger.json
+     transcribes the designated account out of the renewal certificate; the
+     digits this page prints must be those digits. Two copies of a bank account
+     is worse than two copies of anything else in this repository. */
+for (const a of PAY.accounts) {
+  const nAt = ACCT_RENDERED.indexOf(a.number);
+  const whoAt = ACCT_RENDERED.indexOf(a.who);
+  gate(nAt > 0 && whoAt > 0 && whoAt < nAt,
+    `the ${a.id} account number is preceded by the sentence saying who it is for`);
+}
+gate(PAY.accounts.find(a => a.id === 'fcra')?.number === LEDGER.registration.fcra.designated_account,
+  'the FCRA account on this page is the account named on the FCRA certificate '
+  + `(${LEDGER.registration.fcra.designated_account})`);
+gate(ACCT_RENDERED.includes(LEDGER.registration.pan),
+  `the PAN rendered here is the one in the ledger (${LEDGER.registration.pan})`);
+/* No account digit is a literal in this file. Every one is read from
+   data/act.json, so a correction to an account never has to find a generator. */
+{
+  const source = readFileSync(new URL(import.meta.url), 'utf8');
+  const typed = PAY.accounts.map(a => a.number).filter(n => source.includes(n));
+  gate(typed.length === 0,
+    `no account number is typed into this generator${typed.length ? `; FOUND: ${typed.join(', ')}` : ''}`);
+}
+
+const longNameInAccounts = (ACCT_RENDERED.match(/Swechha We for Change Foundation/g) || []).length;
+gate(longNameInAccounts === 1,
+  `the accounts block names the account holder exactly once (found ${longNameInAccounts})`);
+gate(longName - longNameInAccounts === 1,
+  `the full legal name appears exactly once in the page's own body outside the accounts block `
+  + `(found ${longName - longNameInAccounts})`);
 gate(brandName > longName + 2,
   `the brand name carries the prose — "Swechha" ${brandName}x against the long form ${longName}x`);
 /* The footer is the site's other statutory line and carries it a second time,

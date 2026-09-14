@@ -748,7 +748,9 @@ const LED_ROWS = [
   ['Registered name', REG.legal_name],
   ['Legal status', REG.legal_status],
   ['PAN', REG.pan],
-  ['Tax order', `${REG.eightyg.order}, ${REG.eightyg.dated}`],
+  ['12A registration', `${REG.twelve_a.urn}, ${REG.twelve_a.granted}`],
+  ['80G approval', `${REG.eightyg.urn}, ${REG.eightyg.granted}`],
+  ['FCRA registration', `${REG.fcra.number}, to ${REG.fcra.valid_to}`],
 ];
 
 B.ledger = () => `${opener('ledger', 'On file',
@@ -761,10 +763,10 @@ ${LED_ROWS.map(([k, v]) => `        <div class="a-led-r">
           <dd class="a-led-v">${esc(v)}</dd>
         </div>`).join('\n')}
       </dl>
-      <p class="a-led-note">The order was granted in ${
-  esc(REG.eightyg.dated.replace(/^\d+ /, ''))} by the ${esc(REG.eightyg.issued_by)}, and every
-        receipt issued against it carries its number. Approvals under this section were
-        re-issued from 2021 under the rules that replaced it.</p>
+      <p class="a-led-note">Both income-tax orders were granted for assessment years ${
+  esc(REG.eightyg.from_ay)} to ${esc(REG.eightyg.to_ay)}, which ends with the financial year
+        before this one &mdash; a gift made today falls outside them, and the renewals are not
+        on this shelf. The FCRA registration runs to ${esc(REG.fcra.valid_to)}.</p>
 
       <ul class="a-files" role="list">
 ${LEDGER.documents.map(docRow).join('\n')}
@@ -1360,7 +1362,16 @@ const LEDGER_YEARS = new Set(
    copy that goes stale the first time a rung is added or corrected. `Now` is
    not a year and matches nothing, which is correct. */
 const RUNG_YEARS = new Set(RUNGS.map(r => r.year).filter(y => /^(?:19|20)\d\d$/.test(y)));
-const declared = new Set([...LEDGER_YEARS, ...RUNG_YEARS, '2000', '2004', '2008', '2016', '2026',
+/* ★ AND SO DO THE REGISTRATIONS, which is the third instance of the same rule
+   and the one that caught this gate out. `FCRA registration 231660913, to
+   30 June 2029` put 2029 on the page — a year read off a certificate, as
+   sourced as any of them — and the gate refused a page for stating a fact the
+   dataset had just given it. A registration's own dates declare themselves for
+   exactly the reason a document's period does: writing 2029 as a literal here
+   would go stale on the next renewal, which is the failure this gate exists to
+   catch rather than cause. */
+const REG_YEARS = new Set(JSON.stringify(REG).match(/\b(?:19|20)\d\d\b/g) || []);
+const declared = new Set([...LEDGER_YEARS, ...RUNG_YEARS, ...REG_YEARS, '2000', '2004', '2008', '2016', '2026',
   // years inside the people's own descriptions of themselves, which are
   // quoted and therefore historical statements, not claims by this page
   '2001', '2003', '2005', '2006', '2007', '2011', '2013', '2014', '2017', '2018', '2019', '2020', '2024']);
