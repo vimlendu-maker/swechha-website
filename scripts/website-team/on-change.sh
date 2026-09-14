@@ -156,4 +156,26 @@ echo "$CURRENT" > "$SEEN"
 echo "on-change: $URGENT urgent item(s) — running the department now"
 python3 "${SWECHHA_LOG_EVENT:-$HOME/.swechha-ai/log-event.py}" "$DEPARTMENT" runner \
   run_triggered by=inbox-urgent urgent="$URGENT" jobs="$JOBS" 2>/dev/null || true
-exec "$REPO/scripts/website-team/run.sh" work
+# ★ THROUGH THE SNAPSHOT, NOT STRAIGHT AT THE REPO. This line read
+#
+#       exec "$REPO/scripts/website-team/run.sh" work
+#
+#   which is precisely the defect snapshot-run.sh was written to close, left
+#   open in the ONE ENTRY POINT THAT FIRES MOST OFTEN. #171 ("a running script
+#   must not be edited underneath it") fixed the two launchd jobs that call
+#   snapshot-run.sh and never touched this one, because the fix was applied to
+#   the call sites somebody remembered rather than to all of them.
+#
+# ★ WHY IT MATTERS HERE MORE THAN ANYWHERE. This job is triggered by WatchPaths
+#   on the vault's inbox files, so it fires whenever the vault is written --
+#   which is exactly when somebody is working, and therefore exactly when the
+#   repository is most likely to be mid-edit. Bash reads a script incrementally
+#   by byte offset: edit run.sh underneath a running copy and execution resumes
+#   at a stale offset, landing anywhere.
+#
+#   Measured 2026-09-13/14: run.sh was committed at 23:07, 23:23, 01:51 and
+#   02:04, and runs left `run_started` with no terminal event at 22:22, 22:54,
+#   23:55, 00:25, 00:56 and 01:26 -- one of them dying with
+#   "line 629: TEXT: unbound variable", a variable assigned unconditionally a
+#   hundred lines above the line that could not see it.
+exec "$REPO/scripts/website-team/snapshot-run.sh" work
