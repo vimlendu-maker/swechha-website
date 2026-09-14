@@ -18,6 +18,7 @@ import { crumb, siblings, FAMILY_CSS, NAV_SEARCH_CSS, NAV as SHELL_NAV, HOME_HRE
 import { withSocialImage } from './lib/social-image.mjs';
 import { seo } from './lib/seo-register.mjs';
 import { stampLastmod } from './lib/lastmod.mjs';
+import { readHistory } from './lib/air-history.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const V3 = join(ROOT, 'public/_pages/v3');
@@ -218,7 +219,49 @@ const OBS = (() => { const o = AIR.observed; return o ? `${String(o.hh).padStart
 const istDay = (ms) => { const d = new Date(ms + 19800000);
   return `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 const FIRE_TO = FIRE.fetched?.epochMs ? istDay(FIRE.fetched.epochMs) : null;
-const REC_FROM = AIR.observed ? `${AIR.observed.d} ${MON[AIR.observed.m - 1]} ${AIR.observed.y}` : null;
+/* ── THE RECORD IS READ OFF THE RECORD ────────────────────────────────────
+   ★ THIS LINE USED TO BE `AIR.observed`, WHICH IS THE LATEST READING, AND IT
+     WAS PRINTED AS THE RECORD'S START. So the page said "The record starts on
+     14 September 2026" on 14 September — the day it ends — and had been
+     sliding forward an hour at a time since the job first ran. The comment
+     this replaces defended it: the grid was "anchored to the OBSERVATION date
+     ... so the one date the page states twice is the same date in both
+     places". Both places agreed. Both were wrong together, which is what an
+     anchor to the wrong end of a series buys you.
+
+   ★ AND THE GRID BESIDE IT DREW NOTHING AT ALL. It was
+     `Array.from({length:365},(_,i)=>i===0?'p-g-on':'')` — three hundred and
+     sixty-five squares with the first one lit, always, whatever the data said.
+     It had never opened data/air-history/. Measured on this commit: 298 hourly
+     observations across 21 days, 25 August to 14 September 2026, and the page
+     drew one red square and called it the record.
+
+     The caption under it promises "It draws no square it does not have — an
+     empty cell is absence, not zero." Twenty of those empty cells were days
+     this site holds. A page whose whole claim is that it keeps the record
+     cannot be the one place that does not read it.
+
+   readHistory() is the seam air-history.mjs already named for exactly this
+   ("the report CLI and any future chart"), so nothing new is invented here.
+   The span runs from the first day held to the last, one square per calendar
+   day, lit where that day has an observation — so a gap in the record shows as
+   a gap, which is the behaviour the caption has always described. */
+const REC = (() => {
+  const iso = (dmy) => `${dmy.slice(6, 10)}-${dmy.slice(3, 5)}-${dmy.slice(0, 2)}`;
+  const held = new Set(readHistory({ dir: join(DATA, 'air-history'), scope: 'delhi' })
+    .map((e) => iso(String(e.obs).slice(0, 10))));
+  if (!held.size) return null;
+  const sorted = [...held].sort();
+  const [first, last] = [sorted[0], sorted[sorted.length - 1]];
+  const cells = [];
+  for (let t = Date.parse(`${first}T00:00:00Z`); t <= Date.parse(`${last}T00:00:00Z`); t += 86400000) {
+    const day = new Date(t).toISOString().slice(0, 10);
+    cells.push({ day, held: held.has(day) });
+  }
+  const pretty = (d) => `${Number(d.slice(8, 10))} ${MON[Number(d.slice(5, 7)) - 1]} ${d.slice(0, 4)}`;
+  return { first, last, cells, days: held.size, from: pretty(first), to: pretty(last) };
+})();
+const REC_FROM = REC ? REC.from : null;
 
 /* ── TWO PIPELINES, TWO CLOCKS, BOTH PRINTED ─────────────────────────────
    AD-47, replacing AD-27.6-A's same-hour rule.
@@ -859,8 +902,10 @@ B.trend = () => {
   const amx = Math.max(...recent.map(m => m.views));
   const fmx = days.length ? Math.max(...days.map(d => d.max)) : 1;
   const pRecord = `<div class="p-grid-wrap">
-          <div class="p-grid" role="img" aria-label="Daily record, one square per day, beginning ${REC_FROM ?? 'when the job first ran'}">
-            ${Array.from({length:365},(_,i)=>`<i class="${i===0?'p-g-on':''}"></i>`).join('')}
+          <div class="p-grid" role="img" aria-label="${REC
+      ? `Daily record, one square per day, ${REC.days} day${REC.days === 1 ? '' : 's'} held from ${REC.from} to ${REC.to}`
+      : 'Daily record, one square per day — the job has not run yet'}">
+            ${(REC?.cells ?? []).map((c)=>`<i class="${c.held?'p-g-on':''}"></i>`).join('')}
           </div>
           <p class="cap"><b>One square.</b> ${REC_FROM ? `The record begins on ${REC_FROM}. ` : ''}It draws no
             square it does not have &mdash; an empty cell is absence, not zero. There is no retrospective
@@ -2260,6 +2305,54 @@ catch (e) { console.error('\nREFUSING TO WRITE: page script is not valid JS.\n' 
    So it is back, and stronger than the version that was lost: it checks the
    RENDERED TEXT rather than the variables, which is the only way to catch a
    number that gets typed back in as a literal. */
+/* ── THE RECORD BAND MUST AGREE WITH THE RECORD ──────────────────────────
+   Both halves of this band lied for weeks and every other gate passed, because
+   neither half was ever compared to data/air-history/. The date came from the
+   latest observation and the grid came from a loop over the number 365. So the
+   check is the one that was missing: the page against the files.
+
+   ★ IT COUNTS THE RENDERED SQUARES, not the array that produced them, for the
+     same reason the national gate re-reads its own text — a number typed back
+     in as a literal is exactly how this band failed the first time. */
+{
+  const problems = [];
+  if (!REC) {
+    console.log('record grid: no history under data/air-history — the grid draws nothing and the page says so');
+  } else {
+    const grid = (OUT.match(/<div class="p-grid"[^>]*>([\s\S]*?)<\/div>/) || [])[1] ?? '';
+    const lit = (grid.match(/p-g-on/g) || []).length;
+    const drawn = (grid.match(/<i\b/g) || []).length;
+    if (lit !== REC.days) {
+      problems.push(`the grid lights ${lit} square(s); the record holds ${REC.days} day(s)`);
+    }
+    if (drawn !== REC.cells.length) {
+      problems.push(`the grid draws ${drawn} square(s); the record spans ${REC.cells.length} day(s)`);
+    }
+    const stated = [...OUT.matchAll(/The record (?:starts|begins) on ([^;.<]+)/g)].map((m) => m[1].trim());
+    if (!stated.length) problems.push('the page no longer states when the record starts');
+    for (const d of new Set(stated)) {
+      if (d !== REC.from) {
+        problems.push(`the page says the record starts on "${d}"; the first day held is ${REC.from}`);
+      }
+    }
+    /* The original defect, named so it cannot return quietly. */
+    const obsDay = AIR.observed ? `${AIR.observed.d} ${MON[AIR.observed.m - 1]} ${AIR.observed.y}` : null;
+    if (obsDay && REC.days > 1 && stated.includes(obsDay)) {
+      problems.push(`the record's start is printed as the LATEST observation (${obsDay}) — `
+        + 'that is the wrong end of the series');
+    }
+  }
+  if (problems.length) {
+    console.error('\nREFUSING TO WRITE: the record band disagrees with data/air-history.\n  - '
+      + problems.join('\n  - ')
+      + '\n  Both the date and the squares are derived by REC above. Neither may be typed.');
+    process.exit(1);
+  }
+  if (REC) {
+    console.log(`record grid: ${REC.days} day(s) held of ${REC.cells.length} spanned, ${REC.from} to ${REC.to}`);
+  }
+}
+
 {
   const R = OUT.replace(/<[^>]+>/g, ' ').replace(/&[a-z]+;/g, ' ').replace(/\s+/g, ' ');
   const problems = [];
