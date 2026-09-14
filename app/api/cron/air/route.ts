@@ -84,6 +84,39 @@ const PIPELINES = [
     coverMinutes: 115,
     inputs: { dry_run: 'false' },
   },
+  {
+    /* ★ THE MONTHLY DIGEST, AND IT IS HERE BECAUSE ITS OWN CRON WOULD NEVER
+       HAVE FIRED. digest-monthly.yml declares `schedule: 30 5 1 * *` and this
+       repository has measured what that is worth: five scheduled events in
+       forty-eight hours across seven workflows, and none at all to air-hourly
+       for thirty-four hours. A monthly cron on that service is a job that runs
+       when it feels like it, and the digest promises a reader "once a month".
+       So the cron stays as the cheap best-effort rung and this is the heartbeat,
+       exactly as it is for the two above.
+
+       ★ IT DELIBERATELY BREAKS THE "JUST UNDER THE CADENCE" CONVENTION, and the
+       reason is that this job's cadence is not in its trigger. Air and the
+       detector are rate-limited by how often they are woken; the digest is rate
+       limited by a COLUMN — `last_digest_month` holds the month each subscriber
+       was last sent, and the send job skips any row already stamped with the
+       month it is sending. db/002 puts it plainly: "Monthly is a column, not an
+       intention."
+
+       So waking it daily cannot send twice, and it buys something a monthly
+       wake cannot: the digest goes out on the day its note is approved rather
+       than up to a month later. A once-a-month trigger that arrives before the
+       note is written skips the whole month; this one waits for it.
+
+       1380 is twenty-three hours — just under the daily Vercel cron that drives
+       this route, which is the same "just under" reasoning applied to the
+       heartbeat's own rate rather than to the workflow's.
+
+       A run with no approved note exits 75, sends nothing and stays green, so
+       the common case is a daily no-op that costs one API call and no deploy. */
+    workflow: 'digest-monthly.yml',
+    coverMinutes: 1380,
+    inputs: { dry_run: 'false' },
+  },
 ] as const;
 
 /* ── THE QUIET HOURS APPLY HERE TOO, AND THAT IS THE POINT ────────────────

@@ -24,6 +24,20 @@ name: The monthly digest — compose and send
 
 on:
   schedule:
+    # ★ DO NOT RELY ON THIS ALONE — IT IS THE CHEAP RUNG, NOT THE HEARTBEAT.
+    # Measured on this repository 26-28 August 2026: GitHub's schedule service
+    # delivered five scheduled events in forty-eight hours across seven
+    # scheduled workflows, and none at all to air-hourly for thirty-four hours.
+    # A MONTHLY cron on that service is a job that runs when it feels like it,
+    # and this one promises a reader "once a month".
+    #
+    # The dependable trigger is the Vercel cron in vercel.json, which calls
+    # /api/cron/air and dispatches this workflow from outside GitHub entirely —
+    # the same mechanism that drives Air and the climate detector. It wakes this
+    # daily, which cannot send twice because `last_digest_month` is a column and
+    # not an intention, and which means the digest goes out on the day its note
+    # is approved rather than up to a month later.
+    #
     # 11:00 IST on the 1st, about the month that just ended.
     #
     # THE QUIET HOURS APPLY TO THIS JOB. Nothing on this repository's schedule
