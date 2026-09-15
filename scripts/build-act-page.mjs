@@ -230,6 +230,49 @@ for (const [way, c] of Object.entries(CH)) {
       + '  If giving now has a real destination, that is a payment URL and a ruling, not a form slot.');
   }
 }
+
+/* ── 14. A CHANNEL SLOT THAT NOTHING READS MAY NOT LOOK WIRED ─────────────
+   ★ THE TRAP THIS CLOSES IS SPECIFIC AND WAS ONE PASTE AWAY. `partner` has a
+     slot in data/act.json exactly like `hands`, and the file said both were
+     "ready for a form". They are not the same: the Volunteer band's control is
+     cta('hands', ...), which reads the slot, while AD-27.19 upgraded the
+     Partner band's to a structured Ask that does not. Pasting a URL into
+     `partner.form` would have changed nothing at all, silently — the file
+     would say the form is wired, the button would still open an email, and
+     nothing in the build would disagree.
+
+     That is this repository's own "documented, nothing enforced" defect class,
+     and the cure is the same one it uses elsewhere: derive the fact rather than
+     assert it. cta() is the only reader, so the slots it is called with ARE the
+     wirable set, read off this file's own source. A slot outside that set
+     carrying a URL stops the build and says which band would have ignored it.
+
+     Switching the Partner band to the form is a legitimate decision. It is a
+     code change and a ruling, not a paste, and this gate is what makes the
+     difference visible. */
+{
+  const source = readFileSync(new URL(import.meta.url), 'utf8');
+  /* ★ `${cta('` AND NOT `cta('`, BECAUSE THE FIRST DRAFT OF THIS GATE DID NOT
+       FIRE. Matching the bare call caught the AD-27.19 note twenty lines above,
+       which quotes `cta('partner', …)` while explaining that the Partner band
+       stopped using it. So `partner` landed in the wirable set, read out of the
+       very comment that says it is not wired, and the gate passed on the one
+       case it exists for. Found by setting the slot and watching the build not
+       refuse — a gate nobody has seen fail is a gate nobody has tested.
+       Every real call is interpolated into a band's template literal, so the
+       `${` is what separates an invocation from a mention of one. */
+  const WIRABLE = new Set([...source.matchAll(/\$\{cta\('([a-z]+)'/g)].map((m) => m[1]));
+  const inert = Object.entries(CH)
+    .filter(([way, c]) => c.form && !WIRABLE.has(way))
+    .map(([way]) => way);
+  if (inert.length) {
+    die(`channels.${inert.join(', channels.')} carries a form URL that nothing on this page reads.\n`
+      + `  Only ${[...WIRABLE].sort().join(', ')} go through cta(), which is the function that renders a\n`
+      + '  form button. The other bands build their own control, so the URL would be ignored and the\n'
+      + '  button would keep opening an email while this file claimed otherwise.\n'
+      + '  Wire the band to cta(), or leave the slot null and say in its note why it is email.');
+  }
+}
 const EMAIL = A.start.email;
 /* The way's call to action: a form when there is one, the email when there is
    not. Written once so all three ways cannot drift apart. */
