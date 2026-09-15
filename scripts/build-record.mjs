@@ -669,6 +669,7 @@ ${/* THE INDEX TAKES ANY ARTICLE THAT CITES ANY PART OF THE RECORD, because
      written out of it is the argument. */''}
 ${journalDoors((h) => h.startsWith('/record'))}
       </div>
+${S.newsletter('record')}
     </div>`,
   };
 
@@ -698,6 +699,7 @@ ${journalDoors((h) => h.startsWith('/record'))}
     index: [['What is kept', '#kept'], ['Day by day', '#air'], ['Cite it', '#cite'], ['Next', '#onward']],
     sh, clashes: S.groundChain(BANDS),
     pageCss: PAGE_CSS,
+    script: S.NEWSLETTER_JS,
     navMark: { current: null, url: null },
     sectionFor: (id) => B[id](),
     note: `${KEPT.length} subjects, ${monthPages.length} month pages.`,

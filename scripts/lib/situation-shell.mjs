@@ -1734,7 +1734,13 @@ ${/* THE JOURNAL RAIL, AFTER THE LEARN RAIL AND BEFORE THE DOORS. Learn is
    undefined-class gate, which is the only generator on this site strict enough
    to have noticed; the eleven pages that already carried the band had been
    emitting both since the digest was built. */
-const NO_DIGEST = new Set(['air']);
+/* ★ `schools` IS HERE FOR THE SAME REASON `air` IS, and it is recorded rather
+     than merely omitted. /schools carries the school-enquiry form
+     (app/api/schools/enquire), which is the better-targeted ask for a teacher
+     who got that far; a second email field beside it is the choice nobody
+     wants to make. Leaving the band off a page says nothing to the next
+     person, who adds it back. This says why. */
+const NO_DIGEST = new Set(['air', 'schools']);
 export const newsletter = (id) => {
   if (NO_DIGEST.has(id)) {
     throw new Error(`newsletter: "${id}" is in NO_DIGEST — ${id} already carries its own `

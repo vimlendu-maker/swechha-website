@@ -528,6 +528,7 @@ ${A.onward.map(o => `        <a class="fm-door-a" href="${o.href}">
           <p class="body fm-door-p">${esc(o.p)}</p>
         </a>`).join('\n')}
       </div>
+${S.newsletter('farm')}
     </div>`;
 
 /* ═══ PAGE CSS ═══════════════════════════════════════════════════════════
@@ -797,6 +798,7 @@ const OUT = await S.assemble({
   desc: seo('/farm').description,
   bands: BANDS, index: INDEX, sh, clashes,
   pageCss: PAGE_CSS,
+  script: S.NEWSLETTER_JS,
   /* `Farm` is a nav word and this page IS it, so it takes aria-current="page".
      The shell cannot derive that — its family is the six situations — so it is
      passed, exactly as /impact passes its own. */
