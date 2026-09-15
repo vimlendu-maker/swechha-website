@@ -744,12 +744,25 @@ ${d.note ? `            <span class="cap a-file-w">${esc(d.note)}</span>\n` : ''
    and an order number are looked up, not read. `a-led-v` is set in the numeric
    face for the same reason every reading on this site is — these are figures a
    reader copies into a form. */
+/** The section an order is granted under, off the order's own words: "section
+    12AB(1)(b) of the …" -> "12AB", "clause (ii) of the second proviso to
+    section 80G(5) of the …" -> "80G". Falls back to the whole string rather
+    than guessing, so a section this pattern does not know about shows up on
+    the page instead of vanishing from it. */
+const sectionOf = (o) => (o.section.match(/section (\d+[A-Z]*)/) || [, o.section])[1];
+
 const LED_ROWS = [
   ['Registered name', REG.legal_name],
   ['Legal status', REG.legal_status],
   ['PAN', REG.pan],
-  ['12A registration', `${REG.twelve_a.urn}, ${REG.twelve_a.granted}`],
-  ['80G approval', `${REG.eightyg.urn}, ${REG.eightyg.granted}`],
+  /* ★ THE SECTION IN THE LABEL IS READ OUT OF THE ORDER, NOT TYPED. This row
+     said "12A registration" for a day after the renewal landed, and the
+     renewal is granted under section 12AB(1)(b) — 12AB is the section that
+     REPLACED 12A in 2021, so the label named a section the document does not.
+     Small, and exactly the kind of drift a hand-typed label produces the
+     moment the thing it labels is reissued. */
+  [`${sectionOf(REG.twelve_a)} registration`, `${REG.twelve_a.urn}, ${REG.twelve_a.granted}`],
+  [`${sectionOf(REG.eightyg)} approval`, `${REG.eightyg.urn}, ${REG.eightyg.granted}`],
   ['FCRA registration', `${REG.fcra.number}, to ${REG.fcra.valid_to}`],
 ];
 
@@ -763,10 +776,11 @@ ${LED_ROWS.map(([k, v]) => `        <div class="a-led-r">
           <dd class="a-led-v">${esc(v)}</dd>
         </div>`).join('\n')}
       </dl>
-      <p class="a-led-note">Both income-tax orders were granted for assessment years ${
-  esc(REG.eightyg.from_ay)} to ${esc(REG.eightyg.to_ay)}, which ends with the financial year
-        before this one &mdash; a gift made today falls outside them, and the renewals are not
-        on this shelf. The FCRA registration runs to ${esc(REG.fcra.valid_to)}.</p>
+      <p class="a-led-note">The 12AB registration runs to assessment year ${
+  esc(REG.twelve_a.to_ay)} and the 80G approval to ${esc(REG.eightyg.to_ay)}; both were granted
+        on ${esc(REG.eightyg.granted)} and begin with the year now running, so a gift made today
+        is inside them. A donation certificate is issued in ${esc(REG.eightyg.receipt_form)}. The
+        FCRA registration runs to ${esc(REG.fcra.valid_to)}.</p>
 
       <ul class="a-files" role="list">
 ${LEDGER.documents.map(docRow).join('\n')}
