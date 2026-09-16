@@ -237,3 +237,23 @@ The department inbox's "what is already done" section for the Vercel storage ite
 ## 2026-09-13 — "Careful" does not move a `never`-list item
 
 A specialist recompressed ~100 images in place, verified thoroughly (dimensions, EXIF orientation, pixel diff, share-card regeneration), to solve a real, urgent quota problem. The verification quality is not in question; the `never`-list entry ("replace a font or image at its existing filename") has no carve-out for careful execution, and this repository has already shipped a real regression from exactly this class of change once (the EXIF-rotation incident the rule almost certainly exists because of). **Do:** when a brief's own solution touches a `never`-list path, that is not a "did the specialist do it well" question — it stops at the manager, every time, regardless of verification quality on the branch.
+
+## 2026-09-16 — A lesson is not a ticket, and a defect recorded in `lessons.md` can sit live for days
+
+The 2026-09-13 entry recorded `--display` as referenced across every served page and defined nowhere. Three days later it is still true — 147 of 148 served pages, 11 rules across 6 generators, zero definitions in CSS or JS — and it is the likely cause of an owner-reported symptom (`website-20260912-0009`, "the space between words is less where the font style and size changes") that was filed the day *before* the lesson was written. Nobody connected the two, because a lesson is read as knowledge and a task is read as work, and nothing crosses between them.
+
+**Do:** when writing a lesson that describes a **live defect** rather than a process trap, say in the lesson which open task it explains, or say that none exists. A lesson that records an unfixed bug and names no ticket is a bug report filed in the wrong drawer.
+
+## 2026-09-16 — `gh run list --json conclusion` is empty for a run still in progress, and that reads as failure
+
+`scripts/air-status.mjs:99` maps `ok: r.conclusion === 'success'` without requesting `status`, so an in-progress run is classified not-ok and printed as `FAILED`. I observed the same run as `in_progress` in `gh run list` and as `FAILED` in `air-status` within the same minute.
+
+The near-miss is the useful half: I was about to report it as a false alarm, checked the run's final conclusion first, and found it had genuinely failed. The defect is real but today's label happened to be correct.
+
+**Do:** when a monitor and a raw query disagree, resolve the underlying fact before calling the monitor wrong. A monitor that is right by accident is still a defect, and a monitor you declared wrong by accident is worse.
+
+## 2026-09-16 — `git log --name-only -- <path>` filters the filename list to that same path, so counting other paths always returns zero
+
+I ran `git log --name-only -- data/air-delhi.json | grep -c '^public/_pages'` to ask "do air commits also rewrite built pages", got `0`, and nearly reported that air ticks change no served HTML. They change about nine pages each. The pathspec restricts the printed file list as well as the commit selection, so the answer was structurally guaranteed to be zero regardless of the truth. Using `--grep` on the commit subject instead of a pathspec gave the real figures.
+
+**Do:** when counting paths across commits, select commits with `--grep` or a revision range and never with the pathspec you are trying to count *around*. A query that can only return one answer is not evidence.
