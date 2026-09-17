@@ -257,3 +257,23 @@ The near-miss is the useful half: I was about to report it as a false alarm, che
 I ran `git log --name-only -- data/air-delhi.json | grep -c '^public/_pages'` to ask "do air commits also rewrite built pages", got `0`, and nearly reported that air ticks change no served HTML. They change about nine pages each. The pathspec restricts the printed file list as well as the commit selection, so the answer was structurally guaranteed to be zero regardless of the truth. Using `--grep` on the commit subject instead of a pathspec gave the real figures.
 
 **Do:** when counting paths across commits, select commits with `--grep` or a revision range and never with the pathspec you are trying to count *around*. A query that can only return one answer is not evidence.
+
+## 2026-09-17 — A build artefact in a forbidden directory refuses a branch the specialist wrote correctly
+
+`website-20260916-0002`'s branch changed three real files and two nobody authored: `scripts/website-team/__pycache__/{inbox-intake,tool-grants}.cpython-314.pyc`, written by Python when the runner imported those scripts and staged by `execute.sh`'s `git add -A`. `guard-paths.sh` forbids `scripts/website-team/`, so the guard failed while tests, typecheck, lint, build and `verify:seo` all passed in the same second. `.gitignore` had no Python entry and `git ls-files` shows the files were never tracked on `main` — so the branch was refused for files that exist only because a run happened.
+
+This is the third instance of one shape: a **machine-written** file inside a **denied** tree stops the department shipping. The first was `data/seo/lastmod.json` (fixed 12 Sep by narrowing the deny). The second was the abandoned diagnostic script in the 2026-09-11 entry.
+
+**Do:** when a branch fails `guard` while every other gate passes, read the full `git diff --name-only BASE...HEAD` before re-diagnosing the work — the violation is more likely a generated artefact than the change. And any tree the guard denies needs a matching `.gitignore` rule for whatever tooling writes into it, or the deny will eventually refuse an innocent branch.
+
+## 2026-09-17 — Five days of an owner's `#today` items were a blocked gate, not a misjudged priority
+
+Five `#today` items sat open for five days. The instinct is to re-diagnose them. The activity log said otherwise: on 12 Sep five `/teach` branches were refused by `guard` at 08:21, 10:53, 11:46, 13:04 and 13:10, and on 16 Sep the air-status branch was refused the same way. The work had been done up to four times over; none of it reached `main` for the next run to see. One of the five items (`0008`) had in fact shipped on 12 Sep and nobody had noticed, which two greps settled.
+
+**Do:** before re-investigating an owner complaint that is more than a day old, grep `~/.swechha-ai/activity.jsonl` for `gate_result` and `task_refused` on that task. If the gates other than one are green, the question is why that gate fired — not what the defect is. And check the served files for the complaint's symptom before assuming it is still there.
+
+## 2026-09-17 — `air:status` exiting 1 turns a stale upstream into an UNKNOWN row for the whole pipeline
+
+`scripts/air-status.mjs:113` raises a problem from page-observation age alone and prints *"The pipeline is not publishing."* Today that sentence was false: `/api/air` returned the same 05:00 IST observation the page shows, and the last run succeeded 46 minutes earlier. CPCB was slow; the pipeline was fine. Because the script exits 1, `infra:status` renders the whole Air/climate row as UNKNOWN — so a slow upstream hides a real failure behind the same label.
+
+**Do:** a monitor may report a symptom but must not assert a cause it has not separated from the alternatives. Where `air-status` already computes the site-vs-source comparison (line 132), the page-age problem should name the upstream when there is no gap. And note per the 16 Sep entry: resolve the underlying fact before declaring a monitor wrong — I checked `/api/air` and the run conclusion before writing this.
