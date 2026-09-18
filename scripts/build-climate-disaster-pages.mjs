@@ -89,6 +89,71 @@ const J = (p) => (existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : null);
    hook is what the page HAS — every figure with its source, the readings that
    disagree, and what is not established — which is both stable and the actual
    difference between this page and a news report. */
+/* ═══ THE YEAR IN THE TITLE, AND THE TWO THINGS IT IS NOT ════════════════
+   Added 18 September 2026. The title now reads "Bihar flood 2026 — what is
+   known, and what is not — Swechha".
+
+   ★ WHY A YEAR AT ALL. This site's own Search Console data, not a guess:
+   over 15 August – 11 September the /now section drew 11,400 page-level
+   impressions — more than half the site's total — and returned 91 clicks,
+   a CTR of 0.80% at position 7 to 8. The single best-placed non-brand event
+   query in that window was "tamil nadu floods 2026", at position 2.46. People
+   searching a disaster type the year, because that is how you separate this
+   flood from the last one, and until now not one of these titles carried it.
+
+   ★ WHY NOT A MONTH, WHICH IS WHAT WAS ASKED FOR. Because the month is not
+   stable and the year is. Two dossier fields could supply it and both fail:
+
+     · `occurred` MOVES EVERY DAY. Measured on bihar-flood's own history —
+       2026-09-14, then 15, then 16, then 17 on consecutive commits, because
+       it tracks the latest reported development rather than the onset. A
+       title built on it would rewrite itself daily. That is strictly worse
+       than the stale death toll the ruling below refuses: a toll is a number
+       inside the page's identity, and this would change the identity.
+     · `first_detected` is frozen once set, but it is the day the DETECTOR
+       saw the event, not the day the event began. bihar-flood and nepal-glof
+       both carry 28 August while dominating September's coverage, so two of
+       five live pages would have said "August 2026" to a September searcher.
+       Wrong for the reader and wrong for the query.
+
+   The YEAR is the one component both fields agree on, for every published
+   event, and it cannot move within an event's life. So the year is what
+   ships. `first_detected` is the source because it is the field that does
+   not move; the assertion below fails the build rather than guessing if a
+   dossier ever reaches here without it.
+
+   ★ AND STILL NO FIGURE, which the ruling in description() below sets and
+   this change does not touch. The year is a fact about the event that was
+   true when the page was written and will be true when Google re-crawls it.
+   A toll is not.
+
+   ★ IT GOES IMMEDIATELY AFTER THE NAME, not at the end, and that is
+   load-bearing. Google shows roughly 60 characters; the longest of these
+   titles is 69 ("Uttarakhand landslide 2026 — …"). Placed here the year is
+   inside the first 26 characters of every one of them, so it survives the
+   truncation that already eats the "— Swechha" tail today. Moving it later
+   would add the string and not the benefit.
+
+   NOT ADDED TO THE `<h1>`, deliberately: the heading is the event's name in
+   40pt type, and the page states its dates in the strip directly under it
+   and again on every row of the timeline. A year in the heading is a
+   repetition for the reader; in the title it is the only place a searcher
+   can see it before they click. */
+function eventYear(e) {
+  const ms = e.first_detected?.epochMs;
+  if (!Number.isFinite(ms)) {
+    console.error(`REFUSING TO WRITE: ${e.slug} has no first_detected.epochMs, `
+      + 'so its title has no year that is stable. `occurred` is not a substitute — '
+      + 'it moves daily; see the note above this function.');
+    process.exit(1);
+  }
+  /* +19800000 and getUTC*, the same shift istStamp() uses in
+     scripts/lib/climate-events.mjs. IST is the reader's clock, and an event
+     detected in the small hours of 1 January would otherwise be stamped with
+     the previous year. */
+  return new Date(ms + 19800000).getUTCFullYear();
+}
+
 function description(e) {
   const hazard = (HAZARD_LABEL[e.hazard] || e.hazard).toLowerCase();
   /* "in Bihar", and "in Nepal" too. The old text said "at", which is wrong for
@@ -325,7 +390,7 @@ ${S.newsletter('climate')}
        own vocabulary and it spent the most valuable words in the result on
        nothing. What replaces it is the page's actual offer, and it is what no
        news result on the same query says. */
-    title: `${eventName(e)} — what is known, and what is not — Swechha`,
+    title: `${eventName(e)} ${eventYear(e)} — what is known, and what is not — Swechha`,
     route,
     desc: description(e),
     bands: BANDS.map(([id, cls]) => [id, cls]),
