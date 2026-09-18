@@ -122,6 +122,22 @@ esac
 OUT="$RECORDS/$STAMP-$DEPARTMENT-team-$MODE.md"
 
 EV="${SWECHHA_LOG_EVENT:-$HOME/.swechha-ai/log-event.py}"
+# ★ A RUN NAMES ITS OWN JOB, because a department cannot. `org status` joins
+#   observed runs to scheduled jobs, and with only a department to join on, a
+#   department with two scheduled jobs shows BOTH as `ok` when EITHER ran --
+#   so a job that silently stopped is masked by its neighbour still running.
+#
+#   The label is not inferred from anything. The PLIST declares it about
+#   ITSELF, in EnvironmentVariables, so the string launchd registers and the
+#   string that reaches the event are the same string by construction. Deriving
+#   it from $DEPARTMENT and $MODE would be a rule about a naming convention,
+#   which ADR-0009 §1 forbids and which org/status.py declines to build on.
+#
+#   Unset when run by hand, and that is correct: a hand run is not a scheduled
+#   occurrence and must not be counted as one. The reader falls back to the
+#   department-level answer whenever `job` is absent.
+JOB_LABEL="${ORG_JOB_LABEL:-}"
+job_field() { [ -n "$JOB_LABEL" ] && printf 'job=%s' "$JOB_LABEL"; }
 ev() { python3 "$EV" "$DEPARTMENT" manager "$@" 2>/dev/null || true; }
 
 # ★ DEFINED HERE, BESIDE `ev`, NOT BESIDE THE TRAP THAT READS IT. The first
@@ -466,7 +482,7 @@ cd "$WORK"
 #   same log showed line 695 reached, which is 240 lines and three stage markers
 #   later, and past the run_finished at 635. Both are true of DIFFERENT
 #   processes and neither is true of one. With run_pid that is a glance.
-ev run_started mode="$MODE" run_pid="$$"
+ev run_started mode="$MODE" run_pid="$$" $(job_field)
 
 # ── THE SPINE HELPERS, DEFINED BEFORE ANYTHING CALLS THEM ────────────────────
 # ★ MOVED UP 2026-09-13, and a test caught why it had to be. Bash resolves a
@@ -691,7 +707,7 @@ DENIED="$(printf '%s' "$RESULT" | python3 "$LIB/denials.py" 2>/dev/null || true)
 #   dropped them. Unquoted on purpose: --metrics emits bare key=value pairs and
 #   word-splitting is how they become separate arguments to log-event.py.
 METRICS="$(printf '%s' "$RESULT" | python3 "$LIB/parse-result.py" --metrics 2>/dev/null || true)"
-ev run_finished mode="$MODE" run_pid="$$" cost_usd="$COST" record="$(basename "$OUT")" $METRICS
+ev run_finished mode="$MODE" run_pid="$$" $(job_field) cost_usd="$COST" record="$(basename "$OUT")" $METRICS
 ENDED=1
 
 echo "wrote $OUT"
