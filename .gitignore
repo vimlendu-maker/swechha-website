@@ -92,3 +92,14 @@ public/_compare/
 # sdd/ was tracked by default, which is how two working notes reached the repo
 # in PRs #74 and #75 without anyone intending it. Ignore the whole tree.
 .superpowers/
+# Python bytecode. `scripts/website-team/` is the team's own machinery and the
+# path guard refuses any change that touches it — deliberately, so an agent
+# cannot edit the thing that judges it. Running those scripts writes
+# `scripts/website-team/__pycache__/` INSIDE that forbidden tree, execute.sh's
+# `git add -A` sweeps it into the commit, and guard-paths.sh then refuses the
+# branch for touching a path nothing intended to touch. It refused every branch
+# from 2026-09-17 (task website-20260917-0004) until this line existed. The
+# artefact is the bug, not the guard: ignoring it breaks the chain at its first
+# link rather than narrowing a deny that is doing its job.
+__pycache__/
+*.pyc
