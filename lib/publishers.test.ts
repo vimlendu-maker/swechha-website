@@ -129,15 +129,85 @@ describe('one rebuild loop', () => {
   })
 })
 
+/* ═══ THE MEASUREMENT EXEMPTION, AND WHY IT IS NOW CHECKED ════════════════
+   Some workflows commit to `main` without being publishers: they rebuild
+   nothing and stage ONE data file that no generator reads, so they cannot
+   leave a page stale — which is the failure this whole file is about.
+   search-console.yml was the first and umami.yml is the second.
+
+   ★ IT USED TO BE A FILENAME SOMEBODY TYPED. `w.name !== 'search-console.yml'`,
+   with the reasoning in a comment and a grep the author had run by hand once.
+   That is the exact shape this file's own header calls this repository's most
+   repeated defect — a hand-maintained list that has to move in lockstep with
+   something else. Adding a second name to it would have been the defect
+   arriving inside the test written to prevent it.
+
+   So the rule the comment stated is now the rule the code applies. A workflow
+   is exempt only while BOTH remain true, re-derived on every run:
+
+     1. it runs no generator at all — no `npm run build:` anywhere in it; and
+     2. every path it stages is a data file that NOTHING under scripts/ or
+        lib/ reads, other than the script that writes it.
+
+   The day a generator renders one of these files, condition 2 fails, the
+   workflow joins PUBLISHERS, and the two assertions below demand it run the
+   shared rebuild and the shared staging. That is the outcome the old comment
+   asked a future reader to notice; this notices it for them. */
+/** ★ COMMENTS ARE NOT READS, and the first version of this check did not know
+ *  that. scripts/umami.mjs's header explains why it appends by contrasting
+ *  itself with data/seo/search-performance.json — it NAMES that path, in prose,
+ *  and the naive substring search counted the mention as a generator rendering
+ *  the file. search-console.yml promptly lost an exemption it still deserved.
+ *  A gate that accuses correct files is worse than no gate; this repository
+ *  calls that "the notification people mute" in scripts/lib/build-all.sh's
+ *  neighbourhood and in lib/scripts-parse.test.ts. So the comments come out
+ *  before the search goes in. */
+const codeOnly = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/[^\n]*/gm, ' ')
+
+const READERS = [
+  ...readdirSync(join(ROOT, 'scripts')).filter((f) => f.endsWith('.mjs')).map((f) => join('scripts', f)),
+  ...readdirSync(join(ROOT, 'scripts', 'lib')).filter((f) => f.endsWith('.mjs')).map((f) => join('scripts/lib', f)),
+].map((p) => ({ path: p, src: codeOnly(readFileSync(join(ROOT, p), 'utf8')) }))
+
+/** Every `data/…` path a workflow stages with `git add`. */
+function stagedDataPaths(src: string): string[] {
+  return [...src.matchAll(/git add\s+(?!-A\b)([^\n]*)/g)]
+    .flatMap((m) => m[1].trim().split(/\s+/))
+    .filter((p) => p.startsWith('data/'))
+}
+
+/** Is this data file read by any generator other than the one that writes it? */
+function readByAGenerator(dataPath: string, writer: string): boolean {
+  return READERS.some((r) => r.path !== writer && r.src.includes(dataPath))
+}
+
 describe('one staging list', () => {
-  /* search-console.yml is EXEMPT, and for a checked reason rather than by
-     custom: it rebuilds nothing and stages one file,
-     data/seo/search-performance.json, which no generator reads — verified by
-     grep across scripts/ and lib/, where the only reader is its own writer.
-     It therefore cannot leave a page stale, which is the failure this whole
-     file is about. If a generator ever renders that file, this exemption is
-     wrong and the workflow joins the rest. */
-  const PUBLISHERS = workflows.filter((w) => /git commit/.test(w.src) && w.name !== 'search-console.yml')
+  const EXEMPT_WRITERS: Record<string, string> = {
+    'search-console.yml': 'scripts/search-console.mjs',
+    'umami.yml': 'scripts/umami.mjs',
+  }
+  const isMeasurementOnly = (w: { name: string; src: string }) => {
+    const writer = EXEMPT_WRITERS[w.name]
+    if (!writer) return false
+    if (/npm run build:/.test(w.src)) return false
+    const staged = stagedDataPaths(w.src)
+    return staged.length > 0 && staged.every((p) => !readByAGenerator(p, writer))
+  }
+  const PUBLISHERS = workflows.filter((w) => /git commit/.test(w.src) && !isMeasurementOnly(w))
+
+  it('exempts a measurement job only while it really is one', () => {
+    /* The exemption re-derived, not trusted. If umami.yml ever gains a
+       `npm run build:`, or data/analytics/audience.json ever gets a reader
+       under scripts/, this goes red and the workflow is treated as the
+       publisher it has become. */
+    for (const name of Object.keys(EXEMPT_WRITERS)) {
+      const w = workflows.find((x) => x.name === name)
+      expect(w, `${name} is listed as exempt but does not exist`).toBeTruthy()
+      expect(isMeasurementOnly(w!), `${name} no longer qualifies for the measurement exemption: `
+        + 'it either runs a generator now, or the data file it stages has gained a reader under '
+        + 'scripts/. Remove it from EXEMPT_WRITERS — it is a publisher.').toBe(true)
+    }
+  })
 
   it('finds the five publishers this is about', () => {
     expect(PUBLISHERS.map((w) => w.name).sort()).toEqual([

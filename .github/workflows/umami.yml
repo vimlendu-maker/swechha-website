@@ -1,0 +1,136 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# UMAMI — KEEP THE AUDIENCE BASELINE.
+# ───────────────────────────────────────────────────────────────────────────
+# ★ WHY A JOB AT ALL, when Umami keeps the raw events itself and the Search
+# Console job exists because Google only keeps sixteen months. The reason here
+# is different and it is in the analytics spec, §3.4: the analytics database is
+# on a free tier whose documented failure mode is that it "suspends compute at
+# the cap". The risk is a SILENT GAP — a week that was never collected looks
+# exactly like a week nobody visited, for ever, and nothing announces it.
+#
+# A weekly reading with its day-by-day series inside it is what makes that
+# difference visible afterwards. scripts/umami.mjs reports any zero day with
+# traffic on both sides of it, which is the one shape a quiet site does not
+# produce, and writes it into the snapshot as a suspicion rather than a
+# finding — only Neon's own console can confirm it.
+#
+# ★ IT PUBLISHES NOTHING. The spec's Phase 3 splits collection from
+# publication deliberately: "which figures are honest to publish is a question
+# to settle against real traffic, not against a guess." This job collects. A
+# figure reaching /impact is a separate change and an owner-level decision.
+#
+# ★ TUESDAY, NOT MONDAY, AND NOT HOURLY. Two reasons, both about the same
+# database. Search Console runs Mondays at 05:40 UTC; putting this on a
+# different day keeps two scheduled jobs from waking the same Neon project
+# within minutes of each other for no gain. And reading is not free: the spec
+# notes that browsing the dashboard wakes the same compute, so a job that ran
+# hourly would itself be a plausible way to reach the cap it exists to detect.
+# Once a week, one run, six requests.
+#
+# ★ IT DEGRADES HONESTLY. Without the credential the job says so in its own
+# summary and stops. It does not fail the repository's other work, it does not
+# write an empty snapshot, and it does not pretend to have run.
+# ═══════════════════════════════════════════════════════════════════════════
+name: Umami — the audience baseline
+
+on:
+  schedule:
+    # Tuesdays, 06:10 UTC (11:40 IST).
+    - cron: '10 6 * * 2'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'What to run'
+        type: choice
+        default: pull
+        options: [check, pull]
+      days:
+        description: 'pull only — window length in days'
+        type: string
+        default: '28'
+      dry_run:
+        description: 'Read and print, write nothing'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: umami
+  cancel-in-progress: false
+
+jobs:
+  umami:
+    runs-on: ubuntu-latest
+    env:
+      # Either UMAMI_API_KEY, or BOTH of the username/password pair. The script
+      # decides which it has and says which it used; neither is ever printed.
+      UMAMI_API_KEY: ${{ secrets.UMAMI_API_KEY }}
+      UMAMI_USERNAME: ${{ secrets.UMAMI_USERNAME }}
+      UMAMI_PASSWORD: ${{ secrets.UMAMI_PASSWORD }}
+      # Host and website id come from data/analytics.json, the same file the
+      # tracker tag is built from. Set UMAMI_HOST here only to point a run at a
+      # different instance.
+    steps:
+      - name: Is a credential present?
+        id: cfg
+        run: |
+          if [ -z "$UMAMI_API_KEY" ] && { [ -z "$UMAMI_USERNAME" ] || [ -z "$UMAMI_PASSWORD" ]; }; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            {
+              echo '### Umami is not wired yet'
+              echo ''
+              echo 'Set the repository secret `UMAMI_API_KEY`, or both `UMAMI_USERNAME` and'
+              echo '`UMAMI_PASSWORD`. Until then this job does nothing — see `docs/UMAMI-API.md`.'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "Not configured. Nothing was read and nothing was written."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.cfg.outputs.ready == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.cfg.outputs.ready == 'true'
+        with:
+          node-version-file: .nvmrc
+
+      - name: Does the credential work?
+        if: steps.cfg.outputs.ready == 'true'
+        run: node scripts/umami.mjs --check
+
+      - name: Pull the audience snapshot
+        if: steps.cfg.outputs.ready == 'true' && github.event.inputs.action != 'check'
+        run: |
+          node scripts/umami.mjs --pull \
+            --days "${{ github.event.inputs.days || '28' }}" \
+            ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }} | tee /tmp/umami.log
+          {
+            echo '### Audience'
+            echo ''
+            echo '```'
+            cat /tmp/umami.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # STAGE FIRST, THEN ASK — the lesson search-console.yml's own commit step
+      # records at length. `git diff --quiet -- <path>` does not see an
+      # UNTRACKED file, so on the very first run, when the snapshot file is
+      # brand new, it reports no change, exits 0, and the baseline is written to
+      # the runner's disk and destroyed with it. The job passes while losing the
+      # one thing it exists to collect. `git diff --cached` after `git add` sees
+      # a new file and a changed one alike.
+      - name: Commit the snapshot
+        if: steps.cfg.outputs.ready == 'true' && github.event.inputs.dry_run != 'true' && github.event.inputs.action != 'check'
+        run: |
+          git config user.name  'swechha-umami[bot]'
+          git config user.email 'actions@github.com'
+          git add data/analytics/audience.json
+          if git diff --cached --quiet -- data/analytics/audience.json; then
+            echo "Nothing staged — the snapshot did not change. Nothing to commit."
+            exit 0
+          fi
+          N=$(node -p "require('./data/analytics/audience.json').snapshots.length")
+          git commit -m "data(analytics): audience snapshot ${N}"
+          git push
