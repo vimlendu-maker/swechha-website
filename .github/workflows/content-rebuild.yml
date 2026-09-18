@@ -22,6 +22,21 @@ on:
     paths:
       - 'data/**'
       - 'content/**'
+      # ★ MEASUREMENT IS NOT CONTENT. data/analytics/audience.json is written
+      # weekly by the Umami job and NO page reads it — it is a record kept so a
+      # figure can one day be published from evidence rather than a dashboard
+      # screenshot (analytics spec §6, Phase 3). Without this line every
+      # snapshot commit rebuilds all 149 pages and ships a deploy in which
+      # nothing has changed, on a Vercel plan that has already hit a daily
+      # deploy cap once.
+      # DELETE THIS LINE the day a page actually reads the file — that is the
+      # moment the spec's "data/** changes already trigger content-rebuild.yml,
+      # so no new automation is needed" starts applying to it.
+      # NOTE: data/seo/search-performance.json is the same case and is NOT
+      # excluded here, because changing an existing job's triggers was outside
+      # the change that added this line. It still rebuilds the site every
+      # Monday for nothing.
+      - '!data/analytics/**'
   workflow_dispatch:
     inputs:
       dry_run:
