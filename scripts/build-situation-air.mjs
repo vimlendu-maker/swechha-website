@@ -695,6 +695,25 @@ B.measured = () => {
   // sub-indexes, like every other number in this feed.
   const shown = ['PM2.5','PM10','NO2','OZONE','SO2','NH3','CO'].filter(k => ws.pollutants[k]?.sub != null)
     .map(k => ({ k, ...ws.pollutants[k] })).sort((a,b) => b.sub - a.sub);
+  /* ★ EACH POLLUTANT AGAINST ITS OWN LIMIT, AND THE WINDOW DECIDES WHICH ONE.
+     The grid has always shown seven sub-indexes and the concentration each
+     implies. It named a standard for two of them, so a reader met "NO₂ 36,
+     ~28.8 µg/m³" with nothing to weigh it against while this same band
+     asserted "above 100 is above the law" about the index.
+
+     THE KEY IS READ OFF THE ROW, NOT ASSUMED. Ozone and CO sub-indexes are
+     computed over eight hours and the rest over twenty-four; pairing a
+     24-hour standard with an 8-hour reading would be a different claim, so
+     the station's own `averaging` picks `h8` or `h24`. A pollutant whose
+     window this does not recognise, or which has no limit in the feed, keeps
+     the line it had rather than inventing a comparison. */
+  const limitFor = (x) => {
+    const L = AIR.limits?.[x.k];
+    if (!L) return null;
+    const key = x.averaging === '8-hour' ? 'h8' : x.averaging === '24-hour' ? 'h24' : null;
+    if (!key || L[key] == null) return null;
+    return L[key];
+  };
   const cmp = XC.comparison;
   const expl = [
     ['AQI','One number for eight poisons',`Eight pollutants folded into one 0&ndash;500 figure that reports <b>whichever is worst</b> at a monitor, then averaged across Delhi&rsquo;s monitors. It is an index, not a concentration. ${rd.aqi} today; the limit is ${AIR.aqiLimit}.`],
@@ -706,7 +725,7 @@ B.measured = () => {
           <span class="p-cite">CPCB, <i>About National Air Quality Index</i>.</span></p>
         <div class="p-subs">${shown.map(x => `<div class="p-sub${x.k===ws.governing?' is-gov':''}">
             <p class="lbl p-sub-n">${PRETTY[x.k]}</p><p class="p-sub-v">${x.sub}</p>
-            <p class="cap p-sub-c">~${x.impliedConc} ${x.impliedUnit}</p>${x.k===ws.governing?'<p class="lbl p-sub-g">governing</p>':''}</div>`).join('')}</div>
+            <p class="cap p-sub-c">~${x.impliedConc}${limitFor(x) != null ? ` of ${limitFor(x)}` : ''} ${x.impliedUnit}</p>${x.k===ws.governing?'<p class="lbl p-sub-g">governing</p>':''}</div>`).join('')}</div>
         <p class="cap p-miss">Eight pollutants, ${shown.length} at this monitor. <b>Pb</b> is not reported here.
           The big numbers are CPCB&rsquo;s own sub-indexes, published as such; the small ones under them are the
           concentrations those sub-indexes imply, carrying a tilde because <b>this feed publishes no
