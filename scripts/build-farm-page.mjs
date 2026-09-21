@@ -1196,6 +1196,38 @@ gate((F.stay.airbnb || []).length === 0 ? !/airbnb/i.test(RENDERED) && !/href="[
        is asserted here rather than only in the shell. */
 gate(seo('/farm').description.length >= 140 && seo('/farm').description.length <= 158,
   `the description is ${seo('/farm').description.length} characters (140–158)`);
+/* ★ MEASURED 2026-09-21, AND THE PHRASE HAS RETURNED NOTHING SO FAR.
+   This gate is not changed by that and the ruling stands — it is recorded here
+   so the next reader does not assume the bet has paid simply because it is
+   still enforced.
+
+   Search Console, the 28 days to 2026-09-18, whole property: **not one query
+   containing camp, trip, visit, excursion, picnic or outing** drew a single
+   impression. "school camps" is the phrase AD-27.47/48 assigns to this page
+   and nothing has ever come back for it.
+
+   What /farm IS shown for is its own name:
+
+     swechha farm       52 impr   4 clk   position 2.31
+     swechha            47 impr   0 clk   position 8.83
+     farm school         6 impr   0 clk   position 14.33
+
+   And the "farm school" family — nine variants, about 92 impressions, led by
+   "farm school" at 58 and including "farming school for kids" and "farm school
+   for kids" — sits on /work/projects/farm-school, which is the right page for
+   it. The two do not compete: this page holds the brand-and-place query at
+   2.31 and that one holds the programme query. A 2026-09-21 reading of the six
+   impressions above as a split was wrong, and the gate below is what caught it.
+
+   ★ READ THE ZERO CORRECTLY. Google names a query on only about a third of
+   impressions — 824 page/query pairs covering 34.27% of 23,375 on that window
+   — so this is zero among NAMED queries, not a proof that nobody searched. It
+   is evidence the phrase has not landed, not evidence it cannot.
+
+   Two readings are open and this note settles neither: the phrase is right and
+   has not been earned yet, or school camps are not searched for this way and
+   the slot is spent. Either is the owner's call. What would decide it is a
+   re-read after the school-trip booking season rather than another guess. */
 gate(/school camps/i.test(TITLE) && TITLE.includes('—') && !TITLE.includes('&mdash;'),
   'the title carries "school camps" and a literal em dash (AD-27.47/48)');
 gate(!/\b(today|currently|DEMO DATA)\b/i.test(seo('/farm').description), 'the description is not tensed and carries no specimen');
