@@ -695,6 +695,42 @@ B.measured = () => {
   // sub-indexes, like every other number in this feed.
   const shown = ['PM2.5','PM10','NO2','OZONE','SO2','NH3','CO'].filter(k => ws.pollutants[k]?.sub != null)
     .map(k => ({ k, ...ws.pollutants[k] })).sort((a,b) => b.sub - a.sub);
+  /* ★ EACH POLLUTANT AGAINST ITS OWN LIMIT, AND THE WINDOW DECIDES WHICH ONE.
+     The grid has always shown seven sub-indexes and the concentration each
+     implies. It named a standard for two of them, so a reader met "NO₂ 36,
+     ~28.8 µg/m³" with nothing to weigh it against while this same band
+     asserted "above 100 is above the law" about the index.
+
+     THE KEY IS READ OFF THE ROW, NOT ASSUMED. Ozone and CO sub-indexes are
+     computed over eight hours and the rest over twenty-four; pairing a
+     24-hour standard with an 8-hour reading would be a different claim, so
+     the station's own `averaging` picks `h8` or `h24`. A pollutant whose
+     window this does not recognise, or which has no limit in the feed, keeps
+     the line it had rather than inventing a comparison. */
+  const limitFor = (x) => {
+    const L = AIR.limits?.[x.k];
+    if (!L) return null;
+    const key = x.averaging === '8-hour' ? 'h8' : x.averaging === '24-hour' ? 'h24' : null;
+    if (!key || L[key] == null) return null;
+    return L[key];
+  };
+  /* ★ THE BREACHES ARE MARKED, IN THE HUE THIS PAGE ALREADY USES FOR ONE.
+     Seven rows where two are above the law and five are not, all rendered
+     identically, made the band quieter than the sentence below it — which
+     says "above 100 is above the law" in so many words. `is-red` is the
+     class the rest of this page marks an exceedance with; nothing new is
+     invented for it, and only the small caption takes the colour, so the
+     grid's weight is unchanged.
+
+     COMPARED IN THE UNIT THE ROW IS IN. CO is mg/m³ against an mg/m³ limit
+     and everything else µg/m³ against µg/m³, so the comparison never
+     crosses units. A row with no limit is never marked either way rather
+     than being marked compliant by default. */
+  const overLimit = (x) => {
+    const lim = limitFor(x);
+    const conc = Number(x.impliedConc);
+    return lim != null && Number.isFinite(conc) && conc > lim;
+  };
   const cmp = XC.comparison;
   const expl = [
     ['AQI','One number for eight poisons',`Eight pollutants folded into one 0&ndash;500 figure that reports <b>whichever is worst</b> at a monitor, then averaged across Delhi&rsquo;s monitors. It is an index, not a concentration. ${rd.aqi} today; the limit is ${AIR.aqiLimit}.`],
@@ -706,7 +742,7 @@ B.measured = () => {
           <span class="p-cite">CPCB, <i>About National Air Quality Index</i>.</span></p>
         <div class="p-subs">${shown.map(x => `<div class="p-sub${x.k===ws.governing?' is-gov':''}">
             <p class="lbl p-sub-n">${PRETTY[x.k]}</p><p class="p-sub-v">${x.sub}</p>
-            <p class="cap p-sub-c">~${x.impliedConc} ${x.impliedUnit}</p>${x.k===ws.governing?'<p class="lbl p-sub-g">governing</p>':''}</div>`).join('')}</div>
+            <p class="cap p-sub-c${overLimit(x) ? ' is-red' : ''}">~${x.impliedConc}${limitFor(x) != null ? ` of ${limitFor(x)}` : ''} ${x.impliedUnit}</p>${x.k===ws.governing?'<p class="lbl p-sub-g">governing</p>':''}</div>`).join('')}</div>
         <p class="cap p-miss">Eight pollutants, ${shown.length} at this monitor. <b>Pb</b> is not reported here.
           The big numbers are CPCB&rsquo;s own sub-indexes, published as such; the small ones under them are the
           concentrations those sub-indexes imply, carrying a tilde because <b>this feed publishes no
@@ -2162,6 +2198,22 @@ const { title: TITLE, description: DESC, indexName: INDEX_NAME } = seo('/now/air
    ANYTHING ADDED HERE IS AIR-ONLY. Anything added to PAGE_CSS is site-wide.
    That is the whole distinction, and it is invisible from inside either block. */
 const AIR_ONLY_CSS = `
+/* AND HUE ANSWERS THE OTHER HALF OF THE RULE IN PAGE_CSS — which reserved it
+   in terms: "weight and ink, never hue: which pollutant decided the number is
+   not a question of whether a limit fell." This is the limit falling.
+
+   IT LIVES HERE AND NOT BESIDE THE RULE IT COMPLETES, which is the whole of
+   AD-43 above. .p-sub exists on this page alone, so in PAGE_CSS this rule is
+   dead weight on about 150 other pages and moves every one of their lastmod
+   hashes — which is exactly what happened on the first attempt, and what
+   build:all caught.
+
+   SPECIFICITY IS DELIBERATE. A bare .is-red is (0,1,0) and loses to .p-sub-c
+   on source order, then loses again to the .p-sub.is-gov rule — so the breach
+   on the GOVERNING pollutant, the one most likely to be over, is precisely the
+   one that would silently fail to mark. Both selectors are written out rather
+   than trusting order. */
+.p-sub .p-sub-c.is-red,.p-sub.is-gov .p-sub-c.is-red{color:var(--red)}
 /* The state roll-up rows in the geography band's India tab. Same three-column
    grid as .p-nr, deliberately: the reader has already met that shape at the top
    of this page, and a second ranked list that looked different would read as a

@@ -611,9 +611,38 @@ const out = {
       + 'text, never converted); swechha_checked_utc is when WE ASKED CPCB (UTC ISO). They are '
       + 'different clocks and different facts, and must never be swapped or mixed.',
   },
+  /* ★ ALL SEVEN REPORTED POLLUTANTS CARRY THEIR LIMIT, NOT JUST THE TWO
+     PARTICULATES — added 2026-09-22.
+     The page has always shown seven sub-indexes with the concentration each
+     implies, and named a standard for two of them. So a reader met "NO₂ 36,
+     ~28.8 µg/m³" with nothing to weigh it against, while the same page
+     asserted "above 100 is above the law" about the index. Both halves of that
+     are now sayable.
+
+     ★ THE AVERAGING WINDOW IS PART OF THE LIMIT. Ozone and CO sub-indexes are
+     computed over EIGHT hours and the rest over twenty-four, so `h8` is the
+     comparable figure for those two and `h24` for the others — pairing a
+     24-hour standard with an 8-hour reading would be a different claim. The
+     station rows carry their own `averaging`, and the page reads the key off
+     it rather than assuming.
+
+     ★ CO IS IN mg/m³, EVERY OTHER ROW IN µg/m³ — a thousandfold difference
+     sitting in one table. It is stated per row for that reason.
+
+     READ OFF THE INSTRUMENT, NOT A SUMMARY. The Gazette of India,
+     Extraordinary, Part III Section 4, No. 217, New Delhi, 18 November 2009 —
+     the CPCB notification that is NAAQS 2009 — column (4), "Industrial,
+     Residential, Rural and Other Areas". A web search offered 120 µg/m³ for
+     SO2 and NO2, which is the pre-2009 industrial column and wrong for this
+     table; the notification says 80. */
   limits: {
     'PM2.5': { h24: 60, annual: 40, unit: 'µg/m³', authority: 'CPCB, NAAQS 2009' },
     'PM10':  { h24: 100, annual: 60, unit: 'µg/m³', authority: 'CPCB, NAAQS 2009' },
+    'NO2':   { h24: 80, annual: 40, unit: 'µg/m³', authority: 'CPCB, NAAQS 2009' },
+    'SO2':   { h24: 80, annual: 50, unit: 'µg/m³', authority: 'CPCB, NAAQS 2009' },
+    'NH3':   { h24: 400, annual: 100, unit: 'µg/m³', authority: 'CPCB, NAAQS 2009' },
+    'OZONE': { h8: 100, h1: 180, unit: 'µg/m³', authority: 'CPCB, NAAQS 2009' },
+    'CO':    { h8: 2, h1: 4, unit: 'mg/m³', authority: 'CPCB, NAAQS 2009' },
   },
   aqiLimit: 100,
   bands: BANDS,
