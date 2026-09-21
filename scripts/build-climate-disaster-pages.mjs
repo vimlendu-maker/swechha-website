@@ -154,6 +154,58 @@ function eventYear(e) {
   return new Date(ms + 19800000).getUTCFullYear();
 }
 
+/* ── WHAT ACTUALLY DIFFERS BETWEEN SIX EVENTS ─────────────────────────────
+   The 9 September rewrite listed four faults in the old description and fixed
+   three. The fourth it named and did not fix: "it is the same sentence on
+   every page with the hazard and place swapped, so it carries no information
+   at all." That was still true on 21 September — all six live events shipped
+   "The <hazard> in <place>: every figure with the source that published it,
+   the readings that disagree with each other, and the questions still open."
+
+   Two things in the dossiers genuinely vary, and neither is a claim about the
+   event, so neither can go stale the way the refused death toll would:
+
+     · THE SOURCING. Two news reports (Uttarakhand) and thirty-five (Nepal) are
+       different objects, and Assam and Bihar are the only two carrying OFFICIAL
+       alerts — SDMA river-gauge rows — which is the strongest thing either page
+       can say about itself. On /now the sourcing IS the substance; the copy
+       standard's two regimes say so in terms.
+     · THE REACH. `india_relevance` is "downstream" for exactly one live event,
+       nepal-glof, whose note opens "Nepal's rivers drain into Bihar and eastern
+       Uttar Pradesh". That page is shown for "did nepal flood reach india" —
+       nine impressions, no clicks — and the answer was sitting in its own
+       dossier, absent from the one line a searcher reads.
+
+   NOT A FIGURE ABOUT THE EVENT, which the ruling in the block above forbids
+   and this does not touch. A source count is a fact about the page; a death
+   toll is a claim about the world that moves hourly while Google caches the
+   description for days. */
+const COUNT_WORD = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+const counted = (n, noun) => `${n <= 10 ? COUNT_WORD[n] : n} ${noun}${n === 1 ? '' : 's'}`;
+
+/** "six official alerts and four news reports", or null when a dossier carries
+ *  neither — the ladder then falls through to a variant that does not name any. */
+function sourcing(e) {
+  const src = Array.isArray(e.sources) ? e.sources : [];
+  const official = src.filter((x) => x?.tier === 'official').length;
+  const news = src.filter((x) => x?.tier === 'news').length;
+  if (official && news) return `${counted(official, 'official alert')} and ${counted(news, 'news report')}`;
+  if (official) return counted(official, 'official alert');
+  if (news) return counted(news, 'news report');
+  return null;
+}
+
+/** The first sentence of the downstream note, for the one event that has one.
+ *  Taken from the dossier rather than written here: the note is the editor's
+ *  sentence and this must not become a second, drifting copy of it. */
+function reach(e) {
+  if (e.india_relevance !== 'downstream') return null;
+  const note = String(e.india_relevance_note || '').trim();
+  if (!note) return null;
+  const first = note.split(/(?<=\.)\s/)[0].replace(/\.$/, '').trim();
+  return first || null;
+}
+
 function description(e) {
   const hazard = (HAZARD_LABEL[e.hazard] || e.hazard).toLowerCase();
   /* "in Bihar", and "in Nepal" too. The old text said "at", which is wrong for
@@ -168,13 +220,25 @@ function description(e) {
      and the first that lands inside assemble()'s 140-158 window is used. A
      hazard name ranges from "flood" to "glacial lake outburst flood", so the
      ladder has to span about forty characters. */
+  /* THE LADDER IS NOW PER-EVENT AT THE TOP AND GENERIC ONLY AT THE BOTTOM.
+     The first four variants say something no other page can say; the last two
+     are the old sentences, kept as the floor so a dossier with no sources and
+     no downstream note still gets a whole sentence rather than a refusal. */
+  const src = sourcing(e);
+  const downstream = reach(e);
   const VARIANTS = [
+    downstream && src && `The ${hazard} in ${where}. ${downstream}. Read from ${src}, each figure carrying the source that printed it.`,
+    downstream && src && `The ${hazard} in ${where}. ${downstream}. Read from ${src}, each figure with its source.`,
+    downstream && `The ${hazard} in ${where}. ${downstream}. Every figure carries the source that printed it, and what is unestablished is listed.`,
+    src && `The ${hazard} in ${where}, read from ${src}. Every figure carries the source that printed it, and what nobody has established is listed.`,
+    src && `The ${hazard} in ${where}, read from ${src}, each figure carrying the source that printed it, and a standing list of what is not established.`,
+    src && `The ${hazard} in ${where}, read from ${src}. Every figure carries the source that printed it, and the questions still open.`,
     `The ${hazard} in ${where}: every figure with the source that published it, the readings that disagree with each other, and the questions still open.`,
     `The ${hazard} in ${where}: every figure with the source that published it, the readings that disagree, and the questions still open.`,
     `The ${hazard} in ${where}: what is established, what the sources disagree about, and what nobody has answered yet. Every figure names its source.`,
     `The ${hazard} in ${where}, with every figure carrying the source that published it, and a standing list of what nobody has established yet.`,
     `The ${hazard} in ${where}: every figure with its source, and the questions that are still open.`,
-  ];
+  ].filter(Boolean);
   for (const d of VARIANTS) if (d.length >= 140 && d.length <= 158) return d;
 
   /* Nothing fitting is a build failure, not a truncation. A description
