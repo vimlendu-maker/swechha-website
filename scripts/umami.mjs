@@ -167,9 +167,36 @@ async function api(auth, path, params = {}) {
    this version — the enum is validated after auth. That is why METRICS below
    is a list this script tries INDIVIDUALLY and records as unavailable when the
    instance refuses one, rather than a set it asserts. The first authenticated
-   run prints the truth and the snapshot records it. */
+   run prints the truth and the snapshot records it.
+
+   ★ AND THE FIRST AUTHENTICATED RUN DID EXACTLY THAT — 2026-09-21. It recorded
+   `url` as unavailable, which is the one metric the whole snapshot is for: the
+   per-page breakdown. The design above worked; the guess inside it was wrong.
+   `type=url` is Umami's name in the documentation and in most of what is
+   written about it, and it is NOT this instance's name. Probed against the
+   live API with a working credential, same window, same auth:
+
+     type=url                 400  bad-request
+     type=url  (no limit)     400  bad-request
+     type=url + unit/timezone 400  bad-request
+     type=host                400  bad-request
+     type=path                200  50 rows, first {"x":"/","y":692}
+     type=title               200  50 rows, first {"x":"Swechha — Delhi…","y":697}
+     type=query               200  34 rows, first {"x":"utm_source=chatgpt.com","y":19}
+
+   So: `path`. The instance is `privateMode:true`, `cloudMode:false` per
+   /api/config, i.e. self-hosted, and that is the variant whose enum this is.
+   Do not "correct" it back to `url` because a doc page says so — the table
+   above is this instance answering for itself.
+
+   `query` joins the list on the same evidence. It is the only place the UTM
+   tags appear, and it is already carrying something worth reading: 19 visits
+   tagged `utm_source=chatgpt.com`. `title` is deliberately NOT here — it is
+   the same rows as `path` keyed by a string that changes whenever a headline
+   is edited, so it would age into a second, worse copy of the page list. */
 const METRICS = [
-  ['url', 'top pages'],
+  ['path', 'top pages'],
+  ['query', 'query strings, where the UTM tags land'],
   ['referrer', 'where readers came from'],
   ['country', 'country'],
   ['device', 'device'],
@@ -272,7 +299,7 @@ async function pull(auth) {
     console.log(`\n  ★ ${suspected.length} suspected collection gap(s): ${suspected.join(', ')}`);
     console.log('    Zero pageviews with traffic on both sides. Check whether Neon suspended compute.');
   }
-  const top = metrics.url?.rows?.slice(0, 8) || [];
+  const top = metrics.path?.rows?.slice(0, 8) || [];
   if (top.length) {
     console.log('\n  most-read pages');
     for (const r of top) console.log(`    ${String(r.y).padStart(6)}  ${r.x}`);
