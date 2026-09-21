@@ -64,6 +64,7 @@ const ORIGIN = (process.env.SITE_ORIGIN?.trim() || 'https://swechha.in').replace
    permissions problem. */
 const PROPERTY = process.env.GSC_PROPERTY?.trim() || `sc-domain:${new URL(ORIGIN).host}`;
 const PERF = join(ROOT, 'data/seo/search-performance.json');
+const LASTMOD = join(ROOT, 'data/seo/lastmod.json');
 
 /* ═══ CREDENTIAL ═════════════════════════════════════════════════════════ */
 function credential() {
@@ -200,9 +201,40 @@ async function analytics(token) {
   const t = totals.rows?.[0] || { clicks: 0, impressions: 0, ctr: 0, position: 0 };
   const num = (n) => Math.round(n * 100) / 100;
 
-  /* SECTIONS, because the whole point of the baseline is to see whether the
-     new sections earn anything. Derived from the path, not a typed list. */
-  const SECTIONS = ['/learn', '/now', '/record', '/journal', '/schools', '/work', '/stories', '/use-the-data'];
+  /* ★ SECTIONS ARE DERIVED FROM THE REGISTER, AND THE COMMENT THAT USED TO SIT
+     HERE SAID THEY ALREADY WERE.
+     It read "Derived from the path, not a typed list" above a typed list of
+     eight. That list was written before `/teach` (54 pages) and
+     `/healthy-cities` (11) existed, so the two largest additions the site has
+     ever made fell into `(other)` together with the homepage and every surviving
+     WordPress URL — and `(other)` is the one row nobody can read anything out
+     of. The whole point of this file is to see whether a new section earns
+     anything, and for the biggest new section it could not answer.
+
+     This is the estate's parallel-list failure class: a hand-kept list that has
+     to move in lockstep with something else, in the file whose own comment
+     denied being one. The fix is the one that class always takes — derive it.
+
+     `data/seo/lastmod.json` is the register of every route this site has ever
+     built, which is exactly the right universe: it is keyed by route, it is
+     written by the build rather than by hand, and it keeps RETIRED routes too,
+     so a withdrawn event still sections to `/now` instead of falling out of the
+     report on the day it stops being served.
+
+     `(other)` therefore now means one thing — a URL Google still has that is
+     not a route this site has built — which is legacy WordPress URLs and the
+     homepage. That is a reading rather than a residue.
+
+     ★ SECTION ROWS ARE NOT COMPARABLE ACROSS THIS CHANGE. Snapshots taken
+     before it used the eight-item list, so their `(other)` bundles `/teach`,
+     `/healthy-cities`, `/about`, `/act`, `/farm`, `/impact`, `/method`,
+     `/posters`, `/publications` and `/search` into itself. Totals, brand split
+     and per-page rows are unaffected; only `by_section` changed shape. */
+  const SECTIONS = [...new Set(
+    Object.keys(JSON.parse(readFileSync(LASTMOD, 'utf8')))
+      .filter((r) => r !== '/')
+      .map((r) => `/${r.split('/')[1]}`),
+  )].sort();
   const section = (u) => { const p = new URL(u).pathname; return SECTIONS.find((s) => p === s || p.startsWith(`${s}/`)) || '(other)'; };
   const bySection = {};
   for (const r of byPage.rows || []) {
