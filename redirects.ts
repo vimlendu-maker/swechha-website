@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next'
 import { designRoutes } from './design-routes'
 import { buildLegacyRedirects, readMap } from './lib/legacy-redirects'
+import { buildRetiredRedirects, readBuiltRoutes } from './lib/retired-redirects'
 
 type Redirects = NonNullable<NextConfig['redirects']>
 type Redirect = Awaited<ReturnType<Redirects>>[number]
@@ -50,6 +51,43 @@ export const legacyRedirects: Redirect[] = buildLegacyRedirects(
   readMap(),
   new Set(designRoutes().map((r) => r.source)),
 )
+
+/**
+ * Redirects for routes this site BUILT AND THEN RETIRED — derived, never typed.
+ *
+ * Kept separate from both lists below it because it is a different kind of
+ * fact. The WordPress list is migration debt from another site. `movedRedirects`
+ * is a decision somebody made. This one is the consequence of two sections
+ * being EPHEMERAL BY CONSTRUCTION: `/now/climate-event/<slug>` exists while the
+ * detector holds an event above its publication bar, `/journal/<slug>` exists
+ * while an article is approved, and both sets shrink without anybody editing
+ * anything. `lib/retired-redirects.ts` explains what that cost — 22 indexed
+ * URLs answering a hard 404 on 2026-09-21, four of them still in Search
+ * Console's top 40 while dead.
+ *
+ * ★ A PROBLEM HERE WARNS AND DOES NOT THROW, WHICH IS THE OPPOSITE OF THE
+ * LEGACY LIST, AND THE ASYMMETRY IS DELIBERATE. `buildLegacyRedirects` throws
+ * because its input is a reviewed map: a disagreement there means a human wrote
+ * something the site cannot honour, and the build should stop until they fix
+ * it. This input is not reviewed by anybody — it is the difference between two
+ * generated files, and the generator that changes it is the hourly climate-event
+ * pipeline. A retired route with no live ancestor would therefore be able to
+ * fail the production build at 03:00 on a Sunday because a detector closed an
+ * event, and the failure mode it would be protecting against is a route that
+ * 404s — which is exactly what it already does. Breaking the site's publishing
+ * to avoid leaving a 404 as a 404 is not a trade worth making.
+ *
+ * So: emit what can be repaired, say plainly what cannot. The warning names the
+ * route, so a section that has genuinely gone away is visible in the build log
+ * rather than silent.
+ */
+const retired = buildRetiredRedirects(readBuiltRoutes(), new Set(designRoutes().map((r) => r.source)))
+if (retired.problems.length)
+  console.warn(
+    'retired-redirects: no redirect emitted for these retired routes —\n' +
+      retired.problems.map((p) => `  ${p.route}: ${p.why}`).join('\n'),
+  )
+export const retiredRedirects: Redirect[] = retired.redirects
 
 /**
  * Redirects for URLs this site itself has moved. Kept separate from the

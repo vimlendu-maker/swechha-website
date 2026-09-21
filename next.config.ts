@@ -1,12 +1,19 @@
 import type { NextConfig } from 'next'
-import { legacyRedirects, movedRedirects } from './redirects'
+import { legacyRedirects, movedRedirects, retiredRedirects } from './redirects'
 import { designRoutes } from './design-routes'
 import { isIndexable } from './lib/org'
 import { analyticsRewrites } from './lib/analytics'
 
 const nextConfig: NextConfig = {
   async redirects() {
-    return [...movedRedirects, ...legacyRedirects]
+    /* ORDER IS PRECEDENCE — Next matches in order, first hit wins. `moved`
+       stays first because it holds the hand-written rulings, including the
+       `/campaigns/:slug`-before-`/campaigns` pair whose ordering note lives in
+       redirects.ts. `retired` is next and cannot collide with it: its sources
+       are this site's own routes, and `lib/retired-redirects.test.ts` asserts
+       the three lists share no source. `legacy` is last because its sources are
+       another site's URL space entirely. */
+    return [...movedRedirects, ...retiredRedirects, ...legacyRedirects]
   },
   /**
    * `beforeFiles` is load-bearing, not a default. These routes have real app
