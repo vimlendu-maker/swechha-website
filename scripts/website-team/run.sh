@@ -337,6 +337,68 @@ if [ "$DRY" = "--dry-run" ]; then
   exit 0
 fi
 
+# ── PREFLIGHT: IS THERE A NETWORK AT ALL? ────────────────────────────────────
+#
+# ★ THE FAILURE THIS ENDS. On 2026-09-21 every recent run of BOTH departments
+#   ended the same way:
+#       fatal: unable to access 'https://github.com/...': Could not resolve host
+#       run.sh: DIED at stage 'worktree' (exit 128) without reporting an outcome
+#   `org status` showed both live departments' last run as FAILED and seven
+#   jobs MISSED. Twelve run_failed events, every one stage=worktree rc=128.
+#
+# ★ NOTHING WAS WRONG WITH EITHER DEPARTMENT. The Mac was on battery, asleep,
+#   and launchd was firing these jobs during **DarkWake** — 45-second
+#   maintenance wakes where the calendar timer runs but Wi-Fi has not
+#   associated. `pmset -g log` shows it plainly: sleep for thousands of
+#   seconds, DarkWake for 45, sleep again. A job needing github.com inside that
+#   window cannot have it, and no amount of retrying would have changed that.
+#
+# ★ "NO NETWORK" IS NOT A FAILURE, IT IS A RUN THAT COULD NOT START. Same
+#   ruling green-the-map's sentinel needed on 2026-09-15, where "never
+#   configured" and "cannot tell" were both exit 2 and a department nobody had
+#   switched on sat permanently HALTED by a brake built to catch regressions.
+#   A brake that fires because the laptop was asleep halts a healthy department.
+#
+# ★ SO: REFUSE, DO NOT DIE. `run_refused` renders as `refused` in
+#   org/status.py and `run_failed` renders as FAILED — the distinction already
+#   exists and is already governed, so this needs no new event name and no new
+#   hand-kept reason list. Nothing is spent, the exit trap sees ENDED=1 and
+#   stays quiet, and the department is reported as not having run rather than
+#   as having broken.
+#
+# ★ WE WAIT A LITTLE FIRST. A real wake associates Wi-Fi within seconds, and
+#   refusing a run that was one second early would be its own false negative.
+#   Three tries five seconds apart — bounded, so a genuinely offline machine
+#   still refuses promptly instead of holding the lock.
+#
+# ★ THE HOST IS OVERRIDABLE SO THIS PATH CAN BE TESTED. A refusal path that
+#   has never been executed is a refusal path that does not work; pointing
+#   NET_PROBE_HOST at an unresolvable name is the only way to run it without
+#   turning off the machine's Wi-Fi. The default is the host that actually
+#   failed.
+NET_PROBE_HOST="${NET_PROBE_HOST:-github.com}"
+NET_OK=0
+for _try in 1 2 3; do
+  # RESOLUTION, NOT REACHABILITY. The observed failure is DNS. A HEAD request
+  # would also pass through a captive portal that resolves everything and
+  # serves nothing; if the host resolves, git's own errors are honest again.
+  if python3 -c "import socket,sys; socket.setdefaulttimeout(5); socket.getaddrinfo('$NET_PROBE_HOST',443); sys.exit(0)" 2>/dev/null; then
+    NET_OK=1; break
+  fi
+  [ "$_try" -lt 3 ] && sleep 5
+done
+if [ "$NET_OK" = "0" ]; then
+  echo "run.sh: REFUSED — $NET_PROBE_HOST does not resolve from this process." >&2
+  echo "run.sh: Nothing was spent and nothing was attempted." >&2
+  echo "run.sh: If this ran from launchd on a sleeping Mac, this is DarkWake:" >&2
+  echo "run.sh: the calendar timer fires but Wi-Fi has not associated. Confirm" >&2
+  echo "run.sh: with: pmset -g log | grep -E 'DarkWake|Wake from'" >&2
+  echo "run.sh: A run that had no network did not fail — it did not start." >&2
+  ev run_refused reason=network-unreachable host="$NET_PROBE_HOST" tries=3
+  ENDED=1
+  exit 6
+fi
+
 # ── PREFLIGHT: CAN WE ACTUALLY REACH THE VAULT? ──────────────────────────────
 # Check BEFORE spending anything. A launchd-spawned process cannot read or
 # write ~/Desktop — macOS TCC protects it, an agent inherits no grant and can
