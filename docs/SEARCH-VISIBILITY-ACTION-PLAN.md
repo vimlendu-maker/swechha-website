@@ -1,6 +1,6 @@
 # Search visibility action plan — off-site work
 
-**Date:** 2026-08-30
+**Date:** 2026-08-30, revised 2026-09-21
 **Status:** owner-run. Nothing in this document is executed by the on-site
 work in the same pass (register title/description edits, `/llms.txt`) — it
 is the list of what's left, and why each item can't be a code change.
@@ -34,12 +34,37 @@ most explicitly solicit "let us know if we missed you" style inclusion:
 | Impaac | blog.impaac.org/top-10-environmental-ngos-in-india | |
 | India Is Us | indiaisus.com/blog/top-environmental-ngo-in-india.html | |
 
-**Already working — verify, don't rebuild:** [AQI.IN's "5 Environmental
-Organizations in Delhi"](https://www.aqi.in/blog/5-environmental-organizations-delhi/)
-lists Swechha **first**, ahead of Chintan, CSE and TERI. Worth a check that
-its outbound link points at a live swechha.in URL and not a dead WordPress
-one — the pattern `[[swechha-seo-baseline]]` already found elsewhere on the
-old site.
+**★ STRUCK 2026-09-21 — THE "ALREADY WORKING" ITEM WAS NOT TRUE.** This
+paragraph claimed AQI.IN's ["5 Environmental Organizations in
+Delhi"](https://www.aqi.in/blog/5-environmental-organizations-delhi/) listed
+Swechha **first, ahead of Chintan, CSE and TERI**, and told the reader to
+"verify, don't rebuild". It was verified. It is wrong on every particular.
+
+The article is dated **2 November 2017** and lists Help Delhi Breathe,
+Chintan, Clean Air Asia, Toxics Link and Environics Trust. It does not
+mention Swechha, does not mention CSE or TERI either, and carries **zero**
+links to swechha.in — read from the rendered page, not from a search snippet.
+
+It is left here struck rather than deleted because the failure is the
+instructive part: an unverified claim written into a plan as a finding, with
+"verify, don't rebuild" attached to it, is worse than no claim at all. It
+told the next reader that a thing was already working and steered effort away
+from it. Nothing else in this document has been checked to a higher standard
+than that sentence was, which is why the section below now carries dates.
+
+**★ AND THE SECTION'S PREMISE DID NOT HOLD EITHER.** The sentence above the
+table says "most explicitly solicit 'let us know if we missed you' style
+inclusion". Checked 2026-09-21 against the five that still resolve — Grow
+Billion Trees, Unessa, Social for Action, India Is Us, Sakal Relief Fund —
+**none of them does.** Each carries a general `support@` address for its own
+organisation and no editorial contact, no submission form and no nomination
+route. `blog.impaac.org` no longer resolves at all (DNS failure). Swechha
+appears on none of them.
+
+These are SEO content farms: they publish a list once and move on. Cold
+email to a `support@` address is the only route and its odds are poor, so
+**this section is deprioritised below section 2**, which fixes links that
+already exist and already point at this domain.
 
 **What to send each site:** one paragraph — founding year, focus areas
 (air, Yamuna, youth environmental education, the farm), registration status
@@ -68,6 +93,38 @@ teams actually search, and several are free to list on:
   it's free.
 - **GuideStar India / Give.do** — donor-facing NGO transparency directory.
 - **GlobalGiving** — if Swechha wants international donor visibility.
+
+### ★ TWO LISTINGS ALREADY EXIST, AND BOTH LINK TO THE WRONG URL
+
+Found 2026-09-21. Neither needs a pitch — both need a correction, which is a
+smaller ask with better odds than any cold email in section 1.
+
+| listing | links to | what is wrong |
+|---|---|---|
+| [Give.do](https://give.do/discover/19VW/swechha/) | `https://swechha.in/about-us-environment-ngo/` | a pre-migration WordPress path. It resolves, in two 308 hops, but it is not the canonical URL and it keeps a dead structure alive in a high-authority donor directory. Should be `https://swechha.in/about`. |
+| [Benevity](https://causes.benevity.org/causes/356-5702397212154_53d7) | `http://swechha.in` | **http, not https.** Search Console holds `http://www.swechha.in/` as a SEPARATE indexed result taking 1,751 impressions and 14 clicks in the 28 days to 2026-09-18; an inbound link on the wrong protocol is part of why it has not consolidated. Should be `https://swechha.in`. |
+
+**AND GIVE.DO PUBLISHES THREE FIGURES THIS SITE DOES NOT.** Not an SEO
+matter, and more serious than one. Compared 2026-09-21 against what
+swechha.in itself states:
+
+| Give.do says | this site says |
+|---|---|
+| "55,000 trees planted" | **over 50,000** planted and survived, ~5,000 a year |
+| "45,000 workshops conducted across 257 schools" | **over 50,000 students** across **over 250 schools** |
+| focus areas include **Tourism** | journeys — Yamuna Yatra, Gram Anubhav, Cityscapes |
+
+The middle row is the one to fix first: 45,000 workshops across 257 schools
+is 175 workshops per school, which is not a plausible reading of anything.
+It looks like *students* recorded as *workshops*. And "257" is a precision
+this organisation does not claim anywhere — the site says "over 250",
+deliberately. A donor-facing directory attributing unsourced and
+internally-impossible figures to an organisation whose whole site refuses to
+publish a figure it cannot source is a consistency problem before it is a
+search one.
+
+FCRA 231660913 on the Give.do listing **matches** what /about publishes. The
+Societies registration it shows, S-39769, is not a number this site states.
 
 ## 4. Google Business Profile
 
