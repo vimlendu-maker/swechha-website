@@ -55,6 +55,9 @@ export function readMap(): MapRow[] {
   return JSON.parse(readFileSync(join(ROOT, 'docs/legacy/redirect-map.json'), 'utf8')) as MapRow[]
 }
 
+/** The route a destination names, without the `#fragment` it may carry. */
+export const routePart = (d: string): string => d.split('#')[0]
+
 /** Strip the trailing slash WordPress put on every URL. Root stays `/`. */
 export const noSlash = (p: string): string => (p.length > 1 ? p.replace(/\/$/, '') : p)
 
@@ -76,8 +79,17 @@ export function buildLegacyRedirects(rows: MapRow[], siteRoutes: Set<string>): R
     const destination = row.to
 
     /* A 308 to a route that does not exist launders a dead end into a
-       live-looking one, which is worse than the 404 it replaces. */
-    if (!siteRoutes.has(destination)) {
+       live-looking one, which is worse than the 404 it replaces.
+
+       THE FRAGMENT IS NOT PART OF THE ROUTE, so it is stripped before this
+       check and kept in what is emitted. A destination may carry one —
+       `/about#vimlendu-jha` puts a reader who asked for one person on that
+       person rather than at the top of a page sixteen deep — and Next keeps a
+       hash in a `redirects()` destination and returns it in the Location
+       header, which redirects.ts verified against a production build for
+       `/healthy-cities#fellows` rather than assuming it. What must exist is the
+       PAGE; that the anchor exists is asserted by the page's own build. */
+    if (!siteRoutes.has(routePart(destination))) {
       problems.push(`${source} -> ${destination} is not a route on this site`)
       continue
     }
@@ -87,7 +99,7 @@ export function buildLegacyRedirects(rows: MapRow[], siteRoutes: Set<string>): R
       problems.push(`${source} is a live route; redirecting it would shadow the real page`)
       continue
     }
-    if (source === destination) {
+    if (source === routePart(destination)) {
       problems.push(`${source} redirects to itself`)
       continue
     }
@@ -106,7 +118,7 @@ export function buildLegacyRedirects(rows: MapRow[], siteRoutes: Set<string>): R
   /* No chains: a destination that is itself a source costs the reader a second
      round trip, and search engines discount the hop. */
   for (const r of out) {
-    if (sources.has(r.destination)) problems.push(`${r.source} -> ${r.destination}, which is itself a source`)
+    if (sources.has(routePart(String(r.destination)))) problems.push(`${r.source} -> ${r.destination}, which is itself a source`)
   }
 
   if (problems.length) {

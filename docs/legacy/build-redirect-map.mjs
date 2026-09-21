@@ -303,8 +303,42 @@ for (const { type, path } of inv) {
     ;[to, why, conf] = hit
   } else if (type === 'profile') {
     const slug = path.replace(/^\/profile\//, '').replace(/\/$/, '')
-    if (TEAM.has(slug))        { to = '/about'; why = 'staff bio; /about carries the team section'; conf = 'exact' }
-    else if (BOARD.has(slug))  { to = '/about'; why = 'governing body bio; /about carries the board section'; conf = 'exact' }
+    /* ★ A PROFILE WITH AN ANCHOR LANDS ON THE PERSON, NOT ON THE TOP OF /about.
+       /about is long and sixteen people deep, so `/profile/<someone>/ -> /about`
+       delivers a reader who asked for one person to a page where they must go
+       find them. Where the About page gives that person a heading id, the
+       redirect can carry it and the reader arrives at the bio they came for.
+
+       THIS IS NOT A NEW CLAIM ABOUT THE SITE — IT IS THE SITE'S OWN. /about
+       already publishes `"@type":"Person","name":"Vimlendu Jha","url":
+       "https://swechha.in/about#vimlendu-jha"` in its JSON-LD, and the SEO
+       phrase table points there too. Sending the old profile URL anywhere else
+       was the one place the redirect disagreed with the structured data.
+
+       IT MATTERS MORE THAN THE OTHER FIFTEEN. `/profile/vimlendu/` is still a
+       live Google result at position 2.12 for "vimlendu jha" — 16 clicks in the
+       28 days to 2026-09-18, the site's best non-homepage ranking — because the
+       old index has not yet been recrawled. That is the /contact-us/ test again:
+       the redirect a still-ranking URL takes is worth getting right while the
+       ranking lasts.
+
+       THE ANCHOR IS LOOKED UP BY PERSON, NOT BY SLUG, so his governing-body
+       profile (`/profile/vimlendu-jha-2/`, a second entry for the same human)
+       reaches the same heading. Only one entry may carry the id — /about would
+       otherwise ship a duplicate id, which its own gate refuses — and matching
+       on the name is what lets the other entry benefit from it anyway.
+
+       NOBODY ELSE HAS AN ANCHOR TODAY and nothing here says they should: adding
+       `anchor` to a person in data/about-people.json is the whole change, and
+       this branch picks it up with no edit. */
+    const anchored = new Map(
+      [...people.team, ...people.governing_body].filter((p) => p.anchor).map((p) => [p.name, p.anchor]),
+    )
+    const bySlug = new Map([...people.team, ...people.governing_body].map((p) => [p.slug, p]))
+    const anchor = anchored.get(bySlug.get(slug)?.name)
+    const dest = anchor ? `/about#${anchor}` : '/about'
+    if (TEAM.has(slug))        { to = dest; why = anchor ? 'staff bio; /about carries the team section, and this person has a heading of their own on it' : 'staff bio; /about carries the team section'; conf = 'exact' }
+    else if (BOARD.has(slug))  { to = dest; why = anchor ? 'governing body bio; /about carries the board section, and this person has a heading of their own on it' : 'governing body bio; /about carries the board section'; conf = 'exact' }
     /* Kamlika Chandla is the one old profile with nobody behind it: 16 old
        profiles and 16 new people, but the sets differ — the new data has
        naveen-joshua, the old site has her. OWNER, 2026-08-23: she has left.
@@ -375,9 +409,16 @@ for (const [type, from, to, why, confidence] of RECOVERED) {
 const problems = []
 const sources = new Set(rows.filter((r) => r.to).map((r) => r.from))
 for (const r of rows) {
-  if (r.to && !ROUTES.has(r.to)) problems.push(`destination is not a real route: ${r.from} -> ${r.to}`)
-  if (r.to && sources.has(r.to)) problems.push(`chained redirect: ${r.from} -> ${r.to}, itself a source`)
-  if (r.to && r.to === r.from) problems.push(`self-redirect: ${r.from}`)
+  /* THE FRAGMENT IS NOT PART OF THE ROUTE. A destination may carry one —
+     `/about#vimlendu-jha` lands a reader on the person they asked for — and
+     what has to exist is the PAGE. The same split is made in
+     lib/legacy-redirects.ts, which gates the emitted redirects, and in both
+     places the anchor itself is checked by the page's own build rather than
+     here: build-about-page.mjs asserts the id it writes appears exactly once. */
+  const dest = r.to && r.to.split('#')[0]
+  if (r.to && !ROUTES.has(dest)) problems.push(`destination is not a real route: ${r.from} -> ${r.to}`)
+  if (r.to && sources.has(dest)) problems.push(`chained redirect: ${r.from} -> ${r.to}, itself a source`)
+  if (r.to && dest === r.from) problems.push(`self-redirect: ${r.from}`)
   if (r.to === null && r.confidence !== 'none' && r.confidence !== 'RULING')
     problems.push(`no destination but confidence "${r.confidence}": ${r.from}`)
 }

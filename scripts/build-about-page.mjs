@@ -598,8 +598,20 @@ ${RUNGS.map(r => `        <li class="a-rung rl${r.green ? ' is-now' : ''}">
    expert` at /about#vimlendu-jha, and the Person JSON-LD below states the same
    URL, so this heading is the only link target among the sixteen. Giving all
    sixteen an id would also risk the duplicate-id AD-27.51 gate 4 forbids — he
-   appears twice on this page, once on staff and once on the governing body. */
-const anchorFor = (p) => (p.slug === 'vimlendu' ? ' id="vimlendu-jha"' : '');
+   appears twice on this page, once on staff and once on the governing body.
+
+   WHICH PERSON, AND WHAT THE id IS, ARE NOW READ FROM THE PERSON — `anchor` on
+   their entry in data/about-people.json, where both facts sit beside the name
+   they belong to. They used to be a slug and a literal typed here. The reason
+   to move them is that this page is no longer the only reader: the WordPress
+   map sends `/profile/vimlendu/` to `/about#vimlendu-jha` rather than to the
+   top of /about, and a second copy of "which person has an anchor" in
+   docs/legacy/build-redirect-map.mjs is the parallel-list failure this estate
+   keeps paying for. One fact, one place, two derivations. The gate below still
+   asserts the id appears exactly once, so an anchor added to a second person —
+   including his own governing-body entry — fails the build rather than shipping
+   a duplicate id. */
+const anchorFor = (p) => (p.anchor ? ` id="${p.anchor}"` : '');
 
 const person = (p) => `        <li class="a-p">
           <span class="ht a-p-fig"><img class="duo" src="${p.photo.src}" alt="${esc(p.photo.alt)}"${S.imgDim(p.photo.src)} loading="lazy"></span>

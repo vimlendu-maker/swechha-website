@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { designRoutes } from '@/design-routes'
-import { buildLegacyRedirects, readMap, noSlash, type MapRow } from '@/lib/legacy-redirects'
+import { buildLegacyRedirects, readMap, noSlash, routePart, type MapRow } from '@/lib/legacy-redirects'
 
 const routes = new Set(designRoutes().map((r) => r.source))
 const rows = readMap()
@@ -32,8 +32,27 @@ describe('the legacy redirect map', () => {
   })
 
   it('sends every redirect to a route that exists', () => {
-    const bad = built.filter((r) => !routes.has(String(r.destination)))
+    /* `routePart`, not the raw destination: a destination may carry a
+       `#fragment` and what has to exist is the PAGE. See the note in
+       buildLegacyRedirects. */
+    const bad = built.filter((r) => !routes.has(routePart(String(r.destination))))
     expect(bad).toEqual([])
+  })
+
+  it('lands an old profile URL on the person when /about gives them a heading', () => {
+    /* /about already publishes this exact URL as that person's Person.url in
+       its JSON-LD, so a redirect anywhere else was the one place the map
+       disagreed with the site's own structured data. The anchor is data
+       (`anchor` on the person in data/about-people.json), which is why this
+       asserts the shape rather than the name: any person given an anchor gets
+       one of these, and nobody else does. */
+    const anchored = built.filter((r) => String(r.destination).includes('#'))
+    expect(anchored.length).toBeGreaterThan(0)
+    for (const r of anchored) {
+      expect(r.source).toMatch(/^\/profile\//)
+      expect(String(r.destination)).toMatch(/^\/about#[a-z0-9-]+$/)
+      expect(routes.has(routePart(String(r.destination)))).toBe(true)
+    }
   })
 
   it('uses 308, not 301, throughout', () => {
