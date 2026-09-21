@@ -189,7 +189,17 @@ async function analytics(token) {
   const iso = (d) => d.toISOString().slice(0, 10);
   const window = { startDate: iso(start), endDate: iso(end) };
   console.log(`Search performance ${window.startDate} to ${window.endDate} (${days} days)\nProperty ${PROPERTY}`);
-  if (DRY) return console.log('\n--dry-run: nothing sent.');
+  /* ★ NO EARLY RETURN HERE ANY MORE, AND THAT IS THE POINT OF --dry-run.
+     This used to stop before asking Google anything, so `--analytics
+     --dry-run` printed one line and proved nothing — the run that would tell
+     you whether a change to this function works was the same run that
+     appends to the committed record. A pull is READ-ONLY at Google's end;
+     the only side effect is the file written at the bottom, so that is the
+     only thing a dry run needs to skip. `--sitemap` keeps its early return
+     above, because there the request ITSELF is the write.
+     scripts/umami.mjs has always behaved this way — "read everything above,
+     wrote nothing" — and the two pulls should not mean different things by
+     the same flag. */
 
   const q = (body) => api(token, `${WMX}/${SITE}/searchAnalytics/query`,
     { method: 'POST', body: JSON.stringify({ ...window, ...body }) });
@@ -197,6 +207,14 @@ async function analytics(token) {
   const totals = await q({ dimensions: [] });
   const byPage = await q({ dimensions: ['page'], rowLimit: 500 });
   const byQuery = await q({ dimensions: ['query'], rowLimit: 250 });
+  /* ★ THE PAIRING, WHICH NEITHER OF THE TWO ABOVE CAN RECONSTRUCT.
+     `by_page` says a page took 3,783 impressions and 11 clicks. `by_query`
+     says the property was shown for "nepal glof". Neither says WHICH query
+     that page was shown for — and a 0.8% CTR is a question about exactly
+     that: what a reader typed, immediately before deciding this result was
+     not the answer. Without the pairing the only remedy anyone can propose
+     for a bad CTR is a guess at the title. */
+  const byPageQuery = await q({ dimensions: ['page', 'query'], rowLimit: 5000 });
 
   const t = totals.rows?.[0] || { clicks: 0, impressions: 0, ctr: 0, position: 0 };
   const num = (n) => Math.round(n * 100) / 100;
@@ -257,6 +275,55 @@ async function analytics(token) {
     b.clicks += r.clicks; b.impressions += r.impressions;
   }
 
+  /* ── WHICH QUERY LOSES THE CLICK ──────────────────────────────────────
+     Kept to the pages worth diagnosing and their strongest queries, because
+     this file APPENDS FOREVER: the full pairing is thousands of rows a week
+     and would bury the figures it sits next to. 20 pages x 10 queries is the
+     shape of the question — "this page is shown a lot and clicked rarely, for
+     what?" — and the pages are chosen by IMPRESSIONS, not clicks, because a
+     page nobody clicks is the one being asked about.
+
+     ★ COVERAGE IS RECORDED BECAUSE IT IS LOW AND THE OMISSION WOULD MISLEAD.
+     Google anonymises any query it considers rare, and those impressions are
+     counted in the totals while appearing under no query at all. Measured on
+     the 2026-08-22..09-18 window the first time this ran: 824 page/query
+     pairs accounting for 34.27% of 23,375 impressions. Two thirds of the
+     property's impressions name no query at any page. So these rows are the
+     VISIBLE TAIL of a page's demand, never the whole of it, and `coverage`
+     states the share so a later reader cannot mistake one for the other. A
+     page's listed queries summing to far less than its impressions is the
+     normal case, not a bug.
+
+     (The single-dimension `by_query` pull above is anonymised harder still —
+     2,528 of 20,680 on the earlier window, about 12%. The two numbers measure
+     different things and neither is the other's check.) */
+  const pageRows = {};
+  for (const r of byPageQuery.rows || []) {
+    const [page, query] = r.keys;
+    (pageRows[page] ||= []).push({
+      query, clicks: num(r.clicks), impressions: num(r.impressions),
+      ctr: num(r.ctr * 100), position: num(r.position),
+    });
+  }
+  const pairedImpressions = (byPageQuery.rows || []).reduce((a, r) => a + r.impressions, 0);
+  const rankedPages = (byPage.rows || []).slice(0, 20).map((r) => r.keys[0]);
+  const pages = {};
+  for (const page of rankedPages) {
+    const rows = (pageRows[page] || []).sort((a, b) => b.impressions - a.impressions).slice(0, 10);
+    if (rows.length) pages[page] = rows;
+  }
+  const pageQueries = {
+    _: 'The queries each of the 20 most-shown pages was shown for, its 10 strongest each. '
+      + 'Google names only the queries it does not consider rare, so these are a page\'s VISIBLE '
+      + 'demand and not all of it — read `coverage` before treating a page\'s rows as complete.',
+    coverage: {
+      impressions_with_a_named_query: num(pairedImpressions),
+      impressions_total: num(t.impressions),
+      share_percent: t.impressions ? num((pairedImpressions / t.impressions) * 100) : 0,
+    },
+    pages,
+  };
+
   const snapshot = {
     observed_at: new Date().toISOString(),
     window,
@@ -274,6 +341,7 @@ async function analytics(token) {
     top_queries: (byQuery.rows || []).slice(0, 40).map((r) => ({
       query: r.keys[0], clicks: num(r.clicks), impressions: num(r.impressions), position: num(r.position),
     })),
+    page_queries: pageQueries,
   };
 
   /* ── APPEND. Search Console revises its own figures for days, exactly as
@@ -281,6 +349,18 @@ async function analytics(token) {
      those. A snapshot for a window already recorded is added BESIDE the
      earlier one and never on top of it: that is the only way to see later
      whether a number moved after it was quoted. */
+  if (DRY) {
+    console.log(`\n  clicks ${num(t.clicks)}  impressions ${num(t.impressions)}  CTR ${num(t.ctr * 100)}%  position ${num(t.position)}`);
+    console.log(`  page/query pairs ${(byPageQuery.rows || []).length}, coverage ${pageQueries.coverage.share_percent}% of impressions`);
+    for (const [page, rows] of Object.entries(pageQueries.pages).slice(0, 6)) {
+      console.log(`\n    ${page}`);
+      for (const r of rows.slice(0, 5)) {
+        console.log(`      ${String(Math.round(r.impressions)).padStart(5)} impr  ${String(r.clicks).padStart(3)} clk  pos ${String(r.position).padStart(5)}  ${r.query}`);
+      }
+    }
+    return console.log('\n--dry-run: read everything above, wrote nothing.');
+  }
+
   mkdirSync(dirname(PERF), { recursive: true });
   const store = existsSync(PERF)
     ? JSON.parse(readFileSync(PERF, 'utf8'))
@@ -296,6 +376,31 @@ async function analytics(token) {
   for (const [s, b] of Object.entries(bySection).sort((a, c) => c[1].impressions - a[1].impressions)) {
     console.log(`    ${s.padEnd(16)} ${String(b.impressions).padStart(8)} impressions  ${String(b.clicks).padStart(6)} clicks  ${b.pages} pages`);
   }
+  /* THE PAGES WORTH A TITLE REWRITE, PRINTED RATHER THAN LEFT IN THE JSON.
+     Ranked by impressions LOST — impressions x (2% - its CTR) — because the
+     prize is the product of the two, not either alone. 2% is the bar this
+     site's own average position (7.5) would ordinarily earn; a page already
+     above it is not listed, however many impressions it takes. */
+  const BAR = 2;
+  const lossy = Object.entries(pages).map(([page, rows]) => {
+    const p = (byPage.rows || []).find((r) => r.keys[0] === page);
+    const ctr = p && p.impressions ? (p.clicks / p.impressions) * 100 : 0;
+    return { page, rows, ctr, impressions: p?.impressions || 0, lost: (p?.impressions || 0) * (BAR - ctr) / 100 };
+  }).filter((x) => x.lost > 0).sort((a, b) => b.lost - a.lost).slice(0, 5);
+  if (lossy.length) {
+    console.log(`\n  shown often, clicked rarely — the ${lossy.length} pages furthest below a ${BAR}% CTR:`);
+    for (const x of lossy) {
+      console.log(`\n    ${x.page}`);
+      console.log(`      ${Math.round(x.impressions)} impressions at ${x.ctr.toFixed(2)}% — about ${Math.round(x.lost)} clicks below the bar`);
+      console.log('      shown for:');
+      for (const r of x.rows.slice(0, 5)) {
+        console.log(`        ${String(Math.round(r.impressions)).padStart(5)} impr  ${String(r.clicks).padStart(3)} clk  pos ${String(r.position).padStart(5)}  ${r.query}`);
+      }
+    }
+    console.log(`\n    Query coverage ${pageQueries.coverage.share_percent}% — Google names only the queries it does not`);
+    console.log('    consider rare, so each list is the visible part of that page\'s demand.');
+  }
+
   console.log(`\n  ${store.snapshots.length} snapshot(s) in data/seo/search-performance.json`);
   return snapshot;
 }
