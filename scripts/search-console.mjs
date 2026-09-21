@@ -285,12 +285,18 @@ async function analytics(token) {
 
      ★ COVERAGE IS RECORDED BECAUSE IT IS LOW AND THE OMISSION WOULD MISLEAD.
      Google anonymises any query it considers rare, and those impressions are
-     counted in the totals while appearing under no query at all. On the
-     2026-09-18 window only 2,528 of 20,680 impressions — about 12% — had a
-     query Google would name. So these rows are the VISIBLE TAIL of a page's
-     demand, never the whole of it, and `coverage` states the share so a later
-     reader cannot mistake one for the other. A page's listed queries summing
-     to far less than its impressions is the normal case, not a bug. */
+     counted in the totals while appearing under no query at all. Measured on
+     the 2026-08-22..09-18 window the first time this ran: 824 page/query
+     pairs accounting for 34.27% of 23,375 impressions. Two thirds of the
+     property's impressions name no query at any page. So these rows are the
+     VISIBLE TAIL of a page's demand, never the whole of it, and `coverage`
+     states the share so a later reader cannot mistake one for the other. A
+     page's listed queries summing to far less than its impressions is the
+     normal case, not a bug.
+
+     (The single-dimension `by_query` pull above is anonymised harder still —
+     2,528 of 20,680 on the earlier window, about 12%. The two numbers measure
+     different things and neither is the other's check.) */
   const pageRows = {};
   for (const r of byPageQuery.rows || []) {
     const [page, query] = r.keys;
