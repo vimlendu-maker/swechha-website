@@ -11,8 +11,8 @@
     "note": "fallback run — the CAAQMS live feed did not serve: did not answer: unreachable via fetch (fetch failed (Connect Timeout Error (attempted address: airquality.cpcb.gov.in:443, timeout: 10000ms))) and via curl (curl transport failed: curl: (28) Failed to connect to airquality.cpcb.gov.in port 443 after 15002 ms: Timeout was reached) and via relay (relay answered HTTP 502 with no upstream status — the relay itself refused or does not exist yet, so the source has not been asked)"
   },
   "derivation": "AQI read from CPCB's own published per-pollutant sub-indexes — this feed carries the index, not concentrations, and nothing here recomputes it. A station's AQI is its worst sub-index, and the headline reading is the WORST MONITOR of those reporting, named, not a city average. CPCB's own city figure is the mean of the stations and is carried separately as city_mean. Concentrations shown are implied back from the sub-index using the breakpoint table in \"About National Air Quality Index\", never measured.",
-  "state_label": "LIVE",
-  "observation_age_hours": 2,
+  "state_label": "PERIODIC",
+  "observation_age_hours": 3.3,
   "observed": {
     "y": 2026,
     "m": 9,
@@ -22,7 +22,7 @@
     "raw": "23-09-2026 05:00:00"
   },
   "fetched": {
-    "epochMs": 1790127131760
+    "epochMs": 1790131669595
   },
   "time": {
     "cpcb_observed_ist": "23-09-2026 05:00:00",
@@ -33,9 +33,9 @@
       "hh": 5,
       "mi": 0
     },
-    "swechha_checked_utc": "2026-09-23T01:32:11.758Z",
+    "swechha_checked_utc": "2026-09-23T02:47:49.594Z",
     "swechha_first_saw_utc": "2026-09-23T00:32:05.933Z",
-    "observation_age_minutes_at_check": 120,
+    "observation_age_minutes_at_check": 198,
     "note": "cpcb_observed_ist is when the AIR was measured (CPCB’s own stamp, IST wall-clock text, never converted); swechha_checked_utc is when WE ASKED CPCB (UTC ISO). They are different clocks and different facts, and must never be swapped or mixed."
   },
   "limits": {
@@ -1131,8 +1131,8 @@
         "PM2.5",
         "SO2",
         "OZONE",
-        "NO2",
-        "CO"
+        "CO",
+        "NO2"
       ],
       "notReported": [
         "PB"
@@ -1183,15 +1183,6 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NO2": {
-          "sub": 5,
-          "subMin": 1,
-          "subMax": 10,
-          "averaging": "24-hour",
-          "impliedConc": 4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "CO": {
           "sub": 57,
           "subMin": 51,
@@ -1199,6 +1190,15 @@
           "averaging": "8-hour",
           "impliedConc": 1.2,
           "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 5,
+          "subMin": 1,
+          "subMax": 10,
+          "averaging": "24-hour",
+          "impliedConc": 4,
+          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
       },
@@ -2758,8 +2758,8 @@
         "PM10",
         "NO2",
         "NH3",
-        "OZONE",
         "PM2.5",
+        "OZONE",
         "SO2",
         "CO"
       ],
@@ -2794,21 +2794,21 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "OZONE": {
-          "sub": 3,
-          "subMin": 2,
-          "subMax": 5,
-          "averaging": "8-hour",
-          "impliedConc": 3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM2.5": {
           "sub": 138,
           "subMin": 80,
           "subMax": 233,
           "averaging": "24-hour",
           "impliedConc": 71.8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 3,
+          "subMin": 2,
+          "subMax": 5,
+          "averaging": "8-hour",
+          "impliedConc": 3,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -4241,7 +4241,7 @@
   ],
   "check": {
     "status": "same_observation",
-    "at": "2026-09-23T01:32:11.758Z",
+    "at": "2026-09-23T02:47:49.594Z",
     "served_by": "data.gov.in mirror (resource 3b01bcb8)",
     "previous_observation": "23-09-2026 05:00:00",
     "reason": null
