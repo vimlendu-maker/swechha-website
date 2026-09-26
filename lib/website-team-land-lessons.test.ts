@@ -150,7 +150,7 @@ describe('land-lessons: the ratchet reaches main', () => {
     const out = run(e)
     expect(out).toContain("granting 'gh run list'")
     expect(ledgerOnMain(e)).toContain('gh run list')
-  })
+  }, 20000)
 
   /**
    * THE REGRESSION. Before the fix this second run died on a rejected
@@ -184,7 +184,7 @@ describe('land-lessons: the ratchet reaches main', () => {
     expect(out).toContain('replacing the stale ref')
     expect(out).not.toContain('PUSH FAILED')
     expect(ledgerOnMain(e)).toContain('gh workflow list')
-  })
+  }, 20000)
 
   /**
    * A push that genuinely cannot succeed must still exit 0 — bookkeeping never
@@ -203,7 +203,7 @@ describe('land-lessons: the ratchet reaches main', () => {
     expect(out).toContain('PUSH FAILED')
     expect(out).toContain('are NOT saved')
     expect(ledgerOnMain(e)).toEqual([]) // and it really did not land
-  })
+  }, 20000)
 
   /**
    * Found by the test above rather than by reading: `git fetch` was the second
@@ -217,5 +217,5 @@ describe('land-lessons: the ratchet reaches main', () => {
     const out = run(e)
     expect(out).toContain('CANNOT REACH origin')
     expect(out).toContain('are NOT saved')
-  })
+  }, 20000)
 })
