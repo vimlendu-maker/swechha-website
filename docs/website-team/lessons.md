@@ -277,3 +277,11 @@ Five `#today` items sat open for five days. The instinct is to re-diagnose them.
 `scripts/air-status.mjs:113` raises a problem from page-observation age alone and prints *"The pipeline is not publishing."* Today that sentence was false: `/api/air` returned the same 05:00 IST observation the page shows, and the last run succeeded 46 minutes earlier. CPCB was slow; the pipeline was fine. Because the script exits 1, `infra:status` renders the whole Air/climate row as UNKNOWN — so a slow upstream hides a real failure behind the same label.
 
 **Do:** a monitor may report a symptom but must not assert a cause it has not separated from the alternatives. Where `air-status` already computes the site-vs-source comparison (line 132), the page-age problem should name the upstream when there is no gap. And note per the 16 Sep entry: resolve the underlying fact before declaring a monitor wrong — I checked `/api/air` and the run conclusion before writing this.
+
+## 2026-09-26 — `git log --oneline --all` finding a commit does not mean it is on `main`; check the checkout, not the search scope
+
+This run's checkout is `HEAD detached at origin/main`, so anything `git log` or `Read` returns from it genuinely is on `main` — worth stating explicitly in a report (as I did for `vercel.json`, `.gitignore`, and the photo-optimisation commits) rather than just citing a commit hash, because the 2026-09-13 lesson recorded exactly this checkout-vs-branch confusion going the other way (a fix described as "done" that was only on an unmerged PR). Citing which ref you actually read is cheap and closes that gap every time.
+
+## 2026-09-26 — A test that fails once under full-suite load and passes twice afterward is a flake to fix, not a regression to report
+
+`lib/website-team-land-lessons.test.ts` timed out at vitest's 5000ms default during a `npm test` run doing real subprocess git I/O (clone/merge/commit/push), then passed both isolated and on an immediate full-suite re-run. Per the 2026-09-16 lesson ("resolve the underlying fact before calling a monitor wrong"), the same discipline applies to a red test: rerun before treating one red line as a regression. The fix (an explicit longer timeout on the two subprocess-heavy tests) is cheap and prevents this from someday blocking an auto-merge PR on pure bad luck.
