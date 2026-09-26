@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>in.swechha.air-local</string>
+
+    <!-- The Delhi air fallback publisher. See docs/AIR-LOCAL-PUBLISHER.md.
+         Each run resets its own worktree to origin/main FIRST and only then
+         runs the script, so it always executes the merged version and never a
+         file bash is halfway through reading. The worktree belongs to this job
+         alone; nothing else may keep uncommitted work in it. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-c</string>
+        <string>cd /Users/administrator/.swechha-ai/air-worktree &amp;&amp; git fetch -q origin main &amp;&amp; git reset -q --hard origin/main &amp;&amp; git clean -q -fd data public design &amp;&amp; exec /bin/bash scripts/air-local-publish.sh</string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+        <key>HOME</key>
+        <string>/Users/administrator</string>
+    </dict>
+
+    <!-- Minute 40 of every hour: CPCB stamps an hour 15 to 35 minutes after it
+         ends, so :40 IST catches the hour just published. The script itself
+         stands down between 00:00 and 05:00 IST, as the cloud job does.
+         launchd reruns a calendar slot missed while the machine slept, once. -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Minute</key><integer>40</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/administrator/.swechha-ai/logs/air-local.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/administrator/.swechha-ai/logs/air-local.log</string>
+</dict>
+</plist>
