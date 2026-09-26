@@ -71,3 +71,46 @@ for (const [mn, mx, av, want, why] of CASES) {
  */
 export const AQI_SCALE_MAX = 500;
 export const isOffScale = (sub) => sub != null && sub > AQI_SCALE_MAX;
+
+/* ── A GAS CHANNEL NOTHING AT ITS OWN STATION CORROBORATES — AD-42E ────────
+   Moved here from fetch-india.mjs, where it was judged ONCE PER CITY, on the
+   city's worst station only. That was right for the flag and wrong for the
+   fallback: when the worst station was suspect, the city was re-ranked on
+   THAT station's particulate — not on the city's. Measured on the committed
+   snapshot of 25 September 2026, 19:00 IST: Delhi's worst station, DU North
+   Campus, read NO₂ 154 over a PM10 of 58, so Delhi was ranked on 58, 143rd in
+   India, while Wazirpur — another Delhi monitor in the same hour — read PM10
+   134. The mean of Delhi's 44 monitors (75) sat ABOVE the "worst monitor"
+   (58), which a worst monitor cannot do. AD-42E's own words are "a suspect
+   city is ranked on its particulates": the city's, so the rule is applied to
+   every station and the city takes the worst figure it can stand behind.
+
+   Same test as lib/air.ts (`plausibility`) and the hero: a gas governs, it is
+   above 100, and the worst particulate at the SAME station is under half of
+   it. A gas-only station cannot be judged by this rule and is not suspect by
+   it — it has no particulate to fall back to, which fetch-india handles. */
+export const GASES = new Set(['OZONE', 'CO', 'NO2', 'SO2', 'NH3']);
+export function gasUncorroborated({ aqi, governing, pmSub }) {
+  return GASES.has(governing) && aqi > 100 && pmSub != null && pmSub >= 0 && pmSub < aqi / 2;
+}
+/** The figure a station can be ranked on: its AQI, or its worst particulate
+    when its governing gas is uncorroborated. Null when it has nothing. */
+export function rankableFigure(st) {
+  if (st.aqi == null || st.aqi < 0) return null;
+  return gasUncorroborated(st) ? st.pmSub : st.aqi;
+}
+
+{
+  const cases = [
+    [{ aqi: 154, governing: 'NO2', pmSub: 58 }, 58, 'DU North Campus, 25 Sep 2026 — NO₂ over PM10 58'],
+    [{ aqi: 134, governing: 'PM10', pmSub: 134 }, 134, 'Wazirpur — particulate governs, taken as read'],
+    [{ aqi: 102, governing: 'CO', pmSub: 60 }, 102, 'Ashok Vihar CO 102 over PM10 60 — not under half, stands'],
+    [{ aqi: 158, governing: 'OZONE', pmSub: -1 }, 158, 'gas-only station — nothing to fall back to, not judged here'],
+  ];
+  for (const [st, want, why] of cases) {
+    if (rankableFigure(st) !== want) {
+      console.error(`RANKABLE-FIGURE TEST IS WRONG: expected ${want} (${why}). Refusing to run.`);
+      process.exit(1);
+    }
+  }
+}

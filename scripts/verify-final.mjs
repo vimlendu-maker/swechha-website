@@ -83,7 +83,9 @@ export const SITUATIONS = [
     kind: 'situation', famId: 'air', file: 'situation-air.html', route: '/now/air',
     title: 'Delhi’s air', h1: 'Delhi’s air',
     generator: 'scripts/build-situation-air.mjs', npm: 'build:situation-air',
-    bands: 9, money: true,
+    /* 11 since air hub v2 (26 Sep 2026): + `rules` (standards and GRAP) and
+       + `questions` (the standalone answers). */
+    bands: 11, money: true,
     states: ['PERIODIC'],
     subject: 'AQI against CPCB’s own limit of 100, read from CPCB’s published sub-indexes.',
     reading: () => [String(J('air-delhi.json').city_reading.aqi)],

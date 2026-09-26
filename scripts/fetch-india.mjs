@@ -53,7 +53,7 @@ import {
 import { recordObservation } from './lib/air-history.mjs';
 /* isStuck, with the self-check that runs on import. This file used to carry
    its own copy and NOT the test — see scripts/lib/air-rules.mjs (AD-47). */
-import { isStuck } from './lib/air-rules.mjs';
+import { isStuck, rankableFigure, gasUncorroborated, GASES } from './lib/air-rules.mjs';
 
 const KEY = process.env.DATA_GOV_IN_KEY;
 const OUT = resolve(process.argv[2] || 'data/air-india.json');
@@ -370,91 +370,67 @@ for (const s of stations.values()) {
   const c = cities.get(s.city);
   c.stations++;
   c.sum = (c.sum || 0) + s.aqi;
-  /* ★ THE RANKED FIGURE IS THE CITY'S WORST MONITOR — AD-42C, and it has to
-     match the hero. Delhi's headline on the homepage is its worst monitor;
-     if this table ranked Delhi by its mean, the hero and the panel under it
-     would print two different numbers for the same city on the same screen,
-     which is the exact defect D-21.6 was written to stop.
-     The mean is kept as `meanAqi` — CPCB's own city definition, the
-     comparable number, and the tripwire for the double conversion. */
+  /* The mean is kept as `meanAqi` — CPCB's own city definition, the
+     comparable number, and the tripwire for the double conversion. It is the
+     mean of every station's AQI AS PUBLISHED, suspect or not, because that is
+     what CPCB averages. */
   c.meanAqi = Math.round(c.sum / c.stations);
-  if (s.aqi > (c.worstAqi ?? -1)) {
-    c.worstAqi = s.aqi; c.station = s.station; c.governing = s.governing; c.pmSub = s.pmSub;
-    c.pmGoverning = s.pmGoverning ?? null;
-    /* The governing station's POSITION travels with the row, because a
-       suspect reading has to be locatable: verify-air-crosscheck.mjs asks an
-       independent network what it sees AT THIS POINT, and its whole defence
-       against a false corroboration is the distance between the two. A row
-       without coordinates cannot be adjudicated, only believed. */
-    c.lat = s.lat; c.lng = s.lng;
+  /* THE RAW WORST, kept so a set-aside gas figure can still be printed. */
+  if (s.aqi > (c.worstAqi ?? -1)) { c.worstAqi = s.aqi; c.raw = s; }
+  /* ★ THE RANKED FIGURE IS THE CITY'S WORST MONITOR — AD-42C, and it has to
+     match the hero — taken over the figure each station can be RANKED on
+     (scripts/lib/air-rules.mjs `rankableFigure`, AD-42E). Judged per station,
+     not once on the city's worst station, so a suspect gas at one monitor
+     hands the city to its next-worst trustworthy monitor, not to that one
+     monitor's own particulate. */
+  const r = rankableFigure(s);
+  if (r != null && r > (c.aqi ?? -1)) {
+    c.aqi = r; c.pick = s;
   }
-  c.aqi = c.worstAqi;
 }
 /* SUSPECT, NOT SUPPRESSED. A gas standing far above clean particulates is
    either a genuine local source or an uncalibrated channel, and this feed
    cannot tell them apart. Leh ranked SECOND in India on one ozone channel
-   beside a PM2.5 of 13. The row stays; the doubt travels with it. */
-const GASES = new Set(['OZONE', 'CO', 'NO2', 'SO2', 'NH3']);
+   beside a PM2.5 of 13. The row stays; the doubt travels with it.
+
+   ★ AND A GAS-ONLY STATION CANNOT FALL BACK (AD-42E). If there is no
+   particulate at all there is nothing to fall back TO, and publishing
+   "clean" for a station that never measured particulates would be inventing
+   a reading. Those keep the gas figure and stay flagged — an error is not a
+   zero, at this level too. */
 for (const c of cities.values()) {
-  /* ★ pmSub < 0 IS ALSO SUSPECT — the AD-45 audit found AD-42E's E-4 branch
-     DEAD. E-4 rules that a gas-only station over the limit "keeps the gas
-     figure and stays flagged" — but suspicion used to REQUIRE a particulate
-     to compare against (`pmSub >= 0 && pmSub < worst/2`), so a station
-     reporting no particulate at all could never be flagged, and the
-     gas-only `else if (c.suspect)` below was unreachable. That published
-     unverifiable gas readings with no doubt attached, which is the opposite
-     of the ruling. A gas over the limit with NOTHING at the station to
-     corroborate it is not less suspect than one beside clean particulates —
-     it is the same claim with even less standing behind it. */
-  c.suspect = !!(GASES.has(c.governing) && c.worstAqi > AQI_LIMIT
-    && (c.pmSub < 0 || c.pmSub < c.worstAqi / 2));
-  /* The reason is written BEFORE the fallback swaps c.governing, and it names
-     both numbers — the one we rank on and the one we have set aside. A flag
-     that hides the figure it is flagging is not a flag. */
-  c.suspectReason = !c.suspect ? null
-    : (c.pmSub >= 0
-      ? `The ${c.governing} channel here reads ${c.worstAqi}, but the worst particulate at the `
-        + `same station reads only ${c.pmSub}, and no independent monitor is near enough to say `
-        + `which is right. This city is ranked on its particulates; the ${c.governing} figure `
-        + `of ${c.worstAqi} is published but not ranked.`
-      : `The ${c.governing} channel here reads ${c.worstAqi} and the station reports no `
-        + `particulate at all, so nothing at the station can corroborate it. The figure is `
-        + `published with that doubt attached — there is no particulate to rank on instead.`);
-
-  /* ── A SUSPECT CITY IS RANKED ON ITS PARTICULATES — AD-42E ──────────────
-     Owner's question: for a suspicious reading, can we just take PM2.5?
-     Yes, with one correction: the worst PARTICULATE, not PM2.5 alone. Of 507
-     stations, 453 report PM2.5 and 7 report PM10 with no PM2.5 — those seven
-     would go dark under a strict PM2.5 rule, and a station going dark is the
-     error-as-absence this repo keeps ruling against. `pmSub` is already the
-     worst of the two.
-
-     WHY FALL BACK AT ALL. These are readings we cannot verify and cannot
-     refute: one gas channel, far above clean particulates at the same station,
-     with no independent monitor near enough to adjudicate (Leh's nearest WAQI
-     station is 300km away, in Tibet). Publishing 158 asserts Leh has bad air.
-     Ranking it 4th in India asserts it is among the country's worst. On the
-     evidence we actually hold — PM2.5 17, PM10 26, among the cleanest in
-     India — that is the less defensible of the two claims.
-
-     ★ NOTHING IS DELETED. The gas figure keeps its own field, its name and its
-     doubt, and the page prints it. B-3 stands: we are not throwing away a
-     government number, we are declining to RANK a city on a channel we cannot
-     stand behind. The two are different acts.
-
-     ★ AND A GAS-ONLY STATION CANNOT FALL BACK. If there is no particulate at
-     all there is nothing to fall back TO, and publishing "clean" for a station
-     that never measured particulates would be inventing a reading. Those keep
-     the gas figure and stay flagged — an error is not a zero, at this level
-     too. */
-  if (c.suspect && c.pmSub >= 0) {
-    c.gas = { pollutant: c.governing, aqi: c.worstAqi, ranked: false };
-    c.aqi = c.pmSub;
-    c.governing = c.pmGoverning ?? c.governing;
-    c.basis = 'particulate-only — the gas channel above it could not be verified';
-  } else if (c.suspect) {
+  const p = c.pick, w = c.raw;
+  const swapped = gasUncorroborated(p);   // this station is ranked on its particulate
+  c.station = p.station; c.governing = swapped ? (p.pmGoverning ?? p.governing) : p.governing; c.pmSub = p.pmSub;
+  c.pmGoverning = p.pmGoverning ?? null;
+  /* The governing station's POSITION travels with the row, because a
+     suspect reading has to be locatable: verify-air-crosscheck.mjs asks an
+     independent network what it sees AT THIS POINT. */
+  c.lat = p.lat; c.lng = p.lng;
+  const setAside = gasUncorroborated(w) && w.aqi > c.aqi;
+  const gasOnly = !swapped && GASES.has(p.governing) && p.aqi > AQI_LIMIT && !(p.pmSub >= 0);
+  c.suspect = setAside || gasOnly;
+  if (setAside) {
+    const pickName = String(p.station).split(',')[0].trim();
+    const where = w === p ? 'its own particulates' : `${pickName}`;
+    const rawName = String(w.station).split(',')[0].trim();
+    c.suspectReason = `The ${w.governing} channel at ${rawName} reads ${w.aqi}, but the worst particulate at the `
+      + `same station reads only ${w.pmSub}, and no independent monitor is near enough to say which is right. `
+      + `This city is ranked on the worst figure it can stand behind — ${where}, ${c.aqi} — and the `
+      + `${w.governing} figure of ${w.aqi} is published but not ranked.`;
+    c.gas = { pollutant: w.governing, aqi: w.aqi, station: w.station, ranked: false };
+    c.basis = w === p
+      ? 'particulate-only — the gas channel above it could not be verified'
+      : 'worst corroborated monitor — a gas channel at another monitor could not be verified';
+  } else if (gasOnly) {
+    c.suspectReason = `The ${p.governing} channel here reads ${p.aqi} and the station reports no `
+      + `particulate at all, so nothing at the station can corroborate it. The figure is `
+      + `published with that doubt attached — there is no particulate to rank on instead.`;
     c.basis = 'gas channel, unverified — this station reports no particulate to fall back to';
+  } else {
+    c.suspectReason = null;
   }
+  delete c.pick; delete c.raw;
 }
 
 const ranked = [...cities.values()]
@@ -492,11 +468,17 @@ const OBS_AGE_MIN = (() => {
 })();
 
 const delhi = ranked.find(c => c.city.toLowerCase() === 'delhi') ?? null;
-// The airshed argument: how many of the cities immediately behind Delhi are
-// its own neighbours. Computed from the state field, not from a typed list.
-const NCR_STATES = ['Haryana', 'Uttar Pradesh', 'Delhi', 'Rajasthan'];
+/* The neighbour count: how many of the cities immediately behind Delhi are in
+   the National Capital Region. ★ THIS USED TO BE FOUR WHOLE STATES —
+   Haryana, Uttar Pradesh, Delhi and Rajasthan — so on 25 September 2026 the
+   "neighbours in its own airshed" were Khora, Sawai Madhopur, Agra and
+   Vrindavan: three of the four are not in NCR, and Sawai Madhopur is 150 km
+   past its edge. NCR is a list of districts (data/ncr.json, from the NCR
+   Planning Board), so the count reads that list and nothing wider. */
+const NCR_CITIES = new Set(JSON.parse(readFileSync(resolve('data/ncr.json'), 'utf8'))
+  .districts.flatMap((d) => d.cities));
 const behind = delhi ? ranked.slice(delhi.rank, delhi.rank + 12) : [];
-const neighbours = behind.filter(c => NCR_STATES.includes(String(c.state)));
+const neighbours = behind.filter(c => NCR_CITIES.has(c.city));
 
 const out = {
   subject: 'Every city reporting to CPCB, ranked, on CPCB\'s own scale',
@@ -554,7 +536,7 @@ const out = {
     neighbours: neighbours.length,
     names: neighbours.map(c => c.city),
     reading: `Delhi is ${delhi.rank === 1 ? 'first' : 'ranked ' + delhi.rank}. `
-      + `${neighbours.length} of the next ${behind.length} are in its own airshed.`,
+      + `${neighbours.length} of the next ${behind.length} are in the National Capital Region.`,
   } : null,
   caveats: [
     'A city\'s figure here is its WORST MONITOR, so a city with forty monitors has forty chances to produce a high one and a city with a single monitor has one. That cuts the opposite way from the mean: a well-monitored city ranks WORSE, not better, and a city with one monitor is a single reading wearing a city\'s name. Read `stations` before reading the rank, and `meanAqi` for the figure CPCB itself publishes.',
