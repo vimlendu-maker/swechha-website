@@ -76,7 +76,7 @@ describe('fetch-india.mjs replayed on the AD-42E fixture', () => {
 
   it('…while the gas figure keeps its name, its value and its doubt (E-3)', () => {
     const leh = city('Leh')
-    expect(leh.gas).toEqual({ pollutant: 'OZONE', aqi: 195, ranked: false })
+    expect(leh.gas).toEqual({ pollutant: 'OZONE', aqi: 195, station: 'Skara Yokma, Leh - LPCC', ranked: false })
     // The flag names BOTH numbers — a flag that hides the figure it is
     // flagging is not a flag.
     expect(leh.suspectReason).toContain('195')
@@ -87,6 +87,21 @@ describe('fetch-india.mjs replayed on the AD-42E fixture', () => {
     const leh = city('Leh')
     expect(leh.aqi).not.toBe(188)
     expect(leh.gas!.aqi).not.toBe(188)   // even the set-aside figure is the ozone, not the dead CO
+  })
+
+  it('a suspect worst station hands the city to its next-worst CORROBORATED monitor, not to its own particulate', () => {
+    // 25 September 2026: Delhi was ranked on DU North Campus's own PM10 58 —
+    // 143rd in India — while Wazirpur read PM10 134 in the same hour, and the
+    // CPCB mean (75) sat above the "worst monitor". A worst monitor cannot.
+    const tw = city('Twinmonitor')
+    expect(tw.aqi).toBe(134)
+    expect(tw.station).toBe('Wazirpur, Twinmonitor - DPCC')
+    expect(tw.governing).toBe('PM10')
+    expect(tw.suspect).toBe(true)
+    expect(tw.gas).toEqual({ pollutant: 'NO2', aqi: 154, station: 'North Campus, Twinmonitor - IITM', ranked: false })
+    expect(tw.basis).toContain('worst corroborated monitor')
+    expect(tw.meanAqi).toBe(144)          // CPCB's mean still averages every station AS PUBLISHED
+    expect(tw.aqi).toBeGreaterThanOrEqual(58)
   })
 
   it('a GAS-ONLY city keeps its gas figure AND stays flagged (E-4)', () => {
@@ -100,6 +115,6 @@ describe('fetch-india.mjs replayed on the AD-42E fixture', () => {
   })
 
   it('the ranking reflects the fallback: the unverifiable gas city sits above Delhi, Leh at the bottom', () => {
-    expect(out.cities.map((c) => c.city)).toEqual(['Gasville', 'Delhi', 'Leh'])
+    expect(out.cities.map((c) => c.city)).toEqual(['Gasville', 'Delhi', 'Twinmonitor', 'Leh'])
   })
 })
