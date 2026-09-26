@@ -1085,7 +1085,50 @@ if git -C "$VAULT" diff --quiet --exit-code -- "$OUT" 2>/dev/null && \
    [ -z "$(git -C "$VAULT" status --porcelain -- "$OUT")" ]; then
   echo "no change to record"
 else
-  git -C "$VAULT" add "$OUT"
-  git -C "$VAULT" commit -q -m "website team: scheduled run $STAMP"
-  git -C "$VAULT" push -q origin main && echo "pushed record to vault"
+  # ★ THE VAULT IS A SHARED CHECKOUT AND THIS BLOCK USED TO ASSUME IT WAS NOT.
+  #   Measured 2026-09-18: four days of records — two website runs and two
+  #   fundraising ones — sat committed on `spec/ai-os-2.0-agent-kind-taxonomy`,
+  #   pushed nowhere, because a human had left the vault on that branch. These
+  #   are the files `org status` cites as each run's own account, so the
+  #   estate's accountability trail for 16-17 Sep existed in one working copy.
+  #
+  #   Three separate faults, all of them in three lines:
+  #
+  #   1. IT COMMITTED TO HEAD AND PUSHED A DIFFERENT REF. `commit` takes
+  #      whatever branch is checked out; `push origin main` then pushed main,
+  #      which the commit had never touched. The push SUCCEEDED, having sent
+  #      nothing, so `&&` printed "pushed record to vault" over a record that
+  #      had gone nowhere. An absence that reads as a success.
+  #   2. IT COMMITTED THE WHOLE INDEX. `commit` with no pathspec takes
+  #      everything staged, so vault 2a71507 — a website run — swept three
+  #      unrelated fundraising documents another session had staged, under the
+  #      website's message. Same hazard as `git add -A` in a shared checkout.
+  #   3. THE MESSAGE HARDCODED "website team" though run.sh is ONE runner
+  #      shared by both departments ($DEPARTMENT, set at the top). Every
+  #      fundraising run has been misattributed in the vault's history.
+  #
+  #   The refusal is deliberate and it is not a loss: the record is already
+  #   written to disk, $RECORDS is department-scoped, and the next run on a
+  #   correct checkout commits the whole directory — so a record stranded by a
+  #   branch left switched lands by itself once the branch is put back. What
+  #   must never happen again is committing it somewhere nobody looks and
+  #   reporting success.
+  VBRANCH="$(git -C "$VAULT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+  if [ "$VBRANCH" != "main" ]; then
+    echo "run.sh: vault is on '$VBRANCH', not main — record NOT committed." \
+         "It is on disk at $OUT and will land on the next run once the vault" \
+         "is back on main." >&2
+    ev vault_record_stranded branch="$VBRANCH"
+  else
+    # Pathspec on BOTH add and commit: this department's own records and
+    # nothing else, whatever another session may have left staged.
+    git -C "$VAULT" add -- "$RECORDS"
+    git -C "$VAULT" commit -q -m "$DEPARTMENT team: scheduled run $STAMP" -- "$RECORDS"
+    if git -C "$VAULT" push -q origin main; then
+      echo "pushed record to vault"
+    else
+      echo "run.sh: vault push FAILED — the record is committed locally only" >&2
+      ev vault_push_failed
+    fi
+  fi
 fi
