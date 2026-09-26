@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Catch-up for the FUNDRAISING department's daily working run (audit defect 3).
+
+  Same runner, same rules as com.swechha.website-team-catchup.plist beside it:
+  every 30 minutes, silent unless today's 10:00 window was missed and the Mac is
+  genuinely awake, online and authenticated. It lives here, not in
+  swechha-fundraising, because the runner it calls lives here.
+
+  Install:
+      cp scripts/website-team/com.swechha.fundraising-team-catchup.plist ~/Library/LaunchAgents/
+      launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.swechha.fundraising-team-catchup.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.swechha.fundraising-team-catchup</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-lc</string>
+    <string>TEAM_DEPARTMENT=fundraising TEAM_REPO="$HOME/swechha-fundraising" "$HOME/swechha-website/scripts/website-team/snapshot-run.sh" work --catch-up</string>
+  </array>
+
+  <key>StartInterval</key>
+  <integer>1800</integer>
+
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/swechha-fundraising-team-catchup.out</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/swechha-fundraising-team-catchup.err</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>ORG_JOB_LABEL</key>
+    <string>com.swechha.fundraising-team-catchup</string>
+    <key>TEAM_CATCHUP_OF</key>
+    <string>com.swechha.fundraising-team-work</string>
+  </dict>
+</dict>
+</plist>

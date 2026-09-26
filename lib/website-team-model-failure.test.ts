@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { readFileSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 
 /**
  * THE RUNNER DIED TWICE TODAY AND SAID NOTHING.
@@ -41,7 +42,10 @@ describe('model-failure.py classifies why the model call failed', () => {
   })
 
   it('names an auth failure, which halts rather than retries', () => {
-    expect(run('Invalid API key · Please run /login')).toContain('reason=auth')
+    // org-claude's vocabulary, so a refusal and a failure name one condition.
+    expect(run('Invalid API key · Please run /login')).toContain('reason=auth-expired')
+    expect(run('Not logged in · Please run /login')).toContain('reason=auth-missing')
+    expect(run('403 Forbidden: unauthorized')).toContain('reason=auth')
   })
 
   it('names a network failure', () => {
@@ -69,12 +73,69 @@ describe('model-failure.py classifies why the model call failed', () => {
   })
 })
 
+/**
+ * ★ THE ERROR IS ON STDOUT. From 2026-09-22 every run failed with
+ *   `{"is_error": true, "result": "Failed to authenticate: …"}` on stdout and an
+ *   EMPTY stderr, and this classifier — reading stderr only — said `unknown`
+ *   seven days running. These are the real shapes the CLI printed.
+ */
+describe('model-failure.py reads the reply on stdout too', () => {
+  const withStdout = (stdout: string, stderr = '', code = '1') => {
+    const dir = mkdtempSync(join(tmpdir(), 'mf-'))
+    const f = join(dir, 'out.json')
+    writeFileSync(f, stdout)
+    return execFileSync('python3', [SCRIPT, code, '--stdout', f], { input: stderr, encoding: 'utf8' }).trim()
+  }
+  const isError = (stdout: string) =>
+    execFileSync('python3', [SCRIPT, '--is-error'], { input: stdout, encoding: 'utf8' }).trim()
+
+  it('names an expired OAuth session from the is_error result, not `unknown`', () => {
+    const out = withStdout(JSON.stringify({
+      type: 'result', is_error: true,
+      result: 'Failed to authenticate: OAuth session expired and could not be refreshed',
+    }))
+    expect(out).toContain('reason=auth-expired')
+    expect(out).toContain('source=stdout')
+    expect(out).toContain('stderr=empty')
+    expect(out).not.toContain('reason=unknown')
+  })
+
+  it('names a missing login', () => {
+    const out = withStdout(JSON.stringify({ type: 'result', is_error: true, result: 'Not logged in · Please run /login' }))
+    expect(out).toContain('reason=auth-missing')
+  })
+
+  it('survives a warning object before the result', () => {
+    const out = withStdout('{"type":"warning"}\n' +
+      JSON.stringify({ type: 'result', is_error: true, result: 'Claude AI usage limit reached' }))
+    expect(out).toContain('reason=usage_limit')
+  })
+
+  it('never classifies a SUCCESSFUL reply — model prose is not evidence', () => {
+    const out = withStdout(JSON.stringify({ type: 'result', is_error: false, result: 'the 401 page and the rate limit' }))
+    expect(out).toContain('reason=unknown')
+    expect(out).not.toContain('source=stdout')
+  })
+
+  it('stays one line of safe key=value pairs', () => {
+    const out = withStdout(JSON.stringify({ type: 'result', is_error: true, result: 'Not logged in\nsecond line' }))
+    expect(out.split('\n')).toHaveLength(1)
+    for (const pair of out.split(' ')) expect(pair).toMatch(/^[a-z_]+=[^ ]*$/)
+  })
+
+  it('--is-error answers 1 only for an is_error reply', () => {
+    expect(isError(JSON.stringify({ type: 'result', is_error: true, result: 'x' }))).toBe('1')
+    expect(isError(JSON.stringify({ type: 'result', is_error: false, result: 'x' }))).toBe('0')
+    expect(isError('')).toBe('0')
+  })
+})
+
 describe('the runners no longer discard the explanation', () => {
   const RUN = readFileSync(join(__dirname, '..', 'scripts', 'website-team', 'run.sh'), 'utf8')
   const EXEC = readFileSync(join(__dirname, '..', 'scripts', 'website-team', 'execute.sh'), 'utf8')
 
   it('run.sh captures the model call stderr instead of /dev/null', () => {
-    const line = RUN.split('\n').find((l) => l.includes('claude -p "$PROMPT"'))
+    const line = RUN.split('\n').find((l) => l.includes('"$ORG_CLAUDE" -p "$PROMPT"'))
     expect(line, 'the manager call disappeared').toBeTruthy()
     const block = RUN.slice(RUN.indexOf(line!), RUN.indexOf(line!) + 400)
     expect(block, 'stderr is still going to /dev/null').not.toContain('2>/dev/null')
@@ -100,9 +161,16 @@ describe('the runners no longer discard the explanation', () => {
     // `2>/dev/null` anywhere in the block and fired on the classifier's own
     // stderr suppression two lines below — a legitimate use. A matcher that
     // catches innocent neighbours gets relaxed, and then it catches nothing.
-    const call = EXEC.slice(EXEC.lastIndexOf('claude -p', i), i + 200)
+    const call = EXEC.slice(EXEC.lastIndexOf('"$ORG_CLAUDE" -p', i), i + 200)
     expect(call, "the claude call's stderr still goes to /dev/null")
-      .not.toMatch(/claude -p[\s\S]*?2>\/dev\/null/)
+      .not.toMatch(/ORG_CLAUDE" -p[\s\S]*?2>\/dev\/null/)
     expect(EXEC).toContain('model-failure.py')
+  })
+
+  it('both runners hand the classifier STDOUT, where the CLI puts its error', () => {
+    expect(RUN).toMatch(/model-failure\.py" "\$MODEL_RC" --stdout "\$MODEL_OUT"/)
+    expect(RUN).toMatch(/MODEL_IS_ERROR" = "1"/)
+    expect(EXEC).toMatch(/model-failure\.py" 1 --stdout "\$RUNLOG"\/exec\.json/)
+    expect(EXEC).toMatch(/model-failure\.py" --is-error/)
   })
 })

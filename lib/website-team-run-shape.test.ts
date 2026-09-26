@@ -55,7 +55,7 @@ describe('run.sh keeps its shape', () => {
   })
 
   it.each([
-    ['the model call', /claude -p/],
+    ['the model call', /claude -p|ORG_CLAUDE" -p/],
     ['the model output', /^RESULT=/m],
     ['the run-finished report', /ev run_finished/],
     ['the hooks-health probe', /hooks-health/],
@@ -68,9 +68,9 @@ describe('run.sh keeps its shape', () => {
     //   The defect was a top-level statement becoming a function body without
     //   moving a single character. Every top-level statement in run.sh sits at
     //   column 0; everything inside a function is indented. So an unindented
-    //   `RESULT="$(claude -p` is the one cheap, mechanical witness that the
+    //   `RESULT="$("$ORG_CLAUDE" -p` is the one cheap, mechanical witness that the
     //   model call has not fallen into a function again.
-    const topLevel = RUN_SH.split('\n').filter((l) => /^RESULT="\$\(claude -p/.test(l))
+    const topLevel = RUN_SH.split('\n').filter((l) => /^RESULT="\$\("\$ORG_CLAUDE" -p/.test(l))
     expect(topLevel).toHaveLength(1)
   })
 })

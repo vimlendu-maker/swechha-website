@@ -27,6 +27,11 @@ esac
 LOG="${SWECHHA_LOG_EVENT:-$HOME/.swechha-ai/log-event.py}"
 ev() { python3 "$LOG" website "$SPECIALIST" "$@" 2>/dev/null || true; }
 
+# ★ THE SAME CLAUDE AS run.sh, which exports it: org-claude, the pinned CLI with
+#   the long-lived credential. Bare `claude` only until that symlink exists.
+ORG_CLAUDE="${ORG_CLAUDE:-$HOME/.swechha-ai/org-claude}"
+[ -x "$ORG_CLAUDE" ] || ORG_CLAUDE="$(command -v claude 2>/dev/null || echo claude)"
+
 # GATE OUTPUT GOES IN A PER-RUN DIRECTORY, not in fixed /tmp paths. The logs
 # used to be /tmp/wt-test.log and friends, which meant every run overwrote the
 # evidence of the last one -- and two runs starting together (both schedules
@@ -195,11 +200,14 @@ ev task_started $TASK_FIELD model_requested="$MODEL" routed_because="$ROUTED_BEC
 #   so a specialist that could not reach the model at all looked identical to one
 #   that ran and produced nothing parsable -- and the run log, which exists
 #   precisely so a failure can be read afterwards, held no trace of the reason.
-claude -p "$PROMPT" --agent "$SPECIALIST" --model "$MODEL" --permission-mode dontAsk \
+"$ORG_CLAUDE" -p "$PROMPT" --agent "$SPECIALIST" --model "$MODEL" --permission-mode dontAsk \
   --allowedTools "$ALLOWED" --output-format json < /dev/null \
   > "$RUNLOG"/exec.json 2>"$RUNLOG"/exec.stderr || true
-if [ ! -s "$RUNLOG"/exec.json ] && [ -s "$RUNLOG"/exec.stderr ]; then
-  WHY="$(python3 "$STAGE/model-failure.py" 1 < "$RUNLOG"/exec.stderr 2>/dev/null || true)"
+# ★ AN `is_error` REPLY IS A FAILURE TOO, and its reason is on stdout -- the
+#   case that read as `stderr=empty` for seven days (audit defect 1).
+if { [ ! -s "$RUNLOG"/exec.json ] && [ -s "$RUNLOG"/exec.stderr ]; } || \
+   [ "$(python3 "$STAGE/model-failure.py" --is-error < "$RUNLOG"/exec.json 2>/dev/null || echo 0)" = "1" ]; then
+  WHY="$(python3 "$STAGE/model-failure.py" 1 --stdout "$RUNLOG"/exec.json < "$RUNLOG"/exec.stderr 2>/dev/null || true)"
   echo "execute: the model call produced nothing. $WHY" >&2
   sed -n '1,20p' "$RUNLOG"/exec.stderr >&2
   ev task_failed $TASK_FIELD lane=agentic provider=anthropic-claude-code model_requested="$MODEL" brief="$(basename "$BRIEF_FILE")" $WHY

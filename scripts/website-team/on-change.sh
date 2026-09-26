@@ -114,9 +114,13 @@ URGENT="$(printf '%s' "$BOTH" \
 #   `|| true` because bookkeeping may never stop the department, the same rule
 #   run.sh follows for the spine. It is idempotent -- filing is keyed on the task
 #   store, not on a marker -- so running it on every save costs one read.
+#
+# ★ THIS DEPARTMENT'S INBOX ONLY, as in run.sh. `org route` watches the org
+#   inbox itself (WatchPaths, launchd in.swechha.org-route) and files it; this
+#   was the second filer of audit defect 7. The org inbox still WAKES the
+#   department above -- waking and filing are different questions.
 if [ "$JOBS" -gt 0 ]; then
-  python3 "$REPO/scripts/website-team/inbox-intake.py" "$DEPARTMENT" \
-    "$INBOX" --org-inbox "$ORG_INBOX" || true
+  python3 "$REPO/scripts/website-team/inbox-intake.py" "$DEPARTMENT" "$INBOX" || true
 fi
 
 if [ "$JOBS" -eq 0 ]; then
