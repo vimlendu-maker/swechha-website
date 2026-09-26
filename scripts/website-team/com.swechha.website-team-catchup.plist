@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Catch-up for the daily working run (forensic audit 2026-09-24, defect 3).
+
+  ★ WHY. launchd fires the 09:00 job inside DarkWake -- a 45-second maintenance
+    wake with no DNS -- so run.sh refuses (network-unreachable) and nothing tries
+    again until tomorrow. `pmset repeat wake` would fix the clock but needs sudo;
+    this is the half code can do.
+
+  ★ EVERY 30 MINUTES, AND ALMOST ALWAYS SILENT. `run.sh work --catch-up` exits 0
+    with no event unless today's window has passed, today's work run has not
+    finished, no run holds the lock, none was attempted in the last hour, DNS
+    resolves and Claude authenticates. Then it is an ordinary work run.
+
+  ★ TEAM_CATCHUP_OF NAMES THE JOB IT COVERS; run.sh reads that job's
+    StartCalendarInterval from ~/Library/LaunchAgents, so the window has one copy.
+
+  Install:
+      cp scripts/website-team/com.swechha.website-team-catchup.plist ~/Library/LaunchAgents/
+      launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.swechha.website-team-catchup.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>              <string>com.swechha.website-team-catchup</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-lc</string>
+    <string>$HOME/swechha-website/scripts/website-team/snapshot-run.sh work --catch-up</string>
+  </array>
+  <key>StartInterval</key>      <integer>1800</integer>
+  <key>StandardOutPath</key>    <string>/tmp/swechha-website-team-catchup.log</string>
+  <key>StandardErrorPath</key>  <string>/tmp/swechha-website-team-catchup.err</string>
+  <key>RunAtLoad</key>          <false/>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<!-- The job names itself to the event stream, like every team job. -->
+		<key>ORG_JOB_LABEL</key>
+		<string>com.swechha.website-team-catchup</string>
+		<key>TEAM_CATCHUP_OF</key>
+		<string>com.swechha.website-team-work</string>
+	</dict>
+</dict>
+</plist>

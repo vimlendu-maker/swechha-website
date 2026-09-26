@@ -80,7 +80,7 @@ describe('budget', () => {
     // A refusal that costs a dollar to discover is not a refusal.
     const s = readFileSync(join(ROOT, 'scripts/website-team/run.sh'), 'utf8')
     expect(s.indexOf('budget.py')).toBeGreaterThan(-1)
-    expect(s.indexOf('budget.py')).toBeLessThan(s.indexOf('RESULT="$(claude -p'))
+    expect(s.indexOf('budget.py')).toBeLessThan(s.indexOf('RESULT="$("$ORG_CLAUDE" -p'))
     // And it must say so rather than going quiet: a silent stop mid-incident
     // turns a cost control into an outage.
     expect(s).toMatch(/REFUSED — today's spend/)

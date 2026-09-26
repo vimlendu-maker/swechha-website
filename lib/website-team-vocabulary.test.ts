@@ -106,14 +106,21 @@ print("IN_SET" if c in m.READ_ONLY else "NOT_IN_SET")`)
     // Every verb the log actually contains must either canonicalise to a
     // member of the read-only set, or to nothing. Never to a string the set
     // does not contain — that would be a grant nobody declared.
-    for (const v of verbs) {
-      const c = canonical(v)
-      if (!c) continue
-      const inSet = py(`import importlib.util
+    //
+    // ★ ONE PYTHON FOR ALL OF THEM. This spawned two interpreters per verb, and
+    //   the log only grows: by 2026-09-26 it timed out at 5s on every run, on
+    //   main, so the one test that reads real data was the one always red.
+    const verdicts = JSON.parse(py(`import importlib.util, json
 spec=importlib.util.spec_from_file_location("tg", ${JSON.stringify(TG)})
 m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
-print("Y" if m.permitted(${JSON.stringify(c)}) else "N")`)
-      expect(inSet, `canonical(${v}) = ${c} is not itself permitted`).toBe('Y')
+out={}
+for v in json.loads(${JSON.stringify(JSON.stringify([...verbs]))}):
+    c=m.canonical(v) or ""
+    out[v]=[c, bool(c) and bool(m.permitted(c))]
+print(json.dumps(out))`)) as Record<string, [string, boolean]>
+    for (const [v, [c, ok]] of Object.entries(verdicts)) {
+      if (!c) continue
+      expect(ok ? 'Y' : 'N', `canonical(${v}) = ${c} is not itself permitted`).toBe('Y')
     }
   })
 })

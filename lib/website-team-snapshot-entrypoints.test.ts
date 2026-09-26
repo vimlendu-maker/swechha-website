@@ -270,7 +270,7 @@ describe('the runner\'s functions contain only their own bodies', () => {
   })
 
   it('★ the model call is at the top level, not inside any function', () => {
-    const call = RUN.findIndex((l) => l.startsWith('RESULT="$(claude -p'))
+    const call = RUN.findIndex((l) => l.startsWith('RESULT="$("$ORG_CLAUDE" -p'))
     expect(call, 'the model call is gone').toBeGreaterThan(-1)
     for (const fn of ['spine_new', 'spine_incident', 'spine_close', 'on_exit']) {
       const i = RUN.findIndex((l) => l.startsWith(`${fn}() `))

@@ -113,12 +113,18 @@ DEPT_TITLE="$(printf '%s' "$DEPARTMENT" | awk '{print toupper(substr($0,1,1)) su
 # not running.
 MODE="${1:-work}"
 DRY=""
+CATCHUP=""
 [ "${2:-}" = "--dry-run" ] && DRY="--dry-run"
+[ "${2:-}" = "--catch-up" ] && CATCHUP="--catch-up"
 [ "$MODE" = "--dry-run" ] && { DRY="--dry-run"; MODE="work"; }
 case "$MODE" in
   work|review) ;;
-  *) echo "usage: run.sh [work|review] [--dry-run]" >&2; exit 2 ;;
+  *) echo "usage: run.sh [work|review] [--dry-run|--catch-up]" >&2; exit 2 ;;
 esac
+# Catch-up is for the DAILY run only: a missed weekly review waits for Monday.
+if [ -n "$CATCHUP" ] && [ "$MODE" != "work" ]; then
+  echo "run.sh: --catch-up applies to work mode only" >&2; exit 2
+fi
 OUT="$RECORDS/$STAMP-$DEPARTMENT-team-$MODE.md"
 
 EV="${SWECHHA_LOG_EVENT:-$HOME/.swechha-ai/log-event.py}"
@@ -149,6 +155,41 @@ ev() { python3 "$EV" "$DEPARTMENT" manager "$@" 2>/dev/null || true; }
 STAGE="startup"
 ENDED=0
 stage() { STAGE="$1"; }
+
+# ── ONE CLAUDE, ONE CREDENTIAL ───────────────────────────────────────────────
+# ★ EVERY MODEL CALL GOES THROUGH org-claude (forensic audit 2026-09-24,
+#   correction 1): the pinned CLI plus the long-lived token from <AI_HOME>/env.
+#   Two CLIs on PATH and an interactive login that expired on 09-22 is how seven
+#   days of runs failed as `reason=unknown`. The bare-`claude` fallback exists
+#   only until the symlink is installed. Exported: execute.sh uses the same one.
+ORG_CLAUDE="${ORG_CLAUDE:-$HOME/.swechha-ai/org-claude}"
+ORG_CLAUDE_WRAPPED=1
+if [ ! -x "$ORG_CLAUDE" ]; then
+  ORG_CLAUDE_WRAPPED=0
+  ORG_CLAUDE="$(command -v claude 2>/dev/null || true)"
+fi
+export ORG_CLAUDE
+
+# One reason on stdout: ok | auth-missing | auth-expired | binary-missing | unknown.
+# The fallback can only prove a login ABSENT (`auth status` is free); anything
+# else it reports as ok, and the stdout classification below catches the rest.
+claude_preflight() {
+  local r="" st=""
+  if [ "$ORG_CLAUDE_WRAPPED" = "1" ]; then
+    r="$("$ORG_CLAUDE" --preflight)" || true
+    r="${r%%$'\n'*}"
+    case "$r" in ok|auth-missing|auth-expired|binary-missing|unknown) ;; *) r=unknown ;; esac
+  elif [ -z "$ORG_CLAUDE" ]; then
+    r=binary-missing
+  else
+    r=ok
+    if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
+      st="$("$ORG_CLAUDE" auth status 2>/dev/null)" || true
+      case "$st" in *'"loggedIn": false'*|*'"loggedIn":false'*) r=auth-missing ;; esac
+    fi
+  fi
+  echo "$r"
+}
 
 # ★ WHAT IS ALREADY FILED, BECAUSE THIS MANAGER HAS NEVER BEEN TOLD. It
 #   re-derives its work from the site on every run, so it observed the same
@@ -331,10 +372,174 @@ if [ "$DRY" = "--dry-run" ]; then
   echo "record:   $OUT"
   echo "agent:    $DEPARTMENT-manager"
   echo "tools:    $ALLOWED"
+  echo "claude:   ${ORG_CLAUDE:-NOT FOUND}   ($([ "$ORG_CLAUDE_WRAPPED" = 1 ] && echo org-claude || echo 'fallback: bare claude, no org-claude installed'))"
   echo
-  echo "would run: claude -p --agent "$DEPARTMENT-manager" --permission-mode dontAsk \\"
+  echo "would run: $ORG_CLAUDE -p --agent "$DEPARTMENT-manager" --permission-mode dontAsk \\"
   echo "             --allowedTools '$ALLOWED' --output-format json"
   exit 0
+fi
+
+# ── THE SPINE HELPERS, DEFINED BEFORE ANYTHING CALLS THEM ────────────────────
+# ★ MOVED UP 2026-09-13, and a test caught why it had to be. Bash resolves a
+#   function at CALL time, so a `spine_new` used above its own definition is
+#   simply "command not found" -- and under `set -e` that aborts the script. The
+#   new model-failure handler below files a task, so the definitions have to come
+#   first. lib/website-team-denials.test.ts asserts the ordering and found this
+#   within a minute of the handler being written.
+#
+# ★ AND UP AGAIN 2026-09-26, ABOVE EVERY PREFLIGHT: the auth refusal files a
+#   task and raises an incident before the lock is taken. It also means the
+#   ceiling's `${ORG_HAS_KEY:-0}` is finally SET when read -- until now it was
+#   always 0 there, so the ceiling task was never keyed.
+ORG="${ORG_CLI:-$HOME/.swechha-ai/org}"
+
+# Probed once per run, not per filing: `--help` is cheap but not free, and a
+# capability of the installed spine cannot change mid-run. `|| true` because
+# EVERY spine call here swallows its own failure -- a runner must not die
+# because the task store is unavailable, and lib/website-team-spine.test.ts
+# asserts exactly that for every line that touches $ORG.
+ORG_HAS_KEY="$({ [ -x "$ORG" ] && "$ORG" task new --help 2>/dev/null | grep -c -- "--key"; } || true)"
+
+spine_new() {   # <title> [dedupe-key] -> task id on stdout, or nothing
+  [ -x "$ORG" ] || return 0
+  # ★ THE KEY IS WHY THE QUEUE STOPPED GROWING. The spine folds a repeat into
+  #   the live task it repeats, same department, same day -- but only if it can
+  #   tell that two filings are the same condition, and it cannot do that from
+  #   these titles:
+  #
+  #       BLOCKED: the work run was refused 5 tool(s)
+  #       BLOCKED: the work run was refused 17 tool(s)
+  #
+  #   One standing fact, a varying parameter, two different strings. THIS runner
+  #   knows they are one condition; the spine must not guess it, because a
+  #   near-match rule would eventually fold "section 3" into "section 4".
+  #
+  #   Measured 2026-09-12: 13 needs_human tasks, 10 of them duplicates of two
+  #   messages. Measured 2026-09-13: 24, all undated. Every one of them filed
+  #   from here.
+  #
+  #   `--key` is ignored by an older spine? No -- it would be an ARGPARSE ERROR
+  #   and the task would not be filed at all. The `|| true` below swallows that
+  #   into "no task", which is why this is guarded on the flag existing.
+  # ★ "$DEPARTMENT", NOT `website`: one runner, two departments, and this line
+  #   was the last to name one -- so fundraising's blocked runs landed in the
+  #   website queue. Defaulted because the tests run this block bare.
+  if [ -n "${2:-}" ] && [ "${ORG_HAS_KEY:-0}" != "0" ]; then
+    "$ORG" task new "${DEPARTMENT:-website}" "$1" --origin schedule --key "$2" 2>/dev/null || true
+  else
+    "$ORG" task new "${DEPARTMENT:-website}" "$1" --origin schedule 2>/dev/null || true
+  fi
+}
+
+# ★ AN INCIDENT IS NOT A TASK, and raising one is not the same as filing one.
+#   A task is work somebody must do. An incident is a FAULT: deduplicated by
+#   signature so a flapping service is one row with a count rather than forty,
+#   dispatched ONCE to a phone, and closed only when a person says what the
+#   outcome was. ADR-0010.
+#
+#   The error text stays LOCAL -- it is what the signature is computed from and
+#   it lands in the incident record on this machine. What reaches the phone is a
+#   closed vocabulary that cannot express it: department, kind, count, minutes,
+#   id. The topic is a bearer URL and org/notify.py is built so a secret cannot
+#   travel over it even by accident.
+#
+#   `|| true` like every other spine call here: a runner must not die because
+#   the incident store is unavailable, and lib/website-team-spine.test.ts
+#   asserts that for every line touching $ORG.
+spine_incident() {  # <kind> <error-text> -> id on stdout, or nothing
+  [ -x "$ORG" ] || return 0
+  "$ORG" incident detect "$DEPARTMENT" "$1" "$2" \
+      --workflow "$DEPARTMENT-$MODE" --notify 2>/dev/null || true
+}
+
+spine_close() { # <task id> <done|refused|escalate> <note>
+  [ -x "$ORG" ] || return 0
+  [ -n "$1" ] || return 0
+  case "$2" in
+    done)     "$ORG" task done    "$1" --outcome "$3"  >/dev/null 2>&1 || true ;;
+    # A brief this department declined to execute is CLOSED, not escalated. Only
+    # something genuinely stuck belongs in "needs you"; a queue full of routine
+    # skips is a queue nobody reads.
+    refused)  "$ORG" task refuse  "$1" "$3"            >/dev/null 2>&1 || true ;;
+    # A brief that did not ship STAYS VISIBLE until a person moves it. This is the
+    # structural answer to a task being skipped 682 times while reporting success.
+    escalate) "$ORG" task escalate "$1" --reason "$3"  >/dev/null 2>&1 || true ;;
+  esac
+}
+
+# ── CATCH-UP: A MISSED WINDOW, RUN ONCE THE MAC IS REALLY AWAKE ──────────────
+# ★ THE FAILURE THIS ENDS (audit defect 3). launchd fires the 09:00/10:00 jobs
+#   inside DarkWake -- 45-second maintenance wakes with no DNS -- so the network
+#   preflight below refuses, correctly, and then nothing tries again until
+#   tomorrow. `pmset repeat wake` needs sudo and is the owner's; this is the half
+#   code can do. A half-hourly job calls `run.sh work --catch-up`, which is
+#   SILENT (exit 0, no event) unless every one of these holds:
+#     today's window for the job it covers has passed; no work run_finished for
+#     this department today; no live lock; not tried in the last hour; DNS
+#     resolves; Claude authenticates (or its absence is not yet reported today).
+#   Then it is an ordinary work run. Silence is the point: 48 wakes a day that
+#   each wrote an event would bury the one run that matters.
+# ★ THE WINDOW IS READ FROM THE PLIST IT COVERS (TEAM_CATCHUP_OF), because
+#   that is the schedule launchd actually keeps. Unreadable is UNKNOWN, and
+#   UNKNOWN does not run -- a guessed window is how a department double-spends.
+ACTIVITY="${TEAM_ACTIVITY_LOG:-$HOME/.swechha-ai/activity.jsonl}"
+net_resolves() {  # RESOLUTION, NOT REACHABILITY -- see the network preflight
+  python3 -c "import socket,sys; socket.setdefaulttimeout(5); socket.getaddrinfo('${NET_PROBE_HOST:-github.com}',443); sys.exit(0)" 2>/dev/null
+}
+seen_today() {  # <event> [reason] -> yes | no | unknown, for this department's manager today
+  python3 - "$ACTIVITY" "$DEPARTMENT" "$MODE" "$(date +%Y-%m-%d)" "$1" "${2:-}" <<'PY' 2>/dev/null || echo unknown
+import json, sys
+path, dept, mode, day, event, reason = sys.argv[1:7]
+try:
+    f = open(path, encoding="utf8", errors="replace")
+except OSError:
+    print("unknown"); sys.exit(0)
+hit = "no"
+for line in f:
+    if event not in line:
+        continue
+    try:
+        r = json.loads(line)
+    except ValueError:
+        continue
+    if (r.get("event") == event and r.get("department") == dept
+            and r.get("actor") == "manager" and r.get("mode") == mode
+            and (not reason or r.get("reason") == reason)
+            and str(r.get("ts", "")).startswith(day)):
+        hit = "yes"
+print(hit)
+PY
+}
+finished_today() { seen_today run_finished; }
+catchup_skip() { echo "run.sh: catch-up: not running — $*"; exit 0; }
+if [ -n "$CATCHUP" ]; then
+  _of="$HOME/Library/LaunchAgents/${TEAM_CATCHUP_OF:-com.swechha.$DEPARTMENT-team-work}.plist"
+  _h="$(/usr/bin/plutil -extract StartCalendarInterval.Hour raw -o - "$_of" 2>/dev/null || true)"
+  _m="$(/usr/bin/plutil -extract StartCalendarInterval.Minute raw -o - "$_of" 2>/dev/null || echo 0)"
+  case "$_h" in ''|*[!0-9]*) catchup_skip "window UNKNOWN (cannot read StartCalendarInterval from $_of)" ;; esac
+  case "$_m" in ''|*[!0-9]*) _m=0 ;; esac
+  # A 15-minute grace, so the scheduled run itself is never raced.
+  _now=$((10#$(date +%H) * 60 + 10#$(date +%M)))
+  [ "$_now" -ge $((10#$_h * 60 + 10#$_m + 15)) ] || catchup_skip "today's window ($_h:$(printf '%02d' "$_m")) has not passed"
+  case "$(finished_today)" in
+    yes) catchup_skip "the $MODE run already finished today" ;;
+    no)  ;;
+    *)   catchup_skip "cannot read $ACTIVITY, so cannot tell whether today's run finished" ;;
+  esac
+  _holder="$("$WT" status 2>/dev/null | sed -n 's/^lock: HELD by pid \([0-9][0-9]*\).*/\1/p' || true)"
+  if [ -n "$_holder" ] && kill -0 "$_holder" 2>/dev/null; then catchup_skip "a run holds the lock (pid $_holder)"; fi
+  _stamp="$HOME/.swechha-ai/catchup-$DEPARTMENT-$MODE.stamp"
+  if [ -n "$(find "$_stamp" -mmin -60 2>/dev/null)" ]; then catchup_skip "a catch-up was attempted within the hour"; fi
+  net_resolves || catchup_skip "${NET_PROBE_HOST:-github.com} does not resolve (DarkWake?)"
+  _auth="$(claude_preflight)"
+  # ★ NO CREDENTIAL IS SAID ONCE A DAY, NOT NEVER. If DarkWake ate the 09:00
+  #   run, no scheduled run has reported it; so the first catch-up to see it
+  #   falls through to the auth preflight below, which refuses loudly.
+  if [ "$_auth" != "ok" ] && [ "$(seen_today run_refused "$_auth")" != "no" ]; then
+    catchup_skip "Claude will not authenticate ($_auth); already reported today"
+  fi
+  mkdir -p "$(dirname "$_stamp")" && date +%s > "$_stamp"
+  echo "run.sh: catch-up: today's $MODE run is missing and the Mac is awake — running it now"
 fi
 
 # ── PREFLIGHT: IS THERE A NETWORK AT ALL? ────────────────────────────────────
@@ -382,7 +587,7 @@ for _try in 1 2 3; do
   # RESOLUTION, NOT REACHABILITY. The observed failure is DNS. A HEAD request
   # would also pass through a captive portal that resolves everything and
   # serves nothing; if the host resolves, git's own errors are honest again.
-  if python3 -c "import socket,sys; socket.setdefaulttimeout(5); socket.getaddrinfo('$NET_PROBE_HOST',443); sys.exit(0)" 2>/dev/null; then
+  if net_resolves; then
     NET_OK=1; break
   fi
   [ "$_try" -lt 3 ] && sleep 5
@@ -428,9 +633,12 @@ fi
 # Placed AFTER the vault preflight so an unreadable inbox is already a loud
 # refusal, and BEFORE the ceiling so a refused run still files the work it was
 # refused from doing.
+#
+# ★ THIS DEPARTMENT'S INBOX ONLY. The org inbox is `org route`'s (org-spine
+#   route.py, launchd in.swechha.org-route) -- filing it here too was the second
+#   inbox router of audit defect 7. The manager still READS both, in its prompt.
 stage inbox-intake
-python3 "$LIB/inbox-intake.py" "$DEPARTMENT" \
-  "$INBOX" --org-inbox "$ORG_INBOX" || true
+python3 "$LIB/inbox-intake.py" "$DEPARTMENT" "$INBOX" || true
 
 # ── THE DAILY CEILING ────────────────────────────────────────────────────────
 # Checked BEFORE the model call, like the vault preflight above and for the same
@@ -476,11 +684,42 @@ if [ -n "$CEILING" ]; then
   echo "run.sh: budget ok — \$$SPENT of \$$CEILING spent today"
 fi
 
+# ── PREFLIGHT: WILL CLAUDE AUTHENTICATE? ─────────────────────────────────────
+# ★ THE FAILURE THIS ENDS (audit defect 1). From 2026-09-22 every run of both
+#   departments reached the model and died there as `reason=unknown
+#   stderr=empty`: the CLI was logged out and said so on stdout. Seven days, and
+#   the only record was seven NEEDS-YOU tasks saying "could not reach the model".
+# ★ REFUSE, LIKE NO NETWORK: no credential is a run that could not start. ONE
+#   keyed task per reason, escalated because only a person can mint a token,
+#   and an incident so it reaches the phone. Nothing is spent.
+# ★ LAST OF THE PREFLIGHTS: a cold check may cost one tiny probe call (cached
+#   for an hour by org-claude), so every free check goes first.
+stage auth-preflight
+AUTH="$(claude_preflight)"
+if [ "$AUTH" != "ok" ]; then
+  echo "run.sh: REFUSED — Claude will not authenticate ($AUTH). Nothing was spent." >&2
+  echo "run.sh: Fix it once: \`claude setup-token\`, then \`org auth claude-token\`." >&2
+  ev run_refused reason="$AUTH" mode="$MODE" run_pid="$$" $(job_field)
+  ENDED=1
+  ATASK="$(spine_new "BLOCKED: Claude is not authenticated ($AUTH) — run \`claude setup-token\`, then \`org auth claude-token\`" "claude-auth:$AUTH")"
+  [ -n "$ATASK" ] && spine_close "$ATASK" escalate "every scheduled run refuses until Claude authenticates ($AUTH)"
+  AINC="$(spine_incident claude_auth "$AUTH")"
+  [ -n "$AINC" ] && echo "run.sh: task ${ATASK:-none}, incident $AINC — org incident show $AINC" >&2
+  # Exit 8: "could not start for want of a credential", distinct from 5 (vault),
+  # 6 (network / ceiling) and 7 (the model call itself failed).
+  exit 8
+fi
+
 # ── ONE RUN AT A TIME, IN THE DEPARTMENT'S OWN TREE ──────────────────────────
 # Both schedules fire at 09:00, so on Mondays `work` and `review` start
 # together. They share one worktree, so they must not overlap: the lock makes
 # the second wait rather than read a tree the first is mid-checkout of.
 "$WT" lock "$$"
+# ★ AND KEEP THE MAC AWAKE UNTIL THIS PROCESS EXITS (audit defect 3): a run
+#   that starts in a real wake must not be put back to sleep mid-model-call.
+if command -v caffeinate >/dev/null 2>&1; then
+  caffeinate -i -w $$ >/dev/null 2>&1 &
+fi
 # ── A RUN CANNOT DIE SILENTLY ────────────────────────────────────────────────
 #
 # ★ THE FAILURE THIS ENDS. Six runs on 2026-09-13/14 emitted `run_started` and
@@ -528,6 +767,12 @@ on_exit() {
   return 0
 }
 trap on_exit EXIT
+# A catch-up that queued behind the scheduled run must not repeat it.
+if [ -n "$CATCHUP" ] && [ "$(finished_today)" != "no" ]; then
+  echo "run.sh: catch-up: today's $MODE run finished while this one waited — not repeating it"
+  ENDED=1
+  exit 0
+fi
 stage worktree
 WORK="$("$WT" ensure)"
 cd "$WORK"
@@ -545,86 +790,6 @@ cd "$WORK"
 #   later, and past the run_finished at 635. Both are true of DIFFERENT
 #   processes and neither is true of one. With run_pid that is a glance.
 ev run_started mode="$MODE" run_pid="$$" $(job_field)
-
-# ── THE SPINE HELPERS, DEFINED BEFORE ANYTHING CALLS THEM ────────────────────
-# ★ MOVED UP 2026-09-13, and a test caught why it had to be. Bash resolves a
-#   function at CALL time, so a `spine_new` used above its own definition is
-#   simply "command not found" -- and under `set -e` that aborts the script. The
-#   new model-failure handler below files a task, so the definitions have to come
-#   first. lib/website-team-denials.test.ts asserts the ordering and found this
-#   within a minute of the handler being written.
-ORG="${ORG_CLI:-$HOME/.swechha-ai/org}"
-
-# Probed once per run, not per filing: `--help` is cheap but not free, and a
-# capability of the installed spine cannot change mid-run. `|| true` because
-# EVERY spine call here swallows its own failure -- a runner must not die
-# because the task store is unavailable, and lib/website-team-spine.test.ts
-# asserts exactly that for every line that touches $ORG.
-ORG_HAS_KEY="$({ [ -x "$ORG" ] && "$ORG" task new --help 2>/dev/null | grep -c -- "--key"; } || true)"
-
-spine_new() {   # <title> [dedupe-key] -> task id on stdout, or nothing
-  [ -x "$ORG" ] || return 0
-  # ★ THE KEY IS WHY THE QUEUE STOPPED GROWING. The spine folds a repeat into
-  #   the live task it repeats, same department, same day -- but only if it can
-  #   tell that two filings are the same condition, and it cannot do that from
-  #   these titles:
-  #
-  #       BLOCKED: the work run was refused 5 tool(s)
-  #       BLOCKED: the work run was refused 17 tool(s)
-  #
-  #   One standing fact, a varying parameter, two different strings. THIS runner
-  #   knows they are one condition; the spine must not guess it, because a
-  #   near-match rule would eventually fold "section 3" into "section 4".
-  #
-  #   Measured 2026-09-12: 13 needs_human tasks, 10 of them duplicates of two
-  #   messages. Measured 2026-09-13: 24, all undated. Every one of them filed
-  #   from here.
-  #
-  #   `--key` is ignored by an older spine? No -- it would be an ARGPARSE ERROR
-  #   and the task would not be filed at all. The `|| true` below swallows that
-  #   into "no task", which is why this is guarded on the flag existing.
-  if [ -n "${2:-}" ] && [ "${ORG_HAS_KEY:-0}" != "0" ]; then
-    "$ORG" task new website "$1" --origin schedule --key "$2" 2>/dev/null || true
-  else
-    "$ORG" task new website "$1" --origin schedule 2>/dev/null || true
-  fi
-}
-
-# ★ AN INCIDENT IS NOT A TASK, and raising one is not the same as filing one.
-#   A task is work somebody must do. An incident is a FAULT: deduplicated by
-#   signature so a flapping service is one row with a count rather than forty,
-#   dispatched ONCE to a phone, and closed only when a person says what the
-#   outcome was. ADR-0010.
-#
-#   The error text stays LOCAL -- it is what the signature is computed from and
-#   it lands in the incident record on this machine. What reaches the phone is a
-#   closed vocabulary that cannot express it: department, kind, count, minutes,
-#   id. The topic is a bearer URL and org/notify.py is built so a secret cannot
-#   travel over it even by accident.
-#
-#   `|| true` like every other spine call here: a runner must not die because
-#   the incident store is unavailable, and lib/website-team-spine.test.ts
-#   asserts that for every line touching $ORG.
-spine_incident() {  # <kind> <error-text> -> id on stdout, or nothing
-  [ -x "$ORG" ] || return 0
-  "$ORG" incident detect "$DEPARTMENT" "$1" "$2" \
-      --workflow "$DEPARTMENT-$MODE" --notify 2>/dev/null || true
-}
-
-spine_close() { # <task id> <done|refused|escalate> <note>
-  [ -x "$ORG" ] || return 0
-  [ -n "$1" ] || return 0
-  case "$2" in
-    done)     "$ORG" task done    "$1" --outcome "$3"  >/dev/null 2>&1 || true ;;
-    # A brief this department declined to execute is CLOSED, not escalated. Only
-    # something genuinely stuck belongs in "needs you"; a queue full of routine
-    # skips is a queue nobody reads.
-    refused)  "$ORG" task refuse  "$1" "$3"            >/dev/null 2>&1 || true ;;
-    # A brief that did not ship STAYS VISIBLE until a person moves it. This is the
-    # structural answer to a task being skipped 682 times while reporting success.
-    escalate) "$ORG" task escalate "$1" --reason "$3"  >/dev/null 2>&1 || true ;;
-  esac
-}
 
 # ── THE HOOK WIRING ──────────────────────────────────────────────────────────
 # ★ FOLDED IN FROM THE SENTINEL, 2026-09-14, when the Mac's half-hourly sentinel
@@ -692,30 +857,46 @@ fi
 MODEL_ERR="$(mktemp)"
 set +e
 stage model-call
-RESULT="$(claude -p "$PROMPT" \
+RESULT="$("$ORG_CLAUDE" -p "$PROMPT" \
   --agent "$DEPARTMENT-manager" \
   --permission-mode dontAsk \
   --allowedTools "$ALLOWED" \
   --output-format json < /dev/null 2>"$MODEL_ERR")"
 MODEL_RC=$?
 set -e
+# ★ `is_error` ON STDOUT IS A FAILURE WHATEVER THE EXIT CODE SAYS: the reply's
+#   text is then the CLI's error, and writing it up as the manager's report
+#   would publish "Failed to authenticate" to the vault as a run record.
+MODEL_IS_ERROR="$(printf '%s' "$RESULT" | python3 "$LIB/model-failure.py" --is-error 2>/dev/null || echo 0)"
 
-if [ "$MODEL_RC" -ne 0 ] || [ -z "$RESULT" ]; then
+if [ "$MODEL_RC" -ne 0 ] || [ -z "$RESULT" ] || [ "$MODEL_IS_ERROR" = "1" ]; then
   # Classified, not guessed: model-failure.py says `unknown` rather than
   # inventing a cause, and carries the stderr so a person can read what the
-  # matcher could not.
-  WHY="$(python3 "$LIB/model-failure.py" "$MODEL_RC" < "$MODEL_ERR" 2>/dev/null || true)"
+  # matcher could not. ★ AND STDOUT: that is where the CLI puts its error.
+  MODEL_OUT="$(mktemp)"
+  printf '%s' "$RESULT" > "$MODEL_OUT"
+  WHY="$(python3 "$LIB/model-failure.py" "$MODEL_RC" --stdout "$MODEL_OUT" < "$MODEL_ERR" 2>/dev/null || true)"
   echo "run.sh: the model call FAILED (exit $MODEL_RC). $WHY" >&2
   sed -n '1,20p' "$MODEL_ERR" >&2
   ev run_failed mode="$MODE" $WHY
   ENDED=1
   # The reason, not the whole stderr: the classification is what deduplicates,
   # and model-failure.py already refuses to guess when it does not recognise it.
-  INC="$(spine_incident model_call_failed "$(printf '%s' "$WHY" | tr ' ' '\n' | grep '^reason=' | cut -d= -f2 || echo unknown)")"
+  WHY_REASON="$(printf '%s' "$WHY" | tr ' ' '\n' | grep '^reason=' | cut -d= -f2 || true)"
+  WHY_REASON="${WHY_REASON:-unknown}"
+  case "$WHY_REASON" in
+    # A credential that failed at the call is the SAME condition the auth
+    # preflight refuses on: one task, one incident, whichever caught it.
+    auth-*)
+      INC="$(spine_incident claude_auth "$WHY_REASON")"
+      BTASK="$(spine_new "BLOCKED: Claude is not authenticated ($WHY_REASON) — run \`claude setup-token\`, then \`org auth claude-token\`" "claude-auth:$WHY_REASON")" ;;
+    *)
+      INC="$(spine_incident model_call_failed "$WHY_REASON")"
+      BTASK="$(spine_new "BLOCKED: the $MODE run could not reach the model" "model-call-failed:$MODE")" ;;
+  esac
   [ -n "$INC" ] && echo "run.sh: incident $INC — org incident show $INC"
-  BTASK="$(spine_new "BLOCKED: the $MODE run could not reach the model" "model-call-failed:$MODE")"
   [ -n "$BTASK" ] && { spine_close "$BTASK" escalate "the model call failed: $WHY"; }
-  rm -f "$MODEL_ERR"
+  rm -f "$MODEL_ERR" "$MODEL_OUT"
   # Exit 7, distinct from the budget brake's 6: a caller must be able to tell
   # "the department refused to spend" from "the department could not run".
   exit 7
@@ -739,7 +920,7 @@ DENIED="$(printf '%s' "$RESULT" | python3 "$LIB/denials.py" 2>/dev/null || true)
 {
   echo "---"
   echo "title: $DEPT_TITLE team run — $STAMP"
-  echo "source: $DEPARTMENT-team/run.sh, claude -p --agent $DEPARTMENT-manager"
+  echo "source: $DEPARTMENT-team/run.sh, org-claude -p --agent $DEPARTMENT-manager"
   echo "cost_usd_estimate: $COST"
   echo "---"
   echo
