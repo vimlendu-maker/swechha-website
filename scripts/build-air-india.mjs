@@ -157,7 +157,7 @@ B.top = () => {
       <h1 class="d1">Every city CPCB measures</h1>
       <p class="lead">${n0(IND.totals.cities)} cities reported an air quality index at
         <b>${OBS_TIME}</b>. ${n0(IND.totals.above_limit)} of them are above the limit India set for
-        itself. This is all of them, read together in one hour, in the order they were read.</p>
+        itself. This is all of them, read together in one hour, worst first.</p>
       <p style="margin:0">${S.stateChip(IND.state_label === 'LIVE' ? 'LIVE' : IND.state_label)}</p>
       <div class="ci-figs">
         ${fig}
@@ -294,8 +294,10 @@ B.reading = () => `${opener('reading', 'How to read a rank',
           <p class="lbl ci-rd-h">Every pollutant counts</p>
           <p class="body">A station&rsquo;s AQI is its worst published sub-index, whichever pollutant
             that is. Where the governing pollutant is <b>not particulate</b> the row names it, because
-            a rank is not comparable unless you can see what is being ranked. Nothing is excluded:
-            CPCB publishes sub-indexes, already on one scale.</p>
+            a rank is not comparable unless you can see what is being ranked. CPCB publishes sub-indexes,
+            already on one scale. Two things are set aside: a channel that has stopped moving, and a gas
+            reading its own station&rsquo;s particulates do not back up, which is published with a question
+            mark but not ranked.</p>
         </div>
       </div>
 ${SUSPECT.length ? `      <p class="cap ci-sus"><b>${n0(SUSPECT.length)} ${SUSPECT.length === 1 ? 'row carries' : 'rows carry'} a question mark.</b>
@@ -303,7 +305,7 @@ ${SUSPECT.length ? `      <p class="cap ci-sus"><b>${n0(SUSPECT.length)} ${SUSPE
         particulate at the same station and no independent monitor is near enough to say which is
         right. ${SUSPECT.length === 1 ? 'It is' : 'They are'} ranked on particulates; the gas figure
         is published in the tooltip, not ranked. Hover or focus the mark to read it.</p>` : ''}
-${hole(`These are the cities CPCB measures, not the cities of India. A place with no monitor produces no row, and an absent row is an absent instrument — never clean air. ${n0(IND.totals.cities)} cities is the whole of the national real-time network.`)}
+${hole(`These are the cities CPCB measures, not the cities of India. A place with no monitor produces no row, and an absent row is an absent instrument — never clean air. ${n0(IND.totals.cities)} cities reported in this hour; the count moves as stations drop in and out.`)}
 ${hole('CPCB measures cities, not states. Averaging a state’s cities would invent a reading for the land between them, so there is no state figure.')}
       <p class="cap ci-src">Source: <a class="lk" href="${esc(IND.source.url)}">${esc(IND.source.name)}</a>,
         resource ${esc(IND.source.resource)}. Snapshot ${OBS}, ${n0(IND.totals.rows)} station-pollutant
@@ -342,7 +344,7 @@ https://swechha.in/now/air/india</code>
 
 /* ── BAND 4. ONWARD. ────────────────────────────────────────────────────── */
 B.onward = () => `${opener('onward', 'The city this site reads every hour',
-  'Delhi is one row above. Its page is the same reading taken apart &mdash; forty-four monitors, '
+  `Delhi is one row above. Its page takes the city apart &mdash; ${n0(IND.delhi?.stations ?? 0)} monitors, `
   + 'what is in the air, who is in it, and what has been spent on it.')}
     <div class="wrap">
       <p><a class="b b-1" href="/now/air">Delhi&rsquo;s air, monitor by monitor ${ARROW}</a></p>

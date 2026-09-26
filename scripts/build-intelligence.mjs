@@ -102,8 +102,11 @@ const SITUATIONS = [
     sub: `${esc(airRd.band)}${AIR.observed ? ` · ${String(AIR.observed.hh).padStart(2, '0')}:${String(AIR.observed.mi).padStart(2, '0')} IST` : ''}`,
     kind: 'a ceiling', limit: `AQI ${AIR.aqiLimit}`,
     authority: 'CPCB, National Air Quality Index',
-    verdict: airRd.aqi > AIR.aqiLimit
-      ? `${+(airRd.aqi / AIR.aqiLimit).toFixed(1)}× the limit` : 'within the limit',
+    /* NO MULTIPLIER — D-15.3. The AQI is piecewise-linear, so 154 is not
+       "1.5× the limit": /now/air/india says it itself ("200 is not twice the
+       pollution of 100 — it is twice the index"). A multiplier belongs to a
+       concentration against its own standard, and this card holds an index. */
+    verdict: airRd.aqi > AIR.aqiLimit ? 'over AQI 100' : 'within AQI 100',
     breach: airRd.aqi > AIR.aqiLimit,
     /* ★ LIVE, ALWAYS. Client ruling, and the justification is better than
        the ruling.
@@ -404,7 +407,7 @@ const IX_LIVE = `
     v.textContent=r.aqi.toLocaleString('en-IN');
     var over=r.aqi>limit;
     card.classList.toggle('is-breach',over);
-    if(verd) verd.textContent=over?(Math.round(r.aqi/limit*10)/10)+'\u00D7 the limit':'within the limit';
+    if(verd) verd.textContent=over?'over AQI '+limit:'within AQI '+limit;
     if(verd) verd.classList.toggle('is-red',over);
     /* AD-37: the hour rides with the number, never separately. r.observed is
        "HH:MM IST, D Month YYYY"; the card shows the clock part, which is the
