@@ -14,11 +14,12 @@ import { tmpdir } from 'node:os';
 import { crumb, siblings, FAMILY_CSS, NAV_SEARCH_CSS, NAV as SHELL_NAV, HOME_HREF, GIVE_HREF, INDEX_PAGE,
   stripCssComments, stripHtmlComments, redactScriptLedgerRefs, HOME_SRC, cadence, STATES,
   closing, citeBlock, CLOSING_CSS, abs, imgDim, responsiveImages,
-  LICENCE_URL, datasetJsonLd, FAMILY, stateRollup, TRACKER, HASH_STRIP } from './lib/situation-shell.mjs';
+  LICENCE_URL, recordDatasetJsonLd, FAMILY, stateRollup, TRACKER, HASH_STRIP, faqJsonLd } from './lib/situation-shell.mjs';
 import { withSocialImage } from './lib/social-image.mjs';
 import { seo } from './lib/seo-register.mjs';
 import { stampLastmod } from './lib/lastmod.mjs';
 import { readHistory } from './lib/air-history.mjs';
+import { gasUncorroborated, rankableFigure } from './lib/air-rules.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const V3 = join(ROOT, 'public/_pages/v3');
@@ -127,6 +128,12 @@ const NEWS = J('coverage-delhi-air.json');
 const ATTN = J('attention-delhi-air.json');
 const IND = J('air-india.json');
 const AP = J('apportionment-delhi.json');
+const NCR = J('ncr.json');
+const STD = J('air-standards.json');
+const GRAP = J('grap.json');
+const ANN = J('air-annual-delhi.json');
+/* CAQM's own schedule document, revision of 21.11.2025 — fetched and read 26 Sep 2026. */
+const GRAP_SCHEDULE_URL = 'https://caqm.nic.in/FileUploadDomain/WebsiteDocument/GRAP/GRAP%20Schedule/GRAP%20Schedule7e3bd726-7308-484f-995f-7cb3fa705b8d.pdf';
 /* The split is the one dataset transcribed BY HAND from a PDF rather than
    fetched, so its shape is asserted here — a dropped segment would silently
    under-report a sector and nothing else would notice.
@@ -179,6 +186,71 @@ const govLimit = AIR.limits[ws.governing];
    resort for a limits table that has been emptied, not the normal path. */
 const limitAuthority = (govLimit || Object.values(AIR.limits)[0] || {}).authority || 'CPCB';
 const catIdx = AIR.bands.findIndex(b => b.name === rd.band);
+/* ── WHAT 100 IS, SAID PRECISELY — replacing "CPCB safe limit 100. Limit broken."
+   The arithmetic D-15.2 rests on is right and stays: CPCB set each pollutant's
+   sub-index 100 at India's own NAAQS 2009 short-term standard — 24-hour, or
+   8-hour for ozone and CO. So a sub-index over 100 means that pollutant's
+   rolling average at that monitor is over the level the standard sets.
+   What the old line added was a LEGAL claim the numbers do not carry:
+     · CPCB never calls 100 "safe"; the band is "Satisfactory";
+     · NAAQS 2009's own note: 24-hourly and 8-hourly values "shall be complied
+       with 98% of the time in a year. 2% of the time, they may exceed the
+       limits but not on two consecutive days of monitoring" (Gazette of
+       India, Extraordinary, No. 217, 18 November 2009) — so one reading over
+       the level is not, by itself, a breach of the standard;
+     · the reading is one monitor's rolling window, recomputed hourly.
+   So the line names the pollutant, its standard, its window and its unit, and
+   says "over it" — which is true — rather than "broken", which is a finding
+   about a year of monitoring that one hour cannot make. Read off the row, like
+   the sub-index grid: the window decides the key, and a pollutant with no
+   limit in the feed falls back to the index boundary, never to an invented
+   standard. */
+const WIN = { '24-hour': 'h24', '8-hour': 'h8' };
+const HERO_LIMIT = (() => {
+  const g = gov ? WIN[gov.averaging] : null;
+  const std = g && govLimit ? govLimit[g] : null;
+  const over = rd.aqi > AIR.aqiLimit;
+  const verdict = `<b>${over ? 'Over it.' : 'Under it.'}</b>`;
+  if (std == null) return `AQI ${AIR.aqiLimit} is where India&rsquo;s own short-term standards sit. ${verdict}`;
+  return `AQI ${AIR.aqiLimit} is ${PRETTY[ws.governing] || ws.governing}&rsquo;s ${gov.averaging} standard, `
+    + `${std} <span class="u">${esc(govLimit?.unit)}</span>. ${verdict}`;
+})();
+
+/* ── A GAS CHANNEL ITS OWN STATION CANNOT CORROBORATE IS DISCLOSED — AD-42C/E.
+   The national table has ranked such a city on its particulates since AD-42E,
+   but the hero printed the same channel with no doubt beside it. On
+   25 September 2026 the hero said 154 (DU North Campus, NO₂) while the panel
+   beside it ranked Delhi on 58 — one station, one hour, two numbers, which is
+   the contradiction AD-42C C-5 exists to stop. The number stays (B-3: flagged,
+   not deleted, and the owner's worst-monitor rule stands); what changes is
+   that the page now says what the national table says, and names the worst
+   monitor it CAN stand behind. Same rule, same module, as fetch-india. */
+const HERO_SUSPECT = (() => {
+  const pm = (st) => Math.max(st.pollutants?.['PM2.5']?.sub ?? -1, st.pollutants?.PM10?.sub ?? -1);
+  const w = AIR.stations.find(st => st.station === ws.station);
+  if (!w || !gasUncorroborated({ aqi: w.aqi, governing: w.governing, pmSub: pm(w) })) return null;
+  const alt = AIR.stations
+    .map(st => ({ st, r: rankableFigure({ aqi: st.aqi, governing: st.governing, pmSub: pm(st) }) }))
+    .filter(x => x.r != null && x.st !== w)
+    .sort((a, b) => b.r - a.r)[0];
+  const pmName = (st) => ((st.pollutants?.['PM2.5']?.sub ?? -1) >= (st.pollutants?.PM10?.sub ?? -1) ? 'PM2.5' : 'PM10');
+  return { pmHere: pm(w), alt: alt ? { name: String(alt.st.station).split(',')[0].trim(), aqi: alt.r,
+    gov: alt.r === alt.st.aqi ? alt.st.governing : pmName(alt.st) } : null };
+})();
+
+/* ── THE READING AS A SENTENCE SOMEBODY CAN QUOTE (§37 of the air-hub spec).
+   Who, what, where, when, number, source, caveat — built HERE, from the same
+   fields the hero prints, so the copied sentence cannot say anything the page
+   does not. A static attribute, not a client computation: nothing is written
+   into the page by script (AD-27.6-A); the button only copies. */
+/* A function because OBS is defined further down this file. */
+const QUOTE = () => `Delhi's worst-reading CPCB monitor, ${String(ws.station).split(',')[0].trim()}, read AQI ${rd.aqi} `
+  + `(${rd.band}; governing pollutant ${String(PRETTY[ws.governing] || ws.governing).replace('₂', '2').replace('₃', '3')}, `
+  + `${gov?.averaging || 'rolling'} average) at ${OBS}. The mean of all ${AIR.spread.stations} Delhi monitors was ${AIR.city_mean.aqi}. `
+  + (HERO_SUSPECT ? `The governing channel is not corroborated by the same station's particulates (${HERO_SUSPECT.pmHere}). ` : '')
+  + `An AQI is an index, not a concentration, and one monitor's reading is not a personal exposure. `
+  + `Source: Central Pollution Control Board, compiled by Swechha, ${abs('/now/air')}`;
+
 
 /* THE CLOSE PAIR THAT CARRIES THE FINDING — hoisted to module scope because it
    is stated in TWO places on this page, and until 25 August 2026 one of them
@@ -202,6 +274,20 @@ const NEAR = (() => {
   return best;
 })();
 const [NEAR_GAP, [NEAR_A, NEAR_B, NEAR_KM]] = NEAR;
+/* ── THE OBSERVATION AS AN INSTANT, FOR THE PAGE'S OWN AGE CHECK ──────────
+   The chip is a build artefact (D-26.1): it is written LIVE when the build
+   ran on a reading under three hours old, and nothing rebuilt the page when
+   the pipeline stopped. Measured 26 September 2026: every air-hourly run
+   since 19:00 IST the day before had found no source and — by design —
+   written nothing, so /now/air carried a green Live chip over a reading a
+   day old. The client could only ever UPGRADE the chip. So the page now
+   carries its own observation instant and the script DEMOTES the chip once
+   the reading is older than STALE_HOURS — the same three hours fetch-air.mjs
+   and lib/air.ts use for LIVE — and says how old it is. IST wall-clock text
+   minus 5:30, never Date-parsed (the standing date rule). */
+const OBS_UTC = (() => { const o = AIR.observed;
+  return o ? new Date(Date.UTC(o.y, o.m - 1, o.d, o.hh, o.mi) - 19800000).toISOString() : ''; })();
+const STALE_HOURS = 3;
 const OBS = (() => { const o = AIR.observed; return o ? `${String(o.hh).padStart(2,'0')}:${String(o.mi).padStart(2,'0')} IST, ${o.d} ${MON[o.m-1]} ${o.y}` : 'time not stated'; })();
 
 /* ── AD-36. A RELATIVE WINDOW ON A STATIC PAGE HAS TO NAME ITS END.
@@ -331,10 +417,12 @@ const BANDS = [
   ['strip',     '',           '#151512'],
   ['people',    't2',         '#0D0D0B'],
   ['measured',  'paper t2',   '#F3F2F0'],
+  ['rules',     't2',         '#0D0D0B'],
   ['sources',   'dark-2 t3',  '#151512'],
   ['trend',     't2',         '#0D0D0B'],
   ['geography', 'dark-2 t2',  '#151512'],
   ['money',     'paper t2',   '#F3F2F0'],
+  ['questions', 'dark-2 t2',  '#151512'],
   ['act',       't3',         '#0D0D0B'],
 ];
 const chain = [...BANDS.map(b => [b[0], b[2]]), ['footer', '#151512']];
@@ -502,8 +590,8 @@ pointer-events:none;transition:background .12s}
 const NAV = SHELL_NAV;
 // Seven rows for eight bands — the index carries the argument, not the DOM.
 const INDEX = [['The reading','#top'],['Who is in it','#people'],['How the number is made','#measured'],
-  ['Where it comes from','#sources'],['Where it is going','#trend'],['The geography','#geography'],
-  ['What it costs','#money'],['What you can do','#act']];
+  ['The rules','#rules'],['Where it comes from','#sources'],['Where it is going','#trend'],['The geography','#geography'],
+  ['What it costs','#money'],['Questions','#questions'],['What you can do','#act']];
 const HEADER = `<header class="nav"><div class="nav-in"><a class="mark" href="${HOME_HREF}" aria-label="Swechha"><img src="/brand/swechha-horizontal-white-approved.png" alt="Swechha"${imgDim('/brand/swechha-horizontal-white-approved.png')}></a><nav class="navlinks" aria-label="Primary">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav><button type="button" class="navidx-t" aria-expanded="false" aria-controls="navidx">Menu</button>
 <div class="navidx" id="navidx" hidden><nav aria-label="Pages">${NAV.map(([t,h])=>`<a class="nl" href="${h}"${t===INDEX_PAGE.label?' aria-current="true"':''}>${t}</a>`).join('')}</nav></div><a class="nl navsearch" href="/search"><svg class="navsearch-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg><span class="navsearch-t">Search</span></a><a class="give" href="${GIVE_HREF}">Act</a></div><nav class="navscroll" aria-label="Sections"><ul>${INDEX.map(([t,h])=>`<li><a class="nl" href="${h}">${t}</a></li>`).join('')}</ul></nav></header>${AFFORD_CSS}${SECTION_SPY}`;
 
@@ -555,7 +643,11 @@ B.top = () => {
      the row, because a city with one monitor is measured less, not better. */
   const top = IND.cities.slice(0, 8);
   const dr = IND.delhi;
-  const natRows = top.map(c => {
+  /* The caption below promises "Delhi's row beside them". When Delhi is not in
+     the top eight that row did not exist, so it is appended after a gap, with
+     its rank, rather than the promise being quietly false. */
+  const natList = dr && !top.some(c => c.city.toLowerCase() === 'delhi') ? [...top, dr] : top;
+  const natRows = natList.map(c => {
     const isD = c.city.toLowerCase() === 'delhi';
     /* AD-27.6-A: NO id, NO data-aqi. Both existed so the live upgrade could
        re-rank Delhi against the snapshot without re-fetching the other 258
@@ -578,7 +670,9 @@ B.top = () => {
     const gasGov = c.governing && c.governing !== 'PM2.5' && c.governing !== 'PM10';
     const mark = gasGov ? ` &middot; ${esc(PRETTY[c.governing] || c.governing)}` : '';
     const doubt = c.suspect ? ` <abbr class="p-nr-q" title="${esc(c.suspectReason || '')}">?</abbr>` : '';
-    return `<div class="p-nr${isD?' is-me':''}"><span class="p-nr-n">${esc(c.city)}${c.state&&!isD?`, ${esc(c.state)}`:''}</span>
+    const gap = isD && c !== top[top.length - 1] && !top.includes(c)
+      ? `<div class="p-nr p-nr-gap" aria-hidden="true"><span class="p-nr-n">&hellip;</span></div>` : '';
+    return `${gap}<div class="p-nr${isD?' is-me':''}"><span class="p-nr-n">${isD && !top.includes(c) ? `${ORD(c.rank)} &middot; ` : ''}${esc(c.city)}${c.state&&!isD?`, ${esc(c.state)}`:''}</span>
           <span class="p-nr-v${c.aqi>IND.aqiLimit?' is-red':''}">${c.aqi}${doubt}</span>
           <span class="cap p-nr-s">${c.stations}&nbsp;station${c.stations===1?'':'s'}${mark}</span></div>`;
   }).join('\n        ');
@@ -597,13 +691,17 @@ ${crumb('air')}
       <div class="p2-cols">
       <div class="p2-read breach">
         <p class="state p2-state ${STATES[AIR_STATE]}" id="air-state" data-state="${STATES[AIR_STATE]}"><i aria-hidden="true"></i><span id="air-state-w">${AIR_STATE_WORD}</span><span class="sr" id="air-state-x"> &mdash; ${AIR_STATE_GLOSS}</span></p>
-        <p class="readout rl" id="air-aqi" data-committed="${rd.aqi}">${rd.aqi}</p>
+        <p class="readout rl" id="air-aqi" data-committed="${rd.aqi}" data-observed-utc="${OBS_UTC}" data-stale-hours="${STALE_HOURS}">${rd.aqi}</p>
         <p class="unit">AQI &middot; 24-hour &middot; worst of ${AIR.spread.stations} monitors</p>
         <p class="verdict bad" id="air-band">${rd.band}</p>
         <div class="bands bad" id="air-bands" role="img" aria-label="${rd.band}, band ${catIdx+1} of ${AIR.bands.length}">${bands}</div>
-        <p class="limit" id="air-limit">CPCB safe limit ${AIR.aqiLimit}. <b>${rd.aqi > AIR.aqiLimit ? 'Limit broken.' : 'Within the limit.'}</b></p>
-        <p class="cap p2-src" id="air-src"><span id="air-src-w">This is the WORST of ${AIR.spread.stations} CPCB monitors across Delhi &mdash; ${esc(String(ws.station).split(',')[0].trim())}. Averaged across all ${AIR.spread.stations}, Delhi reads ${AIR.city_mean.aqi}, which is the figure CPCB itself publishes for the city. ${AIR_CADENCE_VIS} Observed ${OBS}.</span>
-          <a class="lk" href="#measured">How this number is made</a>.</p>
+        <p class="limit" id="air-limit">${HERO_LIMIT}</p>
+        <p class="cap p2-src" id="air-src"><span id="air-src-w">This is the WORST of ${AIR.spread.stations} CPCB monitors across Delhi &mdash; ${esc(String(ws.station).split(',')[0].trim())}. Averaged across all ${AIR.spread.stations}, Delhi reads ${AIR.city_mean.aqi} &mdash; an average across stations is how CPCB makes the city figure it publishes. ${AIR_CADENCE_VIS} Observed ${OBS}.</span><span id="air-age" class="p2-age" hidden></span>
+          <a class="lk" href="#measured">How this number is made</a>.</p>${HERO_SUSPECT ? `
+        <p class="cap p-hole p2-doubt" id="air-doubt"><b>One channel, uncorroborated.</b> That ${rd.aqi} is ${esc(String(ws.station).split(',')[0].trim())}&rsquo;s
+          ${PRETTY[ws.governing] || ws.governing}; the same station&rsquo;s particulates read only ${HERO_SUSPECT.pmHere}, so nothing at that station backs the figure up.${HERO_SUSPECT.alt
+          ? ` Set that channel aside and the worst monitor is ${esc(HERO_SUSPECT.alt.name)}: ${HERO_SUSPECT.alt.aqi}, on ${PRETTY[HERO_SUSPECT.alt.gov] || HERO_SUSPECT.alt.gov} &mdash; ${IND.delhi && IND.delhi.aqi === HERO_SUSPECT.alt.aqi ? 'the figure Delhi&rsquo;s national rank is read from.' : 'the figure this page would rank Delhi on.'}` : ''}</p>` : ''}
+        <p class="cap p2-cite"><button type="button" class="lk p2-copy" id="air-copy" data-quote="${esc(QUOTE())}">Copy this reading, with its source</button><span class="sr" id="air-copy-s" role="status" aria-live="polite"></span></p>
       </div>
       <div class="p2-nat">
         <p class="lbl p2-nat-h">India, right now</p>
@@ -662,25 +760,25 @@ const kd = (kind) => `class="unit p-kd ${kind === 'modelled' ? 'p-kd-m' : 'p-kd-
 const KIND_LEGEND = `      <p class="p-legend"><span class="lbl p-kd p-kd-c">Counted or measured</span><span class="lbl p-kd p-kd-m">Modelled</span></p>`;
 
 B.people = () => `    <div class="wrap">
-${opener('people','Who is in it?','Every figure here is measured against a limit India has not adopted.')}
+${opener('people','Who is in it?','Four figures about people, three of them models, and each says what it is measured against.')}
 ${KIND_LEGEND}
       <div class="p-two">
-        <div class="p-two-c"><p class="num rl">1.5</p><p ${kd('modelled')}>million deaths a year</p>
-          <p class="cap">about 1.5 million, against <b>the WHO guideline</b> &mdash; 5 µg/m³ annual.
-          <span class="p-cite">Lancet Planetary Health, December 2024.</span></p></div>
-        <div class="p-two-c"><p class="num rl">5.0%</p><p ${kd('modelled')}>of all mortality</p>
-          <p class="cap">against <b>India&rsquo;s own standard</b> &mdash; 40 µg/m³ annual. Same study, same deaths.</p></div>
+        <div class="p-two-c"><p class="num rl">16.6</p><p ${kd('modelled')}>million deaths, 2009&ndash;2019</p>
+          <p class="cap">measured against <b>the WHO guideline</b> &mdash; 5 µg/m³ annual; about 1.5 million a year, 24.9% of all mortality.
+          <span class="p-cite"><a class="lk" href="https://doi.org/10.1016/S2542-5196(24)00248-1" rel="noopener" target="_blank">Jaganathan and others, Lancet Planetary Health, December 2024</a>.</span></p></div>
+        <div class="p-two-c"><p class="num rl">3.8</p><p ${kd('modelled')}>million deaths, 2009&ndash;2019</p>
+          <p class="cap">measured against <b>India&rsquo;s own standard</b> &mdash; 40 µg/m³ annual; 5.0% of all mortality. Same study, same years.</p></div>
       </div>
-      <p class="body p-ratio">India&rsquo;s standard is eight times the WHO guideline, so the same harm counts twice over.</p>
+      <p class="body p-ratio">India&rsquo;s annual standard is eight times the WHO guideline, so the same air counts as 3.8 million deaths against one and 16.6 million against the other.</p>
       <div class="p-rows">
         <div class="p-row"><p class="num rl">29.4%</p>
-          <div><p class="body">of <b>Delhi adolescents aged 13&ndash;17</b> showed spirometry-defined asthma or airflow obstruction. <span class="lbl p-kd p-kd-c">Counted</span></p>
-          <p class="cap">The study&rsquo;s own strongest association was obesity, not air pollution &mdash; 39.8% overweight against 16.4%.
-          <span class="p-cite">Lung Care Foundation with Pulmocare Research, Lung India, September 2021.</span></p></div></div>
+          <div><p class="body">of <b>Delhi schoolchildren aged 13&ndash;14 and 16&ndash;17</b> showed airflow obstruction on spirometry &mdash; 3,157 students in private schools. <span class="lbl p-kd p-kd-c">Counted</span></p>
+          <p class="cap">Its strongest association was body weight, not air pollution: 39.8% of the Delhi children were overweight or obese, against 16.4% in Kottayam and Mysore.
+          <span class="p-cite"><a class="lk" href="https://doi.org/10.4103/lungindia.lungindia_955_20" rel="noopener" target="_blank">Salvi and others, Lung India, September 2021</a>.</span></p></div></div>
         <div class="p-row"><p class="num rl">8.2 years</p>
-          <div><p class="body">of life expectancy lost in <b>Delhi-NCR</b>. 3.5 years across India. <span class="lbl p-kd p-kd-m">Modelled</span></p>
-          <p class="cap">Nearly twice the toll of childhood and maternal malnutrition.
-          <span class="p-cite">Air Quality Life Index, EPIC, University of Chicago, 2025.</span></p></div></div>
+          <div><p class="body">of life expectancy an average resident of the <b>NCT of Delhi</b> could gain if particulates met the WHO guideline. 3.5 years across India. <span class="lbl p-kd p-kd-m">Modelled</span></p>
+          <p class="cap">A counterfactual for the average resident, not a forecast for any person, from satellite-based 2023 estimates. Across South Asia&rsquo;s most polluted countries it is nearly twice the toll of childhood and maternal malnutrition.
+          <span class="p-cite"><a class="lk" href="https://aqli.epic.uchicago.edu/report/annual-update-2025" rel="noopener" target="_blank">Air Quality Life Index, EPIC, University of Chicago, 2025 update</a>.</span></p></div></div>
       </div>
       <p class="body p-key"><b>Three of those four figures are models.</b> The one that was counted is the one
         about children&rsquo;s lungs, because somebody put real adolescents in front of a spirometer. A model
@@ -732,10 +830,23 @@ B.measured = () => {
     return lim != null && Number.isFinite(conc) && conc > lim;
   };
   const cmp = XC.comparison;
+  /* ★ EACH CARD NAMES THE MONITOR ITS NUMBER CAME FROM, and it is the monitor
+     with the highest reading OF THAT POLLUTANT. The PM2.5 card used to print
+     `gov.impliedConc` — the GOVERNING pollutant's figure at the worst station —
+     so on 25 September 2026 it said "About 134 µg/m³ at North Campus", which
+     was NO₂: North Campus reports no PM2.5 at all. The word "today" is gone
+     too (AD-05 R1): a static page cannot know what day it is read on, so the
+     cards say "in the hour above". */
+  const topBy = (k) => AIR.stations
+    .filter(st => st.pollutants?.[k]?.impliedConc != null)
+    .sort((a, b) => b.pollutants[k].sub - a.pollutants[k].sub)[0] || null;
+  const cardFor = (k) => { const t = topBy(k); return t
+    ? `About <b>${t.pollutants[k].impliedConc} ${t.pollutants[k].impliedUnit}</b> at ${esc(String(t.station).split(',')[0].trim())}, the highest of the Delhi monitors reporting it in the hour above, implied by its sub-index. India&rsquo;s ${t.pollutants[k].averaging} standard is ${AIR.limits[k][WIN[t.pollutants[k].averaging]]} ${AIR.limits[k].unit}.`
+    : `No Delhi monitor reported it in the hour above.`; };
   const expl = [
-    ['AQI','One number for eight poisons',`Eight pollutants folded into one 0&ndash;500 figure that reports <b>whichever is worst</b> at a monitor, then averaged across Delhi&rsquo;s monitors. It is an index, not a concentration. ${rd.aqi} today; the limit is ${AIR.aqiLimit}.`],
-    ['PM2.5','Small enough to enter blood',`Particles under two and a half microns pass the lung wall into the bloodstream. About <b>${gov.impliedConc} µg/m³</b> at ${esc(String(ws.station).split(',')[0].trim())} today, implied by its sub-index. The Indian daily standard is ${AIR.limits['PM2.5'].h24}.`],
-    ['PM10','Dust you can feel',`Coarser particles from roads, construction and soil, stopping in the upper airway. About <b>${ws.pollutants['PM10']?.impliedConc ?? '—'} µg/m³</b> there today. The standard is ${AIR.limits['PM10'].h24}.`],
+    ['AQI','One number for eight poisons',`Up to eight pollutants folded into one 0&ndash;500 figure that reports <b>whichever is worst</b> at a monitor. It is an index, not a concentration. The number at the top of this page is the worst monitor, ${rd.aqi}; CPCB&rsquo;s own city figure averages the monitors instead. Neither is a measure of what any one person breathes.`],
+    ['PM2.5','Small enough to enter blood',`Particles under two and a half microns reach the deepest part of the lung, and the finest cross into the blood. ${cardFor('PM2.5')}`],
+    ['PM10','Dust you can feel',`Coarser particles from roads, construction and soil, stopping mostly in the upper airway. ${cardFor('PM10')}`],
   ];
   const pWhat = `<div class="p-expl">${expl.map(([h,sb,b]) => `<div><h3 class="p-expl-h">${h}</h3><p class="p-expl-s">${sb}</p><p class="p-expl-b">${b}</p></div>`).join('')}</div>`;
   const pEight = `<p class="body p-quote">&ldquo;The worst sub-index determines the overall AQI.&rdquo;
@@ -743,13 +854,17 @@ B.measured = () => {
         <div class="p-subs">${shown.map(x => `<div class="p-sub${x.k===ws.governing?' is-gov':''}">
             <p class="lbl p-sub-n">${PRETTY[x.k]}</p><p class="p-sub-v">${x.sub}</p>
             <p class="cap p-sub-c${overLimit(x) ? ' is-red' : ''}">~${x.impliedConc}${limitFor(x) != null ? ` of ${limitFor(x)}` : ''} ${x.impliedUnit}</p>${x.k===ws.governing?'<p class="lbl p-sub-g">governing</p>':''}</div>`).join('')}</div>
-        <p class="cap p-miss">Eight pollutants, ${shown.length} at this monitor. <b>Pb</b> is not reported here.
+        <p class="cap p-miss">Eight pollutants, ${shown.length} at this monitor. ${(() => { const absent = ['PM2.5','PM10','NO2','OZONE','SO2','NH3','CO','PB'].filter(k => ws.pollutants[k]?.sub == null).map(k => `<b>${PRETTY[k]}</b>`); return absent.length ? `${absent.join(', ').replace(/, ([^,]*)$/, ' and $1')} ${absent.length === 1 ? 'is' : 'are'} not reported here.` : ''; })()}
           The big numbers are CPCB&rsquo;s own sub-indexes, published as such; the small ones under them are the
           concentrations those sub-indexes imply, carrying a tilde because <b>this feed publishes no
           concentration at all</b>.</p>
-        <p class="body p-key"><b>AQI 100 is not a rule of thumb.</b> The boundary sits at PM2.5
-          ${AIR.limits['PM2.5'].h24} µg/m³ and PM10 ${AIR.limits['PM10'].h24} µg/m³ &mdash; exactly the 24-hour
-          standards India set for itself. <b>Above 100 is above the law.</b></p>`;
+        <p class="body p-key"><b>AQI 100 is not a rule of thumb.</b> CPCB put every pollutant&rsquo;s 100 exactly
+          on India&rsquo;s own standard &mdash; PM2.5 ${AIR.limits['PM2.5'].h24} µg/m³ and PM10 ${AIR.limits['PM10'].h24} µg/m³
+          over 24 hours, ozone and CO over eight. <b>Above 100, that pollutant is over the standard at that
+          monitor.</b> Whether the standard is <i>breached</i> is a judgement across days: the notification lets
+          24-hour values exceed it on 2% of days in a year, never on two days running. One hour can show the
+          air over the line; on its own, it cannot show the standard broken.
+          <span class="p-cite">NAAQS 2009, Gazette of India, 18 November 2009.</span></p>`;
   const pScales = cmp ? `<div class="p-scales">
         <div class="p-scales-r">
           <div><p class="num rl">${cmp.waqi_us_epa_aqi}</p><p class="unit">US EPA scale &middot; WAQI</p></div>
@@ -766,15 +881,16 @@ B.measured = () => {
             re-read.</caption>
           <thead><tr><th scope="col">Figure</th><th scope="col">Kind</th><th scope="col">Source</th><th scope="col">Cadence</th></tr></thead><tbody>
           <tr><th scope="row">AQI, ${rd.aqi}</th><td>Read, then selected</td><td>CPCB’s published sub-indexes; worst of ${AIR.spread.stations} monitors (${esc(rd.station)}). CPCB’s own city mean is ${AIR.city_mean.aqi}.</td><td>Hourly</td></tr>
-          <tr><th scope="row">Station concentrations</th><td>Measured</td><td>CPCB, ${AIR.spread.stations} Delhi stations</td><td>Hourly</td></tr>
-          <tr><th scope="row">Published limit, ${AIR.aqiLimit}</th><td>Standard</td><td>${esc(limitAuthority)}</td><td>Fixed</td></tr>
+          <tr><th scope="row">Concentrations, with a tilde</th><td>Calculated</td><td>Implied from CPCB&rsquo;s sub-indexes through its own breakpoint table; CPCB&rsquo;s feed carries no concentrations</td><td>Hourly</td></tr>
+          <tr><th scope="row">AQI ${AIR.aqiLimit}</th><td>Standard</td><td>CPCB National Air Quality Index, 2014 &mdash; set at each pollutant&rsquo;s ${esc(limitAuthority)} short-term standard</td><td>Fixed</td></tr>
           <tr><th scope="row">Source split</th><td>Modelled</td><td>published apportionment study</td><td>Per study</td></tr>
-          <tr><th scope="row">Farm-fire counts</th><td>Measured</td><td>NASA FIRMS, per sensor</td><td>Daily</td></tr>
-          <tr><th scope="row">Attention</th><td>Measured</td><td>Wikipedia pageviews</td><td>Daily</td></tr>
-          <tr><th scope="row">Forecast</th><td>Modelled</td><td>WAQI&rsquo;s model, not CPCB&rsquo;s</td><td>Daily</td></tr>
+          <tr><th scope="row">Farm-fire detections</th><td>Observed by satellite</td><td>NASA FIRMS, per sensor</td><td>As dated on the figure</td></tr>
+          <tr><th scope="row">Attention</th><td>Counted</td><td>Wikipedia pageviews</td><td>Monthly, as dated</td></tr>
+          <tr><th scope="row">Forecast</th><td>Forecast</td><td>WAQI&rsquo;s model, on the US EPA index scale &mdash; not CPCB&rsquo;s, not an observation</td><td>As dated</td></tr>
         </tbody></table>
-        <p class="cap"><b>Not CPCB&rsquo;s published AQI.</b> The feed returns concentrations and no index, so the
-          number at the top of this page is computed here using CPCB&rsquo;s own breakpoint table.</p></div>`;
+        <p class="cap"><b>CPCB&rsquo;s own sub-indexes, never recomputed.</b> The feed publishes each pollutant&rsquo;s
+          index at each station; the number at the top of this page is the worst of them at the worst monitor,
+          read as published. Only the concentrations are calculated, and they carry a tilde.</p></div>`;
   return `    <div class="wrap">
 ${opener('measured','How the number is made','One number stands in for eight, and it is not their average &mdash; it is the worst of them.')}
 ${tabs('Method', [['What they are', pWhat], ['Today\'s eight', pEight], ['Two scales', pScales], ['Every figure', pMethod]].filter(x => x[1]))}
@@ -833,12 +949,12 @@ B.sources = () => {
   }).join('\n          ');
   const pSplit = `<div class="p-ap">
           <p>${kindTag('modelled')}</p>
-          <p class="body p-ap-k"><b>This is the only complete split anyone has published for Delhi, and its
-            newest measurement is from February 2017.</b> Six sectors, summing to a hundred, from the study
-            the Government of India commissioned to settle the question.</p>
+          <p class="body p-ap-k"><b>This is the split the Government of India commissioned for Delhi, and its
+            newest measurement is from February 2017.</b> Six sectors, summing to a hundred &mdash; a seasonal
+            average, not a reading of any one day.</p>
           <div class="p-ap-h"><span></span><span class="lbl">Winter</span><span class="lbl">Summer</span><span class="lbl p-ap-d">&Delta;</span></div>
           ${apRows}
-          <p class="body p-ap-f"><b>Dust more than doubles in summer and industry stays put.</b> The season
+          <p class="body p-ap-f"><b>${(() => { const d = (k) => { const w = tw.find(x => x.sector === k), m = ts.find(x => x.sector === k); return w && m ? [w.pct, m.pct] : null; }; const du = d('Dust'), ind = d('Industry'); return du && ind ? `Dust goes from ${du[0]}% to ${du[1]}% in summer; industry from ${ind[0]}% to ${ind[1]}%.` : 'The split moves with the season.'; })()}</b> The season
             does not just change how much there is &mdash; it changes what it is. A control measure aimed at
             the winter split is aimed at a different problem in June.</p>
           <p class="cap">${esc(T.short)}, ${esc(T.published)} &mdash; PM2.5, Delhi, dispersion model
@@ -858,7 +974,7 @@ B.sources = () => {
           <p class="body p-ap-k"><b>The other government study will not give you a single number.</b>
             ${esc(K.short)} sampled six sites across Delhi and reported every source as a <b>range</b>,
             because the answer was different under every monitor. The width of each line below is how much
-            the two studies, and the six sites, fail to agree.</p>
+            the six sites fail to agree.</p>
           <div class="p-rg">
             ${K.ranges.pm25.map(r => `<div class="p-rg-r"><span class="p-rg-n">${esc(r.sector)}</span>
               <span class="p-rg-t"><i class="p-rg-l" style="left:${(r.lo/rmax*100).toFixed(1)}%;right:${(100-r.hi/rmax*100).toFixed(1)}%"></i></span>
@@ -902,7 +1018,7 @@ B.sources = () => {
             of the remainder to <b>dust that did not originate in Delhi at all</b>.
             <span class="p-cite">${esc(T.short)}, section E7.3.</span></p>
           <p class="cap p-hole"><b>The question neither study answers.</b> What is in the air <i>today</i>.
-            Both are seasonal averages whose last measurement is eight years old. There is a system that does
+            Both are seasonal averages, and the newer of the two last measured anything in ${T.monitoring_period.split(' to ').pop()}. There is a system that does
             answer it &mdash; <a class="lk" href="${esc(AP.live_system.url)}" rel="noopener" target="_blank">${esc(AP.live_system.name)}</a>,
             run by the ${esc(AP.live_system.by.replace(/, Ministry of Earth Sciences$/, ''))}, which publishes
             a daily split across 29 sectors with the stubble share taken from the previous evening&rsquo;s
@@ -926,7 +1042,7 @@ B.sources = () => {
           sample, not a season total</b> &mdash; burning dates shift with monsoon withdrawal and harvest timing,
           so a fixed window can miss a peak. 2024 and 2025 run at roughly a sixth of 2021.</p>`;
   return `    <div class="wrap">
-${opener('sources','Where does it come from?','A source apportionment is a model: it takes measured concentrations, wind and an emissions inventory and works backwards to a plausible split. Biomass burning is one segment, and it has a season.')}
+${opener('sources','Where does it come from?','A source apportionment is a model. One kind works backwards from what the filters caught; the other works forwards from an emissions inventory and the weather. Either way it is a plausible split, not a measurement &mdash; and it changes with the season.')}
 ${tabs('Sources', [['The split', pSplit], ['Two studies', pRanges], ['Inside transport', pWho], ['Farm fires now', pNow], ['Year on year', pYY]])}
     </div>`;
 };
@@ -937,36 +1053,58 @@ B.trend = () => {
   const recent = complete.slice(-24);
   const amx = Math.max(...recent.map(m => m.views));
   const fmx = days.length ? Math.max(...days.map(d => d.max)) : 1;
+  /* ── YEAR BY YEAR: the government's own annual series (air hub v2). The
+     brief's "is Delhi's air getting better?" had no honest answer on this page:
+     its own record is a month old. CAQM publishes one, and it is printed as
+     theirs — official data, its window stated in its own words, compared only
+     with the ANNUAL standard (like with like), and with the COVID year marked.
+     The bars reuse the year-on-year fire panel's .p-yy, so nothing new is drawn. */
+  const annMax = Math.max(...ANN.years.map(y => y.pm25));
+  const annStd = AIR.limits['PM2.5'].annual;
+  const annLast = ANN.years[ANN.years.length - 1], annFirst = ANN.years[0];
+  const annLow = ANN.years.filter(y => !y.note).reduce((a, b) => (b.pm25 < a.pm25 ? b : a));
+  const pYear = `<div class="p-yr">
+          <p class="lbl p-kd p-kd-c">Official data &middot; CAQM</p>
+          <div class="p-yy" role="img" aria-label="Delhi annual average PM2.5, ${ANN.years.map(y => `${y.year} ${y.pm25}`).join(', ')} micrograms per cubic metre; India's annual standard is ${annStd}.">${ANN.years.map(y => `<div class="p-yy-c"><span class="p-yy-bar" style="height:${Math.round(y.pm25 / annMax * 100)}%"></span><span class="p-yy-v">${y.pm25}</span><span class="lbl p-yy-y">${y.year}${y.note ? '*' : ''}</span></div>`).join('')}</div>
+          <p class="body"><b>PM2.5 ${annFirst.pm25} µg/m³ in ${annFirst.year}, ${annLast.pm25} in ${annLast.year}.</b> On the Commission for Air
+            Quality Management&rsquo;s own figures ${annLow.year} was the lowest of these years bar ${ANN.years.filter(y => y.note).map(y => y.year).join(', ')},
+            and still <b>${+(annLast.pm25 / annStd).toFixed(1)} times India&rsquo;s annual standard</b> of ${annStd} &mdash; a concentration
+            against a concentration, over a year against a year&rsquo;s standard. PM10 moved from ${annFirst.pm10} to ${annLast.pm10}.</p>
+          <p class="cap">Eight numbers is a direction, not a trend line, and the release does not say which monitors
+            were averaged. * ${ANN.years.filter(y => y.note).map(y => `${y.year}: ${esc(y.note)}`).join('; ')}.
+            <a class="lk" href="${esc(ANN.source.url)}" rel="noopener" target="_blank">CAQM via PIB, ${esc(ANN.source.published.split('-').reverse().join('-'))}</a>
+            &mdash; &ldquo;${esc(ANN.source.window)}&rdquo;.</p></div>`;
   const pRecord = `<div class="p-grid-wrap">
           <div class="p-grid" role="img" aria-label="${REC
       ? `Daily record, one square per day, ${REC.days} day${REC.days === 1 ? '' : 's'} held from ${REC.from} to ${REC.to}`
       : 'Daily record, one square per day — the job has not run yet'}">
             ${(REC?.cells ?? []).map((c)=>`<i class="${c.held?'p-g-on':''}"></i>`).join('')}
           </div>
-          <p class="cap"><b>One square.</b> ${REC_FROM ? `The record begins on ${REC_FROM}. ` : ''}It draws no
+          <p class="cap"><b>One square a day.</b> ${REC_FROM ? `The record begins on ${REC_FROM}. ` : ''}It draws no
             square it does not have &mdash; an empty cell is absence, not zero. There is no retrospective
             series: the CPCB feed publishes the latest hour only.</p></div>`;
   const pAttn = `<div class="p-attn">
           <div class="p-attn-c">${recent.map(m=>`<span class="p-attn-b" style="height:${Math.round(m.views/amx*100)}%" title="${m.month}: ${n0(m.views)}"></span>`).join('')}</div>
           <div class="p-attn-x"><span>${recent[0].month.slice(0,4)}</span><span>${recent[recent.length-1].month.slice(0,4)}</span></div>
-          <p class="body"><b>Attention is not air.</b> Searches peak every November at ${n0(ATTN.peak.views)}
-            and fall to ${n0(ATTN.floor.views)} in summer &mdash; a <b>${ATTN.swing}&times; swing</b> &mdash;
-            while the readings stay above the limit all twelve months. And the swing is <b>widening</b>:
+          <p class="body"><b>Attention is not air.</b> The Wikipedia article was read ${n0(ATTN.peak.views)} times in its busiest month,
+            ${MON[+ATTN.peak.month.slice(4) - 1]} ${ATTN.peak.month.slice(0, 4)}, and ${n0(ATTN.floor.views)} in its quietest, ${MON[+ATTN.floor.month.slice(4) - 1]} ${ATTN.floor.month.slice(0, 4)} &mdash;
+            a <b>${ATTN.swing}&times; swing</b>. November against the summer, year by year, it is <b>widening</b>:
             ${ATTN.seasons.filter(s=>s.ratio).map(s=>`${s.year} ${s.ratio}×`).join(', ')}.</p>
           <p class="cap">Wikipedia pageviews, ${ATTN.complete_months} complete months. It measures what people
             <b>seek</b>, not what outlets publish. A quiet month is not a clean month. The current month is
             incomplete and excluded, never plotted.</p></div>`;
   const pFc = `<div class="p-fc">
           ${days.length ? `<div class="p-fc-c">${days.map(d=>`<div class="p-fc-d"><span class="p-fc-bar" style="height:${Math.round(d.avg/fmx*100)}%"></span><span class="p-fc-v">${d.avg}</span><span class="lbl p-fc-x">${d.day.slice(8)}</span></div>`).join('')}</div>
-          <p class="cap">PM2.5 daily mean, ${days.length} days.</p>` : ''}
+          <p class="cap">WAQI&rsquo;s PM2.5 forecast, daily mean, ${days.length} days &mdash; on the <b>US EPA index scale</b>, not in µg/m³ and not CPCB&rsquo;s AQI. <b>A forecast, not an observation.</b></p>` : ''}
           <p>${kindTag('modelled')}</p>
-          <p class="body"><b>Somebody is forecasting this. Not us, and not the government.</b> The curve is
-            <b>WAQI&rsquo;s own model</b>. India&rsquo;s official forecaster is
-            <a class="lk" href="${esc(fc.official_indian_forecaster.url)}" rel="noopener" target="_blank">SAFAR</a>,
-            which publishes a 72-hour Delhi forecast.</p></div>`;
+          <p class="body"><b>Somebody is forecasting this, and it is not us.</b> The curve is
+            <b>WAQI&rsquo;s own model</b>. The government&rsquo;s is the
+            <a class="lk" href="https://ews.tropmet.res.in/" rel="noopener" target="_blank">Air Quality Early Warning System</a>
+            run by IITM and IMD &mdash; the forecast GRAP stages can be invoked on, and where SAFAR&rsquo;s own site now sends readers.
+            Where the two disagree, neither is an observation.</p></div>`;
   return `    <div class="wrap">
-${opener('trend','Where it has been, and where it is going',`The record starts ${REC_FROM ? `on ${REC_FROM}` : 'when the job first runs'}; the forecast reaches seven days ahead.`)}
-${tabs('Time', [['The record', pRecord], ['Attention', pAttn], ['Forecast', pFc]])}
+${opener('trend','Where it has been, and where it is going',`The government&rsquo;s annual figures go back to ${ANN.years[0].year}; this page&rsquo;s own hourly record starts ${REC_FROM ? `on ${REC_FROM}` : 'when the job first runs'}; the forecast reaches seven days ahead.`)}
+${tabs('Time', [['Year by year', pYear], ['The record', pRecord], ['Attention', pAttn], ['Forecast', pFc]])}
     </div>`;
 };
 
@@ -1000,6 +1138,30 @@ const DELHI_ORD = ORD(DELHI_RANK);
    now the highest-ranked city in the feed reporting from a single station, so
    the sentence keeps its point without going stale. */
 const ONE_ST = IND.cities.slice(0, 12).find(c => c.stations === 1) || null;
+
+/* ── DELHI AND THE TOWNS AROUND IT — NCR, as the NCR Planning Board draws it.
+   The question half the readers of this page actually arrive with ("Gurugram
+   AQI", "Noida AQI") had no answer here: the national snapshot has held every
+   NCR town CPCB measures since AD-43, ranked among 260 others. This pulls them
+   out on the SAME two statistics every table on this page uses — the worst
+   monitor, named, and the mean of all monitors beside it — at the national
+   snapshot's own hour, which it states. data/ncr.json is a list of districts
+   from the Board's own page; a town that file does not name is outside NCR,
+   never assumed in. A district with no reporting monitor is NAMED as such:
+   unmeasured is not clean (D-16.4). */
+const NCR_ROWS = (() => {
+  const byCity = new Map(IND.cities.map(c => [c.city, c]));
+  const rows = [], dark = [];
+  for (const d of NCR.districts) {
+    const hits = d.cities.map(n => byCity.get(n)).filter(Boolean);
+    if (!hits.length) dark.push(d.district);
+    for (const c of hits) rows.push({ ...c, district: d.district, dstate: d.state });
+  }
+  rows.sort((a, b) => b.aqi - a.aqi);
+  return { rows, dark, districts: NCR.districts.length };
+})();
+if (!NCR_ROWS.rows.some(r => r.city === 'Delhi')) { console.error('NCR: Delhi is missing from the national snapshot'); bad++; }
+const NCR_OVER = NCR_ROWS.rows.filter(r => r.aqi > IND.aqiLimit).length;
 B.geography = () => {
   const st = AIR.stations.filter(s => s.aqi != null);
   const rows = (arr) => arr.map(s=>`<div class="p-rank-r"><span class="p-rank-v${s.aqi>AIR.aqiLimit?' is-red':''}">${s.aqi}</span><span class="p-rank-n">${esc(s.station.replace(/, Delhi.*/,''))}</span><span class="cap p-rank-g">${PRETTY[s.governing]||s.governing}</span></div>`).join('');
@@ -1009,12 +1171,11 @@ B.geography = () => {
           ${rows(st.slice(-3))}
           <p class="cap">${AIR.spread.stations} stations, <b>${AIR.spread.above_limit} above the limit</b>.
             The quietest reads ${AIR.spread.best.aqi}, the loudest ${AIR.spread.worst.aqi} &mdash;
-            <b>one city, a fivefold spread</b>. A city average hides it. Red is above the limit.</p></div>`;
+            <b>one city, one hour, ${AIR.spread.best.aqi} to ${AIR.spread.worst.aqi}</b>. A city average hides it. Red is above the limit.</p></div>`;
   /* The names, the count and the rank all come off the same fetch as the rank
      in the strip, so the two cannot say different things. The point of the
      paragraph survives whatever the ranking does on a given morning: it is not
      that Delhi is worst, it is that its neighbours move with it. */
-  const AS = IND.airshed;
   /* ── AD-43. THIS TAB WAS TWO PARAGRAPHS AND NOTHING ELSE, and it is where
      "All ${NAT.cities} cities" used to land. So the one link on this page that
      promised the national picture opened a band whose FIRST tab is a map of
@@ -1038,14 +1199,31 @@ B.geography = () => {
   const natRows2 = ROLL_OVER.map(s => `<div class="p-nsr"><span class="p-nsr-n">${esc(s.state)}</span>
             <span class="p-nsr-v is-red">${s.over}</span>
             <span class="cap p-nsr-s">of ${s.cities} ${s.cities === 1 ? 'city' : 'cities'} &middot; worst ${esc(s.worst.city)} ${s.worst.aqi}</span></div>`).join('\n          ');
+  const pNcr = `<div class="p-ncr">
+          <p class="body"><b>${NCR_OVER} of ${NCR_ROWS.rows.length} NCR towns above AQI ${IND.aqiLimit}</b> at their worst
+            monitor, read together at ${esc(NAT_OBS)}. The mean of each town&rsquo;s monitors is beside it, and so is how
+            many there are &mdash; a town with one monitor is a single reading wearing a town&rsquo;s name.</p>
+          <table class="p-tbl p-tbl-d">
+            <caption class="sr">Air quality in the towns of the National Capital Region that report to CPCB: the worst
+              monitor&rsquo;s AQI, the governing pollutant, the mean of all monitors and the number of monitors, one hour.</caption>
+            <thead><tr><th scope="col">Town</th><th scope="col">Worst monitor</th><th scope="col">Mean</th><th scope="col">Monitors</th></tr></thead>
+            <tbody>${NCR_ROWS.rows.map(r => `<tr${r.city === 'Delhi' ? ' class="is-me"' : ''}><th scope="row">${esc(r.city)}<span class="cap p-ncr-d">${esc(r.district === r.city ? r.dstate : `${r.district}, ${r.dstate}`)}</span></th>
+              <td><span class="p-ncr-v${r.aqi > IND.aqiLimit ? ' is-red' : ''}">${r.aqi}</span>${r.suspect ? ` <abbr class="p-nr-q" title="${esc(r.suspectReason || '')}">?</abbr>` : ''}<span class="cap p-ncr-d">${esc(PRETTY[r.governing] || r.governing)} &middot; ${esc(String(r.station).split(',')[0].trim())}</span></td>
+              <td>${r.meanAqi ?? '&mdash;'}</td><td>${r.stations}</td></tr>`).join('\n              ')}</tbody>
+          </table>
+          <p class="cap">${NCR_ROWS.dark.length ? `<b>No CPCB monitor reported this hour</b> from ${NCR_ROWS.dark.map(esc).join(', ').replace(/, ([^,]*)$/, ' or $1')} &mdash; unmeasured, not clean. ` : ''}NCR is ${NCR_ROWS.districts}
+            districts as the <a class="lk" href="${esc(NCR.source.url)}" rel="noopener" target="_blank">NCR Planning Board</a> lists them.
+            A town&rsquo;s figure is its monitors, not every street in it; a <b>?</b> marks a gas channel its own station
+            does not back up, published but not ranked.</p></div>`;
   const pIndia = `<div class="p-nat">
-          <p class="body"><b>Delhi is ${DELHI_ORD} of ${NAT.cities} cities, and ${n0(AS.neighbours)} of the
-            next ${n0(AS.behind_delhi)} are its neighbours</b> &mdash; ${AS.names.map(esc).join(', ')}.
-            This is not a city problem. It is an airshed.</p>
+          <p class="body"><b>Delhi is ${DELHI_ORD} of ${NAT.cities} cities.</b> Around it, ${NCR_OVER} of the
+            ${NCR_ROWS.rows.length} NCR towns CPCB measured in the same hour read above AQI ${IND.aqiLimit} at
+            their worst monitor &mdash; the Delhi-NCR tab beside this one has every one.
+            Air does not stop at the city limit, and neither does the question.</p>
           <p class="cap">${NAT.above} of ${NAT.cities} cities are above the limit India set for itself, and
             ${NAT.good} are &ldquo;Good&rdquo; &mdash; the country is not uniformly polluted, which is what makes
-            the cluster around Delhi legible. Computed from ${NAT.stations} stations on CPCB&rsquo;s scale,
-            every pollutant it publishes included.</p>
+            the cluster around Delhi legible. Read from ${NAT.stations} stations on CPCB&rsquo;s scale. A stuck channel is dropped, and a gas channel its
+            own station&rsquo;s particulates do not back up is published but not ranked.</p>
           <p class="lbl p-nsr-h">Where the ${NAT.above} sit &mdash; ${ROLL_OVER.length} of ${ROLL.length} states and union territories</p>
           ${natRows2}
           <p class="cap">Counts, never averages: CPCB measures cities, not states, so the unmeasured
@@ -1155,7 +1333,7 @@ ${opener('geography','Which part of the city, and where the city sits',
   + `<b>Every figure in this band was read at ${OBS}</b> &mdash; one hour, all ${AIR.spread.stations} `
   + `stations together, which is what makes them comparable &mdash; and the same hour as the reading `
   + `at the top of the page, which is read from this band's worst station.`)}
-${tabs('Geography', [['The map', pMap], ['Every station', pDelhi], ['India', pIndia]])}
+${tabs('Geography', [['The map', pMap], ['Every station', pDelhi], ['Delhi-NCR', pNcr], ['India', pIndia]])}
       <p style="margin:var(--gap-row) 0 0"><a class="act" href="#money">What has been spent on it ${ARROW}</a></p>
     </div>`;
 };
@@ -1170,7 +1348,7 @@ ${tabs('Geography', [['The map', pMap], ['Every station', pDelhi], ['India', pIn
    inaction has cost beside what action has been given. The distinction is
    printed rather than glossed, which is the only reason the hook can stand. */
 B.money = () => `    <div class="wrap">
-${opener('money','The cost of inaction is more than the action','Allocated is the claim. Utilised is the record. Both are dwarfed by the damage — and all three numbers are the government&rsquo;s own.')}
+${opener('money','The cost of inaction is more than the action','Released is the promise. Spent is the record. Both are dwarfed by the damage &mdash; and the two spending figures are the government&rsquo;s own.')}
       <div class="p-money">
         <div class="p-money-r"><p class="lbl">The damage, each year</p><p class="num rl">&#8377;7 lakh crore</p>
           <p class="cap">about $95 billion, roughly <b>3% of GDP</b> &mdash; the report&rsquo;s own comparisons are
@@ -1193,6 +1371,112 @@ ${opener('money','The cost of inaction is more than the action','Allocated is th
         <i>Tracing the Hazy Air</i>, Dalberg with Clean Air Fund and CII.</p>
     </div>`;
 
+/* ── THE RULES THAT APPLY (air hub v2). Two instruments this page measures
+   against and one it cannot see: India's standards, the WHO's guidelines, and
+   GRAP. All three are REFERENCE data, committed by hand with a source per row
+   (data/air-standards.json, data/grap.json), because none of them is a reading.
+   ★ GRAP IS STATED AS A SCHEDULE, NEVER AS A STATUS — the ruling
+   /learn/grap already carries ("this page states the schedule, not the
+   status"). Whether a stage is in force is an order of CAQM's sub-committee,
+   published case by case with no feed behind it; a hand-kept "current stage"
+   would be the one figure on this page that goes wrong without anyone
+   noticing. What the page CAN say is where Delhi's own average sits against
+   the schedule in the hour above — labelled as a comparison, not a stage. */
+const STDV = (pol, win, who) => { const r = STD.rows.find(x => x.pollutant === pol && x.window === win); return r ? (who ? r.who : r.india) : null; };
+const P25 = { ia: STDV('PM2.5', 'Annual'), wa: STDV('PM2.5', 'Annual', 1), id: STDV('PM2.5', '24-hour'), wd: STDV('PM2.5', '24-hour', 1) };
+const STD_NAME = { 'PM2.5': 'PM2.5', PM10: 'PM10', NO2: 'NO₂', SO2: 'SO₂', OZONE: 'O₃', CO: 'CO', NH3: 'NH₃', PB: 'Pb' };
+if (!STD.who.verified) { console.error('STANDARDS: data/air-standards.json carries WHO figures not yet checked against the WHO document (who.verified is false). Refusing to publish them.'); bad++; }
+B.rules = () => {
+  const cell = (v, none = 'none set') => v == null ? `<span class="cap">${none}</span>` : `${v}`;
+  /* India's figure against WHO's, only where both exist for one window. Where
+     India's is the LOWER of the two (CO over 8 hours and 1 hour), a ratio under
+     1 would read as a typo, so the cell says which is stricter instead. */
+  const ratio = (r) => r.india == null || r.who == null || r.india === r.who ? ''
+    : r.india > r.who ? `<span class="cap">${+(r.india / r.who).toFixed(1)}&times;</span>`
+    : '<span class="cap">India stricter</span>';
+  const pStd = `<div class="p-std">
+          <p class="body p-key"><b>India&rsquo;s PM2.5 standard is ${P25.ia / P25.wa} times the WHO&rsquo;s guideline over a
+            year, and ${P25.id / P25.wd} times over a day.</b> The two are not the same kind of thing. India&rsquo;s is
+            <b>law</b>, notified under the Air Act; the WHO&rsquo;s is the level its review of the health evidence
+            recommends, and binds no one in India. A multiplier here is honest because both sides are concentrations
+            in the same unit over the same window &mdash; which is exactly what an AQI is not.</p>
+          <table class="p-tbl p-tbl-d">
+            <caption class="sr">India&rsquo;s National Ambient Air Quality Standards 2009 beside the WHO&rsquo;s 2021 guideline, per pollutant and averaging window. Pairs appear only where both set a figure for the same window.</caption>
+            <thead><tr><th scope="col">Pollutant</th><th scope="col">Window</th><th scope="col">India, NAAQS 2009</th><th scope="col">WHO</th><th scope="col"><span class="sr">India against WHO</span></th></tr></thead>
+            <tbody>${STD.rows.map(r => `<tr><th scope="row">${STD_NAME[r.pollutant] || esc(r.pollutant)}<span class="cap p-ncr-d">${esc(r.unit)}</span></th><td>${esc(r.window)}</td><td>${cell(r.india)}</td><td>${cell(r.who, 'not in the 2021 guideline')}${r.who_basis === 'earlier' ? '<sup>&dagger;</sup>' : ''}</td><td>${ratio(r)}</td></tr>`).join('\n              ')}</tbody>
+          </table>
+          <p class="cap"><b>Two windows are never compared.</b> A 24-hour reading is set against a 24-hour standard, an
+            8-hour against an 8-hour; where only one body sets a figure for a window the other cell says so.
+            India&rsquo;s short-term standards must be met on 98% of days in a year and never missed two days running;
+            the WHO&rsquo;s short-term levels are the 99th percentile of the year, three or four days over.
+            <sup>&dagger;</sup> A WHO guideline set before 2021 that the 2021 update did not re-evaluate and says remains valid.
+            <a class="lk" href="${esc(STD.india.url)}" rel="noopener" target="_blank">NAAQS 2009, the notification</a> &middot;
+            <a class="lk" href="${esc(STD.who.url)}" rel="noopener" target="_blank">WHO guidelines, 2021</a>.</p></div>`;
+  const st = GRAP.stages;
+  const src = (id) => GRAP.sources[id];
+  const cm = AIR.city_mean.aqi;
+  const stageAt = st.slice().reverse().find(x => x.above != null ? cm > x.above : cm >= x.from);
+  const pGrap = `<div class="p-grap">
+          <p class="body p-key"><b>GRAP is the schedule of what Delhi-NCR shuts down, and at what number.</b> Four stages,
+            keyed to Delhi&rsquo;s <b>average</b> AQI &mdash; never to one monitor. A stage is in force only when the
+            Commission for Air Quality Management&rsquo;s GRAP sub-committee orders it, and it has ordered stages ahead of
+            a forecast before the average got there. So the threshold says when it <i>may</i> act, not that it has.</p>
+          <table class="p-tbl p-tbl-d">
+            <caption class="sr">The four stages of the Graded Response Action Plan for Delhi-NCR and the Delhi AQI at which each begins, as revised by CAQM on ${esc(GRAP.revised_label)}.</caption>
+            <thead><tr><th scope="col">Stage</th><th scope="col">Air quality</th><th scope="col">Delhi AQI</th><th scope="col">Source</th></tr></thead>
+            <tbody>${st.map(x => `<tr><th scope="row">Stage ${esc(x.n)}</th><td>${esc(x.band)}</td><td>${x.above != null ? `above ${x.above}` : `${x.from}&ndash;${x.to}`}</td><td><a class="lk" href="${esc(src(x.source).url)}" rel="noopener" target="_blank">PIB</a></td></tr>`).join('\n              ')}</tbody>
+          </table>
+          <p class="body"><b>A comparison, not a status.</b> In the hour at the top of this page the average of Delhi&rsquo;s
+            ${AIR.city_mean.stations} monitors was ${cm}${stageAt ? ` &mdash; inside Stage ${esc(stageAt.n)}&rsquo;s range` : ` &mdash; below where Stage I begins, ${st[0].from}`}.
+            The stages are judged on CPCB&rsquo;s daily city figure, not on one hour, and only an order puts one in force.</p>
+          <p class="cap">Schedule as revised by CAQM on ${esc(GRAP.revised_label)}. It says the stages are to be invoked
+            <b>in advance</b>, on IMD and IITM forecasts, and at once if the observed AQI crosses a threshold the forecast
+            missed. The measures under each stage are amended without a version number, so they are not copied here:
+            <a class="lk" href="${esc(GRAP_SCHEDULE_URL)}" rel="noopener" target="_blank">CAQM&rsquo;s schedule</a> &middot;
+            <a class="lk" href="/learn/grap">what each stage does, and how to read a GRAP headline</a>.</p></div>`;
+  return `    <div class="wrap">
+${opener('rules', 'The rules that apply', 'India&rsquo;s standards, the WHO&rsquo;s guidelines, and the emergency schedule that switches Delhi-NCR down. One of the three is law, one is advice, and one is a decision somebody has to take.')}
+${tabs('Rules', [['India and the WHO', pStd], ['GRAP', pGrap]])}
+    </div>`;
+};
+
+/* ── QUESTIONS, ANSWERED (air hub v2, §58-59 of the brief). The questions
+   people actually bring to this page, each answered in a paragraph that stands
+   on its own — who, what, where, when, the number, the source, the caveat —
+   and every figure in them read off the same data the bands above print, so
+   an answer cannot say something the page does not. The SAME strings feed the
+   FAQPage block in the head (faqJsonLd's rule: visible or not at all). Where
+   the honest answer is "this page cannot tell you", it says that. */
+const BIG = ['Mumbai', 'Kolkata', 'Bengaluru', 'Chennai', 'Hyderabad']
+  .map(n => IND.cities.find(c => c.city === n)).filter(Boolean);
+const QA = [
+  { q: 'What is Delhi’s AQI right now?',
+    a: `At ${OBS}, the worst of Delhi’s ${AIR.spread.stations} CPCB monitors, ${String(ws.station).split(',')[0].trim()}, read AQI ${rd.aqi} (${rd.band}), set by ${PRETTY[ws.governing] || ws.governing}. The average of all ${AIR.spread.stations} was ${AIR.city_mean.aqi}.${HERO_SUSPECT ? ` That channel is not backed up by the same station’s particulates (${HERO_SUSPECT.pmHere})${HERO_SUSPECT.alt ? `; set aside, the worst monitor is ${HERO_SUSPECT.alt.name} at ${HERO_SUSPECT.alt.aqi}` : ''}.` : ''} CPCB publishes hourly; the time is part of the answer, and a reading hours old is not the air now.` },
+  { q: 'Is that above India’s air quality standard?',
+    a: `CPCB set AQI 100 for each pollutant at India’s own short-term standard, so above 100 means that pollutant’s rolling average at that monitor is over the standard’s level. It is not, on its own, a breach: the 2009 standards let 24-hour values exceed on 2% of days in a year, never two days running. The AQI band names carry no legal force.` },
+  { q: 'What is the difference between the AQI and PM2.5?',
+    a: `PM2.5 is a concentration — micrograms of particles smaller than 2.5 microns in a cubic metre of air. The AQI is an index: each pollutant’s concentration is converted to a 0–500 sub-index and the station reports the worst one. An AQI of 200 is not twice the pollution of 100; the scale is piecewise, so only a concentration can be multiplied.` },
+  { q: 'How do India’s standards compare with the WHO’s?',
+    a: `For PM2.5, India’s standard is ${P25.ia} µg/m³ over a year and ${P25.id} over 24 hours (NAAQS 2009); the WHO’s 2021 guideline is ${P25.wa} and ${P25.wd} — ${P25.ia / P25.wa} and ${P25.id / P25.wd} times lower. India’s standards are law under the Air Act; the WHO’s guideline is a health-based recommendation with no legal force in India.` },
+  { q: 'Is GRAP in force in Delhi?',
+    a: `GRAP’s four stages begin at Delhi AQI ${GRAP.stages[0].from}, ${GRAP.stages[1].from}, ${GRAP.stages[2].from} and above ${GRAP.stages[3].above} (CAQM, revised ${GRAP.revised_label}). A stage is in force only when CAQM’s GRAP sub-committee orders it, sometimes ahead of a forecast, so a number crossing a threshold does not by itself put one in force. This page states the schedule, not the status; CAQM’s own orders do that.` },
+  { q: 'What causes Delhi’s air pollution?',
+    a: `No single split describes every day. The two government-commissioned studies disagree: TERI-ARAI (2018) put transport at ${(AP.studies.find(x => x.id === 'teri-arai-2018').splits.pm25.winter.find(x => x.sector === 'Transport') || {}).pct}% of winter PM2.5 in Delhi, while IIT Kanpur (2016) gave vehicles a range of ${(AP.studies.find(x => x.id === 'iitk-2016').ranges.pm25.find(x => /vehic/i.test(x.sector)) || {}).lo}–${(AP.studies.find(x => x.id === 'iitk-2016').ranges.pm25.find(x => /vehic/i.test(x.sector)) || {}).hi}% across six sites. Both are seasonal averages that cannot describe a bad day; weather decides how much of what is emitted stays over the city.` },
+  { q: 'How does Delhi compare with other Indian cities?',
+    a: `In CPCB’s national snapshot at ${NAT_OBS}, Delhi ranked ${DELHI_ORD} of ${NAT.cities} cities on its worst monitor. ${BIG.map(c => `${c.city} ${c.aqi} (mean ${c.meanAqi}, ${c.stations} monitors)`).join('; ')}. A city ranked on its worst monitor ranks higher the more monitors it has, which is why the mean and the count sit beside every figure.` },
+  { q: 'Is Delhi’s air getting better?',
+    a: `On the Commission for Air Quality Management’s own figures, Delhi’s annual average PM2.5 was ${ANN.years[0].pm25} µg/m³ in ${ANN.years[0].year} and ${ANN.years[ANN.years.length - 1].pm25} in ${ANN.years[ANN.years.length - 1].year}, the lowest of those years apart from COVID-hit 2020 — and still ${+(ANN.years[ANN.years.length - 1].pm25 / AIR.limits['PM2.5'].annual).toFixed(1)} times India’s annual standard of ${AIR.limits['PM2.5'].annual}. Eight annual figures show a direction, not a settled trend, and the release does not say which monitors were averaged.` },
+  { q: 'What does this page not know?',
+    a: `What is in the air at your street — a monitor measures its own location, and in the hour above two monitors ${NEAR_KM.toFixed(1)} km apart disagreed by ${NEAR_GAP} points. Your exposure, which depends on where you spend the day. Which source caused today’s reading; the studies above are seasonal averages. Whether a satellite fire detection was a crop fire. And what tomorrow brings: a forecast is a model, not an observation.` },
+];
+B.questions = () => `    <div class="wrap">
+${opener('questions', 'Questions, answered', 'Each answer stands on its own, and every figure in it is read off this page&rsquo;s own data, at the hour it was observed.')}
+      <div class="p-qa">
+${QA.map((x, i) => `        <div class="p-qa-r"><h3 class="p-qa-q" id="q${i + 1}">${esc(x.q)}</h3><p class="body p-qa-a">${esc(x.a)}</p></div>`).join('\n')}
+      </div>
+    </div>`;
+const QA_JSONLD = faqJsonLd(QA);
+
 B.act = () => {
   const items = NEWS.register.items ?? [];
   const ORDER_RE = /\b(NGT|tribunal|supreme court|high court|CAQM|gazette|directs?|order|verdict|bench)\b/i;
@@ -1208,9 +1492,8 @@ B.act = () => {
   const pAsk = `<div class="p-act">
           <div class="p-act-c">
             <p class="lbl">Watch your monitor</p>
-            <p class="body">One message when your monitor&rsquo;s band changes for the worse. Not when it is
-              merely over the limit &mdash; it is over the limit most of the year, and an alert every hour is
-              not an alert. <b>Nothing else, ever</b>, and no address is shared with anybody.</p>
+            <p class="body">One message when your monitor&rsquo;s band changes for the worse. Not every hour it
+              sits over the line &mdash; an alert every hour is not an alert. <b>Nothing else, ever</b>, and no address is shared with anybody.</p>
             <div class="p-ward" data-ward>
               <p class="f-lab" id="ward-l">Find the monitor nearest you</p>
               <p><input class="f" id="ward-q" type="text" aria-labelledby="ward-l"
@@ -1928,6 +2211,37 @@ const SCRIPT = `/* ── TABS. Canonical ARIA tabs with a roving tabindex. Pane
   var COMMITTED=(aqi.getAttribute('data-committed')||'').trim();
   if(!COMMITTED) return;
 
+  /* ── THE PAGE CHECKS ITS OWN AGE — AD-42 B-4, enforced at last on the client.
+     B-4 rules that LIVE drops to PERIODIC once the observation is over three
+     hours old. The build obeyed it; nothing obeyed it AFTER the build, so when
+     every source went dark the page kept the chip it was built with. Measured
+     26 September 2026: a green Live chip over a reading 25 hours old. The
+     observation instant is a build artefact (data-observed-utc), so this reads
+     no network and cannot be fooled by the feed: past the bound the chip is
+     demoted and the age is SAID. Nothing here writes a reading — the numeral,
+     the band and the limit line are untouched (AD-27.6-A). STALE also stops the
+     fetch below from upgrading the chip back over an old reading. */
+  var STALE=false;
+  (function(){
+    var obs=Date.parse(aqi.getAttribute('data-observed-utc')||'');
+    var bound=+(aqi.getAttribute('data-stale-hours')||3);
+    if(!isFinite(obs)||!isFinite(bound)) return;
+    var h=(Date.now()-obs)/3600000;
+    if(h<=bound) return;
+    STALE=true;
+    state.className='state p2-state periodic';
+    state.setAttribute('data-state','periodic');
+    var w=el('air-state-w'); if(w) w.textContent='Periodic';
+    var x=el('air-state-x'); if(x) x.textContent=' — no newer CPCB reading has reached this page; the reading shown is older than three hours.';
+    var a=el('air-age');
+    if(a){
+      var n=h<48?Math.round(h):Math.round(h/24);
+      a.textContent=' This reading is '+n+(h<48?(n===1?' hour':' hours'):(n===1?' day':' days'))+' old. No newer one has reached us from CPCB since.';
+      a.hidden=false;
+    }
+  })();
+  if(STALE) CHIP_ALREADY_LIVE=true; /* never upgrade over a stale reading */
+
   /* THE OBSERVATION STAMP, AS AN INSTANT.
      /api/air prints 'observed' as IST wall-clock text ("23:00 IST, 22 August
      2026"), which is what the page shows. To ask "is this within two hours"
@@ -2039,6 +2353,21 @@ const SCRIPT = `/* ── TABS. Canonical ARIA tabs with a roving tabindex. Pane
   }).catch(function(e){
     clearTimeout(deadline);
     giveUp((e&&e.name==='AbortError')?'the live fetch was aborted at the 6s deadline':(e&&e.message)||'the live fetch failed');
+  });
+})();
+
+/* ── COPY THIS READING. The sentence is a build artefact (data-quote), so this
+   copies it and writes nothing but a status word for screen readers. No
+   clipboard, no button: it stays a plain link-styled control that does
+   nothing, which is the safe way to fail. */
+(function(){
+  var b=document.getElementById('air-copy'), st=document.getElementById('air-copy-s');
+  if(!b) return;
+  if(!navigator.clipboard||!window.isSecureContext){ b.hidden=true; return; }
+  b.addEventListener('click',function(){
+    navigator.clipboard.writeText(b.getAttribute('data-quote')||'').then(function(){
+      b.textContent='Copied, with its source'; if(st) st.textContent='Reading copied to the clipboard.';
+    },function(){ if(st) st.textContent='Could not copy.'; });
   });
 })();
 
@@ -2198,6 +2527,39 @@ const { title: TITLE, description: DESC, indexName: INDEX_NAME } = seo('/now/air
    ANYTHING ADDED HERE IS AIR-ONLY. Anything added to PAGE_CSS is site-wide.
    That is the whole distinction, and it is invisible from inside either block. */
 const AIR_ONLY_CSS = `
+/* THE HERO'S THREE ADDITIONS (air hub v2): the stated age, the doubt line and
+   the copy control. The age and the doubt reuse .cap/.p-hole; the control is a
+   button dressed as the page's own .lk, because it acts rather than navigates. */
+.p2-age{display:inline}
+/* .limit is set in capitals, and a capital µ is Greek Mu — "µg/m³" rendered as
+   "MG/M³", which reads as milligrams. The unit keeps its case. */
+.limit .u{text-transform:none}
+.p2-doubt{margin-top:var(--gap-row,12px)}
+.p2-cite{margin:6px 0 0}
+.p2-copy{background:none;border:0;border-bottom:1px solid rgba(225,163,43,.42);padding:0;font:inherit;color:var(--mustard);cursor:pointer}
+.p2-copy:focus-visible{outline:2px solid var(--mustard);outline-offset:3px}
+/* THE NCR TABLE sits on a dark ground, and .p-tbl was written for paper
+   (ink tokens). Only the colours move; the type and the rules are .p-tbl's. */
+.p-tbl-d thead th{color:var(--fg-3);border-bottom-color:var(--hair-2)}
+.p-tbl-d td,.p-tbl-d tbody th{color:var(--fg-2);border-bottom-color:var(--hair-2)}
+.p-tbl-d tbody th{color:var(--fg)}
+.p-tbl-d .cap{color:var(--fg-3)}
+.p-tbl-d tr.is-me th,.p-tbl-d tr.is-me td{color:var(--fg);font-weight:600}
+.p-ncr-d{display:block;font-weight:400}
+.p-ncr-v{font-weight:600;color:var(--fg)}
+.p-ncr-v.is-red{color:var(--red)}
+.p-ncr>*{margin:0 0 var(--gap-row)}
+.p-ncr .p-tbl{margin:0 0 var(--gap-row)}
+/* THE RULES AND THE QUESTIONS (air hub v2). Both reuse the page's own type
+   classes; these rules only space them. The Q&A is a list of h3 + paragraph
+   pairs because each answer must stand alone. */
+.p-std>*,.p-grap>*,.p-yr>*{margin:0 0 var(--gap-row)}
+.p-yr>.body,.p-yr>.cap{max-width:62ch}
+.p-std .p-key,.p-grap .p-key,.p-grap>.body,.p-std>.cap,.p-grap>.cap{max-width:62ch}
+.p-qa{display:grid;gap:var(--gap-block,32px) clamp(24px,4vw,56px);grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr))}
+.p-qa-r>*{margin:0}
+.p-qa-q{font-family:Archivo,system-ui,sans-serif;font-variation-settings:'wdth' 88,'wght' 650;font-size:var(--t-lead);line-height:1.25;color:var(--fg);margin:0 0 10px}
+.p-qa-a{color:var(--fg-2);max-width:62ch}
 /* AND HUE ANSWERS THE OTHER HALF OF THE RULE IN PAGE_CSS — which reserved it
    in terms: "weight and ink, never hue: which pollutant decided the number is
    not a question of whether a limit fell." This is the limit falling.
@@ -2300,7 +2662,27 @@ ${HEADER}
 ${BANDS.map(section).join('\n')}
 </main>
 ${FOOTER}${CRUMBS}
-${datasetJsonLd(FAMILY.find(f => f.id === 'air'), DESC)}
+${recordDatasetJsonLd({
+  /* THE RICHER DATASET, NOT THE FAMILY'S MINIMUM (air hub v2). datasetJsonLd
+     is deliberately small because the other five situations have no download;
+     Air does — build-data-exports.mjs writes the daily and monthly CSVs — and
+     recordDatasetJsonLd drops any file that is not on disk, so this cannot
+     claim a download that was never written. The name stays the family's. */
+  name: `${FAMILY.find(f => f.id === 'air').name} — ${FAMILY.find(f => f.id === 'air').where}`,
+  description: DESC,
+  url: '/now/air',
+  spatialCoverage: 'Delhi',
+  measurementTechnique: 'Continuous ambient air quality monitoring; CPCB National Air Quality Index sub-indices '
+    + 'as published, never recomputed. The headline is the worst reporting Delhi monitor, named, with the '
+    + 'unweighted mean of all monitors beside it. Concentrations are implied from the sub-indices.',
+  variables: ['Air Quality Index', 'Governing pollutant', 'Pollutant sub-index', 'Monitors reporting',
+    'Mean of reporting monitors'],
+  dist: [
+    { path: 'data/air/delhi-daily.csv', format: 'text/csv', name: 'Delhi, one row per day' },
+    ...(AIR.observed ? [{ path: `data/air/delhi-${AIR.observed.y}-${String(AIR.observed.m).padStart(2, '0')}.csv`, format: 'text/csv', name: 'Delhi, hourly, this month' }] : []),
+  ],
+})}
+${QA_JSONLD}
 <script>
 ${SHIP_SCRIPT}</script>
 </body>
