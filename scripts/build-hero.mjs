@@ -144,6 +144,9 @@ const AIR_MON = ['January', 'February', 'March', 'April', 'May', 'June',
 if (ob && (typeof ob.d !== 'number' || typeof ob.m !== 'number' || typeof ob.y !== 'number')) {
   fail('air-delhi.json observed has no y / m / d — the hero stamps the observation date');
 }
+/* The observation as an instant, for the deck's own age check (AD-42 B-4 on
+   the client). IST wall-clock minus 5:30, by field — never Date.parse. */
+const airObsUtc = ob ? new Date(Date.UTC(ob.y, ob.m - 1, ob.d, ob.hh, ob.mi) - 19800000).toISOString() : '';
 const airStamp = ob ? `${airHour} IST, ${ob.d} ${AIR_MON[ob.m - 1]} ${ob.y}` : '';
 /* AD-46 PRINTED A SECOND CLOCK BESIDE THE FIRST — "observed" (CPCB's, when the
    air was measured) and "last checked" (ours, when this build's fetch asked).
@@ -200,6 +203,8 @@ const SLIDES = [
          impossible. */
       [/(<span class="readout" data-committed=")[^"]*(" aria-hidden="true">)[^<]*(?:<span class="dp">\.<\/span>[^<]*)?(<\/span>)/,
         `$1${airAqi}$2${readout(airAqi)}$3`, 'readout, and the committed-value attribute beside it'],
+      [/(id="h-air" data-observed-utc=")[^"]*(")/, `$1${airObsUtc}$2`,
+        'the observation instant the deck checks its own age against'],
       [/(<span class="s-hero-prov">)[^<]*(<\/span>)/,
         `$1Observed ${airStamp}.$2`,
         'provenance: the source\'s own observation stamp. AD-46 printed a second clock beside it —\n         when Swechha last checked — and the 2026-09-10 copy pass struck it: a fetch time is our\n         bookkeeping, not an observation, and the homepage is the regime where the figure stands clean.'],

@@ -940,6 +940,7 @@ button.b[disabled]{opacity:.55;cursor:default}
 .ix-card.is-breach .ix-card-v{color:var(--red)}
 .ix-card-u{display:block;color:var(--fg-2);margin:.35em 0 .1em}
 .ix-card-s{display:block;color:var(--fg-3)}
+.ix-card-age{display:block;color:var(--fg-3)}
 .ix-card-rule{display:block;height:1px;background:var(--hair);margin:clamp(14px,1.6vw,20px) 0}
 .ix-card-lim{display:block;margin:0 0 clamp(10px,1.2vw,14px)}
 .ix-card-k{display:block;font-size:10px;letter-spacing:.09em;text-transform:uppercase;
@@ -1136,7 +1137,7 @@ pointer-events:none;transition:background .12s}
         <p class="lead">One card each, and the kind of limit each reading is held to.</p>
       </div></div>
     <div class="wide ix-cards">
-        <a class="ix-card" id="ix-air" href="/now/air">
+        <a class="ix-card" id="ix-air" data-observed-utc="2026-09-27T03:30:00.000Z" data-stale-hours="3" href="/now/air">
           <span class="ix-card-top">
             <span class="lbl ix-card-n">Air</span>
             <span class="cap ix-card-w">Delhi</span>
@@ -1587,6 +1588,34 @@ pointer-events:none;transition:background .12s}
   var v=card.querySelector('[data-v]'),
       verd=card.querySelector('[data-verd]'), sub=card.querySelector('[data-sub]');
   if(!v) return;
+  /* ── THE CHIP FOLLOWS THE READING ON SCREEN — note B-4, after the build.
+     D-26 says this chip names Air's delivery cadence, and it reads that word
+     from the cadence register — which fetch-air.mjs writes as PERIODIC once an
+     observation is over three hours old (B-4). So the word already carries
+     freshness, but only at BUILD time: when the feed died on 25 September
+     2026 nothing rebuilt, and this card said LIVE over a reading a day old
+     while /now/air and the homepage, which now check their own age, said
+     Periodic. One reading, two claims — the exact defect D-26 was written to
+     end. So the card checks the age of whatever reading it is showing: the
+     committed one on load, then the route's if the fetch below repaints. */
+  var chip=card.querySelector('.ix-card-foot .tag'), bound=+(card.getAttribute('data-stale-hours')||3);
+  var MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  function obsAt(t){ var m=/^(\d{2}):(\d{2}) IST, (\d{1,2}) ([A-Za-z]+) (\d{4})$/.exec(String(t||'').trim());
+    if(!m) return null; var mo=MONTHS.indexOf(m[4]); if(mo<0) return null;
+    return Date.UTC(+m[5],mo,+m[3],+m[1],+m[2])-19800000; }
+  function setAge(at){
+    if(!chip||!isFinite(at)) return;
+    var h=(Date.now()-at)/3600000, stale=h>bound;
+    chip.className='lbl tag '+(stale?'tag-periodic':'tag-live');
+    chip.textContent=stale?'PERIODIC':'LIVE';
+    var a=card.querySelector('.ix-card-age');
+    if(stale){
+      if(!a){ a=document.createElement('span'); a.className='cap ix-card-age'; if(sub) sub.parentNode.insertBefore(a,sub.nextSibling); }
+      var n=h<48?Math.round(h):Math.round(h/24);
+      a.textContent=n+(h<48?(n===1?' hour':' hours'):(n===1?' day':' days'))+' old';
+    } else if(a){ a.parentNode.removeChild(a); }
+  }
+  setAge(Date.parse(card.getAttribute('data-observed-utc')||''));
   fetch('/api/air',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
     if(!d||d.ok!==true) return;
     var r=d.reading;
@@ -1604,9 +1633,8 @@ pointer-events:none;transition:background .12s}
       var hh=r.observed?String(r.observed).split(',')[0].trim():'';
       sub.textContent=r.band+(r.governing?' · governed by '+r.governing:'')+(hh?' · '+hh:'');
     }
-    /* THE CHIP IS NOT TOUCHED. It reads LIVE on every render because it
-       names Air's DELIVERY CADENCE, not this fetch. See the note on the
-       Air situation above, and D-26. */
+    /* The chip follows the reading now on screen — see the age check above. */
+    var at=obsAt(r.observed); if(at!==null) setAge(at);
   }).catch(function(){ /* leave the committed card alone */ });
 })();
 

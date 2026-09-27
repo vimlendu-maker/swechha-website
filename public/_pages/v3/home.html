@@ -1373,7 +1373,7 @@ main{display:block;margin:0;padding:0}
           </div></div>
         </div>
 
-        <div class="sit s-hero-sit" id="h-air" data-id="air" data-tab="Air" data-breach="true" role="tabpanel" aria-label="Delhi-NCR / Air quality index">
+        <div class="sit s-hero-sit" id="h-air" data-observed-utc="2026-09-27T03:30:00.000Z" data-stale-hours="3" data-id="air" data-tab="Air" data-breach="true" role="tabpanel" aria-label="Delhi-NCR / Air quality index">
           <figure class="s-hero-shot"><img loading="lazy" width="2400" height="1601" class="duo" src="/images/photos/india-gate-hero.jpg" alt="India Gate through Delhi haze" style="--zh:134%;--zt:-33%" decoding="async" sizes="100vw" srcset="/_next/image?url=%2Fimages%2Fphotos%2Findia-gate-hero.jpg&amp;w=128&amp;q=75 128w, /_next/image?url=%2Fimages%2Fphotos%2Findia-gate-hero.jpg&amp;w=256&amp;q=75 256w, /_next/image?url=%2Fimages%2Fphotos%2Findia-gate-hero.jpg&amp;w=384&amp;q=75 384w, /_next/image?url=%2Fimages%2Fphotos%2Findia-gate-hero.jpg&amp;w=640&amp;q=75 640w, /_next/image?url=%2Fimages%2Fphotos%2Findia-gate-hero.jpg&amp;w=828&amp;q=75 828w, /_next/image?url=%2Fimages%2Fphotos%2Findia-gate-hero.jpg&amp;w=1080&amp;q=75 1080w, /_next/image?url=%2Fimages%2Fphotos%2Findia-gate-hero.jpg&amp;w=1920&amp;q=75 1920w"></figure>
 
           <div class="s-hero-stamp" aria-hidden="true"><div class="wrap"><p class="state live"><i></i>Live</p></div></div>
@@ -1402,7 +1402,7 @@ main{display:block;margin:0;padding:0}
             </div>
             <div class="s-hero-plate">
 
-              <p class="cap s-hero-src">CPCB continuous monitors<span class="s-hero-loc">, worst of 44 CPCB monitors — Jahangirpuri, DPCC</span>. <span class="s-hero-cad">Hourly. </span><span class="s-hero-prov">Observed 09:00 IST, 27 September 2026.</span></p>
+              <p class="cap s-hero-src">CPCB continuous monitors<span class="s-hero-loc">, worst of 44 CPCB monitors — Jahangirpuri, DPCC</span>. <span class="s-hero-cad">Hourly. </span><span class="s-hero-prov">Observed 09:00 IST, 27 September 2026.</span><span class="s-hero-age" hidden></span></p>
               <span class="tag tag-season">Year round</span>
               <p class="s-hero-act"><a class="act" href="/now/air">See it in full <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
 
@@ -2569,6 +2569,34 @@ document.querySelectorAll('.rig').forEach(rig);
   var committed=(out.getAttribute('data-committed')||'').trim();
   if(!committed) return;
 
+  /* ── THE DECK CHECKS ITS OWN AGE — note B-4, enforced after the build.
+     B-4: LIVE drops to PERIODIC once the observation is over three hours old.
+     The build obeys it, but the build only runs when a reading arrives, so a
+     dead feed left this chip Live over an old reading: measured 26 September
+     2026, a green Live over a reading 25 hours old, with /now/air saying the
+     same. The observation instant is a build artefact (data-observed-utc on
+     the slide, written by build-hero.mjs), so this needs no network. Past the
+     bound the chip is demoted and the age is said, and STALE stops the fetch
+     below from upgrading it back. Nothing here writes a reading (note-A).
+     /now/air runs the identical check with the identical bound. */
+  var STALE=false;
+  (function(){
+    var obs=Date.parse(slide.getAttribute('data-observed-utc')||'');
+    var bound=+(slide.getAttribute('data-stale-hours')||3);
+    if(!isFinite(obs)||!isFinite(bound)) return;
+    var h=(Date.now()-obs)/3600000;
+    if(h<=bound) return;
+    STALE=true;
+    badge.className='state periodic';
+    badge.innerHTML='<i></i>Periodic';
+    var a=slide.querySelector('.s-hero-age');
+    if(a){
+      var n=h<48?Math.round(h):Math.round(h/24);
+      a.textContent=' '+n+(h<48?(n===1?' hour':' hours'):(n===1?' day':' days'))+' old.';
+      a.hidden=false;
+    }
+  })();
+
   var warned=false;
   function give(why){ if(!warned){ warned=true;
     console.warn('hero air: '+(CHIP_ALREADY_LIVE
@@ -2657,7 +2685,7 @@ document.querySelectorAll('.rig').forEach(rig);
          numeral, the band, the limit line or any figure, and this touches none
          of them — no digit of the AQI is written from here. */
       stampChecked(document.querySelector('.s-hero-prov'), d.time && d.time.swechha_checked_utc);
-      if(CHIP_ALREADY_LIVE) return;
+      if(CHIP_ALREADY_LIVE||STALE) return;
       badge.className='state live';
       badge.innerHTML='<i></i>Live';
     }).catch(function(e){
