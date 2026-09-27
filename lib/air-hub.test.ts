@@ -165,3 +165,29 @@ describe('the questions are visible, or they are not in the markup', () => {
     expect(ld.mainEntity.map((q: { name: string }) => q.name)).toEqual(shown)
   })
 })
+
+describe('the homepage and /now check the same age, against the same bound', () => {
+  const home = readFileSync(join(ROOT, 'public/_pages/v3/home.html'), 'utf8')
+  const o = AIR.observed
+  const want = new Date(Date.UTC(o.y, o.m - 1, o.d, o.hh, o.mi) - 19800000).toISOString()
+  const bound = Number(/const STALE_HOURS = (\d+)/.exec(fetchAir)?.[1])
+
+  it('the homepage air slide carries the observation instant and the bound', () => {
+    expect(home).toContain(`id="h-air" data-observed-utc="${want}" data-stale-hours="${bound}"`)
+  })
+
+  it('the homepage demotes a stale chip and never upgrades it back', () => {
+    expect(home).toContain('var STALE=false')
+    expect(home).toContain("badge.innerHTML='<i></i>Periodic'")
+    expect(home).toContain('if(CHIP_ALREADY_LIVE||STALE) return;')
+    expect(home).toMatch(/<span class="s-hero-age" hidden><\/span>/)
+  })
+
+  it('/now’s air card carries the same instant and bound, and follows the reading on screen', () => {
+    expect(now).toContain(`id="ix-air" data-observed-utc="${want}" data-stale-hours="${bound}"`)
+    expect(now).toContain("setAge(Date.parse(card.getAttribute('data-observed-utc')||''))")
+    expect(now).toContain('if(at!==null) setAge(at);')
+    // The observation parser must survive the template literal: \d, not d.
+    expect(now).toContain('/^(\\d{2}):(\\d{2}) IST, (\\d{1,2})')
+  })
+})

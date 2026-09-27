@@ -308,7 +308,7 @@ B.top = () => `    <div class="wrap ix-hero">
 /* THE SIX. One card each. The KIND OF LIMIT is the field that carries the
    argument, so it is given the same weight as the reading. */
 B.set = () => {
-  const cards = SITUATIONS.map((s) => `<a class="ix-card${s.breach ? ' is-breach' : ''}${s.kind === 'none' ? ' is-nolimit' : ''}"${s.upgrades ? ` id="ix-${s.id}"` : ''} href="${esc(s.href)}">
+  const cards = SITUATIONS.map((s) => `<a class="ix-card${s.breach ? ' is-breach' : ''}${s.kind === 'none' ? ' is-nolimit' : ''}"${s.upgrades ? ` id="ix-${s.id}" data-observed-utc="${AIR_OBS_UTC}" data-stale-hours="3"` : ''} href="${esc(s.href)}">
           <span class="ix-card-top">
             <span class="lbl ix-card-n">${esc(s.name)}</span>
             <span class="cap ix-card-w">${esc(s.where)}</span>
@@ -393,12 +393,45 @@ ${S.newsletter('index')}
    two views. Every failure path returns early and leaves the card as rendered
    (D-16.4). Nothing here can write a dash, an empty string or a 0.
    ═══════════════════════════════════════════════════════════════════════ */
+/* The committed observation as an instant, for the card's own age check. IST
+   wall-clock minus 5:30, by field — never Date.parse (the standing date rule). */
+const AIR_OBS_UTC = AIR.observed
+  ? new Date(Date.UTC(AIR.observed.y, AIR.observed.m - 1, AIR.observed.d, AIR.observed.hh, AIR.observed.mi) - 19800000).toISOString()
+  : '';
 const IX_LIVE = `
 (function(){
   var card=document.getElementById('ix-air'); if(!card||!window.fetch) return;
   var v=card.querySelector('[data-v]'),
       verd=card.querySelector('[data-verd]'), sub=card.querySelector('[data-sub]');
   if(!v) return;
+  /* ── THE CHIP FOLLOWS THE READING ON SCREEN — AD-42 B-4, after the build.
+     D-26 says this chip names Air's delivery cadence, and it reads that word
+     from the cadence register — which fetch-air.mjs writes as PERIODIC once an
+     observation is over three hours old (B-4). So the word already carries
+     freshness, but only at BUILD time: when the feed died on 25 September
+     2026 nothing rebuilt, and this card said LIVE over a reading a day old
+     while /now/air and the homepage, which now check their own age, said
+     Periodic. One reading, two claims — the exact defect D-26 was written to
+     end. So the card checks the age of whatever reading it is showing: the
+     committed one on load, then the route's if the fetch below repaints. */
+  var chip=card.querySelector('.ix-card-foot .tag'), bound=+(card.getAttribute('data-stale-hours')||3);
+  var MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  function obsAt(t){ var m=/^(\\d{2}):(\\d{2}) IST, (\\d{1,2}) ([A-Za-z]+) (\\d{4})$/.exec(String(t||'').trim());
+    if(!m) return null; var mo=MONTHS.indexOf(m[4]); if(mo<0) return null;
+    return Date.UTC(+m[5],mo,+m[3],+m[1],+m[2])-19800000; }
+  function setAge(at){
+    if(!chip||!isFinite(at)) return;
+    var h=(Date.now()-at)/3600000, stale=h>bound;
+    chip.className='lbl tag '+(stale?'tag-periodic':'tag-live');
+    chip.textContent=stale?'PERIODIC':'LIVE';
+    var a=card.querySelector('.ix-card-age');
+    if(stale){
+      if(!a){ a=document.createElement('span'); a.className='cap ix-card-age'; if(sub) sub.parentNode.insertBefore(a,sub.nextSibling); }
+      var n=h<48?Math.round(h):Math.round(h/24);
+      a.textContent=n+(h<48?(n===1?' hour':' hours'):(n===1?' day':' days'))+' old';
+    } else if(a){ a.parentNode.removeChild(a); }
+  }
+  setAge(Date.parse(card.getAttribute('data-observed-utc')||''));
   fetch('/api/air',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
     if(!d||d.ok!==true) return;
     var r=d.reading;
@@ -416,9 +449,8 @@ const IX_LIVE = `
       var hh=r.observed?String(r.observed).split(',')[0].trim():'';
       sub.textContent=r.band+(r.governing?' \u00B7 governed by '+r.governing:'')+(hh?' \u00B7 '+hh:'');
     }
-    /* THE CHIP IS NOT TOUCHED. It reads LIVE on every render because it
-       names Air's DELIVERY CADENCE, not this fetch. See the note on the
-       Air situation above, and D-26. */
+    /* The chip follows the reading now on screen — see the age check above. */
+    var at=obsAt(r.observed); if(at!==null) setAge(at);
   }).catch(function(){ /* leave the committed card alone */ });
 })();
 `;
@@ -487,6 +519,7 @@ const PAGE_CSS = `
 .ix-card.is-breach .ix-card-v{color:var(--red)}
 .ix-card-u{display:block;color:var(--fg-2);margin:.35em 0 .1em}
 .ix-card-s{display:block;color:var(--fg-3)}
+.ix-card-age{display:block;color:var(--fg-3)}
 .ix-card-rule{display:block;height:1px;background:var(--hair);margin:clamp(14px,1.6vw,20px) 0}
 /* THE KIND OF LIMIT. Given the same weight as the reading, because it is the
    page's argument. A card with no limit is marked by the ABSENCE of a value,
