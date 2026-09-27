@@ -22,8 +22,8 @@
 #      guard compares against what the site actually carries. If the cloud job
 #      (or anyone) already published this hour, the status is not new and it
 #      stands down.
-#   3. A lost push race is not an error: someone else published first, and the
-#      next hour starts clean.
+#   3. A rejected push (main moved during the build) resets to the new main and
+#      reruns the cycle, up to three times, exactly as the workflow does.
 #
 # Exit codes: 0 = published or stood down (including no source answering);
 # non-zero = a source answered wrongly, a gate refused, or a generator failed —
@@ -88,49 +88,71 @@ fi
 
 J='JSON.parse(require("fs").readFileSync("data/air-delhi.json","utf8"))'
 
-# ── DELHI: the leg that matters.
-npm run -s data:air:delhi; code=$?
-if [ "$code" = "75" ]; then log "no Delhi source answered — nothing written"; exit 0; fi
-if [ "$code" != "0" ]; then log "data:air:delhi exited $code — a source answered and the answer was wrong"; exit "$code"; fi
+# ── ONE CYCLE: fetch, build, verify, commit, push. Returns 0 (published or
+#    stood down), 2 (the push was rejected because main moved), or the
+#    failing step's code.
+publish_once() {
+  # ── DELHI: the leg that matters.
+  npm run -s data:air:delhi; code=$?
+  if [ "$code" = "75" ]; then log "no Delhi source answered — nothing written"; return 0; fi
+  if [ "$code" != "0" ]; then log "data:air:delhi exited $code — a source answered and the answer was wrong"; return "$code"; fi
 
-st="$(node -p "$J.check?.status")"
-if [ "$st" != "new_observation" ]; then
-  log "Delhi check: $st — this hour is already on the site; standing down"
-  git checkout -q -- data public design 2>/dev/null
-  exit 0
-fi
-
-# ── INDIA: never holds Delhi back.
-npm run -s data:air:india || log "national snapshot did not refresh; it keeps its committed hour"
-
-# ── CROSS-CHECK against CPCB's own bulletin, when the verdict is > 6 h old.
-due="$(node -p '
-  let at=null; try { at = '"$J"'.crosscheck?.at ?? null } catch {}
-  (!at || (Date.now() - Date.parse(at)) / 3600000 > 6) ? "1" : "0"' 2>/dev/null || echo 1)"
-if [ "$due" = "1" ]; then
-  if [ -n "$WAQI_TOKEN" ]; then npm run -s data:air:crosscheck || log "WAQI panel did not refresh"; fi
-  npm run -s verify:crosscheck; xc=$?
-  if [ "$xc" = "1" ]; then
-    log "CROSS-CHECK FAILED against CPCB's bulletin — nothing published"
+  st="$(node -p "$J.check?.status")"
+  if [ "$st" != "new_observation" ]; then
+    log "Delhi check: $st — this hour is already on the site; standing down"
     git checkout -q -- data public design 2>/dev/null
-    exit 1
+    return 0
   fi
-fi
 
-npm run -s build:all    || { log "a generator refused to write — nothing published"; exit 1; }
-npm run -s verify:final >/dev/null || { log "verify:final refused — nothing published"; exit 1; }
-./scripts/stage-generated.sh >/dev/null
-if git diff --cached --quiet; then log "a new observation staged nothing — refusing"; exit 1; fi
+  # ── INDIA: never holds Delhi back.
+  npm run -s data:air:india || log "national snapshot did not refresh; it keeps its committed hour"
 
-aqi="$(node -p "$J.city_reading?.aqi")"; obs="$(node -p "$J.observed?.raw")"; chk="$(node -p "$J.time?.swechha_checked_utc")"
-if [ "${AIR_LOCAL_DRY_RUN:-}" = "1" ]; then log "dry run — would publish Delhi AQI $aqi, observed $obs"; git reset -q; exit 0; fi
+  # ── CROSS-CHECK against CPCB's own bulletin, when the verdict is > 6 h old.
+  due="$(node -p '
+    let at=null; try { at = '"$J"'.crosscheck?.at ?? null } catch {}
+    (!at || (Date.now() - Date.parse(at)) / 3600000 > 6) ? "1" : "0"' 2>/dev/null || echo 1)"
+  if [ "$due" = "1" ]; then
+    if [ -n "$WAQI_TOKEN" ]; then npm run -s data:air:crosscheck || log "WAQI panel did not refresh"; fi
+    npm run -s verify:crosscheck; xc=$?
+    if [ "$xc" = "1" ]; then
+      log "CROSS-CHECK FAILED against CPCB's bulletin — nothing published"
+      git checkout -q -- data public design 2>/dev/null
+      return 1
+    fi
+  fi
 
-git -c user.name='swechha-air[local]' -c user.email='actions@github.com' commit -q \
-  -m "data(air): ${st} — Delhi AQI ${aqi}, observed ${obs}" \
-  -m "Checked ${chk}. Published by scripts/air-local-publish.sh on the owner's Mac, the fallback for when no cloud egress reaches CPCB (docs/AIR-LOCAL-PUBLISHER.md). Same steps as .github/workflows/air-hourly.yml."
-if git push -q origin HEAD:main; then
-  log "published Delhi AQI $aqi, observed $obs"
-else
-  log "push lost the race — somebody published first; the next hour starts from their commit"
-fi
+  npm run -s build:all    || { log "a generator refused to write — nothing published"; return 1; }
+  npm run -s verify:final >/dev/null || { log "verify:final refused — nothing published"; return 1; }
+  ./scripts/stage-generated.sh >/dev/null
+  if git diff --cached --quiet; then log "a new observation staged nothing — refusing"; return 1; fi
+
+  aqi="$(node -p "$J.city_reading?.aqi")"; obs="$(node -p "$J.observed?.raw")"; chk="$(node -p "$J.time?.swechha_checked_utc")"
+  if [ "${AIR_LOCAL_DRY_RUN:-}" = "1" ]; then log "dry run — would publish Delhi AQI $aqi, observed $obs"; git reset -q; return 0; fi
+
+  git -c user.name='swechha-air[local]' -c user.email='actions@github.com' commit -q \
+    -m "data(air): ${st} — Delhi AQI ${aqi}, observed ${obs}" \
+    -m "Checked ${chk}. Published by scripts/air-local-publish.sh on the owner's Mac, the fallback for when no cloud egress reaches CPCB (docs/AIR-LOCAL-PUBLISHER.md). Same steps as .github/workflows/air-hourly.yml."
+  if git push -q origin HEAD:main; then
+    log "published Delhi AQI $aqi, observed $obs"
+    return 0
+  fi
+  return 2
+}
+
+# ── A REJECTED PUSH IS RETRIED FROM THE TOP, as air-hourly.yml does.
+# ★ It is NOT "somebody published this hour first". The first version assumed
+#   so and stood down, and on 27 Sep 2026 lost every push: the climate-event
+#   and coverage publishers move main several times an hour, so main almost
+#   always advances during the three-minute build. Generated artefacts are not
+#   rebased; they are regenerated — so a rejected push resets to the new main
+#   and runs the whole cycle again. If the new main already carries this hour,
+#   the Delhi check comes back not-new and the cycle stands down by itself.
+for attempt in 1 2 3; do
+  publish_once; rc=$?
+  [ "$rc" = "2" ] || exit "$rc"
+  log "push rejected — main moved during the build (attempt $attempt of 3); starting again from the new main"
+  git fetch -q origin main && git reset -q --hard origin/main && git clean -q -fd data public design \
+    || { log "could not reset to the new main"; exit 1; }
+done
+log "push rejected three times running — giving up until the next hour"
 exit 0
