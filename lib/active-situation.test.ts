@@ -912,7 +912,7 @@ describe('every built event page is routed', () => {
  */
 describe('a published slug names the hazard its own dossier claims', () => {
   // Named, dated exceptions only — see the comment above for why each is here.
-  const GRANDFATHERED = ['assam-landslide', 'uttarakhand-landslide', 'nepal-glof']
+  const GRANDFATHERED = ['assam-landslide', 'uttarakhand-landslide', 'nepal-glof', 'bihar-flood']
 
   // The slug is `${place}-${hazardWord}`; find which HAZARDS entry it ends
   // with (slugify turns "extreme_rain" into "extreme-rain", so compare
