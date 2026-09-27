@@ -891,24 +891,29 @@ describe('every built event page is routed', () => {
  * disk, precisely so the winning hazard word can move without forking a
  * second page for the same event (PR #113) — that's the whole subject of the
  * describe block above. What that ruling cannot prevent is what it's FOR: a
- * slug going on naming a hazard word the dossier no longer claims. Three of
- * today's five published pages do exactly that, confirmed against the built
- * HTML in public/_pages/v3/climate-event/ (each page's own title is right;
- * the URL is what's stale):
+ * slug going on naming a hazard word the dossier no longer claims. Four
+ * published pages have been named for it, each confirmed against the built
+ * HTML in public/_pages/v3/climate-event/ when it was added (each page's own
+ * title follows the dossier; the URL is what's stale):
  *
  *   assam-landslide.json        hazard: flood       — titles itself "Assam flood"
- *   uttarakhand-landslide.json  hazard: cloudburst  — titles itself "Uttarakhand: cloudburst"
+ *   uttarakhand-landslide.json  hazard: cloudburst  — titled itself "Uttarakhand: cloudburst"
  *   nepal-glof.json             hazard: landslide   — titles itself "Nepal landslide"
+ *   bihar-flood.json            hazard: cyclone     — titles itself "Cyclone over Bihar"  (added 27 Sep 2026, #225)
  *
- * These three are grandfathered by dossierSlug()'s identity-preserving
+ * On 27 Sep 2026 three of the four still mismatch: uttarakhand-landslide's
+ * dossier has moved back to "landslide", so its URL is right again — which is
+ * the case the last sentence below provides for.
+ *
+ * These four are grandfathered by dossierSlug()'s identity-preserving
  * no-op, PR #113; the URL question (rename with a redirect, or leave it) is
  * the owner's, same reasoning as the still-open nepal-glof/nepal-flood
  * URL-merge decision — see the 2026-09-11 decision record. Grandfathering is
- * not the same as tolerating a fourth: a NEW published page with this
- * mismatch must fail this test by name. And if one of the three named ones
- * stops mismatching (a rename lands, with a redirect), this test must keep
- * passing without being edited — the exception list is named slugs, never a
- * count.
+ * not the same as tolerating a fifth: a NEW published page with this
+ * mismatch must fail this test by name. And if one of the named ones
+ * stops mismatching (a rename lands, with a redirect, or the dossier moves
+ * back), this test must keep passing without being edited — the exception
+ * list is named slugs, never a count.
  */
 describe('a published slug names the hazard its own dossier claims', () => {
   // Named, dated exceptions only — see the comment above for why each is here.
@@ -922,7 +927,7 @@ describe('a published slug names the hazard its own dossier claims', () => {
       .filter((h: string) => slug.endsWith(`-${h.replace(/_/g, '-')}`))
       .sort((a: string, b: string) => b.length - a.length)[0]
 
-  it('flags exactly the named exceptions on today\'s published pages, and no fourth', () => {
+  it('flags exactly the named exceptions on today\'s published pages, and no fifth', () => {
     const dir = join(process.cwd(), 'data/climate-events/active')
     const published = readdirSync(dir)
       .filter((f) => f.endsWith('.json'))
