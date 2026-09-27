@@ -26,7 +26,7 @@ a fallback rather than a second publisher:
 1. **It publishes only a new CPCB observation.** A same-hour or stale check writes nothing and pushes nothing.
    At most ~19 deploys a day, well inside Vercel Hobby's 100.
 2. **It starts from `origin/main` every run**, so if the cloud job already published this hour it stands down.
-3. **A lost push race exits 0**; the next hour starts clean.
+3. **A rejected push is retried from the top** (reset to the new `main`, run the cycle again, up to three times). Other publishers move `main` several times an hour, so this is the ordinary case, not a race with another air publish.
 
 It keeps the cloud job's window (no runs 00:00–05:00 IST) and runs at minute 40, after CPCB's 15–35 minute lag.
 When the mirror recovers, both run: the cloud job's lagging mirror reading is refused by the regression guard
