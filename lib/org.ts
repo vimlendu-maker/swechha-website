@@ -6,8 +6,12 @@
  * that every "years of" figure is DERIVED from the founding year. A hardcoded
  * 26 is correct for exactly one year and then quietly wrong on every page that
  * carries it — and this site says it in at least three places.
+ *
+ * 2001, not 2000 — owner ruling 2026-09-29: We for Yamuna began in 2000 and
+ * Swechha, the organisation, dates from 2001. 2000 is right only for We for
+ * Yamuna's start or a figure counted from it; never for Swechha's founding.
  */
-export const FOUNDED_YEAR = 2000
+export const FOUNDED_YEAR = 2001
 
 /** Whole years since founding, as of `now` (defaults to today). */
 export function yearsSinceFounding(now: Date = new Date()): number {

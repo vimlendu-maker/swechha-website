@@ -1691,7 +1691,7 @@ ${/* THE JOURNAL RAIL, AFTER THE LEARN RAIL AND BEFORE THE DOORS. Learn is
              area. Sized in CSS rather than in markup, so it cannot do this again. -->
         <div class="cl-doors">
           <a class="cl-door" href="/work"><span class="cl-door-n">Explore the work</span><span class="cap cl-door-w">Fifteen pages, four kinds</span></a>
-          <a class="cl-door" href="/about"><span class="cl-door-n">Who is Swechha</span><span class="cap cl-door-w">Working since 2000, and who runs it</span></a>
+          <a class="cl-door" href="/about"><span class="cl-door-n">Who is Swechha</span><span class="cap cl-door-w">Working since 2001, and who runs it</span></a>
           <a class="cl-door" href="/act"><span class="cl-door-n">Take part</span><span class="cap cl-door-w">Give, volunteer or partner</span></a>
         </div>
       </section>`;
