@@ -1127,7 +1127,7 @@ gate(!OUT.includes('We For Change'), 'the struck capital-F spelling is absent');
    file. A boundary computed by indexOf must assert it FOUND the boundary
    (AD-27.55, warning label 2). It does now, and the string is a constant so
    this gate and gate 13b's cannot drift apart. */
-const FOOTER_LEGAL = 'Swechha We for Change Foundation, New Delhi. Working since 2000. '
+const FOOTER_LEGAL = 'Swechha We for Change Foundation, New Delhi. Working since 2001. '
   + 'Registered Societies Registration Act, 80G, 12A, FCRA Powered.';
 const footerAt = RENDERED.indexOf(FOOTER_LEGAL);
 if (footerAt < 0) {

@@ -3,11 +3,11 @@ import { FOUNDED_YEAR, SITE_URL, organizationJsonLd, yearsSinceFounding } from '
 
 describe('yearsSinceFounding', () => {
   it('counts whole years from the founding year', () => {
-    expect(yearsSinceFounding(new Date('2026-08-19T00:00:00Z'))).toBe(26)
+    expect(yearsSinceFounding(new Date('2026-08-19T00:00:00Z'))).toBe(25)
   })
 
   it('moves with the calendar rather than staying at whatever was typed', () => {
-    expect(yearsSinceFounding(new Date('2030-01-01T00:00:00Z'))).toBe(30)
+    expect(yearsSinceFounding(new Date('2030-01-01T00:00:00Z'))).toBe(29)
   })
 
   it('is zero in the founding year itself', () => {

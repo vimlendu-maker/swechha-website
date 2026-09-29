@@ -117,7 +117,7 @@ const word = (n) => WORDS[n] ?? String(n);
 const TEAM = ABOUT.team;
 const BOARD = ABOUT.governing_body;
 const BOTH = BOARD.filter(p => p.also_staff);
-const FOUNDED = 2000;
+const FOUNDED = 2001;
 
 /* Cross-reference gate. A board row carrying `also_staff` renders "see above"
    INSTEAD OF a bio, so a slug that does not resolve would render a dead
