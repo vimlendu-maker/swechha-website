@@ -295,3 +295,13 @@ This run's checkout is `HEAD detached at origin/main`, so anything `git log` or 
 ## 2026-09-28 — A probe can exit ATTENTION with nothing to say, and that is a worse failure than UNKNOWN
 
 `vercel-health.sh` and `neon-health.sh` both guarantee, by their own code paths, that any exit-1 is preceded by a `print`/`echo` explaining why — I read every branch and none of them falls through silently. Yet `npm run infra:status -- --fresh --json` returned `"status": "ATTENTION", "usage": ""` for both, reproduced on a forced re-probe, not a stale cache artefact. I could not execute the raw scripts to isolate the cause because only the wrapping npm script is on this role's allowlist. **Do:** when a probe's contract promises a reason for every non-GREEN status and the renderer shows none, don't read that as "the service is fine, just unlabelled" — treat the missing reason itself as the finding, and say so as an open question rather than either alarming on an unverified incident or quietly passing it as healthy.
+
+## 2026-09-29 — A push-triggered CI failure on `main` is invisible unless someone reads `gh run list`, and it sat red for ~19 hours
+
+`generated-current.yml` failed on 7 consecutive pushes to `main` starting 2026-09-28T14:11:26Z, over a genuine new hazard/slug mismatch (`odisha-cyclone`) that `lib/active-situation.test.ts` is specifically designed to catch. Nothing in the org or department inbox mentioned it, and `~/.swechha-ai/activity.jsonl` has zero mentions of "odisha" — the department's own automated commits (air, climate-events) kept pushing straight past a red gate because those pipelines don't check gate status before committing.
+
+**Do:** OBSERVE should check `gh run list --workflow=generated-current.yml` (or equivalent) for `push`-triggered failures on `main` specifically, not just PR-triggered ones — a red gate on `main` is a standing defect until someone reads the Actions tab, and this department's own data pipelines will happily keep pushing past it.
+
+## 2026-09-29 — The "ATTENTION with no reason" probe defect (2026-09-28) is not limited to the two probes it was first found on
+
+Confirmed today on `api-health.sh`'s rows too (data.gov.in, WAQI, FIRMS, GitHub API & storage) — 6 of 8 ATTENTION rows this run carry an empty `usage` field, not just Vercel/Neon. Extends the 2026-09-28 lesson's scope; still can't isolate the cause from this role's allowlist (raw scripts aren't reachable, and the instrument lives in a different repository).
