@@ -301,3 +301,23 @@ This run's checkout is `HEAD detached at origin/main`, so anything `git log` or 
 `infra:status` has said `GitHub — Actions: ATTENTION … workflows failing on their most recent run: Generated pages are current` for at least several runs, but the sentinel only names the workflow, not why. The actual cause — a specific, well-understood test (`lib/active-situation.test.ts`'s grandfathered-slug check) rejecting two newly-drifted climate-event pages — has been sitting there since 2026-09-29, reproducible with one `npm test`, fixable in two lines following a pattern already used three times in this exact file. Nobody connected "a named workflow is red" to "here is the specific assertion and the two-line fix," because the infra probe's job is detection, not diagnosis.
 
 **Do:** when `infra:status` names a failing workflow, the next step is always `gh run view --log-failed` on its most recent run, not just noting the ATTENTION status — the root cause is often one `npm test` away and may already have a three-times-proven fix pattern sitting in the same file's own comments.
+
+## 2026-09-29 — A push-triggered CI failure on `main` is invisible unless someone reads `gh run list`, and it sat red for ~19 hours
+
+`generated-current.yml` failed on 7 consecutive pushes to `main` starting 2026-09-28T14:11:26Z, over a genuine new hazard/slug mismatch (`odisha-cyclone`) that `lib/active-situation.test.ts` is specifically designed to catch. Nothing in the org or department inbox mentioned it, and `~/.swechha-ai/activity.jsonl` has zero mentions of "odisha" — the department's own automated commits (air, climate-events) kept pushing straight past a red gate because those pipelines don't check gate status before committing.
+
+**Do:** OBSERVE should check `gh run list --workflow=generated-current.yml` (or equivalent) for `push`-triggered failures on `main` specifically, not just PR-triggered ones — a red gate on `main` is a standing defect until someone reads the Actions tab, and this department's own data pipelines will happily keep pushing past it.
+
+## 2026-09-29 — The "ATTENTION with no reason" probe defect (2026-09-28) is not limited to the two probes it was first found on
+
+Confirmed today on `api-health.sh`'s rows too (data.gov.in, WAQI, FIRMS, GitHub API & storage) — 6 of 8 ATTENTION rows this run carry an empty `usage` field, not just Vercel/Neon. Extends the 2026-09-28 lesson's scope; still can't isolate the cause from this role's allowlist (raw scripts aren't reachable, and the instrument lives in a different repository).
+
+## 2026-09-30 — Read the previous run's decision record before treating a live CI failure as a five-minute fix
+
+I nearly drafted an execution brief for `website-engineering` to add `odisha-cyclone` to `lib/active-situation.test.ts`'s `GRANDFATHERED` list — it looked mechanical and well-precedented (four prior entries, same pattern). Reading `2026-09-29-website-team-work.md` first showed that run had already reached the same fix and explicitly declined to brief it, because the test's own docstring reserves exactly this call for the owner (rename-with-redirect vs. accept-and-grandfather), the same shape as the still-open `nepal-glof`/`nepal-flood` decision. A brief would have quietly moved an owner decision into an agent's hands under cover of "it's just a test file."
+
+**Do:** before briefing a fix for a live, CI-breaking test failure, check whether a prior run already diagnosed it — a test failure that looks trivial to patch can be the mechanism itself working as designed, not a bug waiting on code.
+
+## 2026-10-01 — A re-escalated open question needs its own delta stated, not just repeated
+
+The `odisha-cyclone` GRANDFATHERED decision was escalated unchanged on 2026-09-29 and 2026-09-30. This run it had grown (one slug → two, two blocked PRs → three), but a lazy re-read would have reported "same as yesterday" and buried that growth. **Do:** when re-reporting a standing escalation, diff it against the last run's own numbers (which slugs, how many PRs, how many days) before writing "unchanged" — an escalation that is silently getting worse is a different fact from one that is stable, even though the *decision needed* is identical.
