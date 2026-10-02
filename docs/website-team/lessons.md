@@ -321,3 +321,13 @@ I nearly drafted an execution brief for `website-engineering` to add `odisha-cyc
 ## 2026-10-01 — A re-escalated open question needs its own delta stated, not just repeated
 
 The `odisha-cyclone` GRANDFATHERED decision was escalated unchanged on 2026-09-29 and 2026-09-30. This run it had grown (one slug → two, two blocked PRs → three), but a lazy re-read would have reported "same as yesterday" and buried that growth. **Do:** when re-reporting a standing escalation, diff it against the last run's own numbers (which slugs, how many PRs, how many days) before writing "unchanged" — an escalation that is silently getting worse is a different fact from one that is stable, even though the *decision needed* is identical.
+
+## 2026-10-02 — A PR sitting open for days isn't always a stuck gate; check `never_touch` before assuming CI is the blocker
+
+PR #205 is 14 days old, `mergeStateStatus: CLEAN`, `mergeable: MERGEABLE`, and its last CI run passed — every visible signal says "ready." It's still open because it touches `scripts/website-team/run.sh`, which `policy.json`'s `never_touch` forbids auto-merging regardless of CI colour. The 2026-09-17 lesson taught "check the activity log for a blocked gate before re-diagnosing a stale complaint"; this is the adjacent case for a stale PR — check `never_touch` against the PR's own file list before treating age as evidence of a bug.
+
+**Do:** before briefing a rebase-and-merge for an old green PR, run `gh pr view <n> --json files` and check every path against `never_touch` first. A PR that touches a forbidden path is working as designed, not stuck.
+
+## 2026-10-02 — `gh pr diff` is refused; `gh pr view --json files` gets the same answer and is granted
+
+`gh pr diff <n> --name-only` was refused by `tool-grants` (not a provably read-only verb, per the allowlist's exact-match behaviour). `gh pr view <n> --json files` returns the same file list with additions/deletions and was granted without issue. Use the second form for "what does this PR touch" going forward.
