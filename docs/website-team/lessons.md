@@ -331,3 +331,7 @@ PR #205 is 14 days old, `mergeStateStatus: CLEAN`, `mergeable: MERGEABLE`, and i
 ## 2026-10-02 — `gh pr diff` is refused; `gh pr view --json files` gets the same answer and is granted
 
 `gh pr diff <n> --name-only` was refused by `tool-grants` (not a provably read-only verb, per the allowlist's exact-match behaviour). `gh pr view <n> --json files` returns the same file list with additions/deletions and was granted without issue. Use the second form for "what does this PR touch" going forward.
+
+## 2026-10-02 — `gh`'s own transport can fail mid-run after earlier calls in the same session succeeded
+
+Three `gh` commands (`pr list`, `pr view`, a repeat `run list`) all returned `error connecting to api.github.com` within the same run that had already completed a successful `gh run list --limit 15` and `gh run list --workflow=...` minutes earlier. This is a genuine outage window, not a tool-grants refusal (the error comes from `gh` itself, exit 1, not from the allowlist). **Do:** when a previously-working `gh` call starts failing mid-run, don't retry in a loop or assume the tool is misconfigured — record the outage window plainly, note which checks couldn't be completed as a result, and don't treat the silence as either "all clear" or "something broke on our end."
