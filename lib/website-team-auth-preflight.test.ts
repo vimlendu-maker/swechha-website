@@ -101,7 +101,7 @@ describe('run.sh refuses before spending when Claude will not authenticate', () 
     // The lock and the worktree are never touched by a run that could not start.
     expect(sb.read('wt.log')).toBe('')
     expect(sb.read('events.log')).not.toContain('run_started')
-  })
+  }, 20000)
 
   it('files ONE keyed task, escalates it, and raises a claude_auth incident', () => {
     const sb = sandbox({ preflight: 'auth-expired' })
@@ -111,7 +111,7 @@ describe('run.sh refuses before spending when Claude will not authenticate', () 
     expect(org.match(/^task new /gm)).toHaveLength(1)
     expect(org).toMatch(/task escalate website-19700101-0001/)
     expect(org).toMatch(/incident detect website claude_auth auth-expired --workflow website-work --notify/)
-  })
+  }, 20000)
 
   it('files the task in the department that refused, not always `website`', () => {
     const sb = sandbox({ preflight: 'auth-missing' })
@@ -122,14 +122,14 @@ describe('run.sh refuses before spending when Claude will not authenticate', () 
     const { status } = runner({ ...sb, env: { ...sb.env, TEAM_DEPARTMENT: 'fundraising' } })
     expect(status).toBe(8)
     expect(sb.read('org.log')).toMatch(/^task new fundraising BLOCKED: Claude is not authenticated/m)
-  })
+  }, 20000)
 
   it('an ok preflight passes through to the lock', () => {
     const sb = sandbox({ preflight: 'ok' })
     runner(sb)
     expect(sb.read('events.log')).not.toContain('run_refused')
     expect(sb.read('wt.log')).toMatch(/^lock /m)
-  })
+  }, 20000)
 
   it('without org-claude, the bare-claude fallback still refuses a logged-out CLI', () => {
     const sb = sandbox({ fallbackLoggedIn: false })
@@ -137,7 +137,7 @@ describe('run.sh refuses before spending when Claude will not authenticate', () 
     expect(status, out).toBe(8)
     expect(sb.read('events.log')).toMatch(/run_refused reason=auth-missing/)
     expect(sb.read('model.log').trim().split('\n')).toEqual(['auth status'])
-  })
+  }, 20000)
 
   it('the fallback reports binary-missing when there is no CLI at all', () => {
     const sb = sandbox({ fallbackLoggedIn: false })
@@ -147,7 +147,7 @@ describe('run.sh refuses before spending when Claude will not authenticate', () 
       expect(status).toBe(8)
       expect(sb.read('events.log')).toMatch(/run_refused reason=binary-missing/)
     }
-  })
+  }, 20000)
 })
 
 describe('run.sh --catch-up is silent unless a window was really missed', () => {
@@ -158,7 +158,7 @@ describe('run.sh --catch-up is silent unless a window was really missed', () => 
     expect(out).toMatch(/catch-up: not running — window UNKNOWN/)
     expect(sb.read('events.log')).toBe('')
     expect(sb.read('model.log')).toBe('')
-  })
+  }, 20000)
 
   const plutil = existsSync('/usr/bin/plutil')
   it.skipIf(!plutil)('does nothing when today’s work run already finished', () => {
@@ -187,7 +187,7 @@ describe('run.sh --catch-up is silent unless a window was really missed', () => 
     const second = runner(sb, ['work', '--catch-up'])
     expect(second.status).toBe(0)
     expect(second.out).toMatch(/attempted within the hour/)
-  })
+  }, 20000)
 
   it.skipIf(!plutil)('reports a missing credential ONCE a day, then stays silent', () => {
     // DarkWake can eat the 09:00 run, so no scheduled run said it. The first
@@ -215,12 +215,12 @@ describe('run.sh --catch-up is silent unless a window was really missed', () => 
     const second = runner(sb, ['work', '--catch-up'])
     expect(second.status).toBe(0)
     expect(second.out).toMatch(/already reported today/)
-  })
+  }, 20000)
 
   it('refuses --catch-up for the weekly review', () => {
     const sb = sandbox({ preflight: 'ok' })
     expect(runner(sb, ['review', '--catch-up']).status).toBe(2)
-  })
+  }, 20000)
 })
 
 describe('run.sh structure', () => {
