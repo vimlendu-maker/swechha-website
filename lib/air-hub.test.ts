@@ -19,6 +19,7 @@ const AIR = JSON.parse(readFileSync(join(ROOT, 'data/air-delhi.json'), 'utf8'))
 const STD = JSON.parse(readFileSync(join(ROOT, 'data/air-standards.json'), 'utf8'))
 const NCR = JSON.parse(readFileSync(join(ROOT, 'data/ncr.json'), 'utf8'))
 const fetchAir = readFileSync(join(ROOT, 'scripts/fetch-air.mjs'), 'utf8')
+const XC = JSON.parse(readFileSync(join(ROOT, 'data/air-crosscheck.json'), 'utf8'))
 
 /** Visible text only: scripts, styles and comments blanked, tags stripped. */
 const visible = (h: string) => h
@@ -92,9 +93,26 @@ describe('measured, calculated, modelled and forecast are never swapped', () => 
 
   it('the forecast is labelled a forecast, and its scale is named', () => {
     expect(row('Forecast')).toContain('Forecast')
-    expect(text).toContain('A forecast, not an observation.')
     expect(text).toContain('US EPA index scale')
   })
+
+  // scripts/build-situation-air.mjs:1051 reads the same `?? []` fallback —
+  // WAQI's forecast has been an empty array in data/air-crosscheck.json
+  // since 2026-10-04 (an upstream gap, not a build defect: the generator's
+  // job is to never print a forecast chart or its disclaimer without data
+  // behind it, and omitting the whole block is that design working).
+  const fcDays = XC.forecast?.daily?.pm25 ?? []
+
+  if (fcDays.length) {
+    it('when WAQI has forecast days, the disclaimer accompanies them', () => {
+      expect(text).toContain('A forecast, not an observation.')
+    })
+  } else {
+    it('when WAQI has no forecast days, the chart and its disclaimer are both absent — never a claim without its label', () => {
+      expect(page).not.toContain('class="p-fc-c"')
+      expect(text).not.toContain('A forecast, not an observation.')
+    })
+  }
 
   it('the PM2.5 card quotes a monitor that actually reports PM2.5', () => {
     const card = /PM2\.5<\/h3>[\s\S]*?<\/div>/.exec(page)?.[0] ?? ''
