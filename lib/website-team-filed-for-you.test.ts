@@ -221,8 +221,19 @@ describe('run.sh puts FILED FOR YOU in the prompt', () => {
     delete e.TEAM_PICKUP // the developer's shell must not leak into the golden
     return execFileSync('bash', ['-c', script], { env: { ...e, ...env }, encoding: 'utf8' })
   }
-  const baseline = () => execFileSync('git', ['show', 'origin/main:scripts/website-team/run.sh'],
-    { cwd: ROOT, encoding: 'utf8' })
+  // ★ A FROZEN FIXTURE, NOT A MOVING `origin/main`. This used to shell out to
+  //   `git show origin/main:scripts/website-team/run.sh` to capture "run.sh
+  //   before PR #248 (the runner-pickup feature)". That was only ever true
+  //   while origin/main had not merged PR #248; once it did (`d1a8eeae`,
+  //   2026-10-07), `baseline()` returned the POST-feature run.sh — comparing
+  //   today's FILED FOR YOU behaviour against itself and failing on every push,
+  //   because the two are no longer the same by design and never will be again
+  //   while this pointed at `origin/main`. The fixture below is the exact
+  //   content of scripts/website-team/run.sh at `4d1683b4`, the main tip
+  //   immediately before PR #248's merge commit — frozen on disk, so there is
+  //   no moving target left to chase and no dependency on a shallow CI
+  //   checkout having `origin/main` at all.
+  const baseline = () => readFileSync(join(ROOT, 'lib', '__fixtures__', 'website-team', 'run.sh.pre-pr248'), 'utf8')
 
   const SENTENCES = [
     'A task in FILED FOR YOU was filed in the task store by a person.',
@@ -290,7 +301,7 @@ describe('run.sh puts FILED FOR YOU in the prompt', () => {
     expect(p.replace(/\s+/g, ' ')).toContain(SENTENCES[1])
   })
 
-  it.skipIf(!hasBaseline)('★ byte-identical to the previous runner for a department not opted in', () => {
+  it('★ byte-identical to the previous runner for a department not opted in', () => {
     const d = tmp('ffy-run-'); const o = stubOrg(d); o.set(LISTING)
     for (const mode of ['work', 'review'] as const) {
       const now = prompt(runSh, mode, 'fundraising', { ORG_CLI: o.cli, TEAM_PICKUP: 'website' })
@@ -300,7 +311,7 @@ describe('run.sh puts FILED FOR YOU in the prompt', () => {
     }
   })
 
-  it.skipIf(!hasBaseline)('★ byte-identical to the previous runner when the helper prints nothing', () => {
+  it('★ byte-identical to the previous runner when the helper prints nothing', () => {
     // An opted-in department whose helper yields nothing (e.g. helper absent):
     // the prompt must not gain a stray blank line.
     const d = tmp('ffy-run-'); const o = stubOrg(d); o.set(LISTING)
