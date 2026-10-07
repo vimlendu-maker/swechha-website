@@ -14,10 +14,12 @@
   machine runs at wake.
 
   THE TASK DIRECTORY IS WATCHED TOO. A task a person files in the AI OS store
-  (CLI, MCP file_task, Command Centre) is a NEW FILE under
-  ~/.swechha-ai/tasks/website, and a directory WatchPath fires when entries are
-  added to it. on-change.sh then reads `org task pickup` and wakes the
-  department on a NEW NOW:/TODAY: task exactly as it does for an inbox NOW.
+  (CLI, MCP file_task, Command Centre) is written under ~/.swechha-ai/tasks/website.
+  A directory WatchPath fires on EVERY write in that directory (tmp file +
+  os.replace, lock files), not only when a task is added, so this fires often.
+  That is safe: on-change.sh wakes only for a NEW NOW:/TODAY: task id it has not
+  handled (kept in ~/.swechha-ai/tasks-seen.website) or a changed urgent inbox,
+  so the churn costs one cheap read, never a paid run.
 
   THIS FILE IS A TEMPLATE. The INSTALLED copy in ~/Library/LaunchAgents is what
   launchd runs; after this lands it must be updated to match and reloaded by the

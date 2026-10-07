@@ -24,6 +24,8 @@
   default `website`. A department not listed gets NO OUTPUT AT ALL, so its prompt
   and its wake decision are byte-for-byte what they were. A department adopts by
   being added to the default below or by setting TEAM_PICKUP in its plist.
+  An EMPTY TEAM_PICKUP falls back to the default (`website`); to opt a department
+  out entirely set a dummy value such as `none`.
 
   FILED_FOR_YOU_TIMEOUT (seconds, default 20) exists so a test can exercise the
   hang path without waiting 20 s.
