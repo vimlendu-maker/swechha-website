@@ -137,7 +137,7 @@ if [ ! -f "$STAMP" ] && [ -f "$SEEN" ]; then
   touch -r "$SEEN" "$STAMP" 2>/dev/null || true
 fi
 if [ -f "$STAMP" ]; then
-  LAST_AGE=$(( $(date +%s) - $(stat -f %m "$STAMP") ))
+  LAST_AGE=$(( $(date +%s) - $(stat -c %Y "$STAMP" 2>/dev/null || stat -f %m "$STAMP") ))
 fi
 
 # Urgent = a line that OPENS with NOW/TODAY, in either the colon form
