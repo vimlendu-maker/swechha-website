@@ -1,6 +1,20 @@
 #!/usr/bin/env bash
 # Run the department when the owner adds urgent work — within seconds, not
-# tomorrow. Fired by launchd WatchPaths on the inboxes.
+# tomorrow. Fired by launchd WatchPaths on the inboxes AND on the department's
+# task directory in the AI OS store.
+#
+# ── HUMAN-FILED TASKS ARE WORK TOO ───────────────────────────────────────────
+#   The watcher also reacts to NEW tasks a person filed in the task store (CLI,
+#   MCP file_task, Command Centre), read through `org task pickup` via
+#   filed-for-you.py. They obey the same vocabulary below, applied to the task
+#   TITLE: a new NOW:/TODAY: task wakes the department exactly as an inbox NOW
+#   does (same lock, same minimum interval); a THIS WEEK/BACKLOG/WATCH task
+#   changes the hash, is recorded, and waits for the scheduled run; the same set
+#   again does not re-wake. Opt-in per department (TEAM_PICKUP, default
+#   `website`): for any other the helper prints nothing and nothing changes.
+#   If the store cannot be read the literal marker TASKS-UNKNOWN is hashed, so a
+#   later successful read changes the hash and is re-evaluated -- unreadable is
+#   not empty, and bookkeeping never stops the department.
 #
 # ── THE PRIORITY VOCABULARY ──────────────────────────────────────────────────
 #   The owner writes a prefix and the system does the right thing without him
@@ -83,8 +97,8 @@ open_section() {
 }
 
 BOTH="$( { open_section "$INBOX"; open_section "$ORG_INBOX"; } )"
-CURRENT="$(printf '%s' "$BOTH" | shasum | cut -d' ' -f1)"
-JOBS="$(printf '%s' "$BOTH" | grep -c . || true)"
+INBOX_JOBS="$(printf '%s' "$BOTH" | grep -c . || true)"
+JOBS="$INBOX_JOBS"
 
 # Urgent = a line that OPENS with NOW/TODAY, in either the colon form
 # (`TODAY:`) or the Obsidian tag form (`#today`). Case-insensitive, because the
@@ -98,6 +112,52 @@ JOBS="$(printf '%s' "$BOTH" | grep -c . || true)"
 URGENT="$(printf '%s' "$BOTH" \
   | sed -E 's/^([[:space:]]*(#+[[:space:]]+|[-*+][[:space:]]*|\[[ xX]\][[:space:]]*))+//' \
   | grep -icE '^(#?(NOW|TODAY)[[:space:]]*:|#(NOW|TODAY)([^[:alnum:]_-]|$))' || true)"
+
+# ── THE TASK STORE, FOLDED IN EXACTLY LIKE THE INBOX ─────────────────────────
+#   Tasks a person filed for this department (see the header). Opt-in aware: the
+#   helper prints NOTHING for a department that has not adopted this, which
+#   leaves HASHIN, JOBS and URGENT exactly as the inbox alone made them.
+#   `|| true` throughout: bookkeeping never stops the department.
+#
+#   Parsed with python (already required here); a document that does not parse
+#   counts as UNKNOWN, never as zero tasks.
+TASK_JSON="$(python3 "$REPO/scripts/website-team/filed-for-you.py" "$DEPARTMENT" --json --limit 1000 2>/dev/null || true)"
+HASHIN="$BOTH"
+if [ -n "$TASK_JSON" ]; then
+  TASK_PARSED="$(printf '%s' "$TASK_JSON" | python3 -c '
+import json, sys
+try:
+    d = json.load(sys.stdin)
+    if not isinstance(d, dict) or d.get("ok") is not True or not isinstance(d.get("tasks"), list):
+        raise ValueError(str(d.get("reason") if isinstance(d, dict) and d.get("reason") else "the pickup read reported ok:false"))
+    t = [x for x in d["tasks"] if isinstance(x, dict) and x.get("id")]
+    print("OK")
+    print(len(t))
+    print(sum(1 for x in t if x.get("priority") in ("NOW", "TODAY")))
+    print(",".join(sorted(str(x["id"]) for x in t)))
+except Exception as e:
+    print("UNKNOWN")
+    print(str(e).replace("\n", " ")[:160])
+' 2>/dev/null || true)"
+  TASK_STATUS="$(printf '%s\n' "$TASK_PARSED" | sed -n 1p)"
+  if [ "$TASK_STATUS" = "OK" ]; then
+    TASK_JOBS="$(printf '%s\n' "$TASK_PARSED" | sed -n 2p)"
+    TASK_URGENT="$(printf '%s\n' "$TASK_PARSED" | sed -n 3p)"
+    TASK_IDS="$(printf '%s\n' "$TASK_PARSED" | sed -n 4p)"
+    if [ "$TASK_JOBS" -gt 0 ] 2>/dev/null; then
+      HASHIN="${BOTH:+$BOTH
+}TASKS:$TASK_IDS"
+      JOBS=$(( JOBS + TASK_JOBS ))
+      URGENT=$(( URGENT + TASK_URGENT ))
+    fi
+  else
+    TASK_REASON="$(printf '%s\n' "$TASK_PARSED" | sed -n 2p)"
+    echo "on-change: task store unreadable (${TASK_REASON:-no reason given}) — inbox rules only" >&2
+    HASHIN="${BOTH:+$BOTH
+}TASKS-UNKNOWN"
+  fi
+fi
+CURRENT="$(printf '%s' "$HASHIN" | shasum | cut -d' ' -f1)"
 
 # ── FILE EVERY OPEN LINE AS A WORK ITEM, BEFORE DECIDING WHETHER TO WAKE ANYONE ─
 #   Tracking and waking are different questions and conflating them is what made
@@ -119,7 +179,7 @@ URGENT="$(printf '%s' "$BOTH" \
 #   inbox itself (WatchPaths, launchd in.swechha.org-route) and files it; this
 #   was the second filer of audit defect 7. The org inbox still WAKES the
 #   department above -- waking and filing are different questions.
-if [ "$JOBS" -gt 0 ]; then
+if [ "$INBOX_JOBS" -gt 0 ]; then
   python3 "$REPO/scripts/website-team/inbox-intake.py" "$DEPARTMENT" "$INBOX" || true
 fi
 

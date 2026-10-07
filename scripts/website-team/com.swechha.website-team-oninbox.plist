@@ -12,6 +12,16 @@
 
   launchd does not fire while the Mac is asleep; a job saved on a sleeping
   machine runs at wake.
+
+  THE TASK DIRECTORY IS WATCHED TOO. A task a person files in the AI OS store
+  (CLI, MCP file_task, Command Centre) is a NEW FILE under
+  ~/.swechha-ai/tasks/website, and a directory WatchPath fires when entries are
+  added to it. on-change.sh then reads `org task pickup` and wakes the
+  department on a NEW NOW:/TODAY: task exactly as it does for an inbox NOW.
+
+  THIS FILE IS A TEMPLATE. The INSTALLED copy in ~/Library/LaunchAgents is what
+  launchd runs; after this lands it must be updated to match and reloaded by the
+  owner. Nothing in the repository installs or reloads it.
 -->
 <plist version="1.0">
 <dict>
@@ -26,6 +36,7 @@
   <array>
     <string>/Users/administrator/swechha-vault/swechha/website/team/inbox.md</string>
     <string>/Users/administrator/swechha-vault/swechha/ai/inbox.md</string>
+    <string>/Users/administrator/.swechha-ai/tasks/website</string>
   </array>
   <key>StandardOutPath</key>    <string>/tmp/swechha-website-team-oninbox.log</string>
   <key>StandardErrorPath</key>  <string>/tmp/swechha-website-team-oninbox.err</string>
