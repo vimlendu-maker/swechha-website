@@ -1,6 +1,40 @@
 #!/usr/bin/env bash
 # Run the department when the owner adds urgent work — within seconds, not
-# tomorrow. Fired by launchd WatchPaths on the inboxes.
+# tomorrow. Fired by launchd WatchPaths on the inboxes AND on the department's
+# task directory in the AI OS store.
+#
+# ── HUMAN-FILED TASKS ARE WORK TOO ───────────────────────────────────────────
+#   The watcher also reacts to tasks a person filed in the task store (CLI, MCP
+#   file_task, Command Centre), read through `org task pickup` via
+#   filed-for-you.py. They obey the same vocabulary below, applied to the task
+#   TITLE. Opt-in per department (TEAM_PICKUP, default `website`; an EMPTY value
+#   falls back to the default and a dummy value such as `none` opts everything
+#   out): for any department not listed the helper prints nothing and every line
+#   of this file behaves exactly as it did before tasks existed.
+#
+#   ★ TASKS ARE DELIBERATELY NOT PART OF THE INBOX HASH. The first design hashed
+#     task ids (and a TASKS-UNKNOWN marker for an unreadable store) into CURRENT.
+#     Review found that every readable<->unreadable flip then changed the hash,
+#     and with any open inbox NOW/#today line each flip was a PAID wake -- the
+#     installed `org` has no `task pickup` yet, so it would have happened at
+#     deploy. So the two halves are decided INDEPENDENTLY:
+#
+#       inbox : hash, URGENT, JOBS and every rule below -- exactly as before.
+#       tasks : NEW_URGENT = urgent (NOW/TODAY) pickup ids not yet in
+#               $STATE/tasks-seen.$DEPARTMENT, one id per line.
+#
+#     Wake if (the inbox changed AND is urgent) OR NEW_URGENT > 0, through the
+#     same lock and minimum-interval path. The ids are appended to the seen file
+#     only when a wake is actually launched (before the exec, like SEEN), so one
+#     task never wakes twice, and a held lock or interval records nothing so the
+#     next fire re-evaluates. THIS WEEK/BACKLOG/WATCH tasks never wake; the
+#     scheduled run picks them up. An UNREADABLE store is NEW_URGENT=0 plus one
+#     `task store unreadable` line: a store problem can never cause a wake, and
+#     nothing about it is hashed. (Unreadable is still not "empty" -- run.sh
+#     tells the manager UNKNOWN; this only declines to spend money on it.)
+#
+#     The first run after deploy treats every urgent task already open as new
+#     and wakes once for them. That is intended: they are unworked.
 #
 # ── THE PRIORITY VOCABULARY ──────────────────────────────────────────────────
 #   The owner writes a prefix and the system does the right thing without him
@@ -83,8 +117,28 @@ open_section() {
 }
 
 BOTH="$( { open_section "$INBOX"; open_section "$ORG_INBOX"; } )"
-CURRENT="$(printf '%s' "$BOTH" | shasum | cut -d' ' -f1)"
-JOBS="$(printf '%s' "$BOTH" | grep -c . || true)"
+INBOX_JOBS="$(printf '%s' "$BOTH" | grep -c . || true)"
+JOBS="$INBOX_JOBS"
+# Age of the last LAUNCHED run, read BEFORE anything below rewrites a file.
+#
+# ★ THE INTERVAL CLOCK IS ITS OWN STAMP, `last-wake.$DEPARTMENT`, touched ONLY on
+#   the launch path. It used to be SEEN's mtime, but SEEN is rewritten on every
+#   fire with an empty or non-urgent-changed inbox, and the task directory is now
+#   watched, so a HOLD refreshed the clock and a NOW task filed within the
+#   interval of the last run was held forever (reproduced in review). SEEN means
+#   "inbox hash seen" and nothing else. Until the first launch after deploy there
+#   is no stamp, so the old behaviour (SEEN's mtime) is used and the upgrade
+#   cannot cause a surprise wake.
+STAMP="$STATE/last-wake.$DEPARTMENT"
+LAST_AGE=""
+if [ ! -f "$STAMP" ] && [ -f "$SEEN" ]; then
+  # Seed the stamp from SEEN's mtime NOW, before SEEN is rewritten below, so the
+  # old clock carries over once and is never refreshed by a hold.
+  touch -r "$SEEN" "$STAMP" 2>/dev/null || true
+fi
+if [ -f "$STAMP" ]; then
+  LAST_AGE=$(( $(date +%s) - $(stat -c %Y "$STAMP" 2>/dev/null || stat -f %m "$STAMP") ))
+fi
 
 # Urgent = a line that OPENS with NOW/TODAY, in either the colon form
 # (`TODAY:`) or the Obsidian tag form (`#today`). Case-insensitive, because the
@@ -98,6 +152,45 @@ JOBS="$(printf '%s' "$BOTH" | grep -c . || true)"
 URGENT="$(printf '%s' "$BOTH" \
   | sed -E 's/^([[:space:]]*(#+[[:space:]]+|[-*+][[:space:]]*|\[[ xX]\][[:space:]]*))+//' \
   | grep -icE '^(#?(NOW|TODAY)[[:space:]]*:|#(NOW|TODAY)([^[:alnum:]_-]|$))' || true)"
+
+# ── THE TASK STORE: NEW URGENT TASKS ONLY (see the header) ───────────────────
+#   Opt-in aware: the helper prints NOTHING for a department that has not adopted
+#   this, so NEW_URGENT stays 0 and nothing below changes. `|| true` throughout:
+#   bookkeeping never stops the department. Nothing here touches CURRENT.
+TASKS_SEEN="$STATE/tasks-seen.$DEPARTMENT"
+NEW_URGENT=0
+NEW_URGENT_IDS=""
+TASK_JSON="$(python3 "$REPO/scripts/website-team/filed-for-you.py" "$DEPARTMENT" --json --limit 1000 2>/dev/null || true)"
+if [ -n "$TASK_JSON" ]; then
+  TASK_PARSED="$(printf '%s' "$TASK_JSON" | python3 -c '
+import json, sys
+seen = set()
+try:
+    seen = set(l.strip() for l in open(sys.argv[1]) if l.strip())
+except Exception:
+    pass
+try:
+    d = json.load(sys.stdin)
+    if not isinstance(d, dict) or d.get("ok") is not True or not isinstance(d.get("tasks"), list):
+        raise ValueError(str(d.get("reason") if isinstance(d, dict) and d.get("reason") else "the pickup read reported ok:false"))
+    new = sorted(str(x["id"]) for x in d["tasks"]
+                 if isinstance(x, dict) and x.get("id") and x.get("priority") in ("NOW", "TODAY")
+                 and str(x["id"]) not in seen)
+    print("OK")
+    print(" ".join(new))
+except Exception as e:
+    print("UNKNOWN")
+    print(str(e).replace("\n", " ")[:160])
+' "$TASKS_SEEN" 2>/dev/null || true)"
+  if [ "$(printf '%s\n' "$TASK_PARSED" | sed -n 1p)" = "OK" ]; then
+    NEW_URGENT_IDS="$(printf '%s\n' "$TASK_PARSED" | sed -n 2p)"
+    NEW_URGENT="$(printf '%s' "$NEW_URGENT_IDS" | wc -w | tr -d ' ')"
+  else
+    TASK_REASON="$(printf '%s\n' "$TASK_PARSED" | sed -n 2p)"
+    echo "on-change: task store unreadable (${TASK_REASON:-no reason given}) — inbox rules only" >&2
+  fi
+fi
+CURRENT="$(printf '%s' "$BOTH" | shasum | cut -d' ' -f1)"
 
 # ── FILE EVERY OPEN LINE AS A WORK ITEM, BEFORE DECIDING WHETHER TO WAKE ANYONE ─
 #   Tracking and waking are different questions and conflating them is what made
@@ -119,47 +212,68 @@ URGENT="$(printf '%s' "$BOTH" \
 #   inbox itself (WatchPaths, launchd in.swechha.org-route) and files it; this
 #   was the second filer of audit defect 7. The org inbox still WAKES the
 #   department above -- waking and filing are different questions.
-if [ "$JOBS" -gt 0 ]; then
+if [ "$INBOX_JOBS" -gt 0 ]; then
   python3 "$REPO/scripts/website-team/inbox-intake.py" "$DEPARTMENT" "$INBOX" || true
 fi
 
+# The inbox half decides on its own, exactly as before; INBOX_WAKE says whether
+# it wants a run. A new urgent task (NEW_URGENT) is the only other reason.
+INBOX_WAKE=0
 if [ "$JOBS" -eq 0 ]; then
   echo "$CURRENT" > "$SEEN"
-  exit 0
-fi
-
-if [ -f "$SEEN" ] && [ "$(cat "$SEEN")" = "$CURRENT" ]; then
-  exit 0   # written, but the open jobs are identical
-fi
-
-if [ "$URGENT" -eq 0 ]; then
+elif [ -f "$SEEN" ] && [ "$(cat "$SEEN")" = "$CURRENT" ]; then
+  :   # written, but the open jobs are identical
+elif [ "$URGENT" -eq 0 ]; then
   # The list changed but nothing is urgent. Record it so this does not
   # re-evaluate on every subsequent save, and leave it to the next cycle.
   echo "$CURRENT" > "$SEEN"
   echo "on-change: jobs changed, none marked NOW or TODAY — leaving it for the next scheduled run"
+else
+  INBOX_WAKE=1
+fi
+
+if [ "$INBOX_WAKE" -eq 0 ] && [ "$NEW_URGENT" -eq 0 ]; then
   exit 0
 fi
 
 if [ -d "$LOCK" ]; then
   # A run is in flight and reads the same file. Do not queue a second one, and
-  # deliberately do NOT record the hash — if that run started before the job
-  # was saved, the next write still triggers.
+  # deliberately do NOT record the hash or the task ids — if that run started
+  # before the job was saved, the next write still triggers.
   echo "on-change: a run is already in flight — it will see this" >&2
   exit 0
 fi
 
-if [ -f "$SEEN" ]; then
-  LAST_RUN=$(( $(date +%s) - $(stat -f %m "$SEEN") ))
-  if [ "$LAST_RUN" -lt "$MIN_INTERVAL" ]; then
-    echo "on-change: last run was ${LAST_RUN}s ago (min ${MIN_INTERVAL}s) — holding" >&2
-    exit 0
-  fi
+if [ -n "$LAST_AGE" ] && [ "$LAST_AGE" -lt "$MIN_INTERVAL" ]; then
+  echo "on-change: last run was ${LAST_AGE}s ago (min ${MIN_INTERVAL}s) — holding" >&2
+  exit 0
 fi
 
+if [ "$INBOX_WAKE" -eq 1 ]; then
+  WAKE_URGENT=$(( URGENT + NEW_URGENT )); WAKE_BY="inbox-urgent"
+else
+  WAKE_URGENT="$NEW_URGENT"; WAKE_BY="task-urgent"
+fi
+if [ "$NEW_URGENT" -gt 0 ]; then
+  # Record the ids BEFORE the exec, like SEEN, so one task never wakes twice.
+  # FAIL CLOSED: a task-only wake whose ids cannot be recorded would re-wake on
+  # every interval -- a paid loop -- so it does not launch. An urgent inbox wake
+  # is its own reason and still goes ahead.
+  if ! { [ ! -d "$TASKS_SEEN" ] && { [ -f "$TASKS_SEEN" ] && cat "$TASKS_SEEN"; printf '%s\n' $NEW_URGENT_IDS; } > "$TASKS_SEEN.tmp.$$" \
+         && mv "$TASKS_SEEN.tmp.$$" "$TASKS_SEEN"; } 2>/dev/null; then
+    rm -f "$TASKS_SEEN.tmp.$$" 2>/dev/null || true
+    echo "on-change: cannot record handled task ids in $TASKS_SEEN" >&2
+    if [ "$INBOX_WAKE" -eq 0 ]; then
+      echo "on-change: not waking for tasks it cannot record — it would repeat every interval" >&2
+      exit 0
+    fi
+  fi
+fi
+touch "$STAMP"
 echo "$CURRENT" > "$SEEN"
-echo "on-change: $URGENT urgent item(s) — running the department now"
+echo "on-change: $WAKE_URGENT urgent item(s) — running the department now"
 python3 "${SWECHHA_LOG_EVENT:-$HOME/.swechha-ai/log-event.py}" "$DEPARTMENT" runner \
-  run_triggered by=inbox-urgent urgent="$URGENT" jobs="$JOBS" 2>/dev/null || true
+  run_triggered by="$WAKE_BY" urgent="$WAKE_URGENT" jobs="$JOBS" 2>/dev/null || true
 # ★ THROUGH THE SNAPSHOT, NOT STRAIGHT AT THE REPO. This line read
 #
 #       exec "$REPO/scripts/website-team/run.sh" work
