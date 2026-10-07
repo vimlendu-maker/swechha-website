@@ -119,10 +119,26 @@ open_section() {
 BOTH="$( { open_section "$INBOX"; open_section "$ORG_INBOX"; } )"
 INBOX_JOBS="$(printf '%s' "$BOTH" | grep -c . || true)"
 JOBS="$INBOX_JOBS"
-# Age of the last recorded run, read BEFORE anything below rewrites SEEN: a
-# non-urgent inbox record in this same invocation must not look like a recent run.
-SEEN_AGE=""
-if [ -f "$SEEN" ]; then SEEN_AGE=$(( $(date +%s) - $(stat -f %m "$SEEN") )); fi
+# Age of the last LAUNCHED run, read BEFORE anything below rewrites a file.
+#
+# ★ THE INTERVAL CLOCK IS ITS OWN STAMP, `last-wake.$DEPARTMENT`, touched ONLY on
+#   the launch path. It used to be SEEN's mtime, but SEEN is rewritten on every
+#   fire with an empty or non-urgent-changed inbox, and the task directory is now
+#   watched, so a HOLD refreshed the clock and a NOW task filed within the
+#   interval of the last run was held forever (reproduced in review). SEEN means
+#   "inbox hash seen" and nothing else. Until the first launch after deploy there
+#   is no stamp, so the old behaviour (SEEN's mtime) is used and the upgrade
+#   cannot cause a surprise wake.
+STAMP="$STATE/last-wake.$DEPARTMENT"
+LAST_AGE=""
+if [ ! -f "$STAMP" ] && [ -f "$SEEN" ]; then
+  # Seed the stamp from SEEN's mtime NOW, before SEEN is rewritten below, so the
+  # old clock carries over once and is never refreshed by a hold.
+  touch -r "$SEEN" "$STAMP" 2>/dev/null || true
+fi
+if [ -f "$STAMP" ]; then
+  LAST_AGE=$(( $(date +%s) - $(stat -f %m "$STAMP") ))
+fi
 
 # Urgent = a line that OPENS with NOW/TODAY, in either the colon form
 # (`TODAY:`) or the Obsidian tag form (`#today`). Case-insensitive, because the
@@ -228,8 +244,8 @@ if [ -d "$LOCK" ]; then
   exit 0
 fi
 
-if [ -n "$SEEN_AGE" ] && [ "$SEEN_AGE" -lt "$MIN_INTERVAL" ]; then
-  echo "on-change: last run was ${SEEN_AGE}s ago (min ${MIN_INTERVAL}s) — holding" >&2
+if [ -n "$LAST_AGE" ] && [ "$LAST_AGE" -lt "$MIN_INTERVAL" ]; then
+  echo "on-change: last run was ${LAST_AGE}s ago (min ${MIN_INTERVAL}s) — holding" >&2
   exit 0
 fi
 
@@ -240,9 +256,20 @@ else
 fi
 if [ "$NEW_URGENT" -gt 0 ]; then
   # Record the ids BEFORE the exec, like SEEN, so one task never wakes twice.
-  { [ -f "$TASKS_SEEN" ] && cat "$TASKS_SEEN"; printf '%s\n' $NEW_URGENT_IDS; } > "$TASKS_SEEN.tmp.$$" \
-    && mv "$TASKS_SEEN.tmp.$$" "$TASKS_SEEN" || true
+  # FAIL CLOSED: a task-only wake whose ids cannot be recorded would re-wake on
+  # every interval -- a paid loop -- so it does not launch. An urgent inbox wake
+  # is its own reason and still goes ahead.
+  if ! { [ ! -d "$TASKS_SEEN" ] && { [ -f "$TASKS_SEEN" ] && cat "$TASKS_SEEN"; printf '%s\n' $NEW_URGENT_IDS; } > "$TASKS_SEEN.tmp.$$" \
+         && mv "$TASKS_SEEN.tmp.$$" "$TASKS_SEEN"; } 2>/dev/null; then
+    rm -f "$TASKS_SEEN.tmp.$$" 2>/dev/null || true
+    echo "on-change: cannot record handled task ids in $TASKS_SEEN" >&2
+    if [ "$INBOX_WAKE" -eq 0 ]; then
+      echo "on-change: not waking for tasks it cannot record — it would repeat every interval" >&2
+      exit 0
+    fi
+  fi
 fi
+touch "$STAMP"
 echo "$CURRENT" > "$SEEN"
 echo "on-change: $WAKE_URGENT urgent item(s) — running the department now"
 python3 "${SWECHHA_LOG_EVENT:-$HOME/.swechha-ai/log-event.py}" "$DEPARTMENT" runner \

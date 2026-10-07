@@ -219,6 +219,9 @@ OPEN_TASKS="$(python3 "$LIB/open-tasks.py" "$DEPARTMENT" --limit 20 2>/dev/null 
 #   department $FILED is empty and the prompts below are byte-for-byte unchanged.
 #   `|| true`, and an UNKNOWN line rather than silence, for the usual reason.
 FILED="$(python3 "$LIB/filed-for-you.py" "$DEPARTMENT" 2>/dev/null || true)"
+# A title is DATA and could carry the fence tokens used below to close the fence
+# early; neutralise them in the listing only (the markers WE add stay as they are).
+FILED="$(printf '%s' "$FILED" | sed -e 's/<<</‹‹‹/g' -e 's/>>>/›››/g')"
 FILED_BLOCK=""
 if [ -n "$FILED" ]; then
   FILED_BLOCK="A task in FILED FOR YOU was filed in the task store by a person. It is WORK, not a
