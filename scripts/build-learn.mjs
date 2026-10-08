@@ -23,9 +23,10 @@
    methodology notes because those are the substance; everywhere else the
    figure stands clean. A section whose entire subject is how environmental
    data is made and how it misleads belongs on the first side of that line.
-   Every article therefore carries its primary sources, its authority for a
-   limit, and a "what this cannot tell you" list — and gate 5 refuses an
-   article that has no source at all.
+   Every article therefore carries its primary sources and a "what this
+   cannot tell you" list, and — where a regulatory limit exists to cite —
+   its authority; gate 5 refuses an article that has no source at all,
+   standard or not.
 
    ★ WHAT IS NOT HERE, AND WHY.
      · No reading date in a `<meta description>` and no live value in a title.
@@ -163,6 +164,18 @@ for (const a of ARTICLES) {
   if (!Array.isArray(a.cannot) || !a.cannot.length) {
     dataFail(`${w}: no "what this cannot tell you" list. Every article states the limits of its own subject.`);
   }
+  /* ── AN ARTICLE WITH NO REGULATORY LIMIT TAKES A `grounding` BAND INSTEAD
+     OF A `standard` ONE — it fills the same slot in the ground chain (see
+     bandsFor() below) but cites the article's own sources in prose rather
+     than resolving a figure out of a dataset that, for a subject like a
+     mycorrhizal network or a migrating bird, does not exist. One of the two
+     is required; neither is invented when the other is missing. */
+  if (!a.standard && !a.grounding) {
+    dataFail(`${w}: no "standard" band and no "grounding" band to take its place — an explainer needs one or the other.`);
+  } else if (!a.standard) {
+    if (!a.grounding.head || !a.grounding.lead) dataFail(`${w}: the grounding band needs a head and a lead.`);
+    if (!a.grounding.chip) dataFail(`${w}: the grounding band needs a chip label for the section index.`);
+  }
   for (const r of a.related || []) {
     if (!BY_SLUG.has(r)) dataFail(`${w}: related article "${r}" does not exist.`);
     if (r === a.slug) dataFail(`${w}: relates to itself.`);
@@ -188,6 +201,7 @@ const ESCAPED_FIELDS = (a) => [
   ['card', a.card],
   ['frame.alt', a.frame?.alt],
   ['standard.chip', a.standard?.chip],
+  ['grounding.chip', a.grounding?.chip],
   ...(a.standard?.rows || []).flatMap((r, i) => [
     [`standard.rows[${i}].name`, r.name], [`standard.rows[${i}].authority`, r.authority],
     [`standard.rows[${i}].unit`, r.unit], [`standard.rows[${i}].value`, r.value],
@@ -257,6 +271,25 @@ const standardBand = (a) => {
 ${rows ? `      <div class="lr-st">\n${rows}\n      </div>` : ''}
 ${(st.after || []).map((p) => `      <p class="lr-p">${p}</p>`).join('\n')}
 ${a.live ? `      <p class="lr-cta"><a class="b b-1" href="${esc(a.live.href)}">${esc(a.live.label)}${ARROW}</a></p>` : ''}
+    </div>`;
+};
+
+/** The band that fills the `standard` slot for an article with nothing
+ * regulatory to cite — a soil fungus or a migrating bird has no published
+ * limit and no `/now/` reading, so there is no dataset field for gate 1's
+ * resolver to dereference. Rather than invent a seventh visual language this
+ * reuses the one `sourcesBand()` below already renders: prose, then a plain
+ * citation list off the article's own `a.sources` — no `<ref>`, because an
+ * article of this shape has no dataset to point one at. */
+const groundingBand = (a) => {
+  const g = a.grounding;
+  return `${opener('grounding', g.head, g.lead)}
+    <div class="wrap">
+${(g.after || []).map((p) => `      <p class="lr-p">${p}</p>`).join('\n')}
+      <ul class="lr-src">
+${a.sources.map((s) => `        <li><a class="lk" href="${esc(s.url)}" rel="noopener">${esc(s.name)}</a>
+          <span class="cap">${esc(s.publisher)}${s.note ? ` &middot; ${esc(s.note)}` : ''}</span></li>`).join('\n')}
+      </ul>
     </div>`;
 };
 
@@ -464,18 +497,23 @@ const PAGE_CSS = `
 `;
 
 /* ═══ BANDS — one fixed chain, so the ground rhythm cannot drift ═════════
-   top #0D0D0B -> explain #F3F2F0 -> standard #0D0D0B -> reading #ECEBE8
-   -> sources #151512 -> onward #F3F2F0 -> footer #151512.
-   Zero paper-to-paper steps, zero clashes. Every article carries all six:
-   an explainer with no standard, no method or no source is not publishable,
-   which is a content rule the fixed chain makes structural. */
-const ARTICLE_BANDS = [
-  ['top',      't1',          '#0D0D0B'],
-  ['explain',  'paper t2',    '#F3F2F0'],
-  ['standard', 't2',          '#0D0D0B'],
-  ['reading',  'paper-2 t2',  '#ECEBE8'],
-  ['sources',  'dark-2 t2',   '#151512'],
-  ['onward',   'paper t3',    '#F3F2F0'],
+   top #0D0D0B -> explain #F3F2F0 -> standard|grounding #0D0D0B -> reading
+   #ECEBE8 -> sources #151512 -> onward #F3F2F0 -> footer #151512.
+   Zero paper-to-paper steps, zero clashes. Every article carries all six
+   slots: an explainer with no method or no source is not publishable, which
+   is a content rule the fixed chain makes structural. The third slot is the
+   one exception — it takes `standard` where a regulatory limit exists to
+   cite and `grounding` where it does not (an article's `a.standard` being
+   present or absent decides which, never both) — because the ground colour
+   either band renders on is identical, so the chain itself cannot tell the
+   two apart and does not need to. */
+const bandsFor = (a) => [
+  ['top',                              't1',          '#0D0D0B'],
+  ['explain',                          'paper t2',    '#F3F2F0'],
+  [a.standard ? 'standard' : 'grounding', 't2',        '#0D0D0B'],
+  ['reading',                          'paper-2 t2',  '#ECEBE8'],
+  ['sources',                          'dark-2 t2',   '#151512'],
+  ['onward',                           'paper t3',    '#F3F2F0'],
 ];
 
 if (dataBad) {
@@ -489,7 +527,7 @@ if (dataBad) {
    silent hole, which is the one outcome every gate in this repo exists to
    prevent. Resolving up front turns it back into a refusal to write. */
 for (const a of ARTICLES) {
-  for (const r of a.standard.rows || []) figureText(r, `learn/${a.slug} standard "${r.name}"`);
+  for (const r of a.standard?.rows || []) figureText(r, `learn/${a.slug} standard "${r.name}"`);
 }
 if (dataBad) {
   console.error(`\nREFUSING TO WRITE: ${dataBad} figure reference(s) did not resolve.`);
@@ -509,14 +547,16 @@ for (const a of ARTICLES) {
     top: () => masthead(a),
     explain: () => explainBand(a),
     standard: () => standardBand(a),
+    grounding: () => groundingBand(a),
     reading: () => readBand(a),
     sources: () => sourcesBand(a),
     onward: () => onwardBand(a),
   };
-  const clashes = S.groundChain(ARTICLE_BANDS);
+  const bands = bandsFor(a);
+  const clashes = S.groundChain(bands);
   const INDEX = [
     ['What it means', '#explain'],
-    [a.standard.chip, '#standard'],
+    a.standard ? [a.standard.chip, '#standard'] : [a.grounding.chip, '#grounding'],
     ['How to read it', '#reading'],
     ['Sources', '#sources'],
     ['Next', '#onward'],
@@ -538,7 +578,7 @@ for (const a of ARTICLES) {
       section: catOf(a).name,
       about: [catOf(a).name, ...(a.defs || []).slice(0, 3).map((d) => d.term)],
     }),
-    bands: ARTICLE_BANDS, index: INDEX, sh, clashes,
+    bands, index: INDEX, sh, clashes,
     pageCss: PAGE_CSS,
     /* THE SEVENTH NAV WORD IS THIS SECTION'S, so these pages mark it. An
        article gets aria-current="true" (under Learn, not at it) and the index
@@ -692,7 +732,7 @@ const strip = (h) => h.replace(/<style[\s\S]*?<\/style>/g, ' ')
 let figs = 0, missing = [];
 for (const { a, OUT } of written) {
   const txt = strip(OUT);
-  for (const r of a.standard.rows || []) {
+  for (const r of a.standard?.rows || []) {
     const v = figureText(r, `gate learn/${a.slug}`);
     if (v === null) continue;
     figs++;
