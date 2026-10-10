@@ -2,12 +2,16 @@
  * Facts about the organisation that more than one page needs, and that must
  * never be typed as a literal in a page.
  *
- * The ledger's ruling (DECISIONS-2026-08-18, "26 years (founded 2000)") is
- * that every "years of" figure is DERIVED from the founding year. A hardcoded
- * 26 is correct for exactly one year and then quietly wrong on every page that
- * carries it — and this site says it in at least three places.
+ * The ledger's ruling (DECISIONS-2026-08-18) is that every "years of" figure is
+ * DERIVED from the founding year. A hardcoded count is correct for exactly one
+ * year and then quietly wrong on every page that carries it.
+ *
+ * 2001, NOT 2000 — owner ruling R155 (2026-10-10): "We for Yamuna started in
+ * year 2000. Swechha was registered in 2001." The ledger's earlier "founded
+ * 2000" dated Swechha by We for Yamuna's start. 2000 stays correct wherever
+ * the subject is We for Yamuna itself.
  */
-export const FOUNDED_YEAR = 2000
+export const FOUNDED_YEAR = 2001
 
 /** Whole years since founding, as of `now` (defaults to today). */
 export function yearsSinceFounding(now: Date = new Date()): number {
