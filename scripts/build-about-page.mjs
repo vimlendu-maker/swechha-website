@@ -117,7 +117,7 @@ const word = (n) => WORDS[n] ?? String(n);
 const TEAM = ABOUT.team;
 const BOARD = ABOUT.governing_body;
 const BOTH = BOARD.filter(p => p.also_staff);
-const FOUNDED = 2000;
+const FOUNDED = 2001;
 
 /* Cross-reference gate. A board row carrying `also_staff` renders "see above"
    INSTEAD OF a bio, so a slug that does not resolve would render a dead
@@ -242,6 +242,16 @@ const RUNGS = [
   { year: '2000', head: 'We for Yamuna',
     text: 'A collective response towards growing apathy towards one of the most polluted '
         + 'rivers of the world. No funding, no office, one stretch of bank.' },
+  /* ★ THREE RUNGS ADDED 10 OCTOBER 2026 (2001, 2007, 2008), and their source is
+     the OWNER, not a report — the one other source this spine accepts. Each
+     `source` field quotes what he gave. Nothing in them is extended: no figure,
+     no count, no name he did not supply. */
+  { year: '2001', head: 'Swechha, registered',
+    text: 'The UN&rsquo;s International Year of Volunteers. UNV and UNDP had been instrumental '
+        + 'in forming We for Yamuna, and a year later it became Swechha.',
+    source: 'Owner, ruling R155, 10 October 2026: "We for Yamuna started in year 2000. Swechha was registered in '
+          + '2001." 2001 was the UN International Year of Volunteers; UNV/UNDP was instrumental '
+          + 'in forming We for Yamuna, which a year later became Swechha.' },
   { year: '2004', head: 'The first Yamuna Yatra',
     text: 'Twelve days from Yamunotri to Agra, about a thousand kilometres, tracking the river '
         + '&ldquo;from where it originates and is pristine, down to the point where it reaches '
@@ -252,6 +262,14 @@ const RUNGS = [
     source: 'Annual Activity Report 2016-2017: "Since 2006, more than 1,000 school and '
           + 'college students have experienced rural Rajasthan and Uttarakhand through Gram '
           + 'Anubhavs." The 2018-19 report repeats it at more than 1,500.' },
+  { year: '2007', head: 'The fire',
+    text: 'One Diwali the whole office burnt down. Everything was rebuilt from scratch.',
+    source: 'Owner, ruling R155, 10 October 2026: one Diwali in 2007 the whole office burnt down and '
+          + 'everything was rebuilt from scratch.' },
+  { year: '2008', head: 'Monsoon Wooding',
+    text: 'The planting campaign starts.',
+    source: 'Owner, ruling R155, 10 October 2026: Monsoon Wooding starts in 2008. The 2011 rung, '
+          + '"becomes annual", is sourced separately and stays.' },
   { year: '2009', head: 'Pagdandi',
     text: 'A year-round learning programme for children in one Delhi neighbourhood, running '
         + 'alongside their formal education rather than instead of it.',
@@ -328,7 +346,7 @@ const RUNGS = [
    unnecessary; the page called it necessary; and HIS OWN NEW FOOTER SENTENCE is
    what settles it. AD-27.8 replaced the footer legal strip with:
 
-     Swechha We for Change Foundation, New Delhi. Working since 2000.
+     Swechha We for Change Foundation, New Delhi. Working since 2001.
      Registered Societies Registration Act, 80G, 12A, FCRA Powered.
 
    That carries the registered name, the city, the founding year, the Societies
@@ -1248,8 +1266,8 @@ const PAGE_CSS = `
    THE EM DASH IS A LITERAL, NOT `&mdash;` (AD-27.48's convention fix). The 15
    WORK pages already use the literal; the render is identical and the drift is
    not.
-   THE DESCRIPTION carries one verifiable fact — founded in 2000 as We for
-   Yamuna, which is this page's own first record rung — and nothing tensed,
+   THE DESCRIPTION carries one verifiable fact — registered 2001, out of We for
+   Yamuna in 2000 (owner ruling R155), the page's first two record rungs — and nothing tensed,
    dated or specimen, per BRANDING §3.5 applied to <head>.
    BOTH `title` AND `desc` NOW COME FROM data/seo/pages.json (`seo('/about')`)
    rather than literals here: this generator used to keep its own description
