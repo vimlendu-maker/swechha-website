@@ -321,7 +321,8 @@ B.trend = () => {
       </div>
       <p class="h-note"><b>${esc(HI.honesty.headline)}</b> ${esc(HI.honesty.reading)}</p>
       <p class="cap h-cap"><b>Counted as cities, not averaged.</b>
-        ${esc(NAT.consensus_note)}</p>
+        ${esc(NAT.consensus_note)}
+        <a class="lk" href="/learn/warm-nights">Why a night that does not cool is the one to watch</a>.</p>
       ${disclose('Why the afternoons are the wrong thing to watch',
     `<ol class="h-ol">
             ${HI.honesty.what_it_does_not_mean.map(x => `<li>${esc(x)}</li>`).join('\n            ')}
