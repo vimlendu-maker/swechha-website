@@ -154,6 +154,27 @@ function eventYear(e) {
   return new Date(ms + 19800000).getUTCFullYear();
 }
 
+/* ── THE TITLE FITS GOOGLE'S ~60 CHARACTERS, SHORTEST CUT FIRST ───────────
+   Measured 2026-10-11: 8 of the published event titles ran 66–75 characters,
+   so the result cut them mid-offer ("…what is known, and what i…") — the one
+   phrase no news result says was the part being lost. Each step below gives
+   up the least valuable words first:
+     1. the full title, when it fits;
+     2. drop "— Swechha" — Google prints the site name above every result
+        anyway, so in the title it is a repeat;
+     3. the offer in three words, which keeps both halves of it.
+   Never truncated mid-word: the last step is returned whatever its length,
+   because the name and year are the part a searcher matched on. */
+const TITLE_MAX = 60;
+function eventTitle(nameYear) {
+  const steps = [
+    `${nameYear} — what is known, and what is not — Swechha`,
+    `${nameYear} — what is known, and what is not`,
+    `${nameYear} — known and unknown`,
+  ];
+  return steps.find((t) => t.length <= TITLE_MAX) || steps[steps.length - 1];
+}
+
 /* ── WHAT ACTUALLY DIFFERS BETWEEN SIX EVENTS ─────────────────────────────
    The 9 September rewrite listed four faults in the old description and fixed
    three. The fourth it named and did not fix: "it is the same sentence on
@@ -454,7 +475,7 @@ ${S.newsletter('climate')}
        own vocabulary and it spent the most valuable words in the result on
        nothing. What replaces it is the page's actual offer, and it is what no
        news result on the same query says. */
-    title: `${eventName(e)} ${eventYear(e)} — what is known, and what is not — Swechha`,
+    title: eventTitle(`${eventName(e)} ${eventYear(e)}`),
     route,
     desc: description(e),
     bands: BANDS.map(([id, cls]) => [id, cls]),
