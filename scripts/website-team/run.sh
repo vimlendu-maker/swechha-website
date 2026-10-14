@@ -72,6 +72,14 @@ LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 #   a sentence that reads like a bug.
 DEPARTMENT="${TEAM_DEPARTMENT:-${WEBSITE_TEAM_DEPARTMENT:-website}}"
 REPO="${TEAM_REPO:-${WEBSITE_TEAM_REPO:-$HOME/swechha-$DEPARTMENT}}"
+# The department's manager agent: "<department>-manager" unless the department's repo names its own in
+# .claude/department-agent (one line, an agent name under .claude/agents/). swechha-social revision 4 renamed its manager
+# to head-of-social; without this the communications run would ask for an agent that no longer exists.
+MANAGER_AGENT="$DEPARTMENT-manager"
+if [ -f "$REPO/.claude/department-agent" ]; then
+  _named="$(head -n1 "$REPO/.claude/department-agent" | tr -cd 'a-z0-9-')"
+  [ -n "$_named" ] && [ -f "$REPO/.claude/agents/$_named.md" ] && MANAGER_AGENT="$_named"
+fi
 # ★ FROM $REPO, AND DELIBERATELY NOT FROM THE SNAPSHOT. I changed this to
 #   "$LIB/worktree.sh" so it would travel with snapshot-run.sh, and
 #   lib/website-team-inbox.test.ts refused it: "the department supplies its own
@@ -402,11 +410,11 @@ if [ "$DRY" = "--dry-run" ]; then
   echo "inbox:    $INBOX"
   echo "org inbox: $ORG_INBOX"
   echo "record:   $OUT"
-  echo "agent:    $DEPARTMENT-manager"
+  echo "agent:    $MANAGER_AGENT"
   echo "tools:    $ALLOWED"
   echo "claude:   ${ORG_CLAUDE:-NOT FOUND}   ($([ "$ORG_CLAUDE_WRAPPED" = 1 ] && echo org-claude || echo 'fallback: bare claude, no org-claude installed'))"
   echo
-  echo "would run: $ORG_CLAUDE -p --agent "$DEPARTMENT-manager" --permission-mode dontAsk \\"
+  echo "would run: $ORG_CLAUDE -p --agent "$MANAGER_AGENT" --permission-mode dontAsk \\"
   echo "             --allowedTools '$ALLOWED' --output-format json"
   exit 0
 fi
@@ -890,7 +898,7 @@ MODEL_ERR="$(mktemp)"
 set +e
 stage model-call
 RESULT="$("$ORG_CLAUDE" -p "$PROMPT" \
-  --agent "$DEPARTMENT-manager" \
+  --agent "$MANAGER_AGENT" \
   --permission-mode dontAsk \
   --allowedTools "$ALLOWED" \
   --output-format json < /dev/null 2>"$MODEL_ERR")"
@@ -952,7 +960,7 @@ DENIED="$(printf '%s' "$RESULT" | python3 "$LIB/denials.py" 2>/dev/null || true)
 {
   echo "---"
   echo "title: $DEPT_TITLE team run — $STAMP"
-  echo "source: $DEPARTMENT-team/run.sh, org-claude -p --agent $DEPARTMENT-manager"
+  echo "source: $DEPARTMENT-team/run.sh, org-claude -p --agent $MANAGER_AGENT"
   echo "cost_usd_estimate: $COST"
   echo "---"
   echo
