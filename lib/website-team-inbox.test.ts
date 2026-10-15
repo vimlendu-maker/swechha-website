@@ -81,8 +81,20 @@ describe('inbox: the org-wide convention', () => {
       /LIB="\$\(cd "\$\(dirname "\$\{BASH_SOURCE\[0\]\}"\)" && pwd\)"/)
     expect(run, 'the department supplies its own worktree script')
       .toMatch(/WT="\$REPO\/scripts\/\$DEPARTMENT-team\/worktree\.sh"/)
-    expect(run, 'and its own manager agent')
-      .toMatch(/--agent "\$DEPARTMENT-manager"/)
+    // The manager agent defaults to the department's own name, and the real
+    // model-call invocation uses that resolved variable rather than inlining
+    // a literal department name at the call site — so a department (e.g.
+    // swechha-social, whose manager is named head-of-social) can override the
+    // default via .claude/department-agent without editing the runner. The
+    // second assertion is anchored on the actual "$ORG_CLAUDE" -p "$PROMPT"
+    // invocation, not merely on the string "$MANAGER_AGENT" appearing
+    // anywhere — the dry-run echo on a separate line also names that
+    // variable, and matching that alone wouldn't catch the call site itself
+    // reverting to a literal.
+    expect(run, 'the manager agent defaults from the department')
+      .toMatch(/MANAGER_AGENT="\$DEPARTMENT-manager"/)
+    expect(run, 'and its own manager agent, invoked via the resolved variable')
+      .toMatch(/-p "\$PROMPT" \\\s*\n\s*--agent "\$MANAGER_AGENT" \\/)
   })
 
   /**
