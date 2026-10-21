@@ -8,11 +8,11 @@
     "resource": "3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69",
     "url": "https://api.data.gov.in/resource/3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69",
     "returns": "per-station, per-pollutant CPCB sub-indexes — the index itself, not concentrations",
-    "note": "fallback run — the CAAQMS live feed did not serve: did not answer: unreachable via fetch (fetch failed (Connect Timeout Error (attempted address: airquality.cpcb.gov.in:443, timeout: 10000ms))) and via curl (curl transport failed: curl: (28) Failed to connect to airquality.cpcb.gov.in port 443 after 15003 ms: Timeout was reached) and via relay (relay answered HTTP 502 with no upstream status — the relay itself refused or does not exist yet, so the source has not been asked)"
+    "note": "fallback run — the CAAQMS live feed did not serve: did not answer: unreachable via fetch (fetch failed (Connect Timeout Error (attempted address: airquality.cpcb.gov.in:443, timeout: 10000ms))) and via curl (curl transport failed: curl: (28) Failed to connect to airquality.cpcb.gov.in port 443 after 15002 ms: Timeout was reached) and via relay (relay answered HTTP 502 with no upstream status — the relay itself refused or does not exist yet, so the source has not been asked)"
   },
   "derivation": "AQI read from CPCB's own published per-pollutant sub-indexes — this feed carries the index, not concentrations, and nothing here recomputes it. A station's AQI is its worst sub-index, and the headline reading is the WORST MONITOR of those reporting, named, not a city average. CPCB's own city figure is the mean of the stations and is carried separately as city_mean. Concentrations shown are implied back from the sub-index using the breakpoint table in \"About National Air Quality Index\", never measured.",
   "state_label": "LIVE",
-  "observation_age_hours": 0.5,
+  "observation_age_hours": 1.4,
   "observed": {
     "y": 2026,
     "m": 10,
@@ -22,7 +22,7 @@
     "raw": "21-10-2026 23:00:00"
   },
   "fetched": {
-    "epochMs": 1792605747998
+    "epochMs": 1792608696643
   },
   "time": {
     "cpcb_observed_ist": "21-10-2026 23:00:00",
@@ -33,9 +33,9 @@
       "hh": 23,
       "mi": 0
     },
-    "swechha_checked_utc": "2026-10-21T18:02:27.996Z",
+    "swechha_checked_utc": "2026-10-21T18:51:36.642Z",
     "swechha_first_saw_utc": "2026-10-21T18:02:27.996Z",
-    "observation_age_minutes_at_check": 30,
+    "observation_age_minutes_at_check": 84,
     "note": "cpcb_observed_ist is when the AIR was measured (CPCB’s own stamp, IST wall-clock text, never converted); swechha_checked_utc is when WE ASKED CPCB (UTC ISO). They are different clocks and different facts, and must never be swapped or mixed."
   },
   "limits": {
@@ -2899,8 +2899,8 @@
         "PM10",
         "NO2",
         "CO",
-        "OZONE",
-        "PM2.5"
+        "PM2.5",
+        "OZONE"
       ],
       "notReported": [
         "SO2",
@@ -2935,21 +2935,21 @@
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "OZONE": {
-          "sub": 53,
-          "subMin": 10,
-          "subMax": 124,
-          "averaging": "8-hour",
-          "impliedConc": 53,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM2.5": {
           "sub": 256,
           "subMin": 122,
           "subMax": 349,
           "averaging": "24-hour",
           "impliedConc": 107.1,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 53,
+          "subMin": 10,
+          "subMax": 124,
+          "averaging": "8-hour",
+          "impliedConc": 53,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -5135,10 +5135,10 @@
       "governing": "PM10",
       "reported": [
         "PM10",
-        "PM2.5",
-        "NO2",
         "SO2",
         "OZONE",
+        "PM2.5",
+        "NO2",
         "CO"
       ],
       "notReported": [
@@ -5152,24 +5152,6 @@
           "subMax": 136,
           "averaging": "24-hour",
           "impliedConc": 129.6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 91,
-          "subMin": 20,
-          "subMax": 148,
-          "averaging": "24-hour",
-          "impliedConc": 54.7,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 75,
-          "subMin": 32,
-          "subMax": 117,
-          "averaging": "24-hour",
-          "impliedConc": 60.1,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -5188,6 +5170,24 @@
           "subMax": 219,
           "averaging": "8-hour",
           "impliedConc": 76,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 91,
+          "subMin": 20,
+          "subMax": 148,
+          "averaging": "24-hour",
+          "impliedConc": 54.7,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 75,
+          "subMin": 32,
+          "subMax": 117,
+          "averaging": "24-hour",
+          "impliedConc": 60.1,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -5383,21 +5383,21 @@
     }
   ],
   "check": {
-    "status": "new_observation",
-    "at": "2026-10-21T18:02:27.996Z",
+    "status": "same_observation",
+    "at": "2026-10-21T18:51:36.642Z",
     "served_by": "data.gov.in mirror (resource 3b01bcb8)",
-    "previous_observation": "21-10-2026 22:00:00",
+    "previous_observation": "21-10-2026 23:00:00",
     "reason": null
   },
   "crosscheck": {
     "status": "passed",
-    "at": "2026-10-21T12:04:36.966Z",
+    "at": "2026-10-21T18:53:35.259Z",
     "source": "CPCB daily AQI bulletin (cpcb.nic.in) — same publisher, same scale, same definition as our city_mean, so any gap is our bug, not a methodology difference",
     "compared": "our city_mean against CPCB's own published city figure — never the headline, which is the worst monitor and has no bulletin counterpart",
-    "matched": 252,
-    "ratio": 0.999,
-    "mae": 2.03,
-    "bias": -0.12,
+    "matched": 251,
+    "ratio": 0.981,
+    "mae": 8.86,
+    "bias": -2.11,
     "bulletin_heading": "Oct 21, 2026 @ 4 PM",
     "bulletin_url": "https://cpcb.gov.in//upload/Downloads/AQI_Bulletin_20261021.pdf",
     "thresholds": {
@@ -5405,8 +5405,8 @@
       "ratioMax": 1.15,
       "minMatched": 100
     },
-    "suspect_readings": 3,
-    "suspect_unresolved": 3,
+    "suspect_readings": 0,
+    "suspect_unresolved": 0,
     "reason": null
   }
 }
