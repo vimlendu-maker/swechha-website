@@ -304,7 +304,15 @@ jobs:
               # 'unavailable' — which is precisely the failure mode this whole
               # cleanup exists to stop — so it is installed explicitly rather
               # than assumed present in the runner image.
-              command -v pdftotext >/dev/null 2>&1 || sudo apt-get install -y -qq poppler-utils
+              #
+              # `apt-get update` first: the runner image's package index goes
+              # stale, and the pinned poppler .deb then 404s ("Unable to fetch
+              # some archives"). That killed the step under `-e` on every run
+              # where the cross-check was due, so Delhi never published.
+              if ! command -v pdftotext >/dev/null 2>&1; then
+                sudo apt-get update -qq
+                sudo apt-get install -y -qq poppler-utils
+              fi
 
               # The WAQI comparison and forecast PANEL is a different artefact
               # from the GATE below, and it is rendered on the page. It was
