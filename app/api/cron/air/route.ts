@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { pruneDeployments } from '@/lib/prune-deployments';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -310,6 +311,17 @@ export async function GET(request: NextRequest) {
     return unauthorized();
   }
 
+  /* ★ PRUNE BEFORE ANYTHING THAT CAN RETURN EARLY (missing dispatch token,
+     quiet hours): the storage cap does not sleep at night, and a failure here
+     must never stop the workflows being driven. It is a no-op until
+     VERCEL_PRUNE_TOKEN is set. See lib/prune-deployments.ts. */
+  const prune = await pruneDeployments({
+    token: process.env.VERCEL_PRUNE_TOKEN,
+    projectId: process.env.VERCEL_PROJECT_ID ?? 'prj_3BY9DVeM14PO0IfQpL0fxsUIvo0B',
+    teamId: process.env.VERCEL_TEAM_ID ?? 'team_f8cilZUmexlLHQkjQ1KvUWj9',
+    currentDeploymentId: process.env.VERCEL_DEPLOYMENT_ID,
+  });
+
   const token = process.env.GITHUB_AIR_DISPATCH_TOKEN;
   if (!token) {
     console.error('GITHUB_AIR_DISPATCH_TOKEN is not set. The caller authenticated correctly, '
@@ -341,6 +353,7 @@ export async function GET(request: NextRequest) {
       ok: true,
       dispatched: [],
       quiet_hours: true,
+      prune,
       note: `Nothing is pulled between ${QUIET_FROM_IST_HOUR}:00 and `
         + `${QUIET_UNTIL_IST_HOUR}:00 IST. It is ${istHour(now)}:xx IST; no workflow was driven.`,
       checked_at: now.toISOString(),
@@ -354,6 +367,7 @@ export async function GET(request: NextRequest) {
     ok: failed.length === 0,
     dispatched: results.filter((r) => r.action === 'dispatched').map((r) => r.workflow),
     results,
+    prune,
     checked_at: new Date().toISOString(),
   }, {
     /* 502 when any pipeline could not be driven, so the external pinger's own
