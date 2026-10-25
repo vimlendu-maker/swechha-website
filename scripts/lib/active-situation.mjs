@@ -428,6 +428,14 @@ export const isPrimary = (e, now = Date.now()) => statusOf(e, now).hero >= 2;
    scale, so the event that leads the homepage is by construction the same one
    /now/climate-event's banner leads on. Two events at once is not
    hypothetical — the detector currently holds twenty-three. */
+/* ★ OWNER RULING, 2026-10-25: AIR LEADS THE HOMEPAGE FOR THREE MONTHS.
+   This reverses the 2026-09-21 decision to let an active event displace Air.
+   It is a DATE, not a switch, so it cannot be forgotten: until AIR_FIRST_UNTIL
+   a would-be 'primary' event is demoted to 'rotation' (present, after Air); on
+   that day the ordinary promotion rule resumes with no edit. Events keep their
+   slide, their ticker cell and their banner on /now/climate-event. */
+export const AIR_FIRST_UNTIL = Date.parse('2027-01-25T00:00:00+05:30');
+
 export function homepageSlot(events = loadEvents(), now = Date.now()) {
   const eligible = events
     .filter((e) => isCurrent(e, now) && inRotation(e, now))
@@ -437,7 +445,7 @@ export function homepageSlot(events = loadEvents(), now = Date.now()) {
   if (!eligible.length) return { slot: null, event: null, status: null };
   const top = eligible[0];
   return {
-    slot: top.st.hero >= 2 ? 'primary' : 'rotation',
+    slot: top.st.hero >= 2 && now >= AIR_FIRST_UNTIL ? 'primary' : 'rotation',
     event: top.e,
     status: top.st,
     rank: top.r,

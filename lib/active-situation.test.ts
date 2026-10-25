@@ -6,7 +6,7 @@ import { join } from 'node:path'
 // types are inferred and no suppression is needed.
 import { figuresFromText, consolidate, eventName, mentionsPlace } from '../scripts/lib/event-figures.mjs'
 import { dedupeFeedItems, anchorPublished, lastUpdatedFrom, feedCollapse } from '../scripts/lib/event-feed.mjs'
-import { statusOf, homepageSlot, situationHref, publishStateFor, keepEditorFields, dossierSlug, slugify, SITUATION_STATUS } from '../scripts/lib/active-situation.mjs'
+import { statusOf, homepageSlot, AIR_FIRST_UNTIL, situationHref, publishStateFor, keepEditorFields, dossierSlug, slugify, SITUATION_STATUS } from '../scripts/lib/active-situation.mjs'
 import { validateEvent, HAZARDS } from '../scripts/lib/climate-events.mjs'
 
 /**
@@ -281,7 +281,9 @@ describe('the lifecycle', () => {
 
   it('puts an active event first and a stabilising one only in the rotation', () => {
     const now = Date.now()
-    expect(homepageSlot([ev()], now).slot).toBe('primary')
+    // Until AIR_FIRST_UNTIL (owner ruling 2026-10-25) an active event is held in
+    // the rotation behind Air; after it the ordinary rule resumes.
+    expect(homepageSlot([ev()], now).slot).toBe(now < AIR_FIRST_UNTIL ? 'rotation' : 'primary')
     expect(homepageSlot([ev({ situation_status: 'stabilising' })], now).slot).toBe('rotation')
     expect(homepageSlot([ev({ situation_status: 'demoted' })], now).slot).toBeNull()
     expect(homepageSlot([], now).slot).toBeNull()
@@ -296,7 +298,16 @@ describe('the lifecycle', () => {
     // Status outranks score: a STABILISING event with a huge score must not
     // take the primary slot from an ACTIVE one.
     expect(picked.event.slug).toBe('loud')
-    expect(picked.slot).toBe('primary')
+    expect(picked.slot).toBe(Date.now() < AIR_FIRST_UNTIL ? 'rotation' : 'primary')
+  })
+
+  it('Air leads for three months: an active event is rotation until 25 Jan 2027, never dropped', () => {
+    expect(new Date(AIR_FIRST_UNTIL).toISOString()).toBe('2027-01-24T18:30:00.000Z')
+    const before = homepageSlot([ev()], Date.now())
+    if (Date.now() < AIR_FIRST_UNTIL) {
+      expect(before.slot).toBe('rotation')
+      expect(before.event).not.toBeNull()
+    }
   })
 
   it('the homepage link is the event page, never the section index', () => {

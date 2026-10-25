@@ -996,6 +996,19 @@ B.sources = () => {
             estimates of one quantity. <b>They do not average</b>, and neither is a measurement of
             today&rsquo;s reading.</p>
         </div>`;
+  const pIitm = `<div class="p-ap">
+          <p>${kindTag('modelled')}</p>
+          <p class="body p-ap-k"><b>IITM now publishes a daily split, and a third or more of it is unexplained.</b>
+            Its new lab in Delhi reported <b>secondary particles at 29&ndash;42%</b> of PM2.5 for 20&ndash;24 October,
+            ahead of vehicles at 19&ndash;28%. Secondary particles form in the air from gases, and nobody can yet say
+            where they started.</p>
+          <p class="body p-ap-f"><b>It is not yet a reading to rely on.</b> The lab&rsquo;s total was 47% of the middle
+            CPCB reading on 22 October, and the forecast model beside it runs on a 2021 emissions inventory built from
+            2016 surveys, with a replacement due by June 2027.</p>
+          <p class="cap">IITM, 20&ndash;24 October 2026, as summed by Hindustan Times, 25 October 2026.
+            <a class="lk" href="/journal/iitm-source-breakdown">What it shows and what it does not</a> &middot;
+            <a class="lk" href="https://www.hindustantimes.com/india-news/delhis-new-pollution-study-leaves-major-sources-unidentified-relies-on-outdated-data-101792886406730.html" rel="noopener" target="_blank">Hindustan Times</a></p>
+        </div>`;
   const sub = T.sub_sectors_pm25_winter_delhi;
   const smax = Math.max(...sub.transport.map(x => x.pct));
   const pWho = `<div class="p-ap">
@@ -1043,7 +1056,7 @@ B.sources = () => {
           so a fixed window can miss a peak. 2024 and 2025 run at roughly a sixth of 2021.</p>`;
   return `    <div class="wrap">
 ${opener('sources','Where does it come from?','A source apportionment is a model. One kind works backwards from what the filters caught; the other works forwards from an emissions inventory and the weather. Either way it is a plausible split, not a measurement &mdash; and it changes with the season.')}
-${tabs('Sources', [['The split', pSplit], ['Two studies', pRanges], ['Inside transport', pWho], ['Farm fires now', pNow], ['Year on year', pYY]])}
+${tabs('Sources', [['New: IITM, Oct 2026', pIitm], ['The split', pSplit], ['Two studies', pRanges], ['Inside transport', pWho], ['Farm fires now', pNow], ['Year on year', pYY]])}
     </div>`;
 };
 
