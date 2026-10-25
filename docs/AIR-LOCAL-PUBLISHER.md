@@ -1,5 +1,16 @@
 # The local air publisher — the fallback when no cloud egress reaches CPCB
 
+> **UPDATE 25 October 2026 — it now runs on the Oracle VM, not the Mac.** On 25 Oct the Mac slept on battery
+> and nothing published from ~05:50 to 08:52 IST; the cloud job only reaches the data.gov.in mirror, ~3 h behind.
+> Measured the same day: `swechha-social-big` (Oracle Mumbai, `ubuntu@100.105.228.19` on the tailnet) reaches
+> CAAQMS directly (HTTP 200, 0.19 s; `rss_feed` 390 KB), so the "CPCB blocks all datacenters" finding above is
+> not true of that VM. The job is `swechha-air-publish.timer` (systemd, :10 and :40 UTC) running this script
+> in `~/.swechha-ai/air-worktree-vm`, with keys in `~/.swechha-ai/air.env` (mode 600, `ENV_FILE`) and a
+> write-enabled deploy key `swechha-air-vm` (repo Settings → Deploy keys; SSH alias `github-website`).
+> The launchd job on the Mac is unloaded; its plist is kept for rollback. Where the text below says "this Mac",
+> read "the publisher host". Logs: `journalctl -u swechha-air-publish`.
+
+
 `scripts/air-local-publish.sh`, run hourly by launchd on the owner's Mac
 (`docs/launchd/in.swechha.air-local.plist`). Added 27 September 2026.
 
