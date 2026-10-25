@@ -105,5 +105,43 @@ if [[ "$SERVED_CHANGE" -eq 0 ]]; then
   exit 0
 fi
 
+# --- DATA-REFRESH BATCHING --------------------------------------------------
+#
+# WHY THIS EXISTS
+#
+# On 2026-10-25 the team hit 100% of BOTH Hobby storage meters (Deployment
+# Storage 13.85/10 GB, Functions Storage 11.08/10 GB). The cause was the rate:
+# the hourly `data(air)` and `data(climate-event)` bot commits each regenerate
+# the committed static pages and each triggered a full production deploy —
+# ~33 retained deployments a day, every one carrying the whole of public/.
+# Retention was already at its floor (1 day, keep 10), so only the rate was left.
+#
+# These commits DO change the served site (public/_pages is what readers get),
+# so they cannot be skipped outright — only batched. A data-refresh commit
+# deploys only in the first hour of each 6-hour UTC window (00, 06, 12, 18);
+# a build always ships the whole tree, so everything committed in between goes
+# out with it. Air and climate pages can lag by up to ~6 hours.
+#
+# Anything that touches a path outside this set builds immediately.
+DATA_REFRESH='^(data/.*|public/_pages/.*|public/data/.*|public/images/eo/.*|design/home\.html)$'
+
+DATA_ONLY=1
+while IFS= read -r f; do
+  [[ -z "$f" ]] && continue
+  if ! [[ "$f" =~ $DATA_REFRESH ]]; then
+    DATA_ONLY=0
+  fi
+done <<< "$CHANGED"
+
+if [[ "$DATA_ONLY" -eq 1 ]]; then
+  HOUR_UTC="$(date -u +%H)"
+  if (( 10#$HOUR_UTC % 6 == 0 )); then
+    echo "Data-refresh commit inside the batch window (hour $HOUR_UTC UTC) — building."
+    exit 1
+  fi
+  echo "Data-refresh commit outside the 6-hourly batch window (hour $HOUR_UTC UTC) — skipping; the next window's build will include it."
+  exit 0
+fi
+
 echo "A changed path could affect the served site — building normally."
 exit 1
