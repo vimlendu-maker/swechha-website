@@ -13,15 +13,15 @@ export default function robots(): MetadataRoute.Robots {
     return { rules: { userAgent: '*', disallow: '/' } }
   }
   return {
-    /* `/keystatic` joins `/_pages/` as disallowed unconditionally: it is the
-       CMS login, it has no reader-facing content, and it should not be a search
-       result telling the world where the editor is. `next.config.ts` sets the
-       matching `X-Robots-Tag` for a crawler that already has the URL.
-       `/api/` joins them (AD-27.52): the endpoints are not content, and
-       `/api/air` returning a JSON blob into an index is noise. It is a
-       crawl-budget instruction, not a security boundary — the routes stay
-       reachable, and `/api/ward*` keeps its own no-store for its own reason. */
-    rules: { userAgent: '*', allow: '/', disallow: ['/_pages/', '/keystatic', '/api/'] },
+    /* NO Disallow FOR THE PATHS THAT CARRY `X-Robots-Tag: noindex`.
+       A crawler blocked by robots.txt never fetches the URL, so it never sees
+       the noindex header — and if anything links to it, Google indexes the bare
+       URL anyway ("Indexed, though blocked by robots.txt", Search Console,
+       2026-10-26). `/_pages/`, `/keystatic` and `/api/` are therefore left
+       crawlable here and kept out of the index by the header in
+       `next.config.ts` instead. Re-adding a Disallow for any of them
+       re-creates that report. */
+    rules: { userAgent: '*', allow: '/' },
     sitemap: `${SITE_URL}/sitemap.xml`,
   }
 }
