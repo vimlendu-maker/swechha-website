@@ -387,3 +387,9 @@ I traced a live "Air — poll, validate, publish" failure (6 consecutive runs, s
 Yesterday's run correctly identified 5 stale `docs(lessons)`-titled PRs (#230, #233, #243, #244, #245) by diffing each against `main`, but #234 — same title pattern (`docs(lessons): N lesson(s) from the <date> run`), same stale condition (its sole line, `lessons.md:321`, already on `main`) — wasn't in that list and sat unflagged for at least a day. The check method was right; the input set (a hand-curated shortlist rather than every PR matching the pattern) was incomplete.
 
 **Do:** when auditing a family of PRs by a recurring title shape, pull the full `gh pr list` first and filter by the title pattern itself, not by a previous run's named subset — a previous audit's list is a starting point, not the universe.
+
+## 2026-10-26 — A cross-department mix-up in the land-lessons mechanism is caught only by reading the diff, never the title or branch name
+
+PR #271's branch (`team/lessons-20261025`) and title (`docs(lessons): 2 lesson(s) from the 2026-10-25 run`) both look like this department's own output. Its actual diff is two Head-of-Social lessons about the social content calendar — content that has nothing to do with this department and is heading for the wrong file. This is the same "label is not the contents" class this file already records twice, now shown to cross a department boundary rather than just misdescribe scope within one.
+
+**Do:** before treating any `docs(lessons)` PR as this department's own, read its diff, not its branch name or title — the land-lessons mechanism evidently can source content from more than one department, and nothing currently stops it landing in the wrong file.
