@@ -251,6 +251,12 @@ const nextConfig: NextConfig = {
         source: '/keystatic',
         headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
       },
+      /* Endpoints are not content. robots.txt no longer disallows them (a
+         disallowed URL cannot show Google its noindex), so the header does it. */
+      {
+        source: '/api/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
     ]
     if (isIndexable()) return always
     return [
