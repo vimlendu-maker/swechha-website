@@ -3,20 +3,16 @@
   "state": "Delhi",
   "source": {
     "name": "Central Pollution Control Board",
-    "served_by": "CPCB CAAQMS live feed (airquality.cpcb.gov.in/caaqms/rss_feed)",
-    "via": "CPCB CAAQMS live feed — airquality.cpcb.gov.in/caaqms/rss_feed (keyless XML, hourly)",
-    "url": "https://airquality.cpcb.gov.in/caaqms/rss_feed",
+    "served_by": "data.gov.in mirror (resource 3b01bcb8)",
+    "via": "data.gov.in — Real time Air Quality Index from various locations",
+    "resource": "3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69",
+    "url": "https://api.data.gov.in/resource/3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69",
     "returns": "per-station, per-pollutant CPCB sub-indexes — the index itself, not concentrations",
-    "integrity": {
-      "stations_compared": 508,
-      "disagreeing": 0,
-      "rule": "our worst raw Avg sub-index vs CPCB's own <Air_Quality_Index> Value, ±1"
-    },
-    "fallback": "data.gov.in mirror (resource 3b01bcb8) — used only when this feed fails its gates; never mixed"
+    "note": "fallback run — the CAAQMS live feed did not serve: did not answer: unreachable via fetch (fetch failed (Connect Timeout Error (attempted address: airquality.cpcb.gov.in:443, timeout: 10000ms))) and via curl (curl transport failed: curl: (28) Connection timed out after 15002 milliseconds) and via relay (relay answered HTTP 502 with no upstream status — the relay itself refused or does not exist yet, so the source has not been asked)"
   },
   "derivation": "AQI read from CPCB's own published per-pollutant sub-indexes — this feed carries the index, not concentrations, and nothing here recomputes it. A station's AQI is its worst sub-index, and the headline reading is the WORST MONITOR of those reporting, named, not a city average. CPCB's own city figure is the mean of the stations and is carried separately as city_mean. Concentrations shown are implied back from the sub-index using the breakpoint table in \"About National Air Quality Index\", never measured.",
   "state_label": "LIVE",
-  "observation_age_hours": 0.2,
+  "observation_age_hours": 1,
   "observed": {
     "y": 2026,
     "m": 10,
@@ -26,7 +22,7 @@
     "raw": "29-10-2026 05:00:00"
   },
   "fetched": {
-    "epochMs": 1793230819620
+    "epochMs": 1793233922346
   },
   "time": {
     "cpcb_observed_ist": "29-10-2026 05:00:00",
@@ -37,9 +33,9 @@
       "hh": 5,
       "mi": 0
     },
-    "swechha_checked_utc": "2026-10-28T23:40:19.618Z",
+    "swechha_checked_utc": "2026-10-29T00:32:02.345Z",
     "swechha_first_saw_utc": "2026-10-28T23:40:19.618Z",
-    "observation_age_minutes_at_check": 12,
+    "observation_age_minutes_at_check": 60,
     "note": "cpcb_observed_ist is when the AIR was measured (CPCB’s own stamp, IST wall-clock text, never converted); swechha_checked_utc is when WE ASKED CPCB (UTC ISO). They are different clocks and different facts, and must never be swapped or mixed."
   },
   "limits": {
@@ -153,6 +149,15 @@
         "impliedUnit": "µg/m³",
         "concBasis": "implied-from-subindex"
       },
+      "SO2": {
+        "sub": 15,
+        "subMin": 7,
+        "subMax": 28,
+        "averaging": "24-hour",
+        "impliedConc": 12,
+        "impliedUnit": "µg/m³",
+        "concBasis": "implied-from-subindex"
+      },
       "PM10": {
         "sub": 223,
         "subMin": 121,
@@ -160,6 +165,24 @@
         "averaging": "24-hour",
         "impliedConc": 273,
         "impliedUnit": "µg/m³",
+        "concBasis": "implied-from-subindex"
+      },
+      "OZONE": {
+        "sub": 15,
+        "subMin": 6,
+        "subMax": 26,
+        "averaging": "8-hour",
+        "impliedConc": 15,
+        "impliedUnit": "µg/m³",
+        "concBasis": "implied-from-subindex"
+      },
+      "CO": {
+        "sub": 115,
+        "subMin": 102,
+        "subMax": 136,
+        "averaging": "8-hour",
+        "impliedConc": 3.2,
+        "impliedUnit": "mg/m³",
         "concBasis": "implied-from-subindex"
       },
       "NO2": {
@@ -177,33 +200,6 @@
         "subMax": 1,
         "averaging": "24-hour",
         "impliedConc": 4,
-        "impliedUnit": "µg/m³",
-        "concBasis": "implied-from-subindex"
-      },
-      "SO2": {
-        "sub": 15,
-        "subMin": 7,
-        "subMax": 28,
-        "averaging": "24-hour",
-        "impliedConc": 12,
-        "impliedUnit": "µg/m³",
-        "concBasis": "implied-from-subindex"
-      },
-      "CO": {
-        "sub": 115,
-        "subMin": 102,
-        "subMax": 136,
-        "averaging": "8-hour",
-        "impliedConc": 3.2,
-        "impliedUnit": "mg/m³",
-        "concBasis": "implied-from-subindex"
-      },
-      "OZONE": {
-        "sub": 15,
-        "subMin": 6,
-        "subMax": 26,
-        "averaging": "8-hour",
-        "impliedConc": 15,
         "impliedUnit": "µg/m³",
         "concBasis": "implied-from-subindex"
       }
@@ -234,6 +230,15 @@
         "impliedUnit": "µg/m³",
         "concBasis": "implied-from-subindex"
       },
+      "SO2": {
+        "sub": 15,
+        "subMin": 7,
+        "subMax": 28,
+        "averaging": "24-hour",
+        "impliedConc": 12,
+        "impliedUnit": "µg/m³",
+        "concBasis": "implied-from-subindex"
+      },
       "PM10": {
         "sub": 223,
         "subMin": 121,
@@ -241,6 +246,24 @@
         "averaging": "24-hour",
         "impliedConc": 273,
         "impliedUnit": "µg/m³",
+        "concBasis": "implied-from-subindex"
+      },
+      "OZONE": {
+        "sub": 15,
+        "subMin": 6,
+        "subMax": 26,
+        "averaging": "8-hour",
+        "impliedConc": 15,
+        "impliedUnit": "µg/m³",
+        "concBasis": "implied-from-subindex"
+      },
+      "CO": {
+        "sub": 115,
+        "subMin": 102,
+        "subMax": 136,
+        "averaging": "8-hour",
+        "impliedConc": 3.2,
+        "impliedUnit": "mg/m³",
         "concBasis": "implied-from-subindex"
       },
       "NO2": {
@@ -258,33 +281,6 @@
         "subMax": 1,
         "averaging": "24-hour",
         "impliedConc": 4,
-        "impliedUnit": "µg/m³",
-        "concBasis": "implied-from-subindex"
-      },
-      "SO2": {
-        "sub": 15,
-        "subMin": 7,
-        "subMax": 28,
-        "averaging": "24-hour",
-        "impliedConc": 12,
-        "impliedUnit": "µg/m³",
-        "concBasis": "implied-from-subindex"
-      },
-      "CO": {
-        "sub": 115,
-        "subMin": 102,
-        "subMax": 136,
-        "averaging": "8-hour",
-        "impliedConc": 3.2,
-        "impliedUnit": "mg/m³",
-        "concBasis": "implied-from-subindex"
-      },
-      "OZONE": {
-        "sub": 15,
-        "subMin": 6,
-        "subMax": 26,
-        "averaging": "8-hour",
-        "impliedConc": 15,
         "impliedUnit": "µg/m³",
         "concBasis": "implied-from-subindex"
       }
@@ -312,12 +308,12 @@
       "governing": "PM2.5",
       "reported": [
         "PM2.5",
-        "PM10",
-        "NO2",
-        "NH3",
         "SO2",
+        "PM10",
+        "OZONE",
         "CO",
-        "OZONE"
+        "NO2",
+        "NH3"
       ],
       "notReported": [
         "PB"
@@ -332,6 +328,15 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
+        "SO2": {
+          "sub": 15,
+          "subMin": 7,
+          "subMax": 28,
+          "averaging": "24-hour",
+          "impliedConc": 12,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "PM10": {
           "sub": 223,
           "subMin": 121,
@@ -339,6 +344,24 @@
           "averaging": "24-hour",
           "impliedConc": 273,
           "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 15,
+          "subMin": 6,
+          "subMax": 26,
+          "averaging": "8-hour",
+          "impliedConc": 15,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 115,
+          "subMin": 102,
+          "subMax": 136,
+          "averaging": "8-hour",
+          "impliedConc": 3.2,
+          "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
         "NO2": {
@@ -356,33 +379,6 @@
           "subMax": 1,
           "averaging": "24-hour",
           "impliedConc": 4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 15,
-          "subMin": 7,
-          "subMax": 28,
-          "averaging": "24-hour",
-          "impliedConc": 12,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 115,
-          "subMin": 102,
-          "subMax": 136,
-          "averaging": "8-hour",
-          "impliedConc": 3.2,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 15,
-          "subMin": 6,
-          "subMax": 26,
-          "averaging": "8-hour",
-          "impliedConc": 15,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -405,12 +401,12 @@
       "governing": "PM10",
       "reported": [
         "PM2.5",
-        "PM10",
-        "NO2",
         "NH3",
         "SO2",
-        "CO",
-        "OZONE"
+        "OZONE",
+        "NO2",
+        "PM10",
+        "CO"
       ],
       "notReported": [
         "PB"
@@ -422,24 +418,6 @@
           "subMax": 410,
           "averaging": "24-hour",
           "impliedConc": 127.5,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 323,
-          "subMin": 122,
-          "subMax": 500,
-          "averaging": "24-hour",
-          "impliedConc": 368.6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 69,
-          "subMin": 60,
-          "subMax": 81,
-          "averaging": "24-hour",
-          "impliedConc": 55.3,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -461,15 +439,6 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "CO": {
-          "sub": 71,
-          "subMin": 52,
-          "subMax": 89,
-          "averaging": "8-hour",
-          "impliedConc": 1.5,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "OZONE": {
           "sub": 5,
           "subMin": 4,
@@ -477,6 +446,33 @@
           "averaging": "8-hour",
           "impliedConc": 5,
           "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 69,
+          "subMin": 60,
+          "subMax": 81,
+          "averaging": "24-hour",
+          "impliedConc": 55.3,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 323,
+          "subMin": 122,
+          "subMax": 500,
+          "averaging": "24-hour",
+          "impliedConc": 368.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 71,
+          "subMin": 52,
+          "subMax": 89,
+          "averaging": "8-hour",
+          "impliedConc": 1.5,
+          "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         }
       },
@@ -497,36 +493,18 @@
       "band": "Very Poor",
       "governing": "PM10",
       "reported": [
-        "PM2.5",
-        "PM10",
         "NO2",
         "NH3",
-        "SO2",
         "CO",
+        "PM10",
+        "PM2.5",
+        "SO2",
         "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 285,
-          "subMin": 63,
-          "subMax": 409,
-          "averaging": "24-hour",
-          "impliedConc": 115.6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 303,
-          "subMin": 88,
-          "subMax": 493,
-          "averaging": "24-hour",
-          "impliedConc": 352.6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "NO2": {
           "sub": 72,
           "subMin": 30,
@@ -545,15 +523,6 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "SO2": {
-          "sub": 14,
-          "subMin": 3,
-          "subMax": 28,
-          "averaging": "24-hour",
-          "impliedConc": 11.2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "CO": {
           "sub": 119,
           "subMin": 104,
@@ -561,6 +530,33 @@
           "averaging": "8-hour",
           "impliedConc": 3.5,
           "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 303,
+          "subMin": 88,
+          "subMax": 493,
+          "averaging": "24-hour",
+          "impliedConc": 352.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 285,
+          "subMin": 63,
+          "subMax": 409,
+          "averaging": "24-hour",
+          "impliedConc": 115.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 14,
+          "subMin": 3,
+          "subMax": 28,
+          "averaging": "24-hour",
+          "impliedConc": 11.2,
+          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "OZONE": {
@@ -590,24 +586,33 @@
       "band": "Very Poor",
       "governing": "PM10",
       "reported": [
-        "PM2.5",
+        "CO",
+        "NH3",
         "PM10",
         "NO2",
-        "NH3",
-        "SO2",
-        "CO"
+        "PM2.5",
+        "SO2"
       ],
       "notReported": [
         "OZONE",
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 278,
-          "subMin": 110,
-          "subMax": 367,
+        "CO": {
+          "sub": 95,
+          "subMin": 42,
+          "subMax": 141,
+          "averaging": "8-hour",
+          "impliedConc": 1.9,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 7,
+          "subMin": 5,
+          "subMax": 10,
           "averaging": "24-hour",
-          "impliedConc": 113.6,
+          "impliedConc": 28,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -629,12 +634,12 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NH3": {
-          "sub": 7,
-          "subMin": 5,
-          "subMax": 10,
+        "PM2.5": {
+          "sub": 278,
+          "subMin": 110,
+          "subMax": 367,
           "averaging": "24-hour",
-          "impliedConc": 28,
+          "impliedConc": 113.6,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -645,15 +650,6 @@
           "averaging": "24-hour",
           "impliedConc": 12,
           "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 95,
-          "subMin": 42,
-          "subMax": 141,
-          "averaging": "8-hour",
-          "impliedConc": 1.9,
-          "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         }
       },
@@ -674,11 +670,11 @@
       "band": "Poor",
       "governing": "PM10",
       "reported": [
-        "PM2.5",
         "PM10",
+        "OZONE",
+        "PM2.5",
         "NO2",
-        "CO",
-        "OZONE"
+        "CO"
       ],
       "notReported": [
         "SO2",
@@ -686,21 +682,30 @@
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 265,
-          "subMin": 85,
-          "subMax": 368,
-          "averaging": "24-hour",
-          "impliedConc": 109.7,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM10": {
           "sub": 294,
           "subMin": 106,
           "subMax": 434,
           "averaging": "24-hour",
           "impliedConc": 344,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 10,
+          "subMin": 10,
+          "subMax": 11,
+          "averaging": "8-hour",
+          "impliedConc": 10,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 265,
+          "subMin": 85,
+          "subMax": 368,
+          "averaging": "24-hour",
+          "impliedConc": 109.7,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -721,15 +726,6 @@
           "impliedConc": 4.1,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 10,
-          "subMin": 10,
-          "subMax": 11,
-          "averaging": "8-hour",
-          "impliedConc": 10,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
         }
       },
       "stamp": {
@@ -749,33 +745,24 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
-        "PM10",
+        "OZONE",
         "NO2",
         "SO2",
+        "PM2.5",
         "CO",
-        "OZONE"
+        "PM10"
       ],
       "notReported": [
         "NH3",
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 288,
-          "subMin": 58,
-          "subMax": 420,
-          "averaging": "24-hour",
-          "impliedConc": 116.5,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 282,
-          "subMin": 79,
-          "subMax": 464,
-          "averaging": "24-hour",
-          "impliedConc": 332,
+        "OZONE": {
+          "sub": 16,
+          "subMin": 5,
+          "subMax": 20,
+          "averaging": "8-hour",
+          "impliedConc": 16,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -797,6 +784,15 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
+        "PM2.5": {
+          "sub": 288,
+          "subMin": 58,
+          "subMax": 420,
+          "averaging": "24-hour",
+          "impliedConc": 116.5,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "CO": {
           "sub": 123,
           "subMin": 90,
@@ -806,12 +802,12 @@
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "OZONE": {
-          "sub": 16,
-          "subMin": 5,
-          "subMax": 20,
-          "averaging": "8-hour",
-          "impliedConc": 16,
+        "PM10": {
+          "sub": 282,
+          "subMin": 79,
+          "subMax": 464,
+          "averaging": "24-hour",
+          "impliedConc": 332,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -833,34 +829,25 @@
       "band": "Poor",
       "governing": "PM10",
       "reported": [
-        "PM2.5",
-        "PM10",
+        "CO",
         "NO2",
         "NH3",
+        "OZONE",
+        "PM2.5",
         "SO2",
-        "CO",
-        "OZONE"
+        "PM10"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 260,
-          "subMin": 97,
-          "subMax": 338,
-          "averaging": "24-hour",
-          "impliedConc": 108.3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 284,
-          "subMin": 111,
-          "subMax": 463,
-          "averaging": "24-hour",
-          "impliedConc": 334,
-          "impliedUnit": "µg/m³",
+        "CO": {
+          "sub": 155,
+          "subMin": 104,
+          "subMax": 189,
+          "averaging": "8-hour",
+          "impliedConc": 6.4,
+          "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
         "NO2": {
@@ -881,6 +868,24 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
+        "OZONE": {
+          "sub": 96,
+          "subMin": 1,
+          "subMax": 301,
+          "averaging": "8-hour",
+          "impliedConc": 96,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 260,
+          "subMin": 97,
+          "subMax": 338,
+          "averaging": "24-hour",
+          "impliedConc": 108.3,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "SO2": {
           "sub": 12,
           "subMin": 3,
@@ -890,21 +895,12 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "CO": {
-          "sub": 155,
-          "subMin": 104,
-          "subMax": 189,
-          "averaging": "8-hour",
-          "impliedConc": 6.4,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 96,
-          "subMin": 1,
-          "subMax": 301,
-          "averaging": "8-hour",
-          "impliedConc": 96,
+        "PM10": {
+          "sub": 284,
+          "subMin": 111,
+          "subMax": 463,
+          "averaging": "24-hour",
+          "impliedConc": 334,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -926,27 +922,18 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
         "PM10",
-        "NO2",
-        "NH3",
+        "PM2.5",
         "SO2",
-        "CO"
+        "CO",
+        "NO2",
+        "NH3"
       ],
       "notReported": [
         "OZONE",
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 283,
-          "subMin": 70,
-          "subMax": 500,
-          "averaging": "24-hour",
-          "impliedConc": 115,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM10": {
           "sub": 270,
           "subMin": 108,
@@ -956,21 +943,12 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NO2": {
-          "sub": 79,
-          "subMin": 33,
-          "subMax": 131,
+        "PM2.5": {
+          "sub": 283,
+          "subMin": 70,
+          "subMax": 500,
           "averaging": "24-hour",
-          "impliedConc": 63.3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NH3": {
-          "sub": 6,
-          "subMin": 5,
-          "subMax": 7,
-          "averaging": "24-hour",
-          "impliedConc": 24,
+          "impliedConc": 115,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -991,6 +969,99 @@
           "impliedConc": 2.7,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 79,
+          "subMin": 33,
+          "subMax": 131,
+          "averaging": "24-hour",
+          "impliedConc": 63.3,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 6,
+          "subMin": 5,
+          "subMax": 7,
+          "averaging": "24-hour",
+          "impliedConc": 24,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        }
+      },
+      "stamp": {
+        "y": 2026,
+        "m": 10,
+        "d": 29,
+        "hh": 5,
+        "mi": 0,
+        "raw": "29-10-2026 05:00:00"
+      }
+    },
+    {
+      "station": "Pusa, Delhi - IITM",
+      "lat": 28.63611,
+      "lng": 77.173332,
+      "aqi": 273,
+      "band": "Poor",
+      "governing": "PM2.5",
+      "reported": [
+        "NO2",
+        "CO",
+        "PM2.5",
+        "PM10",
+        "OZONE"
+      ],
+      "notReported": [
+        "SO2",
+        "NH3",
+        "PB"
+      ],
+      "pollutants": {
+        "NO2": {
+          "sub": 130,
+          "subMin": 35,
+          "subMax": 241,
+          "averaging": "24-hour",
+          "impliedConc": 110,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 124,
+          "subMin": 107,
+          "subMax": 132,
+          "averaging": "8-hour",
+          "impliedConc": 3.9,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 273,
+          "subMin": 15,
+          "subMax": 382,
+          "averaging": "24-hour",
+          "impliedConc": 112.1,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 199,
+          "subMin": 60,
+          "subMax": 324,
+          "averaging": "24-hour",
+          "impliedConc": 248.5,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 28,
+          "subMin": 23,
+          "subMax": 32,
+          "averaging": "8-hour",
+          "impliedConc": 28,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
         }
       },
       "stamp": {
@@ -1010,36 +1081,18 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
-        "PM10",
         "NO2",
         "NH3",
         "SO2",
-        "CO",
-        "OZONE"
+        "PM2.5",
+        "OZONE",
+        "PM10",
+        "CO"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 273,
-          "subMin": 98,
-          "subMax": 376,
-          "averaging": "24-hour",
-          "impliedConc": 112.1,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 232,
-          "subMin": 139,
-          "subMax": 365,
-          "averaging": "24-hour",
-          "impliedConc": 282,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "NO2": {
           "sub": 101,
           "subMin": 29,
@@ -1067,13 +1120,13 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "CO": {
-          "sub": 133,
-          "subMin": 116,
-          "subMax": 149,
-          "averaging": "8-hour",
-          "impliedConc": 4.7,
-          "impliedUnit": "mg/m³",
+        "PM2.5": {
+          "sub": 273,
+          "subMin": 98,
+          "subMax": 376,
+          "averaging": "24-hour",
+          "impliedConc": 112.1,
+          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "OZONE": {
@@ -1083,6 +1136,24 @@
           "averaging": "8-hour",
           "impliedConc": 3,
           "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 232,
+          "subMin": 139,
+          "subMax": 365,
+          "averaging": "24-hour",
+          "impliedConc": 282,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 133,
+          "subMin": 116,
+          "subMax": 149,
+          "averaging": "8-hour",
+          "impliedConc": 4.7,
+          "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         }
       },
@@ -1103,10 +1174,10 @@
       "band": "Poor",
       "governing": "PM10",
       "reported": [
+        "CO",
         "PM2.5",
         "PM10",
         "NO2",
-        "CO",
         "OZONE"
       ],
       "notReported": [
@@ -1115,6 +1186,15 @@
         "PB"
       ],
       "pollutants": {
+        "CO": {
+          "sub": 107,
+          "subMin": 84,
+          "subMax": 121,
+          "averaging": "8-hour",
+          "impliedConc": 2.6,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "PM2.5": {
           "sub": 185,
           "subMin": 18,
@@ -1142,96 +1222,12 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "CO": {
-          "sub": 107,
-          "subMin": 84,
-          "subMax": 121,
-          "averaging": "8-hour",
-          "impliedConc": 2.6,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "OZONE": {
           "sub": 7,
           "subMin": 5,
           "subMax": 8,
           "averaging": "8-hour",
           "impliedConc": 7,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        }
-      },
-      "stamp": {
-        "y": 2026,
-        "m": 10,
-        "d": 29,
-        "hh": 5,
-        "mi": 0,
-        "raw": "29-10-2026 05:00:00"
-      }
-    },
-    {
-      "station": "Pusa, Delhi - IITM",
-      "lat": 28.63611,
-      "lng": 77.173332,
-      "aqi": 273,
-      "band": "Poor",
-      "governing": "PM2.5",
-      "reported": [
-        "PM2.5",
-        "PM10",
-        "NO2",
-        "CO",
-        "OZONE"
-      ],
-      "notReported": [
-        "SO2",
-        "NH3",
-        "PB"
-      ],
-      "pollutants": {
-        "PM2.5": {
-          "sub": 273,
-          "subMin": 15,
-          "subMax": 382,
-          "averaging": "24-hour",
-          "impliedConc": 112.1,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 199,
-          "subMin": 60,
-          "subMax": 324,
-          "averaging": "24-hour",
-          "impliedConc": 248.5,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 130,
-          "subMin": 35,
-          "subMax": 241,
-          "averaging": "24-hour",
-          "impliedConc": 110,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 124,
-          "subMin": 107,
-          "subMax": 132,
-          "averaging": "8-hour",
-          "impliedConc": 3.9,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 28,
-          "subMin": 23,
-          "subMax": 32,
-          "averaging": "8-hour",
-          "impliedConc": 28,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -1254,10 +1250,10 @@
       "governing": "PM10",
       "reported": [
         "PM2.5",
-        "PM10",
+        "SO2",
         "NO2",
         "NH3",
-        "SO2",
+        "PM10",
         "CO",
         "OZONE"
       ],
@@ -1274,12 +1270,12 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM10": {
-          "sub": 272,
-          "subMin": 105,
-          "subMax": 446,
+        "SO2": {
+          "sub": 16,
+          "subMin": 9,
+          "subMax": 35,
           "averaging": "24-hour",
-          "impliedConc": 322,
+          "impliedConc": 12.8,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -1301,12 +1297,12 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "SO2": {
-          "sub": 16,
-          "subMin": 9,
-          "subMax": 35,
+        "PM10": {
+          "sub": 272,
+          "subMin": 105,
+          "subMax": 446,
           "averaging": "24-hour",
-          "impliedConc": 12.8,
+          "impliedConc": 322,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -1346,11 +1342,11 @@
       "band": "Poor",
       "governing": "PM10",
       "reported": [
-        "PM2.5",
         "PM10",
+        "PM2.5",
+        "SO2",
         "NO2",
         "NH3",
-        "SO2",
         "CO",
         "OZONE"
       ],
@@ -1358,6 +1354,15 @@
         "PB"
       ],
       "pollutants": {
+        "PM10": {
+          "sub": 271,
+          "subMin": 80,
+          "subMax": 478,
+          "averaging": "24-hour",
+          "impliedConc": 321,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "PM2.5": {
           "sub": 254,
           "subMin": 60,
@@ -1367,12 +1372,12 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM10": {
-          "sub": 271,
-          "subMin": 80,
-          "subMax": 478,
+        "SO2": {
+          "sub": 14,
+          "subMin": 10,
+          "subMax": 18,
           "averaging": "24-hour",
-          "impliedConc": 321,
+          "impliedConc": 11.2,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -1391,15 +1396,6 @@
           "subMax": 13,
           "averaging": "24-hour",
           "impliedConc": 44,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 14,
-          "subMin": 10,
-          "subMax": 18,
-          "averaging": "24-hour",
-          "impliedConc": 11.2,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -1439,60 +1435,24 @@
       "band": "Poor",
       "governing": "PM10",
       "reported": [
+        "NO2",
+        "CO",
+        "OZONE",
         "PM2.5",
         "PM10",
-        "NO2",
         "NH3",
-        "SO2",
-        "CO",
-        "OZONE"
+        "SO2"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 200,
-          "subMin": 47,
-          "subMax": 315,
-          "averaging": "24-hour",
-          "impliedConc": 90,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 270,
-          "subMin": 80,
-          "subMax": 479,
-          "averaging": "24-hour",
-          "impliedConc": 320,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "NO2": {
           "sub": 98,
           "subMin": 37,
           "subMax": 146,
           "averaging": "24-hour",
           "impliedConc": 78.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NH3": {
-          "sub": 4,
-          "subMin": 3,
-          "subMax": 5,
-          "averaging": "24-hour",
-          "impliedConc": 16,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 13,
-          "subMin": 7,
-          "subMax": 21,
-          "averaging": "24-hour",
-          "impliedConc": 10.4,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -1511,6 +1471,42 @@
           "subMax": 16,
           "averaging": "8-hour",
           "impliedConc": 12,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 200,
+          "subMin": 47,
+          "subMax": 315,
+          "averaging": "24-hour",
+          "impliedConc": 90,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 270,
+          "subMin": 80,
+          "subMax": 479,
+          "averaging": "24-hour",
+          "impliedConc": 320,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 4,
+          "subMin": 3,
+          "subMax": 5,
+          "averaging": "24-hour",
+          "impliedConc": 16,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 13,
+          "subMin": 7,
+          "subMax": 21,
+          "averaging": "24-hour",
+          "impliedConc": 10.4,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -1532,60 +1528,24 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
-        "PM10",
         "NO2",
-        "NH3",
-        "SO2",
         "CO",
-        "OZONE"
+        "NH3",
+        "PM2.5",
+        "OZONE",
+        "PM10",
+        "SO2"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 269,
-          "subMin": 135,
-          "subMax": 425,
-          "averaging": "24-hour",
-          "impliedConc": 110.9,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 227,
-          "subMin": 142,
-          "subMax": 482,
-          "averaging": "24-hour",
-          "impliedConc": 277,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "NO2": {
           "sub": 74,
           "subMin": 28,
           "subMax": 115,
           "averaging": "24-hour",
           "impliedConc": 59.3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NH3": {
-          "sub": 7,
-          "subMin": 4,
-          "subMax": 15,
-          "averaging": "24-hour",
-          "impliedConc": 28,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 19,
-          "subMin": 4,
-          "subMax": 32,
-          "averaging": "24-hour",
-          "impliedConc": 15.2,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -1598,12 +1558,48 @@
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
+        "NH3": {
+          "sub": 7,
+          "subMin": 4,
+          "subMax": 15,
+          "averaging": "24-hour",
+          "impliedConc": 28,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 269,
+          "subMin": 135,
+          "subMax": 425,
+          "averaging": "24-hour",
+          "impliedConc": 110.9,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "OZONE": {
           "sub": 6,
           "subMin": 4,
           "subMax": 8,
           "averaging": "8-hour",
           "impliedConc": 6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 227,
+          "subMin": 142,
+          "subMax": 482,
+          "averaging": "24-hour",
+          "impliedConc": 277,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 19,
+          "subMin": 4,
+          "subMax": 32,
+          "averaging": "24-hour",
+          "impliedConc": 15.2,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -1625,27 +1621,18 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
         "PM10",
-        "NO2",
         "NH3",
+        "OZONE",
+        "PM2.5",
+        "NO2",
         "SO2",
-        "CO",
-        "OZONE"
+        "CO"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 268,
-          "subMin": 110,
-          "subMax": 365,
-          "averaging": "24-hour",
-          "impliedConc": 110.6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM10": {
           "sub": 240,
           "subMin": 126,
@@ -1655,21 +1642,39 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NO2": {
-          "sub": 60,
-          "subMin": 19,
-          "subMax": 89,
-          "averaging": "24-hour",
-          "impliedConc": 48.2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "NH3": {
           "sub": 10,
           "subMin": 8,
           "subMax": 12,
           "averaging": "24-hour",
           "impliedConc": 40,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 3,
+          "subMin": 2,
+          "subMax": 3,
+          "averaging": "8-hour",
+          "impliedConc": 3,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 268,
+          "subMin": 110,
+          "subMax": 365,
+          "averaging": "24-hour",
+          "impliedConc": 110.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 60,
+          "subMin": 19,
+          "subMax": 89,
+          "averaging": "24-hour",
+          "impliedConc": 48.2,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -1689,15 +1694,6 @@
           "averaging": "8-hour",
           "impliedConc": 3.3,
           "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 3,
-          "subMin": 2,
-          "subMax": 3,
-          "averaging": "8-hour",
-          "impliedConc": 3,
-          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
       },
@@ -1719,11 +1715,11 @@
       "governing": "PM2.5",
       "reported": [
         "PM2.5",
-        "PM10",
         "NO2",
-        "NH3",
+        "PM10",
         "SO2",
-        "CO"
+        "CO",
+        "NH3"
       ],
       "notReported": [
         "OZONE",
@@ -1739,15 +1735,6 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM10": {
-          "sub": 247,
-          "subMin": 131,
-          "subMax": 430,
-          "averaging": "24-hour",
-          "impliedConc": 297,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "NO2": {
           "sub": 33,
           "subMin": 8,
@@ -1757,12 +1744,12 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NH3": {
-          "sub": 7,
-          "subMin": 4,
-          "subMax": 11,
+        "PM10": {
+          "sub": 247,
+          "subMin": 131,
+          "subMax": 430,
           "averaging": "24-hour",
-          "impliedConc": 28,
+          "impliedConc": 297,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -1783,6 +1770,15 @@
           "impliedConc": 4.9,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 7,
+          "subMin": 4,
+          "subMax": 11,
+          "averaging": "24-hour",
+          "impliedConc": 28,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
         }
       },
       "stamp": {
@@ -1802,9 +1798,9 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
+        "NO2",
         "PM2.5",
         "PM10",
-        "NO2",
         "NH3",
         "SO2",
         "CO",
@@ -1814,6 +1810,15 @@
         "PB"
       ],
       "pollutants": {
+        "NO2": {
+          "sub": 89,
+          "subMin": 37,
+          "subMax": 146,
+          "averaging": "24-hour",
+          "impliedConc": 71.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "PM2.5": {
           "sub": 266,
           "subMin": 113,
@@ -1829,15 +1834,6 @@
           "subMax": 329,
           "averaging": "24-hour",
           "impliedConc": 277,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 89,
-          "subMin": 37,
-          "subMax": 146,
-          "averaging": "24-hour",
-          "impliedConc": 71.2,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -1895,11 +1891,11 @@
       "band": "Poor",
       "governing": "PM10",
       "reported": [
-        "PM2.5",
         "PM10",
-        "NO2",
         "CO",
-        "OZONE"
+        "OZONE",
+        "PM2.5",
+        "NO2"
       ],
       "notReported": [
         "SO2",
@@ -1907,30 +1903,12 @@
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 203,
-          "subMin": 57,
-          "subMax": 334,
-          "averaging": "24-hour",
-          "impliedConc": 91.6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM10": {
           "sub": 261,
           "subMin": 168,
           "subMax": 448,
           "averaging": "24-hour",
           "impliedConc": 311,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 50,
-          "subMin": 5,
-          "subMax": 163,
-          "averaging": "24-hour",
-          "impliedConc": 40,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -1949,6 +1927,24 @@
           "subMax": 14,
           "averaging": "8-hour",
           "impliedConc": 12,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 203,
+          "subMin": 57,
+          "subMax": 334,
+          "averaging": "24-hour",
+          "impliedConc": 91.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 50,
+          "subMin": 5,
+          "subMax": 163,
+          "averaging": "24-hour",
+          "impliedConc": 40,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -1970,18 +1966,54 @@
       "band": "Poor",
       "governing": "PM10",
       "reported": [
+        "SO2",
+        "NH3",
+        "CO",
+        "OZONE",
         "PM2.5",
         "PM10",
-        "NO2",
-        "NH3",
-        "SO2",
-        "CO",
-        "OZONE"
+        "NO2"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
+        "SO2": {
+          "sub": 14,
+          "subMin": 11,
+          "subMax": 16,
+          "averaging": "24-hour",
+          "impliedConc": 11.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 8,
+          "subMin": 6,
+          "subMax": 10,
+          "averaging": "24-hour",
+          "impliedConc": 32,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 16,
+          "subMin": 13,
+          "subMax": 32,
+          "averaging": "8-hour",
+          "impliedConc": 0.3,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 71,
+          "subMin": 15,
+          "subMax": 215,
+          "averaging": "8-hour",
+          "impliedConc": 71,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "PM2.5": {
           "sub": 182,
           "subMin": 75,
@@ -2008,42 +2040,6 @@
           "impliedConc": 28,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
-        },
-        "NH3": {
-          "sub": 8,
-          "subMin": 6,
-          "subMax": 10,
-          "averaging": "24-hour",
-          "impliedConc": 32,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 14,
-          "subMin": 11,
-          "subMax": 16,
-          "averaging": "24-hour",
-          "impliedConc": 11.2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 16,
-          "subMin": 13,
-          "subMax": 32,
-          "averaging": "8-hour",
-          "impliedConc": 0.3,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 71,
-          "subMin": 15,
-          "subMax": 215,
-          "averaging": "8-hour",
-          "impliedConc": 71,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
         }
       },
       "stamp": {
@@ -2064,12 +2060,12 @@
       "governing": "PM2.5",
       "reported": [
         "PM2.5",
+        "SO2",
+        "OZONE",
         "PM10",
         "NO2",
         "NH3",
-        "SO2",
-        "CO",
-        "OZONE"
+        "CO"
       ],
       "notReported": [
         "PB"
@@ -2081,6 +2077,24 @@
           "subMax": 383,
           "averaging": "24-hour",
           "impliedConc": 108.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 14,
+          "subMin": 6,
+          "subMax": 75,
+          "averaging": "24-hour",
+          "impliedConc": 11.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 4,
+          "subMin": 4,
+          "subMax": 5,
+          "averaging": "8-hour",
+          "impliedConc": 4,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -2111,15 +2125,6 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "SO2": {
-          "sub": 14,
-          "subMin": 6,
-          "subMax": 75,
-          "averaging": "24-hour",
-          "impliedConc": 11.2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "CO": {
           "sub": 120,
           "subMin": 103,
@@ -2127,15 +2132,6 @@
           "averaging": "8-hour",
           "impliedConc": 3.6,
           "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 4,
-          "subMin": 4,
-          "subMax": 5,
-          "averaging": "8-hour",
-          "impliedConc": 4,
-          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
       },
@@ -2156,27 +2152,18 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
         "PM10",
         "NO2",
         "NH3",
         "SO2",
         "CO",
-        "OZONE"
+        "OZONE",
+        "PM2.5"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 260,
-          "subMin": 95,
-          "subMax": 449,
-          "averaging": "24-hour",
-          "impliedConc": 108.3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM10": {
           "sub": 259,
           "subMin": 145,
@@ -2230,6 +2217,15 @@
           "impliedConc": 1,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 260,
+          "subMin": 95,
+          "subMax": 449,
+          "averaging": "24-hour",
+          "impliedConc": 108.3,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
         }
       },
       "stamp": {
@@ -2250,12 +2246,12 @@
       "governing": "PM2.5",
       "reported": [
         "PM2.5",
-        "PM10",
-        "NO2",
         "NH3",
         "SO2",
         "CO",
-        "OZONE"
+        "OZONE",
+        "PM10",
+        "NO2"
       ],
       "notReported": [
         "PB"
@@ -2267,24 +2263,6 @@
           "subMax": 401,
           "averaging": "24-hour",
           "impliedConc": 107.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 208,
-          "subMin": 100,
-          "subMax": 393,
-          "averaging": "24-hour",
-          "impliedConc": 258,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 28,
-          "subMin": 14,
-          "subMax": 39,
-          "averaging": "24-hour",
-          "impliedConc": 22.4,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -2323,6 +2301,24 @@
           "impliedConc": 15,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 208,
+          "subMin": 100,
+          "subMax": 393,
+          "averaging": "24-hour",
+          "impliedConc": 258,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 28,
+          "subMin": 14,
+          "subMax": 39,
+          "averaging": "24-hour",
+          "impliedConc": 22.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
         }
       },
       "stamp": {
@@ -2342,60 +2338,24 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
-        "PM10",
         "NO2",
-        "NH3",
-        "SO2",
         "CO",
-        "OZONE"
+        "SO2",
+        "OZONE",
+        "PM10",
+        "NH3",
+        "PM2.5"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 253,
-          "subMin": 96,
-          "subMax": 346,
-          "averaging": "24-hour",
-          "impliedConc": 106.2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 147,
-          "subMin": 95,
-          "subMax": 209,
-          "averaging": "24-hour",
-          "impliedConc": 170.2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "NO2": {
           "sub": 47,
           "subMin": 11,
           "subMax": 84,
           "averaging": "24-hour",
           "impliedConc": 37.6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NH3": {
-          "sub": 4,
-          "subMin": 0,
-          "subMax": 8,
-          "averaging": "24-hour",
-          "impliedConc": 16,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 5,
-          "subMin": 3,
-          "subMax": 9,
-          "averaging": "24-hour",
-          "impliedConc": 4,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -2408,12 +2368,48 @@
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
+        "SO2": {
+          "sub": 5,
+          "subMin": 3,
+          "subMax": 9,
+          "averaging": "24-hour",
+          "impliedConc": 4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "OZONE": {
           "sub": 4,
           "subMin": 0,
           "subMax": 17,
           "averaging": "8-hour",
           "impliedConc": 4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 147,
+          "subMin": 95,
+          "subMax": 209,
+          "averaging": "24-hour",
+          "impliedConc": 170.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 4,
+          "subMin": 0,
+          "subMax": 8,
+          "averaging": "24-hour",
+          "impliedConc": 16,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 253,
+          "subMin": 96,
+          "subMax": 346,
+          "averaging": "24-hour",
+          "impliedConc": 106.2,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -2435,33 +2431,33 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
+        "OZONE",
         "PM2.5",
-        "PM10",
         "NO2",
         "NH3",
-        "SO2",
         "CO",
-        "OZONE"
+        "SO2",
+        "PM10"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
+        "OZONE": {
+          "sub": 6,
+          "subMin": 4,
+          "subMax": 8,
+          "averaging": "8-hour",
+          "impliedConc": 6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "PM2.5": {
           "sub": 251,
           "subMin": 83,
           "subMax": 356,
           "averaging": "24-hour",
           "impliedConc": 105.6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 218,
-          "subMin": 118,
-          "subMax": 399,
-          "averaging": "24-hour",
-          "impliedConc": 268,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -2483,15 +2479,6 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "SO2": {
-          "sub": 15,
-          "subMin": 9,
-          "subMax": 27,
-          "averaging": "24-hour",
-          "impliedConc": 12,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "CO": {
           "sub": 74,
           "subMin": 56,
@@ -2501,12 +2488,21 @@
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "OZONE": {
-          "sub": 6,
-          "subMin": 4,
-          "subMax": 8,
-          "averaging": "8-hour",
-          "impliedConc": 6,
+        "SO2": {
+          "sub": 15,
+          "subMin": 9,
+          "subMax": 27,
+          "averaging": "24-hour",
+          "impliedConc": 12,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 218,
+          "subMin": 118,
+          "subMax": 399,
+          "averaging": "24-hour",
+          "impliedConc": 268,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -2528,60 +2524,24 @@
       "band": "Poor",
       "governing": "PM10",
       "reported": [
-        "PM2.5",
-        "PM10",
         "NO2",
-        "NH3",
-        "SO2",
         "CO",
-        "OZONE"
+        "PM2.5",
+        "NH3",
+        "OZONE",
+        "SO2",
+        "PM10"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 163,
-          "subMin": 49,
-          "subMax": 355,
-          "averaging": "24-hour",
-          "impliedConc": 79.2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 245,
-          "subMin": 95,
-          "subMax": 497,
-          "averaging": "24-hour",
-          "impliedConc": 295,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "NO2": {
           "sub": 48,
           "subMin": 20,
           "subMax": 82,
           "averaging": "24-hour",
           "impliedConc": 38.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NH3": {
-          "sub": 5,
-          "subMin": 4,
-          "subMax": 6,
-          "averaging": "24-hour",
-          "impliedConc": 20,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 39,
-          "subMin": 26,
-          "subMax": 64,
-          "averaging": "24-hour",
-          "impliedConc": 31.2,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -2594,12 +2554,48 @@
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
+        "PM2.5": {
+          "sub": 163,
+          "subMin": 49,
+          "subMax": 355,
+          "averaging": "24-hour",
+          "impliedConc": 79.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 5,
+          "subMin": 4,
+          "subMax": 6,
+          "averaging": "24-hour",
+          "impliedConc": 20,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "OZONE": {
           "sub": 7,
           "subMin": 6,
           "subMax": 9,
           "averaging": "8-hour",
           "impliedConc": 7,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 39,
+          "subMin": 26,
+          "subMax": 64,
+          "averaging": "24-hour",
+          "impliedConc": 31.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 245,
+          "subMin": 95,
+          "subMax": 497,
+          "averaging": "24-hour",
+          "impliedConc": 295,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -2621,42 +2617,42 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
-        "PM10",
         "NO2",
+        "CO",
+        "PM2.5",
         "NH3",
         "SO2",
-        "CO",
+        "PM10",
         "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 243,
-          "subMin": 91,
-          "subMax": 388,
-          "averaging": "24-hour",
-          "impliedConc": 103.3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 177,
-          "subMin": 105,
-          "subMax": 302,
-          "averaging": "24-hour",
-          "impliedConc": 215.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "NO2": {
           "sub": 41,
           "subMin": 17,
           "subMax": 97,
           "averaging": "24-hour",
           "impliedConc": 32.8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 105,
+          "subMin": 78,
+          "subMax": 116,
+          "averaging": "8-hour",
+          "impliedConc": 2.4,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 243,
+          "subMin": 91,
+          "subMax": 388,
+          "averaging": "24-hour",
+          "impliedConc": 103.3,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -2678,13 +2674,13 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "CO": {
-          "sub": 105,
-          "subMin": 78,
-          "subMax": 116,
-          "averaging": "8-hour",
-          "impliedConc": 2.4,
-          "impliedUnit": "mg/m³",
+        "PM10": {
+          "sub": 177,
+          "subMin": 105,
+          "subMax": 302,
+          "averaging": "24-hour",
+          "impliedConc": 215.4,
+          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "OZONE": {
@@ -2717,10 +2713,10 @@
         "PM2.5",
         "PM10",
         "NO2",
-        "NH3",
         "SO2",
         "CO",
-        "OZONE"
+        "OZONE",
+        "NH3"
       ],
       "notReported": [
         "PB"
@@ -2753,15 +2749,6 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NH3": {
-          "sub": 5,
-          "subMin": 4,
-          "subMax": 6,
-          "averaging": "24-hour",
-          "impliedConc": 20,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "SO2": {
           "sub": 9,
           "subMin": 5,
@@ -2788,6 +2775,15 @@
           "impliedConc": 16,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 5,
+          "subMin": 4,
+          "subMax": 6,
+          "averaging": "24-hour",
+          "impliedConc": 20,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
         }
       },
       "stamp": {
@@ -2807,33 +2803,60 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
         "PM10",
-        "NO2",
-        "NH3",
-        "SO2",
         "CO",
-        "OZONE"
+        "SO2",
+        "OZONE",
+        "PM2.5",
+        "NO2",
+        "NH3"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 240,
-          "subMin": 68,
-          "subMax": 418,
-          "averaging": "24-hour",
-          "impliedConc": 102.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM10": {
           "sub": 200,
           "subMin": 83,
           "subMax": 410,
           "averaging": "24-hour",
           "impliedConc": 250,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 149,
+          "subMin": 103,
+          "subMax": 181,
+          "averaging": "8-hour",
+          "impliedConc": 5.9,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 59,
+          "subMin": 37,
+          "subMax": 85,
+          "averaging": "24-hour",
+          "impliedConc": 47.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 8,
+          "subMin": 8,
+          "subMax": 9,
+          "averaging": "8-hour",
+          "impliedConc": 8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 240,
+          "subMin": 68,
+          "subMax": 418,
+          "averaging": "24-hour",
+          "impliedConc": 102.4,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -2852,33 +2875,6 @@
           "subMax": 6,
           "averaging": "24-hour",
           "impliedConc": 20,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 59,
-          "subMin": 37,
-          "subMax": 85,
-          "averaging": "24-hour",
-          "impliedConc": 47.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 149,
-          "subMin": 103,
-          "subMax": 181,
-          "averaging": "8-hour",
-          "impliedConc": 5.9,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 8,
-          "subMin": 8,
-          "subMax": 9,
-          "averaging": "8-hour",
-          "impliedConc": 8,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -2900,33 +2896,24 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
-        "PM10",
-        "NO2",
-        "NH3",
         "SO2",
+        "NO2",
+        "PM2.5",
+        "NH3",
         "CO",
+        "PM10",
         "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 236,
-          "subMin": 93,
-          "subMax": 351,
+        "SO2": {
+          "sub": 6,
+          "subMin": 3,
+          "subMax": 9,
           "averaging": "24-hour",
-          "impliedConc": 101.3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 180,
-          "subMin": 112,
-          "subMax": 409,
-          "averaging": "24-hour",
-          "impliedConc": 219.9,
+          "impliedConc": 4.8,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -2939,21 +2926,21 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
+        "PM2.5": {
+          "sub": 236,
+          "subMin": 93,
+          "subMax": 351,
+          "averaging": "24-hour",
+          "impliedConc": 101.3,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "NH3": {
           "sub": 7,
           "subMin": 6,
           "subMax": 10,
           "averaging": "24-hour",
           "impliedConc": 28,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 6,
-          "subMin": 3,
-          "subMax": 9,
-          "averaging": "24-hour",
-          "impliedConc": 4.8,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -2964,6 +2951,15 @@
           "averaging": "8-hour",
           "impliedConc": 1.3,
           "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 180,
+          "subMin": 112,
+          "subMax": 409,
+          "averaging": "24-hour",
+          "impliedConc": 219.9,
+          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "OZONE": {
@@ -2994,10 +2990,10 @@
       "governing": "PM2.5",
       "reported": [
         "PM2.5",
+        "SO2",
+        "NH3",
         "PM10",
         "NO2",
-        "NH3",
-        "SO2",
         "CO",
         "OZONE"
       ],
@@ -3011,6 +3007,24 @@
           "subMax": 365,
           "averaging": "24-hour",
           "impliedConc": 101,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 12,
+          "subMin": 1,
+          "subMax": 59,
+          "averaging": "24-hour",
+          "impliedConc": 9.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 10,
+          "subMin": 9,
+          "subMax": 13,
+          "averaging": "24-hour",
+          "impliedConc": 40,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -3029,24 +3043,6 @@
           "subMax": 142,
           "averaging": "24-hour",
           "impliedConc": 53.7,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NH3": {
-          "sub": 10,
-          "subMin": 9,
-          "subMax": 13,
-          "averaging": "24-hour",
-          "impliedConc": 40,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 12,
-          "subMin": 1,
-          "subMax": 59,
-          "averaging": "24-hour",
-          "impliedConc": 9.6,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -3086,60 +3082,24 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
         "PM10",
-        "NO2",
-        "NH3",
-        "SO2",
         "CO",
-        "OZONE"
+        "NO2",
+        "SO2",
+        "OZONE",
+        "PM2.5",
+        "NH3"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 234,
-          "subMin": 91,
-          "subMax": 316,
-          "averaging": "24-hour",
-          "impliedConc": 100.7,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM10": {
           "sub": 232,
           "subMin": 106,
           "subMax": 401,
           "averaging": "24-hour",
           "impliedConc": 282,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 158,
-          "subMin": 75,
-          "subMax": 289,
-          "averaging": "24-hour",
-          "impliedConc": 138,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NH3": {
-          "sub": 9,
-          "subMin": 5,
-          "subMax": 13,
-          "averaging": "24-hour",
-          "impliedConc": 36,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 17,
-          "subMin": 2,
-          "subMax": 69,
-          "averaging": "24-hour",
-          "impliedConc": 13.6,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -3152,12 +3112,48 @@
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
+        "NO2": {
+          "sub": 158,
+          "subMin": 75,
+          "subMax": 289,
+          "averaging": "24-hour",
+          "impliedConc": 138,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 17,
+          "subMin": 2,
+          "subMax": 69,
+          "averaging": "24-hour",
+          "impliedConc": 13.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "OZONE": {
           "sub": 12,
           "subMin": 8,
           "subMax": 15,
           "averaging": "8-hour",
           "impliedConc": 12,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 234,
+          "subMin": 91,
+          "subMax": 316,
+          "averaging": "24-hour",
+          "impliedConc": 100.7,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 9,
+          "subMin": 5,
+          "subMax": 13,
+          "averaging": "24-hour",
+          "impliedConc": 36,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -3182,8 +3178,8 @@
         "PM2.5",
         "PM10",
         "NO2",
-        "CO",
-        "OZONE"
+        "OZONE",
+        "CO"
       ],
       "notReported": [
         "SO2",
@@ -3218,15 +3214,6 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "CO": {
-          "sub": 126,
-          "subMin": 114,
-          "subMax": 138,
-          "averaging": "8-hour",
-          "impliedConc": 4.1,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "OZONE": {
           "sub": 18,
           "subMin": 16,
@@ -3234,6 +3221,15 @@
           "averaging": "8-hour",
           "impliedConc": 18,
           "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 126,
+          "subMin": 114,
+          "subMax": 138,
+          "averaging": "8-hour",
+          "impliedConc": 4.1,
+          "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         }
       },
@@ -3254,9 +3250,9 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
         "PM10",
         "NO2",
+        "PM2.5",
         "CO",
         "OZONE"
       ],
@@ -3266,15 +3262,6 @@
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 228,
-          "subMin": 50,
-          "subMax": 344,
-          "averaging": "24-hour",
-          "impliedConc": 98.9,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM10": {
           "sub": 207,
           "subMin": 67,
@@ -3290,6 +3277,15 @@
           "subMax": 48,
           "averaging": "24-hour",
           "impliedConc": 24,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 228,
+          "subMin": 50,
+          "subMax": 344,
+          "averaging": "24-hour",
+          "impliedConc": 98.9,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -3329,18 +3325,36 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
+        "CO",
+        "OZONE",
         "PM2.5",
         "PM10",
-        "NO2",
-        "NH3",
         "SO2",
-        "CO",
-        "OZONE"
+        "NO2",
+        "NH3"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
+        "CO": {
+          "sub": 54,
+          "subMin": 38,
+          "subMax": 76,
+          "averaging": "8-hour",
+          "impliedConc": 1.2,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 6,
+          "subMin": 3,
+          "subMax": 11,
+          "averaging": "8-hour",
+          "impliedConc": 6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "PM2.5": {
           "sub": 222,
           "subMin": 79,
@@ -3359,6 +3373,15 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
+        "SO2": {
+          "sub": 14,
+          "subMin": 7,
+          "subMax": 35,
+          "averaging": "24-hour",
+          "impliedConc": 11.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "NO2": {
           "sub": 65,
           "subMin": 18,
@@ -3374,33 +3397,6 @@
           "subMax": 4,
           "averaging": "24-hour",
           "impliedConc": 8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 14,
-          "subMin": 7,
-          "subMax": 35,
-          "averaging": "24-hour",
-          "impliedConc": 11.2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 54,
-          "subMin": 38,
-          "subMax": 76,
-          "averaging": "8-hour",
-          "impliedConc": 1.2,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 6,
-          "subMin": 3,
-          "subMax": 11,
-          "averaging": "8-hour",
-          "impliedConc": 6,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -3422,11 +3418,11 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
         "PM10",
+        "SO2",
         "NO2",
         "NH3",
-        "SO2",
+        "PM2.5",
         "CO",
         "OZONE"
       ],
@@ -3434,21 +3430,21 @@
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 218,
-          "subMin": 67,
-          "subMax": 342,
-          "averaging": "24-hour",
-          "impliedConc": 96,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM10": {
           "sub": 143,
           "subMin": 83,
           "subMax": 197,
           "averaging": "24-hour",
           "impliedConc": 164.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 3,
+          "subMin": 1,
+          "subMax": 4,
+          "averaging": "24-hour",
+          "impliedConc": 2.4,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -3470,12 +3466,12 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "SO2": {
-          "sub": 3,
-          "subMin": 1,
-          "subMax": 4,
+        "PM2.5": {
+          "sub": 218,
+          "subMin": 67,
+          "subMax": 342,
           "averaging": "24-hour",
-          "impliedConc": 2.4,
+          "impliedConc": 96,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -3515,11 +3511,11 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
-        "PM10",
         "NO2",
+        "SO2",
+        "PM10",
         "NH3",
-        "SO2"
+        "PM2.5"
       ],
       "notReported": [
         "OZONE",
@@ -3527,12 +3523,21 @@
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 214,
-          "subMin": 65,
-          "subMax": 349,
+        "NO2": {
+          "sub": 84,
+          "subMin": 29,
+          "subMax": 150,
           "averaging": "24-hour",
-          "impliedConc": 94.8,
+          "impliedConc": 67.3,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 16,
+          "subMin": 10,
+          "subMax": 44,
+          "averaging": "24-hour",
+          "impliedConc": 12.8,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -3545,15 +3550,6 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NO2": {
-          "sub": 84,
-          "subMin": 29,
-          "subMax": 150,
-          "averaging": "24-hour",
-          "impliedConc": 67.3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "NH3": {
           "sub": 8,
           "subMin": 7,
@@ -3563,12 +3559,12 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "SO2": {
-          "sub": 16,
-          "subMin": 10,
-          "subMax": 44,
+        "PM2.5": {
+          "sub": 214,
+          "subMin": 65,
+          "subMax": 349,
           "averaging": "24-hour",
-          "impliedConc": 12.8,
+          "impliedConc": 94.8,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -3590,11 +3586,11 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
         "PM10",
         "NO2",
+        "OZONE",
         "CO",
-        "OZONE"
+        "PM2.5"
       ],
       "notReported": [
         "SO2",
@@ -3602,15 +3598,6 @@
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 214,
-          "subMin": 69,
-          "subMax": 332,
-          "averaging": "24-hour",
-          "impliedConc": 94.8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM10": {
           "sub": 196,
           "subMin": 62,
@@ -3629,6 +3616,15 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
+        "OZONE": {
+          "sub": 10,
+          "subMin": 3,
+          "subMax": 42,
+          "averaging": "8-hour",
+          "impliedConc": 10,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "CO": {
           "sub": 25,
           "subMin": 20,
@@ -3638,12 +3634,12 @@
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "OZONE": {
-          "sub": 10,
-          "subMin": 3,
-          "subMax": 42,
-          "averaging": "8-hour",
-          "impliedConc": 10,
+        "PM2.5": {
+          "sub": 214,
+          "subMin": 69,
+          "subMax": 332,
+          "averaging": "24-hour",
+          "impliedConc": 94.8,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -3665,11 +3661,11 @@
       "band": "Poor",
       "governing": "PM10",
       "reported": [
+        "OZONE",
         "PM2.5",
         "PM10",
         "SO2",
-        "CO",
-        "OZONE"
+        "CO"
       ],
       "notReported": [
         "NO2",
@@ -3677,6 +3673,15 @@
         "PB"
       ],
       "pollutants": {
+        "OZONE": {
+          "sub": 3,
+          "subMin": 2,
+          "subMax": 4,
+          "averaging": "8-hour",
+          "impliedConc": 3,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "PM2.5": {
           "sub": 58,
           "subMin": 28,
@@ -3712,15 +3717,6 @@
           "impliedConc": 2.3,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 3,
-          "subMin": 2,
-          "subMax": 4,
-          "averaging": "8-hour",
-          "impliedConc": 3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
         }
       },
       "stamp": {
@@ -3740,27 +3736,18 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
         "PM10",
-        "NO2",
+        "PM2.5",
         "NH3",
-        "SO2",
         "CO",
+        "NO2",
+        "SO2",
         "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 209,
-          "subMin": 77,
-          "subMax": 358,
-          "averaging": "24-hour",
-          "impliedConc": 93.3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM10": {
           "sub": 196,
           "subMin": 113,
@@ -3770,12 +3757,12 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NO2": {
-          "sub": 32,
-          "subMin": 12,
-          "subMax": 72,
+        "PM2.5": {
+          "sub": 209,
+          "subMin": 77,
+          "subMax": 358,
           "averaging": "24-hour",
-          "impliedConc": 25.6,
+          "impliedConc": 93.3,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -3788,15 +3775,6 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "SO2": {
-          "sub": 18,
-          "subMin": 7,
-          "subMax": 27,
-          "averaging": "24-hour",
-          "impliedConc": 14.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "CO": {
           "sub": 106,
           "subMin": 102,
@@ -3804,6 +3782,24 @@
           "averaging": "8-hour",
           "impliedConc": 2.5,
           "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 32,
+          "subMin": 12,
+          "subMax": 72,
+          "averaging": "24-hour",
+          "impliedConc": 25.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 18,
+          "subMin": 7,
+          "subMax": 27,
+          "averaging": "24-hour",
+          "impliedConc": 14.4,
+          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "OZONE": {
@@ -3919,99 +3915,6 @@
       }
     },
     {
-      "station": "Karala,Delhi-DPCC",
-      "lat": 28.7313303,
-      "lng": 77.0402585,
-      "aqi": 197,
-      "band": "Moderately Polluted",
-      "governing": "PM2.5",
-      "reported": [
-        "PM2.5",
-        "PM10",
-        "NO2",
-        "NH3",
-        "SO2",
-        "CO",
-        "OZONE"
-      ],
-      "notReported": [
-        "PB"
-      ],
-      "pollutants": {
-        "PM2.5": {
-          "sub": 197,
-          "subMin": 67,
-          "subMax": 311,
-          "averaging": "24-hour",
-          "impliedConc": 89.1,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 126,
-          "subMin": 64,
-          "subMax": 177,
-          "averaging": "24-hour",
-          "impliedConc": 138.6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 124,
-          "subMin": 30,
-          "subMax": 355,
-          "averaging": "24-hour",
-          "impliedConc": 104,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NH3": {
-          "sub": 24,
-          "subMin": 7,
-          "subMax": 54,
-          "averaging": "24-hour",
-          "impliedConc": 96,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 15,
-          "subMin": 6,
-          "subMax": 29,
-          "averaging": "24-hour",
-          "impliedConc": 12,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 94,
-          "subMin": 51,
-          "subMax": 124,
-          "averaging": "8-hour",
-          "impliedConc": 1.9,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 3,
-          "subMin": 3,
-          "subMax": 4,
-          "averaging": "8-hour",
-          "impliedConc": 3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        }
-      },
-      "stamp": {
-        "y": 2026,
-        "m": 10,
-        "d": 29,
-        "hh": 5,
-        "mi": 0,
-        "raw": "29-10-2026 05:00:00"
-      }
-    },
-    {
       "station": "Ashok Vihar, Delhi - DPCC",
       "lat": 28.695381,
       "lng": 77.181665,
@@ -4020,12 +3923,12 @@
       "governing": "PM2.5",
       "reported": [
         "PM2.5",
-        "PM10",
         "NO2",
         "NH3",
         "SO2",
-        "CO",
-        "OZONE"
+        "OZONE",
+        "PM10",
+        "CO"
       ],
       "notReported": [
         "PB"
@@ -4037,15 +3940,6 @@
           "subMax": 327,
           "averaging": "24-hour",
           "impliedConc": 89.1,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 156,
-          "subMin": 68,
-          "subMax": 211,
-          "averaging": "24-hour",
-          "impliedConc": 183.8,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -4076,6 +3970,24 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
+        "OZONE": {
+          "sub": 4,
+          "subMin": 4,
+          "subMax": 5,
+          "averaging": "8-hour",
+          "impliedConc": 4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 156,
+          "subMin": 68,
+          "subMax": 211,
+          "averaging": "24-hour",
+          "impliedConc": 183.8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "CO": {
           "sub": 102,
           "subMin": 60,
@@ -4084,13 +3996,97 @@
           "impliedConc": 2.2,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
+        }
+      },
+      "stamp": {
+        "y": 2026,
+        "m": 10,
+        "d": 29,
+        "hh": 5,
+        "mi": 0,
+        "raw": "29-10-2026 05:00:00"
+      }
+    },
+    {
+      "station": "Karala,Delhi-DPCC",
+      "lat": 28.7313303,
+      "lng": 77.0402585,
+      "aqi": 197,
+      "band": "Moderately Polluted",
+      "governing": "PM2.5",
+      "reported": [
+        "PM2.5",
+        "NH3",
+        "SO2",
+        "OZONE",
+        "NO2",
+        "CO",
+        "PM10"
+      ],
+      "notReported": [
+        "PB"
+      ],
+      "pollutants": {
+        "PM2.5": {
+          "sub": 197,
+          "subMin": 67,
+          "subMax": 311,
+          "averaging": "24-hour",
+          "impliedConc": 89.1,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 24,
+          "subMin": 7,
+          "subMax": 54,
+          "averaging": "24-hour",
+          "impliedConc": 96,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 15,
+          "subMin": 6,
+          "subMax": 29,
+          "averaging": "24-hour",
+          "impliedConc": 12,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
         },
         "OZONE": {
-          "sub": 4,
-          "subMin": 4,
-          "subMax": 5,
+          "sub": 3,
+          "subMin": 3,
+          "subMax": 4,
           "averaging": "8-hour",
-          "impliedConc": 4,
+          "impliedConc": 3,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 124,
+          "subMin": 30,
+          "subMax": 355,
+          "averaging": "24-hour",
+          "impliedConc": 104,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 94,
+          "subMin": 51,
+          "subMax": 124,
+          "averaging": "8-hour",
+          "impliedConc": 1.9,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 126,
+          "subMin": 64,
+          "subMax": 177,
+          "averaging": "24-hour",
+          "impliedConc": 138.6,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -4112,33 +4108,33 @@
       "band": "Moderately Polluted",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
-        "PM10",
-        "NO2",
         "NH3",
-        "SO2",
+        "OZONE",
+        "NO2",
         "CO",
-        "OZONE"
+        "PM10",
+        "PM2.5",
+        "SO2"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 186,
-          "subMin": 64,
-          "subMax": 309,
+        "NH3": {
+          "sub": 11,
+          "subMin": 7,
+          "subMax": 21,
           "averaging": "24-hour",
-          "impliedConc": 85.9,
+          "impliedConc": 44,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM10": {
-          "sub": 161,
-          "subMin": 82,
-          "subMax": 254,
-          "averaging": "24-hour",
-          "impliedConc": 191.3,
+        "OZONE": {
+          "sub": 5,
+          "subMin": 4,
+          "subMax": 7,
+          "averaging": "8-hour",
+          "impliedConc": 5,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -4151,24 +4147,6 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NH3": {
-          "sub": 11,
-          "subMin": 7,
-          "subMax": 21,
-          "averaging": "24-hour",
-          "impliedConc": 44,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 23,
-          "subMin": 13,
-          "subMax": 40,
-          "averaging": "24-hour",
-          "impliedConc": 18.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "CO": {
           "sub": 61,
           "subMin": 41,
@@ -4178,12 +4156,30 @@
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "OZONE": {
-          "sub": 5,
-          "subMin": 4,
-          "subMax": 7,
-          "averaging": "8-hour",
-          "impliedConc": 5,
+        "PM10": {
+          "sub": 161,
+          "subMin": 82,
+          "subMax": 254,
+          "averaging": "24-hour",
+          "impliedConc": 191.3,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 186,
+          "subMin": 64,
+          "subMax": 309,
+          "averaging": "24-hour",
+          "impliedConc": 85.9,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 23,
+          "subMin": 13,
+          "subMax": 40,
+          "averaging": "24-hour",
+          "impliedConc": 18.4,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -4205,25 +4201,34 @@
       "band": "Moderately Polluted",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
+        "OZONE",
+        "CO",
         "PM10",
         "NO2",
-        "NH3",
-        "CO",
-        "OZONE"
+        "PM2.5",
+        "NH3"
       ],
       "notReported": [
         "SO2",
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 185,
-          "subMin": 79,
-          "subMax": 313,
-          "averaging": "24-hour",
-          "impliedConc": 85.6,
+        "OZONE": {
+          "sub": 4,
+          "subMin": 2,
+          "subMax": 7,
+          "averaging": "8-hour",
+          "impliedConc": 4,
           "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 116,
+          "subMin": 102,
+          "subMax": 131,
+          "averaging": "8-hour",
+          "impliedConc": 3.3,
+          "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
         "PM10": {
@@ -4244,30 +4249,21 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
+        "PM2.5": {
+          "sub": 185,
+          "subMin": 79,
+          "subMax": 313,
+          "averaging": "24-hour",
+          "impliedConc": 85.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "NH3": {
           "sub": 24,
           "subMin": 9,
           "subMax": 44,
           "averaging": "24-hour",
           "impliedConc": 96,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 116,
-          "subMin": 102,
-          "subMax": 131,
-          "averaging": "8-hour",
-          "impliedConc": 3.3,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 4,
-          "subMin": 2,
-          "subMax": 7,
-          "averaging": "8-hour",
-          "impliedConc": 4,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -4291,8 +4287,8 @@
       "reported": [
         "PM2.5",
         "PM10",
-        "NO2",
         "SO2",
+        "NO2",
         "CO",
         "OZONE"
       ],
@@ -4319,21 +4315,21 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NO2": {
-          "sub": 25,
-          "subMin": 24,
-          "subMax": 26,
-          "averaging": "24-hour",
-          "impliedConc": 20,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "SO2": {
           "sub": 18,
           "subMin": 10,
           "subMax": 23,
           "averaging": "24-hour",
           "impliedConc": 14.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 25,
+          "subMin": 24,
+          "subMax": 26,
+          "averaging": "24-hour",
+          "impliedConc": 20,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -4373,33 +4369,42 @@
       "band": "Moderately Polluted",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
         "PM10",
-        "NO2",
         "NH3",
+        "PM2.5",
+        "NO2",
+        "OZONE",
         "SO2",
-        "CO",
-        "OZONE"
+        "CO"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 182,
-          "subMin": 82,
-          "subMax": 330,
-          "averaging": "24-hour",
-          "impliedConc": 84.7,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM10": {
           "sub": 171,
           "subMin": 104,
           "subMax": 296,
           "averaging": "24-hour",
           "impliedConc": 206.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 7,
+          "subMin": 7,
+          "subMax": 8,
+          "averaging": "24-hour",
+          "impliedConc": 28,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 182,
+          "subMin": 82,
+          "subMax": 330,
+          "averaging": "24-hour",
+          "impliedConc": 84.7,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -4412,12 +4417,12 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NH3": {
-          "sub": 7,
-          "subMin": 7,
-          "subMax": 8,
-          "averaging": "24-hour",
-          "impliedConc": 28,
+        "OZONE": {
+          "sub": 70,
+          "subMin": 11,
+          "subMax": 382,
+          "averaging": "8-hour",
+          "impliedConc": 70,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -4438,15 +4443,6 @@
           "impliedConc": 4.2,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 70,
-          "subMin": 11,
-          "subMax": 382,
-          "averaging": "8-hour",
-          "impliedConc": 70,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
         }
       },
       "stamp": {
@@ -4466,45 +4462,18 @@
       "band": "Moderately Polluted",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
-        "PM10",
-        "NO2",
         "NH3",
         "SO2",
+        "OZONE",
+        "PM2.5",
         "CO",
-        "OZONE"
+        "NO2",
+        "PM10"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 180,
-          "subMin": 68,
-          "subMax": 316,
-          "averaging": "24-hour",
-          "impliedConc": 84.1,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 163,
-          "subMin": 100,
-          "subMax": 278,
-          "averaging": "24-hour",
-          "impliedConc": 194.3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 64,
-          "subMin": 27,
-          "subMax": 112,
-          "averaging": "24-hour",
-          "impliedConc": 51.3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "NH3": {
           "sub": 10,
           "subMin": 7,
@@ -4523,6 +4492,24 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
+        "OZONE": {
+          "sub": 3,
+          "subMin": 2,
+          "subMax": 4,
+          "averaging": "8-hour",
+          "impliedConc": 3,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 180,
+          "subMin": 68,
+          "subMax": 316,
+          "averaging": "24-hour",
+          "impliedConc": 84.1,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "CO": {
           "sub": 67,
           "subMin": 1,
@@ -4532,12 +4519,21 @@
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "OZONE": {
-          "sub": 3,
-          "subMin": 2,
-          "subMax": 4,
-          "averaging": "8-hour",
-          "impliedConc": 3,
+        "NO2": {
+          "sub": 64,
+          "subMin": 27,
+          "subMax": 112,
+          "averaging": "24-hour",
+          "impliedConc": 51.3,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 163,
+          "subMin": 100,
+          "subMax": 278,
+          "averaging": "24-hour",
+          "impliedConc": 194.3,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -4559,11 +4555,11 @@
       "band": "Moderately Polluted",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
-        "PM10",
         "NO2",
         "NH3",
         "SO2",
+        "PM2.5",
+        "PM10",
         "OZONE"
       ],
       "notReported": [
@@ -4571,24 +4567,6 @@
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 157,
-          "subMin": 69,
-          "subMax": 263,
-          "averaging": "24-hour",
-          "impliedConc": 77.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 111,
-          "subMin": 68,
-          "subMax": 149,
-          "averaging": "24-hour",
-          "impliedConc": 116.1,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "NO2": {
           "sub": 78,
           "subMin": 14,
@@ -4613,6 +4591,24 @@
           "subMax": 25,
           "averaging": "24-hour",
           "impliedConc": 8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 157,
+          "subMin": 69,
+          "subMax": 263,
+          "averaging": "24-hour",
+          "impliedConc": 77.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 111,
+          "subMin": 68,
+          "subMax": 149,
+          "averaging": "24-hour",
+          "impliedConc": 116.1,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -4643,18 +4639,36 @@
       "band": "Moderately Polluted",
       "governing": "PM2.5",
       "reported": [
+        "NO2",
+        "CO",
         "PM2.5",
         "PM10",
-        "NO2",
         "NH3",
-        "SO2",
-        "CO"
+        "SO2"
       ],
       "notReported": [
         "OZONE",
         "PB"
       ],
       "pollutants": {
+        "NO2": {
+          "sub": 47,
+          "subMin": 25,
+          "subMax": 77,
+          "averaging": "24-hour",
+          "impliedConc": 37.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 56,
+          "subMin": 45,
+          "subMax": 62,
+          "averaging": "8-hour",
+          "impliedConc": 1.2,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "PM2.5": {
           "sub": 157,
           "subMin": 79,
@@ -4670,15 +4684,6 @@
           "subMax": 189,
           "averaging": "24-hour",
           "impliedConc": 185.3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 47,
-          "subMin": 25,
-          "subMax": 77,
-          "averaging": "24-hour",
-          "impliedConc": 37.6,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -4698,15 +4703,6 @@
           "averaging": "24-hour",
           "impliedConc": 5.6,
           "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 56,
-          "subMin": 45,
-          "subMax": 62,
-          "averaging": "8-hour",
-          "impliedConc": 1.2,
-          "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         }
       },
@@ -4820,27 +4816,18 @@
       "band": "Moderately Polluted",
       "governing": "PM10",
       "reported": [
-        "PM2.5",
         "PM10",
-        "NO2",
         "NH3",
-        "SO2",
         "CO",
-        "OZONE"
+        "OZONE",
+        "PM2.5",
+        "NO2",
+        "SO2"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 144,
-          "subMin": 68,
-          "subMax": 290,
-          "averaging": "24-hour",
-          "impliedConc": 73.6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM10": {
           "sub": 155,
           "subMin": 110,
@@ -4850,30 +4837,12 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NO2": {
-          "sub": 37,
-          "subMin": 17,
-          "subMax": 88,
-          "averaging": "24-hour",
-          "impliedConc": 29.6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "NH3": {
           "sub": 6,
           "subMin": 5,
           "subMax": 6,
           "averaging": "24-hour",
           "impliedConc": 24,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 21,
-          "subMin": 16,
-          "subMax": 34,
-          "averaging": "24-hour",
-          "impliedConc": 16.8,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -4892,6 +4861,33 @@
           "subMax": 7,
           "averaging": "8-hour",
           "impliedConc": 4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 144,
+          "subMin": 68,
+          "subMax": 290,
+          "averaging": "24-hour",
+          "impliedConc": 73.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 37,
+          "subMin": 17,
+          "subMax": 88,
+          "averaging": "24-hour",
+          "impliedConc": 29.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 21,
+          "subMin": 16,
+          "subMax": 34,
+          "averaging": "24-hour",
+          "impliedConc": 16.8,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -4914,11 +4910,11 @@
       "governing": "PM2.5",
       "reported": [
         "PM2.5",
-        "PM10",
-        "NO2",
         "NH3",
-        "SO2",
+        "PM10",
         "CO",
+        "SO2",
+        "NO2",
         "OZONE"
       ],
       "notReported": [
@@ -4934,6 +4930,15 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
+        "NH3": {
+          "sub": 1,
+          "subMin": 0,
+          "subMax": 2,
+          "averaging": "24-hour",
+          "impliedConc": 4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "PM10": {
           "sub": 122,
           "subMin": 89,
@@ -4943,22 +4948,13 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NO2": {
-          "sub": 38,
-          "subMin": 15,
-          "subMax": 74,
-          "averaging": "24-hour",
-          "impliedConc": 30.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NH3": {
-          "sub": 1,
-          "subMin": 0,
-          "subMax": 2,
-          "averaging": "24-hour",
-          "impliedConc": 4,
-          "impliedUnit": "µg/m³",
+        "CO": {
+          "sub": 44,
+          "subMin": 42,
+          "subMax": 46,
+          "averaging": "8-hour",
+          "impliedConc": 0.9,
+          "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
         "SO2": {
@@ -4970,13 +4966,13 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "CO": {
-          "sub": 44,
-          "subMin": 42,
-          "subMax": 46,
-          "averaging": "8-hour",
-          "impliedConc": 0.9,
-          "impliedUnit": "mg/m³",
+        "NO2": {
+          "sub": 38,
+          "subMin": 15,
+          "subMax": 74,
+          "averaging": "24-hour",
+          "impliedConc": 30.4,
+          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "OZONE": {
@@ -5006,11 +5002,11 @@
       "band": "Moderately Polluted",
       "governing": "PM10",
       "reported": [
+        "OZONE",
         "PM2.5",
         "PM10",
         "NO2",
-        "CO",
-        "OZONE"
+        "CO"
       ],
       "notReported": [
         "SO2",
@@ -5018,6 +5014,15 @@
         "PB"
       ],
       "pollutants": {
+        "OZONE": {
+          "sub": 10,
+          "subMin": 8,
+          "subMax": 12,
+          "averaging": "8-hour",
+          "impliedConc": 10,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "PM2.5": {
           "sub": 120,
           "subMin": 68,
@@ -5053,15 +5058,6 @@
           "impliedConc": 1.6,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 10,
-          "subMin": 8,
-          "subMax": 12,
-          "averaging": "8-hour",
-          "impliedConc": 10,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
         }
       },
       "stamp": {
@@ -5081,33 +5077,33 @@
       "band": "Moderately Polluted",
       "governing": "PM10",
       "reported": [
-        "PM2.5",
-        "PM10",
-        "NO2",
         "NH3",
-        "SO2",
+        "PM2.5",
+        "NO2",
         "CO",
+        "PM10",
+        "SO2",
         "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
+        "NH3": {
+          "sub": 10,
+          "subMin": 6,
+          "subMax": 16,
+          "averaging": "24-hour",
+          "impliedConc": 40,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "PM2.5": {
           "sub": 141,
           "subMin": 66,
           "subMax": 249,
           "averaging": "24-hour",
           "impliedConc": 72.7,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 145,
-          "subMin": 103,
-          "subMax": 210,
-          "averaging": "24-hour",
-          "impliedConc": 167.2,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -5120,12 +5116,21 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NH3": {
-          "sub": 10,
-          "subMin": 6,
-          "subMax": 16,
+        "CO": {
+          "sub": 65,
+          "subMin": 58,
+          "subMax": 70,
+          "averaging": "8-hour",
+          "impliedConc": 1.4,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 145,
+          "subMin": 103,
+          "subMax": 210,
           "averaging": "24-hour",
-          "impliedConc": 40,
+          "impliedConc": 167.2,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -5136,15 +5141,6 @@
           "averaging": "24-hour",
           "impliedConc": 6.4,
           "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 65,
-          "subMin": 58,
-          "subMax": 70,
-          "averaging": "8-hour",
-          "impliedConc": 1.4,
-          "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
         "OZONE": {
@@ -5174,33 +5170,24 @@
       "band": "Moderately Polluted",
       "governing": "PM2.5",
       "reported": [
-        "PM2.5",
-        "PM10",
+        "OZONE",
         "NO2",
         "SO2",
-        "CO",
-        "OZONE"
+        "PM10",
+        "PM2.5",
+        "CO"
       ],
       "notReported": [
         "NH3",
         "PB"
       ],
       "pollutants": {
-        "PM2.5": {
-          "sub": 145,
-          "subMin": 31,
-          "subMax": 250,
-          "averaging": "24-hour",
-          "impliedConc": 73.9,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 139,
-          "subMin": 58,
-          "subMax": 232,
-          "averaging": "24-hour",
-          "impliedConc": 158.2,
+        "OZONE": {
+          "sub": 4,
+          "subMin": 4,
+          "subMax": 5,
+          "averaging": "8-hour",
+          "impliedConc": 4,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -5222,6 +5209,24 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
+        "PM10": {
+          "sub": 139,
+          "subMin": 58,
+          "subMax": 232,
+          "averaging": "24-hour",
+          "impliedConc": 158.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM2.5": {
+          "sub": 145,
+          "subMin": 31,
+          "subMax": 250,
+          "averaging": "24-hour",
+          "impliedConc": 73.9,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "CO": {
           "sub": 91,
           "subMin": 80,
@@ -5229,15 +5234,6 @@
           "averaging": "8-hour",
           "impliedConc": 1.8,
           "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 4,
-          "subMin": 4,
-          "subMax": 5,
-          "averaging": "8-hour",
-          "impliedConc": 4,
-          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
       },
@@ -5260,11 +5256,11 @@
       "reported": [
         "PM2.5",
         "PM10",
+        "OZONE",
         "NO2",
         "NH3",
         "SO2",
-        "CO",
-        "OZONE"
+        "CO"
       ],
       "notReported": [
         "PB"
@@ -5285,6 +5281,15 @@
           "subMax": 127,
           "averaging": "24-hour",
           "impliedConc": 102.5,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 5,
+          "subMin": 3,
+          "subMax": 7,
+          "averaging": "8-hour",
+          "impliedConc": 5,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -5322,15 +5327,6 @@
           "averaging": "8-hour",
           "impliedConc": 0.8,
           "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 5,
-          "subMin": 3,
-          "subMax": 7,
-          "averaging": "8-hour",
-          "impliedConc": 5,
-          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
       },
@@ -5417,11 +5413,11 @@
       "band": "Moderately Polluted",
       "governing": "CO",
       "reported": [
-        "NO2",
         "NH3",
         "SO2",
         "CO",
-        "OZONE"
+        "OZONE",
+        "NO2"
       ],
       "notReported": [
         "PM10",
@@ -5429,15 +5425,6 @@
         "PB"
       ],
       "pollutants": {
-        "NO2": {
-          "sub": 60,
-          "subMin": 42,
-          "subMax": 81,
-          "averaging": "24-hour",
-          "impliedConc": 48.2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "NH3": {
           "sub": 5,
           "subMin": 4,
@@ -5473,6 +5460,15 @@
           "impliedConc": 6,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 60,
+          "subMin": 42,
+          "subMax": 81,
+          "averaging": "24-hour",
+          "impliedConc": 48.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
         }
       },
       "stamp": {
@@ -5486,10 +5482,10 @@
     }
   ],
   "check": {
-    "status": "new_observation",
-    "at": "2026-10-28T23:40:19.618Z",
-    "served_by": "CPCB CAAQMS live feed (airquality.cpcb.gov.in/caaqms/rss_feed)",
-    "previous_observation": "29-10-2026 04:00:00",
+    "status": "same_observation",
+    "at": "2026-10-29T00:32:02.345Z",
+    "served_by": "data.gov.in mirror (resource 3b01bcb8)",
+    "previous_observation": "29-10-2026 05:00:00",
     "reason": null
   },
   "crosscheck": {
