@@ -393,3 +393,24 @@ Yesterday's run correctly identified 5 stale `docs(lessons)`-titled PRs (#230, #
 PR #271's branch (`team/lessons-20261025`) and title (`docs(lessons): 2 lesson(s) from the 2026-10-25 run`) both look like this department's own output. Its actual diff is two Head-of-Social lessons about the social content calendar — content that has nothing to do with this department and is heading for the wrong file. This is the same "label is not the contents" class this file already records twice, now shown to cross a department boundary rather than just misdescribe scope within one.
 
 **Do:** before treating any `docs(lessons)` PR as this department's own, read its diff, not its branch name or title — the land-lessons mechanism evidently can source content from more than one department, and nothing currently stops it landing in the wrong file.
+
+## 2026-10-28 — The Build Desk's first clean run reached next month before this week's already-overdue rows
+
+What happened: PRs #158/#159 fixed the Build Desk's flaky test gate at 17:36–18:07 IST on 28 Oct. Its first run after the fix (commit a24a1c5, 18:06 IST) built seven Swechha rows for 2–8 Nov, while SW-20261028-10, -11, -60, -61, -70 (all due the same day, three of them already past their slot) remained completely unbuilt, still carrying `[…NEEDED]` placeholders, with no exception record in git for any of them.
+
+**Do:** before a build run picks its next rows, it should exhaust the nearest-dated unbuilt rows of the *current* week first, and any row it genuinely cannot build (missing event, footage or research) must leave a visible exception record (Command Centre, or a committed marker), never silence.
+**Source:** git log df6ca5b, a24a1c5, 2213ae0, 555a8b8, 91ad422; `calendar/months/2026-10.json` SW-20261028-10/-11/-60/-61/-70; this run, 28 Oct 2026.
+
+## 2026-10-28 — GTM "desk" runs stamp made_by but never write the contract's handoff record
+
+What happened: every GT- item checked in the 28–30 Oct window (`gtm-spec.json`) carries `made_by` entries for copy-chief, creative-director and reel-director from a desk run, but no `queue/<ID>/handoffs/*.json` exists for any of them — unlike the Swechha Build Desk, which does write handoffs (seen on the Nov 2–8 rows it built the same day).
+
+**Do:** the GTM desk runner should write the same `queue/<ID>/handoffs/<at>-<role>.json` record the Swechha Build Desk writes, so the Head of Social's handoff check (HS-3) has something to read for GTM.
+**Source:** `queue/GT-20261028-05/gtm-spec.json` vs `queue/SW-20261102-60/handoffs/*`; this run, 28 Oct 2026.
+
+## 2026-10-28 — A held row's rendered asset can sit under the id that is no longer live
+
+What happened: SF-20261030-63's own row text says it replaces SF-20261030-62, which is now held — but the already-rendered PNG and manifest from the owner-accepted design sit under `queue/SF-20261030-62/assets/`, while the live id `SF-20261030-63` has only a spec, no render.
+
+**Do:** when an ADD-amendment id is created to carry an accepted build forward (the 2026-10-25 "accepted AS BUILT" pattern), copy or re-render the asset under the new id in the same pass, so "is it built" can be answered by looking at the live id alone.
+**Source:** `queue/SF-20261030-62/assets/*`, `queue/SF-20261030-63/farm-spec.json`; this run, 28 Oct 2026.
