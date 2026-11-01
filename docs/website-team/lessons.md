@@ -393,3 +393,9 @@ Yesterday's run correctly identified 5 stale `docs(lessons)`-titled PRs (#230, #
 PR #271's branch (`team/lessons-20261025`) and title (`docs(lessons): 2 lesson(s) from the 2026-10-25 run`) both look like this department's own output. Its actual diff is two Head-of-Social lessons about the social content calendar — content that has nothing to do with this department and is heading for the wrong file. This is the same "label is not the contents" class this file already records twice, now shown to cross a department boundary rather than just misdescribe scope within one.
 
 **Do:** before treating any `docs(lessons)` PR as this department's own, read its diff, not its branch name or title — the land-lessons mechanism evidently can source content from more than one department, and nothing currently stops it landing in the wrong file.
+
+## 2026-11-01 — The mislabelled-lessons-PR mechanism is now a pattern, not an anomaly
+
+The 2026-10-26 lesson found one instance (#271, social content in a website-titled PR). Today's #283 is a third instance (after #271 and whatever produced the run between), carrying different content again — three Head-of-Social lessons about brand-switch staleness and queue manifests, with zero website relevance, on a `team/lessons-*`-shaped branch. Reading the diff (not the title) caught it again, same method as before, but the fact that it recurs with fresh content each time — rather than being one bad run — means it is a property of the shared `land-lessons` tooling across departments, not a one-off accident in a single run.
+
+**Do:** when this recurs a fourth time, stop treating each instance as a new finding and escalate the mechanism itself as a standing defect needing a human owner — this department has read three different diffs now and can fix none of them, since the script lives in a gated path.
