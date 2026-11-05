@@ -393,3 +393,24 @@ Yesterday's run correctly identified 5 stale `docs(lessons)`-titled PRs (#230, #
 PR #271's branch (`team/lessons-20261025`) and title (`docs(lessons): 2 lesson(s) from the 2026-10-25 run`) both look like this department's own output. Its actual diff is two Head-of-Social lessons about the social content calendar — content that has nothing to do with this department and is heading for the wrong file. This is the same "label is not the contents" class this file already records twice, now shown to cross a department boundary rather than just misdescribe scope within one.
 
 **Do:** before treating any `docs(lessons)` PR as this department's own, read its diff, not its branch name or title — the land-lessons mechanism evidently can source content from more than one department, and nothing currently stops it landing in the wrong file.
+
+## 2026-11-05 — A handoff can self-declare "PASS" while its own listed check reads NEEDS HUMAN REVIEW
+
+What happened: `queue/SW-20261105-60/handoffs/20261028T2030Z-copy-chief.json` has `"state": "PASS"` at the top level while its own `checks` array carries `{"rule": "CC-6", "result": "NEEDS HUMAN REVIEW", ...}` for an unsigned Devanagari string. The next role's handoff (Creative Director, same item) correctly read the situation and wrote `"state": "NEEDS HUMAN REVIEW"` itself, so the system self-corrected one step later — but the false PASS record still sits on disk and nothing flags the contradiction.
+
+**Do:** a handoff's own writer checks that its top-level `state` cannot be `PASS` while any entry in its own `checks` is not PASS; this is cheap to assert in `engine/critic_run.py`'s sibling validators or a new one, and should run on every handoff before it is trusted downstream.
+**Source:** this run (Head of Social, 5 Nov 2026); `queue/SW-20261105-60/handoffs/20261028T2030Z-copy-chief.json` and `20261028T2100Z-creative-director.json`.
+
+## 2026-11-05 — "PASS-WITH-UNRUN-CHECKS" is not a contract state, and it still produced a rendered asset
+
+What happened: `queue/SW-20261105-70/handoffs/20261028T2400Z-creative-director.json` closes with `"state": "PASS-WITH-UNRUN-CHECKS"`, which is none of the four states `config/agents/contracts.json` defines (PASS, FAIL, BLOCKED, NEEDS_HUMAN_REVIEW). Despite this, two Story PNGs exist in the item's `assets/`, and the same handoff's CD-4 check found an unresolved family mismatch (a NOW/LEDGER-kraft row built as FIELD instead, because the tokens give NOW no LEDGER register) that it says needs the Content Strategist or the owner — with no evidence either was asked.
+
+**Do:** a maker that cannot finish a check for want of a shell writes `BLOCKED`, not an invented fifth state; "rendered but unchecked" is not a safe thing for a later role to treat as ready. When a maker finds a plan/token mismatch, the row goes back to the Content Strategist the same day, not into a risks list that nobody reads.
+**Source:** this run (Head of Social, 5 Nov 2026); `queue/SW-20261105-70/handoffs/20261028T2400Z-creative-director.json`.
+
+## 2026-11-05 — सीखो has never been signed, across every LEARN Story in the plan
+
+What happened: `post.json` `hindi_signoff.signed_by` is empty (`""` or `null`) for सीखो on SW-20261101-60, SW-20261104-60, SW-20261105-60 and SW-20261106-60 — every LEARN Story this run sampled, from 1 Nov to 6 Nov. R143 requires the Tab's Devanagari word signed before the card posts (the same rule that produced recorded sign-offs for नदी, समझो, ज़मीन पर, हवा and मिट्टी). No post.json I found even asks the question as a standing item; it is simply left blank build after build.
+
+**Do:** सीखो needs one owner decision, recorded once (as मिट्टी was on 3 Nov), after which every future LEARN Story copies the same signed string instead of carrying an empty field forward. Until then, every LEARN Story is an E13 hold, not a routine automatic post.
+**Source:** this run (Head of Social, 5 Nov 2026); `queue/SW-20261101-60/post.json`, `SW-20261104-60/post.json`, `SW-20261105-60/post.json`, `SW-20261106-60/post.json`.
