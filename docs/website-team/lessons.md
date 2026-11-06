@@ -393,3 +393,26 @@ Yesterday's run correctly identified 5 stale `docs(lessons)`-titled PRs (#230, #
 PR #271's branch (`team/lessons-20261025`) and title (`docs(lessons): 2 lesson(s) from the 2026-10-25 run`) both look like this department's own output. Its actual diff is two Head-of-Social lessons about the social content calendar — content that has nothing to do with this department and is heading for the wrong file. This is the same "label is not the contents" class this file already records twice, now shown to cross a department boundary rather than just misdescribe scope within one.
 
 **Do:** before treating any `docs(lessons)` PR as this department's own, read its diff, not its branch name or title — the land-lessons mechanism evidently can source content from more than one department, and nothing currently stops it landing in the wrong file.
+
+## 2026-10-31 — A brand profile's "live switches" pointer can itself be stale
+
+What happened: `config/brands/swechha.json` names the Mac's `~/.swechha-ai/control-tower/platform-switches.json` as live; its contents contradict ruling G8 and sit beside Sept-dated `.bak` files and a stopped server log. Six straight daily reports treated it as a live candidate before this was named plainly.
+**Do:** check a "live" pointer's contents against the newest dated ruling that should have moved it, on the first read, not the sixth.
+**Source:** this week's six HoS reports; `config/brands/swechha.json`; G8.
+
+## 2026-10-31 — A rendered manifest outranks a stale handoff for "was this built"
+
+What happened: two items' last handoffs said NOT RENDERED; their manifests, written later, showed they were. Two days of reports under-reported their progress.
+**Do:** check `queue/<ID>/assets/*manifest.json` before trusting any handoff's self-reported state.
+**Source:** `queue/SW-20261031-10`, `SW-20261101-60`; this week's reports.
+
+## 2026-10-31 — Farm's Instagram switch has been off for 2.5 weeks against a calendar that keeps planning full Instagram weeks
+
+What happened: off since 14 Oct; every Farm grid/Story row 25–31 Oct was still planned on `"platform": "instagram"`.
+**Do:** state a brand's dead primary-platform switch at the top of its section before classifying any individual item.
+**Source:** `config/brands/swechha-farm.json`; `governance/platform-switches.json`; this week's reports.
+
+## Open questions
+
+- Is the VM actually ahead of what this git checkout shows for the rest of this week's unrendered Swechha items? I have no way to check from here, every day.
+- Has anyone acted on `decisions/OPEN-DECISIONS.md` #2 (name the Hindi reader) since 30 Sept? No file says so.
