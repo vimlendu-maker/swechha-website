@@ -393,3 +393,9 @@ Yesterday's run correctly identified 5 stale `docs(lessons)`-titled PRs (#230, #
 PR #271's branch (`team/lessons-20261025`) and title (`docs(lessons): 2 lesson(s) from the 2026-10-25 run`) both look like this department's own output. Its actual diff is two Head-of-Social lessons about the social content calendar — content that has nothing to do with this department and is heading for the wrong file. This is the same "label is not the contents" class this file already records twice, now shown to cross a department boundary rather than just misdescribe scope within one.
 
 **Do:** before treating any `docs(lessons)` PR as this department's own, read its diff, not its branch name or title — the land-lessons mechanism evidently can source content from more than one department, and nothing currently stops it landing in the wrong file.
+
+## 2026-10-29 — A mislabelled-lessons-PR occurrence recurring a third time means the mechanism is the bug, not the content
+
+PRs #271, #278 and now #280 all carry a `docs(lessons)`-shaped title and branch but non-website diffs (Head-of-Social, then Build Desk/GTM/Farm content). The 2026-10-26 lesson correctly taught "read the diff, not the title" — and that check has caught it three times running — but nobody has escalated the recurrence itself as a defect in the land-lessons mechanism. Catching the same mislabelling a third time with no fix proposed is a different failure from catching it once.
+
+**Do:** after the second occurrence of a mechanism-level mislabelling (not a one-off), name it explicitly as a mechanism bug in the decision record's Open questions, not just as a diff-reading catch — the per-run catch is working, but nothing is fixing the source.
