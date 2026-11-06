@@ -393,3 +393,15 @@ Yesterday's run correctly identified 5 stale `docs(lessons)`-titled PRs (#230, #
 PR #271's branch (`team/lessons-20261025`) and title (`docs(lessons): 2 lesson(s) from the 2026-10-25 run`) both look like this department's own output. Its actual diff is two Head-of-Social lessons about the social content calendar — content that has nothing to do with this department and is heading for the wrong file. This is the same "label is not the contents" class this file already records twice, now shown to cross a department boundary rather than just misdescribe scope within one.
 
 **Do:** before treating any `docs(lessons)` PR as this department's own, read its diff, not its branch name or title — the land-lessons mechanism evidently can source content from more than one department, and nothing currently stops it landing in the wrong file.
+
+## 2026-10-26 — A hard-coded "Brand Book v2.4" is still being written into live calendar rows, five weeks after R179
+
+What happened: three Swechha rows due this week (`SW-20261027-10`, `SW-20261027-70`, `SW-20261028-70`) carry `"book": "Brand Book v2.4 pp. ..."` as their stated authority, while `config/brands/swechha.json` has named v2.5 as latest since before 19 Oct. Other rows in the same file correctly defer to `engine/brand_books.py`.
+**Do:** when the Content Strategist builds or amends a row, write the `book` field as "latest Brand Book, resolved by `engine/brand_books.py` (R179)," never a version string; a precheck or compliance report should refuse a hard-coded older edition in a live row, not only flag it in a doc.
+**Source:** R179; `calendar/months/2026-10.json` rows above; this run, 26 Oct 2026.
+
+## 2026-10-26 — Two local copies of platform-switches.json/accounts.json disagree, and one of them sits beside a file dated a month stale
+
+What happened: `governance/accounts.json` (this repo) says Swechha Instagram/Facebook are CONNECTED and publishing ON; `~/.swechha-ai/control-tower/governance/accounts.json` (Mac-local, the file the repo's own note names as "the live file the publisher reads") says the same cells are CONNECTED but "publishing OFF, API key allowlist excludes it," and its sibling `service-ledger.json` in the same folder is dated 2026-09-30 and still describes Instagram as "NOT CONNECTED."
+**Do:** before trusting any Mac-local control-tower file as "live," check whether its directory has been touched since the VM became the pipeline of record; a Head of Social run should report both files and let the owner or a VM-reading role resolve it, never assume the Mac-local copy is current just because a stale note calls it so.
+**Source:** this run, 26 Oct 2026; `~/.swechha-ai/control-tower/governance/{accounts.json,platform-switches.json,service-ledger.json}`.
