@@ -393,3 +393,17 @@ Yesterday's run correctly identified 5 stale `docs(lessons)`-titled PRs (#230, #
 PR #271's branch (`team/lessons-20261025`) and title (`docs(lessons): 2 lesson(s) from the 2026-10-25 run`) both look like this department's own output. Its actual diff is two Head-of-Social lessons about the social content calendar — content that has nothing to do with this department and is heading for the wrong file. This is the same "label is not the contents" class this file already records twice, now shown to cross a department boundary rather than just misdescribe scope within one.
 
 **Do:** before treating any `docs(lessons)` PR as this department's own, read its diff, not its branch name or title — the land-lessons mechanism evidently can source content from more than one department, and nothing currently stops it landing in the wrong file.
+
+## 2026-11-02 — The Swechha brand profile points to a dead file as "live switches"
+
+What happened: `config/brands/swechha.json` names `~/.swechha-ai/control-tower/governance/platform-switches.json` as the live switch file. Reading it shows content frozen at the 1-4 Oct era (only `SW-20261001-0x` packages and thumbnails exist anywhere under that tree) and switch values (GTM off, Swechha LinkedIn off) that contradict dated rulings (G8, 19 Oct; the 5 Oct LinkedIn ruling) that the repo's own `governance/platform-switches.json` reflects correctly.
+
+**Do:** before trusting a config file's own pointer to a "live" source, check the pointed-to file's contents for recency (does it know about brands/features added after its last touch?). Retire or clearly mark a pre-VM artifact so a brand profile doesn't keep citing it.
+**Source:** this run, 2026-11-02; `config/brands/swechha.json`; `~/.swechha-ai/control-tower/governance/platform-switches.json`; `governance/platform-switches.json`.
+
+## 2026-11-02 — Every Swechha handoff record I could find is missing a valid `version`
+
+What happened: the handoff schema requires `version` (the output's sha256 or the row hash). In every `queue/SW-*/handoffs/*.json` record I opened (SW-20261102-60, SW-20261102-70, SW-20261104-10), the field is either absent or the placeholder `"0000000000000000"`. Each maker explicitly notes it has no shell and "code must stamp them," but nothing in this checkout shows that stamping ever happens.
+
+**Do:** before a handoff is treated as a PASS record the next role (or the Head of Social) can check, code must write a real `version`/`row_hash` into it; a placeholder or absent field cannot be distinguished from a stale record and should not be presumed current.
+**Source:** this run, 2026-11-02; `config/agents/contracts.json` `handoff_schema`; `queue/SW-20261102-60/handoffs/*`, `queue/SW-20261104-10/handoffs/20261028T1900Z-creative-director.json`.
