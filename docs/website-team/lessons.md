@@ -402,3 +402,17 @@ What happened: SW-20261002-02 was re-briefed 2 Oct to move off haldi; four separ
 **Source:** this run, 7 Nov 2026; `queue/SW-20261002-02/spec.json`.
 
 **Supersedes:** 2026-11-02/03/05/06 — "SW-20261002-02 is still on haldi" (the ground fix has completed; the Hindi sign-off and Critic review it also needs have not).
+
+## 2026-11-07 — A Creative Director handoff can declare a non-contract `state` ("PASS-WITH-UNRUN-CHECKS", "PASS-UNRENDERED") when its real checks are NOT RUN
+
+What happened: SW-20261108-70's and SW-20261109-62's creative-director handoffs invented state labels outside the contract's four (PASS/FAIL/BLOCKED/NEEDS_HUMAN_REVIEW), each while CD-4/CD-5 (or CD-2) were explicitly `NOT RUN` because the session had no shell. `handoff_schema` and the "never_a_pass" list both say an unrun check is never a pass, but nothing stops a free-text `state` field from reading like one.
+
+**Do:** the Head of Social (or a code validator) treats any handoff `state` not in {PASS, FAIL, BLOCKED, NEEDS_HUMAN_REVIEW} as BLOCKED, routed back to the issuing role, regardless of how reassuring its name sounds.
+**Source:** `queue/SW-20261108-70/handoffs/20261028T2700Z-creative-director.json`; `queue/SW-20261109-62/handoffs/20261102T2030Z-creative-director.json`; this run.
+
+## 2026-11-07 — The calendar can carry a row's own "replaces held X" note with nothing in governance/holds.json to back it, and the "held" set is what actually gets built
+
+What happened: GT-20261107-07 through -11 and GT-20261108-05/-06 each say, in their own brief, that they replace "held" GT-20261107-01..06 / GT-20261108-01..04 — but `governance/holds.json` never records that hold, and it is the "held" set, not the v3 replacement, that has queue items built (`gtm-import`), ready for the weekly approval. Today's (7 Nov) and tomorrow's (Diwali, 8 Nov) slots are exposed to this right now.
+
+**Do:** a row's brief text calling another id "held" is not a hold; a plan or desk session that writes a "replaces held X" row checks `governance/holds.json` for a matching entry the same day, and if none exists, escalates to the owner before building either set. The desk should refuse to build the superseded id once a replacement row names it so, rather than importing it anyway.
+**Source:** `calendar/months/green-the-map/2026-11.json` lines 2878, 2902, 2927, 2950, 2973, 2997, 3020; `queue/GT-20261107-01..06`, `queue/GT-20261108-01..04`; `governance/holds.json`; this run.
