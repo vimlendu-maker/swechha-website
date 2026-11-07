@@ -393,3 +393,12 @@ Yesterday's run correctly identified 5 stale `docs(lessons)`-titled PRs (#230, #
 PR #271's branch (`team/lessons-20261025`) and title (`docs(lessons): 2 lesson(s) from the 2026-10-25 run`) both look like this department's own output. Its actual diff is two Head-of-Social lessons about the social content calendar — content that has nothing to do with this department and is heading for the wrong file. This is the same "label is not the contents" class this file already records twice, now shown to cross a department boundary rather than just misdescribe scope within one.
 
 **Do:** before treating any `docs(lessons)` PR as this department's own, read its diff, not its branch name or title — the land-lessons mechanism evidently can source content from more than one department, and nothing currently stops it landing in the wrong file.
+
+## 2026-11-07 — A fixed item's own file is the evidence, not the brief that asked for the fix
+
+What happened: SW-20261002-02 was re-briefed 2 Oct to move off haldi; four separate daily reports (2–6 Nov) called it "still haldi" or "not done," citing `V1-REMAKE-NOTE.md`, which was never updated after the fix landed. Reading `spec.json` directly today shows both frames have printed kagaz/kaalikh, not haldi, for some time.
+
+**Do:** when a re-brief or a fix is in question, check the artefact the fix produces (`spec.json`, `post.json`) before trusting a narrative note that may predate it; a remake note is a brief, not a result.
+**Source:** this run, 7 Nov 2026; `queue/SW-20261002-02/spec.json`.
+
+**Supersedes:** 2026-11-02/03/05/06 — "SW-20261002-02 is still on haldi" (the ground fix has completed; the Hindi sign-off and Critic review it also needs have not).
