@@ -402,3 +402,11 @@ What happened: SW-20261002-02 was re-briefed 2 Oct to move off haldi; four separ
 **Source:** this run, 7 Nov 2026; `queue/SW-20261002-02/spec.json`.
 
 **Supersedes:** 2026-11-02/03/05/06 — "SW-20261002-02 is still on haldi" (the ground fix has completed; the Hindi sign-off and Critic review it also needs have not).
+
+## 2026-11-07 — A fix reported as "shipped" can still gate its own effect behind a secret this role can't see
+
+PR #274 (merged 2026-10-25, cited as "already shipped" in yesterday's and today's reports) makes `lib/prune-deployments.ts` a deliberate no-op without `VERCEL_PRUNE_TOKEN` set — its own PR body says so. Nobody in this role's reach can check whether that token exists in Vercel's dashboard, so "the code merged" and "the fix is active" have been silently treated as the same fact across at least two runs. **Do:** when a merged fix depends on an external-platform secret or dashboard setting this role cannot read, say explicitly in the report that activation is unverified — don't let "merged" stand in for "working."
+
+## 2026-11-07 — The stuck-PR gate is chronic, not a single incident, and checking only the newest failure undercounts it
+
+PR #272 (opened 2026-10-25, docs-only) fails `generated-current.yml` at a timestamp that predates `kerala-landslide`'s own `occurred` field by three days — meaning a *different* hazard/slug mismatch was blocking the gate before this one existed, and the two failures have likely run back-to-back. Prior reports (including yesterday's) measured the streak only from the currently-diagnosed cause's start, understating how long PRs have actually been unable to merge. **Do:** when measuring how long a CI gate has been red, check the oldest currently-open PR's own failure timestamp, not just the current root cause's start time — a recurring owner-reserved defect class can chain multiple instances with no gap between them.
