@@ -416,3 +416,9 @@ What happened: GT-20261107-07 through -11 and GT-20261108-05/-06 each say, in th
 
 **Do:** a row's brief text calling another id "held" is not a hold; a plan or desk session that writes a "replaces held X" row checks `governance/holds.json` for a matching entry the same day, and if none exists, escalates to the owner before building either set. The desk should refuse to build the superseded id once a replacement row names it so, rather than importing it anyway.
 **Source:** `calendar/months/green-the-map/2026-11.json` lines 2878, 2902, 2927, 2950, 2973, 2997, 3020; `queue/GT-20261107-01..06`, `queue/GT-20261108-01..04`; `governance/holds.json`; this run.
+
+## 2026-11-08 — The owner-reserved hazard/slug decision class can relocate between runs, not just persist
+
+`kerala-landslide` (yesterday's named blocker) stopped failing `lib/active-situation.test.ts` between runs — its `hazard` field was corrected — but `andhra-pradesh-cyclone` failed the identical assertion today with the identical defect shape (`hazard: "landslide"` on a `-cyclone` slug). A report that says "the gate is still red" without re-reading which slug currently fails will silently keep citing a cause that's already gone stale, the same trap as the 2026-10-26 "PR family" lesson but for a single recurring test rather than a static list.
+
+**Do:** when a CI gate has been red for the same *test* across multiple runs, re-run it and read the *current* assertion failure each time rather than assuming yesterday's named slug is still the cause — this generator keeps minting new instances of the same mismatch, and the fix that would stop that (not just grandfather one slug at a time) is itself a question for the owner, worth raising explicitly rather than treating each new instance as a fresh, isolated incident.
