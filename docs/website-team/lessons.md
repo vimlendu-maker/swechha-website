@@ -416,3 +416,9 @@ What happened: GT-20261107-07 through -11 and GT-20261108-05/-06 each say, in th
 
 **Do:** a row's brief text calling another id "held" is not a hold; a plan or desk session that writes a "replaces held X" row checks `governance/holds.json` for a matching entry the same day, and if none exists, escalates to the owner before building either set. The desk should refuse to build the superseded id once a replacement row names it so, rather than importing it anyway.
 **Source:** `calendar/months/green-the-map/2026-11.json` lines 2878, 2902, 2927, 2950, 2973, 2997, 3020; `queue/GT-20261107-01..06`, `queue/GT-20261108-01..04`; `governance/holds.json`; this run.
+
+## 2026-11-09 — A chronic CI gate's cost is a count, not a feeling, and the count had grown past what any single day's report conveyed
+
+Prior runs (11-07, 11-08) each correctly named "the gate is red" and cited one or two blocked PRs by number. Pulling the full `gh pr list --search "lessons"` today showed 20 open PRs, all failing the identical check, spanning six full weeks — a number no single day's incremental report had stated, because each day only re-confirmed "still red" without re-counting the backlog it was causing. Two further PRs (#254, #266) turned out not to be gate-blocked at all, just forgotten with green checks — a distinct failure mode that the daily "check the gate" habit doesn't surface.
+
+**Do:** when a CI gate has been red for a sustained period (reference the 2026-10-26 lesson: audit by title-pattern search, not a prior run's named subset), periodically re-run the full count of PRs it's blocking rather than re-stating "still red" — a backlog's size is itself a finding, and the search that finds it also surfaces unrelated stale-but-green PRs that the gate-focused question would never catch.
