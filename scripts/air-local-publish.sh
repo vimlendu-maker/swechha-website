@@ -40,6 +40,14 @@ set -uo pipefail
 export PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin"
 export TZ="Asia/Kolkata"
 
+# ── git must never hang this run. On 22 Oct 2026 a `git fetch` in the retry loop
+#    stalled for 1h40m with no timeout; launchd will not start a second copy of a
+#    job that is still running, so every hourly run after 06:24 was skipped and the
+#    site published nothing until the stuck fetch was killed by hand. A transfer
+#    slower than 1 KB/s for 60 s now aborts (the failed push/fetch then takes the
+#    existing "rejected / could not reset" paths), and git may not wait on a prompt.
+export GIT_HTTP_LOW_SPEED_LIMIT=1000 GIT_HTTP_LOW_SPEED_TIME=60 GIT_TERMINAL_PROMPT=0
+
 log() { printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S IST')" "$*"; }
 ROOT="$(git rev-parse --show-toplevel)" || { log "not inside a git worktree"; exit 1; }
 cd "$ROOT"
