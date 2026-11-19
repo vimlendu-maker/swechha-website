@@ -3,39 +3,43 @@
   "state": "Delhi",
   "source": {
     "name": "Central Pollution Control Board",
-    "served_by": "data.gov.in mirror (resource 3b01bcb8)",
-    "via": "data.gov.in — Real time Air Quality Index from various locations",
-    "resource": "3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69",
-    "url": "https://api.data.gov.in/resource/3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69",
+    "served_by": "CPCB CAAQMS live feed (airquality.cpcb.gov.in/caaqms/rss_feed)",
+    "via": "CPCB CAAQMS live feed — airquality.cpcb.gov.in/caaqms/rss_feed (keyless XML, hourly)",
+    "url": "https://airquality.cpcb.gov.in/caaqms/rss_feed",
     "returns": "per-station, per-pollutant CPCB sub-indexes — the index itself, not concentrations",
-    "note": "fallback run — the CAAQMS live feed did not serve: did not answer: unreachable via fetch (fetch failed (Connect Timeout Error (attempted address: airquality.cpcb.gov.in:443, timeout: 10000ms))) and via curl (curl transport failed: curl: (28) Connection timed out after 15002 milliseconds) and via relay (relay answered HTTP 502 with no upstream status — the relay itself refused or does not exist yet, so the source has not been asked)"
+    "integrity": {
+      "stations_compared": 552,
+      "disagreeing": 0,
+      "rule": "our worst raw Avg sub-index vs CPCB's own <Air_Quality_Index> Value, ±1"
+    },
+    "fallback": "data.gov.in mirror (resource 3b01bcb8) — used only when this feed fails its gates; never mixed"
   },
   "derivation": "AQI read from CPCB's own published per-pollutant sub-indexes — this feed carries the index, not concentrations, and nothing here recomputes it. A station's AQI is its worst sub-index, and the headline reading is the WORST MONITOR of those reporting, named, not a city average. CPCB's own city figure is the mean of the stations and is carried separately as city_mean. Concentrations shown are implied back from the sub-index using the breakpoint table in \"About National Air Quality Index\", never measured.",
   "state_label": "LIVE",
-  "observation_age_hours": 1,
+  "observation_age_hours": 0.2,
   "observed": {
     "y": 2026,
     "m": 11,
     "d": 19,
-    "hh": 10,
+    "hh": 11,
     "mi": 0,
-    "raw": "19-11-2026 10:00:00"
+    "raw": "19-11-2026 11:00:00"
   },
   "fetched": {
-    "epochMs": 1795066331097
+    "epochMs": 1795066808888
   },
   "time": {
-    "cpcb_observed_ist": "19-11-2026 10:00:00",
+    "cpcb_observed_ist": "19-11-2026 11:00:00",
     "cpcb_observed_parts": {
       "y": 2026,
       "m": 11,
       "d": 19,
-      "hh": 10,
+      "hh": 11,
       "mi": 0
     },
-    "swechha_checked_utc": "2026-11-19T05:32:11.096Z",
-    "swechha_first_saw_utc": "2026-11-19T04:40:18.823Z",
-    "observation_age_minutes_at_check": 60,
+    "swechha_checked_utc": "2026-11-19T05:40:08.887Z",
+    "swechha_first_saw_utc": "2026-11-19T05:40:08.887Z",
+    "observation_age_minutes_at_check": 12,
     "note": "cpcb_observed_ist is when the AIR was measured (CPCB’s own stamp, IST wall-clock text, never converted); swechha_checked_utc is when WE ASKED CPCB (UTC ISO). They are different clocks and different facts, and must never be swapped or mixed."
   },
   "limits": {
@@ -130,7 +134,7 @@
   "excluded": [],
   "city_reading": {
     "scope": "worst-monitor",
-    "aqi": 375,
+    "aqi": 379,
     "band": "Very Poor",
     "governing": "PM2.5",
     "station": "JNU, Delhi - DPCC",
@@ -140,12 +144,21 @@
     "selectedFrom": 57,
     "stations": 57,
     "pollutants": {
+      "PM2.5": {
+        "sub": 379,
+        "subMin": 293,
+        "subMax": 446,
+        "averaging": "24-hour",
+        "impliedConc": 222.6,
+        "impliedUnit": "µg/m³",
+        "concBasis": "implied-from-subindex"
+      },
       "PM10": {
-        "sub": 237,
+        "sub": 241,
         "subMin": 128,
         "subMax": 405,
         "averaging": "24-hour",
-        "impliedConc": 287,
+        "impliedConc": 291,
         "impliedUnit": "µg/m³",
         "concBasis": "implied-from-subindex"
       },
@@ -155,33 +168,6 @@
         "subMax": 93,
         "averaging": "24-hour",
         "impliedConc": 52.1,
-        "impliedUnit": "µg/m³",
-        "concBasis": "implied-from-subindex"
-      },
-      "PM2.5": {
-        "sub": 375,
-        "subMin": 293,
-        "subMax": 446,
-        "averaging": "24-hour",
-        "impliedConc": 217.4,
-        "impliedUnit": "µg/m³",
-        "concBasis": "implied-from-subindex"
-      },
-      "CO": {
-        "sub": 99,
-        "subMin": 94,
-        "subMax": 102,
-        "averaging": "8-hour",
-        "impliedConc": 2,
-        "impliedUnit": "mg/m³",
-        "concBasis": "implied-from-subindex"
-      },
-      "OZONE": {
-        "sub": 19,
-        "subMin": 19,
-        "subMax": 20,
-        "averaging": "8-hour",
-        "impliedConc": 19,
         "impliedUnit": "µg/m³",
         "concBasis": "implied-from-subindex"
       },
@@ -200,6 +186,24 @@
         "subMax": 3,
         "averaging": "24-hour",
         "impliedConc": 2.4,
+        "impliedUnit": "µg/m³",
+        "concBasis": "implied-from-subindex"
+      },
+      "CO": {
+        "sub": 98,
+        "subMin": 93,
+        "subMax": 101,
+        "averaging": "8-hour",
+        "impliedConc": 2,
+        "impliedUnit": "mg/m³",
+        "concBasis": "implied-from-subindex"
+      },
+      "OZONE": {
+        "sub": 19,
+        "subMin": 19,
+        "subMax": 20,
+        "averaging": "8-hour",
+        "impliedConc": 19,
         "impliedUnit": "µg/m³",
         "concBasis": "implied-from-subindex"
       }
@@ -214,19 +218,28 @@
     "role": "cross-check against CPCB's published city figure — not the page reading"
   },
   "worst_station": {
-    "aqi": 375,
+    "aqi": 379,
     "band": "Very Poor",
     "governing": "PM2.5",
     "station": "JNU, Delhi - DPCC",
     "lat": 28.540721,
     "lng": 77.168544,
     "pollutants": {
+      "PM2.5": {
+        "sub": 379,
+        "subMin": 293,
+        "subMax": 446,
+        "averaging": "24-hour",
+        "impliedConc": 222.6,
+        "impliedUnit": "µg/m³",
+        "concBasis": "implied-from-subindex"
+      },
       "PM10": {
-        "sub": 237,
+        "sub": 241,
         "subMin": 128,
         "subMax": 405,
         "averaging": "24-hour",
-        "impliedConc": 287,
+        "impliedConc": 291,
         "impliedUnit": "µg/m³",
         "concBasis": "implied-from-subindex"
       },
@@ -236,33 +249,6 @@
         "subMax": 93,
         "averaging": "24-hour",
         "impliedConc": 52.1,
-        "impliedUnit": "µg/m³",
-        "concBasis": "implied-from-subindex"
-      },
-      "PM2.5": {
-        "sub": 375,
-        "subMin": 293,
-        "subMax": 446,
-        "averaging": "24-hour",
-        "impliedConc": 217.4,
-        "impliedUnit": "µg/m³",
-        "concBasis": "implied-from-subindex"
-      },
-      "CO": {
-        "sub": 99,
-        "subMin": 94,
-        "subMax": 102,
-        "averaging": "8-hour",
-        "impliedConc": 2,
-        "impliedUnit": "mg/m³",
-        "concBasis": "implied-from-subindex"
-      },
-      "OZONE": {
-        "sub": 19,
-        "subMin": 19,
-        "subMax": 20,
-        "averaging": "8-hour",
-        "impliedConc": 19,
         "impliedUnit": "µg/m³",
         "concBasis": "implied-from-subindex"
       },
@@ -283,17 +269,35 @@
         "impliedConc": 2.4,
         "impliedUnit": "µg/m³",
         "concBasis": "implied-from-subindex"
+      },
+      "CO": {
+        "sub": 98,
+        "subMin": 93,
+        "subMax": 101,
+        "averaging": "8-hour",
+        "impliedConc": 2,
+        "impliedUnit": "mg/m³",
+        "concBasis": "implied-from-subindex"
+      },
+      "OZONE": {
+        "sub": 19,
+        "subMin": 19,
+        "subMax": 20,
+        "averaging": "8-hour",
+        "impliedConc": 19,
+        "impliedUnit": "µg/m³",
+        "concBasis": "implied-from-subindex"
       }
     }
   },
   "spread": {
     "stations": 57,
     "best": {
-      "aqi": 51,
+      "aqi": 53,
       "station": "NSIT Dwarka, Delhi - CPCB"
     },
     "worst": {
-      "aqi": 375,
+      "aqi": 379,
       "station": "JNU, Delhi - DPCC"
     },
     "above_limit": 56
@@ -303,28 +307,37 @@
       "station": "JNU, Delhi - DPCC",
       "lat": 28.540721,
       "lng": 77.168544,
-      "aqi": 375,
+      "aqi": 379,
       "band": "Very Poor",
       "governing": "PM2.5",
       "reported": [
+        "PM2.5",
         "PM10",
         "NO2",
-        "PM2.5",
-        "CO",
-        "OZONE",
         "NH3",
-        "SO2"
+        "SO2",
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
+        "PM2.5": {
+          "sub": 379,
+          "subMin": 293,
+          "subMax": 446,
+          "averaging": "24-hour",
+          "impliedConc": 222.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "PM10": {
-          "sub": 237,
+          "sub": 241,
           "subMin": 128,
           "subMax": 405,
           "averaging": "24-hour",
-          "impliedConc": 287,
+          "impliedConc": 291,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -334,33 +347,6 @@
           "subMax": 93,
           "averaging": "24-hour",
           "impliedConc": 52.1,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 375,
-          "subMin": 293,
-          "subMax": 446,
-          "averaging": "24-hour",
-          "impliedConc": 217.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 99,
-          "subMin": 94,
-          "subMax": 102,
-          "averaging": "8-hour",
-          "impliedConc": 2,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 19,
-          "subMin": 19,
-          "subMax": 20,
-          "averaging": "8-hour",
-          "impliedConc": 19,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -381,52 +367,70 @@
           "impliedConc": 2.4,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 98,
+          "subMin": 93,
+          "subMax": 101,
+          "averaging": "8-hour",
+          "impliedConc": 2,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 19,
+          "subMin": 19,
+          "subMax": 20,
+          "averaging": "8-hour",
+          "impliedConc": 19,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
         }
       },
       "stamp": {
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Sirifort, Delhi - CPCB",
       "lat": 28.5504249,
       "lng": 77.2159377,
-      "aqi": 371,
+      "aqi": 373,
       "band": "Very Poor",
       "governing": "PM2.5",
       "reported": [
-        "SO2",
         "PM2.5",
+        "PM10",
         "NO2",
         "NH3",
-        "CO",
-        "PM10"
+        "SO2",
+        "CO"
       ],
       "notReported": [
         "OZONE",
         "PB"
       ],
       "pollutants": {
-        "SO2": {
-          "sub": 25,
-          "subMin": 15,
-          "subMax": 30,
-          "averaging": "24-hour",
-          "impliedConc": 20,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM2.5": {
-          "sub": 371,
+          "sub": 373,
           "subMin": 310,
           "subMax": 450,
           "averaging": "24-hour",
-          "impliedConc": 212.2,
+          "impliedConc": 214.8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 294,
+          "subMin": 170,
+          "subMax": 439,
+          "averaging": "24-hour",
+          "impliedConc": 344,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -448,22 +452,22 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "CO": {
-          "sub": 107,
-          "subMin": 102,
-          "subMax": 114,
-          "averaging": "8-hour",
-          "impliedConc": 2.6,
-          "impliedUnit": "mg/m³",
+        "SO2": {
+          "sub": 25,
+          "subMin": 15,
+          "subMax": 30,
+          "averaging": "24-hour",
+          "impliedConc": 20,
+          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM10": {
-          "sub": 295,
-          "subMin": 170,
-          "subMax": 439,
-          "averaging": "24-hour",
-          "impliedConc": 345,
-          "impliedUnit": "µg/m³",
+        "CO": {
+          "sub": 105,
+          "subMin": 101,
+          "subMax": 112,
+          "averaging": "8-hour",
+          "impliedConc": 2.4,
+          "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         }
       },
@@ -471,24 +475,24 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Pusa, Delhi - IITM",
       "lat": 28.63611,
       "lng": 77.173332,
-      "aqi": 368,
+      "aqi": 370,
       "band": "Very Poor",
       "governing": "PM2.5",
       "reported": [
-        "NO2",
-        "OZONE",
         "PM2.5",
         "PM10",
-        "CO"
+        "NO2",
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "SO2",
@@ -496,6 +500,24 @@
         "PB"
       ],
       "pollutants": {
+        "PM2.5": {
+          "sub": 370,
+          "subMin": 218,
+          "subMax": 450,
+          "averaging": "24-hour",
+          "impliedConc": 210.9,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 280,
+          "subMin": 130,
+          "subMax": 417,
+          "averaging": "24-hour",
+          "impliedConc": 330,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "NO2": {
           "sub": 74,
           "subMin": 21,
@@ -505,40 +527,22 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "OZONE": {
-          "sub": 6,
-          "subMin": 3,
-          "subMax": 14,
-          "averaging": "8-hour",
-          "impliedConc": 6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 368,
-          "subMin": 218,
-          "subMax": 429,
-          "averaging": "24-hour",
-          "impliedConc": 208.3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 278,
-          "subMin": 130,
-          "subMax": 381,
-          "averaging": "24-hour",
-          "impliedConc": 328,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "CO": {
-          "sub": 97,
-          "subMin": 82,
-          "subMax": 107,
+          "sub": 93,
+          "subMin": 75,
+          "subMax": 104,
           "averaging": "8-hour",
           "impliedConc": 1.9,
           "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 14,
+          "subMin": 3,
+          "subMax": 71,
+          "averaging": "8-hour",
+          "impliedConc": 14,
+          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
       },
@@ -546,37 +550,55 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "NSUT Jaffarpur, Delhi - DPCC",
       "lat": 28.594004,
       "lng": 76.909423,
-      "aqi": 363,
+      "aqi": 364,
       "band": "Very Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM10",
-        "NH3",
-        "CO",
         "PM2.5",
+        "PM10",
+        "NO2",
+        "NH3",
         "SO2",
-        "OZONE",
-        "NO2"
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
+        "PM2.5": {
+          "sub": 364,
+          "subMin": 211,
+          "subMax": 409,
+          "averaging": "24-hour",
+          "impliedConc": 203.1,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "PM10": {
-          "sub": 213,
+          "sub": 216,
           "subMin": 120,
           "subMax": 286,
           "averaging": "24-hour",
-          "impliedConc": 263,
+          "impliedConc": 266,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 61,
+          "subMin": 22,
+          "subMax": 92,
+          "averaging": "24-hour",
+          "impliedConc": 49,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -589,24 +611,6 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "CO": {
-          "sub": 66,
-          "subMin": 61,
-          "subMax": 72,
-          "averaging": "8-hour",
-          "impliedConc": 1.4,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 363,
-          "subMin": 211,
-          "subMax": 409,
-          "averaging": "24-hour",
-          "impliedConc": 201.8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "SO2": {
           "sub": 6,
           "subMin": 2,
@@ -616,21 +620,21 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "OZONE": {
-          "sub": 20,
-          "subMin": 13,
-          "subMax": 40,
+        "CO": {
+          "sub": 66,
+          "subMin": 61,
+          "subMax": 72,
           "averaging": "8-hour",
-          "impliedConc": 20,
-          "impliedUnit": "µg/m³",
+          "impliedConc": 1.4,
+          "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NO2": {
-          "sub": 61,
-          "subMin": 22,
-          "subMax": 92,
-          "averaging": "24-hour",
-          "impliedConc": 49,
+        "OZONE": {
+          "sub": 26,
+          "subMin": 13,
+          "subMax": 70,
+          "averaging": "8-hour",
+          "impliedConc": 26,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -639,64 +643,55 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "ITO, Delhi - CPCB",
       "lat": 28.628624,
       "lng": 77.24106,
-      "aqi": 358,
+      "aqi": 362,
       "band": "Very Poor",
       "governing": "PM2.5",
       "reported": [
-        "NO2",
-        "CO",
-        "OZONE",
         "PM2.5",
-        "NH3",
         "PM10",
-        "SO2"
+        "NO2",
+        "NH3",
+        "SO2",
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
+        "PM2.5": {
+          "sub": 362,
+          "subMin": 211,
+          "subMax": 453,
+          "averaging": "24-hour",
+          "impliedConc": 200.5,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 246,
+          "subMin": 131,
+          "subMax": 413,
+          "averaging": "24-hour",
+          "impliedConc": 296,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "NO2": {
           "sub": 55,
           "subMin": 25,
           "subMax": 70,
           "averaging": "24-hour",
           "impliedConc": 44.2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 116,
-          "subMin": 102,
-          "subMax": 123,
-          "averaging": "8-hour",
-          "impliedConc": 3.3,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 9,
-          "subMin": 6,
-          "subMax": 19,
-          "averaging": "8-hour",
-          "impliedConc": 9,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 358,
-          "subMin": 211,
-          "subMax": 435,
-          "averaging": "24-hour",
-          "impliedConc": 195.3,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -709,15 +704,6 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM10": {
-          "sub": 237,
-          "subMin": 131,
-          "subMax": 375,
-          "averaging": "24-hour",
-          "impliedConc": 287,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "SO2": {
           "sub": 25,
           "subMin": 9,
@@ -726,15 +712,33 @@
           "impliedConc": 20,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 113,
+          "subMin": 102,
+          "subMax": 123,
+          "averaging": "8-hour",
+          "impliedConc": 3.1,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 15,
+          "subMin": 6,
+          "subMax": 60,
+          "averaging": "8-hour",
+          "impliedConc": 15,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
         }
       },
       "stamp": {
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
@@ -745,24 +749,42 @@
       "band": "Very Poor",
       "governing": "PM2.5",
       "reported": [
+        "PM2.5",
         "PM10",
+        "NO2",
         "NH3",
         "SO2",
         "CO",
-        "NO2",
-        "PM2.5",
         "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
+        "PM2.5": {
+          "sub": 353,
+          "subMin": 278,
+          "subMax": 436,
+          "averaging": "24-hour",
+          "impliedConc": 188.8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "PM10": {
-          "sub": 285,
+          "sub": 282,
           "subMin": 198,
           "subMax": 352,
           "averaging": "24-hour",
-          "impliedConc": 335,
+          "impliedConc": 332,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 99,
+          "subMin": 54,
+          "subMax": 137,
+          "averaging": "24-hour",
+          "impliedConc": 79.2,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -785,38 +807,20 @@
           "concBasis": "implied-from-subindex"
         },
         "CO": {
-          "sub": 104,
-          "subMin": 99,
-          "subMax": 110,
+          "sub": 99,
+          "subMin": 66,
+          "subMax": 109,
           "averaging": "8-hour",
-          "impliedConc": 2.3,
+          "impliedConc": 2,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NO2": {
-          "sub": 98,
-          "subMin": 54,
-          "subMax": 137,
-          "averaging": "24-hour",
-          "impliedConc": 78.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 353,
-          "subMin": 278,
-          "subMax": 436,
-          "averaging": "24-hour",
-          "impliedConc": 188.8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "OZONE": {
-          "sub": 26,
+          "sub": 29,
           "subMin": 24,
-          "subMax": 31,
+          "subMax": 43,
           "averaging": "8-hour",
-          "impliedConc": 26,
+          "impliedConc": 29,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -825,106 +829,67 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
-      }
-    },
-    {
-      "station": "CRRI Mathura Road, Delhi - IITM",
-      "lat": 28.5512005,
-      "lng": 77.2735737,
-      "aqi": 350,
-      "band": "Very Poor",
-      "governing": "PM2.5",
-      "reported": [
-        "CO",
-        "PM2.5",
-        "PM10",
-        "OZONE",
-        "NO2"
-      ],
-      "notReported": [
-        "SO2",
-        "NH3",
-        "PB"
-      ],
-      "pollutants": {
-        "CO": {
-          "sub": 94,
-          "subMin": 73,
-          "subMax": 103,
-          "averaging": "8-hour",
-          "impliedConc": 1.9,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 350,
-          "subMin": 281,
-          "subMax": 406,
-          "averaging": "24-hour",
-          "impliedConc": 184.8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 312,
-          "subMin": 162,
-          "subMax": 418,
-          "averaging": "24-hour",
-          "impliedConc": 359.8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 10,
-          "subMin": 9,
-          "subMax": 11,
-          "averaging": "8-hour",
-          "impliedConc": 10,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 39,
-          "subMin": 17,
-          "subMax": 71,
-          "averaging": "24-hour",
-          "impliedConc": 31.2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        }
-      },
-      "stamp": {
-        "y": 2026,
-        "m": 11,
-        "d": 19,
-        "hh": 10,
-        "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Chandni Chowk, Delhi - IITM",
       "lat": 28.656756,
       "lng": 77.227234,
-      "aqi": 350,
+      "aqi": 352,
       "band": "Very Poor",
       "governing": "PM2.5",
       "reported": [
-        "SO2",
         "PM2.5",
-        "NO2",
-        "CO",
-        "OZONE",
         "PM10",
-        "NH3"
+        "NO2",
+        "NH3",
+        "SO2",
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
+        "PM2.5": {
+          "sub": 352,
+          "subMin": 300,
+          "subMax": 407,
+          "averaging": "24-hour",
+          "impliedConc": 187.5,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 309,
+          "subMin": 187,
+          "subMax": 409,
+          "averaging": "24-hour",
+          "impliedConc": 357.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 27,
+          "subMin": 23,
+          "subMax": 36,
+          "averaging": "24-hour",
+          "impliedConc": 21.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 15,
+          "subMin": 6,
+          "subMax": 26,
+          "averaging": "24-hour",
+          "impliedConc": 60,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "SO2": {
           "sub": 20,
           "subMin": 10,
@@ -934,57 +899,21 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM2.5": {
-          "sub": 350,
-          "subMin": 300,
-          "subMax": 407,
-          "averaging": "24-hour",
-          "impliedConc": 184.8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 29,
-          "subMin": 23,
-          "subMax": 62,
-          "averaging": "24-hour",
-          "impliedConc": 23.2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "CO": {
-          "sub": 116,
-          "subMin": 108,
+          "sub": 114,
+          "subMin": 102,
           "subMax": 125,
           "averaging": "8-hour",
-          "impliedConc": 3.3,
+          "impliedConc": 3.1,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
         "OZONE": {
-          "sub": 5,
+          "sub": 8,
           "subMin": 1,
-          "subMax": 17,
+          "subMax": 31,
           "averaging": "8-hour",
-          "impliedConc": 5,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 305,
-          "subMin": 187,
-          "subMax": 409,
-          "averaging": "24-hour",
-          "impliedConc": 354.2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NH3": {
-          "sub": 16,
-          "subMin": 6,
-          "subMax": 37,
-          "averaging": "24-hour",
-          "impliedConc": 64,
+          "impliedConc": 8,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -993,130 +922,46 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
-      }
-    },
-    {
-      "station": "DTU, Delhi - CPCB",
-      "lat": 28.7500499,
-      "lng": 77.1112615,
-      "aqi": 349,
-      "band": "Very Poor",
-      "governing": "PM2.5",
-      "reported": [
-        "PM10",
-        "CO",
-        "PM2.5",
-        "SO2",
-        "OZONE",
-        "NO2",
-        "NH3"
-      ],
-      "notReported": [
-        "PB"
-      ],
-      "pollutants": {
-        "PM10": {
-          "sub": 270,
-          "subMin": 112,
-          "subMax": 396,
-          "averaging": "24-hour",
-          "impliedConc": 320,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 79,
-          "subMin": 72,
-          "subMax": 94,
-          "averaging": "8-hour",
-          "impliedConc": 1.6,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 349,
-          "subMin": 120,
-          "subMax": 423,
-          "averaging": "24-hour",
-          "impliedConc": 183.5,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 37,
-          "subMin": 30,
-          "subMax": 40,
-          "averaging": "24-hour",
-          "impliedConc": 29.6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 9,
-          "subMin": 9,
-          "subMax": 12,
-          "averaging": "8-hour",
-          "impliedConc": 9,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 38,
-          "subMin": 3,
-          "subMax": 58,
-          "averaging": "24-hour",
-          "impliedConc": 30.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NH3": {
-          "sub": 7,
-          "subMin": 4,
-          "subMax": 10,
-          "averaging": "24-hour",
-          "impliedConc": 28,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        }
-      },
-      "stamp": {
-        "y": 2026,
-        "m": 11,
-        "d": 19,
-        "hh": 10,
-        "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Talkatora Garden, Delhi - DPCC",
       "lat": 28.62181,
       "lng": 77.1944633,
-      "aqi": 349,
+      "aqi": 351,
       "band": "Very Poor",
       "governing": "PM2.5",
       "reported": [
         "PM2.5",
-        "NO2",
-        "OZONE",
         "PM10",
-        "SO2",
+        "NO2",
         "NH3",
-        "CO"
+        "SO2",
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
         "PM2.5": {
-          "sub": 349,
+          "sub": 351,
           "subMin": 194,
           "subMax": 419,
           "averaging": "24-hour",
-          "impliedConc": 183.5,
+          "impliedConc": 186.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 244,
+          "subMin": 134,
+          "subMax": 361,
+          "averaging": "24-hour",
+          "impliedConc": 294,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -1129,21 +974,12 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "OZONE": {
-          "sub": 5,
-          "subMin": 4,
-          "subMax": 5,
-          "averaging": "8-hour",
-          "impliedConc": 5,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 241,
-          "subMin": 134,
-          "subMax": 361,
+        "NH3": {
+          "sub": 6,
+          "subMin": 6,
+          "subMax": 7,
           "averaging": "24-hour",
-          "impliedConc": 291,
+          "impliedConc": 24,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -1156,22 +992,22 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NH3": {
-          "sub": 6,
-          "subMin": 6,
-          "subMax": 7,
-          "averaging": "24-hour",
-          "impliedConc": 24,
-          "impliedUnit": "µg/m³",
+        "CO": {
+          "sub": 68,
+          "subMin": 56,
+          "subMax": 80,
+          "averaging": "8-hour",
+          "impliedConc": 1.4,
+          "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "CO": {
-          "sub": 71,
-          "subMin": 56,
-          "subMax": 83,
+        "OZONE": {
+          "sub": 5,
+          "subMin": 4,
+          "subMax": 6,
           "averaging": "8-hour",
-          "impliedConc": 1.5,
-          "impliedUnit": "mg/m³",
+          "impliedConc": 5,
+          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
       },
@@ -1179,24 +1015,117 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
-      "station": "Aya Nagar, Delhi - IITM",
-      "lat": 28.4706914,
-      "lng": 77.1099364,
-      "aqi": 329,
+      "station": "DTU, Delhi - CPCB",
+      "lat": 28.7500499,
+      "lng": 77.1112615,
+      "aqi": 348,
       "band": "Very Poor",
       "governing": "PM2.5",
       "reported": [
-        "CO",
         "PM2.5",
+        "PM10",
         "NO2",
-        "OZONE",
-        "PM10"
+        "NH3",
+        "SO2",
+        "CO",
+        "OZONE"
+      ],
+      "notReported": [
+        "PB"
+      ],
+      "pollutants": {
+        "PM2.5": {
+          "sub": 348,
+          "subMin": 120,
+          "subMax": 423,
+          "averaging": "24-hour",
+          "impliedConc": 182.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 267,
+          "subMin": 112,
+          "subMax": 396,
+          "averaging": "24-hour",
+          "impliedConc": 317,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 39,
+          "subMin": 3,
+          "subMax": 59,
+          "averaging": "24-hour",
+          "impliedConc": 31.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 7,
+          "subMin": 4,
+          "subMax": 10,
+          "averaging": "24-hour",
+          "impliedConc": 28,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 37,
+          "subMin": 30,
+          "subMax": 40,
+          "averaging": "24-hour",
+          "impliedConc": 29.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 78,
+          "subMin": 71,
+          "subMax": 94,
+          "averaging": "8-hour",
+          "impliedConc": 1.6,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 12,
+          "subMin": 9,
+          "subMax": 26,
+          "averaging": "8-hour",
+          "impliedConc": 12,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        }
+      },
+      "stamp": {
+        "y": 2026,
+        "m": 11,
+        "d": 19,
+        "hh": 11,
+        "mi": 0,
+        "raw": "19-11-2026 11:00:00"
+      }
+    },
+    {
+      "station": "CRRI Mathura Road, Delhi - IITM",
+      "lat": 28.5512005,
+      "lng": 77.2735737,
+      "aqi": 348,
+      "band": "Very Poor",
+      "governing": "PM2.5",
+      "reported": [
+        "PM2.5",
+        "PM10",
+        "NO2",
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "SO2",
@@ -1204,6 +1133,108 @@
         "PB"
       ],
       "pollutants": {
+        "PM2.5": {
+          "sub": 348,
+          "subMin": 281,
+          "subMax": 406,
+          "averaging": "24-hour",
+          "impliedConc": 182.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 309,
+          "subMin": 162,
+          "subMax": 418,
+          "averaging": "24-hour",
+          "impliedConc": 357.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 39,
+          "subMin": 17,
+          "subMax": 71,
+          "averaging": "24-hour",
+          "impliedConc": 31.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 86,
+          "subMin": 40,
+          "subMax": 103,
+          "averaging": "8-hour",
+          "impliedConc": 1.7,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 13,
+          "subMin": 9,
+          "subMax": 31,
+          "averaging": "8-hour",
+          "impliedConc": 13,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        }
+      },
+      "stamp": {
+        "y": 2026,
+        "m": 11,
+        "d": 19,
+        "hh": 11,
+        "mi": 0,
+        "raw": "19-11-2026 11:00:00"
+      }
+    },
+    {
+      "station": "Aya Nagar, Delhi - IITM",
+      "lat": 28.4706914,
+      "lng": 77.1099364,
+      "aqi": 330,
+      "band": "Very Poor",
+      "governing": "PM2.5",
+      "reported": [
+        "PM2.5",
+        "PM10",
+        "NO2",
+        "CO",
+        "OZONE"
+      ],
+      "notReported": [
+        "SO2",
+        "NH3",
+        "PB"
+      ],
+      "pollutants": {
+        "PM2.5": {
+          "sub": 330,
+          "subMin": 186,
+          "subMax": 402,
+          "averaging": "24-hour",
+          "impliedConc": 158.8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 236,
+          "subMin": 136,
+          "subMax": 340,
+          "averaging": "24-hour",
+          "impliedConc": 286,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 60,
+          "subMin": 20,
+          "subMax": 124,
+          "averaging": "24-hour",
+          "impliedConc": 48.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "CO": {
           "sub": 46,
           "subMin": 44,
@@ -1213,39 +1244,12 @@
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM2.5": {
-          "sub": 329,
-          "subMin": 186,
-          "subMax": 402,
-          "averaging": "24-hour",
-          "impliedConc": 157.5,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 62,
-          "subMin": 20,
-          "subMax": 124,
-          "averaging": "24-hour",
-          "impliedConc": 49.8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "OZONE": {
-          "sub": 13,
+          "sub": 23,
           "subMin": 4,
-          "subMax": 56,
+          "subMax": 93,
           "averaging": "8-hour",
-          "impliedConc": 13,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 235,
-          "subMin": 136,
-          "subMax": 340,
-          "averaging": "24-hour",
-          "impliedConc": 285,
+          "impliedConc": 23,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -1254,73 +1258,64 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "IIT Delhi, Delhi - IITM",
       "lat": 28.54246,
       "lng": 77.191651,
-      "aqi": 327,
+      "aqi": 328,
       "band": "Very Poor",
       "governing": "PM2.5",
       "reported": [
-        "CO",
-        "PM10",
         "PM2.5",
         "NO2",
+        "CO",
         "OZONE"
       ],
       "notReported": [
+        "PM10",
         "SO2",
         "NH3",
         "PB"
       ],
       "pollutants": {
+        "PM2.5": {
+          "sub": 328,
+          "subMin": 183,
+          "subMax": 387,
+          "averaging": "24-hour",
+          "impliedConc": 156.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 60,
+          "subMin": 27,
+          "subMax": 127,
+          "averaging": "24-hour",
+          "impliedConc": 48.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "CO": {
-          "sub": 70,
-          "subMin": 66,
-          "subMax": 79,
+          "sub": 68,
+          "subMin": 61,
+          "subMax": 74,
           "averaging": "8-hour",
           "impliedConc": 1.4,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM10": {
-          "sub": 288,
-          "subMin": 181,
-          "subMax": 439,
-          "averaging": "24-hour",
-          "impliedConc": 338,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 327,
-          "subMin": 183,
-          "subMax": 387,
-          "averaging": "24-hour",
-          "impliedConc": 154.9,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 59,
-          "subMin": 27,
-          "subMax": 119,
-          "averaging": "24-hour",
-          "impliedConc": 47.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "OZONE": {
-          "sub": 27,
+          "sub": 29,
           "subMin": 23,
-          "subMax": 29,
+          "subMax": 40,
           "averaging": "8-hour",
-          "impliedConc": 27,
+          "impliedConc": 29,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -1329,47 +1324,56 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Mundka, Delhi - DPCC",
       "lat": 28.684678,
       "lng": 77.076574,
-      "aqi": 324,
+      "aqi": 323,
       "band": "Very Poor",
       "governing": "PM2.5",
       "reported": [
         "PM2.5",
-        "CO",
+        "PM10",
+        "NO2",
         "NH3",
         "SO2",
-        "OZONE",
-        "PM10",
-        "NO2"
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
         "PM2.5": {
-          "sub": 324,
+          "sub": 323,
           "subMin": 140,
-          "subMax": 396,
+          "subMax": 385,
           "averaging": "24-hour",
-          "impliedConc": 151,
+          "impliedConc": 149.7,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "CO": {
-          "sub": 68,
-          "subMin": 63,
-          "subMax": 76,
-          "averaging": "8-hour",
-          "impliedConc": 1.4,
-          "impliedUnit": "mg/m³",
+        "PM10": {
+          "sub": 240,
+          "subMin": 131,
+          "subMax": 349,
+          "averaging": "24-hour",
+          "impliedConc": 290,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 69,
+          "subMin": 53,
+          "subMax": 79,
+          "averaging": "24-hour",
+          "impliedConc": 55.3,
+          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "NH3": {
@@ -1382,38 +1386,29 @@
           "concBasis": "implied-from-subindex"
         },
         "SO2": {
-          "sub": 21,
+          "sub": 20,
           "subMin": 8,
           "subMax": 47,
           "averaging": "24-hour",
-          "impliedConc": 16.8,
+          "impliedConc": 16,
           "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 68,
+          "subMin": 62,
+          "subMax": 76,
+          "averaging": "8-hour",
+          "impliedConc": 1.4,
+          "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
         "OZONE": {
-          "sub": 4,
+          "sub": 5,
           "subMin": 3,
-          "subMax": 5,
+          "subMax": 10,
           "averaging": "8-hour",
-          "impliedConc": 4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 243,
-          "subMin": 131,
-          "subMax": 349,
-          "averaging": "24-hour",
-          "impliedConc": 293,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 69,
-          "subMin": 53,
-          "subMax": 79,
-          "averaging": "24-hour",
-          "impliedConc": 55.3,
+          "impliedConc": 5,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -1422,24 +1417,117 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
+      }
+    },
+    {
+      "station": "Chhawla, Delhi-DPCC",
+      "lat": 28.553573,
+      "lng": 76.993845,
+      "aqi": 321,
+      "band": "Very Poor",
+      "governing": "PM2.5",
+      "reported": [
+        "PM2.5",
+        "PM10",
+        "NO2",
+        "NH3",
+        "SO2",
+        "CO",
+        "OZONE"
+      ],
+      "notReported": [
+        "PB"
+      ],
+      "pollutants": {
+        "PM2.5": {
+          "sub": 321,
+          "subMin": 233,
+          "subMax": 376,
+          "averaging": "24-hour",
+          "impliedConc": 147.1,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 286,
+          "subMin": 182,
+          "subMax": 404,
+          "averaging": "24-hour",
+          "impliedConc": 336,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 13,
+          "subMin": 9,
+          "subMax": 24,
+          "averaging": "24-hour",
+          "impliedConc": 10.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 5,
+          "subMin": 4,
+          "subMax": 7,
+          "averaging": "24-hour",
+          "impliedConc": 20,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 4,
+          "subMin": 3,
+          "subMax": 6,
+          "averaging": "24-hour",
+          "impliedConc": 3.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 77,
+          "subMin": 69,
+          "subMax": 86,
+          "averaging": "8-hour",
+          "impliedConc": 1.6,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 14,
+          "subMin": 4,
+          "subMax": 61,
+          "averaging": "8-hour",
+          "impliedConc": 14,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        }
+      },
+      "stamp": {
+        "y": 2026,
+        "m": 11,
+        "d": 19,
+        "hh": 11,
+        "mi": 0,
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Burari Crossing, Delhi - IITM",
       "lat": 28.7256504,
       "lng": 77.2011573,
-      "aqi": 323,
+      "aqi": 321,
       "band": "Very Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM10",
         "PM2.5",
+        "PM10",
+        "NO2",
         "CO",
-        "OZONE",
-        "NO2"
+        "OZONE"
       ],
       "notReported": [
         "SO2",
@@ -1447,48 +1535,48 @@
         "PB"
       ],
       "pollutants": {
-        "PM10": {
-          "sub": 262,
-          "subMin": 123,
-          "subMax": 400,
-          "averaging": "24-hour",
-          "impliedConc": 312,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM2.5": {
-          "sub": 323,
+          "sub": 321,
           "subMin": 117,
           "subMax": 438,
           "averaging": "24-hour",
-          "impliedConc": 149.7,
+          "impliedConc": 147.1,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "CO": {
-          "sub": 94,
-          "subMin": 87,
-          "subMax": 101,
-          "averaging": "8-hour",
-          "impliedConc": 1.9,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 10,
-          "subMin": 8,
-          "subMax": 12,
-          "averaging": "8-hour",
-          "impliedConc": 10,
+        "PM10": {
+          "sub": 259,
+          "subMin": 123,
+          "subMax": 394,
+          "averaging": "24-hour",
+          "impliedConc": 309,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "NO2": {
-          "sub": 43,
+          "sub": 42,
           "subMin": 28,
           "subMax": 68,
           "averaging": "24-hour",
-          "impliedConc": 34.4,
+          "impliedConc": 33.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 81,
+          "subMin": 55,
+          "subMax": 101,
+          "averaging": "8-hour",
+          "impliedConc": 1.7,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 9,
+          "subMin": 8,
+          "subMax": 12,
+          "averaging": "8-hour",
+          "impliedConc": 9,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -1497,31 +1585,49 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Bawana, Delhi - DPCC",
       "lat": 28.7762,
       "lng": 77.051074,
-      "aqi": 322,
+      "aqi": 320,
       "band": "Very Poor",
       "governing": "PM2.5",
       "reported": [
+        "PM2.5",
+        "PM10",
         "NO2",
         "NH3",
+        "SO2",
         "CO",
-        "OZONE",
-        "PM10",
-        "PM2.5",
-        "SO2"
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
+        "PM2.5": {
+          "sub": 320,
+          "subMin": 113,
+          "subMax": 434,
+          "averaging": "24-hour",
+          "impliedConc": 145.8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 191,
+          "subMin": 99,
+          "subMax": 252,
+          "averaging": "24-hour",
+          "impliedConc": 236.5,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "NO2": {
           "sub": 46,
           "subMin": 9,
@@ -1540,141 +1646,30 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "CO": {
-          "sub": 98,
-          "subMin": 93,
-          "subMax": 103,
-          "averaging": "8-hour",
-          "impliedConc": 2,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 15,
-          "subMin": 14,
-          "subMax": 16,
-          "averaging": "8-hour",
-          "impliedConc": 15,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 195,
-          "subMin": 99,
-          "subMax": 300,
-          "averaging": "24-hour",
-          "impliedConc": 242.5,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 322,
-          "subMin": 113,
-          "subMax": 434,
-          "averaging": "24-hour",
-          "impliedConc": 148.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "SO2": {
-          "sub": 23,
+          "sub": 24,
           "subMin": 17,
           "subMax": 43,
           "averaging": "24-hour",
-          "impliedConc": 18.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        }
-      },
-      "stamp": {
-        "y": 2026,
-        "m": 11,
-        "d": 19,
-        "hh": 10,
-        "mi": 0,
-        "raw": "19-11-2026 10:00:00"
-      }
-    },
-    {
-      "station": "Chhawla, Delhi-DPCC",
-      "lat": 28.553573,
-      "lng": 76.993845,
-      "aqi": 321,
-      "band": "Very Poor",
-      "governing": "PM2.5",
-      "reported": [
-        "NO2",
-        "CO",
-        "PM2.5",
-        "NH3",
-        "SO2",
-        "OZONE",
-        "PM10"
-      ],
-      "notReported": [
-        "PB"
-      ],
-      "pollutants": {
-        "NO2": {
-          "sub": 13,
-          "subMin": 9,
-          "subMax": 24,
-          "averaging": "24-hour",
-          "impliedConc": 10.4,
+          "impliedConc": 19.2,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "CO": {
-          "sub": 76,
-          "subMin": 69,
-          "subMax": 86,
+          "sub": 97,
+          "subMin": 91,
+          "subMax": 103,
           "averaging": "8-hour",
-          "impliedConc": 1.6,
+          "impliedConc": 1.9,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM2.5": {
-          "sub": 321,
-          "subMin": 233,
-          "subMax": 376,
-          "averaging": "24-hour",
-          "impliedConc": 147.1,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NH3": {
-          "sub": 5,
-          "subMin": 4,
-          "subMax": 6,
-          "averaging": "24-hour",
-          "impliedConc": 20,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 4,
-          "subMin": 3,
-          "subMax": 6,
-          "averaging": "24-hour",
-          "impliedConc": 3.2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "OZONE": {
-          "sub": 7,
-          "subMin": 4,
-          "subMax": 23,
+          "sub": 16,
+          "subMin": 14,
+          "subMax": 21,
           "averaging": "8-hour",
-          "impliedConc": 7,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 283,
-          "subMin": 182,
-          "subMax": 400,
-          "averaging": "24-hour",
-          "impliedConc": 333,
+          "impliedConc": 16,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -1683,31 +1678,49 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Punjabi Bagh, Delhi - DPCC",
       "lat": 28.674045,
       "lng": 77.131023,
-      "aqi": 319,
+      "aqi": 320,
       "band": "Very Poor",
       "governing": "PM2.5",
       "reported": [
+        "PM2.5",
+        "PM10",
         "NO2",
         "NH3",
-        "PM10",
         "SO2",
         "CO",
-        "PM2.5",
         "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
+        "PM2.5": {
+          "sub": 320,
+          "subMin": 87,
+          "subMax": 416,
+          "averaging": "24-hour",
+          "impliedConc": 145.8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 218,
+          "subMin": 111,
+          "subMax": 424,
+          "averaging": "24-hour",
+          "impliedConc": 268,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "NO2": {
           "sub": 76,
           "subMin": 43,
@@ -1720,18 +1733,9 @@
         "NH3": {
           "sub": 7,
           "subMin": 6,
-          "subMax": 11,
+          "subMax": 9,
           "averaging": "24-hour",
           "impliedConc": 28,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 216,
-          "subMin": 111,
-          "subMax": 424,
-          "averaging": "24-hour",
-          "impliedConc": 266,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -1745,29 +1749,20 @@
           "concBasis": "implied-from-subindex"
         },
         "CO": {
-          "sub": 103,
+          "sub": 102,
           "subMin": 96,
-          "subMax": 107,
+          "subMax": 106,
           "averaging": "8-hour",
-          "impliedConc": 2.3,
+          "impliedConc": 2.2,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM2.5": {
-          "sub": 319,
-          "subMin": 87,
-          "subMax": 416,
-          "averaging": "24-hour",
-          "impliedConc": 144.5,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "OZONE": {
-          "sub": 6,
+          "sub": 11,
           "subMin": 4,
-          "subMax": 19,
+          "subMax": 41,
           "averaging": "8-hour",
-          "impliedConc": 6,
+          "impliedConc": 11,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -1776,9 +1771,9 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
@@ -1789,27 +1784,18 @@
       "band": "Very Poor",
       "governing": "PM2.5",
       "reported": [
-        "NH3",
         "PM2.5",
-        "SO2",
-        "CO",
         "PM10",
         "NO2",
+        "NH3",
+        "SO2",
+        "CO",
         "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "NH3": {
-          "sub": 5,
-          "subMin": 3,
-          "subMax": 9,
-          "averaging": "24-hour",
-          "impliedConc": 20,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM2.5": {
           "sub": 319,
           "subMin": 142,
@@ -1819,30 +1805,12 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "SO2": {
-          "sub": 22,
-          "subMin": 12,
-          "subMax": 35,
-          "averaging": "24-hour",
-          "impliedConc": 17.6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 89,
-          "subMin": 77,
-          "subMax": 102,
-          "averaging": "8-hour",
-          "impliedConc": 1.8,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM10": {
-          "sub": 242,
+          "sub": 244,
           "subMin": 123,
-          "subMax": 316,
+          "subMax": 333,
           "averaging": "24-hour",
-          "impliedConc": 292,
+          "impliedConc": 294,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -1855,12 +1823,39 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "OZONE": {
-          "sub": 9,
-          "subMin": 7,
-          "subMax": 17,
+        "NH3": {
+          "sub": 6,
+          "subMin": 3,
+          "subMax": 9,
+          "averaging": "24-hour",
+          "impliedConc": 24,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 23,
+          "subMin": 12,
+          "subMax": 35,
+          "averaging": "24-hour",
+          "impliedConc": 18.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 86,
+          "subMin": 61,
+          "subMax": 102,
           "averaging": "8-hour",
-          "impliedConc": 9,
+          "impliedConc": 1.7,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 13,
+          "subMin": 7,
+          "subMax": 41,
+          "averaging": "8-hour",
+          "impliedConc": 13,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -1869,55 +1864,64 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Nehru Nagar, Delhi - DPCC",
       "lat": 28.56789,
       "lng": 77.250515,
-      "aqi": 313,
+      "aqi": 314,
       "band": "Very Poor",
       "governing": "PM2.5",
       "reported": [
-        "NO2",
-        "OZONE",
-        "PM10",
-        "SO2",
         "PM2.5",
+        "PM10",
+        "NO2",
+        "NH3",
+        "SO2",
         "CO",
-        "NH3"
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "NO2": {
-          "sub": 42,
-          "subMin": 21,
-          "subMax": 84,
+        "PM2.5": {
+          "sub": 314,
+          "subMin": 177,
+          "subMax": 371,
           "averaging": "24-hour",
-          "impliedConc": 33.6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 5,
-          "subMin": 4,
-          "subMax": 8,
-          "averaging": "8-hour",
-          "impliedConc": 5,
+          "impliedConc": 137.9,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "PM10": {
-          "sub": 193,
+          "sub": 194,
           "subMin": 134,
           "subMax": 266,
           "averaging": "24-hour",
-          "impliedConc": 239.5,
+          "impliedConc": 241,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 40,
+          "subMin": 21,
+          "subMax": 61,
+          "averaging": "24-hour",
+          "impliedConc": 32,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 9,
+          "subMin": 7,
+          "subMax": 10,
+          "averaging": "24-hour",
+          "impliedConc": 36,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -1930,30 +1934,21 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM2.5": {
-          "sub": 313,
-          "subMin": 177,
-          "subMax": 371,
-          "averaging": "24-hour",
-          "impliedConc": 136.6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "CO": {
-          "sub": 105,
-          "subMin": 101,
-          "subMax": 111,
+          "sub": 100,
+          "subMin": 68,
+          "subMax": 109,
           "averaging": "8-hour",
-          "impliedConc": 2.4,
+          "impliedConc": 2,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NH3": {
-          "sub": 9,
-          "subMin": 7,
-          "subMax": 10,
-          "averaging": "24-hour",
-          "impliedConc": 36,
+        "OZONE": {
+          "sub": 8,
+          "subMin": 4,
+          "subMax": 23,
+          "averaging": "8-hour",
+          "impliedConc": 8,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -1962,73 +1957,46 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Wazirpur, Delhi - DPCC",
       "lat": 28.699793,
       "lng": 77.165453,
-      "aqi": 310,
+      "aqi": 309,
       "band": "Very Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM10",
         "PM2.5",
-        "NH3",
-        "CO",
-        "OZONE",
+        "PM10",
         "NO2",
-        "SO2"
+        "NH3",
+        "SO2",
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM10": {
-          "sub": 277,
-          "subMin": 129,
-          "subMax": 380,
-          "averaging": "24-hour",
-          "impliedConc": 327,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM2.5": {
-          "sub": 310,
+          "sub": 309,
           "subMin": 107,
           "subMax": 399,
           "averaging": "24-hour",
-          "impliedConc": 132.7,
+          "impliedConc": 131.4,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NH3": {
-          "sub": 7,
-          "subMin": 5,
-          "subMax": 9,
+        "PM10": {
+          "sub": 276,
+          "subMin": 129,
+          "subMax": 380,
           "averaging": "24-hour",
-          "impliedConc": 28,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 108,
-          "subMin": 105,
-          "subMax": 113,
-          "averaging": "8-hour",
-          "impliedConc": 2.7,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 13,
-          "subMin": 11,
-          "subMax": 17,
-          "averaging": "8-hour",
-          "impliedConc": 13,
+          "impliedConc": 326,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -2041,6 +2009,15 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
+        "NH3": {
+          "sub": 7,
+          "subMin": 5,
+          "subMax": 9,
+          "averaging": "24-hour",
+          "impliedConc": 28,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "SO2": {
           "sub": 15,
           "subMin": 9,
@@ -2049,15 +2026,33 @@
           "impliedConc": 12,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 106,
+          "subMin": 95,
+          "subMax": 113,
+          "averaging": "8-hour",
+          "impliedConc": 2.5,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 15,
+          "subMin": 11,
+          "subMax": 27,
+          "averaging": "8-hour",
+          "impliedConc": 15,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
         }
       },
       "stamp": {
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
@@ -2070,11 +2065,11 @@
       "reported": [
         "PM2.5",
         "PM10",
-        "CO",
-        "OZONE",
         "NO2",
         "NH3",
-        "SO2"
+        "SO2",
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "PB"
@@ -2090,29 +2085,11 @@
           "concBasis": "implied-from-subindex"
         },
         "PM10": {
-          "sub": 261,
+          "sub": 263,
           "subMin": 120,
           "subMax": 345,
           "averaging": "24-hour",
-          "impliedConc": 311,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 65,
-          "subMin": 56,
-          "subMax": 71,
-          "averaging": "8-hour",
-          "impliedConc": 1.4,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 22,
-          "subMin": 19,
-          "subMax": 29,
-          "averaging": "8-hour",
-          "impliedConc": 22,
+          "impliedConc": 313,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -2142,43 +2119,88 @@
           "impliedConc": 12,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 62,
+          "subMin": 43,
+          "subMax": 71,
+          "averaging": "8-hour",
+          "impliedConc": 1.3,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 23,
+          "subMin": 19,
+          "subMax": 35,
+          "averaging": "8-hour",
+          "impliedConc": 23,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
         }
       },
       "stamp": {
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Rohini, Delhi - DPCC",
       "lat": 28.732528,
       "lng": 77.11992,
-      "aqi": 298,
+      "aqi": 297,
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
+        "PM2.5",
+        "PM10",
         "NO2",
+        "NH3",
         "SO2",
         "CO",
-        "OZONE",
-        "PM10",
-        "PM2.5",
-        "NH3"
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
+        "PM2.5": {
+          "sub": 297,
+          "subMin": 85,
+          "subMax": 390,
+          "averaging": "24-hour",
+          "impliedConc": 119.1,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 208,
+          "subMin": 99,
+          "subMax": 272,
+          "averaging": "24-hour",
+          "impliedConc": 258,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "NO2": {
-          "sub": 84,
+          "sub": 82,
           "subMin": 44,
           "subMax": 114,
           "averaging": "24-hour",
-          "impliedConc": 67.3,
+          "impliedConc": 65.7,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 8,
+          "subMin": 6,
+          "subMax": 11,
+          "averaging": "24-hour",
+          "impliedConc": 32,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -2192,47 +2214,20 @@
           "concBasis": "implied-from-subindex"
         },
         "CO": {
-          "sub": 106,
-          "subMin": 101,
-          "subMax": 111,
+          "sub": 102,
+          "subMin": 73,
+          "subMax": 108,
           "averaging": "8-hour",
-          "impliedConc": 2.5,
+          "impliedConc": 2.2,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
         "OZONE": {
-          "sub": 11,
+          "sub": 13,
           "subMin": 10,
-          "subMax": 16,
+          "subMax": 31,
           "averaging": "8-hour",
-          "impliedConc": 11,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 208,
-          "subMin": 99,
-          "subMax": 272,
-          "averaging": "24-hour",
-          "impliedConc": 258,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 298,
-          "subMin": 85,
-          "subMax": 390,
-          "averaging": "24-hour",
-          "impliedConc": 119.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NH3": {
-          "sub": 8,
-          "subMin": 6,
-          "subMax": 11,
-          "averaging": "24-hour",
-          "impliedConc": 32,
+          "impliedConc": 13,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -2241,214 +2236,46 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
-      }
-    },
-    {
-      "station": "NIH Narela, Delhi - DPCC",
-      "lat": 28.858447,
-      "lng": 77.095248,
-      "aqi": 293,
-      "band": "Poor",
-      "governing": "PM2.5",
-      "reported": [
-        "NO2",
-        "PM10",
-        "SO2",
-        "CO",
-        "OZONE",
-        "PM2.5",
-        "NH3"
-      ],
-      "notReported": [
-        "PB"
-      ],
-      "pollutants": {
-        "NO2": {
-          "sub": 68,
-          "subMin": 13,
-          "subMax": 114,
-          "averaging": "24-hour",
-          "impliedConc": 54.5,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 183,
-          "subMin": 83,
-          "subMax": 442,
-          "averaging": "24-hour",
-          "impliedConc": 224.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 11,
-          "subMin": 5,
-          "subMax": 25,
-          "averaging": "24-hour",
-          "impliedConc": 8.8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 124,
-          "subMin": 121,
-          "subMax": 130,
-          "averaging": "8-hour",
-          "impliedConc": 3.9,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 7,
-          "subMin": 4,
-          "subMax": 19,
-          "averaging": "8-hour",
-          "impliedConc": 7,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 293,
-          "subMin": 97,
-          "subMax": 459,
-          "averaging": "24-hour",
-          "impliedConc": 117.9,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NH3": {
-          "sub": 3,
-          "subMin": 0,
-          "subMax": 5,
-          "averaging": "24-hour",
-          "impliedConc": 12,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        }
-      },
-      "stamp": {
-        "y": 2026,
-        "m": 11,
-        "d": 19,
-        "hh": 10,
-        "mi": 0,
-        "raw": "19-11-2026 10:00:00"
-      }
-    },
-    {
-      "station": "IHBAS, Dilshad Garden, Delhi - CPCB",
-      "lat": 28.6811736,
-      "lng": 77.3025234,
-      "aqi": 292,
-      "band": "Poor",
-      "governing": "PM2.5",
-      "reported": [
-        "NO2",
-        "SO2",
-        "OZONE",
-        "CO",
-        "PM2.5",
-        "PM10"
-      ],
-      "notReported": [
-        "NH3",
-        "PB"
-      ],
-      "pollutants": {
-        "NO2": {
-          "sub": 25,
-          "subMin": 25,
-          "subMax": 26,
-          "averaging": "24-hour",
-          "impliedConc": 20,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 19,
-          "subMin": 15,
-          "subMax": 23,
-          "averaging": "24-hour",
-          "impliedConc": 15.2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 8,
-          "subMin": 4,
-          "subMax": 13,
-          "averaging": "8-hour",
-          "impliedConc": 8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 34,
-          "subMin": 30,
-          "subMax": 39,
-          "averaging": "8-hour",
-          "impliedConc": 0.7,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 292,
-          "subMin": 145,
-          "subMax": 371,
-          "averaging": "24-hour",
-          "impliedConc": 117.7,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 173,
-          "subMin": 104,
-          "subMax": 269,
-          "averaging": "24-hour",
-          "impliedConc": 209.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        }
-      },
-      "stamp": {
-        "y": 2026,
-        "m": 11,
-        "d": 19,
-        "hh": 10,
-        "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Ghummanhera, Delhi-DPCC",
       "lat": 28.534762,
       "lng": 76.91609,
-      "aqi": 291,
+      "aqi": 292,
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "OZONE",
-        "NO2",
-        "NH3",
         "PM2.5",
         "PM10",
-        "CO"
+        "NO2",
+        "NH3",
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "SO2",
         "PB"
       ],
       "pollutants": {
-        "OZONE": {
-          "sub": 4,
-          "subMin": 2,
-          "subMax": 11,
-          "averaging": "8-hour",
-          "impliedConc": 4,
+        "PM2.5": {
+          "sub": 292,
+          "subMin": 157,
+          "subMax": 370,
+          "averaging": "24-hour",
+          "impliedConc": 117.7,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 285,
+          "subMin": 131,
+          "subMax": 434,
+          "averaging": "24-hour",
+          "impliedConc": 335,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -2470,31 +2297,22 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM2.5": {
-          "sub": 291,
-          "subMin": 157,
-          "subMax": 370,
-          "averaging": "24-hour",
-          "impliedConc": 117.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 281,
-          "subMin": 131,
-          "subMax": 434,
-          "averaging": "24-hour",
-          "impliedConc": 331,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "CO": {
-          "sub": 91,
+          "sub": 92,
           "subMin": 81,
           "subMax": 100,
           "averaging": "8-hour",
-          "impliedConc": 1.8,
+          "impliedConc": 1.9,
           "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 4,
+          "subMin": 2,
+          "subMax": 11,
+          "averaging": "8-hour",
+          "impliedConc": 4,
+          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
       },
@@ -2502,24 +2320,24 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "IGI Airport (T3), Delhi - IITM",
       "lat": 28.5627763,
       "lng": 77.1180053,
-      "aqi": 289,
+      "aqi": 291,
       "band": "Poor",
       "governing": "PM10",
       "reported": [
         "PM2.5",
+        "PM10",
         "NO2",
         "CO",
-        "OZONE",
-        "PM10"
+        "OZONE"
       ],
       "notReported": [
         "SO2",
@@ -2528,47 +2346,47 @@
       ],
       "pollutants": {
         "PM2.5": {
-          "sub": 226,
+          "sub": 225,
           "subMin": 75,
           "subMax": 330,
           "averaging": "24-hour",
-          "impliedConc": 98.3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 115,
-          "subMin": 63,
-          "subMax": 184,
-          "averaging": "24-hour",
-          "impliedConc": 95,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 97,
-          "subMin": 72,
-          "subMax": 122,
-          "averaging": "8-hour",
-          "impliedConc": 1.9,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 8,
-          "subMin": 5,
-          "subMax": 19,
-          "averaging": "8-hour",
-          "impliedConc": 8,
+          "impliedConc": 98,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "PM10": {
-          "sub": 289,
+          "sub": 291,
           "subMin": 149,
           "subMax": 433,
           "averaging": "24-hour",
-          "impliedConc": 339,
+          "impliedConc": 341,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 114,
+          "subMin": 63,
+          "subMax": 184,
+          "averaging": "24-hour",
+          "impliedConc": 94,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 90,
+          "subMin": 69,
+          "subMax": 108,
+          "averaging": "8-hour",
+          "impliedConc": 1.8,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 11,
+          "subMin": 5,
+          "subMax": 28,
+          "averaging": "8-hour",
+          "impliedConc": 11,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -2577,9 +2395,186 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
+      }
+    },
+    {
+      "station": "IHBAS, Dilshad Garden, Delhi - CPCB",
+      "lat": 28.6811736,
+      "lng": 77.3025234,
+      "aqi": 291,
+      "band": "Poor",
+      "governing": "PM2.5",
+      "reported": [
+        "PM2.5",
+        "PM10",
+        "NO2",
+        "SO2",
+        "CO",
+        "OZONE"
+      ],
+      "notReported": [
+        "NH3",
+        "PB"
+      ],
+      "pollutants": {
+        "PM2.5": {
+          "sub": 291,
+          "subMin": 145,
+          "subMax": 358,
+          "averaging": "24-hour",
+          "impliedConc": 117.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 171,
+          "subMin": 104,
+          "subMax": 243,
+          "averaging": "24-hour",
+          "impliedConc": 206.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 25,
+          "subMin": 25,
+          "subMax": 26,
+          "averaging": "24-hour",
+          "impliedConc": 20,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 19,
+          "subMin": 15,
+          "subMax": 23,
+          "averaging": "24-hour",
+          "impliedConc": 15.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 35,
+          "subMin": 30,
+          "subMax": 39,
+          "averaging": "8-hour",
+          "impliedConc": 0.7,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 9,
+          "subMin": 4,
+          "subMax": 13,
+          "averaging": "8-hour",
+          "impliedConc": 9,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        }
+      },
+      "stamp": {
+        "y": 2026,
+        "m": 11,
+        "d": 19,
+        "hh": 11,
+        "mi": 0,
+        "raw": "19-11-2026 11:00:00"
+      }
+    },
+    {
+      "station": "NIH Narela, Delhi - DPCC",
+      "lat": 28.858447,
+      "lng": 77.095248,
+      "aqi": 289,
+      "band": "Poor",
+      "governing": "PM2.5",
+      "reported": [
+        "PM2.5",
+        "PM10",
+        "NO2",
+        "NH3",
+        "SO2",
+        "CO",
+        "OZONE"
+      ],
+      "notReported": [
+        "PB"
+      ],
+      "pollutants": {
+        "PM2.5": {
+          "sub": 289,
+          "subMin": 97,
+          "subMax": 437,
+          "averaging": "24-hour",
+          "impliedConc": 116.8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 174,
+          "subMin": 83,
+          "subMax": 334,
+          "averaging": "24-hour",
+          "impliedConc": 210.9,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 67,
+          "subMin": 13,
+          "subMax": 114,
+          "averaging": "24-hour",
+          "impliedConc": 53.7,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 3,
+          "subMin": 0,
+          "subMax": 5,
+          "averaging": "24-hour",
+          "impliedConc": 12,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 11,
+          "subMin": 5,
+          "subMax": 25,
+          "averaging": "24-hour",
+          "impliedConc": 8.8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 124,
+          "subMin": 116,
+          "subMax": 130,
+          "averaging": "8-hour",
+          "impliedConc": 3.9,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 11,
+          "subMin": 4,
+          "subMax": 36,
+          "averaging": "8-hour",
+          "impliedConc": 11,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        }
+      },
+      "stamp": {
+        "y": 2026,
+        "m": 11,
+        "d": 19,
+        "hh": 11,
+        "mi": 0,
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
@@ -2593,8 +2588,8 @@
         "PM2.5",
         "PM10",
         "NO2",
-        "CO",
         "SO2",
+        "CO",
         "OZONE"
       ],
       "notReported": [
@@ -2612,11 +2607,11 @@
           "concBasis": "implied-from-subindex"
         },
         "PM10": {
-          "sub": 196,
+          "sub": 198,
           "subMin": 107,
           "subMax": 319,
           "averaging": "24-hour",
-          "impliedConc": 244,
+          "impliedConc": 247,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -2629,8 +2624,17 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
+        "SO2": {
+          "sub": 19,
+          "subMin": 9,
+          "subMax": 45,
+          "averaging": "24-hour",
+          "impliedConc": 15.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "CO": {
-          "sub": 109,
+          "sub": 108,
           "subMin": 102,
           "subMax": 115,
           "averaging": "8-hour",
@@ -2638,21 +2642,12 @@
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "SO2": {
-          "sub": 18,
-          "subMin": 9,
-          "subMax": 36,
-          "averaging": "24-hour",
-          "impliedConc": 14.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "OZONE": {
-          "sub": 3,
+          "sub": 5,
           "subMin": 2,
-          "subMax": 7,
+          "subMax": 21,
           "averaging": "8-hour",
-          "impliedConc": 3,
+          "impliedConc": 5,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -2661,24 +2656,24 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Karala, Delhi-DPCC",
       "lat": 28.7313303,
       "lng": 77.0402585,
-      "aqi": 286,
+      "aqi": 285,
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
         "PM2.5",
         "PM10",
+        "NO2",
         "NH3",
         "SO2",
-        "NO2",
         "CO",
         "OZONE"
       ],
@@ -2687,20 +2682,29 @@
       ],
       "pollutants": {
         "PM2.5": {
-          "sub": 286,
+          "sub": 285,
           "subMin": 94,
-          "subMax": 345,
+          "subMax": 332,
           "averaging": "24-hour",
-          "impliedConc": 115.9,
+          "impliedConc": 115.6,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "PM10": {
-          "sub": 175,
+          "sub": 173,
           "subMin": 90,
-          "subMax": 236,
+          "subMax": 209,
           "averaging": "24-hour",
-          "impliedConc": 212.4,
+          "impliedConc": 209.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 124,
+          "subMin": 35,
+          "subMax": 302,
+          "averaging": "24-hour",
+          "impliedConc": 104,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -2722,30 +2726,21 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NO2": {
-          "sub": 124,
-          "subMin": 35,
-          "subMax": 302,
-          "averaging": "24-hour",
-          "impliedConc": 104,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "CO": {
           "sub": 12,
           "subMin": 12,
-          "subMax": 15,
+          "subMax": 14,
           "averaging": "8-hour",
           "impliedConc": 0.2,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
         "OZONE": {
-          "sub": 5,
+          "sub": 9,
           "subMin": 3,
-          "subMax": 17,
+          "subMax": 31,
           "averaging": "8-hour",
-          "impliedConc": 5,
+          "impliedConc": 9,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -2754,55 +2749,55 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Jharoda Kalan, Delhi-DPCC",
       "lat": 28.645274,
       "lng": 76.956375,
-      "aqi": 284,
+      "aqi": 285,
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
+        "PM2.5",
         "PM10",
-        "CO",
         "NO2",
         "NH3",
-        "OZONE",
-        "PM2.5",
-        "SO2"
+        "SO2",
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM10": {
-          "sub": 196,
-          "subMin": 151,
-          "subMax": 229,
+        "PM2.5": {
+          "sub": 285,
+          "subMin": 187,
+          "subMax": 340,
           "averaging": "24-hour",
-          "impliedConc": 244,
+          "impliedConc": 115.6,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "CO": {
-          "sub": 74,
-          "subMin": 72,
-          "subMax": 76,
-          "averaging": "8-hour",
-          "impliedConc": 1.5,
-          "impliedUnit": "mg/m³",
+        "PM10": {
+          "sub": 198,
+          "subMin": 151,
+          "subMax": 258,
+          "averaging": "24-hour",
+          "impliedConc": 247,
+          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "NO2": {
-          "sub": 37,
+          "sub": 36,
           "subMin": 22,
           "subMax": 71,
           "averaging": "24-hour",
-          "impliedConc": 29.6,
+          "impliedConc": 28.8,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -2815,24 +2810,6 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "OZONE": {
-          "sub": 33,
-          "subMin": 33,
-          "subMax": 35,
-          "averaging": "8-hour",
-          "impliedConc": 33,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 284,
-          "subMin": 187,
-          "subMax": 326,
-          "averaging": "24-hour",
-          "impliedConc": 115.3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "SO2": {
           "sub": 5,
           "subMin": 3,
@@ -2841,52 +2818,70 @@
           "impliedConc": 4,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 73,
+          "subMin": 70,
+          "subMax": 76,
+          "averaging": "8-hour",
+          "impliedConc": 1.5,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 34,
+          "subMin": 33,
+          "subMax": 40,
+          "averaging": "8-hour",
+          "impliedConc": 34,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
         }
       },
       "stamp": {
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Dwarka-Sector 8, Delhi - DPCC ",
       "lat": 28.5710274,
       "lng": 77.0719006,
-      "aqi": 282,
+      "aqi": 283,
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "SO2",
+        "PM2.5",
         "PM10",
         "NO2",
         "NH3",
+        "SO2",
         "CO",
-        "OZONE",
-        "PM2.5"
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "SO2": {
-          "sub": 13,
-          "subMin": 7,
-          "subMax": 17,
+        "PM2.5": {
+          "sub": 283,
+          "subMin": 120,
+          "subMax": 348,
           "averaging": "24-hour",
-          "impliedConc": 10.4,
+          "impliedConc": 115,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "PM10": {
-          "sub": 184,
+          "sub": 185,
           "subMin": 111,
-          "subMax": 239,
+          "subMax": 243,
           "averaging": "24-hour",
-          "impliedConc": 225.9,
+          "impliedConc": 227.4,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -2908,124 +2903,31 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
+        "SO2": {
+          "sub": 12,
+          "subMin": 7,
+          "subMax": 17,
+          "averaging": "24-hour",
+          "impliedConc": 9.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "CO": {
-          "sub": 71,
+          "sub": 67,
           "subMin": 48,
-          "subMax": 106,
+          "subMax": 92,
           "averaging": "8-hour",
-          "impliedConc": 1.5,
+          "impliedConc": 1.4,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
         "OZONE": {
-          "sub": 3,
+          "sub": 5,
           "subMin": 2,
-          "subMax": 5,
-          "averaging": "8-hour",
-          "impliedConc": 3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 282,
-          "subMin": 120,
-          "subMax": 346,
-          "averaging": "24-hour",
-          "impliedConc": 114.7,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        }
-      },
-      "stamp": {
-        "y": 2026,
-        "m": 11,
-        "d": 19,
-        "hh": 10,
-        "mi": 0,
-        "raw": "19-11-2026 10:00:00"
-      }
-    },
-    {
-      "station": "Nangloi, Delhi-DPCC",
-      "lat": 28.6835525,
-      "lng": 77.0742812,
-      "aqi": 281,
-      "band": "Poor",
-      "governing": "PM2.5",
-      "reported": [
-        "SO2",
-        "NH3",
-        "PM2.5",
-        "OZONE",
-        "PM10",
-        "NO2",
-        "CO"
-      ],
-      "notReported": [
-        "PB"
-      ],
-      "pollutants": {
-        "SO2": {
-          "sub": 11,
-          "subMin": 7,
-          "subMax": 21,
-          "averaging": "24-hour",
-          "impliedConc": 8.8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NH3": {
-          "sub": 6,
-          "subMin": 3,
-          "subMax": 8,
-          "averaging": "24-hour",
-          "impliedConc": 24,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 281,
-          "subMin": 118,
-          "subMax": 345,
-          "averaging": "24-hour",
-          "impliedConc": 114.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 9,
-          "subMin": 7,
-          "subMax": 11,
-          "averaging": "8-hour",
-          "impliedConc": 9,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 266,
-          "subMin": 155,
-          "subMax": 426,
-          "averaging": "24-hour",
-          "impliedConc": 316,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 116,
-          "subMin": 61,
-          "subMax": 154,
-          "averaging": "24-hour",
-          "impliedConc": 96,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 137,
-          "subMin": 133,
-          "subMax": 140,
+          "subMax": 19,
           "averaging": "8-hour",
           "impliedConc": 5,
-          "impliedUnit": "mg/m³",
+          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
       },
@@ -3033,24 +2935,24 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Ashok Vihar, Delhi - DPCC",
       "lat": 28.695381,
       "lng": 77.181665,
-      "aqi": 280,
+      "aqi": 281,
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
         "PM2.5",
-        "SO2",
         "PM10",
-        "NH3",
         "NO2",
+        "NH3",
+        "SO2",
         "CO",
         "OZONE"
       ],
@@ -3059,11 +2961,38 @@
       ],
       "pollutants": {
         "PM2.5": {
-          "sub": 280,
+          "sub": 281,
           "subMin": 93,
           "subMax": 359,
           "averaging": "24-hour",
-          "impliedConc": 114.1,
+          "impliedConc": 114.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 198,
+          "subMin": 111,
+          "subMax": 295,
+          "averaging": "24-hour",
+          "impliedConc": 247,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 66,
+          "subMin": 29,
+          "subMax": 105,
+          "averaging": "24-hour",
+          "impliedConc": 52.9,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 9,
+          "subMin": 8,
+          "subMax": 10,
+          "averaging": "24-hour",
+          "impliedConc": 36,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -3076,48 +3005,21 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM10": {
-          "sub": 197,
-          "subMin": 111,
-          "subMax": 295,
-          "averaging": "24-hour",
-          "impliedConc": 245.5,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NH3": {
-          "sub": 9,
-          "subMin": 7,
-          "subMax": 10,
-          "averaging": "24-hour",
-          "impliedConc": 36,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 68,
-          "subMin": 29,
-          "subMax": 105,
-          "averaging": "24-hour",
-          "impliedConc": 54.5,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "CO": {
-          "sub": 104,
-          "subMin": 101,
+          "sub": 101,
+          "subMin": 78,
           "subMax": 107,
           "averaging": "8-hour",
-          "impliedConc": 2.3,
+          "impliedConc": 2.1,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
         "OZONE": {
-          "sub": 4,
+          "sub": 6,
           "subMin": 3,
-          "subMax": 7,
+          "subMax": 22,
           "averaging": "8-hour",
-          "impliedConc": 4,
+          "impliedConc": 6,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -3126,55 +3028,157 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
+      }
+    },
+    {
+      "station": "Nangloi, Delhi-DPCC",
+      "lat": 28.6835525,
+      "lng": 77.0742812,
+      "aqi": 281,
+      "band": "Poor",
+      "governing": "PM2.5",
+      "reported": [
+        "PM2.5",
+        "PM10",
+        "NO2",
+        "NH3",
+        "SO2",
+        "CO",
+        "OZONE"
+      ],
+      "notReported": [
+        "PB"
+      ],
+      "pollutants": {
+        "PM2.5": {
+          "sub": 281,
+          "subMin": 118,
+          "subMax": 345,
+          "averaging": "24-hour",
+          "impliedConc": 114.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 261,
+          "subMin": 155,
+          "subMax": 415,
+          "averaging": "24-hour",
+          "impliedConc": 311,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 115,
+          "subMin": 61,
+          "subMax": 154,
+          "averaging": "24-hour",
+          "impliedConc": 95,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 6,
+          "subMin": 3,
+          "subMax": 8,
+          "averaging": "24-hour",
+          "impliedConc": 24,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 11,
+          "subMin": 7,
+          "subMax": 21,
+          "averaging": "24-hour",
+          "impliedConc": 8.8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 138,
+          "subMin": 133,
+          "subMax": 140,
+          "averaging": "8-hour",
+          "impliedConc": 5.1,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 10,
+          "subMin": 7,
+          "subMax": 16,
+          "averaging": "8-hour",
+          "impliedConc": 10,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        }
+      },
+      "stamp": {
+        "y": 2026,
+        "m": 11,
+        "d": 19,
+        "hh": 11,
+        "mi": 0,
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Jawaharlal Nehru Stadium, Delhi - DPCC",
       "lat": 28.58028,
       "lng": 77.233829,
-      "aqi": 278,
+      "aqi": 279,
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "NH3",
-        "OZONE",
         "PM2.5",
-        "SO2",
         "PM10",
+        "NO2",
+        "NH3",
+        "SO2",
         "CO",
-        "NO2"
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
+        "PM2.5": {
+          "sub": 279,
+          "subMin": 170,
+          "subMax": 345,
+          "averaging": "24-hour",
+          "impliedConc": 113.8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 177,
+          "subMin": 120,
+          "subMax": 285,
+          "averaging": "24-hour",
+          "impliedConc": 215.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 45,
+          "subMin": 18,
+          "subMax": 71,
+          "averaging": "24-hour",
+          "impliedConc": 36,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "NH3": {
           "sub": 17,
           "subMin": 14,
           "subMax": 20,
           "averaging": "24-hour",
           "impliedConc": 68,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 6,
-          "subMin": 5,
-          "subMax": 11,
-          "averaging": "8-hour",
-          "impliedConc": 6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 278,
-          "subMin": 170,
-          "subMax": 345,
-          "averaging": "24-hour",
-          "impliedConc": 113.6,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -3187,30 +3191,21 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM10": {
-          "sub": 176,
-          "subMin": 120,
-          "subMax": 285,
-          "averaging": "24-hour",
-          "impliedConc": 213.9,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "CO": {
-          "sub": 96,
-          "subMin": 64,
+          "sub": 88,
+          "subMin": 42,
           "subMax": 108,
           "averaging": "8-hour",
-          "impliedConc": 1.9,
+          "impliedConc": 1.8,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NO2": {
-          "sub": 45,
-          "subMin": 18,
-          "subMax": 71,
-          "averaging": "24-hour",
-          "impliedConc": 36,
+        "OZONE": {
+          "sub": 9,
+          "subMin": 5,
+          "subMax": 29,
+          "averaging": "8-hour",
+          "impliedConc": 9,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -3219,9 +3214,9 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
@@ -3254,20 +3249,20 @@
           "concBasis": "implied-from-subindex"
         },
         "PM10": {
-          "sub": 161,
+          "sub": 163,
           "subMin": 123,
-          "subMax": 202,
+          "subMax": 244,
           "averaging": "24-hour",
-          "impliedConc": 191.3,
+          "impliedConc": 194.3,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "NO2": {
-          "sub": 95,
+          "sub": 94,
           "subMin": 43,
           "subMax": 154,
           "averaging": "24-hour",
-          "impliedConc": 76,
+          "impliedConc": 75.2,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -3281,29 +3276,29 @@
           "concBasis": "implied-from-subindex"
         },
         "SO2": {
-          "sub": 11,
+          "sub": 12,
           "subMin": 6,
           "subMax": 23,
           "averaging": "24-hour",
-          "impliedConc": 8.8,
+          "impliedConc": 9.6,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "CO": {
-          "sub": 95,
-          "subMin": 69,
-          "subMax": 113,
+          "sub": 86,
+          "subMin": 38,
+          "subMax": 111,
           "averaging": "8-hour",
-          "impliedConc": 1.9,
+          "impliedConc": 1.7,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
         "OZONE": {
-          "sub": 6,
+          "sub": 9,
           "subMin": 6,
-          "subMax": 8,
+          "subMax": 23,
           "averaging": "8-hour",
-          "impliedConc": 6,
+          "impliedConc": 9,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -3312,117 +3307,24 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
-      }
-    },
-    {
-      "station": "Alipur, Delhi - DPCC",
-      "lat": 28.815329,
-      "lng": 77.15301,
-      "aqi": 275,
-      "band": "Poor",
-      "governing": "PM2.5",
-      "reported": [
-        "PM10",
-        "NO2",
-        "OZONE",
-        "NH3",
-        "CO",
-        "PM2.5",
-        "SO2"
-      ],
-      "notReported": [
-        "PB"
-      ],
-      "pollutants": {
-        "PM10": {
-          "sub": 218,
-          "subMin": 85,
-          "subMax": 370,
-          "averaging": "24-hour",
-          "impliedConc": 268,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 62,
-          "subMin": 24,
-          "subMax": 104,
-          "averaging": "24-hour",
-          "impliedConc": 49.8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 13,
-          "subMin": 5,
-          "subMax": 19,
-          "averaging": "8-hour",
-          "impliedConc": 13,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NH3": {
-          "sub": 11,
-          "subMin": 9,
-          "subMax": 14,
-          "averaging": "24-hour",
-          "impliedConc": 44,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 92,
-          "subMin": 78,
-          "subMax": 100,
-          "averaging": "8-hour",
-          "impliedConc": 1.9,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 275,
-          "subMin": 75,
-          "subMax": 416,
-          "averaging": "24-hour",
-          "impliedConc": 112.7,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 18,
-          "subMin": 14,
-          "subMax": 24,
-          "averaging": "24-hour",
-          "impliedConc": 14.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        }
-      },
-      "stamp": {
-        "y": 2026,
-        "m": 11,
-        "d": 19,
-        "hh": 10,
-        "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Mandir Marg, Delhi - DPCC",
       "lat": 28.636429,
       "lng": 77.201067,
-      "aqi": 273,
+      "aqi": 274,
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "NO2",
         "PM2.5",
-        "SO2",
         "PM10",
+        "NO2",
         "NH3",
+        "SO2",
         "CO",
         "OZONE"
       ],
@@ -3430,21 +3332,39 @@
         "PB"
       ],
       "pollutants": {
-        "NO2": {
-          "sub": 57,
-          "subMin": 31,
-          "subMax": 92,
-          "averaging": "24-hour",
-          "impliedConc": 45.8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM2.5": {
-          "sub": 273,
+          "sub": 274,
           "subMin": 88,
           "subMax": 353,
           "averaging": "24-hour",
-          "impliedConc": 112.1,
+          "impliedConc": 112.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 160,
+          "subMin": 88,
+          "subMax": 222,
+          "averaging": "24-hour",
+          "impliedConc": 189.8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 59,
+          "subMin": 31,
+          "subMax": 101,
+          "averaging": "24-hour",
+          "impliedConc": 47.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 8,
+          "subMin": 7,
+          "subMax": 10,
+          "averaging": "24-hour",
+          "impliedConc": 32,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -3457,39 +3377,21 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM10": {
-          "sub": 159,
-          "subMin": 88,
-          "subMax": 209,
-          "averaging": "24-hour",
-          "impliedConc": 188.3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NH3": {
-          "sub": 8,
-          "subMin": 7,
-          "subMax": 9,
-          "averaging": "24-hour",
-          "impliedConc": 32,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "CO": {
-          "sub": 90,
+          "sub": 87,
           "subMin": 82,
-          "subMax": 103,
+          "subMax": 92,
           "averaging": "8-hour",
           "impliedConc": 1.8,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
         "OZONE": {
-          "sub": 5,
+          "sub": 10,
           "subMin": 3,
-          "subMax": 11,
+          "subMax": 49,
           "averaging": "8-hour",
-          "impliedConc": 5,
+          "impliedConc": 10,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -3498,91 +3400,91 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
-      "station": "Sonia Vihar, Delhi - DPCC",
-      "lat": 28.710508,
-      "lng": 77.249485,
-      "aqi": 269,
+      "station": "Alipur, Delhi - DPCC",
+      "lat": 28.815329,
+      "lng": 77.15301,
+      "aqi": 273,
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "NH3",
+        "PM2.5",
         "PM10",
         "NO2",
+        "NH3",
         "SO2",
-        "OZONE",
         "CO",
-        "PM2.5"
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "NH3": {
-          "sub": 10,
-          "subMin": 7,
-          "subMax": 15,
+        "PM2.5": {
+          "sub": 273,
+          "subMin": 75,
+          "subMax": 379,
           "averaging": "24-hour",
-          "impliedConc": 40,
+          "impliedConc": 112.1,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "PM10": {
-          "sub": 162,
-          "subMin": 80,
-          "subMax": 238,
+          "sub": 216,
+          "subMin": 85,
+          "subMax": 349,
           "averaging": "24-hour",
-          "impliedConc": 192.8,
+          "impliedConc": 266,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "NO2": {
-          "sub": 68,
-          "subMin": 33,
-          "subMax": 127,
+          "sub": 62,
+          "subMin": 24,
+          "subMax": 104,
           "averaging": "24-hour",
-          "impliedConc": 54.5,
+          "impliedConc": 49.8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 11,
+          "subMin": 9,
+          "subMax": 13,
+          "averaging": "24-hour",
+          "impliedConc": 44,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "SO2": {
-          "sub": 19,
-          "subMin": 1,
-          "subMax": 34,
+          "sub": 18,
+          "subMin": 14,
+          "subMax": 24,
           "averaging": "24-hour",
-          "impliedConc": 15.2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 3,
-          "subMin": 2,
-          "subMax": 5,
-          "averaging": "8-hour",
-          "impliedConc": 3,
+          "impliedConc": 14.4,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "CO": {
-          "sub": 142,
-          "subMin": 124,
-          "subMax": 170,
+          "sub": 91,
+          "subMin": 71,
+          "subMax": 100,
           "averaging": "8-hour",
-          "impliedConc": 5.4,
+          "impliedConc": 1.8,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM2.5": {
-          "sub": 269,
-          "subMin": 83,
-          "subMax": 367,
-          "averaging": "24-hour",
-          "impliedConc": 110.9,
+        "OZONE": {
+          "sub": 17,
+          "subMin": 5,
+          "subMax": 42,
+          "averaging": "8-hour",
+          "impliedConc": 17,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -3591,55 +3493,46 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Dr. Karni Singh Shooting Range, Delhi - DPCC",
       "lat": 28.498571,
       "lng": 77.26484,
-      "aqi": 269,
+      "aqi": 270,
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "SO2",
-        "OZONE",
         "PM2.5",
+        "PM10",
         "NO2",
         "NH3",
-        "PM10",
-        "CO"
+        "SO2",
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "SO2": {
-          "sub": 19,
-          "subMin": 12,
-          "subMax": 88,
-          "averaging": "24-hour",
-          "impliedConc": 15.2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 3,
-          "subMin": 1,
-          "subMax": 17,
-          "averaging": "8-hour",
-          "impliedConc": 3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM2.5": {
-          "sub": 269,
+          "sub": 270,
           "subMin": 113,
           "subMax": 362,
           "averaging": "24-hour",
-          "impliedConc": 110.9,
+          "impliedConc": 111.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 166,
+          "subMin": 107,
+          "subMax": 224,
+          "averaging": "24-hour",
+          "impliedConc": 198.8,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -3661,22 +3554,31 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM10": {
-          "sub": 164,
-          "subMin": 107,
-          "subMax": 224,
+        "SO2": {
+          "sub": 19,
+          "subMin": 12,
+          "subMax": 88,
           "averaging": "24-hour",
-          "impliedConc": 195.8,
+          "impliedConc": 15.2,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "CO": {
-          "sub": 81,
-          "subMin": 72,
+          "sub": 79,
+          "subMin": 66,
           "subMax": 97,
           "averaging": "8-hour",
-          "impliedConc": 1.7,
+          "impliedConc": 1.6,
           "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 7,
+          "subMin": 1,
+          "subMax": 33,
+          "averaging": "8-hour",
+          "impliedConc": 7,
+          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
       },
@@ -3684,25 +3586,25 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
-      "station": "Ghoga, Delhi-DPCC",
-      "lat": 28.818435,
-      "lng": 77.057932,
-      "aqi": 267,
+      "station": "Sonia Vihar, Delhi - DPCC",
+      "lat": 28.710508,
+      "lng": 77.249485,
+      "aqi": 269,
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
         "PM2.5",
-        "CO",
         "PM10",
         "NO2",
-        "SO2",
         "NH3",
+        "SO2",
+        "CO",
         "OZONE"
       ],
       "notReported": [
@@ -3710,65 +3612,65 @@
       ],
       "pollutants": {
         "PM2.5": {
-          "sub": 267,
-          "subMin": 135,
-          "subMax": 343,
+          "sub": 269,
+          "subMin": 83,
+          "subMax": 367,
           "averaging": "24-hour",
-          "impliedConc": 110.3,
+          "impliedConc": 110.9,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "CO": {
-          "sub": 56,
-          "subMin": 46,
-          "subMax": 77,
-          "averaging": "8-hour",
-          "impliedConc": 1.2,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM10": {
-          "sub": 187,
-          "subMin": 114,
-          "subMax": 375,
+          "sub": 163,
+          "subMin": 80,
+          "subMax": 238,
           "averaging": "24-hour",
-          "impliedConc": 230.4,
+          "impliedConc": 194.3,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "NO2": {
-          "sub": 48,
-          "subMin": 18,
-          "subMax": 79,
+          "sub": 69,
+          "subMin": 33,
+          "subMax": 127,
           "averaging": "24-hour",
-          "impliedConc": 38.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 15,
-          "subMin": 7,
-          "subMax": 41,
-          "averaging": "24-hour",
-          "impliedConc": 12,
+          "impliedConc": 55.3,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "NH3": {
-          "sub": 14,
-          "subMin": 9,
-          "subMax": 21,
+          "sub": 10,
+          "subMin": 7,
+          "subMax": 15,
           "averaging": "24-hour",
-          "impliedConc": 56,
+          "impliedConc": 40,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "OZONE": {
-          "sub": 6,
-          "subMin": 3,
-          "subMax": 16,
+        "SO2": {
+          "sub": 20,
+          "subMin": 1,
+          "subMax": 44,
+          "averaging": "24-hour",
+          "impliedConc": 16,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 134,
+          "subMin": 102,
+          "subMax": 154,
           "averaging": "8-hour",
-          "impliedConc": 6,
+          "impliedConc": 4.7,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 5,
+          "subMin": 2,
+          "subMax": 23,
+          "averaging": "8-hour",
+          "impliedConc": 5,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -3777,73 +3679,55 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Narela, Delhi - DPCC",
       "lat": 28.822836,
       "lng": 77.101981,
-      "aqi": 267,
+      "aqi": 266,
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "CO",
-        "OZONE",
         "PM2.5",
         "PM10",
         "NO2",
         "NH3",
-        "SO2"
+        "SO2",
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "CO": {
-          "sub": 56,
-          "subMin": 48,
-          "subMax": 66,
-          "averaging": "8-hour",
-          "impliedConc": 1.2,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 7,
-          "subMin": 7,
-          "subMax": 8,
-          "averaging": "8-hour",
-          "impliedConc": 7,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM2.5": {
-          "sub": 267,
+          "sub": 266,
           "subMin": 86,
-          "subMax": 392,
+          "subMax": 376,
           "averaging": "24-hour",
-          "impliedConc": 110.3,
+          "impliedConc": 110,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "PM10": {
-          "sub": 188,
+          "sub": 183,
           "subMin": 104,
-          "subMax": 395,
+          "subMax": 281,
           "averaging": "24-hour",
-          "impliedConc": 231.9,
+          "impliedConc": 224.4,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "NO2": {
-          "sub": 15,
+          "sub": 14,
           "subMin": 8,
-          "subMax": 31,
+          "subMax": 23,
           "averaging": "24-hour",
-          "impliedConc": 12,
+          "impliedConc": 11.2,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -3864,15 +3748,126 @@
           "impliedConc": 6.4,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 56,
+          "subMin": 48,
+          "subMax": 66,
+          "averaging": "8-hour",
+          "impliedConc": 1.2,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 7,
+          "subMin": 7,
+          "subMax": 8,
+          "averaging": "8-hour",
+          "impliedConc": 7,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
         }
       },
       "stamp": {
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
+      }
+    },
+    {
+      "station": "Sri Aurobindo Marg, Delhi - DPCC",
+      "lat": 28.531346,
+      "lng": 77.190156,
+      "aqi": 266,
+      "band": "Poor",
+      "governing": "PM2.5",
+      "reported": [
+        "PM2.5",
+        "PM10",
+        "NO2",
+        "NH3",
+        "SO2",
+        "CO",
+        "OZONE"
+      ],
+      "notReported": [
+        "PB"
+      ],
+      "pollutants": {
+        "PM2.5": {
+          "sub": 266,
+          "subMin": 163,
+          "subMax": 336,
+          "averaging": "24-hour",
+          "impliedConc": 110,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 213,
+          "subMin": 150,
+          "subMax": 318,
+          "averaging": "24-hour",
+          "impliedConc": 263,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 49,
+          "subMin": 21,
+          "subMax": 117,
+          "averaging": "24-hour",
+          "impliedConc": 39.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 6,
+          "subMin": 5,
+          "subMax": 6,
+          "averaging": "24-hour",
+          "impliedConc": 24,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 7,
+          "subMin": 0,
+          "subMax": 26,
+          "averaging": "24-hour",
+          "impliedConc": 5.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 70,
+          "subMin": 54,
+          "subMax": 87,
+          "averaging": "8-hour",
+          "impliedConc": 1.4,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 7,
+          "subMin": 3,
+          "subMax": 25,
+          "averaging": "8-hour",
+          "impliedConc": 7,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        }
+      },
+      "stamp": {
+        "y": 2026,
+        "m": 11,
+        "d": 19,
+        "hh": 11,
+        "mi": 0,
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
@@ -3883,31 +3878,31 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "NH3",
+        "PM2.5",
         "PM10",
         "NO2",
-        "PM2.5",
-        "CO",
+        "NH3",
         "SO2",
+        "CO",
         "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "NH3": {
-          "sub": 7,
-          "subMin": 7,
-          "subMax": 8,
+        "PM2.5": {
+          "sub": 265,
+          "subMin": 93,
+          "subMax": 335,
           "averaging": "24-hour",
-          "impliedConc": 28,
+          "impliedConc": 109.7,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "PM10": {
           "sub": 138,
           "subMin": 84,
-          "subMax": 174,
+          "subMax": 181,
           "averaging": "24-hour",
           "impliedConc": 156.7,
           "impliedUnit": "µg/m³",
@@ -3922,22 +3917,13 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM2.5": {
-          "sub": 265,
-          "subMin": 93,
-          "subMax": 335,
+        "NH3": {
+          "sub": 7,
+          "subMin": 7,
+          "subMax": 9,
           "averaging": "24-hour",
-          "impliedConc": 109.7,
+          "impliedConc": 28,
           "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 28,
-          "subMin": 28,
-          "subMax": 30,
-          "averaging": "8-hour",
-          "impliedConc": 0.6,
-          "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
         "SO2": {
@@ -3949,12 +3935,21 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "OZONE": {
-          "sub": 6,
-          "subMin": 5,
-          "subMax": 11,
+        "CO": {
+          "sub": 29,
+          "subMin": 28,
+          "subMax": 30,
           "averaging": "8-hour",
-          "impliedConc": 6,
+          "impliedConc": 0.6,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 10,
+          "subMin": 5,
+          "subMax": 35,
+          "averaging": "8-hour",
+          "impliedConc": 10,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -3963,92 +3958,92 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
-      "station": "Sri Aurobindo Marg, Delhi - DPCC",
-      "lat": 28.531346,
-      "lng": 77.190156,
-      "aqi": 265,
+      "station": "Ghoga, Delhi-DPCC",
+      "lat": 28.818435,
+      "lng": 77.057932,
+      "aqi": 264,
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "NH3",
-        "OZONE",
-        "PM10",
         "PM2.5",
+        "PM10",
         "NO2",
+        "NH3",
         "SO2",
-        "CO"
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "NH3": {
-          "sub": 6,
-          "subMin": 5,
-          "subMax": 6,
+        "PM2.5": {
+          "sub": 264,
+          "subMin": 135,
+          "subMax": 343,
           "averaging": "24-hour",
-          "impliedConc": 24,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 4,
-          "subMin": 3,
-          "subMax": 9,
-          "averaging": "8-hour",
-          "impliedConc": 4,
+          "impliedConc": 109.5,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "PM10": {
-          "sub": 211,
-          "subMin": 150,
-          "subMax": 293,
+          "sub": 177,
+          "subMin": 114,
+          "subMax": 320,
           "averaging": "24-hour",
-          "impliedConc": 261,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 265,
-          "subMin": 163,
-          "subMax": 325,
-          "averaging": "24-hour",
-          "impliedConc": 109.7,
+          "impliedConc": 215.4,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "NO2": {
-          "sub": 49,
-          "subMin": 21,
-          "subMax": 117,
+          "sub": 47,
+          "subMin": 18,
+          "subMax": 79,
           "averaging": "24-hour",
-          "impliedConc": 39.2,
+          "impliedConc": 37.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 14,
+          "subMin": 9,
+          "subMax": 21,
+          "averaging": "24-hour",
+          "impliedConc": 56,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "SO2": {
-          "sub": 6,
-          "subMin": 0,
-          "subMax": 17,
+          "sub": 15,
+          "subMin": 7,
+          "subMax": 41,
           "averaging": "24-hour",
-          "impliedConc": 4.8,
+          "impliedConc": 12,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "CO": {
-          "sub": 77,
-          "subMin": 60,
-          "subMax": 103,
+          "sub": 55,
+          "subMin": 40,
+          "subMax": 77,
           "averaging": "8-hour",
-          "impliedConc": 1.6,
+          "impliedConc": 1.2,
           "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 9,
+          "subMin": 3,
+          "subMax": 31,
+          "averaging": "8-hour",
+          "impliedConc": 9,
+          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
       },
@@ -4056,16 +4051,16 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Anand Vihar, Delhi - DPCC",
       "lat": 28.647622,
       "lng": 77.315809,
-      "aqi": 263,
+      "aqi": 262,
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
@@ -4073,29 +4068,29 @@
         "PM10",
         "NO2",
         "NH3",
+        "SO2",
         "CO",
-        "OZONE",
-        "SO2"
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
         "PM2.5": {
-          "sub": 263,
+          "sub": 262,
           "subMin": 100,
           "subMax": 358,
           "averaging": "24-hour",
-          "impliedConc": 109.2,
+          "impliedConc": 108.9,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "PM10": {
-          "sub": 244,
+          "sub": 243,
           "subMin": 124,
           "subMax": 406,
           "averaging": "24-hour",
-          "impliedConc": 294,
+          "impliedConc": 293,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -4117,24 +4112,6 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "CO": {
-          "sub": 49,
-          "subMin": 1,
-          "subMax": 193,
-          "averaging": "8-hour",
-          "impliedConc": 1,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 6,
-          "subMin": 5,
-          "subMax": 11,
-          "averaging": "8-hour",
-          "impliedConc": 6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "SO2": {
           "sub": 39,
           "subMin": 14,
@@ -4143,15 +4120,33 @@
           "impliedConc": 31.2,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 71,
+          "subMin": 1,
+          "subMax": 193,
+          "averaging": "8-hour",
+          "impliedConc": 1.5,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 8,
+          "subMin": 5,
+          "subMax": 21,
+          "averaging": "8-hour",
+          "impliedConc": 8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
         }
       },
       "stamp": {
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
@@ -4162,42 +4157,51 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM10",
-        "OZONE",
         "PM2.5",
+        "PM10",
+        "NO2",
+        "NH3",
         "SO2",
         "CO",
-        "NH3",
-        "NO2"
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM10": {
-          "sub": 182,
-          "subMin": 105,
-          "subMax": 273,
-          "averaging": "24-hour",
-          "impliedConc": 222.9,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 3,
-          "subMin": 2,
-          "subMax": 3,
-          "averaging": "8-hour",
-          "impliedConc": 3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM2.5": {
           "sub": 257,
           "subMin": 83,
           "subMax": 353,
           "averaging": "24-hour",
           "impliedConc": 107.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 181,
+          "subMin": 105,
+          "subMax": 255,
+          "averaging": "24-hour",
+          "impliedConc": 221.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 95,
+          "subMin": 41,
+          "subMax": 145,
+          "averaging": "24-hour",
+          "impliedConc": 76,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 7,
+          "subMin": 4,
+          "subMax": 8,
+          "averaging": "24-hour",
+          "impliedConc": 28,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -4211,29 +4215,20 @@
           "concBasis": "implied-from-subindex"
         },
         "CO": {
-          "sub": 106,
-          "subMin": 103,
+          "sub": 102,
+          "subMin": 79,
           "subMax": 109,
           "averaging": "8-hour",
-          "impliedConc": 2.5,
+          "impliedConc": 2.2,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NH3": {
-          "sub": 7,
-          "subMin": 4,
-          "subMax": 8,
-          "averaging": "24-hour",
-          "impliedConc": 28,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 96,
-          "subMin": 41,
-          "subMax": 145,
-          "averaging": "24-hour",
-          "impliedConc": 76.8,
+        "OZONE": {
+          "sub": 5,
+          "subMin": 2,
+          "subMax": 16,
+          "averaging": "8-hour",
+          "impliedConc": 5,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -4242,31 +4237,151 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
-      "station": "Pusa, Delhi - DPCC",
-      "lat": 28.636818,
-      "lng": 77.173597,
-      "aqi": 255,
+      "station": "Major Dhyan Chand National Stadium, Delhi - DPCC",
+      "lat": 28.611281,
+      "lng": 77.237738,
+      "aqi": 256,
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
+        "PM2.5",
+        "PM10",
+        "NO2",
         "NH3",
         "SO2",
         "CO",
-        "PM10",
-        "PM2.5",
-        "NO2",
         "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
+        "PM2.5": {
+          "sub": 256,
+          "subMin": 83,
+          "subMax": 346,
+          "averaging": "24-hour",
+          "impliedConc": 107.1,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 170,
+          "subMin": 108,
+          "subMax": 248,
+          "averaging": "24-hour",
+          "impliedConc": 204.8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 89,
+          "subMin": 36,
+          "subMax": 145,
+          "averaging": "24-hour",
+          "impliedConc": 71.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NH3": {
+          "sub": 10,
+          "subMin": 6,
+          "subMax": 13,
+          "averaging": "24-hour",
+          "impliedConc": 40,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "SO2": {
+          "sub": 11,
+          "subMin": 7,
+          "subMax": 16,
+          "averaging": "24-hour",
+          "impliedConc": 8.8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 41,
+          "subMin": 9,
+          "subMax": 75,
+          "averaging": "8-hour",
+          "impliedConc": 0.8,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 6,
+          "subMin": 4,
+          "subMax": 16,
+          "averaging": "8-hour",
+          "impliedConc": 6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        }
+      },
+      "stamp": {
+        "y": 2026,
+        "m": 11,
+        "d": 19,
+        "hh": 11,
+        "mi": 0,
+        "raw": "19-11-2026 11:00:00"
+      }
+    },
+    {
+      "station": "Pusa, Delhi - DPCC",
+      "lat": 28.636818,
+      "lng": 77.173597,
+      "aqi": 256,
+      "band": "Poor",
+      "governing": "PM2.5",
+      "reported": [
+        "PM2.5",
+        "PM10",
+        "NO2",
+        "NH3",
+        "SO2",
+        "CO",
+        "OZONE"
+      ],
+      "notReported": [
+        "PB"
+      ],
+      "pollutants": {
+        "PM2.5": {
+          "sub": 256,
+          "subMin": 103,
+          "subMax": 379,
+          "averaging": "24-hour",
+          "impliedConc": 107.1,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 176,
+          "subMin": 133,
+          "subMax": 376,
+          "averaging": "24-hour",
+          "impliedConc": 213.9,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 54,
+          "subMin": 20,
+          "subMax": 109,
+          "averaging": "24-hour",
+          "impliedConc": 43.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "NH3": {
           "sub": 3,
           "subMin": 1,
@@ -4279,7 +4394,7 @@
         "SO2": {
           "sub": 15,
           "subMin": 11,
-          "subMax": 18,
+          "subMax": 19,
           "averaging": "24-hour",
           "impliedConc": 12,
           "impliedUnit": "µg/m³",
@@ -4294,39 +4409,12 @@
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM10": {
-          "sub": 172,
-          "subMin": 133,
-          "subMax": 288,
-          "averaging": "24-hour",
-          "impliedConc": 207.9,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 255,
-          "subMin": 103,
-          "subMax": 346,
-          "averaging": "24-hour",
-          "impliedConc": 106.8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 55,
-          "subMin": 20,
-          "subMax": 124,
-          "averaging": "24-hour",
-          "impliedConc": 44.2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "OZONE": {
-          "sub": 2,
+          "sub": 3,
           "subMin": 2,
-          "subMax": 4,
+          "subMax": 11,
           "averaging": "8-hour",
-          "impliedConc": 2,
+          "impliedConc": 3,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -4335,9 +4423,9 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
@@ -4348,18 +4436,27 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
+        "PM2.5",
         "PM10",
         "NO2",
-        "OZONE",
-        "PM2.5",
-        "CO",
         "NH3",
-        "SO2"
+        "SO2",
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
+        "PM2.5": {
+          "sub": 255,
+          "subMin": 103,
+          "subMax": 342,
+          "averaging": "24-hour",
+          "impliedConc": 106.8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "PM10": {
           "sub": 175,
           "subMin": 109,
@@ -4376,33 +4473,6 @@
           "averaging": "24-hour",
           "impliedConc": 63.3,
           "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 5,
-          "subMin": 4,
-          "subMax": 7,
-          "averaging": "8-hour",
-          "impliedConc": 5,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 255,
-          "subMin": 103,
-          "subMax": 342,
-          "averaging": "24-hour",
-          "impliedConc": 106.8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 84,
-          "subMin": 56,
-          "subMax": 102,
-          "averaging": "8-hour",
-          "impliedConc": 1.7,
-          "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
         "NH3": {
@@ -4422,97 +4492,22 @@
           "impliedConc": 12,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
-        }
-      },
-      "stamp": {
-        "y": 2026,
-        "m": 11,
-        "d": 19,
-        "hh": 10,
-        "mi": 0,
-        "raw": "19-11-2026 10:00:00"
-      }
-    },
-    {
-      "station": "Major Dhyan Chand National Stadium, Delhi - DPCC",
-      "lat": 28.611281,
-      "lng": 77.237738,
-      "aqi": 255,
-      "band": "Poor",
-      "governing": "PM2.5",
-      "reported": [
-        "NH3",
-        "PM10",
-        "NO2",
-        "SO2",
-        "PM2.5",
-        "CO",
-        "OZONE"
-      ],
-      "notReported": [
-        "PB"
-      ],
-      "pollutants": {
-        "NH3": {
-          "sub": 10,
-          "subMin": 6,
-          "subMax": 13,
-          "averaging": "24-hour",
-          "impliedConc": 40,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 167,
-          "subMin": 108,
-          "subMax": 248,
-          "averaging": "24-hour",
-          "impliedConc": 200.3,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 90,
-          "subMin": 36,
-          "subMax": 150,
-          "averaging": "24-hour",
-          "impliedConc": 72,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "SO2": {
-          "sub": 11,
-          "subMin": 7,
-          "subMax": 14,
-          "averaging": "24-hour",
-          "impliedConc": 8.8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 255,
-          "subMin": 83,
-          "subMax": 335,
-          "averaging": "24-hour",
-          "impliedConc": 106.8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
         },
         "CO": {
-          "sub": 49,
-          "subMin": 9,
-          "subMax": 84,
+          "sub": 76,
+          "subMin": 40,
+          "subMax": 90,
           "averaging": "8-hour",
-          "impliedConc": 1,
+          "impliedConc": 1.6,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
         "OZONE": {
-          "sub": 5,
+          "sub": 8,
           "subMin": 4,
-          "subMax": 7,
+          "subMax": 29,
           "averaging": "8-hour",
-          "impliedConc": 5,
+          "impliedConc": 8,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -4521,64 +4516,55 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Tikri Kalan, Delhi-DPCC",
       "lat": 28.67518,
       "lng": 76.980506,
-      "aqi": 251,
+      "aqi": 254,
       "band": "Poor",
       "governing": "PM10",
       "reported": [
-        "NO2",
-        "OZONE",
         "PM2.5",
         "PM10",
+        "NO2",
         "SO2",
-        "CO"
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "NH3",
         "PB"
       ],
       "pollutants": {
+        "PM2.5": {
+          "sub": 212,
+          "subMin": 25,
+          "subMax": 450,
+          "averaging": "24-hour",
+          "impliedConc": 94.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 254,
+          "subMin": 135,
+          "subMax": 351,
+          "averaging": "24-hour",
+          "impliedConc": 304,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "NO2": {
           "sub": 100,
           "subMin": 45,
           "subMax": 171,
           "averaging": "24-hour",
           "impliedConc": 80,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 8,
-          "subMin": 5,
-          "subMax": 20,
-          "averaging": "8-hour",
-          "impliedConc": 8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 197,
-          "subMin": 25,
-          "subMax": 450,
-          "averaging": "24-hour",
-          "impliedConc": 89.1,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM10": {
-          "sub": 251,
-          "subMin": 135,
-          "subMax": 351,
-          "averaging": "24-hour",
-          "impliedConc": 301,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -4592,12 +4578,21 @@
           "concBasis": "implied-from-subindex"
         },
         "CO": {
-          "sub": 78,
+          "sub": 76,
           "subMin": 69,
-          "subMax": 87,
+          "subMax": 84,
           "averaging": "8-hour",
           "impliedConc": 1.6,
           "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 15,
+          "subMin": 5,
+          "subMax": 62,
+          "averaging": "8-hour",
+          "impliedConc": 15,
+          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
       },
@@ -4605,64 +4600,55 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Badarpur, Delhi-DPCC",
       "lat": 28.513305,
       "lng": 77.32634,
-      "aqi": 246,
+      "aqi": 247,
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM10",
-        "CO",
-        "OZONE",
         "PM2.5",
+        "PM10",
+        "NO2",
         "NH3",
         "SO2",
-        "NO2"
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM10": {
-          "sub": 162,
-          "subMin": 114,
-          "subMax": 196,
-          "averaging": "24-hour",
-          "impliedConc": 192.8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 84,
-          "subMin": 81,
-          "subMax": 89,
-          "averaging": "8-hour",
-          "impliedConc": 1.7,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 5,
-          "subMin": 2,
-          "subMax": 17,
-          "averaging": "8-hour",
-          "impliedConc": 5,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM2.5": {
-          "sub": 246,
+          "sub": 247,
           "subMin": 108,
           "subMax": 338,
           "averaging": "24-hour",
-          "impliedConc": 104.2,
+          "impliedConc": 104.5,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 163,
+          "subMin": 114,
+          "subMax": 201,
+          "averaging": "24-hour",
+          "impliedConc": 194.3,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 69,
+          "subMin": 17,
+          "subMax": 122,
+          "averaging": "24-hour",
+          "impliedConc": 55.3,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -4678,18 +4664,27 @@
         "SO2": {
           "sub": 10,
           "subMin": 3,
-          "subMax": 28,
+          "subMax": 20,
           "averaging": "24-hour",
           "impliedConc": 8,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "NO2": {
-          "sub": 68,
-          "subMin": 17,
-          "subMax": 122,
-          "averaging": "24-hour",
-          "impliedConc": 54.5,
+        "CO": {
+          "sub": 83,
+          "subMin": 78,
+          "subMax": 89,
+          "averaging": "8-hour",
+          "impliedConc": 1.7,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 7,
+          "subMin": 2,
+          "subMax": 23,
+          "averaging": "8-hour",
+          "impliedConc": 7,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -4698,24 +4693,24 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Maidan Garhi, Delhi-DPCC",
       "lat": 28.475672,
       "lng": 77.213538,
-      "aqi": 244,
+      "aqi": 246,
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
+        "PM2.5",
         "PM10",
+        "NO2",
         "SO2",
         "CO",
-        "PM2.5",
-        "NO2",
         "OZONE"
       ],
       "notReported": [
@@ -4723,12 +4718,30 @@
         "PB"
       ],
       "pollutants": {
+        "PM2.5": {
+          "sub": 246,
+          "subMin": 123,
+          "subMax": 349,
+          "averaging": "24-hour",
+          "impliedConc": 104.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "PM10": {
-          "sub": 152,
+          "sub": 154,
           "subMin": 116,
           "subMax": 196,
           "averaging": "24-hour",
-          "impliedConc": 177.8,
+          "impliedConc": 180.8,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 37,
+          "subMin": 16,
+          "subMax": 66,
+          "averaging": "24-hour",
+          "impliedConc": 29.6,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -4744,36 +4757,18 @@
         "CO": {
           "sub": 45,
           "subMin": 44,
-          "subMax": 45,
+          "subMax": 46,
           "averaging": "8-hour",
           "impliedConc": 0.9,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "PM2.5": {
-          "sub": 244,
-          "subMin": 123,
-          "subMax": 349,
-          "averaging": "24-hour",
-          "impliedConc": 103.6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 37,
-          "subMin": 16,
-          "subMax": 66,
-          "averaging": "24-hour",
-          "impliedConc": 29.6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "OZONE": {
-          "sub": 10,
+          "sub": 31,
           "subMin": 6,
-          "subMax": 20,
+          "subMax": 112,
           "averaging": "8-hour",
-          "impliedConc": 10,
+          "impliedConc": 31,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -4782,46 +4777,46 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "IGNOU_Maidan Garhi, Delhi - DPCC",
       "lat": 28.493624,
       "lng": 77.201159,
-      "aqi": 227,
+      "aqi": 231,
       "band": "Poor",
       "governing": "PM10",
       "reported": [
-        "PM10",
-        "SO2",
-        "NO2",
-        "CO",
         "PM2.5",
+        "PM10",
+        "NO2",
         "NH3",
+        "SO2",
+        "CO",
         "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "PM10": {
-          "sub": 227,
-          "subMin": 124,
-          "subMax": 411,
+        "PM2.5": {
+          "sub": 193,
+          "subMin": 24,
+          "subMax": 341,
           "averaging": "24-hour",
-          "impliedConc": 277,
+          "impliedConc": 87.9,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "SO2": {
-          "sub": 7,
-          "subMin": 3,
-          "subMax": 18,
+        "PM10": {
+          "sub": 231,
+          "subMin": 124,
+          "subMax": 411,
           "averaging": "24-hour",
-          "impliedConc": 5.6,
+          "impliedConc": 281,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -4834,24 +4829,6 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "CO": {
-          "sub": 97,
-          "subMin": 93,
-          "subMax": 101,
-          "averaging": "8-hour",
-          "impliedConc": 1.9,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 193,
-          "subMin": 24,
-          "subMax": 341,
-          "averaging": "24-hour",
-          "impliedConc": 87.9,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "NH3": {
           "sub": 2,
           "subMin": 2,
@@ -4861,12 +4838,30 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "OZONE": {
-          "sub": 3,
-          "subMin": 0,
-          "subMax": 20,
+        "SO2": {
+          "sub": 7,
+          "subMin": 3,
+          "subMax": 18,
+          "averaging": "24-hour",
+          "impliedConc": 5.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 93,
+          "subMin": 68,
+          "subMax": 101,
           "averaging": "8-hour",
-          "impliedConc": 3,
+          "impliedConc": 1.9,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 11,
+          "subMin": 0,
+          "subMax": 65,
+          "averaging": "8-hour",
+          "impliedConc": 11,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -4875,73 +4870,55 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Vasundhara Enclave, Delhi - DPCC",
       "lat": 28.603699,
       "lng": 77.321644,
-      "aqi": 224,
+      "aqi": 223,
       "band": "Poor",
       "governing": "PM10",
       "reported": [
-        "NO2",
-        "OZONE",
-        "CO",
         "PM2.5",
         "PM10",
+        "NO2",
         "NH3",
-        "SO2"
+        "SO2",
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
-        "NO2": {
-          "sub": 53,
-          "subMin": 32,
-          "subMax": 75,
-          "averaging": "24-hour",
-          "impliedConc": 42.6,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 2,
-          "subMin": 2,
-          "subMax": 3,
-          "averaging": "8-hour",
-          "impliedConc": 2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "CO": {
-          "sub": 125,
-          "subMin": 115,
-          "subMax": 140,
-          "averaging": "8-hour",
-          "impliedConc": 4,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM2.5": {
           "sub": 201,
           "subMin": 110,
-          "subMax": 311,
+          "subMax": 315,
           "averaging": "24-hour",
           "impliedConc": 91,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "PM10": {
-          "sub": 224,
+          "sub": 223,
           "subMin": 139,
-          "subMax": 373,
+          "subMax": 359,
           "averaging": "24-hour",
-          "impliedConc": 274,
+          "impliedConc": 273,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 53,
+          "subMin": 32,
+          "subMax": 77,
+          "averaging": "24-hour",
+          "impliedConc": 42.6,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -4957,9 +4934,27 @@
         "SO2": {
           "sub": 12,
           "subMin": 8,
-          "subMax": 17,
+          "subMax": 15,
           "averaging": "24-hour",
           "impliedConc": 9.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 121,
+          "subMin": 111,
+          "subMax": 136,
+          "averaging": "8-hour",
+          "impliedConc": 3.7,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 3,
+          "subMin": 2,
+          "subMax": 5,
+          "averaging": "8-hour",
+          "impliedConc": 3,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -4968,9 +4963,9 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
@@ -4981,9 +4976,9 @@
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
+        "PM2.5",
         "PM10",
         "NO2",
-        "PM2.5",
         "CO",
         "OZONE"
       ],
@@ -4993,24 +4988,6 @@
         "PB"
       ],
       "pollutants": {
-        "PM10": {
-          "sub": 201,
-          "subMin": 150,
-          "subMax": 417,
-          "averaging": "24-hour",
-          "impliedConc": 251,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 41,
-          "subMin": 15,
-          "subMax": 75,
-          "averaging": "24-hour",
-          "impliedConc": 32.8,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM2.5": {
           "sub": 221,
           "subMin": 99,
@@ -5020,21 +4997,39 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
+        "PM10": {
+          "sub": 202,
+          "subMin": 150,
+          "subMax": 417,
+          "averaging": "24-hour",
+          "impliedConc": 252,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 40,
+          "subMin": 15,
+          "subMax": 75,
+          "averaging": "24-hour",
+          "impliedConc": 32,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "CO": {
-          "sub": 75,
-          "subMin": 61,
+          "sub": 70,
+          "subMin": 48,
           "subMax": 87,
           "averaging": "8-hour",
-          "impliedConc": 1.5,
+          "impliedConc": 1.4,
           "impliedUnit": "mg/m³",
           "concBasis": "implied-from-subindex"
         },
         "OZONE": {
-          "sub": 18,
+          "sub": 28,
           "subMin": 13,
-          "subMax": 36,
+          "subMax": 92,
           "averaging": "8-hour",
-          "impliedConc": 18,
+          "impliedConc": 28,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -5043,37 +5038,55 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Cantonment Area, Delhi - DPCC",
       "lat": 28.594169,
       "lng": 77.1251,
-      "aqi": 208,
+      "aqi": 210,
       "band": "Poor",
       "governing": "PM2.5",
       "reported": [
-        "PM10",
-        "NH3",
-        "CO",
-        "OZONE",
         "PM2.5",
+        "PM10",
         "NO2",
-        "SO2"
+        "NH3",
+        "SO2",
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "PB"
       ],
       "pollutants": {
+        "PM2.5": {
+          "sub": 210,
+          "subMin": 65,
+          "subMax": 322,
+          "averaging": "24-hour",
+          "impliedConc": 93.6,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
         "PM10": {
-          "sub": 178,
+          "sub": 179,
           "subMin": 103,
           "subMax": 328,
           "averaging": "24-hour",
-          "impliedConc": 216.9,
+          "impliedConc": 218.4,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 41,
+          "subMin": 15,
+          "subMax": 71,
+          "averaging": "24-hour",
+          "impliedConc": 32.8,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -5086,42 +5099,6 @@
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
-        "CO": {
-          "sub": 112,
-          "subMin": 107,
-          "subMax": 117,
-          "averaging": "8-hour",
-          "impliedConc": 3,
-          "impliedUnit": "mg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "OZONE": {
-          "sub": 2,
-          "subMin": 1,
-          "subMax": 3,
-          "averaging": "8-hour",
-          "impliedConc": 2,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 208,
-          "subMin": 49,
-          "subMax": 322,
-          "averaging": "24-hour",
-          "impliedConc": 93.1,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "NO2": {
-          "sub": 43,
-          "subMin": 15,
-          "subMax": 100,
-          "averaging": "24-hour",
-          "impliedConc": 34.4,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "SO2": {
           "sub": 5,
           "subMin": 1,
@@ -5130,28 +5107,46 @@
           "impliedConc": 4,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
+        },
+        "CO": {
+          "sub": 111,
+          "subMin": 105,
+          "subMax": 117,
+          "averaging": "8-hour",
+          "impliedConc": 2.9,
+          "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 2,
+          "subMin": 1,
+          "subMax": 4,
+          "averaging": "8-hour",
+          "impliedConc": 2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
         }
       },
       "stamp": {
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Lodhi Road, Delhi - IITM",
       "lat": 28.588333,
       "lng": 77.221667,
-      "aqi": 195,
-      "band": "Moderately Polluted",
+      "aqi": 205,
+      "band": "Poor",
       "governing": "PM2.5",
       "reported": [
+        "PM2.5",
         "PM10",
         "NO2",
-        "PM2.5",
         "SO2"
       ],
       "notReported": [
@@ -5161,39 +5156,39 @@
         "PB"
       ],
       "pollutants": {
-        "PM10": {
-          "sub": 181,
-          "subMin": 153,
-          "subMax": 208,
+        "PM2.5": {
+          "sub": 205,
+          "subMin": 131,
+          "subMax": 304,
           "averaging": "24-hour",
-          "impliedConc": 221.4,
+          "impliedConc": 92.2,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "PM10": {
+          "sub": 184,
+          "subMin": 153,
+          "subMax": 250,
+          "averaging": "24-hour",
+          "impliedConc": 225.9,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "NO2": {
-          "sub": 87,
+          "sub": 90,
           "subMin": 25,
-          "subMax": 163,
+          "subMax": 170,
           "averaging": "24-hour",
-          "impliedConc": 69.7,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
-        "PM2.5": {
-          "sub": 195,
-          "subMin": 127,
-          "subMax": 282,
-          "averaging": "24-hour",
-          "impliedConc": 88.5,
+          "impliedConc": 72,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
         "SO2": {
-          "sub": 14,
+          "sub": 15,
           "subMin": 3,
-          "subMax": 30,
+          "subMax": 34,
           "averaging": "24-hour",
-          "impliedConc": 11.2,
+          "impliedConc": 12,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -5202,21 +5197,21 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "Shadipur, Delhi - CPCB",
       "lat": 28.6514781,
       "lng": 77.1473105,
-      "aqi": 179,
+      "aqi": 178,
       "band": "Moderately Polluted",
       "governing": "PM10",
       "reported": [
-        "NO2",
         "PM10",
+        "NO2",
         "NH3",
         "SO2",
         "CO",
@@ -5227,21 +5222,21 @@
         "PB"
       ],
       "pollutants": {
-        "NO2": {
-          "sub": 167,
-          "subMin": 95,
-          "subMax": 244,
-          "averaging": "24-hour",
-          "impliedConc": 147,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "PM10": {
-          "sub": 179,
+          "sub": 178,
           "subMin": 115,
           "subMax": 266,
           "averaging": "24-hour",
-          "impliedConc": 218.4,
+          "impliedConc": 216.9,
+          "impliedUnit": "µg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "NO2": {
+          "sub": 166,
+          "subMin": 95,
+          "subMax": 244,
+          "averaging": "24-hour",
+          "impliedConc": 146,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         },
@@ -5264,8 +5259,8 @@
           "concBasis": "implied-from-subindex"
         },
         "CO": {
-          "sub": 40,
-          "subMin": 28,
+          "sub": 38,
+          "subMin": 23,
           "subMax": 56,
           "averaging": "8-hour",
           "impliedConc": 0.8,
@@ -5273,11 +5268,11 @@
           "concBasis": "implied-from-subindex"
         },
         "OZONE": {
-          "sub": 27,
+          "sub": 33,
           "subMin": 11,
-          "subMax": 37,
+          "subMax": 61,
           "averaging": "8-hour",
-          "impliedConc": 27,
+          "impliedConc": 33,
           "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
@@ -5286,21 +5281,21 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     },
     {
       "station": "NSIT Dwarka, Delhi - CPCB",
       "lat": 28.60909,
       "lng": 77.0325413,
-      "aqi": 51,
+      "aqi": 53,
       "band": "Satisfactory",
       "governing": "CO",
       "reported": [
-        "OZONE",
-        "CO"
+        "CO",
+        "OZONE"
       ],
       "notReported": [
         "PM10",
@@ -5311,22 +5306,22 @@
         "PB"
       ],
       "pollutants": {
-        "OZONE": {
-          "sub": 21,
-          "subMin": 20,
-          "subMax": 21,
-          "averaging": "8-hour",
-          "impliedConc": 21,
-          "impliedUnit": "µg/m³",
-          "concBasis": "implied-from-subindex"
-        },
         "CO": {
-          "sub": 51,
+          "sub": 53,
           "subMin": 39,
           "subMax": 64,
           "averaging": "8-hour",
           "impliedConc": 1.1,
           "impliedUnit": "mg/m³",
+          "concBasis": "implied-from-subindex"
+        },
+        "OZONE": {
+          "sub": 26,
+          "subMin": 20,
+          "subMax": 47,
+          "averaging": "8-hour",
+          "impliedConc": 26,
+          "impliedUnit": "µg/m³",
           "concBasis": "implied-from-subindex"
         }
       },
@@ -5334,16 +5329,16 @@
         "y": 2026,
         "m": 11,
         "d": 19,
-        "hh": 10,
+        "hh": 11,
         "mi": 0,
-        "raw": "19-11-2026 10:00:00"
+        "raw": "19-11-2026 11:00:00"
       }
     }
   ],
   "check": {
-    "status": "same_observation",
-    "at": "2026-11-19T05:32:11.096Z",
-    "served_by": "data.gov.in mirror (resource 3b01bcb8)",
+    "status": "new_observation",
+    "at": "2026-11-19T05:40:08.887Z",
+    "served_by": "CPCB CAAQMS live feed (airquality.cpcb.gov.in/caaqms/rss_feed)",
     "previous_observation": "19-11-2026 10:00:00",
     "reason": null
   },
