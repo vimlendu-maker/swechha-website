@@ -65,3 +65,14 @@ exited non-zero and is worth reading.
   the pages built from it, through the same gates the cloud job uses.
 - Remove it once a cloud path reaches CPCB again (the mirror recovering is enough for 4–10 h freshness; a
   relay rung that reaches CAAQMS is enough for real-time).
+
+## A hung git call freezes every later run (22 Oct 2026)
+
+launchd does not start a second copy of a job that is still running. On 22 Oct a `git fetch`
+in the retry loop stalled for 1 h 40 m, so the 07:40, 08:40 and later runs were silently skipped
+(the log simply has no line for them) until the fetch was killed. `scripts/air-local-publish.sh`
+now exports `GIT_HTTP_LOW_SPEED_LIMIT=1000`, `GIT_HTTP_LOW_SPEED_TIME=60` and
+`GIT_TERMINAL_PROMPT=0`, so a stalled push or fetch aborts within about a minute and takes the
+existing failure path. **Not covered:** the job's own first `git fetch` in the launchd plist runs
+before the script; if the log goes quiet for hours, check `ps` for a stuck `git fetch` under the
+job's PID and `launchctl kickstart -k gui/$(id -u)/in.swechha.air-local`.
