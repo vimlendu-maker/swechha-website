@@ -420,3 +420,31 @@ What happened: GT-20261107-07 through -11 and GT-20261108-05/-06 each say, in th
 ## 2026-11-11 — A diagnosed code gap can stop being a live incident without the gap itself closing, and only re-reading the data file shows which is true
 
 Yesterday's run correctly traced a live content defect (an election story overwriting a published cyclone dossier's hazard field) to a real code gap and briefed a fix. By this run, the dossier had naturally decayed forward again — a genuine cyclone story arrived and now agrees with the slug — so the live symptom is gone, `generated-current.yml` recovered on its own, and the brief filed to fix it never executed. Treating "the CI gate is green again" as "the defect is fixed" would have been wrong in the opposite direction from the usual trap: here the *symptom* resolved while the *mechanism* (no guard against an all-negative-flagged sole survivor) did not change at all. **Do:** when a diagnosed defect's live symptom disappears between runs, re-read the data file and built page to confirm whether the underlying mechanism was actually fixed or whether the inputs simply moved past it — a recovered gate is evidence of the former only if a merged PR explains it.
+
+## 2026-11-25 — A calendar file can hold two unmerged, non-colliding batches of rows for the same dates, and only one of them says so
+
+What happened: `calendar/months/green-the-map/2026-11.json` carries, for 25–27 Nov, both a `source_ref`-tagged "v3" batch (matching what little is actually built in `queue/`) and a separate, self-labelled `"blocked": "…no owner-approved campaign calendar row covers it"` draft batch, on different id suffixes so neither collides nor is visibly retired.
+
+**Do:** before reading a GTM month's rows for a date, check for more than one row at that date under different id suffixes; trust the one with `source_ref`/built evidence over one that names itself unapproved, and treat the leftover batch as filing debris for the Content Strategist to withdraw, not as a second live plan.
+**Source:** this run; calendar/months/green-the-map/2026-11.json lines 2011–2199 vs 4046–4182; queue/GT-2026112[4-9]* on disk.
+
+## 2026-11-25 — The department's own weekly review job has never actually run: DarkWake ate one Saturday, and its wiring points at the stale checkout anyway
+
+What happened: `com.swechha.communications-team-review` (Saturday 09:00 IST) last exited 6; its stderr: "REFUSED — github.com does not resolve from this process… DarkWake: the calendar timer fires but Wi-Fi has not associated… A run that had no network did not fail — it did not start." Its plist also sets `TEAM_REPO="$HOME/swechha-social"`, the checkout the 2026-10-19 lesson already named as stale and off `origin/main`.
+
+**Do:** before trusting that a scheduled review ran, read its plist's `StandardErrorPath` as well as `launchctl list`'s exit code; a DarkWake refusal is not a crash and will repeat every Saturday until the Mac is confirmed awake-with-network at that hour. Fix the `TEAM_REPO` wiring to a fresh `origin/main` worktree at the same time, not separately.
+**Source:** this run; `launchctl list`; `~/Library/LaunchAgents/com.swechha.communications-team-review.plist`; `/tmp/swechha-communications-team-review.err`.
+
+## 2026-11-25 — The Command Centre cannot render its own failed/missed/escalated list
+
+What happened: `tower.py:285` raises `UnboundLocalError: local variable 'pubs' referenced before assignment` on every page load, in the exact branch that prints "(E9)" job exceptions, per `~/.swechha-ai/logs/social-control-tower.err`.
+
+**Do:** treat a Command Centre that cannot render its exception list as equivalent to no alerting at all; check this log before assuming the owner has seen an E9. Not a content-team fix, but worth a standing check here each run.
+**Source:** this run; `~/.swechha-ai/logs/social-control-tower.err`.
+
+## 2026-11-25 — Farm's "NEEDS PHOTO" rows don't point at the Drive catalogue the way Swechha's do, and the whole month stalled behind it
+
+What happened: every unbuilt Farm row for 19–30 Nov carries its own `"NEEDS PHOTO"` line with no instruction to check the Drive master library first; Swechha's rows for the same stretch explicitly say "the Creative Director chooses the photograph (Drive catalogue first)." Farm production has not produced a single queue item since 18 Nov.
+
+**Do:** before any Farm row is called BLOCKED for a missing photograph, search Shared drive "Swechha Media" → `01_Master_Media_Library` → `Swechha_Farm` (and its `_Catalogue`) by name, the way the Creative Director's Swechha brief already requires; add the same instruction to the Farm row template so "NEEDS PHOTO" means searched-and-absent, not merely unlooked-for.
+**Source:** this run; calendar/months/swechha-farm/2026-11.json rows SF-20261124-60, -125-10, -127-10; `~/.claude/CLAUDE.md` §4 (18 Oct 2026, Drive-first rule); queue/SF-202611* (nothing built after 18 Nov).
