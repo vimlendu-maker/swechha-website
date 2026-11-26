@@ -73,7 +73,7 @@ function body(): string {
   lines.push('## Key facts')
   lines.push('')
   lines.push(`- Founded: ${FOUNDED_YEAR}`)
-  lines.push(`- Founder: ${founder.name} — ${SITE_URL}/about#vimlendu-jha`)
+  lines.push(`- Founder: ${founder.name} — ${founder.url}`)
   lines.push(`- Legal name: ${org.legalName}`)
   lines.push(`- Location: ${org.address.addressLocality}, ${country}`)
   lines.push('- Registration: Societies Registration Act, 80G, 12A, FCRA')

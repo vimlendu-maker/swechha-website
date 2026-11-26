@@ -40,18 +40,32 @@ describe('the legacy redirect map', () => {
   })
 
   it('lands an old profile URL on the person when /about gives them a heading', () => {
-    /* /about already publishes this exact URL as that person's Person.url in
-       its JSON-LD, so a redirect anywhere else was the one place the map
-       disagreed with the site's own structured data. The anchor is data
-       (`anchor` on the person in data/about-people.json), which is why this
-       asserts the shape rather than the name: any person given an anchor gets
-       one of these, and nobody else does. */
+    /* /about publishes a heading id for a person who has one (`anchor` on the
+       person in data/about-people.json), so a redirect to the top of /about
+       would make a reader hunt for them. Asserted by shape rather than name:
+       any anchored destination must be an /about heading, from a /profile/ URL,
+       on a real route. Since 2026-11-26 the only anchored person also has a
+       page of their own, which outranks the anchor (next test), so there may
+       be none of these today and that is correct. */
     const anchored = built.filter((r) => String(r.destination).includes('#'))
-    expect(anchored.length).toBeGreaterThan(0)
     for (const r of anchored) {
       expect(r.source).toMatch(/^\/profile\//)
       expect(String(r.destination)).toMatch(/^\/about#[a-z0-9-]+$/)
       expect(routes.has(routePart(String(r.destination)))).toBe(true)
+    }
+  })
+
+  it('lands an old profile URL on the person\'s own page when they have one', () => {
+    /* Owner ruling 2026-11-26: Vimlendu has /about/vimlendu-jha, and the old
+       /profile/vimlendu/ was the site's best non-homepage result for his name.
+       Every old profile URL of a person carrying `profile.route` must land
+       there — both of his (staff and governing body), matched by name — and
+       the destination must be a real route, not a 404 behind a 308. */
+    const own = built.filter((r) => /^\/about\/[a-z0-9-]+$/.test(String(r.destination)))
+    expect(own.map((r) => r.source).sort()).toEqual(['/profile/vimlendu', '/profile/vimlendu-jha-2'])
+    for (const r of own) {
+      expect(r.destination).toBe('/about/vimlendu-jha')
+      expect(routes.has(String(r.destination))).toBe(true)
     }
   })
 
