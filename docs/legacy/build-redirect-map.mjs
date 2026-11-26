@@ -268,6 +268,10 @@ const POST_RULES = [
 
 /* ---- PROFILES ---- */
 const people = readJSON('data/about-people.json')
+/* A person's own page is routed by design-routes.ts and built by
+   build-profile-pages.mjs; it is a real destination as soon as the person carries
+   `profile.route`, so it is read from the same dataset that builds it. */
+for (const p of [...people.team, ...people.governing_body]) if (p.profile?.route) ROUTES.add(p.profile.route)
 const TEAM = new Set(people.team.map((p) => p.slug))
 const BOARD = new Set(people.governing_body.map((p) => p.slug))
 
@@ -335,10 +339,20 @@ for (const { type, path } of inv) {
       [...people.team, ...people.governing_body].filter((p) => p.anchor).map((p) => [p.name, p.anchor]),
     )
     const bySlug = new Map([...people.team, ...people.governing_body].map((p) => [p.slug, p]))
+    const profiled = new Map(
+      [...people.team, ...people.governing_body].filter((p) => p.profile?.route).map((p) => [p.name, p.profile.route]),
+    )
     const anchor = anchored.get(bySlug.get(slug)?.name)
-    const dest = anchor ? `/about#${anchor}` : '/about'
-    if (TEAM.has(slug))        { to = dest; why = anchor ? 'staff bio; /about carries the team section, and this person has a heading of their own on it' : 'staff bio; /about carries the team section'; conf = 'exact' }
-    else if (BOARD.has(slug))  { to = dest; why = anchor ? 'governing body bio; /about carries the board section, and this person has a heading of their own on it' : 'governing body bio; /about carries the board section'; conf = 'exact' }
+    /* ★ 2026-11-26 — A PERSON WITH A PAGE OF THEIR OWN LANDS ON THAT PAGE.
+       Owner ruling: Vimlendu has /about/vimlendu-jha, and his Person JSON-LD
+       now points there. The anchor rule above still holds for everyone else;
+       a `profile.route` on the person outranks it, looked up by NAME for the
+       same reason the anchor is, so `/profile/vimlendu-jha-2/` (his
+       governing-body entry) reaches the same page. */
+    const own = profiled.get(bySlug.get(slug)?.name)
+    const dest = own ?? (anchor ? `/about#${anchor}` : '/about')
+    if (TEAM.has(slug))        { to = dest; why = own ? 'staff bio; this person has a page of their own (profile.route in data/about-people.json)' : anchor ? 'staff bio; /about carries the team section, and this person has a heading of their own on it' : 'staff bio; /about carries the team section'; conf = 'exact' }
+    else if (BOARD.has(slug))  { to = dest; why = own ? 'governing body bio; this person has a page of their own (profile.route in data/about-people.json)' : anchor ? 'governing body bio; /about carries the board section, and this person has a heading of their own on it' : 'governing body bio; /about carries the board section'; conf = 'exact' }
     /* Kamlika Chandla is the one old profile with nobody behind it: 16 old
        profiles and 16 new people, but the sets differ — the new data has
        naveen-joshua, the old site has her. OWNER, 2026-08-23: she has left.

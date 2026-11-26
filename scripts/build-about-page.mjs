@@ -81,6 +81,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as S from './lib/situation-shell.mjs';
 import { seo } from './lib/seo-register.mjs';
+import { personJsonLd, ldScript } from './lib/person-jsonld.mjs';
 /* `ask` and `askGates` are AD-27.14–22's component, authored once in the shell
    by lane 1. AD-27.56: lanes 3 and 4 build through this file and CALL it rather
    than retype AD-27.15's markup, and they inherit AD-27.16's CSS with it —
@@ -637,6 +638,7 @@ const person = (p) => `        <li class="a-p">
             <h3 class="a-p-n"${anchorFor(p)}>${esc(p.name)}</h3>
             <p class="lbl a-p-r">${esc(p.role)}</p>
             ${p.email ? `<p class="cap a-p-e"><a class="lk" href="mailto:${esc(p.email)}">${esc(p.email)}</a></p>` : ''}
+            ${p.profile ? `<p class="a-b-go"><a class="act" href="${p.profile.route}">Full profile ${ARROW}</a></p>` : ''}
 ${disclose(`About ${esc(p.name.split(' ')[0])}`,
     p.bio.map(t => `<p class="body a-p-x">${esc(t)}</p>`).join('\n            '))}
           </div>
@@ -859,21 +861,22 @@ if (!VJ) {
     + 'id="vimlendu-jha" anchor and the SEO phrase table all point at that entry.');
   process.exit(1);
 }
-const PERSON_JSON = {
-  '@context': 'https://schema.org',
-  '@type': 'Person',
-  name: VJ.name,
-  jobTitle: VJ.role,
-  worksFor: { '@type': 'NGO', name: 'Swechha' },
-  url: 'https://swechha.in/about#vimlendu-jha',
-  email: VJ.email,
-  knowsAbout: ['Air pollution', 'River restoration', 'Environmental education', 'Sustainability'],
-};
-/* Minified to one line, and `<` escaped to < so no value in the dataset can
-   ever close the script element early. JSON.stringify's output is otherwise
-   already safe inside a script of this type. */
-const PERSON_LD = '      <script type="application/ld+json">'
-  + JSON.stringify(PERSON_JSON).replace(/</g, '\\u003c') + '</script>';
+/* ★ 2026-11-26 — THE OBJECT NOW COMES FROM scripts/lib/person-jsonld.mjs, the
+   same function his own page (/about/vimlendu-jha, build-profile-pages.mjs)
+   calls, so the two pages emit one Person with one `@id` instead of two
+   hand-kept copies. Its `url` is now that page, not this page's #vimlendu-jha
+   heading: Google ranks pages for a name, not fragments. The anchor stays —
+   readers and old links still land on it. */
+if (!VJ.profile) {
+  console.error('DATA IS WRONG: the "vimlendu" entry has no `profile` object, so the Person '
+    + 'JSON-LD has no page to point at.');
+  process.exit(1);
+}
+/* The profiles and schools are LEFT OFF here: they are shown on his own page,
+   not on this one, and markup may not claim what its page does not show. The
+   shared `@id` is what lets a crawler join this block to the full one there. */
+const { sameAs: _sameAs, alumniOf: _alumniOf, ...PERSON_JSON } = personJsonLd(VJ);
+const PERSON_LD = ldScript(PERSON_JSON, '      ');
 
 /* ═══ NGO JSON-LD — TASK 6 ═══════════════════════════════════════════════
    /about is the canonical page for organisation identity, so it carries the
@@ -1577,7 +1580,7 @@ if (personLd) {
   if (personLd.name !== VJ.name) problems.push('name does not match the dataset');
   if (personLd.jobTitle !== VJ.role) problems.push('jobTitle does not match the dataset');
   if (personLd.email !== VJ.email) problems.push('email does not match the dataset');
-  if (!/#vimlendu-jha$/.test(personLd.url || '')) problems.push('url does not end at the anchor');
+  if (!(personLd.url || '').endsWith(VJ.profile.route)) problems.push('url is not his own page (profile.route)');
   if ('award' in personLd) problems.push('award is used — AD-27.50 refuses it');
   if ('telephone' in personLd) problems.push('telephone is used — G-4 struck the number');
   ldOk = problems.length === 0;
@@ -1586,6 +1589,7 @@ if (personLd) {
   ldWhy = 'no block of @type Person among the parsed ld+json blocks';
 }
 gate(ldOk, `Person JSON-LD is valid and agrees with the dataset${ldOk ? '' : `; ${ldWhy}`}`);
+gate(OUT.includes(`href="${VJ.profile.route}"`), `his card links to his own page, ${VJ.profile.route}`);
 gate((OUT.match(/id="vimlendu-jha"/g) || []).length === 1,
   'the id="vimlendu-jha" anchor the JSON-LD and the SEO phrase table point at exists, exactly once');
 
