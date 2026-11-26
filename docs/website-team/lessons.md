@@ -421,6 +421,40 @@ What happened: GT-20261107-07 through -11 and GT-20261108-05/-06 each say, in th
 
 Yesterday's run correctly traced a live content defect (an election story overwriting a published cyclone dossier's hazard field) to a real code gap and briefed a fix. By this run, the dossier had naturally decayed forward again — a genuine cyclone story arrived and now agrees with the slug — so the live symptom is gone, `generated-current.yml` recovered on its own, and the brief filed to fix it never executed. Treating "the CI gate is green again" as "the defect is fixed" would have been wrong in the opposite direction from the usual trap: here the *symptom* resolved while the *mechanism* (no guard against an all-negative-flagged sole survivor) did not change at all. **Do:** when a diagnosed defect's live symptom disappears between runs, re-read the data file and built page to confirm whether the underlying mechanism was actually fixed or whether the inputs simply moved past it — a recovered gate is evidence of the former only if a merged PR explains it.
 
+## 2026-11-26 — A port of a 2,800-line generator spent its whole turn budget reading and wrote nothing
+
+Building `/live-life-better` from `build-healthy-cities.mjs`, the engineering
+specialist used all 35 turns reading the shell, the generator and the spec, and
+the worktree had no file in it when it stopped. Resumed with one instruction —
+stop reading, copy the generator, write the data and generator in one call each,
+commit something before the budget ends — it finished, gates green, in one more
+round.
+
+**Do:** a brief for a port or any large generated page says up front "copy the
+nearest generator first, write in large single calls, and commit a WIP before the
+budget ends". Reading is not progress the lead can check; a file on the branch is.
+
+## 2026-11-26 — `data/work/onward.json` `routes[]` is one more hand-kept route list
+
+A new top-level route that is linked from the footer fails the WORK pages' link
+gate (`FAIL:not-in-route-map`, 16 pages) until it is added to `onward.json`'s
+`routes[]`, separately from `design-routes.ts`. Same parallel-list failure class
+the route invariant exists for.
+
+**Do:** adding any top-level route, grep `healthy-cities` (the last microsite) across
+`scripts/ lib/ data/ .github/` and register in every list that is about a page
+existing — `onward.json` is the one people miss.
+
+## 2026-11-26 — A partner page drafted outside the repo arrives without its facts' sources
+
+Ashim's Live Life Better draft (a re-skinned built HC page) carried figures, dates
+and a school roster with no proposal or report behind them, and none could be found
+on Drive. PR #305 was opened as a draft with the unchecked claims listed, rather than
+shipped.
+
+**Do:** when a page arrives as finished HTML, ask for the project's own report at
+the same time; open the PR as draft until each figure has a source.
+
 ## 2026-11-26 — APPROVED: Vimlendu Jha gets /about/vimlendu-jha; a person's own page outranks their /about anchor everywhere
 
 What happened: the owner asked for an SEO assessment, and the finding was that a search for his name had nothing on swechha.in but a heading inside /about. The owner approved, in chat, a page of his own at `/about/vimlendu-jha`, with the current About bio unchanged, these profiles in `sameAs` (X, Newslaundry, The Quint, Wikidata Q124518724; LinkedIn approved but no URL given), and St Stephen's and TISS as `alumniOf`. Built by an interactive session, not the department: `content_seo` is inactive, so no role covers this.

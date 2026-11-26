@@ -267,6 +267,8 @@ export const TIER = {
      whose counts it says are a floor. */
   horizon: 't3',
   voices: 't3', watch: 't3',
+  /* /live-life-better: its own band ids, declared for the reason above. */
+  gardens: 't2', 'zero-waste': 't2', films: 't3', schools: 't2', learned: 't3',
   onward: 't3',
 };
 
