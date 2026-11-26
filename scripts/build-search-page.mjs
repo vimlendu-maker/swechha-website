@@ -213,6 +213,7 @@ const GROUPS = [
      partner — and eleven rows under a nav word they do not sit beneath would be
      the same misfiling in the other direction. */
   { name: 'Healthy Cities', test: (r) => r === '/healthy-cities' || r.startsWith('/healthy-cities/') },
+  { name: 'Live Life Better', test: (r) => r === '/live-life-better' },
   { name: 'Schools', test: (r) => r === '/schools' || r.startsWith('/schools/') },
   { name: 'Posters', test: (r) => r === '/posters' || r.startsWith('/posters/') },
   { name: 'Publications', test: (r) => r === '/publications' },

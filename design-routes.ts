@@ -319,6 +319,9 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
        short link somebody hands a partner. */
     '/healthy-cities': 'healthy-cities.html',
     ...fellowRoutes(),
+    /* `/live-life-better` — the 2025-26 One Planet Network project, a sibling
+       of /healthy-cities. Route, built file and footer row are one change. */
+    '/live-life-better': 'live-life-better.html',
     /* `/learn` — the knowledge library behind the readings. It joins the map
        in the same commit that builds it and that links it from the footer
        index, for the reason the paragraphs above give: a built page, a routed
