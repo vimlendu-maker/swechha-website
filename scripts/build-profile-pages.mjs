@@ -44,6 +44,9 @@ const MEDIA_GROUPS = [
   ['tv', 'On television'],
   ['interview', 'Interviews and podcasts'],
   ['talk', 'Talks'],
+  /* Swechha's own series, which he hosts: the organisation's channel, not
+     coverage, so it is a group of its own and never mixed into the others. */
+  ['podcast', 'Swechha\u2019s podcast'],
   ['press', 'Written about him'],
 ];
 const PEOPLE = ABOUT.team.filter((p) => p.profile);
@@ -161,7 +164,7 @@ ${p.bio.map((t) => `      <p class="body">${esc(t)}</p>`).join('\n')}
   const byGroup = MEDIA_GROUPS.map(([k, label]) => [label, mine.filter((i) => i.profile === k)
     .sort((a, b) => (b.date || '').localeCompare(a.date || ''))]).filter(([, xs]) => xs.length);
   B.media = () => `${opener('media', 'In the<br>media',
-    'Interviews, panels, talks and press, each linked to where it was published, under its own title.')}
+    'Interviews, panels, talks, press and Swechha&rsquo;s own podcast, each linked to where it was published, under its own title.')}
     <div class="wrap"><div class="vp-groups">
 ${byGroup.map(([label, xs]) => `      <section>
         <h3 class="vp-g-h">${esc(label)}</h3>
