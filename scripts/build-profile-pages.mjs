@@ -33,6 +33,19 @@ import { personJsonLd, personId, ldScript } from './lib/person-jsonld.mjs';
 const { esc, opener, ARROW } = S;
 
 const ABOUT = JSON.parse(readFileSync(join(S.ROOT, 'data/about-people.json'), 'utf8'));
+/* ★ IN THE MEDIA (owner ruling 2026-11-26) IS READ FROM THE EXISTING
+   ON-THE-RECORD REGISTER, not a second list. Its rule carries over unchanged:
+   every item was published, links to where it was published, and shows the
+   publisher's own title verbatim. An item reaches this page only if it carries
+   `profile`; the register belongs to whoever `person.name` names, so the band is
+   built only on that person's page. */
+const VOICE = JSON.parse(readFileSync(join(S.ROOT, 'data/media/vimlendu-voice.json'), 'utf8'));
+const MEDIA_GROUPS = [
+  ['tv', 'On television'],
+  ['interview', 'Interviews and podcasts'],
+  ['talk', 'Talks'],
+  ['press', 'Written about him'],
+];
 const PEOPLE = ABOUT.team.filter((p) => p.profile);
 
 let dataBad = 0;
@@ -49,6 +62,11 @@ for (const p of PEOPLE) {
   }
   try { seo(r); } catch { dataFail(`${p.name}: data/seo/pages.json has no entry for ${r}.`); }
 }
+for (const i of VOICE.items.filter((x) => x.profile)) {
+  if (!MEDIA_GROUPS.some(([k]) => k === i.profile)) dataFail(`media item ${i.id}: profile "${i.profile}" is not one of ${MEDIA_GROUPS.map(([k]) => k).join(', ')}.`);
+  if (!/^https:\/\//.test(i.url || '') || !i.title || !i.outlet) dataFail(`media item ${i.id}: needs an https url, a verbatim title and an outlet.`);
+  if (i.date && !/^\d{4}-\d{2}-\d{2}$/.test(i.date)) dataFail(`media item ${i.id}: date "${i.date}" is not YYYY-MM-DD.`);
+}
 if (dataBad) {
   console.error(`\nREFUSING TO WRITE: ${dataBad} data check(s) failed.`);
   process.exit(1);
@@ -59,10 +77,11 @@ if (dataBad) {
 const BANDS = [
   ['top',       't1',        '#0D0D0B'],
   ['bio',       'paper t2',  '#F3F2F0'],
+  ['media',     'paper-2 t3', '#ECEBE8'],
   ['elsewhere', 't2',        '#0D0D0B'],
 ];
 const clashes = S.groundChain(BANDS);
-const INDEX = [['In Swechha’s words', '#bio'], ['Elsewhere', '#elsewhere']];
+const INDEX = [['In Swechha’s words', '#bio'], ['In the media', '#media'], ['Elsewhere', '#elsewhere']];
 
 /* The lead is the bio's own first sentence, lifted rather than written. */
 const firstSentence = (t) => (t.match(/^.*?[.!?](?=\s|$)/) || [t])[0];
@@ -79,6 +98,14 @@ const PAGE_CSS = `
 .vp-bio{max-width:66ch}
 .vp-bio p{margin:0 0 1.1em;color:var(--ink-2)}
 .vp-bio p:last-child{margin-bottom:0}
+.vp-groups{display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(28px,3.6vw,46px)}
+.vp-g-h{margin:0 0 clamp(8px,1vw,12px);color:var(--ink);font-size:clamp(17px,1.35vw,21px);line-height:1.25}
+.vp-m{list-style:none;margin:0;padding:0}
+.vp-m-i{padding:clamp(10px,1.3vw,15px) 0;border-top:1px solid var(--rule-2)}
+.vp-m-i:first-child{border-top:2px solid var(--ink)}
+.vp-m-t{display:block;color:var(--ink);font-size:clamp(16px,1.25vw,19px);line-height:1.38}
+.vp-m-s{display:block;margin-top:4px;color:var(--ink-2);font-family:Archivo,system-ui,sans-serif;
+  font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-variant-numeric:tabular-nums}
 .vp-reg{list-style:none;margin:0 0 clamp(26px,3.4vw,44px);padding:0}
 .vp-row{display:grid;grid-template-columns:minmax(0,1fr);gap:.2em 0;
   padding:clamp(12px,1.5vw,17px) 0;border-top:1px solid var(--hair)}
@@ -86,6 +113,9 @@ const PAGE_CSS = `
 .vp-k{margin:0;color:var(--fg-3)}
 .vp-v{margin:0;color:var(--fg);font-size:clamp(16px,1.25vw,19px);line-height:1.4}
 .vp-v .lk{color:var(--fg)}
+@media (min-width:1024px){
+  .vp-groups{grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(30px,3.4vw,46px)}
+}
 @media (min-width:640px){
   .vp-top{grid-template-columns:minmax(0,300px) minmax(0,1fr)}
   .vp-row{grid-template-columns:minmax(0,11em) minmax(0,1fr);gap:0 clamp(14px,2vw,28px)}
@@ -116,6 +146,32 @@ for (const p of PEOPLE) {
     `The description Swechha publishes of ${esc(first)} on its About page, unedited.`)}
     <div class="wrap"><div class="vp-bio">
 ${p.bio.map((t) => `      <p class="body">${esc(t)}</p>`).join('\n')}
+    </div></div>`;
+
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const when = (i) => {
+    if (!i.date) return '';
+    const [y, m, dd] = i.date.split('-').map(Number);
+    /* A YouTube date is the channel's UPLOAD date, not the broadcast's, so it
+       says "posted" rather than standing as when he was on air. */
+    const yt = /youtube\.com|youtu\.be/.test(i.url);
+    return `${yt ? 'Posted ' : ''}${dd} ${MONTHS[m - 1]} ${y}`;
+  };
+  const mine = VOICE.person?.name === p.name ? VOICE.items.filter((i) => i.profile) : [];
+  const byGroup = MEDIA_GROUPS.map(([k, label]) => [label, mine.filter((i) => i.profile === k)
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''))]).filter(([, xs]) => xs.length);
+  B.media = () => `${opener('media', 'In the<br>media',
+    'Interviews, panels, talks and press, each linked to where it was published, under its own title.')}
+    <div class="wrap"><div class="vp-groups">
+${byGroup.map(([label, xs]) => `      <section>
+        <h3 class="vp-g-h">${esc(label)}</h3>
+        <ul class="vp-m" role="list">
+${xs.map((i) => `          <li class="vp-m-i">
+            <a class="lk vp-m-t" href="${esc(i.url)}" rel="noopener">${esc(i.title)}${i.kind === 'clip' ? '&hellip;' : ''}</a>
+            <span class="vp-m-s">${[esc(i.outlet), when(i)].filter(Boolean).join(' &middot; ')}</span>
+          </li>`).join('\n')}
+        </ul>
+      </section>`).join('\n')}
     </div></div>`;
 
   const rows = [
@@ -187,6 +243,13 @@ ${rows.map(([k, v]) => `        <li class="vp-row">
   gate(unshown.length === 0, `every Person value is visible on the page${unshown.length ? `; NOT SHOWN: ${unshown.join(', ')}` : ''}`);
   gate(lds.some((d) => d?.['@type'] === 'ProfilePage' && d.mainEntity?.['@id'] === personId(p)),
     'ProfilePage names the Person as its mainEntity');
+
+  // 2b. Every chosen media item reaches the page, linked and under its own
+  //     title, and the item the owner excluded does not.
+  const lostMedia = mine.filter((i) => !OUT.includes(`href="${esc(i.url)}"`) || !OUT.includes(esc(i.title)));
+  gate(mine.length > 0 && lostMedia.length === 0,
+    `all ${mine.length} media items render, linked, under their own titles${lostMedia.length ? `; MISSING: ${lostMedia.map((i) => i.id).join(', ')}` : ''}`);
+  gate(!OUT.includes('05v3CGbG9f8'), 'the conversation the owner excluded (05v3CGbG9f8) is not on the page');
 
   // 3. One h1, and it is the name.
   const h1s = [...OUT.matchAll(/<h1[^>]*>([\s\S]*?)<\/h1>/g)].map((m) => m[1].trim());
