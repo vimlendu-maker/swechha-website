@@ -454,3 +454,29 @@ shipped.
 
 **Do:** when a page arrives as finished HTML, ask for the project's own report at
 the same time; open the PR as draft until each figure has a source.
+
+## 2026-11-26 — APPROVED: Vimlendu Jha gets /about/vimlendu-jha; a person's own page outranks their /about anchor everywhere
+
+What happened: the owner asked for an SEO assessment, and the finding was that a search for his name had nothing on swechha.in but a heading inside /about. The owner approved, in chat, a page of his own at `/about/vimlendu-jha`, with the current About bio unchanged, these profiles in `sameAs` (X, Newslaundry, The Quint, Wikidata Q124518724; LinkedIn approved but no URL given), and St Stephen's and TISS as `alumniOf`. Built by an interactive session, not the department: `content_seo` is inactive, so no role covers this.
+
+**Do:** a person gets a page by adding a `profile` object to their entry in `data/about-people.json`, and nothing else. `build-profile-pages.mjs`, the Person JSON-LD (`scripts/lib/person-jsonld.mjs`), the /about card link and the legacy `/profile/<slug>/` redirects all read it. Never type a person's JSON-LD by hand on a second page; call the shared function, so one `@id` describes one human. Never add a `sameAs` URL the owner has not confirmed (the LinkedIn slot is recorded as pending, not guessed).
+**Source:** PR for branch `feat/vimlendu-profile-page`; `data/about-people.json` → `team[vimlendu].profile`.
+
+## 2026-11-26 — A band class that sets `padding: Y 0 Z` on the same element as `.wrap` zeroes the page gutter
+
+What happened: the first build of the profile page put `class="wrap vp-top"` on the masthead. `.vp-top`'s padding shorthand overrode `.wrap`'s side padding, so the portrait and the name sat flush against the left edge at both 375px and desktop. Every generator gate passed, because none of them measures layout. The first screenshot caught it.
+
+**Do:** put a band's own layout class on a child inside `.wrap`, never on the `.wrap` element itself. Take a capture at 375 and at desktop before calling a new page done.
+**Source:** `scripts/build-profile-pages.mjs` (`B.top`).
+
+## 2026-11-26 — A plain static file server shows every served page with broken images; preview through `next dev`
+
+What happened: serving `public/` with `python -m http.server` rendered the logo and every photograph broken, because the served pages' `srcset` goes through `/_next/image`. That looked like a page defect and was not one.
+
+**Do:** preview a built page through `npx next dev -p <port>` from the worktree. That also exercises `design-routes.ts`, the legacy redirects and `/sitemap.xml`, which a file server cannot.
+
+## 2026-11-26 — `lib/active-situation.test.ts` fails 2 tests on clean `origin/main` (cf973a93c)
+
+What happened: "moves no slug on any dossier already committed" (tamil-nadu-landslide→cyclone, uttar-pradesh-flood→cyclone) and "flags exactly the named exceptions… and no fifth" fail with no local change, confirmed by stashing and re-running. `lib/scripts-parse.test.ts`'s "leaves the working tree untouched" fails whenever built pages are uncommitted, and passes after the commit.
+
+**Do:** before reporting a red `npm test` as your regression, re-run the failing file on a clean tree. The two active-situation failures are a live climate-event data issue and need their own fix; this entry is not that fix.

@@ -376,6 +376,11 @@ export function designRoutes(): Array<{ source: string; destination: string }> {
     '/teach/a-to-z': 'teach/a-to-z.html',
     ...teachRoutes(),
     '/about': 'about.html',
+    /* `/about/vimlendu-jha` — the founder's own page (owner ruling 2026-11-26),
+       built by build-profile-pages.mjs from the person's `profile` object in
+       data/about-people.json and linked from his card on /about. Google ranks a
+       page for a name, not a heading inside a sixteen-person page. */
+    '/about/vimlendu-jha': 'about/vimlendu-jha.html',
     '/impact': 'impact.html',
     '/farm': 'farm.html',
     '/act': 'act.html',
