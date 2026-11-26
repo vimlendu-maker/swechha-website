@@ -480,3 +480,16 @@ What happened: serving `public/` with `python -m http.server` rendered the logo 
 What happened: "moves no slug on any dossier already committed" (tamil-nadu-landslide→cyclone, uttar-pradesh-flood→cyclone) and "flags exactly the named exceptions… and no fifth" fail with no local change, confirmed by stashing and re-running. `lib/scripts-parse.test.ts`'s "leaves the working tree untouched" fails whenever built pages are uncommitted, and passes after the commit.
 
 **Do:** before reporting a red `npm test` as your regression, re-run the failing file on a clean tree. The two active-situation failures are a live climate-event data issue and need their own fix; this entry is not that fix.
+
+## 2026-11-26 — APPROVED: "In the media" on /about/vimlendu-jha reads the existing on-the-record register; the owner's selection rules
+
+What happened: the owner asked for an "In the media" section and set the rules. TV interviews, talks and press written about him go in. From X, "only media clips" go in, not his own commentary posts. The Rahul Gandhi conversation stays out. The owner then asked for recent interviews and panels to be found and added. The section reads `data/media/vimlendu-voice.json` (unread since its event-page band was removed on 2026-08-28), and an item appears only if it carries `profile`.
+
+**Do:** add a media item to that register with `profile` (tv | interview | talk | press), and never to a new list. Open each link and confirm his name appears before adding it. A panel whose pages never name him is not added (an IMPRI #PlanetTalks panel, 3 Dec 2025, was left out for this reason). Swechha's own podcast series is the organisation's channel, not coverage. A YouTube date is the channel's upload date, so print it as "Posted". An X post has no title: use its opening words verbatim, cut at a clause boundary.
+**Source:** `data/media/vimlendu-voice.json` → `_profile`; `scripts/build-profile-pages.mjs` (gate 2b keeps `05v3CGbG9f8` off the page).
+
+## 2026-11-26 — Reading X: the search URL `from:<handle> filter:native_video&f=live` lists every video post; a navigate wipes what you collected
+
+What happened: 53 video posts were collected into `window.__vj`, then lost when the next step in the same batch navigated away. The collection had to be run again.
+
+**Do:** return the collected list from the same JavaScript call, chunked under about 1,500 characters, before any navigation. Use the logged-in Chrome only to read; never post or like.
