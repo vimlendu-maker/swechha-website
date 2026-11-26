@@ -493,3 +493,9 @@ What happened: the owner asked for an "In the media" section and set the rules. 
 What happened: 53 video posts were collected into `window.__vj`, then lost when the next step in the same batch navigated away. The collection had to be run again.
 
 **Do:** return the collected list from the same JavaScript call, chunked under about 1,500 characters, before any navigation. Use the logged-in Chrome only to read; never post or like.
+
+## 2026-11-26 — APPROVED: Swechha's own podcast is a separate "In the media" group, and an episode goes in only if its page names him
+
+What happened: the owner asked for Swechha's podcast series on his page. Ten episodes on @swechhaindia name him in the title or description. The 2026 series' first episode (`_ZZ4TaY_CQo`) does not, although he probably hosts it, so it was left out rather than assumed.
+
+**Do:** keep the organisation's own content in its own group (`profile: "podcast"`) and never mix it into the coverage groups. If an episode's page doesn't name him, ask the owner whether he's in it rather than inferring it from the series.
