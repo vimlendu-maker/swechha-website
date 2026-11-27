@@ -499,3 +499,24 @@ What happened: 53 video posts were collected into `window.__vj`, then lost when 
 What happened: the owner asked for Swechha's podcast series on his page. Ten episodes on @swechhaindia name him in the title or description. The 2026 series' first episode (`_ZZ4TaY_CQo`) does not, although he probably hosts it, so it was left out rather than assumed.
 
 **Do:** keep the organisation's own content in its own group (`profile: "podcast"`) and never mix it into the coverage groups. If an episode's page doesn't name him, ask the owner whether he's in it rather than inferring it from the series.
+
+## 2026-11-27 — A Story share can sit self-flagged NEEDS HUMAN REVIEW for 11+ days while its parent grid post is never attempted
+
+What happened: SW-20261128-62, SW-20261128-63 and SW-20261129-62 were built on 15–16 Nov, each citing an explicit `DEPENDENCY` hold on its still-unbuilt parent (SW-20261128-10, SW-20261128-11, SW-20261129-10). Eleven days later the parents still have no `queue/` folder at all — nothing ever retried them, so the shares sit stalled with no path forward.
+
+**Do:** when the Build Desk builds a day's Story share ahead of its grid parent, the same or a following run should also attempt (or explicitly retry) the parent, rather than leaving it indefinitely un-attempted while the dependent share stalls on a hold that can never clear itself.
+**Source:** queue/SW-20261128-62, -63, SW-20261129-62 handoffs (creative-director, 2026-11-15/16); this run, 27 Nov 2026.
+
+## 2026-11-27 — Two row sets for the same Green The Map dates can sit in the committed calendar at once, one self-flagged needs-frames and one with real imported frames
+
+What happened: `calendar/months/green-the-map/2026-11.json` carries both an older planner draft (ids `GT-20261127-01/-02/-03` etc., every row `"blocked": "needs frames… no owner-approved campaign calendar row covers it"`) and the owner-approved v3 batch (ids `-04/-07`) for the identical 27–29 Nov dates. A reader, or a future automated run, cannot tell from the file alone which is live.
+
+**Do:** when a newer approved batch supersedes a planner draft for the same dates, mark the superseded rows explicitly (a `superseded_by` field or a hold), the way the Farm's amendment system already does, instead of leaving both sets in the file.
+**Source:** calendar/months/green-the-map/2026-11.json (ids -01/-02/-03 vs -04/-07); this run, 27 Nov 2026.
+
+## 2026-11-27 — A 56-day-old department-inbox job can sit unresolved with no record of closure
+
+What happened: `swechha/communications/team/inbox.md`'s "RE-BRIEF: SW-20261002-02" (filed 2 Oct 2026) matches `governance/rulings.md` R77's own "Open" note from the same day; nothing found in the repository confirms it was ever re-rendered or closed, and the item's `queue/` folder still holds only pre-current-schema assets.
+
+**Do:** a department-inbox job older than about two weeks with no matching resolution record should be named to the owner directly, rather than left for the next full audit to rediscover.
+**Source:** swechha/communications/team/inbox.md; governance/rulings.md R77 (merged 2026-10-02); this run, 27 Nov 2026.
