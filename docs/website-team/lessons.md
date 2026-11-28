@@ -513,3 +513,7 @@ What happened: the 23 Nov report read `~/swechha-social/queue/SW-20261002-02/spe
 
 **Do:** a Mac-local file outside `origin/main` (the old `~/swechha-social` checkout, the `control-tower` governance mirrors) is cited only as a dated artefact, never as evidence for a current finding — restate this each time rather than relying on memory of the 2026-10-19 lesson, since it was still mis-applied five weeks after being written.
 **Source:** this review; communications-decisions 2026-11-23 vs 2026-11-24.
+
+## 2026-11-28 — A standing CI-gate escalation's cost can be measured in stuck PRs, not just red checks
+
+The `bhutan-glof`/`tamil-nadu-landslide` naming decision has been reported as "red" since 2026-11-11 without anyone counting what it was actually stopping. `gh pr list` shows 10 open `docs(lessons)` PRs (2026-11-14 through 2026-11-27), each failing the identical `generated-current.yml` check regardless of touching only `lessons.md`, and `lessons.md` itself shows a real 29-day content gap as a result. **Do:** when re-escalating a standing CI blocker, check `gh pr list` for PRs of the department's own routine mechanisms (not just feature work) stuck behind it — a generic "still red" report undercounts the damage; naming the stuck PRs and the resulting content gap turns an abstract escalation into a concrete, auditable cost.
