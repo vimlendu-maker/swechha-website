@@ -499,3 +499,21 @@ What happened: 53 video posts were collected into `window.__vj`, then lost when 
 What happened: the owner asked for Swechha's podcast series on his page. Ten episodes on @swechhaindia name him in the title or description. The 2026 series' first episode (`_ZZ4TaY_CQo`) does not, although he probably hosts it, so it was left out rather than assumed.
 
 **Do:** keep the organisation's own content in its own group (`profile: "podcast"`) and never mix it into the coverage groups. If an episode's page doesn't name him, ask the owner whether he's in it rather than inferring it from the series.
+
+## 2026-11-28 — A week's worth of daily Head of Social reports can repeat the same finding five times without it reaching anyone who can act
+
+What happened: the Green The Map A1/A3 duplicate-row collision was named, identically, in all five daily reports from 23 to 27 Nov. Nothing withdrew the superseded rows in that time; the next daily report simply found it again.
+
+**Do:** when a diagnosis repeats unchanged for three days running in the daily reports, the weekly review (or, failing that, the next daily report) names it to the owner directly instead of re-filing it as "Diagnosed" again. A finding that never changes the file it describes is not being acted on by anyone.
+**Source:** this review; `calendar/months/green-the-map/2026-11.json`; daily reports 2026-11-23 through -27.
+
+## 2026-11-28 — A stale Mac-local cross-check file produced a wrong finding that the next day's report had to correct
+
+What happened: the 23 Nov report read `~/swechha-social/queue/SW-20261002-02/spec.json` (the old, stale Mac checkout) and reported the item "still haldi… Hindi still unsigned." The 24 Nov report, reading this worktree's own git history instead, found the item has never been `haldi` in tracked history at all. Both cannot be describing live truth; only the second was checking the right source.
+
+**Do:** a Mac-local file outside `origin/main` (the old `~/swechha-social` checkout, the `control-tower` governance mirrors) is cited only as a dated artefact, never as evidence for a current finding — restate this each time rather than relying on memory of the 2026-10-19 lesson, since it was still mis-applied five weeks after being written.
+**Source:** this review; communications-decisions 2026-11-23 vs 2026-11-24.
+
+## 2026-11-28 — A standing CI-gate escalation's cost can be measured in stuck PRs, not just red checks
+
+The `bhutan-glof`/`tamil-nadu-landslide` naming decision has been reported as "red" since 2026-11-11 without anyone counting what it was actually stopping. `gh pr list` shows 10 open `docs(lessons)` PRs (2026-11-14 through 2026-11-27), each failing the identical `generated-current.yml` check regardless of touching only `lessons.md`, and `lessons.md` itself shows a real 29-day content gap as a result. **Do:** when re-escalating a standing CI blocker, check `gh pr list` for PRs of the department's own routine mechanisms (not just feature work) stuck behind it — a generic "still red" report undercounts the damage; naming the stuck PRs and the resulting content gap turns an abstract escalation into a concrete, auditable cost.
