@@ -131,7 +131,7 @@ publish_once() {
 
   git -c user.name='swechha-air[local]' -c user.email='actions@github.com' commit -q \
     -m "data(air): ${st} — Delhi AQI ${aqi}, observed ${obs}" \
-    -m "Checked ${chk}. Published by scripts/air-local-publish.sh on the owner's Mac, the fallback for when no cloud egress reaches CPCB (docs/AIR-LOCAL-PUBLISHER.md). Same steps as .github/workflows/air-hourly.yml."
+    -m "Checked ${chk}. Published by scripts/air-local-publish.sh on the publisher host (the Oracle VM since 25 Oct 2026), the fallback for when no cloud egress reaches CPCB (docs/AIR-LOCAL-PUBLISHER.md). Same steps as .github/workflows/air-hourly.yml."
   if git push -q origin HEAD:main; then
     log "published Delhi AQI $aqi, observed $obs"
     return 0
